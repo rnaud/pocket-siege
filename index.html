@@ -97,6 +97,12 @@
               ><button data-weapon="grenade">
                 <span>✹</span> Grenade <small>∞</small>
               </button>
+              <button data-weapon="mortar">
+                <span>◆</span> Mortar <small>F3</small>
+              </button>
+              <button data-weapon="sticky">
+                <span>✿</span> Sticky <small>F4</small>
+              </button>
             </div>
           </div>
           <div id="grenade-settings" hidden>
@@ -131,16 +137,6 @@
               value="45"
               aria-label="Aim angle"
             />
-            <div class="slider-label">
-              <label for="power-meter">POWER</label
-              ><output id="power-value">HOLD TO CHARGE</output>
-            </div>
-            <progress
-              id="power-meter"
-              value="0"
-              max="100"
-              aria-label="Shot charge"
-            ></progress>
           </div>
           <button id="fire">
             <span id="fire-label">HOLD TO FIRE</span><span>↗</span
@@ -176,15 +172,16 @@
             buttons do the same.
           </p>
           <p>
-            <b>02 &nbsp; Line up your shot</b><br />Up/Down aim. On touch, drag
-            to aim or use the angle slider. Judge the arc yourself; wind bends
-            rockets but not grenades.
+            <b>02 &nbsp; Line up your shot</b><br />Up/Down or W/S aim. On
+            touch, drag to aim or use the angle slider. Judge the arc yourself;
+            wind bends rockets but not grenades.
           </p>
           <p>
             <b>03 &nbsp; Make a mess</b><br />Hold Space or the fire button to
-            charge; release to shoot. You get 3 seconds to retreat. Grenade
-            fuse: keys 1–5 or the selector. Falling can hurt you; water is
-            lethal.
+            charge; release to shoot. You get 3 seconds to retreat. Grenade and
+            sticky fuse: keys 1–5 or the selector. F1/F2 select bazooka/grenade;
+            F3 selects a heavy mortar, F4 a sticky bomb. Falling can hurt you;
+            water is lethal.
           </p>
         </details>
         <label class="mode-label" for="mode">MATCH TYPE</label

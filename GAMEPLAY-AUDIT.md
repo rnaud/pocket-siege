@@ -20,9 +20,13 @@ This pass brings the core artillery controls and combat closer to Worms Armagedd
 
 Playwright runs Chromium desktop and iPhone WebKit checks for input, hold/release power, cancellation, maximum-charge firing, absent trajectory hints, grenade settings, retreat, destructive impacts and computer turns. Physics tests cover radial impulses, momentum, collision, fall damage, friction, head hits, charge progression, bounce reflection and viewport-independent launch geometry. WebKit emulation is not a physical iPhone device test.
 
+## Additional controls and weapons
+
+Desktop aiming uses Up/Down or W/S; the slider is touch-only. Charge is displayed around the reticle. Walking no longer toggles the fire button’s disabled appearance on tiny terrain steps. The loadout now also includes a shorter-range, larger-blast mortar and a timed sticky bomb that attaches to terrain or moving worms. These are Pocket Siege additions, not claims of identical Armageddon weapon behavior. Animated shader water adds foam, ripples and bubbles.
+
 ## Intentional tuning and remaining scope
 
-The game uses its own 120 Hz simulation, elliptical body collision, terrain mask and tuned movement/weapon values. Charge duration is two seconds, retreat three seconds, and turns 45 seconds. Blast damage caps at 50. These are this game's settings, not a claim that every original scheme uses these values.
+The game uses its own 120 Hz simulation, elliptical body collision, terrain mask and tuned movement/weapon values. Charge duration is two seconds, retreat three seconds, and turns 45 seconds. Standard blast damage caps at 50; the added heavy mortar caps at 65. These are this game's settings, not a claim that every original scheme uses these values.
 
 Still absent: the original's full arsenal, ninja rope and utilities, crates and mines, configurable schemes and sudden death, online networking, replays, and exact original collision masks, movement constants and camera behavior. This audit fixes the implemented core systems; those larger features remain outside the current game.
 

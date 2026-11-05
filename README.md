@@ -9,11 +9,11 @@ A Worms-inspired, turn-based artillery game built with Three.js. Original genera
 Pit Moss Company against Coral Crew on a destructible floating island. Play solo against the computer or choose local pass-and-play. Each squad has three worms; the last squad standing wins.
 
 - **Move:** left/right arrows, A/D, or touch buttons.
-- **Aim:** Up/Down arrows, drag on the battlefield, or the angle slider. No predicted trajectory is shown.
-- **Fire:** hold Space (or the touch fire button) to build power; release to shoot. Full charge fires automatically after two seconds.
+- **Aim:** Up/Down arrows or W/S. On touch, drag on the battlefield or use the angle slider. No predicted trajectory is shown.
+- **Fire:** hold Space (or the touch fire button) to build power; release to shoot. Power fills a ring around the aiming reticle. Full charge fires automatically after two seconds.
 - **Jump:** Enter jumps forward; double Enter jumps backward. Backspace jumps vertically; double Backspace backflips. Touch has Jump and Backflip buttons.
-- **Weapons:** F1 selects bazooka; F2 selects grenade. Grenade fuse: keys 1–5; bounce: +/−, or use the touch selectors.
-- Wind affects bazookas, not grenades. Water eliminates worms. Turns last 45 seconds, with three seconds to retreat after firing.
+- **Weapons:** F1 selects bazooka; F2 grenade; F3 heavy mortar; F4 sticky bomb. Mortars have shorter range and a larger impact blast. Sticky bombs attach to terrain or worms until their fuse expires. Grenade/sticky fuse: keys 1–5; bounce: +/−, or use the touch selectors.
+- Wind affects bazookas; the other three weapons ignore wind. Water eliminates worms. Turns last 45 seconds, with three seconds to retreat after firing.
 - Sound is optional; use the music-note button. Help pauses the match.
 
 Touch layouts support portrait and landscape, including iPhone Safari. No install or account is required. This is a focused local artillery game, not a recreation of every Worms Armageddon feature; there is no online multiplayer.
@@ -45,7 +45,7 @@ The GitHub Actions workflow builds and deploys `dist/` to GitHub Pages on pushes
 
 ## Implementation
 
-Three.js renders an orthographic battlefield, animated illustrated soldiers, projectiles, debris, and a painted jungle backdrop. A binary terrain mask powers collision and circular excavation; a canvas texture displays the same mask. Physics runs at a fixed 120 Hz with swept projectile collision. The computer samples ballistic trajectories against the live terrain before firing.
+A lightweight water shader animates foam, ripples and bubbles; reduced-motion settings freeze its animation. Three.js renders an orthographic battlefield, animated illustrated soldiers, projectiles, debris, and a painted jungle backdrop. A binary terrain mask powers collision and circular excavation; a canvas texture displays the same mask. Physics runs at a fixed 120 Hz with swept projectile collision. The computer samples ballistic trajectories against the live terrain before firing.
 
 ## License
 

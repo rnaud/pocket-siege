@@ -1,3 +1,4 @@
+import { createWater } from "./water.js";
 import * as THREE from "three";
 import "./style.css";
 import {
@@ -144,32 +145,8 @@ for (let i = 0; i < 26; i++) {
   group.add(mote);
   motes.push(mote);
 }
-const water = flatShape(
-  [
-    [0, 0],
-    [1200, 0],
-    [1200, WATER],
-    [0, WATER],
-  ],
-  "#167e86",
-  20,
-);
-water.material.transparent = true;
-water.material.opacity = 0.82;
-const waterLines = [];
-for (let i = 0; i < 25; i++) {
-  const l = new THREE.Mesh(
-    new THREE.PlaneGeometry(20 + (i % 5) * 9, 1),
-    new THREE.MeshBasicMaterial({
-      color: 0x9cd3ce,
-      transparent: true,
-      opacity: 0.28,
-    }),
-  );
-  l.position.set((i * 53) % 1200, 15 + ((i * 17) % 65), 22);
-  group.add(l);
-  waterLines.push(l);
-}
+const water = createWater(W, WATER);
+group.add(water);
 function paintTerrain() {
   terrain.surfaceCache = Array.from({ length: W }, (_, x) =>
     terrain.surface(x),
@@ -366,6 +343,8 @@ function updateAimHUD() {
     aimHUD.text.textContent = charging
       ? `${Math.round(power)}%`
       : `${Math.round(angle)}°`;
+    aimHUD.charge.style.display = charging ? "" : "none";
+    aimHUD.charge.setAttribute("stroke-dasharray", `${power * 1.508} 150.8`);
     lastAim = { ...geometry, reticle: target, angle };
   }
   aimHUD.tag.hidden = !projectile;
@@ -375,12 +354,13 @@ function updateAimHUD() {
       Math.max(48, Math.min(arena.clientWidth - 48, p.x)) + "px";
     aimHUD.tag.style.top =
       Math.max(14, Math.min(arena.clientHeight - 25, p.y - 22)) + "px";
-    aimHUD.tag.textContent =
-      projectile.kind === "grenade"
-        ? `✹ ${Math.max(0, projectile.fuse - projectile.age).toFixed(1)}s`
-        : p.y < 0
-          ? "↑ ROCKET"
-          : "➶";
+    aimHUD.tag.textContent = ["grenade", "sticky"].includes(projectile.kind)
+      ? `✹ ${Math.max(0, projectile.fuse - projectile.age).toFixed(1)}s`
+      : p.y < 0
+        ? projectile.kind === "mortar"
+          ? "↑ MORTAR"
+          : "↑ ROCKET"
+        : "➶";
     aimHUD.trail.setAttribute(
       "d",
       projectile.trail
@@ -514,8 +494,7 @@ function updateUI() {
     w.label.style.setProperty("--hp", w.hp + "%");
     w.label.classList.toggle("active", i === current && phase !== "over");
   }
-  $("#fire").disabled =
-    !canAct() || !worms[current]?.ground || worms[current]?.knocked;
+  $("#fire").disabled = !canAct() || worms[current]?.knocked;
   $("#angle").disabled = !canAct() || charging;
   document
     .querySelectorAll("[data-weapon],#fuse,#bounce")
@@ -544,15 +523,8 @@ function canMove() {
 function updateSliders() {
   $("#angle").value = angle;
   $("#angle-value").textContent = Math.round(angle) + "°";
-  $("#power-meter").value = power;
-  $("#power-value").textContent = charging
-    ? Math.round(power) + "%"
-    : firedPower
-      ? `LAST ${Math.round(firedPower)}%`
-      : "HOLD TO CHARGE";
   $("#fire").classList.toggle("charging", charging);
   $("#fire-label").textContent = charging ? "RELEASE TO FIRE" : "HOLD TO FIRE";
-  $("#fire").style.setProperty("--charge", power + "%");
 }
 function startCharge(source) {
   if (charging || !canAct() || !worms[current].ground || worms[current].knocked)
@@ -626,6 +598,10 @@ function fire() {
   const w = worms[current],
     origin = launchPoint(w, angle, weapon),
     v = launch(angle, power);
+  if (weapon === "mortar") {
+    v.vx *= 0.7;
+    v.vy *= 0.7;
+  }
   w.recoil = 0.3;
   charging = false;
   chargeSource = null;
@@ -640,6 +616,8 @@ function fire() {
     bounce,
     owner: current,
     sleeping: false,
+    stuck: false,
+    attached: null,
     kind: weapon,
     mesh: createProjectile(weapon),
     trail: [],
@@ -652,14 +630,25 @@ function fire() {
   $("#status").textContent =
     weapon === "rocket"
       ? "Rocket away. Incoming!"
-      : `Grenade thrown. ${fuse}-second fuse. Retreat!`;
+      : weapon === "mortar"
+        ? "Mortar away. Heavy impact incoming!"
+        : `${weapon === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${fuse}-second fuse. Retreat!`;
   move = 0;
   shotWait = 0;
   tone(550, 0.2, "triangle");
   updateUI();
 }
 function explode(x, y, kind) {
-  const radius = kind === "death" ? 28 : kind === "grenade" ? 60 : 53;
+  const radius =
+    kind === "death"
+      ? 28
+      : kind === "mortar"
+        ? 76
+        : kind === "sticky"
+          ? 64
+          : kind === "grenade"
+            ? 60
+            : 53;
   terrain.carve(x, y, radius);
   paintTerrain();
   explosions++;
@@ -700,7 +689,9 @@ function explode(x, y, kind) {
     if (factor > 0) {
       const damage = Math.max(
         1,
-        Math.round(factor * (kind === "death" ? 25 : 50)),
+        Math.round(
+          factor * (kind === "death" ? 25 : kind === "mortar" ? 65 : 50),
+        ),
       );
       w.hitDirection = Math.sign(w.x - x) || 1;
       injure(w, damage);
@@ -884,8 +875,14 @@ function step(dt) {
     const p = projectile;
     const ox = p.x,
       oy = p.y;
-    if (p.sleeping && !terrain.solid(p.x, p.y - 4)) p.sleeping = false;
-    if (!p.sleeping) integrate(p, dt, p.kind === "rocket" ? wind : 0);
+    if (!p.stuck && p.sleeping && !terrain.solid(p.x, p.y - 4))
+      p.sleeping = false;
+    if (p.attached) {
+      p.x = p.attached.w.x + p.attached.dx;
+      p.y = p.attached.w.y + p.attached.dy;
+    }
+    if (!p.sleeping && !p.stuck)
+      integrate(p, dt, p.kind === "rocket" ? wind : 0);
     p.age += dt;
     let hit = p.blocked;
     p.blocked = false;
@@ -908,7 +905,20 @@ function step(dt) {
       }
     }
     let boom =
-      (p.kind === "rocket" && hit) || (p.kind === "grenade" && p.age >= p.fuse);
+      (["rocket", "mortar"].includes(p.kind) && hit) ||
+      (["grenade", "sticky"].includes(p.kind) && p.age >= p.fuse);
+    if (hit && p.kind === "sticky" && !p.stuck) {
+      p.stuck = true;
+      p.vx = 0;
+      p.vy = 0;
+      const w = worms.find(
+        (w, i) =>
+          w.hp > 0 &&
+          (i !== p.owner || p.age > 0.25) &&
+          hitsWorm(w, p.x, p.y, 3),
+      );
+      if (w) p.attached = { w, dx: p.x - w.x, dy: p.y - w.y };
+    }
     if (hit && p.kind === "grenade") {
       const victim = worms.find(
         (w, i) =>
@@ -1057,8 +1067,12 @@ function frame(now) {
       1,
     );
     w.rig.pivot.visible = w.hp > 0 && w.hurt < 0.75;
-    w.rig.barrel.visible = !active || weapon === "rocket";
-    w.rig.grenade.visible = active && weapon === "grenade";
+    w.rig.barrel.visible = !active || ["rocket", "mortar"].includes(weapon);
+    w.rig.grenade.visible = active && ["grenade", "sticky"].includes(weapon);
+    w.rig.grenade.children[0].material.color.setHex(
+      weapon === "sticky" ? 0xf393b5 : 0x647944,
+    );
+    w.rig.barrel.scale.y = active && weapon === "mortar" ? 1.4 : 1;
     w.rig.barrel.position.x = -Math.sin((w.recoil / 0.3) * Math.PI) * 7;
     w.rig.flash.visible = w.recoil > 0.19 && weapon === "rocket";
     w.rig.flash.scale.setScalar(0.8 + Math.sin(now * 0.09) * 0.2);
@@ -1097,9 +1111,7 @@ function frame(now) {
   $("#timer").innerHTML =
     `${retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time))}<small> ${retreat > 0 ? "RETREAT" : "SEC"}</small>`;
   if (now > announceUntil) $("#announcement").style.opacity = 0;
-  waterLines.forEach(
-    (l, i) => (l.position.x = ((i * 53 + now * 0.004) % 1250) - 25),
-  );
+  water.userData.update(reducedMotion ? 0 : now * 0.001);
   motes.forEach((m, i) => {
     m.position.x = (i * 127 + now * 0.007) % W;
     m.position.y = 150 + ((i * 73) % 450) + Math.sin(now * 0.0007 + i) * 12;
@@ -1111,7 +1123,7 @@ function frame(now) {
 }
 function setWeapon(kind) {
   weapon = kind;
-  $("#grenade-settings").hidden = kind !== "grenade";
+  $("#grenade-settings").hidden = !["grenade", "sticky"].includes(kind);
   document
     .querySelectorAll("[data-weapon]")
     .forEach((b) => b.classList.toggle("selected", b.dataset.weapon === kind));
@@ -1199,6 +1211,12 @@ window.addEventListener("keydown", (e) => {
     "Backspace",
     "F1",
     "F2",
+    "F3",
+    "F4",
+    "w",
+    "s",
+    "W",
+    "S",
   ];
   if (controlled.includes(e.key)) e.preventDefault();
   if (e.key === " ") {
@@ -1207,18 +1225,23 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "ArrowLeft" || e.key === "a") setMove(-1);
   if (e.key === "ArrowRight" || e.key === "d") setMove(1);
-  if (e.key === "ArrowUp") aimInput = 1;
-  if (e.key === "ArrowDown") aimInput = -1;
+  if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") aimInput = 1;
+  if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") aimInput = -1;
   if (e.key === "Enter" && !e.repeat) jump("forward");
   if (e.key === "Backspace" && !e.repeat) jump("up");
   if (canAct() && !charging) {
     if (e.key === "F1") setWeapon("rocket");
     if (e.key === "F2") setWeapon("grenade");
-    if (weapon === "grenade" && /^[1-5]$/.test(e.key)) {
+    if (e.key === "F3") setWeapon("mortar");
+    if (e.key === "F4") setWeapon("sticky");
+    if (["grenade", "sticky"].includes(weapon) && /^[1-5]$/.test(e.key)) {
       fuse = +e.key;
       $("#fuse").value = fuse;
     }
-    if (weapon === "grenade" && ["+", "=", "-"].includes(e.key)) {
+    if (
+      ["grenade", "sticky"].includes(weapon) &&
+      ["+", "=", "-"].includes(e.key)
+    ) {
       bounce = e.key === "-" ? 0.3 : 0.7;
       $("#bounce").value = bounce;
     }
@@ -1230,7 +1253,8 @@ window.addEventListener("keyup", (e) => {
     releaseCharge("keyboard");
   }
   if (["ArrowLeft", "ArrowRight", "a", "d"].includes(e.key)) move = 0;
-  if (["ArrowUp", "ArrowDown"].includes(e.key)) aimInput = 0;
+  if (["ArrowUp", "ArrowDown", "w", "s", "W", "S"].includes(e.key))
+    aimInput = 0;
 });
 function releaseInputs() {
   move = 0;
@@ -1334,6 +1358,8 @@ window.siege = {
           vy: projectile.vy,
           age: projectile.age,
           fuse: projectile.fuse,
+          kind: projectile.kind,
+          stuck: projectile.stuck,
         }
       : null,
   }),

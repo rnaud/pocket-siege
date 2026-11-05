@@ -89,10 +89,12 @@ export function createStars() {
 
 export function createProjectile(kind) {
   const g = new THREE.Group();
-  if (kind === "rocket") {
+  if (["rocket", "mortar"].includes(kind)) {
     const body = new THREE.Mesh(
       new THREE.CylinderGeometry(3, 3, 14, 10),
-      new THREE.MeshStandardMaterial({ color: 0xe0c37e }),
+      new THREE.MeshStandardMaterial({
+        color: kind === "mortar" ? 0x9394ae : 0xe0c37e,
+      }),
     );
     body.rotation.z = -Math.PI / 2;
     g.add(body);
@@ -113,7 +115,9 @@ export function createProjectile(kind) {
   } else {
     const ball = new THREE.Mesh(
       new THREE.SphereGeometry(6, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0x718948 }),
+      new THREE.MeshStandardMaterial({
+        color: kind === "sticky" ? 0xf393b5 : 0x718948,
+      }),
     );
     g.add(ball);
     const cap = new THREE.Mesh(
@@ -123,6 +127,7 @@ export function createProjectile(kind) {
     cap.position.y = 6;
     g.add(cap);
   }
+  if (kind === "mortar") g.scale.setScalar(1.5);
   return g;
 }
 
@@ -130,7 +135,7 @@ export function createAimOverlay(arena) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.id = "aim-overlay";
   svg.setAttribute("aria-hidden", "true");
-  svg.innerHTML = `<g id="aim-guide"><g id="aim-reticle"><circle class="reticle-rim" r="14"/><circle class="reticle-ring" r="10"/><path d="M-21 0H-7M7 0H21M0-21V-7M0 7V21"/><circle class="reticle-dot" r="2"/><text y="-28" text-anchor="middle"></text></g></g><path class="projectile-trail"/>`;
+  svg.innerHTML = `<g id="aim-guide"><g id="aim-reticle"><circle class="reticle-charge" r="24" transform="rotate(-90)"/><circle class="reticle-rim" r="14"/><circle class="reticle-ring" r="10"/><path d="M-21 0H-7M7 0H21M0-21V-7M0 7V21"/><circle class="reticle-dot" r="2"/><text y="-28" text-anchor="middle"></text></g></g><path class="projectile-trail"/>`;
   arena.appendChild(svg);
   const tag = document.createElement("div");
   tag.id = "projectile-tag";
@@ -139,6 +144,7 @@ export function createAimOverlay(arena) {
     svg,
     guide: svg.querySelector("#aim-guide"),
     reticle: svg.querySelector("#aim-reticle"),
+    charge: svg.querySelector(".reticle-charge"),
     text: svg.querySelector("#aim-reticle text"),
     trail: svg.querySelector(".projectile-trail"),
     tag,

@@ -67,7 +67,7 @@ export function shotGeometry(
 ) {
   const r = (angle * Math.PI) / 180,
     visualAngle = Math.atan2(Math.sin(r), Math.cos(r) / correction);
-  const reach = kind === "rocket" ? 32 : 22;
+  const reach = ["rocket", "mortar"].includes(kind) ? 32 : 22;
   const pivot = { x: w.x + (Math.cos(r) < 0 ? -1 : 1) * 5.76, y: w.y + 16 };
   const rigScale =
     1 / Math.hypot(Math.cos(visualAngle) * correction, Math.sin(visualAngle));

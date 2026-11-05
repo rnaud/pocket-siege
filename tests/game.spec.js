@@ -36,7 +36,7 @@ test("play a full destructive turn with responsive controls", async ({
     ),
   ).toBe(true);
   const before = await page.evaluate(() => window.siege.getState());
-  await page.locator("#angle").fill("-60");
+  await setAim(page, "-60");
   await chargeShot(page);
   await expect
     .poll(async () => page.evaluate(() => window.siege.getState().team), {
@@ -51,7 +51,7 @@ test("play a full destructive turn with responsive controls", async ({
     fullPage: true,
   });
   await page.locator('[data-weapon="grenade"]').click();
-  await page.locator("#angle").fill("90");
+  await setAim(page, "90");
   await chargeShot(page);
   await expect
     .poll(async () => page.evaluate(() => window.siege.getState().team), {
@@ -66,7 +66,7 @@ test("computer takes its turn and returns control", async ({ page }) => {
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#start").click();
-  await page.locator("#angle").fill("90");
+  await setAim(page, "90");
   await chargeShot(page);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
@@ -199,7 +199,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await expect(page.locator("#aim-reticle")).toBeVisible();
-  await page.locator("#angle").fill("90");
+  await setAim(page, "90");
   await expect
     .poll(() =>
       page.evaluate(() => window.siege.getState().worms[0].weaponRotation),
@@ -209,7 +209,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
     path: `test-results/${info.project.name}-aim-up.png`,
     fullPage: true,
   });
-  await page.locator("#angle").fill("-60");
+  await setAim(page, "-60");
   await expect
     .poll(() =>
       page.evaluate(() => window.siege.getState().worms[0].weaponRotation),
@@ -252,7 +252,7 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await page.locator('[data-weapon="grenade"]').click();
-  await page.locator("#angle").fill("90");
+  await setAim(page, "90");
   await chargeShot(page);
   await expect(page.locator("#projectile-tag")).toContainText(/\d\.\ds/);
   await expect(page.locator('[data-weapon="rocket"]')).toBeDisabled();
@@ -281,7 +281,7 @@ test("Space charges until release, arrows only aim, and no shot prediction exist
   await expect(
     page.locator(".arc,.arc-shadow,.impact-marker,.impact-caption"),
   ).toHaveCount(0);
-  await page.locator("#angle").fill("45");
+  await setAim(page, "45");
   const y = await page.evaluate(() => window.siege.getState().worms[0].y);
   await page.keyboard.down("ArrowUp");
   await page.waitForTimeout(200);
@@ -357,7 +357,7 @@ test("grenade fuse selection and retreat movement work without granting another 
   await page.keyboard.press("-");
   expect(await page.evaluate(() => window.siege.getState().fuse)).toBe(5);
   expect(await page.locator("#bounce").inputValue()).toBe("0.3");
-  await page.locator("#angle").fill("90");
+  await setAim(page, "90");
   await chargeShot(page, 1200);
   await expect(page.locator("#projectile-tag")).toContainText(/4\.\ds/);
   const before = await page.evaluate(() => window.siege.getState().worms[0].x);
@@ -375,3 +375,83 @@ test("grenade fuse selection and retreat movement work without granting another 
     })
     .toBe(0);
 });
+
+async function setAim(page, value) {
+  // Set up a reproducible shot; separate tests cover the real keyboard/touch controls.
+  await page.locator("#angle").evaluate((el, value) => {
+    el.value = value;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+test("desktop hides slider, W/S aim, walking keeps fire stable, charge lives on reticle", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  if (info.project.name === "desktop")
+    await expect(page.locator(".aim-panel")).toBeHidden();
+  else await expect(page.locator(".aim-panel")).toBeVisible();
+  await expect(page.locator("#power-meter")).toHaveCount(0);
+  const before = Number(await page.locator("#angle").inputValue());
+  await page.keyboard.down("w");
+  await page.waitForTimeout(200);
+  await page.keyboard.up("w");
+  expect(Number(await page.locator("#angle").inputValue())).toBeGreaterThan(
+    before,
+  );
+  await page.keyboard.down("s");
+  await page.waitForTimeout(200);
+  await page.keyboard.up("s");
+  await page.evaluate(() => {
+    window.fireFlickers = 0;
+    new MutationObserver((ms) => {
+      window.fireFlickers += ms.filter(
+        (m) =>
+          m.attributeName === "disabled" &&
+          document.querySelector("#fire").disabled,
+      ).length;
+    }).observe(document.querySelector("#fire"), { attributes: true });
+  });
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(600);
+  await page.keyboard.up("ArrowRight");
+  expect(await page.evaluate(() => window.fireFlickers)).toBe(0);
+  await page.waitForTimeout(300);
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(400);
+  await expect(page.locator(".reticle-charge")).toBeVisible();
+  const dash = await page
+    .locator(".reticle-charge")
+    .getAttribute("stroke-dasharray");
+  expect(parseFloat(dash)).toBeGreaterThan(10);
+  await page.keyboard.up("Space");
+});
+for (const weapon of ["mortar", "sticky"])
+  test(`${weapon} fires with its own impact behavior`, async ({ page }) => {
+    await page.goto("/");
+    await page.locator("#mode").selectOption("local");
+    await page.locator("#start").click();
+    await page.locator(`[data-weapon="${weapon}"]`).click();
+    await setAim(page, "-60");
+    const before = await page.evaluate(
+      () => window.siege.getState().terrainPixels,
+    );
+    await chargeShot(page, 300);
+    if (weapon === "sticky") {
+      await expect
+        .poll(() =>
+          page.evaluate(() => window.siege.getState().projectile?.stuck),
+        )
+        .toBe(true);
+      const p = await page.evaluate(() => window.siege.getState().projectile);
+      expect(p.vx).toBe(0);
+      expect(p.vy).toBe(0);
+    }
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().explosions))
+      .toBeGreaterThan(0);
+    expect(
+      await page.evaluate(() => window.siege.getState().terrainPixels),
+    ).toBeLessThan(before);
+  });
