@@ -185,3 +185,86 @@ test("generated art loads and character labels stay readable", async ({
   });
   expect(missing).toEqual([]);
 });
+
+test("crosshair and articulated weapon follow upward and downward aim", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator("#aim-reticle")).toBeVisible();
+  await page.locator("#angle").fill("90");
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.siege.getState().worms[0].weaponRotation),
+    )
+    .toBeCloseTo(Math.PI / 2, 2);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-aim-up.png`,
+    fullPage: true,
+  });
+  await page.locator("#angle").fill("-60");
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.siege.getState().worms[0].weaponRotation),
+    )
+    .toBeLessThan(0);
+  const aim = await page.evaluate(() => window.siege.getState().aim);
+  expect(aim.muzzle.y).toBeLessThan(aim.pivot.y);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-aim-down.png`,
+    fullPage: true,
+  });
+  await page.locator("#power").fill("15");
+  await page.locator("#fire").click();
+  await expect(page.locator("#aim-guide")).toBeHidden();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().worms[0].pose), {
+      intervals: [20, 30, 50],
+      timeout: 5000,
+    })
+    .toBe("hurt");
+  await expect(page.locator(".worm-label.hurt")).not.toHaveCount(0);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-hurt.png`,
+    fullPage: true,
+  });
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.worms[0].hp).toBeLessThan(100);
+  expect(state.worms[0].hits).toBeGreaterThan(0);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().team), {
+      timeout: 12000,
+    })
+    .toBe(1);
+  await expect(page.locator("#aim-reticle")).toBeVisible();
+});
+
+test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator('[data-weapon="grenade"]').click();
+  await page.locator("#angle").fill("90");
+  await page.locator("#power").fill("15");
+  await page.locator("#fire").click();
+  await expect(page.locator("#projectile-tag")).toContainText(/\d\.\ds/);
+  await expect(page.locator('[data-weapon="rocket"]')).toBeDisabled();
+  await page.locator("#help").click();
+  const before = await page.evaluate(() => window.siege.getState().projectile);
+  await page.waitForTimeout(350);
+  expect(await page.evaluate(() => window.siege.getState().projectile)).toEqual(
+    before,
+  );
+  await page.locator(".close-help").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().team), {
+      timeout: 15000,
+    })
+    .toBe(1);
+});

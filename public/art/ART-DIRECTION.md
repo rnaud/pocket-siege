@@ -1,5 +1,18 @@
 # Pocket Siege art
 
+## Modular bodies and hurt frames
+
+Files: `moss-body.webp`, `coral-body.webp`, `moss-hurt.webp`, `coral-hurt.webp`. Edited with the built-in image generation tool using the corresponding original soldier and then body sprite as references. The separate articulated weapon and hands are Three.js geometry.
+
+Body edit prompt:
+
+Edit this transparent game character sprite for a modular animation rig. Keep exactly the same worm identity, helmet, colors, eyes, smile, tail, satchel, facing direction, painterly outlines, full-body scale and framing. Remove the entire bazooka and both hands and arms completely; reconstruct the peach segmented chest and belly behind them naturally. The resulting character has NO weapon, NO arms, NO hands: those will be separate articulated game parts rendered in front at runtime. Do not add anything else. Keep genuine transparent background and original canvas dimensions. One character, same pose, full body.
+
+Hurt frame edit prompt:
+
+Create the hurt reaction frame for this transparent game sprite. Keep exactly the same character silhouette, full-body placement, helmet color and accessories, tail, satchel, scale, facing direction, painterly style and true transparent background. Change ONLY facial expression to a clear comic ouch: eyes squeezed shut into curved lines, eyebrows raised in pain, mouth an open small rounded grimace. Slightly scrunch the cheek. No blood, no wounds, no marks, no stars, no text. No arms, no hands and no weapon. The runtime will add those. Preserve exact canvas framing for smooth frame swaps.
+
+
 Generated with the built-in image generation tool. These are original project assets. WebP delivery files preserve the generated character alpha and are optimized for mobile loading; the character files are 512 × 512.
 
 Files: `fern-islands.webp`, `moss-soldier.webp`, and `coral-soldier.webp` in this directory.

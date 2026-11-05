@@ -55,3 +55,29 @@ export function integrate(p, dt, wind = 0) {
   p.x += p.vx * dt;
   p.y += p.vy * dt;
 }
+
+// Convert world-space aim to the articulated barrel's local angle. The correction
+// preserves sprite proportions on phones, so simply rotating by world angle is wrong.
+export function shotGeometry(
+  w,
+  angle,
+  correction = 1,
+  size = 64,
+  kind = "rocket",
+) {
+  const r = (angle * Math.PI) / 180;
+  const visualAngle = Math.atan2(Math.sin(r), Math.cos(r) / correction);
+  const reach = ((kind === "rocket" ? 32 : 22) * size) / 64;
+  const pivot = {
+    x: w.x + (Math.cos(r) < 0 ? -1 : 1) * size * 0.09 * correction,
+    y: w.y + size * 0.25,
+  };
+  return {
+    pivot,
+    visualAngle,
+    muzzle: {
+      x: pivot.x + Math.cos(visualAngle) * reach * correction,
+      y: pivot.y + Math.sin(visualAngle) * reach,
+    },
+  };
+}

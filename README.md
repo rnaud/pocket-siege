@@ -10,7 +10,7 @@ Pit Moss Company against Coral Crew on a destructible floating island. Play solo
 
 - **Move:** left/right arrows, A/D, or touch buttons
 - **Jump:** up arrow, W, or Jump
-- **Aim:** drag on the battlefield or use the angle and power sliders
+- **Aim:** drag on the battlefield or use the angle and power sliders; Q/E fine-tune the angle. Aim up or down in either direction.
 - **Fire:** Space or Fire Away
 - **Weapons:** Bazooka explodes on contact; grenades bounce and have a three-second fuse. Select with the buttons or 1/2.
 - Wind affects projectiles; water eliminates worms. Each turn lasts 45 seconds.
@@ -28,7 +28,7 @@ npm run dev
 npm run build
 ```
 
-`npm run preview` serves the production build. Character and background images are generated original art, optimized to 367 KB total in WebP. Terrain and effects are procedural. Google Fonts is optional, with system fallbacks. Three.js is bundled locally.
+`npm run preview` serves the production build. Character, hurt-frame, and background images are generated original art, optimized in WebP. Terrain and effects are procedural. Google Fonts is optional, with system fallbacks. Three.js is bundled locally.
 
 ## Tests
 
@@ -54,3 +54,9 @@ MIT. Worms and Worms Armageddon are trademarks of their respective owners. This 
 ## Art direction
 
 The original background and two transparent soldier illustrations were created with the built-in image generation tool. Assets and exact generation prompts are in [`public/art/`](public/art/ART-DIRECTION.md). The terrain uses layered soil, stones, grass fringes, and crater-edge shading. Soldier sprites breathe, bob when walking, and face the aiming direction.
+
+## Combat feedback
+
+The crosshair shows barrel direction; the dotted trajectory previews the shot under current wind. The impact marker shows a rocket collision or a grenade’s first bounce, not its final explosion. Weapons and hands rotate independently of the illustrated soldier, and shots originate at the visible muzzle. The same projection-aware calculation drives aiming and firing on desktop and mobile.
+
+Hits trigger an illustrated hurt face, flinch, brief color flash, knockback, orbiting stun stars, damage numbers and health-bar loss. Knockouts fade and tumble. Firing has recoil, a muzzle flash and a projectile trail; grenades show their remaining fuse. Help and a hidden browser tab pause simulation.

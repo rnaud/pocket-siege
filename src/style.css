@@ -908,3 +908,160 @@ dialog h1 {
     letter-spacing: 1.8px;
   }
 }
+/* Combat feedback stays readable over bright scenery at every screen size. */
+#aim-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3;
+}
+#aim-overlay .arc-shadow {
+  fill: none;
+  stroke: #152b31;
+  stroke-width: 5;
+  stroke-dasharray: 3 10;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+#aim-overlay .arc {
+  fill: none;
+  stroke: #fff5a6;
+  stroke-width: 2.5;
+  stroke-dasharray: 3 10;
+  stroke-linecap: round;
+}
+#aim-reticle {
+  filter: drop-shadow(0 2px 2px #0a202a88);
+}
+#aim-reticle .reticle-rim {
+  fill: #10272a60;
+  stroke: #122a31;
+  stroke-width: 5;
+}
+#aim-reticle .reticle-ring {
+  fill: none;
+  stroke: #fff4a0;
+  stroke-width: 2;
+}
+#aim-reticle path {
+  fill: none;
+  stroke: #fff9d1;
+  stroke-width: 3;
+  paint-order: stroke;
+}
+#aim-reticle .reticle-dot {
+  fill: #ffdf66;
+}
+#aim-reticle text,
+.impact-caption {
+  fill: #fff8d2;
+  stroke: #18333b;
+  stroke-width: 4;
+  paint-order: stroke;
+  stroke-linejoin: round;
+  font:
+    700 11px "DM Sans",
+    sans-serif;
+}
+.impact-marker {
+  fill: #ffb36b33;
+  stroke: #fff4ad;
+  stroke-width: 2;
+  filter: drop-shadow(0 1px 2px #102c35);
+}
+.impact-marker path {
+  stroke-width: 2;
+}
+#aim-overlay .impact-caption {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.projectile-trail {
+  fill: none;
+  stroke: #fff0ba;
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.8;
+  filter: drop-shadow(0 1px 2px #11333b);
+}
+#projectile-tag {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  background: #193536ed;
+  border: 1px solid #fff0ad;
+  color: #fff1b2;
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+#projectile-tag[hidden] {
+  display: none;
+}
+.worm-label {
+  padding-bottom: 6px;
+}
+.worm-label:after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  bottom: 2px;
+  width: calc(var(--hp, 100%) - 6px);
+  height: 2px;
+  background: currentColor;
+  transition: width 0.4s;
+}
+.worm-label.hurt {
+  border-color: #fff2c8;
+  background: #8e3b2fee;
+}
+.damage-number {
+  z-index: 6;
+  background: #512c28dd;
+  border: 1px solid #ffdb9b;
+  padding: 2px 7px;
+  border-radius: 5px;
+  color: #fff0c5;
+  text-shadow: 0 2px 0 #692e20;
+}
+#turn-banner {
+  position: absolute;
+  left: 50%;
+  bottom: 55px;
+  transform: translate(-50%, 8px);
+  background: #132e33e8;
+  color: #ecf5c9;
+  border: 1px solid #c6e49377;
+  border-radius: 6px;
+  padding: 9px 16px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  z-index: 4;
+}
+#turn-banner.shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+@media (max-width: 700px) {
+  .worm-label {
+    padding-bottom: 5px;
+  }
+  #turn-banner {
+    font-size: 9px;
+    bottom: 48px;
+    padding: 8px 12px;
+  }
+}
