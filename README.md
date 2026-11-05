@@ -1,6 +1,6 @@
 # Pocket Siege
 
-A Worms-inspired, turn-based artillery game built with Three.js. Original procedural visuals and characters; no Worms assets or branding are used.
+A Worms-inspired, turn-based artillery game built with Three.js. Original generated character and background art; no Worms assets or branding are used.
 
 ## Play
 
@@ -28,7 +28,7 @@ npm run dev
 npm run build
 ```
 
-`npm run preview` serves the production build. All game assets are procedural. Google Fonts is optional, with system fallbacks. Three.js is bundled locally.
+`npm run preview` serves the production build. Character and background images are generated original art, optimized to 367 KB total in WebP. Terrain and effects are procedural. Google Fonts is optional, with system fallbacks. Three.js is bundled locally.
 
 ## Tests
 
@@ -45,8 +45,12 @@ The GitHub Actions workflow builds and deploys `dist/` to GitHub Pages on pushes
 
 ## Implementation
 
-Three.js renders an orthographic battlefield, lit 3D worms, projectiles, debris, and background silhouettes. A binary terrain mask powers collision and circular excavation; a canvas texture displays the same mask. Physics runs at a fixed 120 Hz with swept projectile collision. The computer samples ballistic trajectories against the live terrain before firing.
+Three.js renders an orthographic battlefield, animated illustrated soldiers, projectiles, debris, and a painted jungle backdrop. A binary terrain mask powers collision and circular excavation; a canvas texture displays the same mask. Physics runs at a fixed 120 Hz with swept projectile collision. The computer samples ballistic trajectories against the live terrain before firing.
 
 ## License
 
 MIT. Worms and Worms Armageddon are trademarks of their respective owners. This project is independently created and is not affiliated with Team17.
+
+## Art direction
+
+The original background and two transparent soldier illustrations were created with the built-in image generation tool. Assets and exact generation prompts are in [`public/art/`](public/art/ART-DIRECTION.md). The terrain uses layered soil, stones, grass fringes, and crater-edge shading. Soldier sprites breathe, bob when walking, and face the aiming direction.

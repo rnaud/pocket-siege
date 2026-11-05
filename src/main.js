@@ -2,6 +2,7 @@ import * as THREE from "three";
 import "./style.css";
 import { Terrain, W, H, WATER, launch, integrate } from "./physics.js";
 const $ = (s) => document.querySelector(s);
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const arena = $("#arena"),
   menu = $("#menu");
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -58,9 +59,8 @@ let terrain,
   announceUntil = 0,
   last = performance.now(),
   accumulator = 0,
-  explosions = 0;
-announceUntil = 0;
-setWeapon("rocket");
+  explosions = 0,
+  shakeUntil = 0;
 function flatShape(points, color, z) {
   const s = new THREE.Shape();
   points.forEach(([x, y], i) => (i ? s.lineTo(x, y) : s.moveTo(x, y)));
@@ -72,67 +72,42 @@ function flatShape(points, color, z) {
   group.add(mesh);
   return mesh;
 }
-// Layered silhouettes keep the battlefield legible without image assets.
-flatShape(
-  [
-    [0, 0],
-    [0, 300],
-    [90, 375],
-    [160, 340],
-    [265, 465],
-    [355, 370],
-    [445, 407],
-    [560, 320],
-    [680, 440],
-    [815, 340],
-    [935, 430],
-    [1045, 345],
-    [1200, 390],
-    [1200, 0],
-  ],
-  "#405b6b",
-  -130,
+// Original generated art, loaded once and shared by all six soldiers.
+let assetsReady = false;
+const manager = new THREE.LoadingManager();
+const loader = new THREE.TextureLoader(manager);
+function artTexture(file) {
+  const map = loader.load(`${import.meta.env.BASE_URL}art/${file}.webp`);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  return map;
+}
+const backdropMap = artTexture("fern-islands");
+const soldierMaps = [artTexture("moss-soldier"), artTexture("coral-soldier")];
+const backdrop = new THREE.Mesh(
+  new THREE.PlaneGeometry(W, H),
+  new THREE.MeshBasicMaterial({ map: backdropMap }),
 );
-flatShape(
-  [
-    [0, 0],
-    [0, 220],
-    [120, 300],
-    [240, 270],
-    [335, 340],
-    [430, 290],
-    [580, 360],
-    [720, 280],
-    [850, 330],
-    [980, 275],
-    [1100, 325],
-    [1200, 270],
-    [1200, 0],
-  ],
-  "#3d606b",
-  -110,
-);
-const disc = new THREE.Mesh(
-  new THREE.CircleGeometry(43, 64),
-  new THREE.MeshBasicMaterial({
-    color: 0xc5d9cc,
-    transparent: true,
-    opacity: 0.6,
-  }),
-);
-disc.position.set(960, 505, -180);
-group.add(disc);
-for (let i = 0; i < 18; i++) {
-  const cloud = new THREE.Mesh(
-    new THREE.PlaneGeometry(60 + (i % 4) * 35, 2),
+backdrop.position.set(W / 2, H / 2, -180);
+group.add(backdrop);
+manager.onLoad = () => {
+  assetsReady = true;
+  resize();
+};
+const motes = [];
+for (let i = 0; i < 26; i++) {
+  const mote = new THREE.Mesh(
+    new THREE.CircleGeometry(1 + (i % 3), 6),
     new THREE.MeshBasicMaterial({
-      color: 0xa8c6cc,
+      color: 0xfff6be,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.25,
+      depthWrite: false,
     }),
   );
-  cloud.position.set((i * 173) % 1200, 405 + ((i * 29) % 200), -90);
-  group.add(cloud);
+  mote.position.z = 8;
+  group.add(mote);
+  motes.push(mote);
 }
 const water = flatShape(
   [
@@ -141,9 +116,11 @@ const water = flatShape(
     [1200, WATER],
     [0, WATER],
   ],
-  "#508a96",
+  "#167e86",
   20,
 );
+water.material.transparent = true;
+water.material.opacity = 0.82;
 const waterLines = [];
 for (let i = 0; i < 25; i++) {
   const l = new THREE.Mesh(
@@ -159,6 +136,9 @@ for (let i = 0; i < 25; i++) {
   waterLines.push(l);
 }
 function paintTerrain() {
+  terrain.surfaceCache = Array.from({ length: W }, (_, x) =>
+    terrain.surface(x),
+  );
   const image = ctx.createImageData(W, H);
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
@@ -166,22 +146,56 @@ function paintTerrain() {
       const i = ((H - 1 - y) * W + x) * 4;
       const grass = !terrain.solid(x, y + 7);
       const rim = !terrain.solid(x, y + 15);
-      const noise = ((x * 13 + y * 31) % 19) - 9;
-      const stripe = Math.sin(y * 0.09 + x * 0.005) > 0.6;
+      const hash = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+      const noise = (hash - Math.floor(hash)) * 9 - 4.5;
+      const strata = Math.sin(y * 0.055 + Math.sin(x * 0.009) * 2.2);
+      const depth = Math.min(1, (terrain.surfaceCache[x] - y) / 150);
+      const edge =
+        !terrain.solid(x - 4, y) ||
+        !terrain.solid(x + 4, y) ||
+        !terrain.solid(x, y - 4);
       let c = grass
-        ? [145, 177, 93]
+        ? [133, 177, 64]
         : rim
-          ? [85, 116, 68]
-          : stripe
-            ? [95, 83, 66]
-            : [109, 94, 72];
-      if ((x * 73 + y * 37) % 503 < 8 && !grass) c = [137, 121, 91];
+          ? [67, 101, 45]
+          : [
+              127 + strata * 13 - depth * 21,
+              83 + strata * 10 - depth * 17,
+              47 + strata * 8 - depth * 7,
+            ];
+      if (grass && !terrain.solid(x, y + 3)) c = [194, 211, 101];
+      if (edge && !grass && !rim) c = c.map((v) => v * 0.67);
       image.data[i] = c[0] + noise;
       image.data[i + 1] = c[1] + noise;
       image.data[i + 2] = c[2] + noise;
       image.data[i + 3] = 255;
     }
   ctx.putImageData(image, 0, 0);
+  // Details are clipped to the current collision mask, so craters erase them too.
+  ctx.save();
+  ctx.globalCompositeOperation = "source-atop";
+  for (let i = 0; i < 250; i++) {
+    const x = (i * 137 + 17) % W,
+      y = (i * 83 + 91) % H;
+    if (!terrain.solid(x, y)) continue;
+    ctx.fillStyle = i % 3 ? "#a8784e" : "#61442d";
+    ctx.beginPath();
+    ctx.ellipse(x, H - y, 3 + (i % 8), 2 + (i % 4), 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  // Fine grass tufts grow only on intact surface, never on the crater walls.
+  ctx.lineWidth = 1.3;
+  for (let x = 55; x < W - 55; x += 5) {
+    const y = terrain.surfaceCache[x];
+    if (y < WATER + 30 || Math.abs(y - terrain.surfaceCache[x + 3]) > 4)
+      continue;
+    ctx.strokeStyle = x % 3 ? "#8baa44" : "#c6d67a";
+    ctx.beginPath();
+    ctx.moveTo(x, H - y + 1);
+    ctx.lineTo(x - 2, H - y - 3 - (x % 4));
+    ctx.stroke();
+  }
   texture.needsUpdate = true;
 }
 function sphere(r, color, x, y, z, sx = 1, sy = 1) {
@@ -195,13 +209,31 @@ function sphere(r, color, x, y, z, sx = 1, sy = 1) {
 }
 function createWorm(t, i, x) {
   const g = new THREE.Group();
-  g.add(sphere(9, 0xeac4a2, 0, 1, 3, 1, 1.3), sphere(10, 0xf5d2b0, 0, 12, 3));
-  g.add(sphere(10, colors[t], 0, 19, 3, 1, 0.4));
-  for (const ex of [-3.8, 3.8]) {
-    g.add(sphere(3, 0xffffff, ex, 13, 11, 1, 1.15));
-    g.add(sphere(1.35, 0x152c32, ex + 1, 13, 13.5));
-  }
-  g.add(sphere(4, 0xb67f68, 1, 6, 11, 1, 0.3));
+  const body = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
+      map: soldierMaps[t],
+      transparent: true,
+      alphaTest: 0.03,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  );
+  body.position.set(0, 22, 4);
+  body.scale.set(64, 64, 1);
+  g.add(body);
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(14, 24),
+    new THREE.MeshBasicMaterial({
+      color: 0x263722,
+      transparent: true,
+      opacity: 0.25,
+      depthWrite: false,
+    }),
+  );
+  shadow.scale.y = 0.22;
+  shadow.position.set(0, -9, 2);
+  g.add(shadow);
   const label = document.createElement("div");
   label.className = "worm-label";
   label.style.color = t ? "#ffb0a1" : "#d2efa8";
@@ -217,6 +249,9 @@ function createWorm(t, i, x) {
     vx: 0,
     vy: 0,
     g,
+    body,
+    shadow,
+    facing: t ? -1 : 1,
     label,
     ground: true,
   };
@@ -276,7 +311,9 @@ function reset() {
   team = 0;
   round = 1;
   turnCount = [0, 0];
-  explosions = 0;
+  ((explosions = 0), (shakeUntil = 0));
+  announceUntil = 0;
+  setWeapon("rocket");
   mode = $("#mode").value;
   beginTurn();
   resize();
@@ -374,6 +411,8 @@ function explode(x, y, kind) {
   terrain.carve(x, y, radius);
   paintTerrain();
   explosions++;
+  shakeUntil = performance.now() + 350;
+  impactFlash(x, y);
   tone(85, 0.6, "sawtooth");
   for (let i = 0; i < 46; i++) {
     const a = Math.random() * Math.PI * 2,
@@ -409,6 +448,15 @@ function explode(x, y, kind) {
     }
   }
   updateUI();
+}
+function impactFlash(x, y) {
+  const p = screen(x, y),
+    flash = document.createElement("span");
+  flash.className = "impact-flash";
+  flash.style.left = p.x + "px";
+  flash.style.top = p.y + "px";
+  $("#damage").appendChild(flash);
+  setTimeout(() => flash.remove(), 600);
 }
 function damageLabel(w, n) {
   const p = screen(w.x, w.y + 30),
@@ -620,8 +668,22 @@ function screen(x, y) {
 function resize() {
   renderer.setSize(arena.clientWidth, arena.clientHeight, false);
   const correction = arena.clientHeight / H / (arena.clientWidth / W);
-  disc.scale.x = correction;
-  for (const w of worms) w.g.scale.x = correction;
+  const aspect = arena.clientWidth / arena.clientHeight;
+  const imageAspect = backdropMap.image
+    ? backdropMap.image.width / backdropMap.image.height
+    : 16 / 9;
+  backdropMap.repeat.set(
+    Math.min(1, aspect / imageAspect),
+    Math.min(1, imageAspect / aspect),
+  );
+  backdropMap.offset.set(
+    (1 - backdropMap.repeat.x) / 2,
+    (1 - backdropMap.repeat.y) / 2,
+  );
+  for (const w of worms) {
+    w.g.scale.x = correction;
+    w.visualSize = Math.max(64, (29 * H) / arena.clientHeight);
+  }
 }
 new ResizeObserver(() => requestAnimationFrame(resize)).observe(arena);
 function frame(now) {
@@ -632,8 +694,45 @@ function frame(now) {
     step(1 / 120);
     accumulator -= 1 / 120;
   }
+  const labelBoxes = [];
   for (const w of worms) {
-    const p = screen(w.x, w.y + 36);
+    const size = w.visualSize || 64;
+    const active = w === worms[current];
+    if (active && phase === "aim") w.facing = move || (angle > 90 ? -1 : 1);
+    const facing = w.facing * (w.team ? -1 : 1);
+    const moving = active && move && canAct();
+    const bounce =
+      menu.open || reducedMotion
+        ? 0
+        : Math.sin(now * (moving ? 0.019 : 0.003) + w.x) * (moving ? 3 : 1.2);
+    w.body.scale.set(
+      size * facing * (1 + bounce * 0.008),
+      size * (1 - bounce * 0.006),
+      1,
+    );
+    w.body.position.y = size / 2 - 12 + bounce;
+    w.body.rotation.z = moving
+      ? Math.sin(now * 0.02) * 0.065
+      : Math.max(-0.15, Math.min(0.15, -w.vx * 0.001));
+    w.shadow.visible = w.ground;
+    const p = screen(w.x, w.y + size - 7);
+    if (w.hp > 0) {
+      const width = w.label.offsetWidth,
+        height = w.label.offsetHeight;
+      p.x = Math.max(
+        width / 2 + 4,
+        Math.min(arena.clientWidth - width / 2 - 4, p.x),
+      );
+      while (
+        labelBoxes.some(
+          (b) =>
+            Math.abs(b.x - p.x) < (b.width + width) / 2 + 3 &&
+            Math.abs(b.y - p.y) < Math.max(b.height, height) + 3,
+        )
+      )
+        p.y -= height + 5;
+      labelBoxes.push({ x: p.x, y: p.y, width, height });
+    }
     w.label.style.left = p.x + "px";
     w.label.style.top = p.y + "px";
   }
@@ -659,6 +758,13 @@ function frame(now) {
   waterLines.forEach(
     (l, i) => (l.position.x = ((i * 53 + now * 0.004) % 1250) - 25),
   );
+  motes.forEach((m, i) => {
+    m.position.x = (i * 127 + now * 0.007) % W;
+    m.position.y = 150 + ((i * 73) % 450) + Math.sin(now * 0.0007 + i) * 12;
+  });
+  const shake = reducedMotion ? 0 : Math.max(0, shakeUntil - now) / 350;
+  camera.position.x = shake * Math.sin(now * 0.09) * 5;
+  camera.position.y = shake * Math.cos(now * 0.07) * 4;
   renderer.render(scene, camera);
 }
 function setWeapon(kind) {
@@ -741,10 +847,12 @@ document.addEventListener("visibilitychange", () => {
   last = performance.now();
 });
 $("#help").onclick = () => {
+  $(".instructions").open = true;
   menu.showModal();
   updateUI();
 };
 $("#restart").onclick = () => {
+  $(".instructions").open = false;
   menu.showModal();
   updateUI();
 };
@@ -769,6 +877,7 @@ requestAnimationFrame(frame);
 // Read-only diagnostics for regression checks and reproducible bug reports.
 window.siege = {
   getState: () => ({
+    assetsReady,
     phase,
     team,
     round,

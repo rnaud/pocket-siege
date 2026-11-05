@@ -41,7 +41,7 @@
       <main>
         <div class="match-bar">
           <div class="team team-lime">
-            <span class="team-symbol">✦</span>
+            <img class="team-portrait" src="./art/moss-soldier.webp" alt="" />
             <div>
               <b>MOSS COMPANY</b>
               <div class="health-track"><i id="health0"></i></div>
@@ -57,7 +57,7 @@
               <b>CORAL CREW</b>
               <div class="health-track"><i id="health1"></i></div>
             </div>
-            <span class="team-symbol">✦</span>
+            <img class="team-portrait" src="./art/coral-soldier.webp" alt="" />
           </div>
         </div>
         <section id="arena" aria-label="Battlefield">
@@ -140,13 +140,18 @@
     </div>
     <dialog id="menu">
       <form method="dialog">
+        <div class="menu-art" aria-hidden="true">
+          <img src="./art/moss-soldier.webp" alt="" /><span>VS</span
+          ><img src="./art/coral-soldier.webp" alt="" />
+        </div>
         <div class="eyebrow">WELCOME TO THE ISLAND</div>
         <h1>Small worms.<br /><em>Big grudges.</em></h1>
         <p>
           Carve up the island and send the other squad swimming. The last team
           standing wins.
         </p>
-        <div class="instructions">
+        <details class="instructions">
+          <summary>FIELD MANUAL <span>Controls & weapons ↓</span></summary>
           <p>
             <b>01 &nbsp; Get in position</b><br />Arrow keys or touch arrows to
             move. Jump over craters.
@@ -159,7 +164,7 @@
             <b>03 &nbsp; Make a mess</b><br />Rockets explode on contact.
             Grenades bounce, then explode after 3 seconds. Water is lethal!
           </p>
-        </div>
+        </details>
         <label class="mode-label" for="mode">MATCH TYPE</label
         ><select id="mode">
           <option value="ai">Solo · You vs. computer</option>

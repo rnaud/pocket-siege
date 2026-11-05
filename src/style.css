@@ -702,3 +702,209 @@ select {
     font-size: 18px;
   }
 }
+/* Jungle expedition art pass. */
+body {
+  background: radial-gradient(ellipse at 50% 0%, #253d3e, #101f28 72%);
+}
+main {
+  box-shadow: 0 20px 65px #020e1840;
+  border-color: #4b625d;
+}
+.match-bar {
+  background: linear-gradient(100deg, #233d35, #1b3037 50%, #3b3331);
+}
+.team-portrait {
+  width: 60px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px #0005);
+}
+.team {
+  gap: 10px;
+}
+.controls {
+  background: linear-gradient(#23373d, #192d33);
+}
+.location,
+#wind {
+  color: #fff7db;
+  background: #163c40b8;
+  border: 1px solid #d1ebc840;
+  backdrop-filter: blur(8px);
+}
+.location span {
+  color: #f6edc9;
+}
+.arena-bottom {
+  text-shadow: 0 2px 4px #133d46;
+}
+.worm-label {
+  background: #17312be0;
+  border: 1px solid #d9edb745;
+  border-radius: 6px;
+  padding: 3px 7px;
+  text-shadow: 0 1px 2px #0008;
+  box-shadow: 0 2px 6px #142e3455;
+}
+.worm-label strong {
+  display: inline;
+  font-size: 14px;
+  margin-left: 5px;
+}
+.worm-label.active {
+  border-color: #e3f29e;
+  box-shadow:
+    0 0 0 2px #d5ef9230,
+    0 3px 10px #1236;
+}
+.worm-label.active:before {
+  position: absolute;
+  bottom: -12px;
+  left: calc(50% - 5px);
+  font-size: 10px;
+  margin: 0;
+}
+#fire {
+  box-shadow:
+    0 4px 0 #6d9251,
+    0 6px 18px #101f2633;
+  background: linear-gradient(#ddf5a6, #bce67e);
+  transition:
+    transform 0.12s,
+    filter 0.12s;
+}
+#fire:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #6d9251;
+}
+.impact-flash {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff4bd;
+  box-shadow:
+    0 0 25px 16px #ffc65e,
+    0 0 65px 30px #ff9a3b88;
+  animation: blast 0.55s ease-out forwards;
+}
+@keyframes blast {
+  25% {
+    width: 100px;
+    height: 100px;
+    background: #ffe89caa;
+  }
+  100% {
+    width: 160px;
+    height: 160px;
+    background: transparent;
+    box-shadow: 0 0 10px 2px #ffd98600;
+    opacity: 0;
+  }
+}
+.menu-art {
+  height: 145px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  margin: -32px -32px 22px;
+  padding: 12px 28px 0;
+  background:
+    linear-gradient(0deg, #1b2e3d, transparent 70%),
+    url("/art/fern-islands.webp") center 35% / cover;
+  border-radius: 15px 15px 0 0;
+}
+.menu-art img {
+  width: 135px;
+  height: 135px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 9px #142d32aa);
+}
+.menu-art span {
+  align-self: center;
+  font:
+    bold italic 24px "Barlow Condensed",
+    sans-serif;
+  color: #fff2c7;
+  text-shadow: 0 2px 4px #173e3c;
+}
+dialog {
+  max-height: 92svh;
+}
+dialog h1 {
+  font-size: 46px;
+}
+@media (max-width: 700px) {
+  .team-portrait {
+    display: none;
+  }
+  .worm-label {
+    font-size: 8px;
+    padding: 2px 4px;
+  }
+  .worm-label strong {
+    font-size: 11px;
+    margin-left: 3px;
+  }
+  .menu-art {
+    margin: -24px -24px 16px;
+    height: 120px;
+  }
+  .menu-art img {
+    width: 115px;
+    height: 115px;
+  }
+  dialog h1 {
+    font-size: 38px;
+  }
+  .instructions {
+    margin: 10px 0;
+  }
+  .instructions p {
+    margin: 9px 0;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .team-portrait {
+    width: 38px;
+    height: 40px;
+  }
+  .menu-art {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .impact-flash {
+    animation-duration: 0.1s;
+  }
+}
+.instructions summary {
+  cursor: pointer;
+  padding: 13px 0;
+  color: #d1e5be;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.instructions summary span {
+  color: #9cb5bc;
+  float: right;
+  font-size: 9px;
+  letter-spacing: 0;
+}
+@media (max-width: 400px) {
+  .brand {
+    font-size: 18px;
+    gap: 8px;
+  }
+  .brand-icon {
+    font-size: 30px;
+  }
+  header {
+    gap: 7px;
+  }
+  .brand small {
+    letter-spacing: 1.8px;
+  }
+}

@@ -17,6 +17,9 @@ test("play a full destructive turn with responsive controls", async ({
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await expect(page.locator("#menu")).not.toBeVisible();
@@ -55,6 +58,9 @@ test("play a full destructive turn with responsive controls", async ({
 });
 test("computer takes its turn and returns control", async ({ page }) => {
   await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
   await page.locator("#start").click();
   await page.locator("#angle").fill("90");
   await page.locator("#power").fill("15");
@@ -76,6 +82,9 @@ test("movement, jump, touch aiming, and landscape layout", async ({
   page,
 }, info) => {
   await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
   await page.locator("#start").click();
   const before = await page.evaluate(() => window.siege.getState().worms[0]);
   await page.locator('[data-move="1"]').scrollIntoViewIfNeeded();
@@ -132,4 +141,47 @@ test("movement, jump, touch aiming, and landscape layout", async ({
       fullPage: true,
     });
   }
+});
+test("generated art loads and character labels stay readable", async ({
+  page,
+}, info) => {
+  const missing = [];
+  page.on("response", (r) => {
+    if (r.url().includes("/art/") && r.status() !== 200) missing.push(r.url());
+  });
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-art-menu.png`,
+    fullPage: true,
+  });
+  await expect(page.locator("#start")).toBeInViewport();
+  await page.locator("#start").click();
+  await expect(page.locator(".worm-label")).toHaveCount(6);
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const boxes = [...document.querySelectorAll(".worm-label")].map((e) =>
+          e.getBoundingClientRect(),
+        );
+        return boxes.every((a, i) =>
+          boxes.every(
+            (b, j) =>
+              i === j ||
+              a.right <= b.left ||
+              b.right <= a.left ||
+              a.bottom <= b.top ||
+              b.bottom <= a.top,
+          ),
+        );
+      }),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-art-battle.png`,
+    fullPage: true,
+  });
+  expect(missing).toEqual([]);
 });
