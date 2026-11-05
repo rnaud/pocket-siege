@@ -145,6 +145,55 @@ test("movement, jump, touch aiming, and landscape layout", async ({
     });
   }
 });
+test("touch controls fit the screen in portrait and landscape", async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== "iphone", "touch layout");
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#start").click();
+  const controls = [
+    "#fire",
+    "#angle",
+    '[data-weapon="rocket"]',
+    '[data-weapon="grenade"]',
+    '[data-weapon="mortar"]',
+    '[data-weapon="sticky"]',
+  ];
+  const fits = async () => {
+    for (const selector of controls)
+      await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollHeight <= innerHeight + 1 &&
+          document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
+    // Ammo counts stay inside their weapon buttons rather than drifting below them.
+    expect(
+      await page.evaluate(() =>
+        [...document.querySelectorAll(".weapons button")].every((button) => {
+          const outer = button.getBoundingClientRect(),
+            count = button.querySelector("small").getBoundingClientRect();
+          return (
+            count.top >= outer.top &&
+            count.bottom <= outer.bottom &&
+            count.left >= outer.left &&
+            count.right <= outer.right
+          );
+        }),
+      ),
+    ).toBe(true);
+  };
+  await fits();
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.waitForTimeout(400);
+  await fits();
+});
+
 test("generated art loads and character labels stay readable", async ({
   page,
 }, info) => {
@@ -455,3 +504,112 @@ for (const weapon of ["mortar", "sticky"])
       await page.evaluate(() => window.siege.getState().terrainPixels),
     ).toBeLessThan(before);
   });
+
+test("limited weapons spend ammo and update their counts", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator('[data-weapon="grenade"] small')).toHaveText("3");
+  await page.locator('[data-weapon="grenade"]').click();
+  await setAim(page, "90");
+  await chargeShot(page, 300);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().ammo[0].grenade))
+    .toBe(2);
+  await expect(page.locator('[data-weapon="grenade"] small')).toHaveText("2");
+  await expect(page.locator('[data-weapon="mortar"] small')).toHaveText("2");
+});
+
+test("computer skill is selectable and hidden for local play", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("#difficulty-row")).toBeVisible();
+  await page.selectOption("#difficulty", "veteran");
+  await page.locator("#start").click();
+  expect(await page.evaluate(() => window.siege.getState().difficulty)).toBe(
+    "veteran",
+  );
+  await page.locator("#restart").click();
+  await page.selectOption("#mode", "local");
+  await expect(page.locator("#difficulty-row")).toBeHidden();
+});
+
+test("active worm ring and labels avoid the aim reticle", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator("#aim-reticle")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        window.siege
+          .getState()
+          .worms.filter((w) => w.ringVisible)
+          .map((w) => w.name),
+      ),
+    )
+    .toEqual(["Sprout"]);
+  await page.waitForTimeout(200);
+  expect(
+    await page.evaluate(() => {
+      const match = document
+        .querySelector("#aim-reticle")
+        .getAttribute("transform")
+        .match(/translate\(([-\d.]+),([-\d.]+)\)/);
+      const x = +match[1],
+        y = +match[2];
+      return [...document.querySelectorAll(".worm-label")].some((element) => {
+        const box = element.getBoundingClientRect();
+        return x > box.left && x < box.right && y > box.top && y < box.bottom;
+      });
+    }),
+  ).toBe(false);
+  // Hard labels never get pushed out of the arena by the reticle.
+  expect(
+    await page.evaluate(() =>
+      [...document.querySelectorAll(".worm-label")].every((element) => {
+        const box = element.getBoundingClientRect(),
+          arena = document.querySelector("#arena").getBoundingClientRect();
+        return box.top >= arena.top - 1 && box.bottom <= arena.bottom + 1;
+      }),
+    ),
+  ).toBe(true);
+});
+
+test("share and install metadata resolve to real assets", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    /og-card\.png$/,
+  );
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+    "content",
+    "summary_large_image",
+  );
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
+    "href",
+    "./manifest.webmanifest",
+  );
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+    "href",
+    "./art/apple-touch-icon.png",
+  );
+  const manifest = await page.evaluate(async () =>
+    (await fetch("./manifest.webmanifest")).json(),
+  );
+  expect(manifest.name).toBe("Pocket Siege");
+  expect(manifest.icons.map((icon) => icon.sizes)).toEqual([
+    "192x192",
+    "512x512",
+  ]);
+  expect(
+    await page.evaluate(async () => {
+      const [icon, card] = await Promise.all([
+        fetch("./art/icon-192.png"),
+        fetch("./art/og-card.png"),
+      ]);
+      return [icon.status, card.status];
+    }),
+  ).toEqual([200, 200]);
+});

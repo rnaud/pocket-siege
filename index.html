@@ -8,7 +8,58 @@
     />
     <meta name="theme-color" content="#101d2c" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pocket Siege" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <title>Pocket Siege — Tiny troops. Big trouble.</title>
+    <meta
+      name="description"
+      content="A tiny turn-based artillery duel on a destructible island. Solo vs. computer or local pass-and-play. Pick your angle. Make a little chaos."
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pocket Siege" />
+    <meta
+      property="og:title"
+      content="Pocket Siege — Tiny troops. Big trouble."
+    />
+    <meta
+      property="og:description"
+      content="A tiny turn-based artillery duel on a destructible island. Solo vs. computer or local pass-and-play."
+    />
+    <meta property="og:url" content="https://rnaud.github.io/pocket-siege/" />
+    <meta
+      property="og:image"
+      content="https://rnaud.github.io/pocket-siege/art/og-card.png"
+    />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Pocket Siege: a moss soldier and a coral soldier facing off on a painted jungle island."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Pocket Siege — Tiny troops. Big trouble."
+    />
+    <meta
+      name="twitter:description"
+      content="A tiny turn-based artillery duel on a destructible island. Pick your angle. Make a little chaos."
+    />
+    <meta
+      name="twitter:image"
+      content="https://rnaud.github.io/pocket-siege/art/og-card.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Pocket Siege: a moss soldier and a coral soldier facing off on a painted jungle island."
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./art/apple-touch-icon.png" />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect rx='24' width='100' height='100' fill='%23bce477'/%3E%3Ctext x='15' y='75' font-size='70'%3E✹%3C/text%3E%3C/svg%3E"
@@ -92,16 +143,23 @@
           <div class="weapon-panel">
             <div class="eyebrow">02 / LOADOUT</div>
             <div class="weapons">
-              <button data-weapon="rocket" class="selected">
+              <button
+                data-weapon="rocket"
+                class="selected"
+                title="Bazooka (F1) · unlimited"
+              >
                 <span>➶</span> Bazooka <small>∞</small></button
-              ><button data-weapon="grenade">
-                <span>✹</span> Grenade <small>∞</small>
+              ><button
+                data-weapon="grenade"
+                title="Grenade (F2) · limited ammo"
+              >
+                <span>✹</span> Grenade <small>3</small>
               </button>
-              <button data-weapon="mortar">
-                <span>◆</span> Mortar <small>F3</small>
+              <button data-weapon="mortar" title="Mortar (F3) · limited ammo">
+                <span>◆</span> Mortar <small>2</small>
               </button>
-              <button data-weapon="sticky">
-                <span>✿</span> Sticky <small>F4</small>
+              <button data-weapon="sticky" title="Sticky (F4) · limited ammo">
+                <span>✿</span> Sticky <small>2</small>
               </button>
             </div>
           </div>
@@ -180,15 +238,29 @@
             <b>03 &nbsp; Make a mess</b><br />Hold Space or the fire button to
             charge; release to shoot. You get 3 seconds to retreat. Grenade and
             sticky fuse: keys 1–5 or the selector. F1/F2 select bazooka/grenade;
-            F3 selects a heavy mortar, F4 a sticky bomb. Falling can hurt you;
-            water is lethal.
+            F3 selects a heavy mortar, F4 a sticky bomb. Mortars and stickies
+            are limited. Falling can hurt you; water is lethal, and from round
+            six the sea climbs every round.
           </p>
         </details>
-        <label class="mode-label" for="mode">MATCH TYPE</label
-        ><select id="mode">
-          <option value="ai">Solo · You vs. computer</option>
-          <option value="local">Local · Pass & play</option></select
-        ><button id="start" value="start">LET’S MAKE TROUBLE ↗</button
+        <div class="menu-grid">
+          <div>
+            <label class="mode-label" for="mode">MATCH TYPE</label
+            ><select id="mode">
+              <option value="ai">Solo vs. computer</option>
+              <option value="local">Local pass &amp; play</option>
+            </select>
+          </div>
+          <div id="difficulty-row">
+            <label class="mode-label" for="difficulty">COMPUTER SKILL</label
+            ><select id="difficulty">
+              <option value="rookie">Rookie</option>
+              <option value="regular" selected>Regular</option>
+              <option value="veteran">Veteran</option>
+            </select>
+          </div>
+        </div>
+        <button id="start" value="start">LET’S MAKE TROUBLE ↗</button
         ><button class="close-help" value="close">Back to the island</button>
       </form>
     </dialog>

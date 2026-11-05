@@ -1,0 +1,26 @@
+{
+  "name": "Pocket Siege",
+  "short_name": "Pocket Siege",
+  "description": "A tiny turn-based artillery duel on a destructible island.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101d2c",
+  "theme_color": "#101d2c",
+  "categories": ["games"],
+  "icons": [
+    {
+      "src": "art/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "art/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

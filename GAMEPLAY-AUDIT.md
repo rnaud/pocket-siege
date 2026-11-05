@@ -14,21 +14,25 @@ This pass brings the core artillery controls and combat closer to Worms Armagedd
 - A shot starts a three-second retreat window. Players cannot fire a second shot, but can move and jump during retreat.
 - Turn progression waits for bodies, projectiles and death explosions to settle. Dead teammates no longer cause living teammates to be skipped in rotation.
 - Death explosions can cause chain reactions. Drowning eliminates a worm without an explosion.
-- The computer visibly charges its chosen shot; interruptions do not leave its turn stuck.
+- The computer visibly charges its chosen shot; interruptions do not leave its turn stuck. It now chooses from the weapons it can afford, scores blast damage and friendly fire, and may reposition away from the waterline before charging.
 
 ## Validation
 
-Playwright runs Chromium desktop and iPhone WebKit checks for input, hold/release power, cancellation, maximum-charge firing, absent trajectory hints, grenade settings, retreat, destructive impacts and computer turns. Physics tests cover radial impulses, momentum, collision, fall damage, friction, head hits, charge progression, bounce reflection and viewport-independent launch geometry. WebKit emulation is not a physical iPhone device test.
+Playwright runs Chromium desktop and iPhone WebKit checks for input, hold/release power, cancellation, maximum-charge firing, absent trajectory hints, grenade settings, retreat, destructive impacts, computer turns, ammo spending, difficulty selection, active-worm rings, reticle/label avoidance and one-screen touch layouts. Physics tests cover radial impulses, momentum, collision, fall damage, friction, head hits, charge progression, bounce reflection and viewport-independent launch geometry. AI tests cover blast scoring, limited-ammo weapon choice, difficulty jitter and waterline repositioning. WebKit emulation is not a physical iPhone device test.
 
 ## Additional controls and weapons
 
-Desktop aiming uses Up/Down or W/S; the slider is touch-only. Charge is displayed around the reticle. Walking no longer toggles the fire button’s disabled appearance on tiny terrain steps. The loadout now also includes a shorter-range, larger-blast mortar and a timed sticky bomb that attaches to terrain or moving worms. These are Pocket Siege additions, not claims of identical Armageddon weapon behavior. Animated shader water adds foam, ripples and bubbles.
+Desktop aiming uses Up/Down or W/S; the slider is touch-only. Charge is displayed around the reticle. Walking no longer toggles the fire button’s disabled appearance on tiny terrain steps. The loadout now also includes a shorter-range, larger-blast mortar and a timed sticky bomb that attaches to terrain or moving worms. Squads carry limited grenades, mortars and stickies; the bazooka stays unlimited. From round six, sudden death raises the sea each round. Solo play offers Rookie, Regular and Veteran computer skill. These are Pocket Siege additions, not claims of identical Armageddon weapon behavior. Animated shader water adds foam, ripples and bubbles, and the active worm gets a pulsing ground ring.
 
 ## Intentional tuning and remaining scope
 
-The game uses its own 120 Hz simulation, elliptical body collision, terrain mask and tuned movement/weapon values. Charge duration is two seconds, retreat three seconds, and turns 45 seconds. Standard blast damage caps at 50; the added heavy mortar caps at 65. These are this game's settings, not a claim that every original scheme uses these values.
+The game uses its own 120 Hz simulation, elliptical body collision, terrain mask and tuned movement/weapon values. Charge duration is two seconds, retreat three seconds, and turns 45 seconds. Standard blast damage caps at 50; the added heavy mortar caps at 65. Each squad starts with three grenades, two mortars and two stickies. Sudden death begins at round six and raises the water 18 world units per round, capped at 250. These are this game's settings, not a claim that every original scheme uses these values.
 
-Still absent: the original's full arsenal, ninja rope and utilities, crates and mines, configurable schemes and sudden death, online networking, replays, and exact original collision masks, movement constants and camera behavior. This audit fixes the implemented core systems; those larger features remain outside the current game.
+Still absent: the original's full arsenal, ninja rope and utilities, crates and mines, configurable schemes and the original's exact sudden-death variants, online networking, replays, and exact original collision masks, movement constants and camera behavior. This audit fixes the implemented core systems; those larger features remain outside the current game.
+
+## Performance
+
+Terrain texture rebuilds read the collision mask directly, allocate no per-pixel color arrays, and are deferred to one paint per frame; debris and projectile meshes share geometry/materials, and projectile shaders are prewarmed before the first shot. In a 4× CPU-throttled mobile profile, the per-pixel texture rebuild measured roughly 15 ms; the complete repaint is deferred and coalesced per frame.
 
 ## References
 

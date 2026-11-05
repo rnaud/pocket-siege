@@ -82,6 +82,21 @@ export function shotGeometry(
   };
 }
 
+// Shared by the player and the computer, so both start from the visible muzzle.
+export function launchGeometry(w, angle, kind = "rocket", terrain = null) {
+  const result = shotGeometry(w, angle, 1, 64, kind);
+  if (!terrain) return { ...result, blocked: false };
+  const { pivot, muzzle } = result;
+  // A long weapon must not teleport a projectile through a nearby wall.
+  for (let i = 1; i <= 24; i++) {
+    const x = pivot.x + ((muzzle.x - pivot.x) * i) / 24,
+      y = pivot.y + ((muzzle.y - pivot.y) * i) / 24;
+    if (terrain.solid(x, y))
+      return { ...result, muzzle: { x, y }, blocked: true };
+  }
+  return { ...result, blocked: false };
+}
+
 // One collision body is used for movement and projectile hits, including the head.
 export const BODY = { rx: 17, ry: 27, cy: 17 };
 const outline = Array.from({ length: 24 }, (_, i) => ({

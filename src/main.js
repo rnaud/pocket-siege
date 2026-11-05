@@ -9,7 +9,6 @@ import {
   launch,
   integrate,
   shotGeometry,
-  bodyBlocked,
   hitsWorm,
   blastImpulse,
   walkWorm,
@@ -17,6 +16,7 @@ import {
   terrainNormal,
   reflectVelocity,
   chargePower,
+  launchGeometry,
 } from "./physics.js";
 import {
   createWeaponRig,
@@ -24,8 +24,18 @@ import {
   createProjectile,
   createAimOverlay,
 } from "./combat-visuals.js";
+import { paintTerrain } from "./terrain-paint.js";
+import {
+  WEAPONS,
+  WEAPON_ORDER,
+  freshAmmo,
+  ammoFor,
+  waterLevelForRound,
+} from "./weapons.js";
+import { planTurn, planMove } from "./ai.js";
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const coarsePointer = matchMedia("(pointer: coarse)").matches;
 const arena = $("#arena"),
   menu = $("#menu");
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -84,7 +94,19 @@ let terrain,
   accumulator = 0,
   explosions = 0,
   shakeUntil = 0;
+let ammo = [freshAmmo(), freshAmmo()],
+  teamWeapon = ["rocket", "rocket"],
+  waterLevel = WATER,
+  suddenDeath = false,
+  difficulty = "regular";
 let aiPower = 100;
+let shotFuse = null,
+  shotBounce = null,
+  aiMoveTime = 0,
+  aiMoveDirection = 0,
+  lastAiPlanMs = 0,
+  aiPlan = null,
+  hitStop = 0;
 let charging = false,
   chargeSeconds = 0,
   chargeSource = null,
@@ -96,17 +118,9 @@ let charging = false,
   shotCount = 0,
   lastJump = { kind: null, time: -1 },
   jumpClock = 0;
-function flatShape(points, color, z) {
-  const s = new THREE.Shape();
-  points.forEach(([x, y], i) => (i ? s.lineTo(x, y) : s.moveTo(x, y)));
-  const mesh = new THREE.Mesh(
-    new THREE.ShapeGeometry(s),
-    new THREE.MeshBasicMaterial({ color }),
-  );
-  mesh.position.z = z;
-  group.add(mesh);
-  return mesh;
-}
+let uiKey = "",
+  terrainDirty = false,
+  timerKey = "";
 // Original generated art, loaded once and shared by all six soldiers.
 let assetsReady = false;
 const manager = new THREE.LoadingManager();
@@ -147,77 +161,36 @@ for (let i = 0; i < 26; i++) {
 }
 const water = createWater(W, WATER);
 group.add(water);
-function paintTerrain() {
-  terrain.surfaceCache = Array.from({ length: W }, (_, x) =>
-    terrain.surface(x),
-  );
-  const image = ctx.createImageData(W, H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      if (!terrain.solid(x, y)) continue;
-      const i = ((H - 1 - y) * W + x) * 4;
-      const grass = !terrain.solid(x, y + 7);
-      const rim = !terrain.solid(x, y + 15);
-      const hash = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-      const noise = (hash - Math.floor(hash)) * 9 - 4.5;
-      const strata = Math.sin(y * 0.055 + Math.sin(x * 0.009) * 2.2);
-      const depth = Math.min(1, (terrain.surfaceCache[x] - y) / 150);
-      const edge =
-        !terrain.solid(x - 4, y) ||
-        !terrain.solid(x + 4, y) ||
-        !terrain.solid(x, y - 4);
-      let c = grass
-        ? [133, 177, 64]
-        : rim
-          ? [67, 101, 45]
-          : [
-              127 + strata * 13 - depth * 21,
-              83 + strata * 10 - depth * 17,
-              47 + strata * 8 - depth * 7,
-            ];
-      if (grass && !terrain.solid(x, y + 3)) c = [194, 211, 101];
-      if (edge && !grass && !rim) c = c.map((v) => v * 0.67);
-      image.data[i] = c[0] + noise;
-      image.data[i + 1] = c[1] + noise;
-      image.data[i + 2] = c[2] + noise;
-      image.data[i + 3] = 255;
-    }
-  ctx.putImageData(image, 0, 0);
-  // Details are clipped to the current collision mask, so craters erase them too.
-  ctx.save();
-  ctx.globalCompositeOperation = "source-atop";
-  for (let i = 0; i < 250; i++) {
-    const x = (i * 137 + 17) % W,
-      y = (i * 83 + 91) % H;
-    if (!terrain.solid(x, y)) continue;
-    ctx.fillStyle = i % 3 ? "#a8784e" : "#61442d";
-    ctx.beginPath();
-    ctx.ellipse(x, H - y, 3 + (i % 8), 2 + (i % 4), 0.4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-  // Fine grass tufts grow only on intact surface, never on the crater walls.
-  ctx.lineWidth = 1.3;
-  for (let x = 55; x < W - 55; x += 5) {
-    const y = terrain.surfaceCache[x];
-    if (y < WATER + 30 || Math.abs(y - terrain.surfaceCache[x + 3]) > 4)
-      continue;
-    ctx.strokeStyle = x % 3 ? "#8baa44" : "#c6d67a";
-    ctx.beginPath();
-    ctx.moveTo(x, H - y + 1);
-    ctx.lineTo(x - 2, H - y - 3 - (x % 4));
-    ctx.stroke();
-  }
-  texture.needsUpdate = true;
+// Debris and projectiles share GPU resources; only one prototype per kind is built.
+const debrisGeometry = new THREE.SphereGeometry(1, 10, 8);
+const debrisMaterials = [
+  new THREE.MeshStandardMaterial({ color: 0xc4a578, roughness: 0.9 }),
+  new THREE.MeshStandardMaterial({ color: 0xffce70, roughness: 0.55 }),
+];
+const debrisPrototype = new THREE.Mesh(debrisGeometry, debrisMaterials[0]);
+debrisPrototype.visible = false;
+debrisPrototype.frustumCulled = false;
+group.add(debrisPrototype);
+const projectilePrototypes = Object.fromEntries(
+  WEAPON_ORDER.map((kind) => {
+    const prototype = createProjectile(kind);
+    prototype.visible = false;
+    prototype.frustumCulled = false;
+    group.add(prototype);
+    return [kind, prototype];
+  }),
+);
+function projectileMesh(kind) {
+  const mesh = projectilePrototypes[kind].clone(true);
+  mesh.visible = true;
+  return mesh;
 }
-function sphere(r, color, x, y, z, sx = 1, sy = 1) {
-  const m = new THREE.Mesh(
-    new THREE.SphereGeometry(r, 16, 12),
-    new THREE.MeshStandardMaterial({ color, roughness: 0.82 }),
-  );
-  m.position.set(x, y, z);
-  m.scale.set(sx, sy, 1);
-  return m;
+function prewarmShaders() {
+  for (const kind of WEAPON_ORDER) projectilePrototypes[kind].visible = true;
+  debrisPrototype.visible = true;
+  renderer.compile(scene, camera);
+  for (const kind of WEAPON_ORDER) projectilePrototypes[kind].visible = false;
+  debrisPrototype.visible = false;
 }
 function createWorm(t, i, x) {
   const g = new THREE.Group();
@@ -240,6 +213,27 @@ function createWorm(t, i, x) {
   const stars = createStars();
   g.add(stars);
   stars.visible = false;
+  // A pulsing ring makes the active worm unmistakable, even when the reticle is far away.
+  const ring = new THREE.Group();
+  const addRing = (inner, outer, color, opacity, z) => {
+    const mesh = new THREE.Mesh(
+      new THREE.RingGeometry(inner, outer, 36),
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    mesh.position.z = z;
+    ring.add(mesh);
+  };
+  addRing(25, 30, 0x10201c, 0.55, 0);
+  addRing(20, 24, colors[t], 0.9, 1);
+  ring.position.set(0, -9, 1);
+  ring.visible = false;
+  g.add(ring);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(14, 24),
     new THREE.MeshBasicMaterial({
@@ -272,6 +266,7 @@ function createWorm(t, i, x) {
     body,
     rig,
     stars,
+    ring,
     hurt: 0,
     recoil: 0,
     dying: 0,
@@ -297,18 +292,6 @@ function shot(w, a = angle, kind = weapon) {
     w.visualSize || 64,
     kind,
   );
-}
-function launchPoint(w, a, kind) {
-  const result = shot(w, a, kind),
-    { pivot, muzzle } = result;
-  // A long weapon must not teleport a projectile through a nearby wall.
-  for (let i = 1; i <= 24; i++) {
-    const x = pivot.x + ((muzzle.x - pivot.x) * i) / 24,
-      y = pivot.y + ((muzzle.y - pivot.y) * i) / 24;
-    if (terrain.solid(x, y))
-      return { ...result, muzzle: { x, y }, blocked: true };
-  }
-  return { ...result, blocked: false };
 }
 function updateAimHUD() {
   const visible = phase === "aim" && !menu.open && worms[current]?.hp > 0;
@@ -340,9 +323,10 @@ function updateAimHUD() {
       "transform",
       `translate(${target.x},${target.y})`,
     );
-    aimHUD.text.textContent = charging
+    const aimText = charging
       ? `${Math.round(power)}%`
       : `${Math.round(angle)}°`;
+    if (aimHUD.text.textContent !== aimText) aimHUD.text.textContent = aimText;
     aimHUD.charge.style.display = charging ? "" : "none";
     aimHUD.charge.setAttribute("stroke-dasharray", `${power * 1.508} 150.8`);
     lastAim = { ...geometry, reticle: target, angle };
@@ -398,6 +382,21 @@ function tone(freq, duration = 0.1, type = "sine") {
 }
 function reset() {
   cancelCharge();
+  uiKey = "";
+  timerKey = "";
+  ammo = [freshAmmo(), freshAmmo()];
+  teamWeapon = ["rocket", "rocket"];
+  waterLevel = WATER;
+  suddenDeath = false;
+  water.userData.setLevel?.(WATER);
+  difficulty = $("#difficulty")?.value || "regular";
+  shotFuse = null;
+  shotBounce = null;
+  aiMoveTime = 0;
+  aiMoveDirection = 0;
+  aiPlan = null;
+  lastAiPlanMs = 0;
+  hitStop = 0;
   move = 0;
   aimInput = 0;
   retreat = 0;
@@ -411,12 +410,13 @@ function reset() {
     dispose(w.g);
     w.label.remove();
   }
-  if (projectile) dispose(projectile.mesh);
+  if (projectile) group.remove(projectile.mesh);
   projectile = null;
-  for (const p of particles) dispose(p.mesh);
+  for (const p of particles) group.remove(p.mesh);
   particles = [];
   terrain = new Terrain(2 + Math.floor(Math.random() * 40));
-  paintTerrain();
+  paintTerrain(ctx, terrain, texture);
+  terrainDirty = false;
   worms = [
     ...names[0].map((_, i) => createWorm(0, i, [180, 340, 490][i])),
     ...names[1].map((_, i) => createWorm(1, i, [710, 860, 1020][i])),
@@ -461,8 +461,16 @@ function beginTurn() {
   firedPower = 0;
   move = 0;
   aiWait = 1.6;
+  aiMoveTime = 0;
+  aiPlan = null;
+  shotFuse = null;
+  shotBounce = null;
+  hitStop = 0;
+  setWeapon(teamWeapon[team]);
   updateSliders();
-  $("#round").textContent = `ROUND ${String(round).padStart(2, "0")}`;
+  $("#round").textContent = suddenDeath
+    ? "SUDDEN DEATH"
+    : `ROUND ${String(round).padStart(2, "0")}`;
   $("#turn-label").textContent =
     mode === "ai"
       ? team
@@ -473,14 +481,20 @@ function beginTurn() {
         : "MOSS’S MOVE";
   $("#wind").textContent =
     `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 5).toFixed(1)}`;
-  $("#status").textContent =
-    `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}`;
+  $("#status").textContent = suddenDeath
+    ? `${active.name} is up. The water is rising.`
+    : `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}`;
   bannerTime = 1.8;
   $("#turn-banner").textContent =
     `${team ? "CORAL CREW" : "MOSS COMPANY"} · ${active.name.toUpperCase()}`;
   updateUI();
 }
 function updateUI() {
+  // Called from the 120 Hz simulation; only touch the DOM when the state behind it changed.
+  const loadout = ammo[team] ?? {};
+  const key = `${current}|${phase}|${team}|${mode}|${charging}|${retreat > 0}|${menu.open}|${loadout.grenade}:${loadout.mortar}:${loadout.sticky}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  if (key === uiKey) return;
+  uiKey = key;
   for (let t = 0; t < 2; t++) {
     let hp = worms.filter((w) => w.team === t).reduce((s, w) => s + w.hp, 0);
     $("#score" + t).textContent = hp;
@@ -496,8 +510,14 @@ function updateUI() {
   }
   $("#fire").disabled = !canAct() || worms[current]?.knocked;
   $("#angle").disabled = !canAct() || charging;
+  document.querySelectorAll("[data-weapon]").forEach((button) => {
+    const count = ammoFor(loadout, button.dataset.weapon);
+    button.querySelector("small").textContent =
+      count === Infinity ? "∞" : count;
+    button.disabled = !canAct() || charging || count <= 0;
+  });
   document
-    .querySelectorAll("[data-weapon],#fuse,#bounce")
+    .querySelectorAll("#fuse,#bounce")
     .forEach((b) => (b.disabled = !canAct() || charging));
   document
     .querySelectorAll("[data-move],#jump,#backflip")
@@ -596,30 +616,43 @@ function injure(w, damage) {
 function fire() {
   if (phase !== "aim") return;
   const w = worms[current],
-    origin = launchPoint(w, angle, weapon),
-    v = launch(angle, power);
-  if (weapon === "mortar") {
-    v.vx *= 0.7;
-    v.vy *= 0.7;
+    kind = weapon,
+    meta = WEAPONS[kind];
+  if (ammoFor(ammo[team], kind) <= 0) {
+    setWeapon("rocket");
+    return;
   }
+  const origin = launchGeometry(w, angle, kind, terrain),
+    v = launch(angle, power);
+  v.vx *= meta.speed;
+  v.vy *= meta.speed;
+  const thisFuse = shotFuse ?? fuse,
+    thisBounce = shotBounce ?? bounce;
+  shotFuse = null;
+  shotBounce = null;
   w.recoil = 0.3;
   charging = false;
   chargeSource = null;
+  updateSliders();
   firedPower = power;
   shotCount++;
   retreat = 3;
+  if (kind !== "rocket") {
+    ammo[team][kind] = Math.max(0, (ammo[team][kind] ?? 0) - 1);
+    if (ammo[team][kind] === 0) setWeapon("rocket");
+  }
   projectile = {
     ...origin.muzzle,
     ...v,
     age: 0,
-    fuse,
-    bounce,
+    fuse: thisFuse,
+    bounce: thisBounce,
     owner: current,
     sleeping: false,
     stuck: false,
     attached: null,
-    kind: weapon,
-    mesh: createProjectile(weapon),
+    kind,
+    mesh: projectileMesh(kind),
     trail: [],
     blocked: origin.blocked,
   };
@@ -628,46 +661,43 @@ function fire() {
   phase = "flight";
   bannerTime = 0;
   $("#status").textContent =
-    weapon === "rocket"
+    kind === "rocket"
       ? "Rocket away. Incoming!"
-      : weapon === "mortar"
+      : kind === "mortar"
         ? "Mortar away. Heavy impact incoming!"
-        : `${weapon === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${fuse}-second fuse. Retreat!`;
+        : `${kind === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`;
   move = 0;
   shotWait = 0;
   tone(550, 0.2, "triangle");
   updateUI();
 }
 function explode(x, y, kind) {
-  const radius =
+  const profile =
     kind === "death"
-      ? 28
-      : kind === "mortar"
-        ? 76
-        : kind === "sticky"
-          ? 64
-          : kind === "grenade"
-            ? 60
-            : 53;
+      ? { radius: 28, damage: 25, impulse: 150 }
+      : {
+          radius: WEAPONS[kind].radius,
+          damage: WEAPONS[kind].damage,
+          impulse: 290,
+        };
+  const { radius, damage: maxDamage, impulse } = profile;
   terrain.carve(x, y, radius);
-  paintTerrain();
+  terrainDirty = true;
   explosions++;
   shakeUntil = performance.now() + 350;
   impactFlash(x, y);
   tone(85, 0.6, "sawtooth");
   for (let i = 0; i < 46; i++) {
     const a = Math.random() * Math.PI * 2,
-      s = 40 + Math.random() * 210;
-    const mesh = sphere(
-      2 + Math.random() * 6,
-      i % 3 ? 0xc4a578 : 0xffce70,
-      x,
-      y,
-      35,
-    );
+      s = 40 + Math.random() * 210,
+      size = 2 + Math.random() * 6;
+    const mesh = new THREE.Mesh(debrisGeometry, debrisMaterials[i % 3 ? 0 : 1]);
+    mesh.position.set(x, y, 35);
+    mesh.scale.setScalar(size);
     group.add(mesh);
     particles.push({
       mesh,
+      size,
       x,
       y,
       vx: Math.cos(a) * s,
@@ -679,25 +709,15 @@ function explode(x, y, kind) {
   const reports = [];
   for (const w of worms) {
     if (w.hp <= 0) continue;
-    const factor = blastImpulse(
-      w,
-      x,
-      y,
-      radius + 34,
-      kind === "death" ? 150 : 290,
-    );
+    const factor = blastImpulse(w, x, y, radius + 34, impulse);
     if (factor > 0) {
-      const damage = Math.max(
-        1,
-        Math.round(
-          factor * (kind === "death" ? 25 : kind === "mortar" ? 65 : 50),
-        ),
-      );
+      const damage = Math.max(1, Math.round(factor * maxDamage));
       w.hitDirection = Math.sign(w.x - x) || 1;
       injure(w, damage);
       reports.push(`${w.name} −${damage}${w.hp === 0 ? " · KO" : ""}`);
     }
   }
+  if (reports.length) hitStop = Math.max(hitStop, 0.06);
   $("#status").textContent = reports.length
     ? reports.join("   /   ")
     : "Terrain destroyed. No worms hit.";
@@ -743,7 +763,16 @@ function nextTurn() {
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
   team = 1 - team;
-  if (team === 0) round++;
+  if (team === 0) {
+    round++;
+    const nextWater = waterLevelForRound(round);
+    suddenDeath = nextWater > WATER;
+    if (nextWater > waterLevel) {
+      waterLevel = nextWater;
+      water.userData.setLevel?.(waterLevel);
+      announce("THE WATER IS RISING");
+    }
+  }
   beginTurn();
 }
 function jump(kind = "forward") {
@@ -765,39 +794,70 @@ function jump(kind = "forward") {
   lastJump = { kind: double ? null : kind, time: jumpClock };
   tone(300, 0.1);
 }
-function aiShoot() {
-  const w = worms[current],
-    targets = worms.filter((t) => t.team !== team && t.hp > 0);
-  let best = { score: Infinity, angle: 135, power: 65 };
-  for (let a = 12; a <= 168; a += 4)
-    for (let p = 25; p <= 100; p += 5) {
-      const q = { ...launchPoint(w, a, "rocket").muzzle, ...launch(a, p) };
-      for (let i = 0; i < 500; i++) {
-        integrate(q, 0.025, wind);
-        if (q.y < WATER || q.x < 0 || q.x > W) break;
-        if (terrain.solid(q.x, q.y)) {
-          const score =
-            Math.min(...targets.map((t) => Math.hypot(t.x - q.x, t.y - q.y))) +
-            (Math.hypot(w.x - q.x, w.y - q.y) < 65 ? 130 : 0);
-          if (score < best.score) best = { score, angle: a, power: p };
-          break;
-        }
-      }
-    }
-  angle = best.angle + (Math.random() - 0.5) * 3;
-  aiPower = best.power;
+function startAiTurn() {
+  const w = worms[current];
+  const reposition = planMove({
+    terrain,
+    me: w,
+    waterLevel,
+    difficulty,
+    random: Math.random,
+  });
+  if (reposition && w.ground) {
+    aiMoveTime = reposition.time;
+    aiMoveDirection = reposition.direction;
+    w.facing = reposition.direction;
+    aiWait = Infinity;
+    $("#status").textContent = "The computer is repositioning…";
+    return;
+  }
+  aiAim();
+}
+function aiAim() {
+  const w = worms[current];
+  const started = performance.now();
+  const plan = planTurn({
+    terrain,
+    worms,
+    me: w,
+    wind,
+    waterLevel,
+    difficulty,
+    ammo: ammo[1],
+    fuse: 2,
+    bounce: 0.55,
+  });
+  lastAiPlanMs = performance.now() - started;
+  const chosen = plan ?? {
+    weapon: "rocket",
+    angle: w.facing < 0 ? 135 : 45,
+    power: 60,
+    fuse: 0,
+    bounce: 0.55,
+  };
+  aiPlan = chosen;
+  angle = chosen.angle;
+  aiPower = chosen.power;
+  shotFuse = WEAPONS[chosen.weapon].timed ? chosen.fuse || 2 : null;
+  shotBounce = chosen.bounce ?? 0.55;
+  weapon = chosen.weapon;
+  setWeapon(weapon);
+  w.facing = Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1;
   power = 0;
   charging = true;
   chargeSource = "ai";
   chargeSeconds = 0;
   aiWait = Infinity;
-  w.facing = Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1;
-  weapon = "rocket";
-  setWeapon(weapon);
   updateSliders();
+  $("#status").textContent =
+    `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
 }
 function step(dt) {
   if (menu.open || document.hidden) return;
+  if (hitStop > 0) {
+    hitStop = Math.max(0, hitStop - dt);
+    return;
+  }
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
   if (retreat > 0) {
@@ -820,7 +880,6 @@ function step(dt) {
     if (charging) {
       chargeSeconds += dt;
       power = chargePower(chargeSeconds);
-      updateSliders();
       if (power >= (chargeSource === "ai" ? aiPower : 100)) {
         charging = false;
         chargeSource = null;
@@ -829,8 +888,16 @@ function step(dt) {
     }
     if (aimInput) adjustAim(aimInput, dt);
     if (team === 1 && mode === "ai") {
-      aiWait -= dt;
-      if (aiWait <= 0 && phase === "aim" && worms[current].ground) aiShoot();
+      if (aiMoveTime > 0) {
+        aiMoveTime = Math.max(0, aiMoveTime - dt);
+        const w = worms[current];
+        if (w.ground && !w.knocked) walkWorm(w, terrain, aiMoveDirection, dt);
+        if (aiMoveTime === 0) aiAim();
+      } else {
+        aiWait -= dt;
+        if (aiWait <= 0 && phase === "aim" && worms[current].ground)
+          startAiTurn();
+      }
     }
   }
   if (canMove() && move) walkWorm(worms[current], terrain, move, dt);
@@ -848,13 +915,13 @@ function step(dt) {
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
     const result = stepWorm(w, terrain, dt);
     if (result.fallDamage) injure(w, result.fallDamage);
-    if (w.y - 10 < WATER || w.x < -30 || w.x > W + 30) {
+    if (w.y - 10 < waterLevel || w.x < -30 || w.x > W + 30) {
       w.hp = 0;
       w.deathPending = false;
       w.drowned = true;
       w.dying = 0.65;
       w.hurt = 0.65;
-      impactFlash(w.x, WATER);
+      impactFlash(w.x, waterLevel);
       tone(150, 0.3);
       damageLabel(w, "SPLASH");
       if (w === worms[current]) {
@@ -882,7 +949,7 @@ function step(dt) {
       p.y = p.attached.w.y + p.attached.dy;
     }
     if (!p.sleeping && !p.stuck)
-      integrate(p, dt, p.kind === "rocket" ? wind : 0);
+      integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0);
     p.age += dt;
     let hit = p.blocked;
     p.blocked = false;
@@ -947,9 +1014,9 @@ function step(dt) {
       p.trail.push({ x: p.x, y: p.y });
       if (p.trail.length > 28) p.trail.shift();
     }
-    if (boom || p.y < WATER || p.x < -50 || p.x > W + 50 || p.age > 12) {
-      if (boom && p.y > WATER) explode(p.x, p.y, p.kind);
-      dispose(p.mesh);
+    if (boom || p.y < waterLevel || p.x < -50 || p.x > W + 50 || p.age > 12) {
+      if (boom && p.y > waterLevel) explode(p.x, p.y, p.kind);
+      group.remove(p.mesh);
       projectile = null;
       phase = "settle";
       shotWait = 0;
@@ -974,9 +1041,9 @@ function step(dt) {
     integrate(p, dt);
     p.life -= dt;
     p.mesh.position.set(p.x, p.y, 35);
-    p.mesh.scale.setScalar(Math.max(0.01, p.life / p.max));
+    p.mesh.scale.setScalar(Math.max(0.01, (p.life / p.max) * p.size));
     if (p.life <= 0) {
-      dispose(p.mesh);
+      group.remove(p.mesh);
       particles.splice(i, 1);
     }
   }
@@ -1016,7 +1083,22 @@ function frame(now) {
     step(1 / 120);
     accumulator -= 1 / 120;
   }
-  const labelBoxes = [];
+  updateAimHUD();
+  const aimBox =
+    phase === "aim" && !menu.open && worms[current]?.hp > 0 && lastAim?.reticle
+      ? {
+          x: lastAim.reticle.x,
+          y: lastAim.reticle.y + 10,
+          width: 54,
+          height: 78,
+        }
+      : null;
+  const labelBoxes = aimBox ? [aimBox] : [];
+  // Read every label size before writing positions, so six labels cost one layout pass, not six.
+  for (const w of worms) {
+    w.labelW = w.label.offsetWidth;
+    w.labelH = w.label.offsetHeight;
+  }
   for (const w of worms) {
     const size = w.visualSize || 64;
     const active = w === worms[current];
@@ -1083,34 +1165,48 @@ function frame(now) {
       star.position.set(Math.cos(a) * 17, Math.sin(a) * 5, 0);
       star.rotation.z = a;
     });
+    w.ring.visible = active && phase === "aim" && w.hp > 0 && !menu.open;
+    if (w.ring.visible) {
+      const pulse = reducedMotion ? 1 : 1 + Math.sin(now * 0.006) * 0.08;
+      w.ring.scale.set(1 / (w.g.scale.x || 1), pulse, 1);
+      w.ring.children[0].material.opacity = 0.55 + (pulse - 1) * 1.2;
+      w.ring.children[1].material.opacity = 0.9 + (pulse - 1) * 1.2;
+    }
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
     const p = screen(w.x, w.y + size - 7);
     if (w.hp > 0) {
-      const width = w.label.offsetWidth,
-        height = w.label.offsetHeight;
+      const width = w.labelW,
+        height = w.labelH;
       p.x = Math.max(
         width / 2 + 4,
         Math.min(arena.clientWidth - width / 2 - 4, p.x),
       );
+      // Labels are positioned by their bottom edge, so compare centers and half-heights.
+      const anchorY = p.y;
       while (
         labelBoxes.some(
           (b) =>
             Math.abs(b.x - p.x) < (b.width + width) / 2 + 3 &&
-            Math.abs(b.y - p.y) < Math.max(b.height, height) + 3,
+            Math.abs(b.y - (p.y - height / 2)) < (b.height + height) / 2 + 3,
         )
       )
         p.y -= height + 5;
-      labelBoxes.push({ x: p.x, y: p.y, width, height });
+      // Never trade a readable label for a reticle-free one at the arena edge.
+      if (p.y - height < 4) p.y = anchorY;
+      labelBoxes.push({ x: p.x, y: p.y - height / 2, width, height });
     }
     w.label.style.left = p.x + "px";
     w.label.style.top = p.y + "px";
   }
-  updateAimHUD();
   $("#turn-banner").classList.toggle("shown", bannerTime > 0 && !menu.open);
-  $("#timer").innerHTML =
-    `${retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time))}<small> ${retreat > 0 ? "RETREAT" : "SEC"}</small>`;
-  if (now > announceUntil) $("#announcement").style.opacity = 0;
+  const timerHtml = `${retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time))}<small> ${retreat > 0 ? "RETREAT" : "SEC"}</small>`;
+  if (timerHtml !== timerKey) {
+    timerKey = timerHtml;
+    $("#timer").innerHTML = timerHtml;
+  }
+  if (now > announceUntil && $("#announcement").style.opacity !== "0")
+    $("#announcement").style.opacity = 0;
   water.userData.update(reducedMotion ? 0 : now * 0.001);
   motes.forEach((m, i) => {
     m.position.x = (i * 127 + now * 0.007) % W;
@@ -1119,10 +1215,16 @@ function frame(now) {
   const shake = reducedMotion ? 0 : Math.max(0, shakeUntil - now) / 350;
   camera.position.x = shake * Math.sin(now * 0.09) * 5;
   camera.position.y = shake * Math.cos(now * 0.07) * 4;
+  if (terrainDirty) {
+    terrainDirty = false;
+    paintTerrain(ctx, terrain, texture);
+  }
   renderer.render(scene, camera);
 }
 function setWeapon(kind) {
+  if (ammoFor(ammo[team], kind) <= 0) kind = "rocket";
   weapon = kind;
+  teamWeapon[team] = kind;
   $("#grenade-settings").hidden = !["grenade", "sticky"].includes(kind);
   document
     .querySelectorAll("[data-weapon]")
@@ -1293,10 +1395,21 @@ menu.addEventListener("close", () => {
   if (phase === "menu") reset();
   updateUI();
 });
+if (coarsePointer) $("#fire small").textContent = "HOLD · RELEASE TO FIRE";
+const difficultyRow = $("#difficulty-row"),
+  menuGrid = $(".menu-grid");
+function syncMenuOptions() {
+  const solo = $("#mode").value === "ai";
+  difficultyRow.hidden = !solo;
+  menuGrid.classList.toggle("single", !solo);
+}
+$("#mode").addEventListener("change", syncMenuOptions);
+syncMenuOptions();
 reset();
 menu.showModal();
 updateUI();
 resize();
+prewarmShaders();
 requestAnimationFrame(frame);
 // Read-only diagnostics for regression checks and reproducible bug reports.
 window.siege = {
@@ -1317,6 +1430,22 @@ window.siege = {
     wind,
     explosions,
     weapon,
+    teamWeapon: [...teamWeapon],
+    difficulty,
+    ammo: ammo.map((loadout) => ({ ...loadout })),
+    waterLevel,
+    suddenDeath,
+    hitStop,
+    lastAiPlanMs: Math.round(lastAiPlanMs * 10) / 10,
+    aiPlan: aiPlan
+      ? {
+          weapon: aiPlan.weapon,
+          angle: Math.round(aiPlan.angle),
+          power: Math.round(aiPlan.power),
+          score: Math.round(aiPlan.score),
+          samples: aiPlan.samples,
+        }
+      : null,
     terrainPixels: terrain.data.reduce((a, b) => a + b, 0),
     worms: worms.map(
       ({
@@ -1332,6 +1461,7 @@ window.siege = {
         hits,
         recoil,
         rig,
+        ring,
         deathPending,
       }) => ({
         name,
@@ -1346,6 +1476,7 @@ window.siege = {
         hurt,
         hits,
         recoil,
+        ringVisible: ring.visible,
         weaponRotation: rig.pivot.rotation.z,
         pose: hurt > 0.35 ? "hurt" : recoil > 0 ? "fire" : "idle",
       }),

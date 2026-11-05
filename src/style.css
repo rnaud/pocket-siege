@@ -937,7 +937,7 @@ dialog h1 {
   filter: drop-shadow(0 2px 2px #0a202a88);
 }
 #aim-reticle .reticle-rim {
-  fill: #10272a60;
+  fill: #10272a2e;
   stroke: #122a31;
   stroke-width: 5;
 }
@@ -1155,5 +1155,171 @@ dialog h1 {
   }
   .weapons {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* One-screen touch frame: the page never scrolls and every control stays reachable. */
+@media (max-width: 700px), (max-height: 550px) and (orientation: landscape) {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  #app {
+    height: 100vh;
+    height: 100svh;
+    display: flex;
+    flex-direction: column;
+  }
+  main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  header,
+  .match-bar,
+  .controls {
+    flex: 0 0 auto;
+  }
+  #arena {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+  }
+  footer {
+    display: none;
+  }
+  dialog {
+    overflow: auto;
+  }
+  .controls {
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  #app {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .brand {
+    font-size: 20px;
+  }
+  .brand-icon {
+    font-size: 32px;
+  }
+  .brand small {
+    font-size: 7px;
+  }
+  header {
+    height: 44px;
+  }
+  .match-bar {
+    height: 44px;
+  }
+  .controls {
+    padding: 8px 12px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+  .weapons button,
+  .move-buttons button {
+    height: 34px;
+  }
+  .eyebrow {
+    font-size: 7px;
+    margin-bottom: 3px;
+  }
+  #fire {
+    height: 48px;
+    padding: 8px 12px;
+  }
+  #fire-label {
+    font-size: 10px;
+  }
+  .aim-panel .slider-label {
+    margin-bottom: 0;
+  }
+  input[type="range"] {
+    height: 11px;
+    margin-bottom: 0;
+  }
+  #turn-banner {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .weapons button {
+    font-size: 9px;
+    padding: 0 4px;
+  }
+  .weapons button span {
+    font-size: 18px;
+    margin-right: 1px;
+  }
+  .move-buttons button {
+    min-width: 30px;
+  }
+}
+@media (max-width: 700px) and (max-height: 550px) and (orientation: landscape) {
+  .weapons button {
+    font-size: 9px;
+  }
+  .weapons button span {
+    font-size: 18px;
+    margin-right: 1px;
+  }
+}
+.menu-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+.menu-grid.single {
+  grid-template-columns: 1fr;
+}
+#difficulty-row[hidden] {
+  display: none;
+}
+@media (max-width: 360px) {
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.menu-grid select {
+  font-size: 13px;
+  padding: 11px 8px;
+}
+@media (display-mode: standalone) {
+  #app {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+/* Ammo matters on touch too: keep the count as a compact corner badge. */
+.weapons button {
+  position: relative;
+}
+@media (hover: none), (pointer: coarse) {
+  .weapons button small {
+    display: block;
+    position: absolute;
+    top: 3px;
+    right: 5px;
+    margin: 0;
+    font-size: 8px;
+    line-height: 1;
+    color: #dbe9c9;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .weapons button small {
+    top: 2px;
+    right: 4px;
+    font-size: 7px;
   }
 }

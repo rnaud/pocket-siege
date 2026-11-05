@@ -29,13 +29,21 @@ export function createWater(width, level) {
         gl_FragColor=vec4(color,.88);
       }`,
   });
+  const baseHeight = level + 8;
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, level + 8),
+    new THREE.PlaneGeometry(width, baseHeight),
     material,
   );
-  mesh.position.set(width / 2, (level + 8) / 2, 22);
+  mesh.position.set(width / 2, baseHeight / 2, 22);
   mesh.userData.update = (time) => {
     material.uniforms.time.value = time;
+  };
+  // Sudden death lifts the same plane; the shader reads the new surface height.
+  mesh.userData.setLevel = (nextLevel) => {
+    const height = nextLevel + 8;
+    mesh.scale.y = height / baseHeight;
+    mesh.position.y = height / 2;
+    material.uniforms.size.value.y = height;
   };
   return mesh;
 }
