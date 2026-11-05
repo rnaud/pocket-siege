@@ -1,0 +1,686 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap");
+:root {
+  font-family: "DM Sans", sans-serif;
+  color: #dce4e8;
+  background: #101c29;
+  font-synthesis: none;
+  --lime: #c3eb87;
+  --coral: #ff8b78;
+  --muted: #7d919e;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+  color: inherit;
+  border: 1px solid #364551;
+  background: #223240;
+  border-radius: 7px;
+  touch-action: manipulation;
+}
+button:hover {
+  filter: brightness(1.14);
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 4px;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+#app {
+  max-width: 1600px;
+  margin: auto;
+  padding: 0 36px;
+}
+header {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #eef2e9;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+.brand-light {
+  font-weight: 400;
+}
+.brand-icon {
+  font-size: 44px;
+  color: var(--lime);
+}
+.brand small {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 2.4px;
+  color: #8499a6;
+  margin-top: 3px;
+}
+.header-center {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 1.7px;
+  color: #9fafb9;
+}
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lime);
+  margin-right: 7px;
+}
+.divider {
+  margin: 0 18px;
+  color: #455561;
+}
+.icon-button {
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+  background: transparent;
+}
+.text-button {
+  border: 0;
+  background: none;
+  font-size: 12px;
+  margin-left: 10px;
+}
+main {
+  border: 1px solid #354452;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #192a38;
+}
+.match-bar {
+  height: 82px;
+  padding: 0 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1d2e3c;
+}
+.team {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 32%;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.team > div {
+  width: 160px;
+}
+.team strong {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 29px;
+  font-weight: 600;
+}
+.team-symbol {
+  font-size: 32px;
+}
+.team-lime {
+  color: var(--lime);
+}
+.team-coral {
+  color: var(--coral);
+  justify-content: flex-end;
+  text-align: right;
+}
+.health-track {
+  height: 4px;
+  background: #354553;
+  margin-top: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.health-track i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  transition: width 0.5s;
+}
+.turn {
+  text-align: center;
+}
+.turn span {
+  display: block;
+  font-size: 9px;
+  color: #91a4af;
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+}
+.turn b {
+  font-size: 12px;
+  letter-spacing: 1.8px;
+}
+#arena {
+  position: relative;
+  height: min(55vw, 560px);
+  min-height: 320px;
+  overflow: hidden;
+  background: #334b61;
+  touch-action: none;
+}
+#scene,
+#labels,
+#damage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.arena-top,
+.arena-bottom {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.arena-top {
+  top: 20px;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  color: #d5e2e7;
+}
+.location {
+  border: 1px solid #829ba54d;
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+.location span {
+  margin-left: 9px;
+  color: #b5c8d0;
+}
+#wind {
+  background: #162c3d77;
+  border-radius: 5px;
+  padding: 9px 12px;
+}
+.arena-bottom {
+  bottom: 16px;
+  font-size: 10px;
+  color: #c2d2d8;
+}
+#timer {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 29px;
+}
+#timer small {
+  font:
+    8px "DM Sans",
+    sans-serif;
+  color: #98acb5;
+}
+.worm-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px #102333;
+}
+.worm-label strong {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 17px;
+  display: block;
+}
+.worm-label.active:before {
+  content: "▼";
+  display: block;
+  color: var(--lime);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+#announcement {
+  position: absolute;
+  top: 28%;
+  width: 100%;
+  text-align: center;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 40px;
+  letter-spacing: 2px;
+  text-shadow: 0 3px 15px #123;
+  pointer-events: none;
+  transition: opacity 0.4s;
+  opacity: 0;
+}
+.controls {
+  padding: 22px 25px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.eyebrow,
+.slider-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #91a3b0;
+  margin-bottom: 12px;
+}
+.move-buttons,
+.weapons {
+  display: flex;
+  gap: 6px;
+}
+.move-buttons button {
+  height: 44px;
+  min-width: 42px;
+  font-size: 23px;
+}
+.move-buttons small {
+  font-size: 9px;
+  vertical-align: middle;
+}
+.move-buttons #jump {
+  padding: 0 12px;
+}
+.weapons button {
+  height: 44px;
+  padding: 0 11px;
+  font-size: 11px;
+}
+.weapons button span {
+  font-size: 24px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+.weapons button small {
+  margin-left: 9px;
+  color: #9cabb4;
+}
+.weapons .selected {
+  border-color: var(--lime);
+  color: var(--lime);
+  background: #c3eb8710;
+}
+.aim-panel {
+  flex: 1;
+  min-width: 125px;
+}
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 2px;
+}
+.slider-label output {
+  color: #e4ebea;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+input[type="range"] {
+  display: block;
+  width: 100%;
+  height: 15px;
+  margin: 0 0 6px;
+  accent-color: var(--lime);
+  touch-action: none;
+}
+#fire {
+  position: relative;
+  background: var(--lime);
+  color: #233529;
+  border: 0;
+  width: 170px;
+  height: 69px;
+  text-align: left;
+  padding: 13px 17px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+#fire > span:nth-child(2) {
+  float: right;
+  font-size: 24px;
+}
+#fire small {
+  display: block;
+  font-size: 8px;
+  opacity: 0.6;
+  margin-top: 7px;
+  letter-spacing: 1.2px;
+}
+footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  color: #6f8493;
+  letter-spacing: 1.3px;
+  padding: 21px 0;
+}
+footer i {
+  margin: 0 8px;
+}
+dialog {
+  color: #dce4e8;
+  background: #1b2e3d;
+  border: 1px solid #53656d;
+  border-radius: 16px;
+  padding: 32px;
+  width: min(440px, calc(100% - 28px));
+  box-shadow: 0 25px 100px #0008;
+}
+dialog::backdrop {
+  background: #071420b5;
+  backdrop-filter: blur(7px);
+}
+h1 {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 54px;
+  line-height: 0.98;
+  margin: 18px 0;
+}
+h1 em {
+  color: var(--lime);
+  font-style: normal;
+}
+dialog p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #a9beca;
+}
+.instructions {
+  border-top: 1px solid #3a4c57;
+  border-bottom: 1px solid #3a4c57;
+  margin: 20px 0;
+}
+.instructions b {
+  color: #e3ecec;
+}
+.mode-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  margin-bottom: 7px;
+}
+select {
+  width: 100%;
+  background: #122432;
+  color: #dce4e8;
+  border: 1px solid #435764;
+  padding: 12px;
+  border-radius: 5px;
+}
+#start {
+  background: var(--lime);
+  color: #25382c;
+  width: 100%;
+  padding: 16px;
+  margin-top: 15px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.close-help {
+  display: block;
+  margin: 12px auto 0;
+  background: none;
+  border: 0;
+  font-size: 11px;
+  color: #a8bbc6;
+}
+.damage-number {
+  position: absolute;
+  color: #fff;
+  font:
+    bold 24px "Barlow Condensed",
+    sans-serif;
+  animation: rise 1.2s forwards;
+  pointer-events: none;
+}
+@keyframes rise {
+  to {
+    transform: translateY(-55px);
+    opacity: 0;
+  }
+}
+@media (min-width: 1500px) {
+  #arena {
+    height: 600px;
+  }
+}
+@media (max-width: 1000px) {
+  #app {
+    padding: 0 16px;
+  }
+  .header-center {
+    font-size: 8px;
+  }
+  .controls {
+    gap: 14px;
+    padding: 18px 16px;
+  }
+  .weapons button {
+    font-size: 10px;
+    padding: 0 7px;
+  }
+  .move-buttons button {
+    min-width: 35px;
+  }
+  #fire {
+    width: 140px;
+  }
+  footer {
+    letter-spacing: 0.5px;
+  }
+}
+@media (max-width: 700px) {
+  #app {
+    padding: 0;
+  }
+  header {
+    height: 66px;
+    padding: 0 15px;
+    gap: 10px;
+  }
+  .brand {
+    font-size: 20px;
+    flex: 1;
+  }
+  .brand-icon {
+    font-size: 35px;
+  }
+  .brand small {
+    font-size: 6px;
+  }
+  .header-center {
+    display: none;
+  }
+  .text-button {
+    font-size: 10px;
+    margin: 0;
+    padding: 0;
+  }
+  .icon-button {
+    width: 28px;
+    height: 28px;
+  }
+  main {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .match-bar {
+    height: 67px;
+    padding: 0 14px;
+  }
+  .team {
+    gap: 7px;
+    width: 36%;
+    font-size: 8px;
+    letter-spacing: 0.4px;
+  }
+  .team > div {
+    width: 90px;
+  }
+  .team-symbol {
+    display: none;
+  }
+  .team strong {
+    font-size: 24px;
+  }
+  .turn b {
+    font-size: 9px;
+    letter-spacing: 0.6px;
+  }
+  .turn span {
+    font-size: 7px;
+  }
+  #arena {
+    height: calc(100svh - 335px);
+    min-height: 290px;
+    max-height: 600px;
+  }
+  .arena-top,
+  .arena-bottom {
+    left: 13px;
+    right: 13px;
+  }
+  .arena-top {
+    top: 13px;
+    font-size: 8px;
+  }
+  .arena-bottom {
+    font-size: 8px;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 15px;
+  }
+  .eyebrow {
+    font-size: 8px;
+    margin-bottom: 8px;
+  }
+  .move-buttons button {
+    height: 39px;
+    flex: 1;
+  }
+  .weapons button {
+    height: 39px;
+    flex: 1;
+  }
+  .weapons button small {
+    margin-left: 3px;
+  }
+  .aim-panel {
+    grid-column: 1;
+  }
+  #fire {
+    grid-column: 2;
+    width: 100%;
+    height: 63px;
+  }
+  #fire small {
+    font-size: 7px;
+  }
+  footer {
+    padding: 13px 15px;
+    padding-bottom: max(13px, env(safe-area-inset-bottom));
+    font-size: 7px;
+  }
+  footer > span:last-child {
+    display: none;
+  }
+  .worm-label {
+    font-size: 7px;
+  }
+  .worm-label strong {
+    font-size: 13px;
+  }
+  dialog {
+    padding: 24px;
+  }
+  h1 {
+    font-size: 44px;
+  }
+  .instructions {
+    margin: 14px 0;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  header {
+    height: 48px;
+  }
+  .match-bar {
+    height: 48px;
+  }
+  #arena {
+    height: calc(100svh - 205px);
+    min-height: 180px;
+  }
+  .controls {
+    display: flex;
+    padding: 9px 15px;
+  }
+  .controls > div {
+    flex: 1;
+  }
+  .eyebrow {
+    margin-bottom: 4px;
+  }
+  #fire {
+    width: 130px;
+    height: 55px;
+  }
+  footer {
+    display: none;
+  }
+  .header-center {
+    display: none;
+  }
+  dialog {
+    max-height: 90svh;
+  }
+}
+@media (max-width: 700px) {
+  .controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .move-buttons button,
+  .weapons button {
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .weapons button small,
+  .move-buttons #jump small {
+    display: none;
+  }
+  .weapons button span {
+    margin-right: 2px;
+    font-size: 21px;
+  }
+}

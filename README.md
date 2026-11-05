@@ -1,0 +1,52 @@
+# Pocket Siege
+
+A Worms-inspired, turn-based artillery game built with Three.js. Original procedural visuals and characters; no Worms assets or branding are used.
+
+## Play
+
+[Play Pocket Siege](https://rnaud.github.io/pocket-siege/)
+
+Pit Moss Company against Coral Crew on a destructible floating island. Play solo against the computer or choose local pass-and-play. Each squad has three worms; the last squad standing wins.
+
+- **Move:** left/right arrows, A/D, or touch buttons
+- **Jump:** up arrow, W, or Jump
+- **Aim:** drag on the battlefield or use the angle and power sliders
+- **Fire:** Space or Fire Away
+- **Weapons:** Bazooka explodes on contact; grenades bounce and have a three-second fuse. Select with the buttons or 1/2.
+- Wind affects projectiles; water eliminates worms. Each turn lasts 45 seconds.
+- Sound is optional; use the music-note button. Help pauses the match.
+
+Touch layouts support portrait and landscape, including iPhone Safari. No install or account is required. This is a focused local artillery game, not a recreation of every Worms Armageddon feature; there is no online multiplayer.
+
+## Development
+
+Requires Node.js 22 or newer.
+
+```sh
+npm ci
+npm run dev
+npm run build
+```
+
+`npm run preview` serves the production build. All game assets are procedural. Google Fonts is optional, with system fallbacks. Three.js is bundled locally.
+
+## Tests
+
+```sh
+npx playwright install chromium webkit
+npm test
+```
+
+Tests cover terrain removal, actual projectile impacts and turn progression, computer turns, and desktop/iPhone layouts in Chromium and WebKit.
+
+## Deployment
+
+The GitHub Actions workflow builds and deploys `dist/` to GitHub Pages on pushes to `main`. In repository Settings → Pages, select **GitHub Actions** as the source. Vite uses a relative base so repository subpaths work.
+
+## Implementation
+
+Three.js renders an orthographic battlefield, lit 3D worms, projectiles, debris, and background silhouettes. A binary terrain mask powers collision and circular excavation; a canvas texture displays the same mask. Physics runs at a fixed 120 Hz with swept projectile collision. The computer samples ballistic trajectories against the live terrain before firing.
+
+## License
+
+MIT. Worms and Worms Armageddon are trademarks of their respective owners. This project is independently created and is not affiliated with Team17.

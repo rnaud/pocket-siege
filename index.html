@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#101d2c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Pocket Siege — Tiny troops. Big trouble.</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect rx='24' width='100' height='100' fill='%23bce477'/%3E%3Ctext x='15' y='75' font-size='70'%3E✹%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <a class="brand" href="./"
+          ><span class="brand-icon">✹</span
+          ><span
+            >POCKET<span class="brand-light">SIEGE</span
+            ><small>TINY TROOPS. BIG TROUBLE.</small></span
+          ></a
+        >
+        <div class="header-center">
+          <span class="live-dot"></span> LOCAL SKIRMISH
+          <span class="divider">/</span> THE OVERGROWN ISLES
+        </div>
+        <button id="help" class="icon-button" aria-label="How to play">?</button
+        ><button
+          id="sound"
+          class="icon-button"
+          aria-label="Toggle sound"
+          aria-pressed="false"
+        >
+          ♪</button
+        ><button id="restart" class="text-button">New match ↗</button>
+      </header>
+      <main>
+        <div class="match-bar">
+          <div class="team team-lime">
+            <span class="team-symbol">✦</span>
+            <div>
+              <b>MOSS COMPANY</b>
+              <div class="health-track"><i id="health0"></i></div>
+            </div>
+            <strong id="score0">300</strong>
+          </div>
+          <div class="turn">
+            <span id="round">ROUND 01</span><b id="turn-label">YOUR MOVE</b>
+          </div>
+          <div class="team team-coral">
+            <strong id="score1">300</strong>
+            <div>
+              <b>CORAL CREW</b>
+              <div class="health-track"><i id="health1"></i></div>
+            </div>
+            <span class="team-symbol">✦</span>
+          </div>
+        </div>
+        <section id="arena" aria-label="Battlefield">
+          <div id="scene"></div>
+          <div class="arena-top">
+            <span class="location">01 <span>FERN ISLAND</span></span
+            ><span id="wind">WIND → 2.0</span>
+          </div>
+          <div id="labels"></div>
+          <div id="announcement" aria-live="polite"></div>
+          <div class="arena-bottom">
+            <span
+              ><i class="live-dot"></i>
+              <span id="status"
+                >Pick your angle. Make a little chaos.</span
+              ></span
+            ><span id="timer">45<small> SEC</small></span>
+          </div>
+          <div id="damage"></div>
+        </section>
+        <div class="controls">
+          <div class="move-panel">
+            <div class="eyebrow">01 / MOVE</div>
+            <div class="move-buttons">
+              <button data-move="-1" aria-label="Move left">←</button
+              ><button data-move="1" aria-label="Move right">→</button
+              ><button id="jump" aria-label="Jump">
+                ↥ <small>JUMP</small>
+              </button>
+            </div>
+          </div>
+          <div class="weapon-panel">
+            <div class="eyebrow">02 / LOADOUT</div>
+            <div class="weapons">
+              <button data-weapon="rocket" class="selected">
+                <span>➶</span> Bazooka <small>∞</small></button
+              ><button data-weapon="grenade">
+                <span>✹</span> Grenade <small>∞</small>
+              </button>
+            </div>
+          </div>
+          <div class="aim-panel">
+            <div class="slider-label">
+              <label for="angle">03 / AIM</label
+              ><output id="angle-value">45°</output>
+            </div>
+            <input
+              id="angle"
+              type="range"
+              min="5"
+              max="175"
+              value="45"
+              aria-label="Aim angle"
+            />
+            <div class="slider-label">
+              <label for="power">POWER</label
+              ><output id="power-value">65%</output>
+            </div>
+            <input
+              id="power"
+              type="range"
+              min="15"
+              max="100"
+              value="65"
+              aria-label="Shot power"
+            />
+          </div>
+          <button id="fire">
+            <span>FIRE AWAY</span><span>↗</span><small>SPACE TO FIRE</small>
+          </button>
+        </div>
+      </main>
+      <footer>
+        <span>A SMALL-SCALE WAR WITH LARGE-SCALE CONSEQUENCES.</span
+        ><span
+          >← → MOVE <i>·</i> ↑ JUMP <i>·</i> DRAG TO AIM <i>·</i> SPACE
+          FIRE</span
+        >
+      </footer>
+    </div>
+    <dialog id="menu">
+      <form method="dialog">
+        <div class="eyebrow">WELCOME TO THE ISLAND</div>
+        <h1>Small worms.<br /><em>Big grudges.</em></h1>
+        <p>
+          Carve up the island and send the other squad swimming. The last team
+          standing wins.
+        </p>
+        <div class="instructions">
+          <p>
+            <b>01 &nbsp; Get in position</b><br />Arrow keys or touch arrows to
+            move. Jump over craters.
+          </p>
+          <p>
+            <b>02 &nbsp; Line up your shot</b><br />Drag on the battlefield or
+            use the angle and power sliders. Wind bends rockets.
+          </p>
+          <p>
+            <b>03 &nbsp; Make a mess</b><br />Rockets explode on contact.
+            Grenades bounce, then explode after 3 seconds. Water is lethal!
+          </p>
+        </div>
+        <label class="mode-label" for="mode">MATCH TYPE</label
+        ><select id="mode">
+          <option value="ai">Solo · You vs. computer</option>
+          <option value="local">Local · Pass & play</option></select
+        ><button id="start" value="start">LET’S MAKE TROUBLE ↗</button
+        ><button class="close-help" value="close">Back to the island</button>
+      </form>
+    </dialog>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
