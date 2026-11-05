@@ -1092,7 +1092,7 @@ function frame(now) {
     if (!Number.isFinite(w.renderY)) w.renderY = targetY;
     const gap = targetY - w.renderY;
     if (Math.abs(gap) > 32) w.renderY = targetY;
-    else w.renderY += gap * Math.min(1, frameDt * 26);
+    else w.renderY += gap * Math.min(0.55, frameDt * 26);
     w.g.position.set(w.x, w.renderY, 15);
 
     const facing = w.facing * (w.team ? -1 : 1);
