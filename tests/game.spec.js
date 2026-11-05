@@ -117,6 +117,16 @@ test("movement, jump, touch aiming, and landscape layout", async ({
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.querySelector("canvas").width ===
+            document.querySelector("#arena").clientWidth *
+              Math.min(devicePixelRatio, 2),
+        ),
+      )
+      .toBe(true);
     await page.screenshot({
       path: "test-results/iphone-landscape.png",
       fullPage: true,

@@ -684,3 +684,21 @@ select {
     font-size: 21px;
   }
 }
+@media (max-height: 550px) and (orientation: landscape) {
+  .weapons button {
+    white-space: nowrap;
+  }
+  .weapons button small,
+  #fire small {
+    display: none;
+  }
+  #fire {
+    flex-shrink: 0;
+    width: 130px;
+    padding: 10px;
+    font-size: 12px;
+  }
+  #fire > span:nth-child(2) {
+    font-size: 18px;
+  }
+}
