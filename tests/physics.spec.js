@@ -28,11 +28,21 @@ test("blast direction is radial, preserves momentum, and weaker with distance", 
   blastImpulse(b, 0, 117, 130);
   blastImpulse(below, 0, 117, 130);
   expect(a.vx).toBeGreaterThan(b.vx);
-  expect(a.vy).toBeCloseTo(0);
+  // Blasts add a little lift, so an even side hit still pops the worm upward.
+  expect(a.vy).toBeGreaterThan(0);
   expect(below.vy).toBeLessThan(0);
   const left = worm(-30, 100);
   blastImpulse(left, 0, 117, 130);
   expect(left.vx).toBeLessThan(0);
+});
+test("side hits carry a worm well away from the blast", () => {
+  const w = worm(100, 300);
+  w.ground = true;
+  const startX = w.x;
+  blastImpulse(w, 60, 317, 87, 380);
+  expect(w.vy).toBeGreaterThan(0);
+  for (let i = 0; i < 180; i++) stepWorm(w, empty, 1 / 120);
+  expect(w.x - startX).toBeGreaterThan(120);
 });
 test("airborne knockback follows gravity without horizontal drag or steering", () => {
   const w = worm(100, 300);

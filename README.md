@@ -16,7 +16,7 @@ Pit Moss Company against Coral Crew on a destructible floating island. Play solo
 - Wind affects bazookas; the other three weapons ignore wind. Water eliminates worms. From round six the sea rises every round, so a stalemate becomes a scramble for high ground. Turns last 45 seconds, with three seconds to retreat after firing.
 - Sound is optional; use the music-note button. Help pauses the match.
 
-Touch layouts support portrait and landscape, including iPhone Safari, and keep the whole control deck on one screen without page scrolling. No install or account is required. This is a focused local artillery game, not a recreation of every Worms Armageddon feature; there is no online multiplayer.
+Touch layouts support portrait and landscape, including iPhone Safari, and keep the whole control deck on one screen without page scrolling. On desktop the battlefield and control deck fill the window edge to edge. No install or account is required. This is a focused local artillery game, not a recreation of every Worms Armageddon feature; there is no online multiplayer.
 
 ## Development
 
@@ -37,7 +37,7 @@ npx playwright install chromium webkit
 npm test
 ```
 
-Tests cover terrain removal, projectile impacts and turn progression, computer turns, AI weapon/blast planning, ammo spending, sudden-death water levels, and desktop/iPhone layouts in Chromium and WebKit.
+Tests cover terrain removal, projectile impacts and turn progression, computer turns, AI weapon/blast planning, ammo spending, sudden-death water levels, desktop full-window and iPhone layouts in Chromium and WebKit.
 
 ## Deployment
 
@@ -63,6 +63,6 @@ The original background and two transparent soldier illustrations were created w
 
 The crosshair shows aiming direction, without a future trajectory or impact prediction. Weapons and hands rotate independently of the illustrated soldier, and shots originate at the visible muzzle. Launch physics remain the same across desktop and mobile layouts.
 
-Hits trigger an illustrated hurt face, flinch, brief color flash, radial knockback, stun stars, damage numbers, a short hit-stop and health-bar loss. Airborne worms retain horizontal momentum and collide with walls, ceilings and ground. Hard falls cause damage. Turns wait for bodies and death explosions to settle. Firing has recoil, a muzzle flash and a trail behind the actual projectile; grenades show their remaining fuse. The active worm has a pulsing ground ring, labels shift away from the aim reticle, and help or a hidden tab pauses simulation.
+Hits trigger an illustrated hurt face, flinch, brief color flash, radial knockback with a little lift, stun stars, damage numbers, a short hit-stop and health-bar loss. Airborne worms retain horizontal momentum and collide with walls, ceilings and ground. Hard falls cause damage. Turns wait for bodies and death explosions to settle. Firing has recoil, a muzzle flash and a trail behind the actual projectile; grenades show their remaining fuse. The active worm’s label is highlighted with a pointer, labels shift away from the aim reticle, and help or a hidden tab pauses simulation.
 
 See [the gameplay audit](GAMEPLAY-AUDIT.md) for corrected behavior, validation, and remaining differences from Worms Armageddon.

@@ -64,11 +64,10 @@ const land = new THREE.Mesh(
 );
 land.position.set(W / 2, H / 2, 0);
 group.add(land);
-const colors = [0xc3eb87, 0xff8b78],
-  names = [
-    ["Sprout", "Moss", "Pickle"],
-    ["Pepper", "Toast", "Chilli"],
-  ];
+const names = [
+  ["Sprout", "Moss", "Pickle"],
+  ["Pepper", "Toast", "Chilli"],
+];
 let terrain,
   worms = [],
   current = 0,
@@ -213,27 +212,6 @@ function createWorm(t, i, x) {
   const stars = createStars();
   g.add(stars);
   stars.visible = false;
-  // A pulsing ring makes the active worm unmistakable, even when the reticle is far away.
-  const ring = new THREE.Group();
-  const addRing = (inner, outer, color, opacity, z) => {
-    const mesh = new THREE.Mesh(
-      new THREE.RingGeometry(inner, outer, 36),
-      new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      }),
-    );
-    mesh.position.z = z;
-    ring.add(mesh);
-  };
-  addRing(25, 30, 0x10201c, 0.55, 0);
-  addRing(20, 24, colors[t], 0.9, 1);
-  ring.position.set(0, -9, 1);
-  ring.visible = false;
-  g.add(ring);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(14, 24),
     new THREE.MeshBasicMaterial({
@@ -252,21 +230,22 @@ function createWorm(t, i, x) {
   label.innerHTML = `${names[t][i]}<strong>100</strong>`;
   $("#labels").appendChild(label);
   group.add(g);
+  const y =
+    Math.max(...[-16, -8, 0, 8, 16].map((dx) => terrain.surface(x + dx))) + 12;
   return {
     team: t,
     name: names[t][i],
     hp: 100,
     x,
-    y:
-      Math.max(...[-16, -8, 0, 8, 16].map((dx) => terrain.surface(x + dx))) +
-      12,
+    y,
+    renderY: y,
+    moving: false,
     vx: 0,
     vy: 0,
     g,
     body,
     rig,
     stars,
-    ring,
     hurt: 0,
     recoil: 0,
     dying: 0,
@@ -674,11 +653,11 @@ function fire() {
 function explode(x, y, kind) {
   const profile =
     kind === "death"
-      ? { radius: 28, damage: 25, impulse: 150 }
+      ? { radius: 28, damage: 25, impulse: 220 }
       : {
           radius: WEAPONS[kind].radius,
           damage: WEAPONS[kind].damage,
-          impulse: 290,
+          impulse: 380,
         };
   const { radius, damage: maxDamage, impulse } = profile;
   terrain.carve(x, y, radius);
@@ -858,6 +837,7 @@ function step(dt) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
+  for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
   if (retreat > 0) {
@@ -891,7 +871,8 @@ function step(dt) {
       if (aiMoveTime > 0) {
         aiMoveTime = Math.max(0, aiMoveTime - dt);
         const w = worms[current];
-        if (w.ground && !w.knocked) walkWorm(w, terrain, aiMoveDirection, dt);
+        if (w.ground && !w.knocked)
+          w.moving = walkWorm(w, terrain, aiMoveDirection, dt);
         if (aiMoveTime === 0) aiAim();
       } else {
         aiWait -= dt;
@@ -900,7 +881,10 @@ function step(dt) {
       }
     }
   }
-  if (canMove() && move) walkWorm(worms[current], terrain, move, dt);
+  if (canMove() && move) {
+    const w = worms[current];
+    w.moving = walkWorm(w, terrain, move, dt);
+  }
   for (const w of worms) {
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
@@ -935,7 +919,6 @@ function step(dt) {
       }
       updateUI();
     } else if (w.deathPending && w.ground && Math.abs(w.vx) < 2) w.dying = 0.8;
-    w.g.position.set(w.x, w.y, 15);
   }
   if (phase === "aim") updateUI();
   if (projectile) {
@@ -1077,7 +1060,8 @@ function resize() {
 new ResizeObserver(() => requestAnimationFrame(resize)).observe(arena);
 function frame(now) {
   requestAnimationFrame(frame);
-  accumulator += Math.min((now - last) / 1000, 0.1);
+  const frameDt = Math.min((now - last) / 1000, 0.1);
+  accumulator += frameDt;
   last = now;
   while (accumulator >= 1 / 120) {
     step(1 / 120);
@@ -1103,8 +1087,16 @@ function frame(now) {
     const size = w.visualSize || 64;
     const active = w === worms[current];
 
+    // The terrain mask is integer-based; glide the sprite over its 1px steps.
+    const targetY = w.y;
+    if (!Number.isFinite(w.renderY)) w.renderY = targetY;
+    const gap = targetY - w.renderY;
+    if (Math.abs(gap) > 32) w.renderY = targetY;
+    else w.renderY += gap * Math.min(1, frameDt * 26);
+    w.g.position.set(w.x, w.renderY, 15);
+
     const facing = w.facing * (w.team ? -1 : 1);
-    const moving = active && move && canMove() && w.ground;
+    const moving = active && w.moving && w.ground;
     const bounce =
       menu.open || reducedMotion
         ? 0
@@ -1139,7 +1131,7 @@ function frame(now) {
     const correction = w.g.scale.x;
     w.rig.pivot.position.set(
       (geometry.pivot.x - w.x) / correction,
-      geometry.pivot.y - w.y,
+      geometry.pivot.y - w.renderY,
       10,
     );
     w.rig.pivot.rotation.z = geometry.visualAngle;
@@ -1165,16 +1157,9 @@ function frame(now) {
       star.position.set(Math.cos(a) * 17, Math.sin(a) * 5, 0);
       star.rotation.z = a;
     });
-    w.ring.visible = active && phase === "aim" && w.hp > 0 && !menu.open;
-    if (w.ring.visible) {
-      const pulse = reducedMotion ? 1 : 1 + Math.sin(now * 0.006) * 0.08;
-      w.ring.scale.set(1 / (w.g.scale.x || 1), pulse, 1);
-      w.ring.children[0].material.opacity = 0.55 + (pulse - 1) * 1.2;
-      w.ring.children[1].material.opacity = 0.9 + (pulse - 1) * 1.2;
-    }
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
-    const p = screen(w.x, w.y + size - 7);
+    const p = screen(w.x, w.renderY + size - 7);
     if (w.hp > 0) {
       const width = w.labelW,
         height = w.labelH;
@@ -1437,6 +1422,7 @@ window.siege = {
     suddenDeath,
     hitStop,
     lastAiPlanMs: Math.round(lastAiPlanMs * 10) / 10,
+    activeWorm: worms[current]?.name ?? null,
     aiPlan: aiPlan
       ? {
           weapon: aiPlan.weapon,
@@ -1461,7 +1447,8 @@ window.siege = {
         hits,
         recoil,
         rig,
-        ring,
+        renderY,
+        moving,
         deathPending,
       }) => ({
         name,
@@ -1476,7 +1463,8 @@ window.siege = {
         hurt,
         hits,
         recoil,
-        ringVisible: ring.visible,
+        renderY,
+        moving,
         weaponRotation: rig.pivot.rotation.z,
         pose: hurt > 0.35 ? "hurt" : recoil > 0 ? "fire" : "idle",
       }),

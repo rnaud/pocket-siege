@@ -120,9 +120,12 @@ export function blastImpulse(w, x, y, radius, strength = 270) {
   if (d >= radius) return 0;
   const factor = 1 - d / radius,
     nx = d > 0.001 ? dx / d : 0,
-    ny = d > 0.001 ? dy / d : 1;
-  w.vx += nx * strength * factor;
-  w.vy += ny * strength * factor;
+    ny = d > 0.001 ? dy / d : 1,
+    push = strength * factor;
+  w.vx += nx * push;
+  // A little lift makes side hits arc away instead of sliding along the floor,
+  // but cap it so a blast from below cannot launch a worm off the top of the map.
+  w.vy += Math.min(ny + 0.4, 0.65) * push;
   w.ground = false;
   w.knocked = true;
   return factor;
@@ -130,10 +133,17 @@ export function blastImpulse(w, x, y, radius, strength = 270) {
 export function walkWorm(w, terrain, direction, dt) {
   if (!w.ground || w.knocked) return false;
   const x = w.x + direction * 42 * dt;
-  for (let rise = 0; rise <= 5; rise++) {
+  // A little more headroom than before lets the worm clear terrain steps
+  // without stopping; settling back down keeps downhill walking grounded.
+  for (let rise = 0; rise <= 10; rise++) {
     if (!bodyBlocked(terrain, x, w.y + rise)) {
+      let y = w.y + rise;
+      for (let drop = 1; drop <= 4; drop++) {
+        if (bodyBlocked(terrain, x, y - 1)) break;
+        y -= 1;
+      }
       w.x = x;
-      w.y += rise;
+      w.y = y;
       return true;
     }
   }

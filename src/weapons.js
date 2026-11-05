@@ -8,7 +8,7 @@ export const WEAPONS = {
     radius: 53,
     damage: 50,
     wind: true,
-    speed: 1,
+    speed: 1.5,
     timed: false,
     bounces: false,
     ammo: Infinity,

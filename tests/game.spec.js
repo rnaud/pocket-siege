@@ -552,21 +552,16 @@ test("computer skill is selectable and hidden for local play", async ({
   await expect(page.locator("#difficulty-row")).toBeHidden();
 });
 
-test("active worm ring and labels avoid the aim reticle", async ({ page }) => {
+test("active worm label and labels avoid the aim reticle", async ({ page }) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await expect(page.locator("#aim-reticle")).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        window.siege
-          .getState()
-          .worms.filter((w) => w.ringVisible)
-          .map((w) => w.name),
-      ),
-    )
-    .toEqual(["Sprout"]);
+  await expect(page.locator(".worm-label.active")).toHaveCount(1);
+  await expect(page.locator(".worm-label.active")).toContainText("Sprout");
+  expect(await page.evaluate(() => window.siege.getState().activeWorm)).toBe(
+    "Sprout",
+  );
   await page.waitForTimeout(200);
   expect(
     await page.evaluate(() => {
@@ -629,4 +624,34 @@ test("share and install metadata resolve to real assets", async ({ page }) => {
       return [icon.status, card.status];
     }),
   ).toEqual([200, 200]);
+});
+
+test("desktop fills the window without page scrolling", async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== "desktop", "desktop layout");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator("#fire")).toBeEnabled();
+  const layout = await page.evaluate(() => {
+    const app = document.querySelector("#app").getBoundingClientRect(),
+      arena = document.querySelector("#arena").getBoundingClientRect();
+    return {
+      appWidth: Math.round(app.width),
+      appLeft: Math.round(app.left),
+      arenaHeight: Math.round(arena.height),
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      scrollHeight: document.documentElement.scrollHeight,
+    };
+  });
+  expect(layout.appWidth).toBe(layout.viewportWidth);
+  expect(layout.appLeft).toBe(0);
+  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(layout.scrollHeight).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(layout.arenaHeight).toBeGreaterThan(layout.viewportHeight * 0.55);
+  await expect(page.locator("#fire")).toBeInViewport({ ratio: 1 });
 });
