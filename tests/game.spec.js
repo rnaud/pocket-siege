@@ -333,9 +333,12 @@ test("Space charges until release, arrows only aim, and no shot prediction exist
   await setAim(page, "45");
   const y = await page.evaluate(() => window.siege.getState().worms[0].y);
   await page.keyboard.down("ArrowUp");
-  await page.waitForTimeout(200);
+  await expect
+    .poll(async () => Number(await page.locator("#angle").inputValue()), {
+      timeout: 5000,
+    })
+    .toBeGreaterThan(45);
   await page.keyboard.up("ArrowUp");
-  expect(Number(await page.locator("#angle").inputValue())).toBeGreaterThan(45);
   expect(
     Math.abs(
       (await page.evaluate(() => window.siege.getState().worms[0].y)) - y,
@@ -417,11 +420,12 @@ test("grenade fuse selection and retreat movement work without granting another 
   await expect(page.locator("#projectile-tag")).toContainText(/4\.\ds/);
   const before = await page.evaluate(() => window.siege.getState().worms[0].x);
   await page.keyboard.down("ArrowRight");
-  await page.waitForTimeout(350);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().worms[0].x), {
+      timeout: 5000,
+    })
+    .toBeGreaterThan(before + 3);
   await page.keyboard.up("ArrowRight");
-  expect(
-    await page.evaluate(() => window.siege.getState().worms[0].x),
-  ).toBeGreaterThan(before + 3);
   await page.keyboard.press("Space");
   expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
   await expect
@@ -450,11 +454,12 @@ test("desktop hides slider, W/S aim, walking keeps fire stable, charge lives on 
   await expect(page.locator("#power-meter")).toHaveCount(0);
   const before = Number(await page.locator("#angle").inputValue());
   await page.keyboard.down("w");
-  await page.waitForTimeout(200);
+  await expect
+    .poll(async () => Number(await page.locator("#angle").inputValue()), {
+      timeout: 5000,
+    })
+    .toBeGreaterThan(before);
   await page.keyboard.up("w");
-  expect(Number(await page.locator("#angle").inputValue())).toBeGreaterThan(
-    before,
-  );
   await page.keyboard.down("s");
   await page.waitForTimeout(200);
   await page.keyboard.up("s");
@@ -474,12 +479,18 @@ test("desktop hides slider, W/S aim, walking keeps fire stable, charge lives on 
   expect(await page.evaluate(() => window.fireFlickers)).toBe(0);
   await page.waitForTimeout(300);
   await page.keyboard.down("Space");
-  await page.waitForTimeout(400);
   await expect(page.locator(".reticle-charge")).toBeVisible();
-  const dash = await page
-    .locator(".reticle-charge")
-    .getAttribute("stroke-dasharray");
-  expect(parseFloat(dash)).toBeGreaterThan(10);
+  await expect
+    .poll(
+      async () =>
+        parseFloat(
+          await page
+            .locator(".reticle-charge")
+            .getAttribute("stroke-dasharray"),
+        ),
+      { timeout: 5000 },
+    )
+    .toBeGreaterThan(10);
   await page.keyboard.up("Space");
 });
 for (const weapon of ["mortar", "sticky"])
