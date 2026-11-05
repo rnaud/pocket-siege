@@ -345,16 +345,22 @@ test("Space charges until release, arrows only aim, and no shot prediction exist
   await page.waitForTimeout(200);
   await page.keyboard.up("ArrowDown");
   await page.keyboard.down("Space");
-  await page.waitForTimeout(350);
+  // Wait on simulation state, not wall-clock time: a loaded CI runner may
+  // process fewer fixed steps than a local machine in the same interval.
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().power), {
+      timeout: 5000,
+    })
+    .toBeGreaterThan(10);
   const held = await page.evaluate(() => window.siege.getState());
   expect(held.charging).toBe(true);
   expect(held.shotCount).toBe(0);
   expect(held.projectile).toBeNull();
-  expect(held.power).toBeGreaterThan(10);
-  await page.waitForTimeout(300);
-  expect(
-    await page.evaluate(() => window.siege.getState().power),
-  ).toBeGreaterThan(held.power + 5);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().power), {
+      timeout: 5000,
+    })
+    .toBeGreaterThan(Math.max(held.power + 5, 30));
   await page.keyboard.up("Space");
   expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
   expect(
