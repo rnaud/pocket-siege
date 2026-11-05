@@ -8,6 +8,14 @@ import {
   launch,
   integrate,
   shotGeometry,
+  bodyBlocked,
+  hitsWorm,
+  blastImpulse,
+  walkWorm,
+  stepWorm,
+  terrainNormal,
+  reflectVelocity,
+  chargePower,
 } from "./physics.js";
 import {
   createWeaponRig,
@@ -66,7 +74,7 @@ let terrain,
   weapon = "rocket",
   move = 0,
   angle = 45,
-  power = 65,
+  power = 0,
   aiWait = 0,
   sound = false,
   audio,
@@ -75,6 +83,18 @@ let terrain,
   accumulator = 0,
   explosions = 0,
   shakeUntil = 0;
+let aiPower = 100;
+let charging = false,
+  chargeSeconds = 0,
+  chargeSource = null,
+  aimInput = 0,
+  retreat = 0,
+  fuse = 3,
+  bounce = 0.55,
+  firedPower = 0,
+  shotCount = 0,
+  lastJump = { kind: null, time: -1 },
+  jumpClock = 0;
 function flatShape(points, color, z) {
   const s = new THREE.Shape();
   points.forEach(([x, y], i) => (i ? s.lineTo(x, y) : s.moveTo(x, y)));
@@ -266,7 +286,9 @@ function createWorm(t, i, x) {
     name: names[t][i],
     hp: 100,
     x,
-    y: terrain.surface(x) + 12,
+    y:
+      Math.max(...[-16, -8, 0, 8, 16].map((dx) => terrain.surface(x + dx))) +
+      12,
     vx: 0,
     vy: 0,
     g,
@@ -281,7 +303,10 @@ function createWorm(t, i, x) {
     shadow,
     facing: t ? -1 : 1,
     label,
-    ground: true,
+    ground: false,
+    knocked: false,
+    deathPending: false,
+    drowned: false,
   };
 }
 const aimHUD = createAimOverlay(arena);
@@ -308,38 +333,12 @@ function launchPoint(w, a, kind) {
   }
   return { ...result, blocked: false };
 }
-function previewShot(w) {
-  const origin = launchPoint(w, angle, weapon);
-  const p = { ...origin.muzzle, ...launch(angle, power) };
-  const points = [screen(p.x, p.y)];
-  let impact = origin.blocked;
-  for (let i = 0; i < 1440 && !impact; i++) {
-    integrate(p, 1 / 120, weapon === "rocket" ? wind : wind * 0.25);
-    impact =
-      terrain.solid(p.x, p.y) ||
-      worms.some(
-        (other) =>
-          other.hp > 0 &&
-          (other !== w || i > 42) &&
-          Math.hypot(other.x - p.x, other.y + 5 - p.y) < 12,
-      );
-    if (i % 5 === 0 || impact) points.push(screen(p.x, p.y));
-    if (p.y < WATER || p.x < 0 || p.x > W || (weapon === "grenade" && i >= 359))
-      break;
-  }
-  return { origin, points, impact, endpoint: screen(p.x, p.y) };
-}
 function updateAimHUD() {
   const visible = phase === "aim" && !menu.open && worms[current]?.hp > 0;
   aimHUD.guide.style.display = visible ? "" : "none";
   if (visible) {
-    const result = previewShot(worms[current]);
-    const path = result.points
-      .map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-      .join(" ");
-    aimHUD.arc.setAttribute("d", path);
-    aimHUD.shadow.setAttribute("d", path);
-    const origin = screen(result.origin.pivot.x, result.origin.pivot.y);
+    const geometry = shot(worms[current]);
+    const origin = screen(geometry.pivot.x, geometry.pivot.y);
     const r = (angle * Math.PI) / 180,
       dx = (Math.cos(r) * arena.clientWidth) / W,
       dy = (-Math.sin(r) * arena.clientHeight) / H;
@@ -364,30 +363,10 @@ function updateAimHUD() {
       "transform",
       `translate(${target.x},${target.y})`,
     );
-    aimHUD.text.textContent = `${Math.round(angle)}° · ${Math.round(power)}%`;
-    const end = result.endpoint;
-    aimHUD.impact.style.display = result.impact ? "" : "none";
-    aimHUD.impact.setAttribute("transform", `translate(${end.x},${end.y})`);
-    aimHUD.caption.setAttribute(
-      "x",
-      Math.max(55, Math.min(arena.clientWidth - 55, end.x)),
-    );
-    aimHUD.caption.setAttribute(
-      "y",
-      Math.max(18, Math.min(arena.clientHeight - 15, end.y + 25)),
-    );
-    aimHUD.caption.textContent = result.impact
-      ? weapon === "rocket"
-        ? "IMPACT"
-        : "FIRST BOUNCE"
-      : "";
-    lastAim = {
-      ...result.origin,
-      reticle: target,
-      angle,
-      power,
-      impact: result.impact,
-    };
+    aimHUD.text.textContent = charging
+      ? `${Math.round(power)}%`
+      : `${Math.round(angle)}°`;
+    lastAim = { ...geometry, reticle: target, angle };
   }
   aimHUD.tag.hidden = !projectile;
   if (projectile) {
@@ -398,7 +377,7 @@ function updateAimHUD() {
       Math.max(14, Math.min(arena.clientHeight - 25, p.y - 22)) + "px";
     aimHUD.tag.textContent =
       projectile.kind === "grenade"
-        ? `✹ ${Math.max(0, 3 - projectile.age).toFixed(1)}s`
+        ? `✹ ${Math.max(0, projectile.fuse - projectile.age).toFixed(1)}s`
         : p.y < 0
           ? "↑ ROCKET"
           : "➶";
@@ -438,6 +417,16 @@ function tone(freq, duration = 0.1, type = "sine") {
   o.stop(audio.currentTime + duration);
 }
 function reset() {
+  cancelCharge();
+  move = 0;
+  aimInput = 0;
+  retreat = 0;
+  shotCount = 0;
+  fuse = 3;
+  bounce = 0.55;
+  $("#fuse").value = "3";
+  $("#bounce").value = "0.55";
+  lastJump = { kind: null, time: -1 };
   for (const w of worms) {
     dispose(w.g);
     w.label.remove();
@@ -452,6 +441,9 @@ function reset() {
     ...names[0].map((_, i) => createWorm(0, i, [180, 340, 490][i])),
     ...names[1].map((_, i) => createWorm(1, i, [710, 860, 1020][i])),
   ];
+  for (let i = 0; i < 240; i++)
+    for (const w of worms) stepWorm(w, terrain, 1 / 120);
+  for (const w of worms) w.g.position.set(w.x, w.y, 15);
   team = 0;
   round = 1;
   turnCount = [0, 0];
@@ -470,15 +462,23 @@ function dispose(obj) {
   });
 }
 function beginTurn() {
-  const living = worms.filter((w) => w.hp > 0 && w.team === team);
-  if (!living.length) return endGame();
-  const active = living[turnCount[team]++ % living.length];
+  const roster = worms.filter((w) => w.team === team);
+  if (!roster.some((w) => w.hp > 0)) return endGame();
+  let next = turnCount[team] % roster.length;
+  while (roster[next].hp <= 0) next = (next + 1) % roster.length;
+  const active = roster[next];
+  turnCount[team] = (next + 1) % roster.length;
   current = worms.indexOf(active);
   phase = "aim";
   time = 45;
   wind = (Math.random() - 0.5) * 28;
   angle = team ? 135 : 45;
-  power = 65;
+  active.facing = team ? -1 : 1;
+  cancelCharge();
+  power = 0;
+  retreat = 0;
+  aimInput = 0;
+  firedPower = 0;
   move = 0;
   aiWait = 1.6;
   updateSliders();
@@ -514,22 +514,112 @@ function updateUI() {
     w.label.style.setProperty("--hp", w.hp + "%");
     w.label.classList.toggle("active", i === current && phase !== "over");
   }
-  const disabled = !canAct();
-  $("#fire").disabled = disabled;
-  $("#angle").disabled = disabled;
-  $("#power").disabled = disabled;
+  $("#fire").disabled =
+    !canAct() || !worms[current]?.ground || worms[current]?.knocked;
+  $("#angle").disabled = !canAct() || charging;
   document
-    .querySelectorAll("[data-weapon],[data-move],#jump")
-    .forEach((b) => (b.disabled = disabled));
+    .querySelectorAll("[data-weapon],#fuse,#bounce")
+    .forEach((b) => (b.disabled = !canAct() || charging));
+  document
+    .querySelectorAll("[data-move],#jump,#backflip")
+    .forEach((b) => (b.disabled = !canMove()));
 }
 function canAct() {
-  return phase === "aim" && !(team === 1 && mode === "ai") && !menu.open;
+  return (
+    phase === "aim" &&
+    !(team === 1 && mode === "ai") &&
+    !menu.open &&
+    worms[current]?.hp > 0
+  );
+}
+function canMove() {
+  return (
+    (canAct() ||
+      (retreat > 0 && !(team === 1 && mode === "ai") && !menu.open)) &&
+    !charging &&
+    worms[current]?.hp > 0 &&
+    !worms[current]?.knocked
+  );
 }
 function updateSliders() {
   $("#angle").value = angle;
-  $("#power").value = power;
   $("#angle-value").textContent = Math.round(angle) + "°";
-  $("#power-value").textContent = Math.round(power) + "%";
+  $("#power-meter").value = power;
+  $("#power-value").textContent = charging
+    ? Math.round(power) + "%"
+    : firedPower
+      ? `LAST ${Math.round(firedPower)}%`
+      : "HOLD TO CHARGE";
+  $("#fire").classList.toggle("charging", charging);
+  $("#fire-label").textContent = charging ? "RELEASE TO FIRE" : "HOLD TO FIRE";
+  $("#fire").style.setProperty("--charge", power + "%");
+}
+function startCharge(source) {
+  if (charging || !canAct() || !worms[current].ground || worms[current].knocked)
+    return;
+  charging = true;
+  chargeSeconds = 0;
+  power = 0;
+  move = 0;
+  aimInput = 0;
+  chargeSource = source;
+  updateSliders();
+  updateUI();
+}
+function cancelCharge() {
+  if (chargeSource === "ai") aiWait = 0.3;
+  charging = false;
+  chargeSeconds = 0;
+  power = 0;
+  chargeSource = null;
+}
+function releaseCharge(source) {
+  if (!charging || source !== chargeSource) return;
+  charging = false;
+  chargeSource = null;
+  if (canAct()) fire();
+  updateSliders();
+  updateUI();
+}
+function turnFacing(direction) {
+  const w = worms[current];
+  if (!w || w.facing === direction) return;
+  w.facing = direction;
+  angle = 180 - angle;
+  updateSliders();
+}
+function setMove(direction) {
+  if (canMove()) {
+    move = direction;
+    turnFacing(direction);
+  }
+}
+function adjustAim(direction, dt) {
+  if (!canAct() || charging) return;
+  const facing = worms[current].facing,
+    elevation = facing > 0 ? angle : 180 - angle;
+  const next = Math.max(-85, Math.min(90, elevation + direction * 65 * dt));
+  angle = facing > 0 ? next : 180 - next;
+  updateSliders();
+}
+function injure(w, damage) {
+  if (w.hp <= 0 || damage <= 0) return;
+  w.hp = Math.max(0, w.hp - damage);
+  w.hurt = 1.4;
+  w.hits++;
+  if (w.hp === 0) w.deathPending = true;
+  damageLabel(w, damage);
+  if (w === worms[current]) {
+    cancelCharge();
+    retreat = 0;
+    move = 0;
+    aimInput = 0;
+    if (phase === "aim") {
+      phase = "settle";
+      shotWait = 0;
+    }
+  }
+  updateUI();
 }
 function fire() {
   if (phase !== "aim") return;
@@ -537,10 +627,19 @@ function fire() {
     origin = launchPoint(w, angle, weapon),
     v = launch(angle, power);
   w.recoil = 0.3;
+  charging = false;
+  chargeSource = null;
+  firedPower = power;
+  shotCount++;
+  retreat = 3;
   projectile = {
     ...origin.muzzle,
     ...v,
     age: 0,
+    fuse,
+    bounce,
+    owner: current,
+    sleeping: false,
     kind: weapon,
     mesh: createProjectile(weapon),
     trail: [],
@@ -553,14 +652,14 @@ function fire() {
   $("#status").textContent =
     weapon === "rocket"
       ? "Rocket away. Incoming!"
-      : "Grenade thrown. Three-second fuse.";
+      : `Grenade thrown. ${fuse}-second fuse. Retreat!`;
   move = 0;
   shotWait = 0;
   tone(550, 0.2, "triangle");
   updateUI();
 }
 function explode(x, y, kind) {
-  const radius = kind === "grenade" ? 66 : 53;
+  const radius = kind === "death" ? 28 : kind === "grenade" ? 60 : 53;
   terrain.carve(x, y, radius);
   paintTerrain();
   explosions++;
@@ -591,19 +690,21 @@ function explode(x, y, kind) {
   const reports = [];
   for (const w of worms) {
     if (w.hp <= 0) continue;
-    const d = Math.hypot(w.x - x, w.y - y);
-    if (d < radius + 40) {
-      const damage = Math.max(1, Math.round((1 - d / (radius + 40)) * 65));
-      w.hp = Math.max(0, w.hp - damage);
-      w.hurt = 1.4;
-      w.hits++;
+    const factor = blastImpulse(
+      w,
+      x,
+      y,
+      radius + 34,
+      kind === "death" ? 150 : 290,
+    );
+    if (factor > 0) {
+      const damage = Math.max(
+        1,
+        Math.round(factor * (kind === "death" ? 25 : 50)),
+      );
       w.hitDirection = Math.sign(w.x - x) || 1;
-      if (w.hp === 0) w.dying = 1.2;
+      injure(w, damage);
       reports.push(`${w.name} −${damage}${w.hp === 0 ? " · KO" : ""}`);
-      w.vx = ((w.x - x) / Math.max(d, 1)) * 170;
-      w.vy = 100 + (1 - d / (radius + 40)) * 110;
-      w.ground = false;
-      damageLabel(w, damage);
     }
   }
   $("#status").textContent = reports.length
@@ -654,15 +755,24 @@ function nextTurn() {
   if (team === 0) round++;
   beginTurn();
 }
-function jump() {
-  if (!canAct()) return;
+function jump(kind = "forward") {
+  if (!canMove()) return;
   const w = worms[current];
-  if (w.ground) {
-    w.vy = 145;
-    w.vx = move * 75;
-    w.ground = false;
-    tone(300, 0.1);
+  const double = lastJump.kind === kind && jumpClock - lastJump.time < 0.28;
+  if (!w.ground && !double) return;
+  if (kind === "backflip" || (kind === "up" && double)) {
+    w.vy = 190;
+    w.vx = -w.facing * 50;
+  } else if (kind === "up") {
+    w.vy = 155;
+    w.vx = 0;
+  } else {
+    w.vy = 140;
+    w.vx = w.facing * (double ? -65 : 65);
   }
+  w.ground = false;
+  lastJump = { kind: double ? null : kind, time: jumpClock };
+  tone(300, 0.1);
 }
 function aiShoot() {
   const w = worms[current],
@@ -684,83 +794,98 @@ function aiShoot() {
       }
     }
   angle = best.angle + (Math.random() - 0.5) * 3;
-  power = best.power;
+  aiPower = best.power;
+  power = 0;
+  charging = true;
+  chargeSource = "ai";
+  chargeSeconds = 0;
+  aiWait = Infinity;
+  w.facing = Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1;
   weapon = "rocket";
   setWeapon(weapon);
   updateSliders();
-  fire();
 }
 function step(dt) {
   if (menu.open || document.hidden) return;
+  jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
+  if (retreat > 0) {
+    retreat = Math.max(0, retreat - dt);
+    if (retreat === 0) {
+      move = 0;
+      updateUI();
+    }
+  }
   if (phase === "aim") {
     time -= dt;
     if (time <= 0) {
+      cancelCharge();
       phase = "settle";
-      shotWait = 1.4;
+      shotWait = 0;
       move = 0;
+      aimInput = 0;
+      updateUI();
     }
-    if (team === 1 && mode === "ai") {
-      aiWait -= dt;
-      if (aiWait <= 0 && phase === "aim") aiShoot();
-    }
-    if (canAct() && move) {
-      const w = worms[current],
-        nx = w.x + move * 48 * dt;
-      if (nx > 12 && nx < W - 12) {
-        let stepY = 0;
-        while (stepY < 12 && terrain.solid(nx, w.y - 8 + stepY)) stepY++;
-        if (stepY < 12) {
-          w.x = nx;
-          w.y += stepY;
-        }
+    if (charging) {
+      chargeSeconds += dt;
+      power = chargePower(chargeSeconds);
+      updateSliders();
+      if (power >= (chargeSource === "ai" ? aiPower : 100)) {
+        charging = false;
+        chargeSource = null;
+        fire();
       }
     }
+    if (aimInput) adjustAim(aimInput, dt);
+    if (team === 1 && mode === "ai") {
+      aiWait -= dt;
+      if (aiWait <= 0 && phase === "aim" && worms[current].ground) aiShoot();
+    }
   }
+  if (canMove() && move) walkWorm(worms[current], terrain, move, dt);
   for (const w of worms) {
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
-    w.dying = Math.max(0, w.dying - dt);
-    w.g.visible = w.hp > 0 || w.dying > 0;
-    if (w.hp <= 0) continue;
-    w.vy -= 145 * dt;
-    let nx = Math.max(8, Math.min(W - 8, w.x + w.vx * dt));
-    if (!terrain.solid(nx, w.y)) w.x = nx;
-    else w.vx *= -0.2;
-    w.vx *= Math.pow(0.15, dt);
-    let ny = w.y + w.vy * dt;
-    w.ground = false;
-    if (w.vy <= 0 && terrain.solid(w.x, ny - 10)) {
-      while (terrain.solid(w.x, ny - 10) && ny < H) ny += 1;
-      w.vy = 0;
-      w.ground = true;
+    if (w.dying > 0) {
+      w.dying = Math.max(0, w.dying - dt);
+      if (w.dying === 0 && w.deathPending) {
+        w.deathPending = false;
+        explode(w.x, w.y + 6, "death");
+      }
     }
-    if (w.vy <= 0 && terrain.solid(w.x, ny - 11)) {
-      w.ground = true;
-      w.vy = 0;
-    }
-    w.y = ny;
-    if (w.y < WATER) {
+    w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;
+    if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
+    const result = stepWorm(w, terrain, dt);
+    if (result.fallDamage) injure(w, result.fallDamage);
+    if (w.y - 10 < WATER || w.x < -30 || w.x > W + 30) {
       w.hp = 0;
-      w.dying = 1;
-      w.hurt = 1;
+      w.deathPending = false;
+      w.drowned = true;
+      w.dying = 0.65;
+      w.hurt = 0.65;
       impactFlash(w.x, WATER);
       tone(150, 0.3);
       damageLabel(w, "SPLASH");
-      if (w === worms[current] && phase === "aim") {
-        phase = "settle";
-        shotWait = 0;
+      if (w === worms[current]) {
+        cancelCharge();
+        retreat = 0;
         move = 0;
+        if (phase === "aim") {
+          phase = "settle";
+          shotWait = 0;
+        }
       }
       updateUI();
-    }
+    } else if (w.deathPending && w.ground && Math.abs(w.vx) < 2) w.dying = 0.8;
     w.g.position.set(w.x, w.y, 15);
   }
+  if (phase === "aim") updateUI();
   if (projectile) {
     const p = projectile;
     const ox = p.x,
       oy = p.y;
-    integrate(p, dt, p.kind === "rocket" ? wind : wind * 0.25);
+    if (p.sleeping && !terrain.solid(p.x, p.y - 4)) p.sleeping = false;
+    if (!p.sleeping) integrate(p, dt, p.kind === "rocket" ? wind : 0);
     p.age += dt;
     let hit = p.blocked;
     p.blocked = false;
@@ -773,9 +898,7 @@ function step(dt) {
         terrain.solid(x, y) ||
         worms.some(
           (w, i) =>
-            w.hp > 0 &&
-            (i !== current || p.age > 0.35) &&
-            Math.hypot(w.x - x, w.y + 5 - y) < 12,
+            w.hp > 0 && (i !== p.owner || p.age > 0.25) && hitsWorm(w, x, y, 3),
         )
       ) {
         p.x = x;
@@ -785,16 +908,27 @@ function step(dt) {
       }
     }
     let boom =
-      (p.kind === "rocket" && hit) || (p.kind === "grenade" && p.age >= 3);
+      (p.kind === "rocket" && hit) || (p.kind === "grenade" && p.age >= p.fuse);
     if (hit && p.kind === "grenade") {
-      if (terrain.solid(p.x, oy)) {
-        p.vx *= -0.55;
-      } else {
-        p.vy *= -0.55;
-        p.vx *= 0.72;
+      const victim = worms.find(
+        (w, i) =>
+          w.hp > 0 &&
+          (i !== p.owner || p.age > 0.25) &&
+          hitsWorm(w, p.x, p.y, 3),
+      );
+      let n = victim
+        ? { x: p.x - victim.x, y: p.y - victim.y - 17 }
+        : terrainNormal(terrain, p.x, p.y, p.vx, p.vy);
+      const l = Math.hypot(n.x, n.y) || 1;
+      n = { x: n.x / l, y: n.y / l };
+      reflectVelocity(p, n, p.bounce);
+      p.x = ox + n.x * 0.3;
+      p.y = oy + n.y * 0.3;
+      if (n.y > 0.5 && Math.hypot(p.vx, p.vy) < 16) {
+        p.vx = 0;
+        p.vy = 0;
+        p.sleeping = true;
       }
-      p.x = ox;
-      p.y = oy;
     }
     p.mesh.position.set(p.x, p.y, 40);
     p.mesh.rotation.z =
@@ -809,15 +943,21 @@ function step(dt) {
       projectile = null;
       phase = "settle";
       shotWait = 0;
+      updateUI();
     }
   }
   if (phase === "settle") {
-    shotWait += dt;
-    if (
-      shotWait > 1.6 &&
-      worms.every((w) => w.hp <= 0 || w.ground || shotWait > 5)
-    )
-      nextTurn();
+    const settled =
+      !projectile &&
+      retreat <= 0 &&
+      worms.every(
+        (w) =>
+          !w.deathPending &&
+          w.dying <= 0 &&
+          (w.hp <= 0 || (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)),
+      );
+    shotWait = settled ? shotWait + dt : 0;
+    if (shotWait > 0.7) nextTurn();
   }
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
@@ -870,10 +1010,9 @@ function frame(now) {
   for (const w of worms) {
     const size = w.visualSize || 64;
     const active = w === worms[current];
-    if (active && phase === "aim")
-      w.facing = move || (Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1);
+
     const facing = w.facing * (w.team ? -1 : 1);
-    const moving = active && move && canAct();
+    const moving = active && move && canMove() && w.ground;
     const bounce =
       menu.open || reducedMotion
         ? 0
@@ -897,22 +1036,24 @@ function frame(now) {
     w.body.material.color.setHex(
       w.hurt > 0.75 && Math.floor(w.hurt * 14) % 2 ? 0xff806c : 0xffffff,
     );
-    w.body.material.opacity = w.hp > 0 ? 1 : Math.min(1, w.dying * 1.4);
-    if (w.hp <= 0) {
+    w.body.material.opacity =
+      w.hp > 0 || (w.deathPending && !w.dying) ? 1 : Math.min(1, w.dying * 1.4);
+    if (w.hp <= 0 && w.dying > 0) {
       w.body.rotation.z += (1 - w.dying) * w.hitDirection * 1.7;
       w.body.position.y -= 20 * (1 - w.dying);
     }
     const a = active ? angle : w.facing < 0 ? 155 : 25,
       geometry = shot(w, a);
+    const correction = w.g.scale.x;
     w.rig.pivot.position.set(
-      (Math.cos((a * Math.PI) / 180) < 0 ? -1 : 1) * size * 0.09,
-      size * 0.25,
+      (geometry.pivot.x - w.x) / correction,
+      geometry.pivot.y - w.y,
       10,
     );
     w.rig.pivot.rotation.z = geometry.visualAngle;
     w.rig.pivot.scale.set(
-      size / 64,
-      ((Math.cos((a * Math.PI) / 180) < 0 ? -1 : 1) * size) / 64,
+      geometry.rigScale,
+      (Math.cos((a * Math.PI) / 180) < 0 ? -1 : 1) * geometry.rigScale,
       1,
     );
     w.rig.pivot.visible = w.hp > 0 && w.hurt < 0.75;
@@ -953,7 +1094,8 @@ function frame(now) {
   }
   updateAimHUD();
   $("#turn-banner").classList.toggle("shown", bannerTime > 0 && !menu.open);
-  $("#timer").innerHTML = `${Math.max(0, Math.ceil(time))}<small> SEC</small>`;
+  $("#timer").innerHTML =
+    `${retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time))}<small> ${retreat > 0 ? "RETREAT" : "SEC"}</small>`;
   if (now > announceUntil) $("#announcement").style.opacity = 0;
   waterLines.forEach(
     (l, i) => (l.position.x = ((i * 53 + now * 0.004) % 1250) - 25),
@@ -969,57 +1111,70 @@ function frame(now) {
 }
 function setWeapon(kind) {
   weapon = kind;
+  $("#grenade-settings").hidden = kind !== "grenade";
   document
     .querySelectorAll("[data-weapon]")
     .forEach((b) => b.classList.toggle("selected", b.dataset.weapon === kind));
 }
 $("#angle").addEventListener("input", (e) => {
+  if (!canAct() || charging) return;
   angle = +e.target.value;
+  worms[current].facing = Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1;
   updateSliders();
 });
-$("#power").addEventListener("input", (e) => {
-  power = +e.target.value;
-  updateSliders();
+$("#fire").addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  startCharge("pointer");
+  if (charging) e.currentTarget.setPointerCapture(e.pointerId);
 });
-$("#fire").onclick = () => {
-  if (canAct()) fire();
+$("#fire").addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  releaseCharge("pointer");
+});
+for (const event of ["pointercancel", "lostpointercapture"])
+  $("#fire").addEventListener(event, () => {
+    if (chargeSource === "pointer") {
+      cancelCharge();
+      updateSliders();
+      updateUI();
+    }
+  });
+$("#fire").addEventListener("contextmenu", (e) => e.preventDefault());
+$("#jump").onclick = () => jump("forward");
+$("#backflip").onclick = () => jump("backflip");
+$("#fuse").onchange = (e) => {
+  if (canAct() && !charging) fuse = +e.target.value;
 };
-$("#jump").onclick = jump;
+$("#bounce").onchange = (e) => {
+  if (canAct() && !charging) bounce = +e.target.value;
+};
 document.querySelectorAll("[data-weapon]").forEach(
   (b) =>
     (b.onclick = () => {
-      if (canAct()) setWeapon(b.dataset.weapon);
+      if (canAct() && !charging) setWeapon(b.dataset.weapon);
     }),
 );
 document.querySelectorAll("[data-move]").forEach((b) => {
   b.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    if (canAct()) {
-      move = +b.dataset.move;
-      b.setPointerCapture(e.pointerId);
-    }
+    setMove(+b.dataset.move);
+    b.setPointerCapture(e.pointerId);
   });
   for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
     b.addEventListener(event, () => (move = 0));
 });
 let aiming = false;
 function pointerAim(e) {
-  if (!canAct()) return;
+  if (!canAct() || charging) return;
   const rect = arena.getBoundingClientRect(),
     x = ((e.clientX - rect.left) / rect.width) * W,
     y = H - ((e.clientY - rect.top) / rect.height) * H,
     w = worms[current];
-  angle = Math.max(
-    -85,
-    Math.min(
-      265,
-      (() => {
-        const a = (Math.atan2(y - shot(w).pivot.y, x - w.x) * 180) / Math.PI;
-        return a < -90 ? a + 360 : a;
-      })(),
-    ),
-  );
-  power = Math.max(15, Math.min(100, Math.hypot(x - w.x, y - w.y) / 4));
+  let a =
+    (Math.atan2(y - shot(w).pivot.y, x - shot(w).pivot.x) * 180) / Math.PI;
+  if (a < -90) a += 360;
+  angle = Math.max(-85, Math.min(265, a));
+  w.facing = Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1;
   updateSliders();
 }
 arena.addEventListener("pointerdown", (e) => {
@@ -1033,39 +1188,70 @@ arena.addEventListener("pointermove", (e) => {
 for (const event of ["pointerup", "pointercancel"])
   arena.addEventListener(event, () => (aiming = false));
 window.addEventListener("keydown", (e) => {
-  if (["INPUT", "SELECT"].includes(document.activeElement.tagName) || !canAct())
+  if (menu.open) return;
+  const controlled = [
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    " ",
+    "Enter",
+    "Backspace",
+    "F1",
+    "F2",
+  ];
+  if (controlled.includes(e.key)) e.preventDefault();
+  if (e.key === " ") {
+    if (!e.repeat) startCharge("keyboard");
     return;
-  if (["ArrowLeft", "ArrowRight", "ArrowUp", " "].includes(e.key))
-    e.preventDefault();
-  if (e.key === "ArrowLeft" || e.key === "a") move = -1;
-  if (e.key === "ArrowRight" || e.key === "d") move = 1;
-  if ((e.key === "ArrowUp" || e.key === "w") && !e.repeat) jump();
-  if (e.key === " " && !e.repeat) fire();
-  if (e.key.toLowerCase() === "q") {
-    angle = Math.min(265, angle + 2);
-    updateSliders();
   }
-  if (e.key.toLowerCase() === "e") {
-    angle = Math.max(-85, angle - 2);
-    updateSliders();
+  if (e.key === "ArrowLeft" || e.key === "a") setMove(-1);
+  if (e.key === "ArrowRight" || e.key === "d") setMove(1);
+  if (e.key === "ArrowUp") aimInput = 1;
+  if (e.key === "ArrowDown") aimInput = -1;
+  if (e.key === "Enter" && !e.repeat) jump("forward");
+  if (e.key === "Backspace" && !e.repeat) jump("up");
+  if (canAct() && !charging) {
+    if (e.key === "F1") setWeapon("rocket");
+    if (e.key === "F2") setWeapon("grenade");
+    if (weapon === "grenade" && /^[1-5]$/.test(e.key)) {
+      fuse = +e.key;
+      $("#fuse").value = fuse;
+    }
+    if (weapon === "grenade" && ["+", "=", "-"].includes(e.key)) {
+      bounce = e.key === "-" ? 0.3 : 0.7;
+      $("#bounce").value = bounce;
+    }
   }
-  if (e.key === "1") setWeapon("rocket");
-  if (e.key === "2") setWeapon("grenade");
 });
 window.addEventListener("keyup", (e) => {
+  if (e.key === " ") {
+    e.preventDefault();
+    releaseCharge("keyboard");
+  }
   if (["ArrowLeft", "ArrowRight", "a", "d"].includes(e.key)) move = 0;
+  if (["ArrowUp", "ArrowDown"].includes(e.key)) aimInput = 0;
 });
-window.addEventListener("blur", () => (move = 0));
-document.addEventListener("visibilitychange", () => {
+function releaseInputs() {
   move = 0;
+  aimInput = 0;
+  cancelCharge();
+  updateSliders();
+  updateUI();
+}
+window.addEventListener("blur", releaseInputs);
+document.addEventListener("visibilitychange", () => {
+  releaseInputs();
   last = performance.now();
 });
 $("#help").onclick = () => {
+  releaseInputs();
   $(".instructions").open = true;
   menu.showModal();
   updateUI();
 };
 $("#restart").onclick = () => {
+  releaseInputs();
   $(".instructions").open = false;
   menu.showModal();
   updateUI();
@@ -1094,24 +1280,61 @@ window.siege = {
     assetsReady,
     aim: lastAim,
     phase,
+    charging,
+    power,
+    firedPower,
+    shotCount,
+    retreat,
+    fuse,
+    bounce,
+    current,
     team,
     round,
     wind,
     explosions,
     weapon,
     terrainPixels: terrain.data.reduce((a, b) => a + b, 0),
-    worms: worms.map(({ name, hp, x, y, ground, hurt, hits, recoil, rig }) => ({
-      name,
-      hp,
-      x,
-      y,
-      ground,
-      hurt,
-      hits,
-      recoil,
-      weaponRotation: rig.pivot.rotation.z,
-      pose: hurt > 0.35 ? "hurt" : recoil > 0 ? "fire" : "idle",
-    })),
-    projectile: projectile ? { x: projectile.x, y: projectile.y } : null,
+    worms: worms.map(
+      ({
+        name,
+        hp,
+        x,
+        y,
+        vx,
+        vy,
+        ground,
+        knocked,
+        hurt,
+        hits,
+        recoil,
+        rig,
+        deathPending,
+      }) => ({
+        name,
+        hp,
+        x,
+        y,
+        vx,
+        vy,
+        ground,
+        knocked,
+        deathPending,
+        hurt,
+        hits,
+        recoil,
+        weaponRotation: rig.pivot.rotation.z,
+        pose: hurt > 0.35 ? "hurt" : recoil > 0 ? "fire" : "idle",
+      }),
+    ),
+    projectile: projectile
+      ? {
+          x: projectile.x,
+          y: projectile.y,
+          vx: projectile.vx,
+          vy: projectile.vy,
+          age: projectile.age,
+          fuse: projectile.fuse,
+        }
+      : null,
   }),
 };

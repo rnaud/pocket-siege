@@ -130,7 +130,7 @@ export function createAimOverlay(arena) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.id = "aim-overlay";
   svg.setAttribute("aria-hidden", "true");
-  svg.innerHTML = `<g id="aim-guide"><path class="arc-shadow"/><path class="arc"/><g class="impact-marker"><circle r="9"/><path d="M-13 0H13M0-13V13"/></g><g id="aim-reticle"><circle class="reticle-rim" r="14"/><circle class="reticle-ring" r="10"/><path d="M-21 0H-7M7 0H21M0-21V-7M0 7V21"/><circle class="reticle-dot" r="2"/><text y="-28" text-anchor="middle"></text></g><text class="impact-caption" text-anchor="middle"></text></g><path class="projectile-trail"/>`;
+  svg.innerHTML = `<g id="aim-guide"><g id="aim-reticle"><circle class="reticle-rim" r="14"/><circle class="reticle-ring" r="10"/><path d="M-21 0H-7M7 0H21M0-21V-7M0 7V21"/><circle class="reticle-dot" r="2"/><text y="-28" text-anchor="middle"></text></g></g><path class="projectile-trail"/>`;
   arena.appendChild(svg);
   const tag = document.createElement("div");
   tag.id = "projectile-tag";
@@ -138,12 +138,8 @@ export function createAimOverlay(arena) {
   return {
     svg,
     guide: svg.querySelector("#aim-guide"),
-    arc: svg.querySelector(".arc"),
-    shadow: svg.querySelector(".arc-shadow"),
     reticle: svg.querySelector("#aim-reticle"),
     text: svg.querySelector("#aim-reticle text"),
-    impact: svg.querySelector(".impact-marker"),
-    caption: svg.querySelector(".impact-caption"),
     trail: svg.querySelector(".projectile-trail"),
     tag,
   };

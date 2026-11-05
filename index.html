@@ -85,9 +85,8 @@
             <div class="move-buttons">
               <button data-move="-1" aria-label="Move left">←</button
               ><button data-move="1" aria-label="Move right">→</button
-              ><button id="jump" aria-label="Jump">
-                ↥ <small>JUMP</small>
-              </button>
+              ><button id="jump" aria-label="Jump">↥ <small>JUMP</small></button
+              ><button id="backflip" aria-label="Backflip">↶</button>
             </div>
           </div>
           <div class="weapon-panel">
@@ -99,6 +98,25 @@
                 <span>✹</span> Grenade <small>∞</small>
               </button>
             </div>
+          </div>
+          <div id="grenade-settings" hidden>
+            <label
+              >FUSE
+              <select id="fuse" aria-label="Grenade fuse">
+                <option value="1">1s</option>
+                <option value="2">2s</option>
+                <option selected value="3">3s</option>
+                <option value="4">4s</option>
+                <option value="5">5s</option>
+              </select></label
+            ><label
+              >BOUNCE
+              <select id="bounce" aria-label="Grenade bounce">
+                <option value="0.3">Low</option>
+                <option selected value="0.55">Normal</option>
+                <option value="0.7">High</option>
+              </select></label
+            >
           </div>
           <div class="aim-panel">
             <div class="slider-label">
@@ -114,27 +132,26 @@
               aria-label="Aim angle"
             />
             <div class="slider-label">
-              <label for="power">POWER</label
-              ><output id="power-value">65%</output>
+              <label for="power-meter">POWER</label
+              ><output id="power-value">HOLD TO CHARGE</output>
             </div>
-            <input
-              id="power"
-              type="range"
-              min="15"
+            <progress
+              id="power-meter"
+              value="0"
               max="100"
-              value="65"
-              aria-label="Shot power"
-            />
+              aria-label="Shot charge"
+            ></progress>
           </div>
           <button id="fire">
-            <span>FIRE AWAY</span><span>↗</span><small>SPACE TO FIRE</small>
+            <span id="fire-label">HOLD TO FIRE</span><span>↗</span
+            ><small>HOLD SPACE · RELEASE TO SHOOT</small>
           </button>
         </div>
       </main>
       <footer>
         <span>A SMALL-SCALE WAR WITH LARGE-SCALE CONSEQUENCES.</span
         ><span
-          >← → MOVE <i>·</i> ↑ JUMP <i>·</i> DRAG TO AIM <i>·</i> SPACE
+          >← → MOVE <i>·</i> ↑ ↓ AIM <i>·</i> DRAG TO AIM <i>·</i> HOLD SPACE
           FIRE</span
         >
       </footer>
@@ -154,16 +171,20 @@
         <details class="instructions">
           <summary>FIELD MANUAL <span>Controls & weapons ↓</span></summary>
           <p>
-            <b>01 &nbsp; Get in position</b><br />Arrow keys or touch arrows to
-            move. Jump over craters.
+            <b>01 &nbsp; Get in position</b><br />Left/Right move. Enter jumps
+            forward; Backspace jumps up, double-tap it to backflip. Touch
+            buttons do the same.
           </p>
           <p>
-            <b>02 &nbsp; Line up your shot</b><br />Drag on the battlefield or
-            use the angle and power sliders. Wind bends rockets.
+            <b>02 &nbsp; Line up your shot</b><br />Up/Down aim. On touch, drag
+            to aim or use the angle slider. Judge the arc yourself; wind bends
+            rockets but not grenades.
           </p>
           <p>
-            <b>03 &nbsp; Make a mess</b><br />Rockets explode on contact.
-            Grenades bounce, then explode after 3 seconds. Water is lethal!
+            <b>03 &nbsp; Make a mess</b><br />Hold Space or the fire button to
+            charge; release to shoot. You get 3 seconds to retreat. Grenade
+            fuse: keys 1–5 or the selector. Falling can hurt you; water is
+            lethal.
           </p>
         </details>
         <label class="mode-label" for="mode">MATCH TYPE</label

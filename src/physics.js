@@ -46,7 +46,7 @@ export class Terrain {
 }
 export function launch(angle, power) {
   const r = (angle * Math.PI) / 180,
-    speed = 160 + power * 3.1;
+    speed = 18 + Math.max(0, Math.min(100, power)) * 4.5;
   return { vx: Math.cos(r) * speed, vy: Math.sin(r) * speed };
 }
 export function integrate(p, dt, wind = 0) {
@@ -56,28 +56,165 @@ export function integrate(p, dt, wind = 0) {
   p.y += p.vy * dt;
 }
 
-// Convert world-space aim to the articulated barrel's local angle. The correction
-// preserves sprite proportions on phones, so simply rotating by world angle is wrong.
+// Gameplay launch geometry is independent of viewport size. Only the rendered rig
+// is compensated for the screen's aspect ratio; rotating a phone cannot move a shot.
 export function shotGeometry(
   w,
   angle,
   correction = 1,
-  size = 64,
+  _size = 64,
   kind = "rocket",
 ) {
-  const r = (angle * Math.PI) / 180;
-  const visualAngle = Math.atan2(Math.sin(r), Math.cos(r) / correction);
-  const reach = ((kind === "rocket" ? 32 : 22) * size) / 64;
-  const pivot = {
-    x: w.x + (Math.cos(r) < 0 ? -1 : 1) * size * 0.09 * correction,
-    y: w.y + size * 0.25,
-  };
+  const r = (angle * Math.PI) / 180,
+    visualAngle = Math.atan2(Math.sin(r), Math.cos(r) / correction);
+  const reach = kind === "rocket" ? 32 : 22;
+  const pivot = { x: w.x + (Math.cos(r) < 0 ? -1 : 1) * 5.76, y: w.y + 16 };
+  const rigScale =
+    1 / Math.hypot(Math.cos(visualAngle) * correction, Math.sin(visualAngle));
   return {
     pivot,
     visualAngle,
+    rigScale,
     muzzle: {
-      x: pivot.x + Math.cos(visualAngle) * reach * correction,
-      y: pivot.y + Math.sin(visualAngle) * reach,
+      x: pivot.x + Math.cos(r) * reach,
+      y: pivot.y + Math.sin(r) * reach,
     },
   };
+}
+
+// One collision body is used for movement and projectile hits, including the head.
+export const BODY = { rx: 17, ry: 27, cy: 17 };
+const outline = Array.from({ length: 24 }, (_, i) => ({
+  x: Math.cos((i * Math.PI) / 12) * BODY.rx,
+  y: BODY.cy + Math.sin((i * Math.PI) / 12) * BODY.ry,
+}));
+export function bodyBlocked(terrain, x, y) {
+  return outline.some((p) => terrain.solid(x + p.x, y + p.y));
+}
+export function hitsWorm(w, x, y, radius = 0) {
+  return (
+    ((x - w.x) / (BODY.rx + radius)) ** 2 +
+      ((y - w.y - BODY.cy) / (BODY.ry + radius)) ** 2 <=
+    1
+  );
+}
+export function blastImpulse(w, x, y, radius, strength = 270) {
+  const dx = w.x - x,
+    dy = w.y + BODY.cy - y,
+    d = Math.hypot(dx, dy);
+  if (d >= radius) return 0;
+  const factor = 1 - d / radius,
+    nx = d > 0.001 ? dx / d : 0,
+    ny = d > 0.001 ? dy / d : 1;
+  w.vx += nx * strength * factor;
+  w.vy += ny * strength * factor;
+  w.ground = false;
+  w.knocked = true;
+  return factor;
+}
+export function walkWorm(w, terrain, direction, dt) {
+  if (!w.ground || w.knocked) return false;
+  const x = w.x + direction * 42 * dt;
+  for (let rise = 0; rise <= 5; rise++) {
+    if (!bodyBlocked(terrain, x, w.y + rise)) {
+      w.x = x;
+      w.y += rise;
+      return true;
+    }
+  }
+  return false;
+}
+function approachZero(value, amount) {
+  return Math.sign(value) * Math.max(0, Math.abs(value) - amount);
+}
+export function stepWorm(w, terrain, dt) {
+  const wasGround = w.ground;
+  const supported = bodyBlocked(terrain, w.x, w.y - 1);
+  if (w.ground && supported && w.vy <= 0) {
+    w.vy = 0;
+    w.vx = approachZero(w.vx, 160 * dt);
+  } else {
+    w.ground = false;
+    w.vy -= GRAVITY * dt;
+  }
+  let landed = false,
+    fallDamage = 0;
+  // Sweep at subpixel-to-two-pixel intervals so fast knockback cannot tunnel.
+  const count = Math.max(
+    1,
+    Math.ceil((Math.max(Math.abs(w.vx), Math.abs(w.vy)) * dt) / 1.5),
+  );
+  for (let i = 0; i < count; i++) {
+    const h = dt / count,
+      nx = w.x + w.vx * h;
+    if (!bodyBlocked(terrain, nx, w.y)) w.x = nx;
+    else {
+      // Stop at the wall; reflected velocity is retained for a real rebound.
+      w.vx = w.knocked ? -w.vx * 0.32 : 0;
+      if (Math.abs(w.vx) < 3) w.vx = 0;
+    }
+    const ny = w.y + w.vy * h;
+    if (!bodyBlocked(terrain, w.x, ny)) {
+      w.y = ny;
+    } else if (w.vy < 0) {
+      const speed = -w.vy;
+      landed = true;
+      if (!wasGround && speed > 185)
+        fallDamage = Math.max(
+          fallDamage,
+          Math.min(50, Math.floor((speed - 185) * 0.18)),
+        );
+      if (w.knocked && speed > 85) {
+        w.vy = speed * 0.26;
+        w.vx *= 0.72;
+        w.ground = false;
+      } else {
+        w.vy = 0;
+        w.ground = true;
+      }
+    } else {
+      w.vy = -Math.abs(w.vy) * 0.25;
+    }
+  }
+  if (w.ground && !bodyBlocked(terrain, w.x, w.y - 1)) w.ground = false;
+  if (w.ground && Math.abs(w.vx) < 2) {
+    w.vx = 0;
+    w.knocked = false;
+  }
+  return { landed, fallDamage };
+}
+export function terrainNormal(terrain, x, y, vx, vy, radius = 4) {
+  let nx = 0,
+    ny = 0;
+  for (let i = 0; i < 16; i++) {
+    const a = (i * Math.PI) / 8,
+      dx = Math.cos(a),
+      dy = Math.sin(a);
+    if (terrain.solid(x + dx * radius, y + dy * radius)) {
+      nx -= dx;
+      ny -= dy;
+    }
+  }
+  let length = Math.hypot(nx, ny);
+  if (length < 0.001) {
+    length = Math.hypot(vx, vy) || 1;
+    return { x: -vx / length, y: -vy / length };
+  }
+  return { x: nx / length, y: ny / length };
+}
+export function reflectVelocity(p, n, restitution = 0.55) {
+  const dot = p.vx * n.x + p.vy * n.y;
+  if (dot < 0) {
+    p.vx -= (1 + restitution) * dot * n.x;
+    p.vy -= (1 + restitution) * dot * n.y;
+  }
+  // Contact friction, rather than arbitrary drag while flying.
+  const tx = -n.y,
+    ty = n.x,
+    tangent = (p.vx * tx + p.vy * ty) * 0.15;
+  p.vx -= tx * tangent;
+  p.vy -= ty * tangent;
+}
+export function chargePower(seconds) {
+  return Math.min(100, Math.max(0, (seconds / 2) * 100));
 }

@@ -8,12 +8,12 @@ A Worms-inspired, turn-based artillery game built with Three.js. Original genera
 
 Pit Moss Company against Coral Crew on a destructible floating island. Play solo against the computer or choose local pass-and-play. Each squad has three worms; the last squad standing wins.
 
-- **Move:** left/right arrows, A/D, or touch buttons
-- **Jump:** up arrow, W, or Jump
-- **Aim:** drag on the battlefield or use the angle and power sliders; Q/E fine-tune the angle. Aim up or down in either direction.
-- **Fire:** Space or Fire Away
-- **Weapons:** Bazooka explodes on contact; grenades bounce and have a three-second fuse. Select with the buttons or 1/2.
-- Wind affects projectiles; water eliminates worms. Each turn lasts 45 seconds.
+- **Move:** left/right arrows, A/D, or touch buttons.
+- **Aim:** Up/Down arrows, drag on the battlefield, or the angle slider. No predicted trajectory is shown.
+- **Fire:** hold Space (or the touch fire button) to build power; release to shoot. Full charge fires automatically after two seconds.
+- **Jump:** Enter jumps forward; double Enter jumps backward. Backspace jumps vertically; double Backspace backflips. Touch has Jump and Backflip buttons.
+- **Weapons:** F1 selects bazooka; F2 selects grenade. Grenade fuse: keys 1–5; bounce: +/−, or use the touch selectors.
+- Wind affects bazookas, not grenades. Water eliminates worms. Turns last 45 seconds, with three seconds to retreat after firing.
 - Sound is optional; use the music-note button. Help pauses the match.
 
 Touch layouts support portrait and landscape, including iPhone Safari. No install or account is required. This is a focused local artillery game, not a recreation of every Worms Armageddon feature; there is no online multiplayer.
@@ -57,6 +57,8 @@ The original background and two transparent soldier illustrations were created w
 
 ## Combat feedback
 
-The crosshair shows barrel direction; the dotted trajectory previews the shot under current wind. The impact marker shows a rocket collision or a grenade’s first bounce, not its final explosion. Weapons and hands rotate independently of the illustrated soldier, and shots originate at the visible muzzle. The same projection-aware calculation drives aiming and firing on desktop and mobile.
+The crosshair shows aiming direction, without a future trajectory or impact prediction. Weapons and hands rotate independently of the illustrated soldier, and shots originate at the visible muzzle. Launch physics remain the same across desktop and mobile layouts.
 
-Hits trigger an illustrated hurt face, flinch, brief color flash, knockback, orbiting stun stars, damage numbers and health-bar loss. Knockouts fade and tumble. Firing has recoil, a muzzle flash and a projectile trail; grenades show their remaining fuse. Help and a hidden browser tab pause simulation.
+Hits trigger an illustrated hurt face, flinch, brief color flash, radial knockback, stun stars, damage numbers and health-bar loss. Airborne worms retain horizontal momentum and collide with walls, ceilings and ground. Hard falls cause damage. Turns wait for bodies and death explosions to settle. Firing has recoil, a muzzle flash and a trail behind the actual projectile; grenades show their remaining fuse. Help and a hidden browser tab pause simulation.
+
+See [the gameplay audit](GAMEPLAY-AUDIT.md) for corrected behavior, validation, and remaining differences from Worms Armageddon.

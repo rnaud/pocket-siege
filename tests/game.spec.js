@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { Terrain } from "../src/physics.js";
+async function chargeShot(page, milliseconds = 600) {
+  await expect(page.locator("#fire")).toBeEnabled();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(milliseconds);
+  await page.keyboard.up("Space");
+}
 test("terrain craters remove solid ground and preserve distant terrain", () => {
   const t = new Terrain(42),
     x = 400,
@@ -30,9 +36,8 @@ test("play a full destructive turn with responsive controls", async ({
     ),
   ).toBe(true);
   const before = await page.evaluate(() => window.siege.getState());
-  await page.locator("#angle").fill("90");
-  await page.locator("#power").fill("15");
-  await page.locator("#fire").click();
+  await page.locator("#angle").fill("-60");
+  await chargeShot(page);
   await expect
     .poll(async () => page.evaluate(() => window.siege.getState().team), {
       timeout: 20000,
@@ -47,8 +52,7 @@ test("play a full destructive turn with responsive controls", async ({
   });
   await page.locator('[data-weapon="grenade"]').click();
   await page.locator("#angle").fill("90");
-  await page.locator("#power").fill("15");
-  await page.locator("#fire").click();
+  await chargeShot(page);
   await expect
     .poll(async () => page.evaluate(() => window.siege.getState().team), {
       timeout: 20000,
@@ -63,8 +67,7 @@ test("computer takes its turn and returns control", async ({ page }) => {
     .toBe(true);
   await page.locator("#start").click();
   await page.locator("#angle").fill("90");
-  await page.locator("#power").fill("15");
-  await page.locator("#fire").click();
+  await chargeShot(page);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
       timeout: 18000,
@@ -218,8 +221,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
     path: `test-results/${info.project.name}-aim-down.png`,
     fullPage: true,
   });
-  await page.locator("#power").fill("15");
-  await page.locator("#fire").click();
+  await chargeShot(page);
   await expect(page.locator("#aim-guide")).toBeHidden();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().worms[0].pose), {
@@ -237,7 +239,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
   expect(state.worms[0].hits).toBeGreaterThan(0);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
-      timeout: 12000,
+      timeout: 20000,
     })
     .toBe(1);
   await expect(page.locator("#aim-reticle")).toBeVisible();
@@ -251,8 +253,7 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
   await page.locator("#start").click();
   await page.locator('[data-weapon="grenade"]').click();
   await page.locator("#angle").fill("90");
-  await page.locator("#power").fill("15");
-  await page.locator("#fire").click();
+  await chargeShot(page);
   await expect(page.locator("#projectile-tag")).toContainText(/\d\.\ds/);
   await expect(page.locator('[data-weapon="rocket"]')).toBeDisabled();
   await page.locator("#help").click();
@@ -267,4 +268,110 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
       timeout: 15000,
     })
     .toBe(1);
+});
+
+test("Space charges until release, arrows only aim, and no shot prediction exists", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator("#fire")).toBeEnabled();
+  await expect(page.locator("#power")).toHaveCount(0);
+  await expect(
+    page.locator(".arc,.arc-shadow,.impact-marker,.impact-caption"),
+  ).toHaveCount(0);
+  await page.locator("#angle").fill("45");
+  const y = await page.evaluate(() => window.siege.getState().worms[0].y);
+  await page.keyboard.down("ArrowUp");
+  await page.waitForTimeout(200);
+  await page.keyboard.up("ArrowUp");
+  expect(Number(await page.locator("#angle").inputValue())).toBeGreaterThan(45);
+  expect(
+    Math.abs(
+      (await page.evaluate(() => window.siege.getState().worms[0].y)) - y,
+    ),
+  ).toBeLessThan(2);
+  await page.keyboard.down("ArrowDown");
+  await page.waitForTimeout(200);
+  await page.keyboard.up("ArrowDown");
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(350);
+  const held = await page.evaluate(() => window.siege.getState());
+  expect(held.charging).toBe(true);
+  expect(held.shotCount).toBe(0);
+  expect(held.projectile).toBeNull();
+  expect(held.power).toBeGreaterThan(10);
+  await page.waitForTimeout(300);
+  expect(
+    await page.evaluate(() => window.siege.getState().power),
+  ).toBeGreaterThan(held.power + 5);
+  await page.keyboard.up("Space");
+  expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
+  expect(
+    await page.evaluate(() => window.siege.getState().firedPower),
+  ).toBeGreaterThan(25);
+});
+
+test("holding fire caps at one full-power shot and canceled input does not shoot", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator("#fire")).toBeEnabled();
+  const b = page.locator("#fire");
+  await b.scrollIntoViewIfNeeded();
+  const rect = await b.boundingBox();
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => window.siege.getState().charging)).toBe(
+    true,
+  );
+  await page.dispatchEvent("#fire", "pointercancel");
+  await page.mouse.up();
+  expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(0);
+  await page.keyboard.down("Space");
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().shotCount), {
+      timeout: 5000,
+    })
+    .toBe(1);
+  expect(await page.evaluate(() => window.siege.getState().firedPower)).toBe(
+    100,
+  );
+  await page.keyboard.up("Space");
+  expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
+});
+
+test("grenade fuse selection and retreat movement work without granting another shot", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator("#fire")).toBeEnabled();
+  await page.locator('[data-weapon="grenade"]').click();
+  await page.keyboard.press("5");
+  await page.keyboard.press("-");
+  expect(await page.evaluate(() => window.siege.getState().fuse)).toBe(5);
+  expect(await page.locator("#bounce").inputValue()).toBe("0.3");
+  await page.locator("#angle").fill("90");
+  await chargeShot(page, 1200);
+  await expect(page.locator("#projectile-tag")).toContainText(/4\.\ds/);
+  const before = await page.evaluate(() => window.siege.getState().worms[0].x);
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(350);
+  await page.keyboard.up("ArrowRight");
+  expect(
+    await page.evaluate(() => window.siege.getState().worms[0].x),
+  ).toBeGreaterThan(before + 3);
+  await page.keyboard.press("Space");
+  expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().retreat), {
+      timeout: 5000,
+    })
+    .toBe(0);
 });
