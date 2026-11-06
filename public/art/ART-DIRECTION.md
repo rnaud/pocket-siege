@@ -11,7 +11,7 @@ The game now uses a tactile **cut-paper diorama** direction instead of the earli
 
 ## Generation note
 
-The supplied OpenAI key was valid but returned `credit_balance_exhausted` for image generation. This pass was generated with the available **Gemini 3.1 Flash Image** key. The prompts below are provider-neutral and can be rerun with OpenAI `gpt-image-1.5` once image credits are added. Sprites were generated on a flat `#ff00ff` chroma matte, keyed with a magenta/green score, edge-decontaminated, alpha-eroded one pixel, trimmed and normalised to WebP.
+The final pass was generated with **OpenAI `gpt-image-2.6-flare`** at high quality. Character/prop sprites and the emblem were generated on true transparent backgrounds; the backdrop and paper texture are opaque. An earlier Gemini fallback was replaced by this OpenAI pass. Sprites were alpha-thresholded to remove the generated soft cast shadow, trimmed, normalised and saved as WebP.
 
 ## Files
 

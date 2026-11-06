@@ -72,7 +72,7 @@ MIT. Worms and Worms Armageddon are trademarks of their respective owners. This 
 
 The current **Paper-Cut Expedition** pass uses layered construction paper, screenprint grain, ink outlines and a cream/teal/moss/coral palette. It replaces the earlier gouache jungle with a paper-cut backdrop and emblem, new body and hurt frames, full portraits, five weapon cards, a crate sprite, paper-grain UI surfaces and a matching OG card. Assets and exact prompts are in [`public/art/ART-DIRECTION.md`](public/art/ART-DIRECTION.md).
 
-OpenAI `gpt-image-1.5` was attempted first but the supplied key had no image credits. The pass was generated with Gemini 3.1 Flash Image; the prompts are provider-neutral and can be rerun with OpenAI once image credits are available. The share card, icons and favicon are composed locally by `scripts/make-brand-assets.py`. Soldier sprites breathe, bob when walking, and face the aiming direction; the terrain is paper strata with a cream cut rim, stone flecks and chartreuse grass.
+The final art pass was generated with **OpenAI `gpt-image-2.6-flare`** at high quality: transparent character, hurt, portrait, weapon, crate and emblem sprites, plus an opaque paper backdrop and texture. The prompts are documented and provider-neutral. The share card, icons and favicon are composed locally by `scripts/make-brand-assets.py`. Soldier sprites breathe, bob when walking, and face the aiming direction; the terrain is paper strata with a cream cut rim, stone flecks and chartreuse grass.
 
 ## Combat feedback
 
