@@ -1281,7 +1281,7 @@ function stepJetpack(w, dt) {
     py = w.y;
   w.x = Math.max(12, Math.min(W - 12, w.x + w.vx * dt));
   w.y = Math.max(12, Math.min(H, w.y + w.vy * dt));
-  if (terrain.solid(w.x, w.y - 8)) {
+  if (terrain.solid(w.x, w.y + 12)) {
     w.x = px;
     w.y = py;
     w.vx = 0;
@@ -1393,7 +1393,7 @@ function stepRope(w, dt) {
   w.ground = false;
   w.moving = Boolean(move);
   w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
-  if (terrain.solid(w.x, w.y - 8)) {
+  if (terrain.solid(w.x, w.y + 12)) {
     w.x = px;
     w.y = py;
     stopRope();
