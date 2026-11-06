@@ -80,4 +80,4 @@ The crosshair shows aiming direction, without a future trajectory or impact pred
 
 Hits trigger an illustrated hurt face, flinch, brief color flash, radial knockback with a little lift, dust trails, directional damage numbers, a short hit-stop, a slow-motion beat on a KO, and health-bar loss. Airborne worms retain horizontal momentum and collide with walls, ceilings and ground. Hard falls cause damage. Turns wait for bodies and death explosions to settle. Firing has recoil, a muzzle flash and a trail behind the actual projectile; grenades show their remaining fuse. The active worm’s label is highlighted with a pointer, labels stay below the HUD strip and shift away from the aim reticle, and help or a hidden tab pauses simulation.
 
-See [the gameplay audit](GAMEPLAY-AUDIT.md) for corrected behavior, validation, and remaining differences from Worms Armageddon.
+See [the gameplay audit](GAMEPLAY-AUDIT.md) for corrected behavior and validation, and [the Worms mechanics research](MECHANICS-RESEARCH.md) for a sourced gap analysis and prioritized roadmap.
