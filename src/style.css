@@ -1542,7 +1542,7 @@ dialog h1 {
   }
 }
 /* Short viewports scroll the menu, but the primary action stays reachable. */
-@media (max-height: 820px) {
+@media (max-height: 1020px) {
   #start {
     position: sticky;
     bottom: 0;
@@ -2182,5 +2182,258 @@ select:focus-visible {
   }
   .worm-label strong {
     font-size: 10px;
+  }
+}
+
+/* Turn economy: worm selection, skip and pace controls. */
+.move-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.mini-button {
+  background: #f7ecd6;
+  color: var(--ink);
+  border: 1px solid #17383b88;
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 7px;
+  line-height: 1.1;
+  letter-spacing: 0.4px;
+  font-weight: 800;
+  box-shadow: 1px 1px 0 #17383b55;
+}
+.mini-button:hover:not(:disabled) {
+  background: var(--lime);
+  filter: none;
+}
+.mini-button[hidden] {
+  display: none;
+}
+.pace-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.danger-link {
+  display: block;
+  margin: 14px auto 0;
+  border: 0;
+  background: transparent;
+  color: #8e4b3e;
+  font-size: 8px;
+  letter-spacing: 1px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.danger-link:hover {
+  color: var(--coral);
+}
+#surrender {
+  margin-bottom: 2px;
+}
+@media (max-width: 700px) {
+  .mini-button {
+    padding: 2px 4px;
+    font-size: 6px;
+  }
+  .pace-row {
+    gap: 8px;
+  }
+}
+
+/* Field kit utilities. */
+.utilities-panel {
+  position: absolute;
+  left: 25px;
+  bottom: calc(100% + 10px);
+  z-index: 8;
+  width: min(520px, calc(100vw - 50px));
+  padding: 10px;
+  background-color: var(--paper);
+  background-image: url("/art/paper-grain.webp");
+  background-size: 420px 420px;
+  background-blend-mode: multiply;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 5px 5px 0 #17383b88;
+}
+.utilities-panel[hidden] {
+  display: none;
+}
+.utilities-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+.utilities-head small {
+  color: #5b7368;
+  font-size: 7px;
+  letter-spacing: 0.3px;
+}
+.utilities-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.utilities-grid button {
+  height: 42px;
+  padding: 0 7px;
+  font-size: 9px;
+  background: var(--paper-light);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #17383b55;
+}
+.utilities-grid button span {
+  font-size: 18px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.utilities-grid button small {
+  float: right;
+  font-size: 8px;
+  color: #4f6a5d;
+}
+.utilities-grid button:hover:not(:disabled),
+.utilities-grid button.selected {
+  background: var(--lime);
+  filter: none;
+}
+.utilities-grid button:disabled {
+  opacity: 0.35;
+}
+.utility-status {
+  min-height: 10px;
+  margin-top: 7px;
+  color: #4f6b5d;
+  font-size: 8px;
+  letter-spacing: 0.3px;
+}
+#utilities-toggle {
+  white-space: nowrap;
+}
+@media (max-width: 700px) {
+  .utilities-panel {
+    left: 13px;
+    right: 13px;
+    width: auto;
+    bottom: calc(100% + 8px);
+  }
+  .utilities-grid button {
+    height: 38px;
+    font-size: 8px;
+  }
+  .utilities-head small {
+    display: none;
+  }
+}
+.worm-label.frozen {
+  filter: saturate(0.55) brightness(0.9);
+  box-shadow:
+    0 0 0 2px #a9d8e6aa,
+    2px 2px 0 #17383b55;
+}
+
+/* Special weapon tray. */
+.loadout-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.special-weapons {
+  position: absolute;
+  right: 25px;
+  bottom: calc(100% + 10px);
+  z-index: 8;
+  width: min(560px, calc(100vw - 50px));
+  padding: 10px;
+  background-color: var(--paper);
+  background-image: url("/art/paper-grain.webp");
+  background-size: 420px 420px;
+  background-blend-mode: multiply;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 5px 5px 0 #17383b88;
+}
+.special-weapons[hidden] {
+  display: none;
+}
+.special-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+.special-head small {
+  color: #5b7368;
+  font-size: 6px;
+  letter-spacing: 0.3px;
+  text-align: right;
+}
+.special-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.special-grid button {
+  height: 40px;
+  padding: 0 6px;
+  font-size: 8px;
+  background: var(--paper-light);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #17383b55;
+}
+.special-grid button span {
+  font-size: 16px;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.special-grid button small {
+  float: right;
+  font-size: 8px;
+  color: #4f6a5d;
+}
+.special-grid button:hover:not(:disabled),
+.special-grid button.selected {
+  background: var(--lime);
+  filter: none;
+}
+.special-grid button:disabled {
+  opacity: 0.35;
+}
+#special-toggle {
+  white-space: nowrap;
+}
+@media (max-width: 700px) {
+  .special-weapons {
+    left: 13px;
+    right: 13px;
+    width: auto;
+    bottom: calc(100% + 8px);
+  }
+  .special-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .special-grid button {
+    height: 36px;
+  }
+  .special-head small {
+    display: none;
   }
 }

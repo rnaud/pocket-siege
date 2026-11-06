@@ -670,9 +670,14 @@ test("best-of-three, storm weather and a supply crate start together", async ({
   expect(state.format).toBe("best3");
   expect(state.weather).toBe("storm");
   expect(state.seriesWins).toEqual([0, 0]);
-  expect(["health", "grenade", "mortar", "sticky"]).toContain(
-    state.crate?.kind,
-  );
+  expect([
+    "health",
+    "grenade",
+    "mortar",
+    "sticky",
+    "utility",
+    "special",
+  ]).toContain(state.crate?.kind);
   expect(
     await page.evaluate(
       () => document.querySelector("#weather-layer").className,
@@ -796,6 +801,8 @@ test("supply crate and a killing blow feed the pickup and slow-motion systems", 
   expect(after.crate).toBeNull();
   if (before.crate.kind === "health")
     expect(after.worms[0].hp).toBeGreaterThanOrEqual(before.worms[0].hp);
+  else if (before.crate.kind === "utility" || before.crate.kind === "special")
+    expect(after.crate).toBeNull();
   else
     expect(after.ammo[0][before.crate.kind]).toBe(
       before.ammo[0][before.crate.kind] + 1,
@@ -923,6 +930,10 @@ test("saved settings survive a reload", async ({ page }) => {
   await page.selectOption("#format", "best3");
   await page.selectOption("#weather", "storm");
   await page.selectOption("#modifier", "low-gravity");
+  await page.selectOption("#scheme", "custom");
+  await page.selectOption("#turn-time", "60");
+  await page.selectOption("#retreat-time", "8");
+  await page.selectOption("#sudden-death", "nuke");
   await page.locator("#start").click();
   await page.locator("#sound").click();
   await page.reload();
@@ -934,5 +945,355 @@ test("saved settings survive a reload", async ({ page }) => {
   expect(await page.locator("#format").inputValue()).toBe("best3");
   expect(await page.locator("#weather").inputValue()).toBe("storm");
   expect(await page.locator("#modifier").inputValue()).toBe("low-gravity");
+  expect(await page.locator("#turn-time").inputValue()).toBe("60");
+  expect(await page.locator("#retreat-time").inputValue()).toBe("8");
+  expect(await page.locator("#sudden-death").inputValue()).toBe("nuke");
+  expect(await page.locator("#scheme").inputValue()).toBe("custom");
   await expect(page.locator("#sound")).toHaveAttribute("aria-pressed", "true");
+});
+
+test("worm selection, turn pace and skip change the turn economy", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.selectOption("#turn-time", "60");
+  await page.selectOption("#retreat-time", "8");
+  await page.locator("#start").click();
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.turnSeconds).toBe(60);
+  expect(state.retreatSeconds).toBe(8);
+  await expect(page.locator("#timer")).toContainText("60");
+  const first = state.current;
+  await page.locator("#select-worm").click();
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.current).not.toBe(first);
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#select-worm")).toBeHidden();
+  await page.locator("#skip").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().team), {
+      timeout: 5000,
+    })
+    .toBe(1);
+});
+
+test("sudden-death health and nuclear variants apply", async ({ page }) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.selectOption("#mode", "local");
+  await page.selectOption("#sudden-death", "health");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.suddenDeathType).toBe("health");
+  expect(state.sdTriggered).toBe(true);
+  expect(state.worms.every((w) => w.hp === 1)).toBe(true);
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.selectOption("#sudden-death", "nuke");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.poisoned).toBe(true);
+});
+
+test("surrender ends a live match from the menu", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect(page.locator("#surrender")).toBeHidden();
+  await page.locator("#restart").click();
+  await expect(page.locator("#surrender")).toBeVisible();
+  await page.locator("#surrender").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase))
+    .toBe("over");
+  expect(
+    await page.evaluate(() => window.siege.getState().lastResult.winner),
+  ).toBe(1);
+});
+
+test("field kit teleport and girder target the battlefield", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#utilities-toggle").click();
+  await expect(page.locator("[data-utility]")).toHaveCount(6);
+  await page.locator('[data-utility="teleport"]').click();
+  let box = await page.locator("#arena").boundingBox();
+  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.2);
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.utilities.teleport).toBe(0);
+  expect(state.phase).toBe("settle");
+  expect(state.worms[0].y).toBeGreaterThan(300);
+
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="girder"]').click();
+  box = await page.locator("#arena").boundingBox();
+  await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.3);
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.girders).toHaveLength(1);
+  expect(state.utilities.girder).toBe(0);
+  expect(state.phase).toBe("settle");
+});
+
+test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  let attached = false;
+  for (const angle of [0, -10, 10, -30, 30, -50]) {
+    await page.locator("#angle").evaluate((el, value) => {
+      el.value = String(value);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }, angle);
+    await page.keyboard.press("r");
+    await page.waitForTimeout(40);
+    attached = await page.evaluate(() => window.siege.getState().rope.attached);
+    if (attached) break;
+  }
+  expect(attached).toBe(true);
+  await page.keyboard.press("r");
+  expect(await page.evaluate(() => window.siege.getState().rope.attached)).toBe(
+    false,
+  );
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="jetpack"]').click();
+  await page.waitForTimeout(250);
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.jetpack.active).toBe(true);
+  expect(state.jetpack.fuel).toBeLessThan(30);
+  await page.keyboard.press("j");
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.jetpack.active).toBe(false);
+});
+
+test("parachute and freeze utilities resolve their effects", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="parachute"]').click();
+  expect(
+    await page.evaluate(() => window.siege.getState().parachuteArmed),
+  ).toBe(true);
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="freeze"]').click();
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.frozen).toEqual([0, 0, 0, 1, 1, 1]);
+  expect(state.utilities.freeze).toBe(0);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().team), {
+      timeout: 5000,
+    })
+    .toBe(1);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().frozen), {
+      timeout: 5000,
+    })
+    .toEqual([0, 0, 0, 0, 0, 0]);
+});
+
+test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#special-toggle").click();
+  await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(8);
+  await page.locator('[data-weapon="shotgun"]').click();
+  await page.locator("#fire").click();
+  await page.waitForTimeout(250);
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.ammo[0].shotgun).toBe(2);
+  expect(state.phase).toBe("settle");
+  expect(state.lastShot.impact.kind).toBe("shotgun");
+
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#special-toggle").click();
+  await page.locator('[data-weapon="dynamite"]').click();
+  await page.locator("#fire").click();
+  await page.waitForTimeout(150);
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.ammo[0].dynamite).toBe(1);
+  expect(state.bombs.some((b) => b.kind === "dynamite")).toBe(true);
+
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#special-toggle").click();
+  await page.locator('[data-weapon="airstrike"]').click();
+  await page.locator("#fire").click();
+  expect(await page.evaluate(() => window.siege.getState().targetUtility)).toBe(
+    "airstrike",
+  );
+  const box = await page.locator("#arena").boundingBox();
+  await page.mouse.click(box.x + box.width * 0.65, box.y + box.height * 0.4);
+  await page.waitForTimeout(250);
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.ammo[0].airstrike).toBe(0);
+  expect(state.bombs.length).toBe(5);
+});
+
+test("cluster bomblets and napalm fires resolve their effects", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "cluster"));
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.explosions).toBeGreaterThanOrEqual(1);
+  expect(state.bombs.length).toBeGreaterThanOrEqual(4);
+  expect(state.ammo[0].cluster).toBe(2);
+
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "napalm"));
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.fires.length).toBe(3);
+  expect(state.ammo[0].napalm).toBe(2);
+});
+
+test("scheme presets apply turn pace, sudden death and stockpile rules", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.selectOption("#scheme", "blitz");
+  expect(await page.locator("#turn-time").inputValue()).toBe("30");
+  expect(await page.locator("#retreat-time").inputValue()).toBe("5");
+  expect(await page.locator("#sudden-death").inputValue()).toBe("health");
+  await page.locator("#start").click();
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.scheme).toBe("blitz");
+  expect(state.turnSeconds).toBe(30);
+  expect(state.retreatSeconds).toBe(5);
+  expect(state.suddenDeathType).toBe("health");
+  expect(state.crateRain).toBe(true);
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.selectOption("#scheme", "stockpile");
+  expect(await page.locator("#format").inputValue()).toBe("best3");
+  await page.locator("#start").click();
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.scheme).toBe("stockpile");
+  expect(state.stockpile).toBe(true);
+  expect(state.format).toBe("best3");
+});
+
+test("stockpile keeps ammo and utilities across series islands", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.selectOption("#scheme", "stockpile");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.setAmmo(0, "grenade", 7));
+  await page.evaluate(() => window.siege.debug.knockout(1));
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().seriesWins), {
+      timeout: 6000,
+    })
+    .toEqual([1, 0]);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().ammo[0].grenade), {
+      timeout: 6000,
+    })
+    .toBe(7);
+});
+
+test("special and utility crates stock the field kit", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => {
+    for (const kind of [
+      "shotgun",
+      "dynamite",
+      "cluster",
+      "airstrike",
+      "napalm",
+      "bat",
+      "homing",
+      "holy",
+    ])
+      window.siege.debug.setAmmo(0, kind, 0);
+  });
+  const beforeSpecial = await page.evaluate(
+    () => window.siege.getState().ammo[0],
+  );
+  await page.evaluate(() => window.siege.debug.setCrateKind("special"));
+  await page.evaluate(() => window.siege.debug.collectCrate());
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.crate).toBeNull();
+  const specialTotal = (loadout) =>
+    loadout.shotgun +
+    loadout.dynamite +
+    loadout.cluster +
+    loadout.airstrike +
+    loadout.napalm +
+    loadout.bat +
+    loadout.homing +
+    loadout.holy;
+  expect(specialTotal(state.ammo[0])).toBe(1);
+  expect(specialTotal(beforeSpecial)).toBe(0);
+
+  await page.reload();
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.setCrateKind("utility"));
+  await page.evaluate(() => window.siege.debug.collectCrate());
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.crate).toBeNull();
+  expect(
+    Object.entries(state.utilities)
+      .filter(([kind]) => kind !== "rope")
+      .reduce((sum, [, n]) => sum + n, 0),
+  ).toBeGreaterThan(5);
 });

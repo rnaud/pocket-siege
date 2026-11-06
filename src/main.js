@@ -17,6 +17,7 @@ import {
   reflectVelocity,
   chargePower,
   launchGeometry,
+  GRAVITY,
 } from "./physics.js";
 import {
   createWeaponRig,
@@ -25,11 +26,14 @@ import {
   createAimOverlay,
   createCrate,
   createMine,
+  createBarrel,
 } from "./combat-visuals.js";
 import { paintTerrain } from "./terrain-paint.js";
 import {
   WEAPONS,
   WEAPON_ORDER,
+  PROJECTILE_ORDER,
+  SPECIAL_WEAPONS,
   freshAmmo,
   ammoFor,
   waterLevelForRound,
@@ -47,6 +51,8 @@ import {
 } from "./progress.js";
 import { nextSeriesWins, seriesWinner } from "./series.js";
 import { applyPickup, PICKUP_KINDS } from "./pickups.js";
+import { UTILITIES, UTILITY_KINDS, freshUtilities } from "./utilities.js";
+import { SCHEMES } from "./schemes.js";
 import { modifierSettings } from "./modifiers.js";
 import { readSettings, writeSettings } from "./settings.js";
 const $ = (s) => document.querySelector(s);
@@ -126,6 +132,9 @@ let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
   suddenDeath = false,
+  suddenDeathType = "water",
+  sdTriggered = false,
+  poisoned = false,
   difficulty = "regular";
 let format = "single",
   seriesWins = [0, 0],
@@ -133,12 +142,37 @@ let format = "single",
   breakTimer = 0,
   crate = null,
   mines = [],
+  girders = [],
+  bombs = [],
+  fires = [],
+  hazards = [],
   slowMo = 0,
   weather = "clear",
   modifier = "standard",
   gravityScale = 1,
   blastScale = 1,
+  scheme = "classic",
+  stockpile = false,
+  crateRain = false,
+  utilityAmmo = [freshUtilities(), freshUtilities()],
+  utilitiesOpen = false,
+  specialOpen = false,
+  activeUtility = null,
+  targetUtility = null,
+  rope = { attached: false, anchor: null, length: 0, mesh: null },
+  jetpack = {
+    active: false,
+    fuel: 30,
+    owner: null,
+    pulse: 0,
+    pulseTime: 0,
+  },
+  parachuteArmed = false,
   turnSeconds = 45,
+  turnTime = 45,
+  retreatSeconds = 3,
+  wormLocked = false,
+  matchStarted = false,
   daily = null,
   record = readRecord();
 let aiPower = 100;
@@ -240,7 +274,7 @@ const dustMaterial = new THREE.MeshBasicMaterial({
   depthWrite: false,
 });
 const projectilePrototypes = Object.fromEntries(
-  WEAPON_ORDER.map((kind) => {
+  PROJECTILE_ORDER.map((kind) => {
     const prototype = createProjectile(kind);
     prototype.visible = false;
     prototype.frustumCulled = false;
@@ -254,10 +288,12 @@ function projectileMesh(kind) {
   return mesh;
 }
 function prewarmShaders() {
-  for (const kind of WEAPON_ORDER) projectilePrototypes[kind].visible = true;
+  for (const kind of PROJECTILE_ORDER)
+    projectilePrototypes[kind].visible = true;
   debrisPrototype.visible = true;
   renderer.compile(scene, camera);
-  for (const kind of WEAPON_ORDER) projectilePrototypes[kind].visible = false;
+  for (const kind of PROJECTILE_ORDER)
+    projectilePrototypes[kind].visible = false;
   debrisPrototype.visible = false;
 }
 function createWorm(t, i, x) {
@@ -347,6 +383,9 @@ function updateAimHUD() {
     phase === "aim" &&
     !menu.open &&
     !replaying &&
+    !targetUtility &&
+    !rope.attached &&
+    !jetpack.active &&
     worms[current]?.hp > 0 &&
     weapon !== "mine";
   aimHUD.guide.style.display = visible ? "" : "none";
@@ -457,22 +496,49 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     weather = $("#weather")?.value || "clear";
     modifier = $("#modifier")?.value || "standard";
   }
+  scheme = isDaily ? "classic" : $("#scheme")?.value || "classic";
+  if (isDaily) $("#scheme").value = "classic";
+  const schemePreset = SCHEMES[scheme] ?? null;
+  stockpile = Boolean(schemePreset?.stockpile) && !isDaily;
+  crateRain = Boolean(schemePreset?.crateRain) && !isDaily;
   const mod = modifierSettings(modifier);
   gravityScale = mod.gravityScale;
   blastScale = mod.blastScale;
-  turnSeconds = mod.turnSeconds;
+  turnTime = isDaily ? 45 : +$("#turn-time")?.value || 45;
+  retreatSeconds = isDaily ? 3 : +$("#retreat-time")?.value || 3;
+  suddenDeathType = isDaily ? "water" : $("#sudden-death")?.value || "water";
+  turnSeconds = mod.turnSeconds === 30 ? Math.min(turnTime, 30) : turnTime;
+  if (isDaily) {
+    $("#turn-time").value = "45";
+    $("#retreat-time").value = "3";
+    $("#sudden-death").value = "water";
+  }
   breakTimer = 0;
   slowMo = 0;
   cameraSnap = true;
   replaying = false;
   lastShot = null;
   replayReady = false;
+  utilitiesOpen = false;
+  specialOpen = false;
+  activeUtility = null;
+  targetUtility = null;
+  parachuteArmed = false;
+  stopRope();
+  stopJetpack();
   $("#replay").disabled = true;
   aimHUD.replay.group.style.display = "none";
-  ammo = [freshAmmo(), freshAmmo()];
+  const carriedAmmo = keepSeries && stockpile ? ammo : null;
+  const carriedUtilities = keepSeries && stockpile ? utilityAmmo : null;
+  ammo = carriedAmmo ?? [freshAmmo(), freshAmmo()];
+  utilityAmmo = carriedUtilities ?? [freshUtilities(), freshUtilities()];
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
   suddenDeath = false;
+  suddenDeathType = isDaily ? "water" : $("#sudden-death")?.value || "water";
+  sdTriggered = false;
+  poisoned = false;
+  wormLocked = false;
   water.userData.setLevel?.(WATER);
   difficulty = $("#difficulty")?.value || "regular";
   shotFuse = null;
@@ -505,6 +571,14 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   particles = [];
   for (const m of mines) dispose(m.mesh);
   mines = [];
+  for (const g of girders) dispose(g.mesh);
+  girders = [];
+  for (const b of bombs) dispose(b.mesh);
+  bombs = [];
+  for (const f of fires) dispose(f.mesh);
+  fires = [];
+  for (const h of hazards) dispose(h.mesh);
+  hazards = [];
   terrain = new Terrain(seed ?? 2 + Math.floor(Math.random() * 40));
   paintTerrain(ctx, terrain, texture);
   terrainDirty = false;
@@ -524,6 +598,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   mode = $("#mode").value;
   applyWeather();
   spawnCrate();
+  spawnHazards();
   beginTurn();
   updateRecordUI();
   resize();
@@ -552,20 +627,120 @@ function spawnCrate() {
     if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
     const kind = PICKUP_KINDS[Math.floor(Math.random() * PICKUP_KINDS.length)],
       mesh = createCrate(kind, crateMap),
-      y = ground + 10;
-    mesh.position.set(x, y, 18);
+      targetY = ground + 10;
+    mesh.position.set(x, H + 34, 18);
     group.add(mesh);
-    crate = { x, y, kind, mesh, bob: Math.random() * Math.PI * 2 };
+    crate = {
+      x,
+      y: H + 34,
+      targetY,
+      kind,
+      mesh,
+      bob: Math.random() * Math.PI * 2,
+      falling: true,
+      vy: 0,
+    };
     return;
+  }
+}
+function spawnHazards() {
+  if (hazards.length || !terrain) return;
+  for (let i = 0; i < 2; i++) {
+    for (let tries = 0; tries < 30; tries++) {
+      const x = 180 + Math.random() * (W - 360),
+        ground = terrain.surface(x);
+      if (ground < waterLevel + 50) continue;
+      if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 70)) continue;
+      if (crate && Math.abs(crate.x - x) < 55) continue;
+      if (hazards.some((h) => Math.abs(h.x - x) < 70)) continue;
+      const mesh = createBarrel();
+      mesh.position.set(x, ground + 14, 17);
+      group.add(mesh);
+      hazards.push({ x, y: ground + 14, mesh });
+      break;
+    }
+  }
+}
+function spawnFire(x, y, owner = -1) {
+  const mesh = new THREE.Mesh(
+    new THREE.CircleGeometry(28 + Math.random() * 10, 16),
+    new THREE.MeshBasicMaterial({
+      color: Math.random() < 0.5 ? 0xff8b3c : 0xffc04d,
+      transparent: true,
+      opacity: 0.62,
+      depthWrite: false,
+    }),
+  );
+  mesh.position.set(x, y + 8, 26);
+  mesh.scale.y = 0.5;
+  group.add(mesh);
+  fires.push({ x, y, owner, mesh, life: 5.5, tick: 0 });
+}
+function stepBombs(dt) {
+  for (let i = bombs.length - 1; i >= 0; i--) {
+    const b = bombs[i];
+    b.fuse -= dt;
+    if (!b.grounded) {
+      integrate(b, dt, 0, gravityScale);
+      b.mesh.position.set(b.x, b.y, 40);
+      const hitGround = terrain.solid(b.x, b.y);
+      if (b.fuse <= 0 || b.y < waterLevel || hitGround) {
+        bombs.splice(i, 1);
+        dispose(b.mesh);
+        if (b.y > waterLevel) explode(b.x, b.y, b.kind, b.owner);
+      }
+    } else if (b.fuse <= 0) {
+      bombs.splice(i, 1);
+      dispose(b.mesh);
+      explode(b.x, b.y, b.kind, b.owner);
+    }
+  }
+}
+function stepFires(dt) {
+  for (let i = fires.length - 1; i >= 0; i--) {
+    const f = fires[i];
+    f.life -= dt;
+    f.tick -= dt;
+    if (f.tick <= 0) {
+      f.tick = 0.55;
+      for (const w of worms) {
+        if (w.hp <= 0) continue;
+        if (Math.abs(w.x - f.x) < 38 && Math.abs(w.y + 18 - f.y) < 45)
+          injure(w, 4, 0);
+      }
+    }
+    f.mesh.scale.x = 0.9 + Math.sin(performance.now() * 0.01 + f.x) * 0.08;
+    if (f.life <= 0) {
+      group.remove(f.mesh);
+      f.mesh.geometry.dispose();
+      f.mesh.material.dispose();
+      fires.splice(i, 1);
+    }
   }
 }
 function collectCrate(w) {
   if (!crate) return;
   const { kind, mesh } = crate;
-  const result = applyPickup(kind, w.hp, ammo[w.team]);
-  w.hp = result.hp;
-  ammo[w.team] = result.loadout;
-  const label = kind === "health" ? "+25 HP" : `+1 ${WEAPONS[kind].label}`;
+  let label;
+  if (kind === "utility") {
+    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze"];
+    const utility = pool[Math.floor(Math.random() * pool.length)];
+    utilityAmmo[w.team][utility] = Math.min(
+      3,
+      (utilityAmmo[w.team][utility] ?? 0) + 1,
+    );
+    label = `+1 ${UTILITIES[utility].label}`;
+  } else if (kind === "special") {
+    const special =
+      SPECIAL_WEAPONS[Math.floor(Math.random() * SPECIAL_WEAPONS.length)];
+    ammo[w.team][special] = Math.min(3, (ammo[w.team][special] ?? 0) + 1);
+    label = `+1 ${WEAPONS[special].label}`;
+  } else {
+    const result = applyPickup(kind, w.hp, ammo[w.team]);
+    w.hp = result.hp;
+    ammo[w.team] = result.loadout;
+    label = kind === "health" ? "+25 HP" : `+1 ${WEAPONS[kind].label}`;
+  }
   pickupLabel(w, label);
   $("#status").textContent = `${w.name} grabs a supply crate: ${label}.`;
   dispose(mesh);
@@ -590,8 +765,34 @@ function updateRecordUI() {
   if (dailyLabel) dailyLabel.textContent = dailyStatus(record);
   const share = $("#share");
   if (share) share.disabled = !lastResult;
+  const surrender = $("#surrender");
+  if (surrender)
+    surrender.hidden = !matchStarted || phase === "menu" || phase === "over";
 }
 function beginTurn() {
+  stopRope();
+  stopJetpack();
+  targetUtility = null;
+  activeUtility = null;
+  parachuteArmed = false;
+  utilitiesOpen = false;
+  specialOpen = false;
+  applyPoisonTick();
+  const aliveTeam = worms.filter((w) => w.team === team && w.hp > 0);
+  if (aliveTeam.length && aliveTeam.every((w) => w.frozen > 0)) {
+    for (const w of aliveTeam) w.frozen = 0;
+    current = worms.indexOf(aliveTeam[0]);
+    phase = "settle";
+    wormLocked = true;
+    retreat = 0;
+    shotWait = 0;
+    move = 0;
+    $("#turn-label").textContent = "FROZEN TURN";
+    $("#status").textContent =
+      `${team === 0 ? "MOSS COMPANY" : "CORAL CREW"} is frozen and loses this turn.`;
+    updateUI();
+    return;
+  }
   const roster = worms.filter((w) => w.team === team);
   if (!roster.some((w) => w.hp > 0)) return endGame();
   let next = turnCount[team] % roster.length;
@@ -601,12 +802,15 @@ function beginTurn() {
   current = worms.indexOf(active);
   phase = "aim";
   cameraSnap = true;
+  wormLocked = false;
   time = turnSeconds;
   const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
   wind = (Math.random() - 0.5) * windMax;
   slowMo = 0;
   angle = team ? 135 : 45;
   active.facing = team ? -1 : 1;
+  if (team === 1 && mode === "ai" && (utilityAmmo[1]?.parachute ?? 0) > 0)
+    parachuteArmed = true;
   cancelCharge();
   power = 0;
   retreat = 0;
@@ -643,8 +847,17 @@ function beginTurn() {
       : weather === "rain"
         ? " Rain falling."
         : "";
+  const suddenNote = suddenDeath
+    ? suddenDeathType === "water"
+      ? " The water is rising."
+      : suddenDeathType === "health"
+        ? " Every worm has 1 HP."
+        : suddenDeathType === "nuke"
+          ? " Nuclear poison is active."
+          : ""
+    : "";
   $("#status").textContent = suddenDeath
-    ? `${active.name} is up. The water is rising.${weatherNote}`
+    ? `${active.name} is up.${suddenNote}${weatherNote}`
     : `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}${weatherNote}`;
   bannerTime = 1.8;
   $("#turn-banner").textContent =
@@ -654,7 +867,7 @@ function beginTurn() {
 function updateUI() {
   // Called from the 120 Hz simulation; only touch the DOM when the state behind it changed.
   const loadout = ammo[team] ?? {};
-  const key = `${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${loadout.grenade}:${loadout.mortar}:${loadout.sticky}:${loadout.mine}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  const key = `${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   for (let t = 0; t < 2; t++) {
@@ -669,9 +882,21 @@ function updateUI() {
     w.label.querySelector("strong").textContent = w.hp;
     w.label.style.setProperty("--hp", w.hp + "%");
     w.label.classList.toggle("active", i === current && phase !== "over");
+    w.label.classList.toggle("frozen", w.frozen > 0);
   }
-  $("#fire").disabled = !canAct() || worms[current]?.knocked;
-  $("#angle").disabled = !canAct() || charging || weapon === "mine";
+  $("#fire").disabled =
+    !canAct() ||
+    worms[current]?.knocked ||
+    Boolean(targetUtility) ||
+    rope.attached ||
+    jetpack.active;
+  $("#angle").disabled =
+    !canAct() ||
+    charging ||
+    weapon === "mine" ||
+    weapon === "dynamite" ||
+    weapon === "airstrike" ||
+    weapon === "bat";
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = ammoFor(loadout, button.dataset.weapon);
     button.querySelector("small").textContent =
@@ -684,6 +909,84 @@ function updateUI() {
   document
     .querySelectorAll("[data-move],#jump,#backflip")
     .forEach((b) => (b.disabled = !canMove()));
+  const select = $("#select-worm"),
+    skip = $("#skip");
+  if (select) {
+    select.hidden = !canSelectWorm();
+    if (!select.hidden) {
+      const roster = worms.filter((w) => w.team === team && w.hp > 0);
+      const index = roster.indexOf(worms[current]) + 1;
+      select.textContent = `⇥ WORM ${index}/${roster.length}`;
+    }
+  }
+  if (skip) {
+    skip.hidden = !canAct();
+    skip.disabled = !canAct();
+  }
+  const utilityLoadout = utilityAmmo[team] ?? {};
+  const utilityPanel = $("#utilities");
+  if (utilityPanel) utilityPanel.hidden = !utilitiesOpen;
+  document.querySelectorAll("[data-utility]").forEach((button) => {
+    const kind = button.dataset.utility;
+    const count = utilityLoadout[kind] ?? 0;
+    button.querySelector("small").textContent =
+      count === Infinity ? "∞" : count;
+    button.disabled =
+      !canAct() ||
+      charging ||
+      (count <= 0 && activeUtility !== kind) ||
+      (activeUtility !== null && activeUtility !== kind);
+    button.classList.toggle("selected", activeUtility === kind);
+  });
+  const utilityToggle = $("#utilities-toggle");
+  if (utilityToggle) {
+    utilityToggle.hidden = !canAct();
+    utilityToggle.disabled = !canAct();
+    utilityToggle.textContent = jetpack.active
+      ? `✦ ${Math.ceil(jetpack.fuel)}`
+      : rope.attached
+        ? `⌁ ${Math.round(rope.length)}`
+        : targetUtility === "teleport"
+          ? "◎ AIM"
+          : targetUtility === "girder"
+            ? "▰ AIM"
+            : targetUtility === "airstrike"
+              ? "✈ AIM"
+              : parachuteArmed
+                ? "☂ CHUTE"
+                : "✦ UTILS";
+    utilityToggle.classList.toggle(
+      "selected",
+      utilitiesOpen ||
+        rope.attached ||
+        jetpack.active ||
+        Boolean(targetUtility),
+    );
+  }
+  const specialPanel = $("#special-weapons");
+  if (specialPanel) specialPanel.hidden = !specialOpen;
+  const specialToggle = $("#special-toggle");
+  if (specialToggle) {
+    specialToggle.hidden = !canAct();
+    specialToggle.disabled = !canAct();
+    specialToggle.classList.toggle("selected", specialOpen);
+  }
+  const utilityStatus = $("#utility-status");
+  if (utilityStatus) {
+    if (targetUtility)
+      utilityStatus.textContent =
+        targetUtility === "teleport"
+          ? "Click or tap an empty spot to teleport."
+          : "Click or tap to place a girder.";
+    else if (rope.attached)
+      utilityStatus.textContent = `Rope out: ${Math.round(rope.length)} px · ↑↓ length · ←→ swing · R release`;
+    else if (jetpack.active)
+      utilityStatus.textContent = `Jet pack fuel ${Math.ceil(jetpack.fuel)} · arrows move · R stops`;
+    else if (parachuteArmed)
+      utilityStatus.textContent =
+        "Parachute armed. It will deploy on a hard fall.";
+    else utilityStatus.textContent = "";
+  }
 }
 function canAct() {
   return (
@@ -703,6 +1006,484 @@ function canMove() {
     worms[current]?.hp > 0 &&
     !worms[current]?.knocked
   );
+}
+function canSelectWorm() {
+  return (
+    phase === "aim" &&
+    !wormLocked &&
+    !charging &&
+    !menu.open &&
+    !replaying &&
+    !targetUtility &&
+    !activeUtility &&
+    !rope.attached &&
+    !jetpack.active &&
+    !(team === 1 && mode === "ai") &&
+    worms[current]?.hp > 0 &&
+    worms.filter((w) => w.team === team && w.hp > 0).length > 1
+  );
+}
+function cycleWorm(direction = 1) {
+  if (!canSelectWorm()) return;
+  const roster = worms.filter((w) => w.team === team && w.hp > 0);
+  const index = roster.indexOf(worms[current]);
+  const next = roster[(index + direction + roster.length) % roster.length];
+  current = worms.indexOf(next);
+  cancelCharge();
+  power = 0;
+  charging = false;
+  chargeSource = null;
+  next.facing = team ? -1 : 1;
+  angle = team ? 135 : 45;
+  cameraSnap = true;
+  wormLocked = false;
+  setWeapon(teamWeapon[team] || "rocket");
+  updateSliders();
+  $("#status").textContent =
+    `${next.name} selected. Choose a worm, then move or fire.`;
+  updateUI();
+}
+function skipTurn() {
+  if (!canAct()) return;
+  cancelCharge();
+  stopRope();
+  stopJetpack();
+  parachuteArmed = false;
+  targetUtility = null;
+  activeUtility = null;
+  wormLocked = true;
+  phase = "settle";
+  retreat = 0;
+  shotWait = 0;
+  move = 0;
+  shotCount++;
+  $("#status").textContent = `${worms[current].name} skips the turn.`;
+  updateUI();
+}
+function stopRope() {
+  if (rope.mesh) {
+    group.remove(rope.mesh);
+    rope.mesh.geometry.dispose();
+    rope.mesh.material.dispose();
+  }
+  rope = { attached: false, anchor: null, length: 0, mesh: null };
+  if (activeUtility === "rope") activeUtility = null;
+}
+function stopJetpack() {
+  jetpack = {
+    active: false,
+    fuel: 30,
+    owner: null,
+    pulse: 0,
+    pulseTime: 0,
+  };
+  if (activeUtility === "jetpack") activeUtility = null;
+}
+function closeUtilities() {
+  utilitiesOpen = false;
+  $("#utilities-toggle")?.classList.remove("selected");
+  updateUI();
+}
+function toggleUtilities() {
+  if (!canAct()) return;
+  utilitiesOpen = !utilitiesOpen;
+  if (utilitiesOpen) specialOpen = false;
+  $("#utilities-toggle")?.classList.toggle("selected", utilitiesOpen);
+  updateUI();
+}
+function finishUtilityTurn(text) {
+  targetUtility = null;
+  activeUtility = null;
+  utilitiesOpen = false;
+  wormLocked = true;
+  phase = "settle";
+  retreat = 0;
+  shotWait = 0;
+  move = 0;
+  $("#status").textContent = text;
+  updateUI();
+}
+function addGirder(cx, cy, angle = 0, length = 64) {
+  const r = (angle * Math.PI) / 180;
+  for (let t = -length / 2; t <= length / 2; t += 1) {
+    const gx = Math.round(cx + Math.cos(r) * t),
+      gy = Math.round(cy + Math.sin(r) * t);
+    for (let n = -3; n <= 3; n++) {
+      const x = Math.round(gx + Math.sin(r) * n),
+        y = Math.round(gy - Math.cos(r) * n);
+      if (x >= 0 && x < W && y >= 0 && y < H) terrain.data[y * W + x] = 1;
+    }
+  }
+  paintTerrain(ctx, terrain, texture);
+  terrainDirty = false;
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(length, 7, 5),
+    new THREE.MeshStandardMaterial({ color: 0x6f8a52, roughness: 0.9 }),
+  );
+  const ink = new THREE.LineSegments(
+    new THREE.EdgesGeometry(mesh.geometry),
+    new THREE.LineBasicMaterial({ color: 0x17383b }),
+  );
+  mesh.add(ink);
+  mesh.position.set(cx, cy, 18);
+  mesh.rotation.z = r;
+  group.add(mesh);
+  girders.push({ mesh, cx, cy, angle, length });
+}
+function handleUtilityTarget(e) {
+  if (!targetUtility) return;
+  const rect = arena.getBoundingClientRect(),
+    x = Math.max(
+      20,
+      Math.min(W - 20, ((e.clientX - rect.left) / rect.width) * W),
+    ),
+    y = H - ((e.clientY - rect.top) / rect.height) * H;
+  const w = worms[current];
+  if (targetUtility === "airstrike") {
+    if ((ammoFor(ammo[team], "airstrike") ?? 0) <= 0) {
+      targetUtility = null;
+      activeUtility = null;
+      updateUI();
+      return;
+    }
+    ammo[team].airstrike--;
+    spawnAirstrike(x);
+    finishUtilityTurn("Air strike called. Bombs away!");
+    return;
+  }
+  if (targetUtility === "teleport") {
+    const blocked =
+      terrain.solid(x, y) ||
+      terrain.solid(x - 10, y - 8) ||
+      terrain.solid(x + 10, y - 8) ||
+      terrain.solid(x, y + 8) ||
+      y < waterLevel + 12;
+    if (blocked) {
+      $("#status").textContent = "Teleport blocked. Choose an empty spot.";
+      return;
+    }
+    utilityAmmo[team].teleport--;
+    const oldX = w.x;
+    w.x = x;
+    w.y = y;
+    w.vx = 0;
+    w.vy = 0;
+    w.ground = false;
+    w.renderY = y;
+    w.facing = x > oldX ? 1 : -1;
+    cameraSnap = true;
+    finishUtilityTurn("Teleported. Turn over.");
+    return;
+  }
+  if (targetUtility === "girder") {
+    if (Math.hypot(x - w.x, y - w.y) > 260) {
+      $("#status").textContent = "Girder out of range. Move closer.";
+      return;
+    }
+    utilityAmmo[team].girder--;
+    addGirder(x, y, 0, 64);
+    finishUtilityTurn("Girder placed. Turn over.");
+  }
+}
+function useUtility(kind) {
+  if (!canAct() || charging) return;
+  if (kind === "jetpack" && jetpack.active) {
+    stopJetpack();
+    closeUtilities();
+    return;
+  }
+  const count = utilityAmmo[team]?.[kind] ?? 0;
+  if (count <= 0) {
+    $("#utility-status").textContent = "None left. Find a field-kit crate.";
+    return;
+  }
+  if (targetUtility) {
+    targetUtility = null;
+    activeUtility = null;
+    updateUI();
+    return;
+  }
+  if (kind === "rope") {
+    toggleRope();
+    return;
+  }
+  if (kind === "jetpack") {
+    if (jetpack.active) stopJetpack();
+    else startJetpack();
+    utilitiesOpen = false;
+    updateUI();
+    return;
+  }
+  if (kind === "parachute") {
+    parachuteArmed = true;
+    activeUtility = null;
+    utilitiesOpen = false;
+    $("#utility-status").textContent =
+      "Parachute armed. It deploys automatically on a hard fall.";
+    updateUI();
+    return;
+  }
+  if (kind === "teleport" || kind === "girder") {
+    targetUtility = kind;
+    activeUtility = kind;
+    utilitiesOpen = false;
+    $("#status").textContent =
+      kind === "teleport"
+        ? "Click or tap an empty spot to teleport."
+        : "Click or tap to place a girder.";
+    updateUI();
+    return;
+  }
+  if (kind === "freeze") {
+    for (const w of worms) if (w.team !== team && w.hp > 0) w.frozen = 1;
+    utilityAmmo[team].freeze--;
+    activeUtility = null;
+    finishUtilityTurn("Freeze deployed. The other squad loses a turn.");
+  }
+}
+function startJetpack() {
+  if (!canAct() || (utilityAmmo[team]?.jetpack ?? 0) <= 0) return;
+  if (rope.attached) stopRope();
+  utilityAmmo[team].jetpack--;
+  jetpack = {
+    active: true,
+    fuel: 30,
+    owner: current,
+    pulse: 0,
+    pulseTime: 0,
+  };
+  activeUtility = "jetpack";
+  wormLocked = true;
+  const w = worms[current];
+  w.ground = false;
+  w.vx = 0;
+  w.vy = 0;
+  utilitiesOpen = false;
+  $("#status").textContent =
+    "Jet pack on. Up thrusts; left/right steer; R stops.";
+  updateUI();
+}
+function stepJetpack(w, dt) {
+  if (!jetpack.active || jetpack.owner !== current) return;
+  jetpack.fuel -= dt * 6;
+  if (jetpack.pulseTime > 0) {
+    jetpack.pulseTime = Math.max(0, jetpack.pulseTime - dt);
+    jetpack.fuel -= dt * 8;
+  }
+  const thrust =
+    aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0) + (move ? 0 : 0);
+  w.vx += move * 220 * dt;
+  w.vy += thrust * 300 * dt;
+  w.vy -= GRAVITY * gravityScale * 0.18 * dt;
+  w.vx *= 0.995;
+  w.vy *= 0.995;
+  const px = w.x,
+    py = w.y;
+  w.x = Math.max(12, Math.min(W - 12, w.x + w.vx * dt));
+  w.y = Math.max(12, Math.min(H, w.y + w.vy * dt));
+  if (terrain.solid(w.x, w.y - 8)) {
+    w.x = px;
+    w.y = py;
+    w.vx = 0;
+    w.vy = 0;
+    stopJetpack();
+  }
+  w.ground = false;
+  w.moving = Boolean(move);
+  w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
+  if (jetpack.fuel <= 0) stopJetpack();
+}
+function makeRopeLine(anchor, w) {
+  const geometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(anchor.x, anchor.y, 30),
+    new THREE.Vector3(w.x, w.y + 18, 30),
+  ]);
+  const material = new THREE.LineBasicMaterial({
+    color: 0xf4e4c0,
+    transparent: true,
+    opacity: 0.95,
+  });
+  const line = new THREE.Line(geometry, material);
+  line.frustumCulled = false;
+  group.add(line);
+  return line;
+}
+function fireRope() {
+  if (!canAct() || charging || targetUtility) return;
+  if (rope.attached) {
+    releaseRope();
+    return;
+  }
+  const w = worms[current];
+  const start = { x: w.x, y: w.y + 18 };
+  const r = (angle * Math.PI) / 180;
+  let hit = null;
+  for (let d = 8; d <= 270; d += 3) {
+    const x = start.x + Math.cos(r) * d,
+      y = start.y + Math.sin(r) * d;
+    if (terrain.solid(x, y)) {
+      hit = {
+        x: start.x + Math.cos(r) * Math.max(0, d - 4),
+        y: start.y + Math.sin(r) * Math.max(0, d - 4),
+      };
+      break;
+    }
+  }
+  if (!hit) {
+    $("#status").textContent = "No rope anchor there. Aim at the island.";
+    return;
+  }
+  rope = {
+    attached: true,
+    anchor: hit,
+    length: Math.hypot(start.x - hit.x, start.y - hit.y),
+    mesh: null,
+  };
+  rope.mesh = makeRopeLine(hit, w);
+  w.ground = false;
+  w.vx = 0;
+  w.vy = 0;
+  activeUtility = "rope";
+  wormLocked = true;
+  utilitiesOpen = false;
+  $("#status").textContent =
+    "Rope attached. Left/right swing; up/down shorten; R release.";
+  updateUI();
+}
+function releaseRope() {
+  if (!rope.attached) return;
+  stopRope();
+  wormLocked = true;
+  $("#status").textContent = "Rope released.";
+  updateUI();
+}
+function toggleRope() {
+  if (rope.attached) releaseRope();
+  else fireRope();
+}
+function stepRope(w, dt) {
+  if (!rope.attached || w !== worms[current]) return;
+  const a = rope.anchor;
+  if (aimInput)
+    rope.length = Math.max(34, Math.min(300, rope.length - aimInput * 95 * dt));
+  let dx = w.x - a.x,
+    dy = w.y - a.y,
+    len = Math.hypot(dx, dy) || 1;
+  const tx = -dy / len,
+    ty = dx / len;
+  w.vx += tx * move * 240 * dt;
+  w.vy += ty * move * 240 * dt;
+  w.vy -= GRAVITY * gravityScale * 0.9 * dt;
+  w.vx *= 0.998;
+  w.vy *= 0.998;
+  const px = w.x,
+    py = w.y;
+  w.x += w.vx * dt;
+  w.y += w.vy * dt;
+  dx = w.x - a.x;
+  dy = w.y - a.y;
+  len = Math.hypot(dx, dy) || 1;
+  const nx = dx / len,
+    ny = dy / len;
+  w.x = a.x + nx * rope.length;
+  w.y = a.y + ny * rope.length;
+  const radial = w.vx * nx + w.vy * ny;
+  w.vx -= radial * nx;
+  w.vy -= radial * ny;
+  w.ground = false;
+  w.moving = Boolean(move);
+  w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
+  if (terrain.solid(w.x, w.y - 8)) {
+    w.x = px;
+    w.y = py;
+    stopRope();
+  }
+}
+function updateRopeVisual(w) {
+  if (!rope.mesh || !rope.attached) return;
+  const pos = rope.mesh.geometry.attributes.position;
+  pos.setXYZ(0, rope.anchor.x, rope.anchor.y, 30);
+  pos.setXYZ(1, w.x, w.y + 18, 30);
+  pos.needsUpdate = true;
+}
+function surrenderMatch() {
+  if (!matchStarted || phase === "over" || phase === "menu") return;
+  const losingTeam = mode === "ai" ? 0 : team;
+  for (const w of worms)
+    if (w.team === losingTeam) {
+      w.hp = 0;
+      w.deathPending = false;
+      w.dying = 0;
+    }
+  if (menu.open) menu.close();
+  if (format === "best3") {
+    const winner = 1 - losingTeam;
+    seriesWins = [0, 0];
+    seriesWins[winner] = 2;
+    finishMatch(winner, true);
+  } else finishMatch(1 - losingTeam, false);
+  updateUI();
+}
+function applyPoisonTick() {
+  if (!poisoned) return;
+  let hits = 0;
+  for (const w of worms) {
+    if (w.hp <= 0) continue;
+    w.hp = Math.max(0, w.hp - 5);
+    w.hurt = Math.max(w.hurt, 0.65);
+    damageLabel(w, 5);
+    hits++;
+    if (w.hp === 0) {
+      w.deathPending = true;
+      w.dying = 0.8;
+    }
+  }
+  if (hits) $("#status").textContent = "Nuclear poison: every worm loses 5 HP.";
+  updateUI();
+}
+function applySuddenDeath() {
+  if (sdTriggered) return false;
+  sdTriggered = true;
+  suddenDeath = true;
+  if (suddenDeathType === "water") {
+    waterLevel = waterLevelForRound(round);
+    water.userData.setLevel?.(waterLevel);
+    announce("SUDDEN DEATH — THE WATER RISES");
+    return false;
+  }
+  if (suddenDeathType === "health") {
+    for (const w of worms)
+      if (w.hp > 0) {
+        w.hp = 1;
+        w.hurt = Math.max(w.hurt, 0.5);
+      }
+    announce("SUDDEN DEATH — EVERY WORM HAS 1 HP");
+    updateUI();
+    return false;
+  }
+  if (suddenDeathType === "nuke") {
+    poisoned = true;
+    announce("SUDDEN DEATH — NUCLEAR POISON");
+    updateUI();
+    return false;
+  }
+  const totals = [0, 1].map((t) =>
+    worms.filter((w) => w.team === t).reduce((sum, w) => sum + w.hp, 0),
+  );
+  const winner = totals[0] === totals[1] ? null : totals[0] > totals[1] ? 0 : 1;
+  announce(
+    winner === null
+      ? "SUDDEN DEATH — DEAD HEAT"
+      : `SUDDEN DEATH — ${winner === 0 ? "MOSS COMPANY" : "CORAL CREW"} LEADS`,
+  );
+  for (const w of worms)
+    if (winner !== null && w.team !== winner) {
+      w.hp = 0;
+      w.deathPending = false;
+      w.dying = 0;
+    }
+  endGame();
+  return true;
 }
 function coverDraw(ctx, image, x, y, w, h) {
   const scale = Math.max(w / image.width, h / image.height),
@@ -843,6 +1624,10 @@ function saveSettings() {
     format: $("#format").value,
     weather: $("#weather").value,
     modifier: $("#modifier").value,
+    scheme: $("#scheme").value,
+    turnTime: +$("#turn-time").value,
+    retreatTime: +$("#retreat-time").value,
+    suddenDeath: $("#sudden-death").value,
   });
 }
 function applySettings() {
@@ -858,6 +1643,10 @@ function applySettings() {
   set("#format", saved.format);
   set("#weather", saved.weather);
   set("#modifier", saved.modifier);
+  set("#scheme", saved.scheme);
+  set("#turn-time", String(saved.turnTime));
+  set("#retreat-time", String(saved.retreatTime));
+  set("#sudden-death", saved.suddenDeath);
   sound = saved.sound;
   updateSoundButton();
 }
@@ -865,25 +1654,56 @@ function updateSliders() {
   $("#angle").value = angle;
   $("#angle-value").textContent = Math.round(angle) + "°";
   $("#fire").classList.toggle("charging", charging);
-  const mine = weapon === "mine";
-  $("#fire-label").textContent = mine
-    ? "PLACE MINE"
+  const specialLabel = {
+    mine: "PLACE MINE",
+    dynamite: "DROP DYNAMITE",
+    shotgun: "FIRE SHOTGUN",
+    bat: "SWING BAT",
+    airstrike: "CALL AIRSTRIKE",
+  }[weapon];
+  $("#fire-label").textContent = specialLabel
+    ? specialLabel
     : charging
       ? "RELEASE TO FIRE"
       : "HOLD TO FIRE";
-  $("#fire small").textContent = mine
+  $("#fire small").textContent = specialLabel
     ? coarsePointer
-      ? "TAP TO PLACE"
-      : "PRESS SPACE TO PLACE"
+      ? "TAP TARGET OR PLACE"
+      : "PRESS SPACE / CLICK"
     : coarsePointer
       ? "HOLD · RELEASE TO FIRE"
       : "HOLD SPACE · RELEASE TO SHOOT";
 }
 function startCharge(source) {
-  if (charging || !canAct() || !worms[current].ground || worms[current].knocked)
+  if (
+    charging ||
+    !canAct() ||
+    !worms[current].ground ||
+    worms[current].knocked ||
+    targetUtility ||
+    rope.attached ||
+    jetpack.active
+  )
     return;
+  wormLocked = true;
   if (weapon === "mine") {
     placeMine();
+    return;
+  }
+  if (weapon === "dynamite") {
+    placeDynamite();
+    return;
+  }
+  if (weapon === "shotgun") {
+    fireShotgun();
+    return;
+  }
+  if (weapon === "bat") {
+    fireBat();
+    return;
+  }
+  if (weapon === "airstrike") {
+    beginAirstrikeTargeting();
     return;
   }
   charging = true;
@@ -918,9 +1738,11 @@ function turnFacing(direction) {
   updateSliders();
 }
 function setMove(direction) {
+  if (targetUtility) return;
   if (canMove()) {
+    wormLocked = true;
     move = direction;
-    turnFacing(direction);
+    if (!rope.attached && !jetpack.active) turnFacing(direction);
   }
 }
 function adjustAim(direction, dt) {
@@ -956,6 +1778,7 @@ function injure(w, damage, direction = 0) {
 }
 function placeMine() {
   if (!canAct() || !worms[current]?.ground || worms[current].knocked) return;
+  wormLocked = true;
   if (ammoFor(ammo[team], "mine") <= 0) {
     setWeapon("rocket");
     return;
@@ -979,7 +1802,7 @@ function placeMine() {
   chargeSource = null;
   w.recoil = 0.15;
   phase = "settle";
-  retreat = 3;
+  retreat = retreatSeconds;
   shotWait = 0;
   move = 0;
   shotCount++;
@@ -988,13 +1811,204 @@ function placeMine() {
   updateSliders();
   updateUI();
 }
+function finishAction(message) {
+  phase = "settle";
+  retreat = retreatSeconds;
+  shotWait = 0;
+  move = 0;
+  wormLocked = true;
+  $("#status").textContent = message;
+  updateUI();
+}
+function spendSpecial(kind) {
+  ammo[team][kind] = Math.max(0, (ammo[team][kind] ?? 0) - 1);
+  if (ammo[team][kind] === 0) setWeapon("rocket");
+}
+function spawnBomb({
+  x,
+  y,
+  vx = 0,
+  vy = 0,
+  fuse = 2,
+  owner = -1,
+  kind = "bomblet",
+  grounded = false,
+}) {
+  const mesh = createProjectile("grenade");
+  mesh.position.set(x, y, 40);
+  const ball = mesh.children[0];
+  if (ball?.material?.color)
+    ball.material.color.setHex(
+      kind === "dynamite"
+        ? 0xb85b45
+        : kind === "cluster"
+          ? 0xe7a34a
+          : kind === "napalm"
+            ? 0xff7b3c
+            : 0x9caf59,
+    );
+  group.add(mesh);
+  bombs.push({
+    x,
+    y,
+    vx,
+    vy,
+    fuse,
+    owner,
+    kind,
+    mesh,
+    grounded,
+    impact: !grounded,
+  });
+}
+function spawnAirstrike(x) {
+  for (let i = -2; i <= 2; i++) {
+    spawnBomb({
+      x: x + i * 34 + (Math.random() - 0.5) * 12,
+      y: H - 8,
+      vx: (Math.random() - 0.5) * 18,
+      vy: -20 - Math.random() * 20,
+      fuse: 2.8,
+      owner: current,
+      kind: "bomblet",
+    });
+  }
+}
+function placeDynamite() {
+  if (!canAct() || (ammoFor(ammo[team], "dynamite") ?? 0) <= 0) return;
+  const w = worms[current];
+  spendSpecial("dynamite");
+  w.recoil = 0.2;
+  shotCount++;
+  spawnBomb({
+    x: w.x,
+    y: w.y + 4,
+    fuse: 3,
+    owner: current,
+    kind: "dynamite",
+    grounded: true,
+  });
+  finishAction("Dynamite dropped. Three-second fuse — retreat!");
+  tone(430, 0.12, "square");
+}
+function fireShotgun() {
+  if (!canAct() || (ammoFor(ammo[team], "shotgun") ?? 0) <= 0) return;
+  const w = worms[current],
+    origin = shot(w, angle, "shotgun"),
+    start = terrain.solid(origin.muzzle.x, origin.muzzle.y)
+      ? { x: origin.pivot.x, y: origin.pivot.y }
+      : { x: origin.muzzle.x, y: origin.muzzle.y },
+    r = (angle * Math.PI) / 180;
+  let hit = null,
+    victim = null;
+  for (let d = 4; d <= 300; d += 2) {
+    const x = start.x + Math.cos(r) * d,
+      y = start.y + Math.sin(r) * d;
+    const target = worms.find(
+      (t) => t.hp > 0 && (t !== w || d > 28) && hitsWorm(t, x, y, 5),
+    );
+    if (target) {
+      hit = { x, y };
+      victim = target;
+      break;
+    }
+    if (terrain.solid(x, y)) {
+      hit = { x, y };
+      break;
+    }
+  }
+  hit ??= {
+    x: start.x + Math.cos(r) * 300,
+    y: start.y + Math.sin(r) * 300,
+  };
+  spendSpecial("shotgun");
+  shotCount++;
+  wormLocked = true;
+  if (victim) {
+    const dir = Math.sign(victim.x - w.x) || 1;
+    injure(victim, Math.round(WEAPONS.shotgun.damage * blastScale), dir);
+    victim.knocked = true;
+    victim.ground = false;
+    victim.vx = dir * 230;
+    victim.vy = 130;
+    impactFlash(hit.x, hit.y);
+    finishAction(`${w.name} hits ${victim.name} with the shotgun.`);
+  } else {
+    terrain.carve(hit.x, hit.y, 14);
+    terrainDirty = true;
+    impactFlash(hit.x, hit.y);
+    finishAction("Shotgun blast. Terrain chipped.");
+  }
+  lastShot = {
+    kind: "shotgun",
+    shooter: w.name,
+    points: [start, hit],
+    impact: { ...hit, kind: "shotgun" },
+  };
+  tone(180, 0.18, "square");
+}
+function fireBat() {
+  if (!canAct() || (ammoFor(ammo[team], "bat") ?? 0) <= 0) return;
+  const w = worms[current];
+  let victim = null,
+    best = 52;
+  for (const t of worms) {
+    if (t.hp <= 0 || t.team === w.team) continue;
+    const d = Math.hypot(t.x - w.x, (t.y - w.y) * 0.7);
+    if (d < best) ((best = d), (victim = t));
+  }
+  spendSpecial("bat");
+  shotCount++;
+  wormLocked = true;
+  if (victim) {
+    const dir = Math.sign(victim.x - w.x) || 1;
+    injure(victim, WEAPONS.bat.damage, dir);
+    victim.knocked = true;
+    victim.ground = false;
+    victim.vx = dir * 360;
+    victim.vy = 165;
+    impactFlash(victim.x, victim.y + 20);
+    finishAction(`${w.name} sends ${victim.name} flying with the bat.`);
+    tone(120, 0.2, "square");
+  } else {
+    finishAction("Bat swing. Nothing in range.");
+    tone(260, 0.1);
+  }
+}
+function beginAirstrikeTargeting() {
+  if ((ammoFor(ammo[team], "airstrike") ?? 0) <= 0) return;
+  targetUtility = "airstrike";
+  activeUtility = "airstrike";
+  specialOpen = false;
+  wormLocked = true;
+  $("#status").textContent = "Click or tap the island to call the airstrike.";
+  updateUI();
+}
 function fire() {
-  if (phase !== "aim") return;
+  if (phase !== "aim" || targetUtility || rope.attached || jetpack.active)
+    return;
+  wormLocked = true;
   const w = worms[current],
     kind = weapon,
     meta = WEAPONS[kind];
   if (kind === "mine") {
     placeMine();
+    return;
+  }
+  if (kind === "dynamite") {
+    placeDynamite();
+    return;
+  }
+  if (kind === "shotgun") {
+    fireShotgun();
+    return;
+  }
+  if (kind === "bat") {
+    fireBat();
+    return;
+  }
+  if (kind === "airstrike") {
+    beginAirstrikeTargeting();
     return;
   }
   if (ammoFor(ammo[team], kind) <= 0) {
@@ -1003,6 +2017,9 @@ function fire() {
   }
   const origin = launchGeometry(w, angle, kind, terrain),
     v = launch(angle, power);
+  const launchPoint = terrain.solid(origin.muzzle.x, origin.muzzle.y)
+    ? origin.pivot
+    : origin.muzzle;
   v.vx *= meta.speed;
   v.vy *= meta.speed;
   const thisFuse = shotFuse ?? fuse,
@@ -1017,16 +2034,16 @@ function fire() {
   updateSliders();
   firedPower = power;
   shotCount++;
-  retreat = 3;
+  retreat = retreatSeconds;
   if (kind !== "rocket") {
     ammo[team][kind] = Math.max(0, (ammo[team][kind] ?? 0) - 1);
     if (ammo[team][kind] === 0) setWeapon("rocket");
   }
   projectile = {
-    ...origin.muzzle,
+    ...launchPoint,
     ...v,
-    launchX: origin.muzzle.x,
-    launchY: origin.muzzle.y,
+    launchX: launchPoint.x,
+    launchY: launchPoint.y,
     age: 0,
     fuse: thisFuse,
     bounce: thisBounce,
@@ -1037,7 +2054,7 @@ function fire() {
     kind,
     mesh: projectileMesh(kind),
     trail: [],
-    blocked: origin.blocked,
+    blocked: launchPoint === origin.muzzle ? origin.blocked : false,
   };
   projectile.mesh.position.set(projectile.x, projectile.y, 40);
   group.add(projectile.mesh);
@@ -1081,6 +2098,34 @@ function explode(x, y, kind, ownerIndex = -1) {
   shakeUntil = performance.now() + 350;
   impactFlash(x, y);
   tone(85, 0.6, "sawtooth");
+  if (kind === "cluster") {
+    for (let i = 0; i < 4; i++)
+      spawnBomb({
+        x: x + (Math.random() - 0.5) * 40,
+        y: y + 18 + Math.random() * 18,
+        vx: (Math.random() - 0.5) * 160,
+        vy: 70 + Math.random() * 90,
+        fuse: 0.7 + Math.random() * 0.5,
+        owner: ownerIndex,
+        kind: "bomblet",
+      });
+  }
+  if (kind === "napalm") {
+    for (let i = 0; i < 3; i++)
+      spawnFire(
+        x + (i - 1) * 42 + (Math.random() - 0.5) * 12,
+        y - 10,
+        ownerIndex,
+      );
+  }
+  const chained = hazards.filter(
+    (h) => Math.hypot(h.x - x, h.y - y) < radius + 18,
+  );
+  for (const h of chained) {
+    hazards.splice(hazards.indexOf(h), 1);
+    dispose(h.mesh);
+    explode(h.x, h.y, "barrel", ownerIndex);
+  }
   for (let i = 0; i < 46; i++) {
     const a = Math.random() * Math.PI * 2,
       s = 40 + Math.random() * 210,
@@ -1261,18 +2306,42 @@ function nextTurn() {
   team = 1 - team;
   if (team === 0) {
     round++;
-    const nextWater = waterLevelForRound(round);
-    suddenDeath = nextWater > WATER;
-    if (nextWater > waterLevel) {
-      waterLevel = nextWater;
-      water.userData.setLevel?.(waterLevel);
-      announce("THE WATER IS RISING");
+    if (
+      !crate &&
+      (crateRain ? round % 2 === 0 : round >= 3 && round % 3 === 0)
+    ) {
+      spawnCrate();
+      announce("SUPPLY DROP INBOUND");
+    }
+    if (!sdTriggered && round >= 6) {
+      if (applySuddenDeath()) return;
+    }
+    if (suddenDeath && suddenDeathType === "water") {
+      const nextWater = waterLevelForRound(round);
+      if (nextWater > waterLevel) {
+        waterLevel = nextWater;
+        water.userData.setLevel?.(waterLevel);
+        announce("THE WATER IS RISING");
+      }
     }
   }
   beginTurn();
 }
 function jump(kind = "forward") {
+  if (rope.attached) {
+    rope.length = Math.max(
+      34,
+      Math.min(300, rope.length + (kind === "up" ? -45 : 45)),
+    );
+    return;
+  }
+  if (jetpack.active) {
+    jetpack.pulse = kind === "backflip" ? -1 : 1;
+    jetpack.pulseTime = 0.22;
+    return;
+  }
   if (!canMove()) return;
+  wormLocked = true;
   const w = worms[current];
   const double = lastJump.kind === kind && jumpClock - lastJump.time < 0.28;
   if (!w.ground && !double) return;
@@ -1292,6 +2361,21 @@ function jump(kind = "forward") {
 }
 function startAiTurn() {
   const w = worms[current];
+  const aiAlive = worms.filter((t) => t.team === 1 && t.hp > 0).length;
+  const playerAlive = worms.filter((t) => t.team === 0 && t.hp > 0).length;
+  if ((utilityAmmo[1]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
+    utilityAmmo[1].freeze--;
+    for (const target of worms)
+      if (target.team === 0 && target.hp > 0) target.frozen = 1;
+    phase = "settle";
+    retreat = 0;
+    shotWait = 0;
+    move = 0;
+    $("#status").textContent =
+      "The computer freezes your squad. Your next turn is lost.";
+    updateUI();
+    return;
+  }
   const reposition = planMove({
     terrain,
     me: w,
@@ -1380,6 +2464,9 @@ function step(dt) {
     time -= dt;
     if (time <= 0) {
       cancelCharge();
+      stopRope();
+      stopJetpack();
+      parachuteArmed = false;
       phase = "settle";
       shotWait = 0;
       move = 0;
@@ -1395,7 +2482,7 @@ function step(dt) {
         fire();
       }
     }
-    if (aimInput) adjustAim(aimInput, dt);
+    if (aimInput && !rope.attached && !jetpack.active) adjustAim(aimInput, dt);
     if (team === 1 && mode === "ai") {
       if (aiMoveTime > 0) {
         aiMoveTime = Math.max(0, aiMoveTime - dt);
@@ -1410,7 +2497,7 @@ function step(dt) {
       }
     }
   }
-  if (canMove() && move) {
+  if (canMove() && move && !rope.attached && !jetpack.active) {
     const w = worms[current];
     w.moving = walkWorm(w, terrain, move, dt);
   }
@@ -1444,7 +2531,24 @@ function step(dt) {
     }
     w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
-    const result = stepWorm(w, terrain, dt, gravityScale);
+    let result = { fallDamage: 0 };
+    if (w === worms[current] && jetpack.active) {
+      stepJetpack(w, dt);
+    } else if (w === worms[current] && rope.attached) {
+      stepRope(w, dt);
+    } else {
+      if (w === worms[current] && parachuteArmed && !w.ground && w.vy < -240) {
+        parachuteArmed = false;
+        utilityAmmo[team].parachute = Math.max(
+          0,
+          utilityAmmo[team].parachute - 1,
+        );
+        w.vy = Math.max(w.vy, -70);
+        $("#status").textContent = `${w.name}'s parachute deploys.`;
+        updateUI();
+      }
+      result = stepWorm(w, terrain, dt, gravityScale);
+    }
     if (result.fallDamage) injure(w, result.fallDamage);
     if (w.y - 10 < waterLevel || w.x < -30 || w.x > W + 30) {
       w.hp = 0;
@@ -1470,7 +2574,10 @@ function step(dt) {
   }
   if (crate) {
     const collector = worms.find(
-      (w) => w.hp > 0 && Math.hypot(w.x - crate.x, w.y + 20 - crate.y) < 30,
+      (w) =>
+        !crate.falling &&
+        w.hp > 0 &&
+        Math.hypot(w.x - crate.x, w.y + 20 - crate.y) < 30,
     );
     if (collector) collectCrate(collector);
   }
@@ -1499,8 +2606,29 @@ function step(dt) {
       p.x = p.attached.w.x + p.attached.dx;
       p.y = p.attached.w.y + p.attached.dy;
     }
-    if (!p.sleeping && !p.stuck)
+    if (!p.sleeping && !p.stuck) {
+      if (p.kind === "homing") {
+        const owner = worms[p.owner];
+        const target = worms
+          .filter((t) => t.hp > 0 && t.team !== owner?.team)
+          .sort(
+            (a, b) =>
+              Math.hypot(a.x - p.x, a.y - p.y) -
+              Math.hypot(b.x - p.x, b.y - p.y),
+          )[0];
+        if (target) {
+          const speed = Math.hypot(p.vx, p.vy),
+            current = Math.atan2(p.vy, p.vx),
+            desired = Math.atan2(target.y + 17 - p.y, target.x - p.x);
+          let delta =
+            ((desired - current + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+          delta = Math.max(-2.8 * dt, Math.min(2.8 * dt, delta));
+          p.vx = Math.cos(current + delta) * speed;
+          p.vy = Math.sin(current + delta) * speed;
+        }
+      }
       integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
+    }
     p.age += dt;
     let hit = p.blocked;
     p.blocked = false;
@@ -1589,9 +2717,23 @@ function step(dt) {
       updateUI();
     }
   }
+  stepBombs(dt);
+  stepFires(dt);
+  if (crate?.falling) {
+    crate.vy -= 220 * dt;
+    crate.y += crate.vy * dt;
+    crate.mesh.position.set(crate.x, crate.y, 18);
+    if (crate.y <= crate.targetY) {
+      crate.y = crate.targetY;
+      crate.falling = false;
+      crate.vy = 0;
+      announce("SUPPLY CRATE LANDED");
+    }
+  }
   if (phase === "settle") {
     const settled =
       !projectile &&
+      bombs.length === 0 &&
       retreat <= 0 &&
       worms.every(
         (w) =>
@@ -1706,6 +2848,7 @@ function frame(now) {
     $("#replay").disabled = !canReplay;
   }
   updateAimHUD();
+  updateRopeVisual(worms[current]);
   const aimBox =
     phase === "aim" && !menu.open && worms[current]?.hp > 0 && lastAim?.reticle
       ? {
@@ -1872,6 +3015,7 @@ function frame(now) {
 }
 function setWeapon(kind) {
   if (ammoFor(ammo[team], kind) <= 0) kind = "rocket";
+  specialOpen = false;
   weapon = kind;
   teamWeapon[team] = kind;
   $("#grenade-settings").hidden = !["grenade", "sticky"].includes(kind);
@@ -1907,6 +3051,18 @@ for (const event of ["pointercancel", "lostpointercapture"])
 $("#fire").addEventListener("contextmenu", (e) => e.preventDefault());
 $("#replay").onclick = startReplay;
 $("#share").onclick = shareResultCard;
+$("#select-worm").onclick = () => cycleWorm(1);
+$("#skip").onclick = skipTurn;
+$("#surrender").onclick = surrenderMatch;
+$("#utilities-toggle").onclick = toggleUtilities;
+$("#special-toggle").onclick = () => {
+  if (!canAct()) return;
+  specialOpen = !specialOpen;
+  if (specialOpen) utilitiesOpen = false;
+  updateUI();
+};
+for (const button of document.querySelectorAll("[data-utility]"))
+  button.onclick = () => useUtility(button.dataset.utility);
 $("#jump").onclick = () => jump("forward");
 $("#backflip").onclick = () => jump("backflip");
 $("#fuse").onchange = (e) => {
@@ -1932,7 +3088,8 @@ document.querySelectorAll("[data-move]").forEach((b) => {
 });
 let aiming = false;
 function pointerAim(e) {
-  if (!canAct() || charging) return;
+  if (!canAct() || charging || targetUtility || rope.attached || jetpack.active)
+    return;
   const rect = arena.getBoundingClientRect(),
     x = ((e.clientX - rect.left) / rect.width) * W,
     y = H - ((e.clientY - rect.top) / rect.height) * H,
@@ -1946,6 +3103,10 @@ function pointerAim(e) {
 }
 arena.addEventListener("pointerdown", (e) => {
   if (e.target.closest("button, a, input, select")) return;
+  if (targetUtility) {
+    handleUtilityTarget(e);
+    return;
+  }
   aiming = true;
   arena.setPointerCapture(e.pointerId);
   pointerAim(e);
@@ -1965,6 +3126,13 @@ window.addEventListener("keydown", (e) => {
     " ",
     "Enter",
     "Backspace",
+    "Tab",
+    "r",
+    "j",
+    "p",
+    "t",
+    "g",
+    "f",
     "F1",
     "F2",
     "F3",
@@ -1975,6 +3143,34 @@ window.addEventListener("keydown", (e) => {
     "S",
   ];
   if (controlled.includes(e.key)) e.preventDefault();
+  if (e.key === "Tab") {
+    cycleWorm(e.shiftKey ? -1 : 1);
+    return;
+  }
+  if (e.key.toLowerCase() === "r") {
+    useUtility("rope");
+    return;
+  }
+  if (e.key.toLowerCase() === "j") {
+    useUtility("jetpack");
+    return;
+  }
+  if (e.key.toLowerCase() === "p") {
+    useUtility("parachute");
+    return;
+  }
+  if (e.key.toLowerCase() === "t") {
+    useUtility("teleport");
+    return;
+  }
+  if (e.key.toLowerCase() === "g") {
+    useUtility("girder");
+    return;
+  }
+  if (e.key.toLowerCase() === "f") {
+    useUtility("freeze");
+    return;
+  }
   if (e.key === " ") {
     if (!e.repeat) startCharge("keyboard");
     return;
@@ -2048,8 +3244,10 @@ $("#daily").addEventListener("click", () => {
   $("#format").value = "single";
   $("#weather").value = "clear";
   $("#modifier").value = "standard";
+  $("#scheme").value = "classic";
   syncMenuOptions();
   saveSettings();
+  matchStarted = true;
   reset({ seed, isDaily: true });
   menu.close();
 });
@@ -2060,9 +3258,11 @@ $("#sound").onclick = () => {
   tone(440);
 };
 $("#start").onclick = () => {
+  matchStarted = true;
   reset();
 };
 menu.addEventListener("close", () => {
+  matchStarted = true;
   if (phase === "menu") reset();
   updateUI();
 });
@@ -2075,8 +3275,39 @@ $("#mode").addEventListener("change", () => {
   syncMenuOptions();
   saveSettings();
 });
-for (const selector of ["#difficulty", "#format", "#weather", "#modifier"])
-  $(selector).addEventListener("change", saveSettings);
+function markSchemeCustom() {
+  const select = $("#scheme");
+  if (select && select.value !== "custom") select.value = "custom";
+}
+for (const selector of [
+  "#difficulty",
+  "#format",
+  "#weather",
+  "#modifier",
+  "#turn-time",
+  "#retreat-time",
+  "#sudden-death",
+]) {
+  $(selector).addEventListener("change", () => {
+    markSchemeCustom();
+    saveSettings();
+  });
+}
+$("#scheme").addEventListener("change", (e) => {
+  const preset = SCHEMES[e.target.value];
+  if (!preset) {
+    saveSettings();
+    return;
+  }
+  $("#format").value = preset.format;
+  $("#weather").value = preset.weather;
+  $("#modifier").value = preset.modifier;
+  $("#turn-time").value = String(preset.turnTime);
+  $("#retreat-time").value = String(preset.retreatTime);
+  $("#sudden-death").value = preset.suddenDeath;
+  syncMenuOptions();
+  saveSettings();
+});
 applySettings();
 syncMenuOptions();
 updateRecordUI();
@@ -2123,6 +3354,15 @@ window.siege = {
     gravityScale,
     blastScale,
     turnSeconds,
+    turnTime,
+    retreatSeconds,
+    scheme,
+    stockpile,
+    crateRain,
+    wormLocked,
+    suddenDeathType,
+    sdTriggered,
+    poisoned,
     seriesWins: [...seriesWins],
     seriesRound,
     breakTimer: Math.round(breakTimer * 10) / 10,
@@ -2133,6 +3373,33 @@ window.siege = {
       zoom: Math.round(view.zoom * 100) / 100,
     },
     crate: crate ? { x: crate.x, y: crate.y, kind: crate.kind } : null,
+    girders: girders.map((g) => ({
+      x: Math.round(g.cx),
+      y: Math.round(g.cy),
+      angle: g.angle,
+    })),
+    projectile: projectile
+      ? {
+          kind: projectile.kind,
+          x: Math.round(projectile.x),
+          y: Math.round(projectile.y),
+          vx: Math.round(projectile.vx),
+          vy: Math.round(projectile.vy),
+          age: Math.round(projectile.age * 10) / 10,
+        }
+      : null,
+    bombs: bombs.map((b) => ({
+      x: Math.round(b.x),
+      y: Math.round(b.y),
+      kind: b.kind,
+      fuse: Math.round(b.fuse * 10) / 10,
+    })),
+    fires: fires.map((f) => ({
+      x: Math.round(f.x),
+      y: Math.round(f.y),
+      life: Math.round(f.life * 10) / 10,
+    })),
+    hazards: hazards.map((h) => ({ x: Math.round(h.x), y: Math.round(h.y) })),
     mines: mines.map((m) => ({
       x: Math.round(m.x),
       y: Math.round(m.y),
@@ -2142,6 +3409,20 @@ window.siege = {
     daily: daily ? { date: daily.date, seed: daily.seed } : null,
     record: { ...record, daily: { ...record.daily } },
     ammo: ammo.map((loadout) => ({ ...loadout })),
+    utilities: { ...utilityAmmo[team] },
+    activeUtility,
+    targetUtility,
+    rope: {
+      attached: rope.attached,
+      length: Math.round(rope.length),
+      anchor: rope.anchor,
+    },
+    jetpack: {
+      active: jetpack.active,
+      fuel: Math.round(jetpack.fuel * 10) / 10,
+    },
+    parachuteArmed,
+    frozen: worms.map((w) => w.frozen ?? 0),
     waterLevel,
     suddenDeath,
     hitStop,
@@ -2234,6 +3515,19 @@ if (import.meta.env.DEV) {
     },
     hit(teamIndex = 1, damage = 200) {
       for (const w of worms) if (w.team === teamIndex) injure(w, damage, 1);
+    },
+    triggerSuddenDeath() {
+      return applySuddenDeath();
+    },
+    explodeAt(x = 600, y = 350, kind = "cluster") {
+      explode(x, y, kind, 0);
+    },
+    setAmmo(teamIndex = 0, kind = "grenade", value = 5) {
+      ammo[teamIndex][kind] = value;
+      updateUI();
+    },
+    setCrateKind(kind = "special") {
+      if (crate) crate.kind = kind;
     },
   };
 }

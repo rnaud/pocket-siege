@@ -89,25 +89,27 @@ These are real Worms features, but they are a different design layer and should 
 
 ## Pocket Siege today
 
-| Area           | Current state                                         |
-| -------------- | ----------------------------------------------------- |
-| Squad          | 3 worms, 100 HP                                       |
-| Turn           | One rotating worm; 30/45 sec; 3 sec retreat           |
-| Weapons        | Bazooka, grenade, mortar, sticky, mine                |
-| Ammo           | Per-team limited ammo; unlimited bazooka              |
-| Utilities      | None (low gravity is a match modifier, not a utility) |
-| Crates         | One supply crate per island; health or one ammo item  |
-| Sudden death   | Rising water from round 6                             |
-| Wind / gravity | Wind; low-gravity and big-blast modifiers             |
-| Terrain        | Destructible mask, craters, water                     |
-| Physics        | Knockback, fall damage, drowning, slow-mo, camera     |
-| AI             | Seeks crates, scores water/edge risk, retreats        |
-| Modes          | Single, best-of-three, daily, AI/local                |
-| Meta           | Local records, share card, shot replay, offline PWA   |
+| Area           | Current state                                                                 |
+| -------------- | ----------------------------------------------------------------------------- |
+| Squad          | 3 worms, 100 HP                                                               |
+| Turn           | Rotating worm with Tab/button selection; 30/45/60 sec; 3/5/8 sec retreat     |
+| Weapons        | 5 conventional + shotgun, dynamite, cluster, air strike, napalm, bat, homing, holy |
+| Ammo           | Per-team limited ammo; unlimited bazooka; special stock from crates           |
+| Utilities      | Rope, jet pack, parachute, teleport, girder, freeze with field-kit charges   |
+| Crates         | Airdropped health/ammo/utility/special crates; recurring drops                |
+| Sudden death   | Water, 1 HP, nuclear poison, or leader wins; selected at round 6              |
+| Wind / gravity | Wind; low-gravity and big-blast modifiers                                     |
+| Terrain        | Destructible mask, craters, water, girders, oil drums                          |
+| Physics        | Knockback, fall damage, drowning, slow-mo, camera, rope swing, jet fuel       |
+| AI             | Seeks crates, scores water/edge risk, retreats, parachutes, freezes            |
+| Modes          | Single, best-of-three, daily, AI/local; Classic/Blitz/Crate rain/Stockpile/Armageddon |
+| Meta           | Local records, share card, shot replay, offline PWA, saved schemes             |
 
 Sources: [README](README.md), [GAMEPLAY-AUDIT.md](GAMEPLAY-AUDIT.md), [src/weapons.js](src/weapons.js), [src/physics.js](src/physics.js).
 
 Pocket Siege is already ahead of classic Worms in camera work, shot replay, result sharing, daily seeds, weather, offline support and readable mobile controls. The gap is tactical breadth, not presentation.
+
+> **Implementation status — 2026-11-06.** The first three phases of the roadmap below are now built and covered by the test suite: turn selection and timers, all four sudden-death variants, skip/surrender/freeze, the rope/jetpack/parachute/teleport/girder field kit, eight representative special-weapon roles, oil drums, airdropped crate types, stockpiling and scheme presets. Deliberate simplifications are listed at the end of this document; the gap matrix is retained as the research snapshot that drove the build.
 
 ## Gap matrix
 
@@ -233,3 +235,13 @@ This is the highest-leverage step. It makes positioning, turn planning and sudde
 - [Select Worm — Worms Knowledge Base](https://worms2d.info/Select_Worm) — Tab cycling and rotation order.
 - [Fall Damage — Worms Knowledge Base](https://worms2d.info/Fall_Damage) — velocity-based damage, control loss.
 - [Worms W.M.D. — Wikipedia](https://en.wikipedia.org/wiki/Worms_W.M.D) — crafting, buildings, vehicles, turrets, classes removed.
+
+
+## Shipped scope and simplifications
+
+- **Turn economy:** Select Worm uses Tab or the ⇥ WORM button, preserves the scheduled rotation, and locks after movement or action. Turn/retreat timers and all four sudden-death outcomes are configurable. Freeze is a one-use rare utility rather than a full superweapon economy.
+- **Mobility:** The ninja rope supports fire, swing, shorten/extend, release and re-fire, but not rope-knocking or firing while attached. The jet pack has fuel, thrust, steering and no fall damage; it cannot drop bombs while flying. Teleport is anywhere clear and ends the turn. Girders are 64 px horizontal terrain pieces rather than eight-angle 32/64 px pieces. The parachute auto-deploys after arming and cancels the damaging fall; it does not glide on wind.
+- **Weapons:** Shotgun is a single hitscan blast; dynamite is a three-second dropped charge; cluster splits into four bomblets; air strike drops five targetable bombs; napalm leaves three burning areas; bat is a short-range knockback hit; homing steers toward the nearest enemy; holy grenade is a large timed blast. These are representative roles, not a complete Armageddon arsenal.
+- **Crates and schemes:** Health, conventional-ammo, utility and special crates are airdropped. Classic, Blitz, Crate rain, Stockpile and Armageddon presets cover the main economy variants. Stockpile carries ammo and utilities across Best-of-Three islands. Health crates still drop after sudden death, unlike Armageddon's health-crate cutoff.
+- **AI:** The computer uses parachutes and a freeze when outnumbered; it does not attempt expert rope, jetpack or girder play.
+- **Still out of scope:** online multiplayer, W.M.D. vehicles/buildings/crafting, a terrain editor, campaign/missions, full team cosmetics and the complete 65-record weapon/utility list.

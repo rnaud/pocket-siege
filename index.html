@@ -139,8 +139,63 @@
           <div id="turn-banner" aria-live="polite"></div>
         </section>
         <div class="controls">
+          <div id="utilities" class="utilities-panel" hidden>
+            <div class="utilities-head">
+              <b>FIELD KIT</b
+              ><small>R rope · J pack · P chute · T tele · G girder</small>
+            </div>
+            <div class="utilities-grid">
+              <button data-utility="rope" type="button">
+                <span>⌁</span>Rope<small>∞</small>
+              </button>
+              <button data-utility="jetpack" type="button">
+                <span>✦</span>Jet pack<small>1</small>
+              </button>
+              <button data-utility="parachute" type="button">
+                <span>☂</span>Chute<small>1</small>
+              </button>
+              <button data-utility="teleport" type="button">
+                <span>◎</span>Teleport<small>1</small>
+              </button>
+              <button data-utility="girder" type="button">
+                <span>▰</span>Girder<small>1</small>
+              </button>
+              <button data-utility="freeze" type="button">
+                <span>❄</span>Freeze<small>0</small>
+              </button>
+            </div>
+            <div id="utility-status" class="utility-status"></div>
+          </div>
           <div class="move-panel">
-            <div class="eyebrow">01 / MOVE</div>
+            <div class="eyebrow move-heading">
+              <span>01 / MOVE</span>
+              <button
+                id="select-worm"
+                class="mini-button"
+                type="button"
+                title="Select worm (Tab)"
+                hidden
+              >
+                ⇥ WORM
+              </button>
+              <button
+                id="skip"
+                class="mini-button"
+                type="button"
+                title="Skip this turn"
+                hidden
+              >
+                SKIP
+              </button>
+              <button
+                id="utilities-toggle"
+                class="mini-button"
+                type="button"
+                title="Utilities"
+              >
+                ✦ UTILS
+              </button>
+            </div>
             <div class="move-buttons">
               <button data-move="-1" aria-label="Move left">←</button
               ><button data-move="1" aria-label="Move right">→</button
@@ -149,7 +204,52 @@
             </div>
           </div>
           <div class="weapon-panel">
-            <div class="eyebrow">02 / LOADOUT</div>
+            <div class="eyebrow loadout-heading">
+              <span>02 / LOADOUT</span>
+              <button
+                id="special-toggle"
+                class="mini-button"
+                type="button"
+                title="Special weapons"
+              >
+                ＋ SPECIAL
+              </button>
+            </div>
+            <div id="special-weapons" class="special-weapons" hidden>
+              <div class="special-head">
+                <b>SPECIALS</b
+                ><small
+                  >SHOTGUN · DYNAMITE · CLUSTER · AIR · NAPALM · BAT · HOMING ·
+                  HOLY</small
+                >
+              </div>
+              <div class="special-grid">
+                <button data-weapon="shotgun" type="button">
+                  <span>▰</span>Shotgun<small>3</small>
+                </button>
+                <button data-weapon="dynamite" type="button">
+                  <span>▮</span>Dynamite<small>2</small>
+                </button>
+                <button data-weapon="cluster" type="button">
+                  <span>✸</span>Cluster<small>2</small>
+                </button>
+                <button data-weapon="airstrike" type="button">
+                  <span>✈</span>Air strike<small>1</small>
+                </button>
+                <button data-weapon="napalm" type="button">
+                  <span>♨</span>Napalm<small>2</small>
+                </button>
+                <button data-weapon="bat" type="button">
+                  <span>⚾</span>Bat<small>3</small>
+                </button>
+                <button data-weapon="homing" type="button">
+                  <span>➹</span>Homing<small>2</small>
+                </button>
+                <button data-weapon="holy" type="button">
+                  <span>✧</span>Holy<small>1</small>
+                </button>
+              </div>
+            </div>
             <div class="weapons">
               <button
                 data-weapon="rocket"
@@ -249,13 +349,16 @@
           <summary>FIELD MANUAL <span>Controls & weapons ↓</span></summary>
           <p>
             <b>01 &nbsp; Get in position</b><br />Left/Right move. Enter jumps
-            forward; Backspace jumps up, double-tap it to backflip. Touch
-            buttons do the same.
+            forward; Backspace jumps up, double-tap it to backflip. Tab or the ⇥
+            WORM button chooses your worm; SKIP passes the turn. Touch buttons
+            do the same.
           </p>
           <p>
             <b>02 &nbsp; Line up your shot</b><br />Up/Down or W/S aim. On
             touch, drag to aim or use the angle slider. Judge the arc yourself;
-            wind bends rockets but not grenades.
+            wind bends rockets but not grenades. Open ＋ SPECIAL for shotgun,
+            dynamite, cluster, air strike, napalm, bat, homing and holy
+            grenades. Air strike asks you to click a target.
           </p>
           <p>
             <b>03 &nbsp; Make a mess</b><br />Hold Space or the fire button to
@@ -263,16 +366,18 @@
             sticky fuse: keys 1–5 or the selector. F1/F2 select bazooka/grenade;
             F3 selects a heavy mortar, F4 a sticky bomb; M places a proximity
             mine. Grenades, mortars, stickies and mines are limited. Falling can
-            hurt you; water is lethal, and from round six the sea climbs every
-            round. Solo skill is chosen in the menu.
+            hurt you; water is lethal, and from round six a chosen sudden-death
+            event fires. Open ✦ UTILS for rope, jet pack, parachute, teleport,
+            girder and freeze. Solo skill is chosen in the menu.
           </p>
           <p>
-            <b>04 &nbsp; Field notes</b><br />Grab a supply crate to heal or
-            restock. Rain and storms strengthen the wind. Choose single or
-            best-of-three, set a match modifier, and try the date-seeded Daily
-            Island; your career record stays on this device. Replay the last
-            shot with ↺ and share a result card from the menu. After the first
-            load the game also works offline.
+            <b>04 &nbsp; Field notes</b><br />Walk onto an airdropped supply
+            crate after it lands to heal, restock weapons or add a field-kit
+            charge. Choose a scheme preset, turn/retreat pace and sudden death,
+            or tune them individually. Rain and storms strengthen the wind. Try
+            the date-seeded Daily Island; your career record stays on this
+            device. Replay the last shot with ↺ and share a result card from the
+            menu. After the first load the game also works offline.
           </p>
         </details>
         <div class="menu-grid">
@@ -307,6 +412,17 @@
             </select>
           </div>
           <div class="wide">
+            <label class="mode-label" for="scheme">SCHEME PRESET</label
+            ><select id="scheme">
+              <option value="classic" selected>Classic duel</option>
+              <option value="blitz">Blitz</option>
+              <option value="crates">Crate rain</option>
+              <option value="stockpile">Stockpile</option>
+              <option value="armageddon">Armageddon</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="wide">
             <label class="mode-label" for="modifier">MATCH MODIFIER</label
             ><select id="modifier">
               <option value="standard" selected>Standard</option>
@@ -314,6 +430,33 @@
               <option value="big-blasts">Big blasts</option>
               <option value="quick-turns">Quick turns</option>
               <option value="moon-chaos">Moon chaos</option>
+            </select>
+          </div>
+          <div class="wide pace-row">
+            <div>
+              <label class="mode-label" for="turn-time">TURN TIME</label
+              ><select id="turn-time">
+                <option value="30">30 seconds</option>
+                <option value="45" selected>45 seconds</option>
+                <option value="60">60 seconds</option>
+              </select>
+            </div>
+            <div>
+              <label class="mode-label" for="retreat-time">RETREAT</label
+              ><select id="retreat-time">
+                <option value="3" selected>3 seconds</option>
+                <option value="5">5 seconds</option>
+                <option value="8">8 seconds</option>
+              </select>
+            </div>
+          </div>
+          <div class="wide">
+            <label class="mode-label" for="sudden-death">SUDDEN DEATH</label
+            ><select id="sudden-death">
+              <option value="water" selected>Rising water</option>
+              <option value="health">All worms to 1 HP</option>
+              <option value="nuke">Nuclear poison</option>
+              <option value="leader">Leader wins round</option>
             </select>
           </div>
         </div>
@@ -326,7 +469,10 @@
           <button type="button" id="share" disabled>SHARE CARD</button>
         </div>
         <button id="start" value="start">LET’S MAKE TROUBLE ↗</button
-        ><button class="close-help" value="close">Back to the island</button>
+        ><button class="close-help" value="close">Back to the island</button
+        ><button type="button" id="surrender" class="danger-link">
+          SURRENDER MATCH
+        </button>
       </form>
     </dialog>
     <script type="module" src="/src/main.js"></script>

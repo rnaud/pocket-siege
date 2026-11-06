@@ -47,7 +47,20 @@ test("weapon metadata and starting ammo match the loadout", () => {
   expect(WEAPONS.rocket.ammo).toBe(Infinity);
   expect(WEAPONS.mortar.radius).toBeGreaterThan(WEAPONS.rocket.radius);
   expect(WEAPONS.mortar.damage).toBeGreaterThan(WEAPONS.rocket.damage);
-  expect(freshAmmo()).toEqual({ grenade: 3, mortar: 2, sticky: 2, mine: 2 });
+  expect(freshAmmo()).toMatchObject({
+    grenade: 3,
+    mortar: 2,
+    sticky: 2,
+    mine: 2,
+    shotgun: 3,
+    dynamite: 2,
+    cluster: 2,
+    airstrike: 1,
+    napalm: 2,
+    bat: 3,
+    homing: 2,
+    holy: 1,
+  });
   expect(WEAPONS.mine.ammo).toBe(2);
   expect(WEAPON_ORDER).not.toContain("mine");
 });

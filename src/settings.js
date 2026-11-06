@@ -10,6 +10,17 @@ const MODIFIERS = [
   "quick-turns",
   "moon-chaos",
 ];
+const TURN_TIMES = [30, 45, 60];
+const RETREAT_TIMES = [3, 5, 8];
+const SUDDEN_DEATHS = ["water", "health", "nuke", "leader"];
+const SCHEMES = [
+  "classic",
+  "blitz",
+  "crates",
+  "stockpile",
+  "armageddon",
+  "custom",
+];
 
 export function defaultSettings() {
   return {
@@ -19,6 +30,10 @@ export function defaultSettings() {
     format: "single",
     weather: "clear",
     modifier: "standard",
+    scheme: "classic",
+    turnTime: 45,
+    retreatTime: 3,
+    suddenDeath: "water",
   };
 }
 
@@ -50,6 +65,16 @@ export function readSettings(storage) {
       modifier: MODIFIERS.includes(parsed.modifier)
         ? parsed.modifier
         : base.modifier,
+      scheme: SCHEMES.includes(parsed.scheme) ? parsed.scheme : base.scheme,
+      turnTime: TURN_TIMES.includes(parsed.turnTime)
+        ? parsed.turnTime
+        : base.turnTime,
+      retreatTime: RETREAT_TIMES.includes(parsed.retreatTime)
+        ? parsed.retreatTime
+        : base.retreatTime,
+      suddenDeath: SUDDEN_DEATHS.includes(parsed.suddenDeath)
+        ? parsed.suddenDeath
+        : base.suddenDeath,
     };
   } catch {
     return defaultSettings();

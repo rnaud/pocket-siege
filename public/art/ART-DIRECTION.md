@@ -90,3 +90,8 @@ Emblem:
 - Supply crates and mines are billboard sprites using `crate-paper.webp` and `weapon-mine.webp`.
 - UI surfaces use `paper-grain.webp` with ink rules, offset shadows and Bricolage Grotesque display type.
 - `scripts/make-brand-assets.py` rebuilds the OG card, paper-seal icons and favicon from the final art.
+
+
+## Expanded loadout controls
+
+The generated card set above covers the five conventional weapons plus the crate, portraits and backdrop. The expanded **special weapon** and **field-kit** trays intentionally use compact typographic paper controls rather than pretending to have generated cards that do not exist. They inherit the same cream paper, ink border, chartreuse selection and moss accent. A future generated-icon pass can add transparent cards for shotgun, dynamite, cluster, air strike, napalm, bat, homing, holy grenade and the six field-kit utilities without changing the runtime layout.

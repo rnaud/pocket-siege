@@ -179,6 +179,8 @@ export function createCrate(kind, image = null) {
     grenade: 0xe6b56d,
     mortar: 0xa8b4d8,
     sticky: 0xf393b5,
+    utility: 0xd4e36c,
+    special: 0xe7a34a,
   };
   const color = colors[kind] ?? 0xd8c48a;
   const group = new THREE.Group();
@@ -278,5 +280,25 @@ export function createMine(image = null) {
   light.position.y = 7;
   group.add(light);
   group.userData.light = light;
+  return group;
+}
+
+export function createBarrel() {
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(12, 12, 28, 16),
+    new THREE.MeshStandardMaterial({ color: 0xb85b45, roughness: 0.8 }),
+  );
+  group.add(body);
+  const band = new THREE.Mesh(
+    new THREE.CylinderGeometry(13, 13, 4, 16),
+    new THREE.MeshStandardMaterial({ color: 0xe9d7ad, roughness: 0.7 }),
+  );
+  group.add(band);
+  const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(body.geometry),
+    new THREE.LineBasicMaterial({ color: 0x17383b }),
+  );
+  body.add(edges);
   return group;
 }

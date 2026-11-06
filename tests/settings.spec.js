@@ -23,6 +23,10 @@ test("settings round-trip and reject unknown values", () => {
     format: "best3",
     weather: "storm",
     modifier: "moon-chaos",
+    scheme: "custom",
+    turnTime: 60,
+    retreatTime: 8,
+    suddenDeath: "nuke",
   };
   writeSettings(settings, storage);
   expect(readSettings(storage)).toEqual(settings);
