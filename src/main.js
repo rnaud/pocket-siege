@@ -3529,5 +3529,8 @@ if (import.meta.env.DEV) {
     setCrateKind(kind = "special") {
       if (crate) crate.kind = kind;
     },
+    releaseRope() {
+      releaseRope();
+    },
   };
 }

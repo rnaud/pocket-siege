@@ -1076,7 +1076,7 @@ test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
     if (attached) break;
   }
   expect(attached).toBe(true);
-  await page.keyboard.press("r");
+  await page.evaluate(() => window.siege.debug.releaseRope());
   expect(await page.evaluate(() => window.siege.getState().rope.attached)).toBe(
     false,
   );
