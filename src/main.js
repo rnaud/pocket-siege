@@ -23,6 +23,7 @@ import {
   createStars,
   createProjectile,
   createAimOverlay,
+  createCrate,
 } from "./combat-visuals.js";
 import { paintTerrain } from "./terrain-paint.js";
 import {
@@ -33,6 +34,17 @@ import {
   waterLevelForRound,
 } from "./weapons.js";
 import { planTurn, planMove } from "./ai.js";
+import {
+  applyMatchResult,
+  dailySeed,
+  dailyStatus,
+  readRecord,
+  recordBest,
+  recordSummary,
+  writeRecord,
+} from "./progress.js";
+import { nextSeriesWins, seriesWinner } from "./series.js";
+import { applyPickup, PICKUP_KINDS } from "./pickups.js";
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const coarsePointer = matchMedia("(pointer: coarse)").matches;
@@ -98,6 +110,15 @@ let ammo = [freshAmmo(), freshAmmo()],
   waterLevel = WATER,
   suddenDeath = false,
   difficulty = "regular";
+let format = "single",
+  seriesWins = [0, 0],
+  seriesRound = 1,
+  breakTimer = 0,
+  crate = null,
+  slowMo = 0,
+  weather = "clear",
+  daily = null,
+  record = readRecord();
 let aiPower = 100;
 let shotFuse = null,
   shotBounce = null,
@@ -170,6 +191,13 @@ const debrisPrototype = new THREE.Mesh(debrisGeometry, debrisMaterials[0]);
 debrisPrototype.visible = false;
 debrisPrototype.frustumCulled = false;
 group.add(debrisPrototype);
+const dustGeometry = new THREE.SphereGeometry(1, 6, 4);
+const dustMaterial = new THREE.MeshBasicMaterial({
+  color: 0xd9c9a6,
+  transparent: true,
+  opacity: 0.42,
+  depthWrite: false,
+});
 const projectilePrototypes = Object.fromEntries(
   WEAPON_ORDER.map((kind) => {
     const prototype = createProjectile(kind);
@@ -240,6 +268,7 @@ function createWorm(t, i, x) {
     y,
     renderY: y,
     moving: false,
+    dustAt: 0,
     vx: 0,
     vy: 0,
     g,
@@ -359,10 +388,27 @@ function tone(freq, duration = 0.1, type = "sine") {
   o.start();
   o.stop(audio.currentTime + duration);
 }
-function reset() {
+function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   cancelCharge();
   uiKey = "";
   timerKey = "";
+  if (!keepSeries) {
+    seriesWins = [0, 0];
+    seriesRound = 1;
+    slowMo = 0;
+    daily = isDaily ? daily : null;
+  }
+  if (isDaily) {
+    format = "single";
+    weather = "clear";
+    $("#format").value = "single";
+    $("#weather").value = "clear";
+  } else {
+    format = $("#format")?.value || "single";
+    weather = $("#weather")?.value || "clear";
+  }
+  breakTimer = 0;
+  slowMo = 0;
   ammo = [freshAmmo(), freshAmmo()];
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
@@ -391,9 +437,13 @@ function reset() {
   }
   if (projectile) group.remove(projectile.mesh);
   projectile = null;
+  if (crate) {
+    dispose(crate.mesh);
+    crate = null;
+  }
   for (const p of particles) group.remove(p.mesh);
   particles = [];
-  terrain = new Terrain(2 + Math.floor(Math.random() * 40));
+  terrain = new Terrain(seed ?? 2 + Math.floor(Math.random() * 40));
   paintTerrain(ctx, terrain, texture);
   terrainDirty = false;
   worms = [
@@ -403,14 +453,17 @@ function reset() {
   for (let i = 0; i < 240; i++)
     for (const w of worms) stepWorm(w, terrain, 1 / 120);
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
-  team = 0;
+  team = keepSeries ? (seriesRound - 1) % 2 : 0;
   round = 1;
   turnCount = [0, 0];
   ((explosions = 0), (shakeUntil = 0));
   announceUntil = 0;
   setWeapon("rocket");
   mode = $("#mode").value;
+  applyWeather();
+  spawnCrate();
   beginTurn();
+  updateRecordUI();
   resize();
 }
 function dispose(obj) {
@@ -419,6 +472,60 @@ function dispose(obj) {
     o.geometry?.dispose();
     if (o.material) o.material.dispose();
   });
+}
+function updateSeriesHUD() {
+  const el = $("#series");
+  el.hidden = format !== "best3";
+  if (!el.hidden) el.textContent = `SERIES ${seriesWins[0]}–${seriesWins[1]}`;
+}
+function applyWeather() {
+  $("#weather-layer").className = weather === "clear" ? "" : weather;
+}
+function spawnCrate() {
+  if (crate || !terrain) return;
+  for (let tries = 0; tries < 40; tries++) {
+    const x = 150 + Math.random() * (W - 300),
+      ground = terrain.surface(x);
+    if (ground < waterLevel + 30) continue;
+    if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
+    const kind = PICKUP_KINDS[Math.floor(Math.random() * PICKUP_KINDS.length)],
+      mesh = createCrate(kind),
+      y = ground + 10;
+    mesh.position.set(x, y, 18);
+    group.add(mesh);
+    crate = { x, y, kind, mesh, bob: Math.random() * Math.PI * 2 };
+    return;
+  }
+}
+function collectCrate(w) {
+  if (!crate) return;
+  const { kind, mesh } = crate;
+  const result = applyPickup(kind, w.hp, ammo[w.team]);
+  w.hp = result.hp;
+  ammo[w.team] = result.loadout;
+  const label = kind === "health" ? "+25 HP" : `+1 ${WEAPONS[kind].label}`;
+  pickupLabel(w, label);
+  $("#status").textContent = `${w.name} grabs a supply crate: ${label}.`;
+  dispose(mesh);
+  crate = null;
+  tone(720, 0.12, "triangle");
+  updateUI();
+}
+function pickupLabel(w, text) {
+  const p = screen(w.x, w.y + 34),
+    el = document.createElement("span");
+  el.className = "pickup-number";
+  el.textContent = text;
+  el.style.left = p.x + "px";
+  el.style.top = p.y + "px";
+  $("#damage").appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+function updateRecordUI() {
+  const summary = $("#record-summary");
+  if (summary) summary.textContent = recordSummary(record);
+  const dailyLabel = $("#daily-status");
+  if (dailyLabel) dailyLabel.textContent = dailyStatus(record);
 }
 function beginTurn() {
   const roster = worms.filter((w) => w.team === team);
@@ -430,7 +537,9 @@ function beginTurn() {
   current = worms.indexOf(active);
   phase = "aim";
   time = 45;
-  wind = (Math.random() - 0.5) * 28;
+  const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
+  wind = (Math.random() - 0.5) * windMax;
+  slowMo = 0;
   angle = team ? 135 : 45;
   active.facing = team ? -1 : 1;
   cancelCharge();
@@ -460,9 +569,17 @@ function beginTurn() {
         : "MOSS’S MOVE";
   $("#wind").textContent =
     `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 5).toFixed(1)}`;
+  $(".location span").textContent = daily ? "DAILY ISLAND" : "FERN ISLAND";
+  updateSeriesHUD();
+  const weatherNote =
+    weather === "storm"
+      ? " Storm winds."
+      : weather === "rain"
+        ? " Rain falling."
+        : "";
   $("#status").textContent = suddenDeath
-    ? `${active.name} is up. The water is rising.`
-    : `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}`;
+    ? `${active.name} is up. The water is rising.${weatherNote}`
+    : `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}${weatherNote}`;
   bannerTime = 1.8;
   $("#turn-banner").textContent =
     `${team ? "CORAL CREW" : "MOSS COMPANY"} · ${active.name.toUpperCase()}`;
@@ -573,13 +690,17 @@ function adjustAim(direction, dt) {
   angle = facing > 0 ? next : 180 - next;
   updateSliders();
 }
-function injure(w, damage) {
+function injure(w, damage, direction = 0) {
   if (w.hp <= 0 || damage <= 0) return;
   w.hp = Math.max(0, w.hp - damage);
   w.hurt = 1.4;
   w.hits++;
-  if (w.hp === 0) w.deathPending = true;
-  damageLabel(w, damage);
+  if (direction) w.hitDirection = direction;
+  if (w.hp === 0) {
+    w.deathPending = true;
+    slowMo = Math.max(slowMo, 0.7);
+  }
+  damageLabel(w, damage, direction);
   if (w === worms[current]) {
     cancelCharge();
     retreat = 0;
@@ -623,6 +744,8 @@ function fire() {
   projectile = {
     ...origin.muzzle,
     ...v,
+    launchX: origin.muzzle.x,
+    launchY: origin.muzzle.y,
     age: 0,
     fuse: thisFuse,
     bounce: thisBounce,
@@ -650,7 +773,7 @@ function fire() {
   tone(550, 0.2, "triangle");
   updateUI();
 }
-function explode(x, y, kind) {
+function explode(x, y, kind, ownerIndex = -1) {
   const profile =
     kind === "death"
       ? { radius: 28, damage: 25, impulse: 220 }
@@ -686,14 +809,25 @@ function explode(x, y, kind) {
     });
   }
   const reports = [];
+  let dealt = 0;
   for (const w of worms) {
     if (w.hp <= 0) continue;
     const factor = blastImpulse(w, x, y, radius + 34, impulse);
     if (factor > 0) {
       const damage = Math.max(1, Math.round(factor * maxDamage));
-      w.hitDirection = Math.sign(w.x - x) || 1;
-      injure(w, damage);
+      const direction = Math.sign(w.x - x) || 1;
+      injure(w, damage, direction);
+      if (ownerIndex >= 0 && worms[ownerIndex]?.team !== w.team)
+        dealt += damage;
       reports.push(`${w.name} −${damage}${w.hp === 0 ? " · KO" : ""}`);
+    }
+  }
+  if (dealt > 0) {
+    const best = recordBest(record, { bestHit: dealt });
+    if (best.bestHit !== record.bestHit) {
+      record = best;
+      writeRecord(record);
+      updateRecordUI();
     }
   }
   if (reports.length) hitStop = Math.max(hitStop, 0.06);
@@ -701,6 +835,23 @@ function explode(x, y, kind) {
     ? reports.join("   /   ")
     : "Terrain destroyed. No worms hit.";
   updateUI();
+}
+function spawnDust(x, y) {
+  const mesh = new THREE.Mesh(dustGeometry, dustMaterial),
+    size = 2 + Math.random() * 3;
+  mesh.position.set(x, y, 30);
+  mesh.scale.setScalar(size);
+  group.add(mesh);
+  particles.push({
+    mesh,
+    size,
+    x,
+    y,
+    vx: (Math.random() - 0.5) * 18,
+    vy: 8 + Math.random() * 14,
+    life: 0.4,
+    max: 0.4,
+  });
 }
 function impactFlash(x, y) {
   const p = screen(x, y),
@@ -711,32 +862,90 @@ function impactFlash(x, y) {
   $("#damage").appendChild(flash);
   setTimeout(() => flash.remove(), 600);
 }
-function damageLabel(w, n) {
+function damageLabel(w, n, direction = 0) {
   const p = screen(w.x, w.y + 30),
     el = document.createElement("span");
   el.className = "damage-number";
-  el.textContent = "−" + n;
+  el.textContent =
+    typeof n === "number"
+      ? `${direction < 0 ? "←" : direction > 0 ? "→" : ""}−${n}`
+      : n;
   el.style.left = p.x + "px";
   el.style.top = p.y + "px";
   $("#damage").appendChild(el);
   setTimeout(() => el.remove(), 1300);
 }
-function endGame() {
+function finishMatch(winner, series) {
   phase = "over";
   aimHUD.guide.style.display = "none";
-  const a = worms.some((w) => w.team === 0 && w.hp > 0),
-    b = worms.some((w) => w.team === 1 && w.hp > 0);
+  const name =
+    winner === 0
+      ? "MOSS COMPANY"
+      : winner === 1
+        ? "CORAL CREW"
+        : "MUTUAL DESTRUCTION";
   announce(
-    a && !b
-      ? "MOSS COMPANY WINS!"
-      : b && !a
-        ? "CORAL CREW WINS!"
-        : "MUTUAL DESTRUCTION!",
+    winner === null
+      ? "MUTUAL DESTRUCTION!"
+      : series
+        ? `${name} WINS THE SERIES!`
+        : `${name} WINS!`,
   );
   announceUntil = Infinity;
-  $("#turn-label").textContent = "MATCH COMPLETE";
-  $("#status").textContent = "Good game. Tap New match for another round.";
+  $("#turn-label").textContent = series ? "SERIES COMPLETE" : "MATCH COMPLETE";
+  $("#status").textContent =
+    format === "best3"
+      ? `Final series ${seriesWins[0]}–${seriesWins[1]}. Tap New match for another.`
+      : "Good game. Tap New match for another round.";
+  updateSeriesHUD();
+  if (mode === "ai" || daily) {
+    record = applyMatchResult(record, {
+      won: winner === 0,
+      ai: mode === "ai",
+      daily: Boolean(daily),
+      dateKey: daily?.date,
+      draw: winner === null,
+    });
+    writeRecord(record);
+    updateRecordUI();
+  }
   updateUI();
+}
+function endGame() {
+  const a = worms.some((w) => w.team === 0 && w.hp > 0),
+    b = worms.some((w) => w.team === 1 && w.hp > 0);
+  const winner = a && !b ? 0 : b && !a ? 1 : null;
+  if (format === "best3" && winner !== null) {
+    seriesWins = nextSeriesWins(seriesWins, winner);
+    const wonSeries = seriesWinner(seriesWins);
+    if (wonSeries !== null) return finishMatch(wonSeries, true);
+    phase = "break";
+    breakTimer = 4.5;
+    aimHUD.guide.style.display = "none";
+    announce(
+      `${winner ? "CORAL CREW" : "MOSS COMPANY"} TAKES ROUND ${seriesRound}`,
+    );
+    $("#turn-label").textContent = "ROUND OVER";
+    $("#status").textContent =
+      `Series ${seriesWins[0]}–${seriesWins[1]}. Next island incoming…`;
+    updateSeriesHUD();
+    updateUI();
+    return;
+  }
+  if (format === "best3" && winner === null) {
+    if (seriesRound >= 9) return finishMatch(null, true);
+    phase = "break";
+    breakTimer = 4.5;
+    aimHUD.guide.style.display = "none";
+    announce("MUTUAL DESTRUCTION — NEXT ISLAND");
+    $("#turn-label").textContent = "ROUND OVER";
+    $("#status").textContent =
+      `Series ${seriesWins[0]}–${seriesWins[1]}. Next island incoming…`;
+    updateSeriesHUD();
+    updateUI();
+    return;
+  }
+  finishMatch(winner, false);
 }
 function nextTurn() {
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
@@ -837,6 +1046,14 @@ function step(dt) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
+  if (phase === "break") {
+    breakTimer = Math.max(0, breakTimer - dt);
+    if (breakTimer === 0) {
+      seriesRound++;
+      reset({ keepSeries: true });
+    }
+    return;
+  }
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -905,6 +1122,7 @@ function step(dt) {
       w.drowned = true;
       w.dying = 0.65;
       w.hurt = 0.65;
+      slowMo = Math.max(slowMo, 0.5);
       impactFlash(w.x, waterLevel);
       tone(150, 0.3);
       damageLabel(w, "SPLASH");
@@ -919,6 +1137,12 @@ function step(dt) {
       }
       updateUI();
     } else if (w.deathPending && w.ground && Math.abs(w.vx) < 2) w.dying = 0.8;
+  }
+  if (crate) {
+    const collector = worms.find(
+      (w) => w.hp > 0 && Math.hypot(w.x - crate.x, w.y + 20 - crate.y) < 30,
+    );
+    if (collector) collectCrate(collector);
   }
   if (phase === "aim") updateUI();
   if (projectile) {
@@ -998,7 +1222,16 @@ function step(dt) {
       if (p.trail.length > 28) p.trail.shift();
     }
     if (boom || p.y < waterLevel || p.x < -50 || p.x > W + 50 || p.age > 12) {
-      if (boom && p.y > waterLevel) explode(p.x, p.y, p.kind);
+      if (boom && p.y > waterLevel) {
+        const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);
+        const best = recordBest(record, { longest: distance });
+        if (best.longest !== record.longest) {
+          record = best;
+          writeRecord(record);
+          updateRecordUI();
+        }
+        explode(p.x, p.y, p.kind, p.owner);
+      }
       group.remove(p.mesh);
       projectile = null;
       phase = "settle";
@@ -1061,8 +1294,11 @@ new ResizeObserver(() => requestAnimationFrame(resize)).observe(arena);
 function frame(now) {
   requestAnimationFrame(frame);
   const frameDt = Math.min((now - last) / 1000, 0.1);
-  accumulator += frameDt;
+  const slow = slowMo > 0 && !reducedMotion;
+  if (slowMo > 0) slowMo = Math.max(0, slowMo - frameDt);
+  accumulator += frameDt * (slow ? 0.35 : 1);
   last = now;
+  arena.classList.toggle("slow-mo", slow);
   while (accumulator >= 1 / 120) {
     step(1 / 120);
     accumulator -= 1 / 120;
@@ -1094,6 +1330,10 @@ function frame(now) {
     if (Math.abs(gap) > 32) w.renderY = targetY;
     else w.renderY += gap * Math.min(0.55, frameDt * 26);
     w.g.position.set(w.x, w.renderY, 15);
+    if (w.knocked && Math.hypot(w.vx, w.vy) > 150 && now - w.dustAt > 50) {
+      w.dustAt = now;
+      spawnDust(w.x, w.renderY + 12);
+    }
 
     const facing = w.facing * (w.team ? -1 : 1);
     const moving = active && w.moving && w.ground;
@@ -1183,6 +1423,15 @@ function frame(now) {
     }
     w.label.style.left = p.x + "px";
     w.label.style.top = p.y + "px";
+  }
+  if (crate) {
+    crate.mesh.position.y = crate.y + Math.sin(now * 0.003 + crate.bob) * 2;
+    if (crate.mesh.userData.beacon)
+      crate.mesh.userData.beacon.rotation.y = now * 0.002;
+  }
+  if (phase === "break") {
+    $("#status").textContent =
+      `Round over. Next island in ${Math.ceil(breakTimer)}…`;
   }
   $("#turn-banner").classList.toggle("shown", bannerTime > 0 && !menu.open);
   const timerHtml = `${retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time))}<small> ${retreat > 0 ? "RETREAT" : "SEC"}</small>`;
@@ -1358,15 +1607,27 @@ document.addEventListener("visibilitychange", () => {
 $("#help").onclick = () => {
   releaseInputs();
   $(".instructions").open = true;
+  updateRecordUI();
   menu.showModal();
   updateUI();
 };
 $("#restart").onclick = () => {
   releaseInputs();
   $(".instructions").open = false;
+  updateRecordUI();
   menu.showModal();
   updateUI();
 };
+$("#daily").addEventListener("click", () => {
+  const { key, seed } = dailySeed();
+  daily = { date: key, seed };
+  $("#mode").value = "ai";
+  $("#format").value = "single";
+  $("#weather").value = "clear";
+  syncMenuOptions();
+  reset({ seed, isDaily: true });
+  menu.close();
+});
 $("#sound").onclick = () => {
   sound = !sound;
   $("#sound").setAttribute("aria-pressed", String(sound));
@@ -1381,15 +1642,13 @@ menu.addEventListener("close", () => {
   updateUI();
 });
 if (coarsePointer) $("#fire small").textContent = "HOLD · RELEASE TO FIRE";
-const difficultyRow = $("#difficulty-row"),
-  menuGrid = $(".menu-grid");
+const difficultyRow = $("#difficulty-row");
 function syncMenuOptions() {
-  const solo = $("#mode").value === "ai";
-  difficultyRow.hidden = !solo;
-  menuGrid.classList.toggle("single", !solo);
+  difficultyRow.hidden = $("#mode").value !== "ai";
 }
 $("#mode").addEventListener("change", syncMenuOptions);
 syncMenuOptions();
+updateRecordUI();
 reset();
 menu.showModal();
 updateUI();
@@ -1417,6 +1676,16 @@ window.siege = {
     weapon,
     teamWeapon: [...teamWeapon],
     difficulty,
+    mode,
+    format,
+    weather,
+    seriesWins: [...seriesWins],
+    seriesRound,
+    breakTimer: Math.round(breakTimer * 10) / 10,
+    slowMo: Math.round(slowMo * 10) / 10,
+    crate: crate ? { x: crate.x, y: crate.y, kind: crate.kind } : null,
+    daily: daily ? { date: daily.date, seed: daily.seed } : null,
+    record: { ...record, daily: { ...record.daily } },
     ammo: ammo.map((loadout) => ({ ...loadout })),
     waterLevel,
     suddenDeath,
@@ -1483,3 +1752,27 @@ window.siege = {
       : null,
   }),
 };
+// Dev-only hooks let the layout/series tests finish rounds without a long match.
+if (import.meta.env.DEV) {
+  window.siege.debug = {
+    knockout(teamIndex = 1) {
+      for (const w of worms) {
+        if (w.team !== teamIndex) continue;
+        w.hp = 0;
+        w.deathPending = false;
+        w.dying = 0;
+      }
+      updateUI();
+      endGame();
+    },
+    skipBreak() {
+      if (phase === "break") breakTimer = 0;
+    },
+    collectCrate() {
+      if (crate) collectCrate(worms[current]);
+    },
+    hit(teamIndex = 1, damage = 200) {
+      for (const w of worms) if (w.team === teamIndex) injure(w, damage, 1);
+    },
+  };
+}

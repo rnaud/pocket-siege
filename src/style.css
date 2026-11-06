@@ -1395,3 +1395,158 @@ dialog h1 {
       0 3px 14px #11223366;
   }
 }
+/* Series, record book, weather, pickups and cinematic hit-stop. */
+#series {
+  display: block;
+  margin-top: 4px;
+  color: var(--lime);
+  font-size: 8px;
+  letter-spacing: 1.2px;
+}
+#series[hidden] {
+  display: none;
+}
+.menu-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+#record-summary {
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  color: #9fb2bb;
+  line-height: 1.5;
+  max-width: 62%;
+}
+#daily {
+  background: #c3eb8710;
+  border: 1px solid #c3eb8755;
+  color: #d9edb7;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: left;
+  flex-shrink: 0;
+}
+#daily span {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+}
+#daily small {
+  display: block;
+  margin-top: 3px;
+  font-size: 7px;
+  letter-spacing: 0.6px;
+  color: #9fb2bb;
+}
+#daily:hover {
+  filter: brightness(1.15);
+}
+#weather-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+#weather-layer.rain {
+  opacity: 1;
+  background-image: repeating-linear-gradient(
+    105deg,
+    #d6efff00 0 22px,
+    #d6efff30 23px 24px,
+    #d6efff00 25px 38px
+  );
+  background-size: 160px 160px;
+  animation: rain-drift 0.5s linear infinite;
+}
+#weather-layer.storm {
+  opacity: 1;
+  background: #07162055;
+}
+#weather-layer.storm::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    105deg,
+    #d6efff00 0 13px,
+    #d6efff40 14px 15px,
+    #d6efff00 16px 25px
+  );
+  background-size: 120px 120px;
+  animation: rain-drift 0.32s linear infinite;
+}
+#weather-layer.storm::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #dff4ff;
+  opacity: 0;
+  animation: lightning 7s linear infinite;
+  mix-blend-mode: screen;
+}
+@keyframes rain-drift {
+  to {
+    background-position: -50px 120px;
+  }
+}
+@keyframes lightning {
+  0%,
+  92%,
+  94%,
+  100% {
+    opacity: 0;
+  }
+  93% {
+    opacity: 0.2;
+  }
+  95% {
+    opacity: 0.08;
+  }
+}
+#arena.slow-mo #scene {
+  filter: saturate(0.65) contrast(1.05);
+}
+.pickup-number {
+  position: absolute;
+  color: #d9ffb0;
+  font:
+    bold 20px "Barlow Condensed",
+    sans-serif;
+  text-shadow: 0 2px 0 #1e3a1e;
+  animation: rise 1.2s forwards;
+  pointer-events: none;
+  z-index: 6;
+}
+@media (prefers-reduced-motion: reduce) {
+  #weather-layer.rain,
+  #weather-layer.storm::before,
+  #weather-layer.storm::after {
+    animation: none;
+  }
+}
+@media (max-width: 700px) {
+  .menu-meta {
+    align-items: stretch;
+  }
+  #record-summary {
+    max-width: 100%;
+  }
+  #daily {
+    flex: 1;
+  }
+}
+/* Short viewports scroll the menu, but the primary action stays reachable. */
+@media (max-height: 820px) {
+  #start {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    box-shadow: 0 -10px 18px #1b2e3d;
+  }
+}

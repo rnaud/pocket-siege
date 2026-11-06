@@ -150,3 +150,62 @@ export function createAimOverlay(arena) {
     tag,
   };
 }
+
+export function createCrate(kind) {
+  const colors = {
+    health: 0x9ef28b,
+    grenade: 0xe6b56d,
+    mortar: 0xa8b4d8,
+    sticky: 0xf393b5,
+  };
+  const color = colors[kind] ?? 0xd8c48a;
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(30, 20, 18),
+    new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.85 }),
+  );
+  group.add(body);
+  const band = new THREE.Mesh(
+    new THREE.BoxGeometry(31, 6, 19),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.5 }),
+  );
+  band.position.y = 2;
+  group.add(band);
+  const lid = new THREE.Mesh(
+    new THREE.BoxGeometry(32, 4, 20),
+    new THREE.MeshStandardMaterial({ color: 0x5f472f, roughness: 0.9 }),
+  );
+  lid.position.y = 11;
+  group.add(lid);
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(2, 4, 42, 8),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+    }),
+  );
+  beam.position.y = 34;
+  group.add(beam);
+  const beacon = new THREE.Mesh(
+    new THREE.OctahedronGeometry(6),
+    new THREE.MeshBasicMaterial({ color, depthWrite: false }),
+  );
+  beacon.position.y = 27;
+  group.add(beacon);
+  const groundGlow = new THREE.Mesh(
+    new THREE.RingGeometry(19, 25, 28),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.38,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  );
+  groundGlow.position.y = -11;
+  group.add(groundGlow);
+  group.userData.beacon = beacon;
+  return group;
+}

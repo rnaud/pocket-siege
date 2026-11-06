@@ -101,6 +101,7 @@
           </div>
           <div class="turn">
             <span id="round">ROUND 01</span><b id="turn-label">YOUR MOVE</b>
+            <span id="series" hidden></span>
           </div>
           <div class="team team-coral">
             <strong id="score1">300</strong>
@@ -113,6 +114,7 @@
         </div>
         <section id="arena" aria-label="Battlefield">
           <div id="scene"></div>
+          <div id="weather-layer" aria-hidden="true"></div>
           <div class="arena-top">
             <span class="location">01 <span>FERN ISLAND</span></span
             ><span id="wind">WIND → 2.0</span>
@@ -238,9 +240,16 @@
             <b>03 &nbsp; Make a mess</b><br />Hold Space or the fire button to
             charge; release to shoot. You get 3 seconds to retreat. Grenade and
             sticky fuse: keys 1–5 or the selector. F1/F2 select bazooka/grenade;
-            F3 selects a heavy mortar, F4 a sticky bomb. Mortars and stickies
-            are limited. Falling can hurt you; water is lethal, and from round
-            six the sea climbs every round.
+            F3 selects a heavy mortar, F4 a sticky bomb. Grenades, mortars and
+            stickies are limited. Falling can hurt you; water is lethal, and
+            from round six the sea climbs every round. Solo skill is chosen in
+            the menu.
+          </p>
+          <p>
+            <b>04 &nbsp; Field notes</b><br />Grab a supply crate to heal or
+            restock. Rain and storms strengthen the wind. Choose single or
+            best-of-three, and try the date-seeded Daily Island; your career
+            record stays on this device.
           </p>
         </details>
         <div class="menu-grid">
@@ -259,6 +268,28 @@
               <option value="veteran">Veteran</option>
             </select>
           </div>
+          <div>
+            <label class="mode-label" for="format">MATCH FORMAT</label
+            ><select id="format">
+              <option value="single" selected>Single island</option>
+              <option value="best3">Best of 3</option>
+            </select>
+          </div>
+          <div>
+            <label class="mode-label" for="weather">WEATHER</label
+            ><select id="weather">
+              <option value="clear" selected>Clear skies</option>
+              <option value="rain">Rain</option>
+              <option value="storm">Storm</option>
+            </select>
+          </div>
+        </div>
+        <div class="menu-meta">
+          <span id="record-summary"></span>
+          <button type="button" id="daily">
+            <span>DAILY ISLAND</span
+            ><small id="daily-status">ONE SEEDED ISLAND A DAY</small>
+          </button>
         </div>
         <button id="start" value="start">LET’S MAKE TROUBLE ↗</button
         ><button class="close-help" value="close">Back to the island</button>
