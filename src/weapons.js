@@ -50,12 +50,25 @@ export const WEAPONS = {
     ammo: 2,
     key: "F4",
   },
+  mine: {
+    label: "Mine",
+    icon: "✸",
+    radius: 55,
+    damage: 45,
+    wind: false,
+    speed: 0,
+    timed: false,
+    bounces: false,
+    ammo: 2,
+    key: "M",
+  },
 };
 export const WEAPON_ORDER = ["rocket", "grenade", "mortar", "sticky"];
 export const freshAmmo = () => ({
   grenade: WEAPONS.grenade.ammo,
   mortar: WEAPONS.mortar.ammo,
   sticky: WEAPONS.sticky.ammo,
+  mine: WEAPONS.mine.ammo,
 });
 export const ammoFor = (loadout, kind) =>
   kind === "rocket" ? Infinity : (loadout?.[kind] ?? 0);

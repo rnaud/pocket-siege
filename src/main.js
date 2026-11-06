@@ -24,6 +24,7 @@ import {
   createProjectile,
   createAimOverlay,
   createCrate,
+  createMine,
 } from "./combat-visuals.js";
 import { paintTerrain } from "./terrain-paint.js";
 import {
@@ -34,6 +35,7 @@ import {
   waterLevelForRound,
 } from "./weapons.js";
 import { planTurn, planMove } from "./ai.js";
+import { chooseCameraTarget, cameraView, FULL_VIEW } from "./camera.js";
 import {
   applyMatchResult,
   dailySeed,
@@ -45,6 +47,8 @@ import {
 } from "./progress.js";
 import { nextSeriesWins, seriesWinner } from "./series.js";
 import { applyPickup, PICKUP_KINDS } from "./pickups.js";
+import { modifierSettings } from "./modifiers.js";
+import { readSettings, writeSettings } from "./settings.js";
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const coarsePointer = matchMedia("(pointer: coarse)").matches;
@@ -57,6 +61,19 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color("#344e64");
 const camera = new THREE.OrthographicCamera(0, W, H, 0, 0.1, 2000);
 camera.position.z = 1000;
+const view = { ...FULL_VIEW };
+let cameraZoom = 1,
+  cameraX = W / 2,
+  cameraY = H / 2,
+  cameraSnap = true;
+function applyView() {
+  camera.left = view.x;
+  camera.right = view.x + view.w;
+  camera.top = view.y + view.h;
+  camera.bottom = view.y;
+  camera.updateProjectionMatrix();
+}
+applyView();
 scene.add(new THREE.AmbientLight(0xffffff, 2));
 const sun = new THREE.DirectionalLight(0xffe4bc, 2.5);
 sun.position.set(-300, 600, 600);
@@ -115,8 +132,13 @@ let format = "single",
   seriesRound = 1,
   breakTimer = 0,
   crate = null,
+  mines = [],
   slowMo = 0,
   weather = "clear",
+  modifier = "standard",
+  gravityScale = 1,
+  blastScale = 1,
+  turnSeconds = 45,
   daily = null,
   record = readRecord();
 let aiPower = 100;
@@ -124,6 +146,7 @@ let shotFuse = null,
   shotBounce = null,
   aiMoveTime = 0,
   aiMoveDirection = 0,
+  aiRetreatTime = 0,
   lastAiPlanMs = 0,
   aiPlan = null,
   hitStop = 0;
@@ -141,6 +164,12 @@ let charging = false,
 let uiKey = "",
   terrainDirty = false,
   timerKey = "";
+let lastShot = null,
+  replaying = false,
+  replayClock = 0,
+  replayDuration = 1,
+  replayReady = false,
+  lastResult = null;
 // Original generated art, loaded once and shared by all six soldiers.
 let assetsReady = false;
 const manager = new THREE.LoadingManager();
@@ -302,14 +331,20 @@ function shot(w, a = angle, kind = weapon) {
   );
 }
 function updateAimHUD() {
-  const visible = phase === "aim" && !menu.open && worms[current]?.hp > 0;
+  const visible =
+    phase === "aim" &&
+    !menu.open &&
+    !replaying &&
+    worms[current]?.hp > 0 &&
+    weapon !== "mine";
   aimHUD.guide.style.display = visible ? "" : "none";
+  if (!visible) lastAim = null;
   if (visible) {
     const geometry = shot(worms[current]);
     const origin = screen(geometry.pivot.x, geometry.pivot.y);
     const r = (angle * Math.PI) / 180,
-      dx = (Math.cos(r) * arena.clientWidth) / W,
-      dy = (-Math.sin(r) * arena.clientHeight) / H;
+      dx = (Math.cos(r) * arena.clientWidth) / view.w,
+      dy = (-Math.sin(r) * arena.clientHeight) / view.h;
     const length = Math.hypot(dx, dy),
       reach = Math.min(100, arena.clientWidth * 0.23);
     const ux = dx / length,
@@ -401,14 +436,27 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   if (isDaily) {
     format = "single";
     weather = "clear";
+    modifier = "standard";
     $("#format").value = "single";
     $("#weather").value = "clear";
+    $("#modifier").value = "standard";
   } else {
     format = $("#format")?.value || "single";
     weather = $("#weather")?.value || "clear";
+    modifier = $("#modifier")?.value || "standard";
   }
+  const mod = modifierSettings(modifier);
+  gravityScale = mod.gravityScale;
+  blastScale = mod.blastScale;
+  turnSeconds = mod.turnSeconds;
   breakTimer = 0;
   slowMo = 0;
+  cameraSnap = true;
+  replaying = false;
+  lastShot = null;
+  replayReady = false;
+  $("#replay").disabled = true;
+  aimHUD.replay.group.style.display = "none";
   ammo = [freshAmmo(), freshAmmo()];
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
@@ -443,6 +491,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   }
   for (const p of particles) group.remove(p.mesh);
   particles = [];
+  for (const m of mines) dispose(m.mesh);
+  mines = [];
   terrain = new Terrain(seed ?? 2 + Math.floor(Math.random() * 40));
   paintTerrain(ctx, terrain, texture);
   terrainDirty = false;
@@ -451,7 +501,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     ...names[1].map((_, i) => createWorm(1, i, [710, 860, 1020][i])),
   ];
   for (let i = 0; i < 240; i++)
-    for (const w of worms) stepWorm(w, terrain, 1 / 120);
+    for (const w of worms) stepWorm(w, terrain, 1 / 120, gravityScale);
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
   team = keepSeries ? (seriesRound - 1) % 2 : 0;
   round = 1;
@@ -526,6 +576,8 @@ function updateRecordUI() {
   if (summary) summary.textContent = recordSummary(record);
   const dailyLabel = $("#daily-status");
   if (dailyLabel) dailyLabel.textContent = dailyStatus(record);
+  const share = $("#share");
+  if (share) share.disabled = !lastResult;
 }
 function beginTurn() {
   const roster = worms.filter((w) => w.team === team);
@@ -536,7 +588,8 @@ function beginTurn() {
   turnCount[team] = (next + 1) % roster.length;
   current = worms.indexOf(active);
   phase = "aim";
-  time = 45;
+  cameraSnap = true;
+  time = turnSeconds;
   const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
   wind = (Math.random() - 0.5) * windMax;
   slowMo = 0;
@@ -550,6 +603,7 @@ function beginTurn() {
   move = 0;
   aiWait = 1.6;
   aiMoveTime = 0;
+  aiRetreatTime = 0;
   aiPlan = null;
   shotFuse = null;
   shotBounce = null;
@@ -588,7 +642,7 @@ function beginTurn() {
 function updateUI() {
   // Called from the 120 Hz simulation; only touch the DOM when the state behind it changed.
   const loadout = ammo[team] ?? {};
-  const key = `${current}|${phase}|${team}|${mode}|${charging}|${retreat > 0}|${menu.open}|${loadout.grenade}:${loadout.mortar}:${loadout.sticky}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  const key = `${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${loadout.grenade}:${loadout.mortar}:${loadout.sticky}:${loadout.mine}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   for (let t = 0; t < 2; t++) {
@@ -605,7 +659,7 @@ function updateUI() {
     w.label.classList.toggle("active", i === current && phase !== "over");
   }
   $("#fire").disabled = !canAct() || worms[current]?.knocked;
-  $("#angle").disabled = !canAct() || charging;
+  $("#angle").disabled = !canAct() || charging || weapon === "mine";
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = ammoFor(loadout, button.dataset.weapon);
     button.querySelector("small").textContent =
@@ -624,6 +678,7 @@ function canAct() {
     phase === "aim" &&
     !(team === 1 && mode === "ai") &&
     !menu.open &&
+    !replaying &&
     worms[current]?.hp > 0
   );
 }
@@ -632,19 +687,184 @@ function canMove() {
     (canAct() ||
       (retreat > 0 && !(team === 1 && mode === "ai") && !menu.open)) &&
     !charging &&
+    !replaying &&
     worms[current]?.hp > 0 &&
     !worms[current]?.knocked
   );
+}
+function coverDraw(ctx, image, x, y, w, h) {
+  const scale = Math.max(w / image.width, h / image.height),
+    iw = image.width * scale,
+    ih = image.height * scale;
+  ctx.drawImage(image, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+}
+async function shareResultCard() {
+  if (!lastResult) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = 1200;
+  canvas.height = 630;
+  const ctx = canvas.getContext("2d");
+  if (backdropMap.image) coverDraw(ctx, backdropMap.image, 0, 0, 1200, 630);
+  else {
+    ctx.fillStyle = "#173235";
+    ctx.fillRect(0, 0, 1200, 630);
+  }
+  const shade = ctx.createLinearGradient(0, 0, 900, 0);
+  shade.addColorStop(0, "rgba(8,24,30,.92)");
+  shade.addColorStop(0.62, "rgba(8,24,30,.55)");
+  shade.addColorStop(1, "rgba(8,24,30,0)");
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, 1200, 630);
+  if (soldierMaps[0].image)
+    ctx.drawImage(soldierMaps[0].image, 690, 235, 330, 330);
+  if (soldierMaps[1].image)
+    ctx.drawImage(soldierMaps[1].image, 900, 285, 290, 290);
+  const result =
+    lastResult.winner === 0
+      ? "MOSS COMPANY WINS"
+      : lastResult.winner === 1
+        ? "CORAL CREW WINS"
+        : "MUTUAL DESTRUCTION";
+  ctx.fillStyle = "#c3eb87";
+  ctx.font = 'bold 24px "Barlow Condensed", sans-serif';
+  ctx.fillText("POCKET SIEGE", 64, 92);
+  ctx.fillStyle = "#f5f7e9";
+  ctx.font = 'bold 60px "Barlow Condensed", sans-serif';
+  ctx.fillText(result, 62, 190);
+  ctx.fillStyle = "#dce8d0";
+  ctx.font = 'bold 28px "Barlow Condensed", sans-serif';
+  const line = lastResult.series
+    ? `BEST OF 3 · ${lastResult.seriesWins[0]}–${lastResult.seriesWins[1]}`
+    : `FINAL HEALTH · ${lastResult.score[0]}–${lastResult.score[1]}`;
+  ctx.fillText(line, 64, 248);
+  if (lastResult.daily) {
+    ctx.fillStyle = "#c3eb87";
+    ctx.font = 'bold 22px "Barlow Condensed", sans-serif';
+    ctx.fillText(`DAILY ISLAND · ${lastResult.date}`, 64, 292);
+  }
+  ctx.fillStyle = "#a9c0ae";
+  ctx.font = 'bold 18px "Barlow Condensed", sans-serif';
+  ctx.fillText(
+    `BEST HIT ${record.bestHit}  ·  LONGEST ${record.longest}  ·  ${record.wins}W–${record.losses}L`,
+    64,
+    350,
+  );
+  ctx.fillStyle = "#f5f7e9";
+  ctx.font = 'bold 22px "Barlow Condensed", sans-serif';
+  ctx.fillText("PICK YOUR ANGLE. MAKE A LITTLE CHAOS.", 64, 430);
+  ctx.fillStyle = "#c3eb87";
+  ctx.font = 'bold 18px "Barlow Condensed", sans-serif';
+  ctx.fillText("rnaud.github.io/pocket-siege", 64, 560);
+  const blob = await new Promise((resolve) =>
+    canvas.toBlob(resolve, "image/png"),
+  );
+  if (!blob) return;
+  const file = new File([blob], "pocket-siege-result.png", {
+    type: "image/png",
+  });
+  if (coarsePointer && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: "Pocket Siege",
+        text: result,
+      });
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+  const url = URL.createObjectURL(blob),
+    link = document.createElement("a");
+  link.href = url;
+  link.download = "pocket-siege-result.png";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function startReplay() {
+  if (replaying || !lastShot || lastShot.points.length < 2) return;
+  replaying = true;
+  cameraSnap = true;
+  const full = cameraView(W / 2, H / 2, 1);
+  Object.assign(view, full);
+  cameraZoom = 1;
+  cameraX = W / 2;
+  cameraY = H / 2;
+  applyView();
+  replayClock = performance.now();
+  replayDuration = Math.min(2.8, Math.max(1.1, lastShot.points.length * 0.018));
+  const points = lastShot.points.map((p) => screen(p.x, p.y));
+  aimHUD.replay.path.setAttribute(
+    "d",
+    points.map((p, i) => `${i ? "L" : "M"}${p.x},${p.y}`).join(" "),
+  );
+  aimHUD.replay.dot.setAttribute("cx", points[0].x);
+  aimHUD.replay.dot.setAttribute("cy", points[0].y);
+  aimHUD.replay.group.style.display = "";
+  $("#replay").disabled = true;
+  updateUI();
+}
+function endReplay() {
+  replaying = false;
+  aimHUD.replay.group.style.display = "none";
+  if (lastShot?.impact) impactFlash(lastShot.impact.x, lastShot.impact.y);
+  updateUI();
+}
+function updateSoundButton() {
+  $("#sound").setAttribute("aria-pressed", String(sound));
+  $("#sound").style.color = sound ? "#c3eb87" : "";
+}
+function saveSettings() {
+  writeSettings({
+    sound,
+    mode: $("#mode").value,
+    difficulty: $("#difficulty").value,
+    format: $("#format").value,
+    weather: $("#weather").value,
+    modifier: $("#modifier").value,
+  });
+}
+function applySettings() {
+  const saved = readSettings();
+  const set = (selector, value) => {
+    const control = $(selector);
+    if (!control || ![...control.options].some((o) => o.value === value))
+      return;
+    control.value = value;
+  };
+  set("#mode", saved.mode);
+  set("#difficulty", saved.difficulty);
+  set("#format", saved.format);
+  set("#weather", saved.weather);
+  set("#modifier", saved.modifier);
+  sound = saved.sound;
+  updateSoundButton();
 }
 function updateSliders() {
   $("#angle").value = angle;
   $("#angle-value").textContent = Math.round(angle) + "°";
   $("#fire").classList.toggle("charging", charging);
-  $("#fire-label").textContent = charging ? "RELEASE TO FIRE" : "HOLD TO FIRE";
+  const mine = weapon === "mine";
+  $("#fire-label").textContent = mine
+    ? "PLACE MINE"
+    : charging
+      ? "RELEASE TO FIRE"
+      : "HOLD TO FIRE";
+  $("#fire small").textContent = mine
+    ? coarsePointer
+      ? "TAP TO PLACE"
+      : "PRESS SPACE TO PLACE"
+    : coarsePointer
+      ? "HOLD · RELEASE TO FIRE"
+      : "HOLD SPACE · RELEASE TO SHOOT";
 }
 function startCharge(source) {
   if (charging || !canAct() || !worms[current].ground || worms[current].knocked)
     return;
+  if (weapon === "mine") {
+    placeMine();
+    return;
+  }
   charging = true;
   chargeSeconds = 0;
   power = 0;
@@ -713,11 +933,49 @@ function injure(w, damage, direction = 0) {
   }
   updateUI();
 }
+function placeMine() {
+  if (!canAct() || !worms[current]?.ground || worms[current].knocked) return;
+  if (ammoFor(ammo[team], "mine") <= 0) {
+    setWeapon("rocket");
+    return;
+  }
+  const w = worms[current],
+    mesh = createMine();
+  mesh.position.set(w.x, w.y - 4, 18);
+  group.add(mesh);
+  mines.push({
+    x: w.x,
+    y: w.y - 4,
+    owner: current,
+    team,
+    arm: 1.2,
+    mesh,
+    bob: Math.random() * Math.PI * 2,
+  });
+  ammo[team].mine = Math.max(0, ammo[team].mine - 1);
+  if (ammo[team].mine === 0) setWeapon("rocket");
+  charging = false;
+  chargeSource = null;
+  w.recoil = 0.15;
+  phase = "settle";
+  retreat = 3;
+  shotWait = 0;
+  move = 0;
+  shotCount++;
+  $("#status").textContent = "Mine planted. Retreat!";
+  tone(420, 0.1, "square");
+  updateSliders();
+  updateUI();
+}
 function fire() {
   if (phase !== "aim") return;
   const w = worms[current],
     kind = weapon,
     meta = WEAPONS[kind];
+  if (kind === "mine") {
+    placeMine();
+    return;
+  }
   if (ammoFor(ammo[team], kind) <= 0) {
     setWeapon("rocket");
     return;
@@ -730,9 +988,11 @@ function fire() {
     thisBounce = shotBounce ?? bounce;
   shotFuse = null;
   shotBounce = null;
+  const fromAi = chargeSource === "ai";
   w.recoil = 0.3;
   charging = false;
   chargeSource = null;
+  if (fromAi) aiRetreatTime = 1.1;
   updateSliders();
   firedPower = power;
   shotCount++;
@@ -760,6 +1020,12 @@ function fire() {
   };
   projectile.mesh.position.set(projectile.x, projectile.y, 40);
   group.add(projectile.mesh);
+  lastShot = {
+    kind,
+    shooter: w.name,
+    points: [{ x: projectile.x, y: projectile.y }],
+    impact: null,
+  };
   phase = "flight";
   bannerTime = 0;
   $("#status").textContent =
@@ -774,13 +1040,18 @@ function fire() {
   updateUI();
 }
 function explode(x, y, kind, ownerIndex = -1) {
+  const scale = blastScale;
   const profile =
     kind === "death"
-      ? { radius: 28, damage: 25, impulse: 220 }
+      ? {
+          radius: 28 * scale,
+          damage: 25 * scale,
+          impulse: 220 * scale,
+        }
       : {
-          radius: WEAPONS[kind].radius,
-          damage: WEAPONS[kind].damage,
-          impulse: 380,
+          radius: WEAPONS[kind].radius * scale,
+          damage: WEAPONS[kind].damage * scale,
+          impulse: 380 * scale,
         };
   const { radius, damage: maxDamage, impulse } = profile;
   terrain.carve(x, y, radius);
@@ -877,6 +1148,7 @@ function damageLabel(w, n, direction = 0) {
 }
 function finishMatch(winner, series) {
   phase = "over";
+  cameraSnap = true;
   aimHUD.guide.style.display = "none";
   const name =
     winner === 0
@@ -898,6 +1170,21 @@ function finishMatch(winner, series) {
       ? `Final series ${seriesWins[0]}–${seriesWins[1]}. Tap New match for another.`
       : "Good game. Tap New match for another round.";
   updateSeriesHUD();
+  const score = [0, 1].map((t) =>
+    worms.filter((w) => w.team === t).reduce((sum, w) => sum + w.hp, 0),
+  );
+  lastResult = {
+    winner,
+    series: Boolean(series),
+    seriesWins: [...seriesWins],
+    score,
+    daily: Boolean(daily),
+    date: new Date().toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    }),
+    mode,
+  };
   if (mode === "ai" || daily) {
     record = applyMatchResult(record, {
       won: winner === 0,
@@ -907,8 +1194,8 @@ function finishMatch(winner, series) {
       draw: winner === null,
     });
     writeRecord(record);
-    updateRecordUI();
   }
+  updateRecordUI();
   updateUI();
 }
 function endGame() {
@@ -989,6 +1276,7 @@ function startAiTurn() {
     me: w,
     waterLevel,
     difficulty,
+    crate,
     random: Math.random,
   });
   if (reposition && w.ground) {
@@ -1014,6 +1302,8 @@ function aiAim() {
     ammo: ammo[1],
     fuse: 2,
     bounce: 0.55,
+    gravityScale,
+    blastScale,
   });
   lastAiPlanMs = performance.now() - started;
   const chosen = plan ?? {
@@ -1042,6 +1332,7 @@ function aiAim() {
 }
 function step(dt) {
   if (menu.open || document.hidden) return;
+  if (replaying) return;
   if (hitStop > 0) {
     hitStop = Math.max(0, hitStop - dt);
     return;
@@ -1102,6 +1393,24 @@ function step(dt) {
     const w = worms[current];
     w.moving = walkWorm(w, terrain, move, dt);
   }
+  if (
+    team === 1 &&
+    mode === "ai" &&
+    aiRetreatTime > 0 &&
+    retreat > 0 &&
+    !charging
+  ) {
+    aiRetreatTime = Math.max(0, aiRetreatTime - dt);
+    const w = worms[current];
+    if (w.ground && !w.knocked) {
+      const target = worms
+        .filter((t) => t.team !== w.team && t.hp > 0)
+        .sort((a, b) => Math.abs(a.x - w.x) - Math.abs(b.x - w.x))[0];
+      let direction = target ? (target.x > w.x ? -1 : 1) : -w.facing;
+      if (w.y - 10 < waterLevel + 35) direction = w.x < W / 2 ? 1 : -1;
+      w.moving = walkWorm(w, terrain, direction, dt);
+    }
+  }
   for (const w of worms) {
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
@@ -1114,7 +1423,7 @@ function step(dt) {
     }
     w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
-    const result = stepWorm(w, terrain, dt);
+    const result = stepWorm(w, terrain, dt, gravityScale);
     if (result.fallDamage) injure(w, result.fallDamage);
     if (w.y - 10 < waterLevel || w.x < -30 || w.x > W + 30) {
       w.hp = 0;
@@ -1144,6 +1453,20 @@ function step(dt) {
     );
     if (collector) collectCrate(collector);
   }
+  for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
+    const mine = mines[i];
+    if (mine.arm > 0) {
+      mine.arm = Math.max(0, mine.arm - dt);
+      continue;
+    }
+    const victim = worms.find(
+      (w) => w.hp > 0 && Math.hypot(w.x - mine.x, w.y + 20 - mine.y) < 34,
+    );
+    if (!victim) continue;
+    mines.splice(i, 1);
+    dispose(mine.mesh);
+    explode(mine.x, mine.y, "mine", mine.owner);
+  }
   if (phase === "aim") updateUI();
   if (projectile) {
     const p = projectile;
@@ -1156,7 +1479,7 @@ function step(dt) {
       p.y = p.attached.w.y + p.attached.dy;
     }
     if (!p.sleeping && !p.stuck)
-      integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0);
+      integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     p.age += dt;
     let hit = p.blocked;
     p.blocked = false;
@@ -1215,6 +1538,11 @@ function step(dt) {
       }
     }
     p.mesh.position.set(p.x, p.y, 40);
+    if (lastShot) {
+      const lastPoint = lastShot.points[lastShot.points.length - 1];
+      if (!lastPoint || Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y) > 6)
+        lastShot.points.push({ x: p.x, y: p.y });
+    }
     p.mesh.rotation.z =
       p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
     if (Math.floor(p.age * 60) !== Math.floor((p.age - dt) * 60)) {
@@ -1223,6 +1551,7 @@ function step(dt) {
     }
     if (boom || p.y < waterLevel || p.x < -50 || p.x > W + 50 || p.age > 12) {
       if (boom && p.y > waterLevel) {
+        if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
         const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);
         const best = recordBest(record, { longest: distance });
         if (best.longest !== record.longest) {
@@ -1254,7 +1583,7 @@ function step(dt) {
   }
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
-    integrate(p, dt);
+    integrate(p, dt, 0, gravityScale);
     p.life -= dt;
     p.mesh.position.set(p.x, p.y, 35);
     p.mesh.scale.setScalar(Math.max(0.01, (p.life / p.max) * p.size));
@@ -1266,8 +1595,8 @@ function step(dt) {
 }
 function screen(x, y) {
   return {
-    x: (x / W) * arena.clientWidth,
-    y: ((H - y) / H) * arena.clientHeight,
+    x: ((x - view.x) / view.w) * arena.clientWidth,
+    y: ((view.y + view.h - y) / view.h) * arena.clientHeight,
   };
 }
 function resize() {
@@ -1302,6 +1631,58 @@ function frame(now) {
   while (accumulator >= 1 / 120) {
     step(1 / 120);
     accumulator -= 1 / 120;
+  }
+  const camTarget = chooseCameraTarget({
+    phase,
+    projectile,
+    worms,
+    active: worms[current],
+  });
+  if (cameraSnap) {
+    cameraZoom = camTarget.zoom;
+    cameraX = camTarget.cx;
+    cameraY = camTarget.cy;
+    cameraSnap = false;
+  } else {
+    const ease = 1 - Math.exp(-frameDt * 4.5);
+    cameraZoom += (camTarget.zoom - cameraZoom) * ease;
+    cameraX += (camTarget.cx - cameraX) * ease;
+    cameraY += (camTarget.cy - cameraY) * ease;
+  }
+  const nextView = cameraView(cameraX, cameraY, cameraZoom);
+  view.x = nextView.x;
+  view.y = nextView.y;
+  view.w = nextView.w;
+  view.h = nextView.h;
+  view.zoom = nextView.zoom;
+  applyView();
+  if (replaying) {
+    const t = Math.min(
+      1,
+      (now - replayClock) / 1000 / Math.max(0.1, replayDuration),
+    );
+    const points = lastShot?.points ?? [];
+    if (points.length > 1) {
+      const pos = t * (points.length - 1),
+        index = Math.min(points.length - 1, Math.floor(pos)),
+        next = Math.min(points.length - 1, index + 1),
+        fraction = pos - index,
+        a = points[index],
+        b = points[next],
+        p = screen(a.x + (b.x - a.x) * fraction, a.y + (b.y - a.y) * fraction);
+      aimHUD.replay.dot.setAttribute("cx", p.x);
+      aimHUD.replay.dot.setAttribute("cy", p.y);
+    }
+    if (t >= 1) endReplay();
+  }
+  const canReplay =
+    !replaying &&
+    !menu.open &&
+    (phase === "aim" || phase === "over") &&
+    (lastShot?.points?.length ?? 0) > 1;
+  if (canReplay !== replayReady) {
+    replayReady = canReplay;
+    $("#replay").disabled = !canReplay;
   }
   updateAimHUD();
   const aimBox =
@@ -1429,6 +1810,12 @@ function frame(now) {
     if (crate.mesh.userData.beacon)
       crate.mesh.userData.beacon.rotation.y = now * 0.002;
   }
+  for (const mine of mines) {
+    mine.mesh.rotation.z = Math.sin(now * 0.002 + mine.bob) * 0.08;
+    if (mine.mesh.userData.light)
+      mine.mesh.userData.light.visible =
+        mine.arm > 0 ? Math.floor(now / 160) % 2 === 0 : true;
+  }
   if (phase === "break") {
     $("#status").textContent =
       `Round over. Next island in ${Math.ceil(breakTimer)}…`;
@@ -1463,6 +1850,8 @@ function setWeapon(kind) {
   document
     .querySelectorAll("[data-weapon]")
     .forEach((b) => b.classList.toggle("selected", b.dataset.weapon === kind));
+  updateSliders();
+  updateUI();
 }
 $("#angle").addEventListener("input", (e) => {
   if (!canAct() || charging) return;
@@ -1488,6 +1877,8 @@ for (const event of ["pointercancel", "lostpointercapture"])
     }
   });
 $("#fire").addEventListener("contextmenu", (e) => e.preventDefault());
+$("#replay").onclick = startReplay;
+$("#share").onclick = shareResultCard;
 $("#jump").onclick = () => jump("forward");
 $("#backflip").onclick = () => jump("backflip");
 $("#fuse").onchange = (e) => {
@@ -1526,6 +1917,7 @@ function pointerAim(e) {
   updateSliders();
 }
 arena.addEventListener("pointerdown", (e) => {
+  if (e.target.closest("button, a, input, select")) return;
   aiming = true;
   arena.setPointerCapture(e.pointerId);
   pointerAim(e);
@@ -1570,6 +1962,7 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "F2") setWeapon("grenade");
     if (e.key === "F3") setWeapon("mortar");
     if (e.key === "F4") setWeapon("sticky");
+    if (e.key.toLowerCase() === "m") setWeapon("mine");
     if (["grenade", "sticky"].includes(weapon) && /^[1-5]$/.test(e.key)) {
       fuse = +e.key;
       $("#fuse").value = fuse;
@@ -1624,14 +2017,16 @@ $("#daily").addEventListener("click", () => {
   $("#mode").value = "ai";
   $("#format").value = "single";
   $("#weather").value = "clear";
+  $("#modifier").value = "standard";
   syncMenuOptions();
+  saveSettings();
   reset({ seed, isDaily: true });
   menu.close();
 });
 $("#sound").onclick = () => {
   sound = !sound;
-  $("#sound").setAttribute("aria-pressed", String(sound));
-  $("#sound").style.color = sound ? "#c3eb87" : "";
+  updateSoundButton();
+  saveSettings();
   tone(440);
 };
 $("#start").onclick = () => {
@@ -1646,7 +2041,13 @@ const difficultyRow = $("#difficulty-row");
 function syncMenuOptions() {
   difficultyRow.hidden = $("#mode").value !== "ai";
 }
-$("#mode").addEventListener("change", syncMenuOptions);
+$("#mode").addEventListener("change", () => {
+  syncMenuOptions();
+  saveSettings();
+});
+for (const selector of ["#difficulty", "#format", "#weather", "#modifier"])
+  $(selector).addEventListener("change", saveSettings);
+applySettings();
 syncMenuOptions();
 updateRecordUI();
 reset();
@@ -1655,6 +2056,14 @@ updateUI();
 resize();
 prewarmShaders();
 requestAnimationFrame(frame);
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  const registerServiceWorker = () =>
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .catch(() => {});
+  if (document.readyState === "complete") registerServiceWorker();
+  else window.addEventListener("load", registerServiceWorker);
+}
 // Read-only diagnostics for regression checks and reproducible bug reports.
 window.siege = {
   getState: () => ({
@@ -1679,11 +2088,26 @@ window.siege = {
     mode,
     format,
     weather,
+    modifier,
+    gravityScale,
+    blastScale,
+    turnSeconds,
     seriesWins: [...seriesWins],
     seriesRound,
     breakTimer: Math.round(breakTimer * 10) / 10,
     slowMo: Math.round(slowMo * 10) / 10,
+    camera: {
+      x: Math.round(view.x),
+      y: Math.round(view.y),
+      zoom: Math.round(view.zoom * 100) / 100,
+    },
     crate: crate ? { x: crate.x, y: crate.y, kind: crate.kind } : null,
+    mines: mines.map((m) => ({
+      x: Math.round(m.x),
+      y: Math.round(m.y),
+      arm: Math.round(m.arm * 10) / 10,
+      team: m.team,
+    })),
     daily: daily ? { date: daily.date, seed: daily.seed } : null,
     record: { ...record, daily: { ...record.daily } },
     ammo: ammo.map((loadout) => ({ ...loadout })),
@@ -1691,7 +2115,13 @@ window.siege = {
     suddenDeath,
     hitStop,
     lastAiPlanMs: Math.round(lastAiPlanMs * 10) / 10,
+    aiRetreatTime: Math.round(aiRetreatTime * 10) / 10,
     activeWorm: worms[current]?.name ?? null,
+    replaying,
+    lastShot: lastShot
+      ? { points: lastShot.points.length, impact: lastShot.impact }
+      : null,
+    lastResult,
     aiPlan: aiPlan
       ? {
           weapon: aiPlan.weapon,

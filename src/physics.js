@@ -49,9 +49,9 @@ export function launch(angle, power) {
     speed = 18 + Math.max(0, Math.min(100, power)) * 4.5;
   return { vx: Math.cos(r) * speed, vy: Math.sin(r) * speed };
 }
-export function integrate(p, dt, wind = 0) {
+export function integrate(p, dt, wind = 0, gravityScale = 1) {
   p.vx += wind * dt;
-  p.vy -= GRAVITY * dt;
+  p.vy -= GRAVITY * gravityScale * dt;
   p.x += p.vx * dt;
   p.y += p.vy * dt;
 }
@@ -152,7 +152,7 @@ export function walkWorm(w, terrain, direction, dt) {
 function approachZero(value, amount) {
   return Math.sign(value) * Math.max(0, Math.abs(value) - amount);
 }
-export function stepWorm(w, terrain, dt) {
+export function stepWorm(w, terrain, dt, gravityScale = 1) {
   const wasGround = w.ground;
   const supported = bodyBlocked(terrain, w.x, w.y - 1);
   if (w.ground && supported && w.vy <= 0) {
@@ -160,7 +160,7 @@ export function stepWorm(w, terrain, dt) {
     w.vx = approachZero(w.vx, 160 * dt);
   } else {
     w.ground = false;
-    w.vy -= GRAVITY * dt;
+    w.vy -= GRAVITY * gravityScale * dt;
   }
   let landed = false,
     fallDamage = 0;

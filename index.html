@@ -117,6 +117,8 @@
           <div id="weather-layer" aria-hidden="true"></div>
           <div class="arena-top">
             <span class="location">01 <span>FERN ISLAND</span></span
+            ><button id="replay" class="replay-button" type="button" disabled>
+              ↺ REPLAY</button
             ><span id="wind">WIND → 2.0</span>
           </div>
           <div id="labels"></div>
@@ -162,6 +164,12 @@
               </button>
               <button data-weapon="sticky" title="Sticky (F4) · limited ammo">
                 <span>✿</span> Sticky <small>2</small>
+              </button>
+              <button
+                data-weapon="mine"
+                title="Proximity mine (M) · limited ammo"
+              >
+                <span>✸</span> Mine <small>2</small>
               </button>
             </div>
           </div>
@@ -240,16 +248,18 @@
             <b>03 &nbsp; Make a mess</b><br />Hold Space or the fire button to
             charge; release to shoot. You get 3 seconds to retreat. Grenade and
             sticky fuse: keys 1–5 or the selector. F1/F2 select bazooka/grenade;
-            F3 selects a heavy mortar, F4 a sticky bomb. Grenades, mortars and
-            stickies are limited. Falling can hurt you; water is lethal, and
-            from round six the sea climbs every round. Solo skill is chosen in
-            the menu.
+            F3 selects a heavy mortar, F4 a sticky bomb; M places a proximity
+            mine. Grenades, mortars, stickies and mines are limited. Falling can
+            hurt you; water is lethal, and from round six the sea climbs every
+            round. Solo skill is chosen in the menu.
           </p>
           <p>
             <b>04 &nbsp; Field notes</b><br />Grab a supply crate to heal or
             restock. Rain and storms strengthen the wind. Choose single or
-            best-of-three, and try the date-seeded Daily Island; your career
-            record stays on this device.
+            best-of-three, set a match modifier, and try the date-seeded Daily
+            Island; your career record stays on this device. Replay the last
+            shot with ↺ and share a result card from the menu. After the first
+            load the game also works offline.
           </p>
         </details>
         <div class="menu-grid">
@@ -283,6 +293,16 @@
               <option value="storm">Storm</option>
             </select>
           </div>
+          <div class="wide">
+            <label class="mode-label" for="modifier">MATCH MODIFIER</label
+            ><select id="modifier">
+              <option value="standard" selected>Standard</option>
+              <option value="low-gravity">Low gravity</option>
+              <option value="big-blasts">Big blasts</option>
+              <option value="quick-turns">Quick turns</option>
+              <option value="moon-chaos">Moon chaos</option>
+            </select>
+          </div>
         </div>
         <div class="menu-meta">
           <span id="record-summary"></span>
@@ -290,6 +310,7 @@
             <span>DAILY ISLAND</span
             ><small id="daily-status">ONE SEEDED ISLAND A DAY</small>
           </button>
+          <button type="button" id="share" disabled>SHARE CARD</button>
         </div>
         <button id="start" value="start">LET’S MAKE TROUBLE ↗</button
         ><button class="close-help" value="close">Back to the island</button>

@@ -8,6 +8,8 @@ import {
   hitsWorm,
   chargePower,
   reflectVelocity,
+  integrate,
+  GRAVITY,
 } from "../src/physics.js";
 const empty = { solid: () => false };
 const floor = { solid: (x, y) => y < 0 };
@@ -116,4 +118,10 @@ test("shot origin is independent of viewport and sprite scale", () => {
     expect(a.muzzle).toEqual(b.muzzle);
     expect(a.pivot).toEqual(b.pivot);
   }
+});
+
+test("low gravity scales projectile and body gravity", () => {
+  const p = { x: 0, y: 0, vx: 0, vy: 0 };
+  integrate(p, 1, 0, 0.5);
+  expect(p.vy).toBeCloseTo(-GRAVITY * 0.5, 5);
 });

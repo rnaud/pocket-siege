@@ -3,6 +3,7 @@ import { planMove, planTurn } from "../src/ai.js";
 import { W, WATER } from "../src/physics.js";
 import {
   WEAPONS,
+  WEAPON_ORDER,
   WATER_RISE,
   MAX_WATER,
   freshAmmo,
@@ -46,7 +47,9 @@ test("weapon metadata and starting ammo match the loadout", () => {
   expect(WEAPONS.rocket.ammo).toBe(Infinity);
   expect(WEAPONS.mortar.radius).toBeGreaterThan(WEAPONS.rocket.radius);
   expect(WEAPONS.mortar.damage).toBeGreaterThan(WEAPONS.rocket.damage);
-  expect(freshAmmo()).toEqual({ grenade: 3, mortar: 2, sticky: 2 });
+  expect(freshAmmo()).toEqual({ grenade: 3, mortar: 2, sticky: 2, mine: 2 });
+  expect(WEAPONS.mine.ammo).toBe(2);
+  expect(WEAPON_ORDER).not.toContain("mine");
 });
 
 test("planner finds a damaging shot on flat ground", () => {
@@ -142,4 +145,19 @@ test("repositioning refuses a downhill walk that moves closer to the water", () 
     random: () => 0.1,
   });
   expect(move).toBeNull();
+});
+
+test("repositioning walks toward a nearby supply crate", () => {
+  const me = worm(0, 200);
+  const move = planMove({
+    terrain: flat,
+    me,
+    waterLevel: WATER,
+    difficulty: "veteran",
+    crate: { x: 290, y: 312, kind: "health" },
+    random: () => 0.1,
+  });
+  expect(move).not.toBeNull();
+  expect(move.direction).toBe(1);
+  expect(move.time).toBeGreaterThan(1);
 });

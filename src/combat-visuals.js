@@ -135,7 +135,7 @@ export function createAimOverlay(arena) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.id = "aim-overlay";
   svg.setAttribute("aria-hidden", "true");
-  svg.innerHTML = `<g id="aim-guide"><g id="aim-reticle"><circle class="reticle-charge" r="24" transform="rotate(-90)"/><circle class="reticle-rim" r="14"/><circle class="reticle-ring" r="10"/><path d="M-21 0H-7M7 0H21M0-21V-7M0 7V21"/><circle class="reticle-dot" r="2"/><text y="38" text-anchor="middle"></text></g></g><path class="projectile-trail"/>`;
+  svg.innerHTML = `<g id="aim-guide"><g id="aim-reticle"><circle class="reticle-charge" r="24" transform="rotate(-90)"/><circle class="reticle-rim" r="14"/><circle class="reticle-ring" r="10"/><path d="M-21 0H-7M7 0H21M0-21V-7M0 7V21"/><circle class="reticle-dot" r="2"/><text y="38" text-anchor="middle"></text></g></g><path class="projectile-trail"/><g id="replay-group" style="display:none"><path class="replay-path"/><circle class="replay-dot" r="5"/></g>`;
   arena.appendChild(svg);
   const tag = document.createElement("div");
   tag.id = "projectile-tag";
@@ -147,6 +147,11 @@ export function createAimOverlay(arena) {
     charge: svg.querySelector(".reticle-charge"),
     text: svg.querySelector("#aim-reticle text"),
     trail: svg.querySelector(".projectile-trail"),
+    replay: {
+      group: svg.querySelector("#replay-group"),
+      path: svg.querySelector(".replay-path"),
+      dot: svg.querySelector(".replay-dot"),
+    },
     tag,
   };
 }
@@ -207,5 +212,28 @@ export function createCrate(kind) {
   groundGlow.position.y = -11;
   group.add(groundGlow);
   group.userData.beacon = beacon;
+  return group;
+}
+
+export function createMine() {
+  const group = new THREE.Group();
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(8, 11, 5, 16),
+    new THREE.MeshStandardMaterial({ color: 0x35433f, roughness: 0.8 }),
+  );
+  group.add(base);
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(9, 1.5, 6, 18),
+    new THREE.MeshBasicMaterial({ color: 0xff8b78 }),
+  );
+  ring.position.y = 3;
+  group.add(ring);
+  const light = new THREE.Mesh(
+    new THREE.SphereGeometry(3, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0xff6b5b }),
+  );
+  light.position.y = 7;
+  group.add(light);
+  group.userData.light = light;
   return group;
 }

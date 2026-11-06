@@ -161,6 +161,7 @@ test("touch controls fit the screen in portrait and landscape", async ({
     '[data-weapon="grenade"]',
     '[data-weapon="mortar"]',
     '[data-weapon="sticky"]',
+    '[data-weapon="mine"]',
   ];
   const fits = async () => {
     for (const selector of controls)
@@ -804,4 +805,134 @@ test("supply crate and a killing blow feed the pickup and slow-motion systems", 
     .poll(() => page.evaluate(() => window.siege.getState().slowMo))
     .toBeGreaterThan(0);
   await expect(page.locator("#arena")).toHaveClass(/slow-mo/);
+});
+
+test("match modifiers change gravity, blast size and turn length", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  await page.selectOption("#modifier", "moon-chaos");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.modifier).toBe("moon-chaos");
+  expect(state.gravityScale).toBe(0.55);
+  expect(state.blastScale).toBe(1.35);
+  expect(state.turnSeconds).toBe(30);
+});
+
+test("action camera follows the shot and snaps back for the next turn", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#angle").evaluate((el) => {
+    el.value = "45";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await chargeShot(page, 1100);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().camera.zoom), {
+      timeout: 6000,
+    })
+    .toBeGreaterThan(1.02);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().team), {
+      timeout: 20000,
+    })
+    .toBe(1);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().camera.zoom), {
+      timeout: 3000,
+    })
+    .toBe(1);
+});
+
+test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator('[data-weapon="mine"]').click();
+  await expect(page.locator("#fire-label")).toHaveText("PLACE MINE");
+  await page.locator("#fire").click();
+  let state = await page.evaluate(() => window.siege.getState());
+  expect(state.mines).toHaveLength(1);
+  expect(state.ammo[0].mine).toBe(1);
+  expect(state.phase).toBe("settle");
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().explosions), {
+      timeout: 5000,
+    })
+    .toBeGreaterThan(0);
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.mines).toHaveLength(0);
+});
+
+test("the last shot can be replayed over the battlefield", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#angle").evaluate((el) => {
+    el.value = "45";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await chargeShot(page, 900);
+  await expect
+    .poll(
+      () => page.evaluate(() => window.siege.getState().lastShot?.points ?? 0),
+      { timeout: 15000 },
+    )
+    .toBeGreaterThan(2);
+  await expect
+    .poll(() => page.locator("#replay").isEnabled(), { timeout: 20000 })
+    .toBe(true);
+  await page.locator("#replay").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().replaying))
+    .toBe(true);
+  await expect(page.locator(".replay-path")).toHaveAttribute("d", /^M/);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().replaying), {
+      timeout: 7000,
+    })
+    .toBe(false);
+});
+
+test("a finished match enables the result card", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.knockout(1));
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase))
+    .toBe("over");
+  await page.locator("#restart").click();
+  await expect(page.locator("#share")).toBeEnabled();
+  expect(
+    await page.evaluate(() => window.siege.getState().lastResult.winner),
+  ).toBe(0);
+});
+
+test("saved settings survive a reload", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#difficulty").selectOption("veteran");
+  await page.locator("#mode").selectOption("local");
+  await page.selectOption("#format", "best3");
+  await page.selectOption("#weather", "storm");
+  await page.selectOption("#modifier", "low-gravity");
+  await page.locator("#start").click();
+  await page.locator("#sound").click();
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
+  expect(await page.locator("#mode").inputValue()).toBe("local");
+  expect(await page.locator("#difficulty").inputValue()).toBe("veteran");
+  expect(await page.locator("#format").inputValue()).toBe("best3");
+  expect(await page.locator("#weather").inputValue()).toBe("storm");
+  expect(await page.locator("#modifier").inputValue()).toBe("low-gravity");
+  await expect(page.locator("#sound")).toHaveAttribute("aria-pressed", "true");
 });

@@ -62,6 +62,7 @@ function blastPoint(
   waterLevel,
   fuse,
   bounce,
+  gravityScale,
 ) {
   const meta = WEAPONS[kind];
   const start = launchGeometry(me, angle, kind, terrain);
@@ -81,7 +82,7 @@ function blastPoint(
     if (meta.timed && p.age >= fuse) break;
     const ox = p.x,
       oy = p.y;
-    integrate(p, STEP, meta.wind ? wind : 0);
+    integrate(p, STEP, meta.wind ? wind : 0, gravityScale);
     p.age += STEP;
     const distance = Math.hypot(p.x - ox, p.y - oy),
       steps = Math.max(1, Math.ceil(distance / 2));
@@ -125,22 +126,42 @@ function blastPoint(
   return { x: p.x, y: p.y, water: p.y < waterLevel };
 }
 
-function scoreBlast(point, kind, worms, me) {
+function scoreBlast(
+  point,
+  kind,
+  worms,
+  me,
+  blastScale = 1,
+  waterLevel = WATER,
+) {
   if (!point || point.blocked || point.water || point.out) return -100;
   const meta = WEAPONS[kind],
-    radius = meta.radius + 34;
+    radius = meta.radius * blastScale + 34,
+    maxDamage = meta.damage * blastScale;
   let score = 0,
     nearest = Infinity;
   for (const w of worms) {
     if (w.hp <= 0) continue;
-    const distance = Math.hypot(w.x - point.x, w.y + BODY.cy - point.y);
+    const dx = w.x - point.x,
+      dy = w.y + BODY.cy - point.y,
+      distance = Math.hypot(dx, dy);
     if (w.team !== me.team) nearest = Math.min(nearest, distance);
     if (distance >= radius) continue;
-    const damage = Math.min(w.hp, (1 - distance / radius) * meta.damage);
-    if (w.team === me.team) score -= damage * 1.5;
-    else {
+    const damage = Math.min(w.hp, (1 - distance / radius) * maxDamage);
+    const nx = distance > 0.001 ? dx / distance : 0,
+      ny = distance > 0.001 ? dy / distance : 1;
+    const nearEdge = (w.x < 150 && nx < -0.15) || (w.x > W - 150 && nx > 0.15),
+      nearWater = w.y - 10 < waterLevel + 55,
+      lifted = ny + 0.4 > 0;
+    if (w.team === me.team) {
+      score -= damage * 1.5;
+      if (w === me && nearEdge) score -= 24;
+      if (w === me && nearWater && lifted) score -= 18;
+    } else {
       score += damage;
       if (damage >= w.hp) score += 20;
+      if (nearEdge) score += 10;
+      if (nearWater && lifted) score += 6;
     }
   }
   // Nudge equal-damage shots toward the enemy so the AI does not pick scenery.
@@ -160,6 +181,7 @@ function evaluate(context, kind, angle, power) {
     context.waterLevel,
     context.fuse,
     context.bounce,
+    context.gravityScale,
   );
   return {
     kind,
@@ -167,8 +189,14 @@ function evaluate(context, kind, angle, power) {
     power,
     point,
     score:
-      scoreBlast(point, kind, context.worms, context.me) +
-      (kind === "rocket" ? 0 : -3),
+      scoreBlast(
+        point,
+        kind,
+        context.worms,
+        context.me,
+        context.blastScale,
+        context.waterLevel,
+      ) + (kind === "rocket" ? 0 : -3),
   };
 }
 
@@ -200,6 +228,8 @@ export function planTurn({
   ammo = {},
   fuse = 2,
   bounce = 0.55,
+  gravityScale = 1,
+  blastScale = 1,
   random = Math.random,
 }) {
   const profile = DIFFICULTIES[difficulty] ?? DIFFICULTIES.regular;
@@ -214,6 +244,8 @@ export function planTurn({
     waterLevel,
     fuse,
     bounce,
+    gravityScale,
+    blastScale,
     kinds,
   };
   const candidates = [];
@@ -274,14 +306,25 @@ export function planMove({
   me,
   waterLevel = WATER,
   difficulty = "regular",
+  crate = null,
   random = Math.random,
 }) {
   const profile = DIFFICULTIES[difficulty] ?? DIFFICULTIES.regular;
   if (!me.ground || me.hp <= 0 || !terrain) return null;
   const nearWater = me.y - 10 < waterLevel + 55,
     nearEdge = me.x < 110 || me.x > W - 110;
-  if (!nearWater && !nearEdge) return null;
+  const crateDistance = crate ? Math.abs(crate.x - me.x) : Infinity;
+  if (!nearWater && !nearEdge && crateDistance > 150) return null;
   if (random() > profile.moveChance) return null;
+  if (crate && crateDistance < 150 && crateDistance > 30) {
+    const direction = Math.sign(crate.x - me.x) || 1,
+      probe = { ...me, vx: 0, vy: 0, knocked: false, ground: true };
+    const steps = Math.min(120, Math.ceil((crateDistance - 24) / (42 * STEP)));
+    for (let i = 0; i < steps; i++) walkWorm(probe, terrain, direction, STEP);
+    const reached = Math.abs(probe.x - crate.x) < 34;
+    if (reached && probe.y - 10 > waterLevel + 15)
+      return { direction, time: Math.min(2.5, (crateDistance - 24) / 42) };
+  }
   const direction = me.x < W / 2 ? 1 : -1;
   const probe = { ...me, vx: 0, vy: 0, knocked: false, ground: true };
   for (let i = 0; i < 30; i++) walkWorm(probe, terrain, direction, STEP);
