@@ -8,8 +8,10 @@ ROOT = Path(__file__).resolve().parent.parent
 ART = ROOT / "public" / "art"
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 FONT_BLACK = "/System/Library/Fonts/Supplemental/Arial Black.ttf"
-LIME = "#c3eb87"
-DARK = "#0d1d24"
+LIME = "#d4e36c"
+CORAL = "#e96e57"
+PAPER = "#f2e8d2"
+DARK = "#17383b"
 
 
 def cover(image, size, centering=(0.5, 0.5)):
@@ -35,17 +37,17 @@ def spaced(draw, xy, text, font, fill, spacing=2):
 
 
 def share_card():
-    bg = cover(Image.open(ART / "fern-islands.webp"), (1200, 630), (0.5, 0.42))
+    bg = cover(Image.open(ART / "paper-islands.webp"), (1200, 630), (0.5, 0.46))
     # Darken the left side so the type stays legible over the painted jungle.
     xs = np.arange(1200)[None, :].repeat(630, axis=0)
     alpha = np.clip(238 - (xs - 360) * 0.62, 0, 238).astype(np.uint8)
     shade = np.zeros((630, 1200, 4), np.uint8)
-    shade[..., 0], shade[..., 1], shade[..., 2] = 9, 26, 32
+    shade[..., 0], shade[..., 1], shade[..., 2] = 17, 45, 48
     shade[..., 3] = alpha
     bg = Image.alpha_composite(bg.convert("RGBA"), Image.fromarray(shade, "RGBA"))
 
-    moss = with_shadow(Image.open(ART / "moss-soldier.webp").convert("RGBA").resize((330, 330), Image.LANCZOS))
-    coral = with_shadow(Image.open(ART / "coral-soldier.webp").convert("RGBA").resize((300, 300), Image.LANCZOS))
+    moss = with_shadow(Image.open(ART / "moss-soldier-paper.webp").convert("RGBA").resize((350, 350), Image.LANCZOS))
+    coral = with_shadow(Image.open(ART / "coral-soldier-paper.webp").convert("RGBA").resize((320, 320), Image.LANCZOS))
     bg.alpha_composite(moss, (660, 240))
     bg.alpha_composite(coral, (880, 290))
 
@@ -55,13 +57,13 @@ def share_card():
     body = ImageFont.truetype(FONT, 30)
     small = ImageFont.truetype(FONT, 16)
     spaced(d, (66, 92), "TINY TROOPS. BIG TROUBLE.", tag, LIME, 2)
-    d.text((62, 128), "POCKET", font=title, fill="#f5f7e9")
-    d.text((62, 214), "SIEGE", font=title, fill=LIME)
-    d.text((66, 330), "Pick your angle.", font=body, fill="#f5f7e9")
-    d.text((66, 368), "Make a little chaos.", font=body, fill="#f5f7e9")
-    spaced(d, (66, 470), "DESTRUCTIBLE ISLAND  ·  4 WEAPONS  ·  SOLO OR PASS & PLAY", small, "#d7e6c6", 1)
-    d.rounded_rectangle((62, 520, 300, 574), radius=8, fill="#c3eb87")
-    d.text((82, 534), "PLAY IN BROWSER", font=tag, fill="#20352a")
+    d.text((62, 128), "POCKET", font=title, fill=PAPER)
+    d.text((62, 214), "SIEGE", font=title, fill=CORAL)
+    d.text((66, 330), "Pick your angle.", font=body, fill=PAPER)
+    d.text((66, 368), "Make a little chaos.", font=body, fill=PAPER)
+    spaced(d, (66, 470), "CUT-PAPER ISLAND  ·  5 WEAPONS  ·  SOLO OR PASS & PLAY", small, "#e7dcc0", 1)
+    d.rounded_rectangle((62, 520, 320, 574), radius=5, fill=LIME, outline=DARK, width=2)
+    d.text((82, 534), "PLAY IN BROWSER", font=tag, fill=DARK)
     out = ART / "og-card.png"
     bg.convert("RGB").save(out, "PNG", optimize=True)
     print(out, bg.size)
@@ -69,25 +71,19 @@ def share_card():
 
 def icon():
     size = 512
-    y = np.arange(size)[:, None].repeat(size, axis=1)
-    t = (y / (size - 1))[:, :, None]
-    top = np.array([27, 54, 52], dtype=float)
-    bottom = np.array([8, 22, 28], dtype=float)
-    rgb = (top * (1 - t) + bottom * t).astype(np.uint8)
-    canvas = Image.fromarray(rgb, "RGB").convert("RGBA")
-    glow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    gd.ellipse((70, 70, 442, 442), fill=(195, 235, 135, 55))
-    glow = glow.filter(ImageFilter.GaussianBlur(24))
-    canvas.alpha_composite(glow)
+    # Paper seal on a deep-teal shadow box.
+    canvas = Image.new("RGBA", (size, size), (15, 51, 55, 255))
+    paper = Image.new("RGBA", (size, size), (242, 232, 210, 255))
+    grain = Image.open(ART / "paper-grain.webp").convert("RGB").resize((size, size), Image.LANCZOS)
+    paper = Image.composite(paper, grain.convert("RGBA"), Image.new("L", (size, size), 210))
+    canvas.alpha_composite(paper)
     d = ImageDraw.Draw(canvas)
-    d.ellipse((92, 92, 420, 420), outline=(195, 235, 135, 210), width=10)
-    d.ellipse((112, 112, 400, 400), outline=(195, 235, 135, 70), width=2)
-    soldier = Image.open(ART / "moss-soldier.webp").convert("RGBA").resize((300, 300), Image.LANCZOS)
-    soldier = with_shadow(soldier, blur=14, offset=(0, 10), opacity=170)
-    canvas.alpha_composite(soldier, (106, 120))
+    d.rounded_rectangle((18, 18, size - 18, size - 18), radius=72, outline=(23, 56, 59, 255), width=8)
+    badge = Image.open(ART / "paper-emblem.webp").convert("RGBA")
+    badge.thumbnail((380, 380), Image.LANCZOS)
+    canvas.alpha_composite(badge, ((size - badge.width) // 2, (size - badge.height) // 2))
     canvas.convert("RGB").save(ART / "icon-512.png", "PNG", optimize=True)
-    for px, name in [(192, "icon-192.png"), (180, "apple-touch-icon.png")]:
+    for px, name in [(192, "icon-192.png"), (180, "apple-touch-icon.png"), (64, "favicon.png")]:
         canvas.convert("RGB").resize((px, px), Image.LANCZOS).save(ART / name, "PNG", optimize=True)
     print("icons written")
 

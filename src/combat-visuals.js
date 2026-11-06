@@ -4,29 +4,46 @@ import * as THREE from "three";
 export function createWeaponRig(team) {
   const pivot = new THREE.Group();
   const barrel = new THREE.Group();
-  const paint = team ? 0xb6543c : 0x6e8041;
+  const paint = team ? 0xc86450 : 0x6c8148;
+  const ink = 0x17383b,
+    cream = 0xeadcb8,
+    wood = 0x9a7047;
+  const edgeMaterial = new THREE.LineBasicMaterial({
+    color: 0x142f33,
+    transparent: true,
+    opacity: 0.9,
+  });
+  const addInk = (mesh) => {
+    mesh.add(
+      new THREE.LineSegments(
+        new THREE.EdgesGeometry(mesh.geometry),
+        edgeMaterial,
+      ),
+    );
+  };
   const box = (w, h, x, y, color, z = 0) => {
     const m = new THREE.Mesh(
       new THREE.BoxGeometry(w, h, 3),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.9 }),
     );
     m.position.set(x, y, z);
+    addInk(m);
     barrel.add(m);
     return m;
   };
-  box(35, 12, 9, 0, 0x302e24);
+  box(35, 12, 9, 0, ink);
   box(33, 9, 9, 0, paint, 2);
-  box(5, 14, 27, 0, 0xd1ad68, 3);
-  box(2, 10, 30, 0, 0x222b26, 4);
-  box(4, 11, -7, 0, 0xb69b60, 3);
-  box(3, 10, 9, -8, 0x503c29, 2);
-  box(5, 3, 15, 8, 0x272d25, 3);
-  box(20, 1, 8, 3, 0xc5c47b, 4);
+  box(5, 14, 27, 0, cream, 3);
+  box(2, 10, 30, 0, ink, 4);
+  box(4, 11, -7, 0, wood, 3);
+  box(3, 10, 9, -8, 0x6f4f38, 2);
+  box(5, 3, 15, 8, ink, 3);
+  box(20, 1, 8, 3, 0xdce39a, 4);
   // Hands travel with the weapon, preserving the grip at every angle.
   for (const x of [-2, 17]) {
     const hand = new THREE.Mesh(
       new THREE.SphereGeometry(4, 12, 8),
-      new THREE.MeshStandardMaterial({ color: 0xf5b184, roughness: 0.8 }),
+      new THREE.MeshStandardMaterial({ color: 0xf0c69f, roughness: 0.9 }),
     );
     hand.position.set(x, -4, 6);
     hand.scale.y = 0.85;
@@ -35,20 +52,20 @@ export function createWeaponRig(team) {
   const grenade = new THREE.Group();
   const shell = new THREE.Mesh(
     new THREE.SphereGeometry(7, 12, 10),
-    new THREE.MeshStandardMaterial({ color: 0x647944, roughness: 0.7 }),
+    new THREE.MeshStandardMaterial({ color: 0x9baf58, roughness: 0.9 }),
   );
   shell.scale.set(0.8, 1, 1);
   shell.position.set(17, 0, 4);
   grenade.add(shell);
   const cap = new THREE.Mesh(
     new THREE.BoxGeometry(6, 3, 4),
-    new THREE.MeshStandardMaterial({ color: 0xd8bb72 }),
+    new THREE.MeshStandardMaterial({ color: 0xd9a05c }),
   );
   cap.position.set(17, 7, 4);
   grenade.add(cap);
   const hand = new THREE.Mesh(
     new THREE.SphereGeometry(4, 12, 8),
-    new THREE.MeshStandardMaterial({ color: 0xf5b184 }),
+    new THREE.MeshStandardMaterial({ color: 0xf0c69f }),
   );
   hand.position.set(12, -4, 7);
   grenade.add(hand);
@@ -93,7 +110,7 @@ export function createProjectile(kind) {
     const body = new THREE.Mesh(
       new THREE.CylinderGeometry(3, 3, 14, 10),
       new THREE.MeshStandardMaterial({
-        color: kind === "mortar" ? 0x9394ae : 0xe0c37e,
+        color: kind === "mortar" ? 0x9b7b58 : 0xe5d3a8,
       }),
     );
     body.rotation.z = -Math.PI / 2;
@@ -107,7 +124,7 @@ export function createProjectile(kind) {
     g.add(tip);
     const tail = new THREE.Mesh(
       new THREE.ConeGeometry(4, 10, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffd66c }),
+      new THREE.MeshBasicMaterial({ color: 0xd4e36c }),
     );
     tail.rotation.z = Math.PI / 2;
     tail.position.x = -10;
@@ -116,7 +133,7 @@ export function createProjectile(kind) {
     const ball = new THREE.Mesh(
       new THREE.SphereGeometry(6, 12, 10),
       new THREE.MeshStandardMaterial({
-        color: kind === "sticky" ? 0xf393b5 : 0x718948,
+        color: kind === "sticky" ? 0xe96e57 : 0x9caf59,
       }),
     );
     g.add(ball);
@@ -156,7 +173,7 @@ export function createAimOverlay(arena) {
   };
 }
 
-export function createCrate(kind) {
+export function createCrate(kind, image = null) {
   const colors = {
     health: 0x9ef28b,
     grenade: 0xe6b56d,
@@ -165,23 +182,36 @@ export function createCrate(kind) {
   };
   const color = colors[kind] ?? 0xd8c48a;
   const group = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(30, 20, 18),
-    new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.85 }),
-  );
-  group.add(body);
-  const band = new THREE.Mesh(
-    new THREE.BoxGeometry(31, 6, 19),
-    new THREE.MeshStandardMaterial({ color, roughness: 0.5 }),
-  );
-  band.position.y = 2;
-  group.add(band);
-  const lid = new THREE.Mesh(
-    new THREE.BoxGeometry(32, 4, 20),
-    new THREE.MeshStandardMaterial({ color: 0x5f472f, roughness: 0.9 }),
-  );
-  lid.position.y = 11;
-  group.add(lid);
+  if (image) {
+    const art = new THREE.Mesh(
+      new THREE.PlaneGeometry(54, 54),
+      new THREE.MeshBasicMaterial({
+        map: image,
+        transparent: true,
+        depthWrite: false,
+      }),
+    );
+    art.position.set(0, 17, 2);
+    group.add(art);
+  } else {
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(30, 20, 18),
+      new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.85 }),
+    );
+    group.add(body);
+    const band = new THREE.Mesh(
+      new THREE.BoxGeometry(31, 6, 19),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.5 }),
+    );
+    band.position.y = 2;
+    group.add(band);
+    const lid = new THREE.Mesh(
+      new THREE.BoxGeometry(32, 4, 20),
+      new THREE.MeshStandardMaterial({ color: 0x5f472f, roughness: 0.9 }),
+    );
+    lid.position.y = 11;
+    group.add(lid);
+  }
   const beam = new THREE.Mesh(
     new THREE.CylinderGeometry(2, 4, 42, 8),
     new THREE.MeshBasicMaterial({
@@ -215,8 +245,21 @@ export function createCrate(kind) {
   return group;
 }
 
-export function createMine() {
+export function createMine(image = null) {
   const group = new THREE.Group();
+  if (image) {
+    const art = new THREE.Mesh(
+      new THREE.PlaneGeometry(28, 28),
+      new THREE.MeshBasicMaterial({
+        map: image,
+        transparent: true,
+        depthWrite: false,
+      }),
+    );
+    art.position.set(0, 17, 2);
+    group.add(art);
+    return group;
+  }
   const base = new THREE.Mesh(
     new THREE.CylinderGeometry(8, 11, 5, 16),
     new THREE.MeshStandardMaterial({ color: 0x35433f, roughness: 0.8 }),

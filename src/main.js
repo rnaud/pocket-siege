@@ -58,7 +58,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 $("#scene").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#344e64");
+scene.background = new THREE.Color("#153b3d");
 const camera = new THREE.OrthographicCamera(0, W, H, 0, 0.1, 2000);
 camera.position.z = 1000;
 const view = { ...FULL_VIEW };
@@ -180,12 +180,24 @@ function artTexture(file) {
   map.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   return map;
 }
-const backdropMap = artTexture("fern-islands");
-const soldierMaps = [artTexture("moss-body"), artTexture("coral-body")];
-const hurtMaps = [artTexture("moss-hurt"), artTexture("coral-hurt")];
+const backdropMap = artTexture("paper-islands");
+const soldierMaps = [
+  artTexture("moss-body-paper"),
+  artTexture("coral-body-paper"),
+];
+const hurtMaps = [
+  artTexture("moss-hurt-paper"),
+  artTexture("coral-hurt-paper"),
+];
+const portraitMaps = [
+  artTexture("moss-soldier-paper"),
+  artTexture("coral-soldier-paper"),
+];
+const crateMap = artTexture("crate-paper");
+const mineMap = artTexture("weapon-mine");
 const backdrop = new THREE.Mesh(
   new THREE.PlaneGeometry(W, H),
-  new THREE.MeshBasicMaterial({ map: backdropMap }),
+  new THREE.MeshBasicMaterial({ map: backdropMap, color: 0xded5bf }),
 );
 backdrop.position.set(W / 2, H / 2, -180);
 group.add(backdrop);
@@ -198,7 +210,7 @@ for (let i = 0; i < 26; i++) {
   const mote = new THREE.Mesh(
     new THREE.CircleGeometry(1 + (i % 3), 6),
     new THREE.MeshBasicMaterial({
-      color: 0xfff6be,
+      color: 0xf3e6bd,
       transparent: true,
       opacity: 0.25,
       depthWrite: false,
@@ -283,7 +295,7 @@ function createWorm(t, i, x) {
   g.add(shadow);
   const label = document.createElement("div");
   label.className = "worm-label";
-  label.style.color = t ? "#ffb0a1" : "#d2efa8";
+  label.style.color = t ? "#a94a3d" : "#4d6b3a";
   label.innerHTML = `${names[t][i]}<strong>100</strong>`;
   $("#labels").appendChild(label);
   group.add(g);
@@ -539,7 +551,7 @@ function spawnCrate() {
     if (ground < waterLevel + 30) continue;
     if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
     const kind = PICKUP_KINDS[Math.floor(Math.random() * PICKUP_KINDS.length)],
-      mesh = createCrate(kind),
+      mesh = createCrate(kind, crateMap),
       y = ground + 10;
     mesh.position.set(x, y, 18);
     group.add(mesh);
@@ -710,50 +722,50 @@ async function shareResultCard() {
     ctx.fillRect(0, 0, 1200, 630);
   }
   const shade = ctx.createLinearGradient(0, 0, 900, 0);
-  shade.addColorStop(0, "rgba(8,24,30,.92)");
-  shade.addColorStop(0.62, "rgba(8,24,30,.55)");
-  shade.addColorStop(1, "rgba(8,24,30,0)");
+  shade.addColorStop(0, "rgba(12,38,41,.93)");
+  shade.addColorStop(0.62, "rgba(12,38,41,.56)");
+  shade.addColorStop(1, "rgba(12,38,41,0)");
   ctx.fillStyle = shade;
   ctx.fillRect(0, 0, 1200, 630);
-  if (soldierMaps[0].image)
-    ctx.drawImage(soldierMaps[0].image, 690, 235, 330, 330);
-  if (soldierMaps[1].image)
-    ctx.drawImage(soldierMaps[1].image, 900, 285, 290, 290);
+  if (portraitMaps[0].image)
+    ctx.drawImage(portraitMaps[0].image, 650, 220, 330, 330);
+  if (portraitMaps[1].image)
+    ctx.drawImage(portraitMaps[1].image, 875, 270, 300, 300);
   const result =
     lastResult.winner === 0
       ? "MOSS COMPANY WINS"
       : lastResult.winner === 1
         ? "CORAL CREW WINS"
         : "MUTUAL DESTRUCTION";
-  ctx.fillStyle = "#c3eb87";
-  ctx.font = 'bold 24px "Barlow Condensed", sans-serif';
+  ctx.fillStyle = "#d4e36c";
+  ctx.font = 'bold 24px "Bricolage Grotesque", sans-serif';
   ctx.fillText("POCKET SIEGE", 64, 92);
-  ctx.fillStyle = "#f5f7e9";
-  ctx.font = 'bold 60px "Barlow Condensed", sans-serif';
+  ctx.fillStyle = "#fbf4e3";
+  ctx.font = 'bold 56px "Bricolage Grotesque", sans-serif';
   ctx.fillText(result, 62, 190);
-  ctx.fillStyle = "#dce8d0";
-  ctx.font = 'bold 28px "Barlow Condensed", sans-serif';
+  ctx.fillStyle = "#e7dcc0";
+  ctx.font = 'bold 26px "Bricolage Grotesque", sans-serif';
   const line = lastResult.series
     ? `BEST OF 3 · ${lastResult.seriesWins[0]}–${lastResult.seriesWins[1]}`
     : `FINAL HEALTH · ${lastResult.score[0]}–${lastResult.score[1]}`;
   ctx.fillText(line, 64, 248);
   if (lastResult.daily) {
-    ctx.fillStyle = "#c3eb87";
-    ctx.font = 'bold 22px "Barlow Condensed", sans-serif';
+    ctx.fillStyle = "#d4e36c";
+    ctx.font = 'bold 22px "Bricolage Grotesque", sans-serif';
     ctx.fillText(`DAILY ISLAND · ${lastResult.date}`, 64, 292);
   }
-  ctx.fillStyle = "#a9c0ae";
-  ctx.font = 'bold 18px "Barlow Condensed", sans-serif';
+  ctx.fillStyle = "#b9c6aa";
+  ctx.font = 'bold 18px "Bricolage Grotesque", sans-serif';
   ctx.fillText(
     `BEST HIT ${record.bestHit}  ·  LONGEST ${record.longest}  ·  ${record.wins}W–${record.losses}L`,
     64,
     350,
   );
-  ctx.fillStyle = "#f5f7e9";
-  ctx.font = 'bold 22px "Barlow Condensed", sans-serif';
+  ctx.fillStyle = "#fbf4e3";
+  ctx.font = 'bold 21px "Bricolage Grotesque", sans-serif';
   ctx.fillText("PICK YOUR ANGLE. MAKE A LITTLE CHAOS.", 64, 430);
-  ctx.fillStyle = "#c3eb87";
-  ctx.font = 'bold 18px "Barlow Condensed", sans-serif';
+  ctx.fillStyle = "#d4e36c";
+  ctx.font = 'bold 18px "Bricolage Grotesque", sans-serif';
   ctx.fillText("rnaud.github.io/pocket-siege", 64, 560);
   const blob = await new Promise((resolve) =>
     canvas.toBlob(resolve, "image/png"),
@@ -809,6 +821,15 @@ function endReplay() {
   aimHUD.replay.group.style.display = "none";
   if (lastShot?.impact) impactFlash(lastShot.impact.x, lastShot.impact.y);
   updateUI();
+}
+function resetMenuScroll() {
+  menu.scrollTop = 0;
+  requestAnimationFrame(() => {
+    menu.scrollTop = 0;
+  });
+  setTimeout(() => {
+    menu.scrollTop = 0;
+  }, 60);
 }
 function updateSoundButton() {
   $("#sound").setAttribute("aria-pressed", String(sound));
@@ -940,7 +961,7 @@ function placeMine() {
     return;
   }
   const w = worms[current],
-    mesh = createMine();
+    mesh = createMine(mineMap);
   mesh.position.set(w.x, w.y - 4, 18);
   group.add(mesh);
   mines.push({
@@ -1616,7 +1637,7 @@ function resize() {
   );
   for (const w of worms) {
     w.g.scale.x = correction;
-    w.visualSize = Math.max(64, (29 * H) / arena.clientHeight);
+    w.visualSize = Math.max(70, (31 * H) / arena.clientHeight);
   }
 }
 new ResizeObserver(() => requestAnimationFrame(resize)).observe(arena);
@@ -1765,7 +1786,7 @@ function frame(now) {
     w.rig.barrel.visible = !active || ["rocket", "mortar"].includes(weapon);
     w.rig.grenade.visible = active && ["grenade", "sticky"].includes(weapon);
     w.rig.grenade.children[0].material.color.setHex(
-      weapon === "sticky" ? 0xf393b5 : 0x647944,
+      weapon === "sticky" ? 0xe96e57 : 0x9caf59,
     );
     w.rig.barrel.scale.y = active && weapon === "mortar" ? 1.4 : 1;
     w.rig.barrel.position.x = -Math.sin((w.recoil / 0.3) * Math.PI) * 7;
@@ -1789,17 +1810,24 @@ function frame(now) {
         Math.min(arena.clientWidth - width / 2 - 4, p.x),
       );
       // Labels are positioned by their bottom edge, so compare centers and half-heights.
+      const topSafe = coarsePointer ? 46 : 54;
       const anchorY = p.y;
+      if (p.y - height < topSafe) p.y = topSafe + height;
+      let guard = 0;
       while (
+        guard++ < 16 &&
         labelBoxes.some(
           (b) =>
-            Math.abs(b.x - p.x) < (b.width + width) / 2 + 3 &&
-            Math.abs(b.y - (p.y - height / 2)) < (b.height + height) / 2 + 3,
+            Math.abs(b.x - p.x) < (b.width + width) / 2 + 5 &&
+            Math.abs(b.y - (p.y - height / 2)) < (b.height + height) / 2 + 5,
         )
-      )
-        p.y -= height + 5;
-      // Never trade a readable label for a reticle-free one at the arena edge.
-      if (p.y - height < 4) p.y = anchorY;
+      ) {
+        // Fan labels downward from the HUD strip; only climb if the floor is near.
+        const down = p.y + height + 6;
+        if (down + height <= arena.clientHeight - 34) p.y = down;
+        else p.y = Math.max(topSafe + height, p.y - height - 6);
+      }
+      if (p.y - height < topSafe) p.y = topSafe + height;
       labelBoxes.push({ x: p.x, y: p.y - height / 2, width, height });
     }
     w.label.style.left = p.x + "px";
@@ -2002,6 +2030,7 @@ $("#help").onclick = () => {
   $(".instructions").open = true;
   updateRecordUI();
   menu.showModal();
+  resetMenuScroll();
   updateUI();
 };
 $("#restart").onclick = () => {
@@ -2009,6 +2038,7 @@ $("#restart").onclick = () => {
   $(".instructions").open = false;
   updateRecordUI();
   menu.showModal();
+  resetMenuScroll();
   updateUI();
 };
 $("#daily").addEventListener("click", () => {
@@ -2052,6 +2082,7 @@ syncMenuOptions();
 updateRecordUI();
 reset();
 menu.showModal();
+resetMenuScroll();
 updateUI();
 resize();
 prewarmShaders();

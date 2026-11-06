@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#101d2c" />
+    <meta name="theme-color" content="#123a3b" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Pocket Siege" />
     <meta
@@ -39,7 +39,7 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Pocket Siege: a moss soldier and a coral soldier facing off on a painted jungle island."
+      content="Pocket Siege: paper-cut moss and coral worm soldiers facing off on a layered paper island."
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta
@@ -56,21 +56,17 @@
     />
     <meta
       name="twitter:image:alt"
-      content="Pocket Siege: a moss soldier and a coral soldier facing off on a painted jungle island."
+      content="Pocket Siege: paper-cut moss and coral worm soldiers facing off on a layered paper island."
     />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./art/apple-touch-icon.png" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect rx='24' width='100' height='100' fill='%23bce477'/%3E%3Ctext x='15' y='75' font-size='70'%3E✹%3C/text%3E%3C/svg%3E"
-    />
+    <link rel="icon" href="./art/favicon.png" />
   </head>
   <body>
     <div id="app">
       <header>
         <a class="brand" href="./"
-          ><span class="brand-icon">✹</span
-          ><span
+          ><img class="brand-icon" src="./art/paper-emblem.webp" alt="" /><span
             >POCKET<span class="brand-light">SIEGE</span
             ><small>TINY TROOPS. BIG TROUBLE.</small></span
           ></a
@@ -92,7 +88,11 @@
       <main>
         <div class="match-bar">
           <div class="team team-lime">
-            <img class="team-portrait" src="./art/moss-soldier.webp" alt="" />
+            <img
+              class="team-portrait"
+              src="./art/moss-soldier-paper.webp"
+              alt=""
+            />
             <div>
               <b>MOSS COMPANY</b>
               <div class="health-track"><i id="health0"></i></div>
@@ -109,7 +109,11 @@
               <b>CORAL CREW</b>
               <div class="health-track"><i id="health1"></i></div>
             </div>
-            <img class="team-portrait" src="./art/coral-soldier.webp" alt="" />
+            <img
+              class="team-portrait"
+              src="./art/coral-soldier-paper.webp"
+              alt=""
+            />
           </div>
         </div>
         <section id="arena" aria-label="Battlefield">
@@ -152,24 +156,33 @@
                 class="selected"
                 title="Bazooka (F1) · unlimited"
               >
-                <span>➶</span> Bazooka <small>∞</small></button
+                <img class="weapon-art" src="./art/weapon-rocket.webp" alt="" />
+                Bazooka <small>∞</small></button
               ><button
                 data-weapon="grenade"
                 title="Grenade (F2) · limited ammo"
               >
-                <span>✹</span> Grenade <small>3</small>
+                <img
+                  class="weapon-art"
+                  src="./art/weapon-grenade.webp"
+                  alt=""
+                />
+                Grenade <small>3</small>
               </button>
               <button data-weapon="mortar" title="Mortar (F3) · limited ammo">
-                <span>◆</span> Mortar <small>2</small>
+                <img class="weapon-art" src="./art/weapon-mortar.webp" alt="" />
+                Mortar <small>2</small>
               </button>
               <button data-weapon="sticky" title="Sticky (F4) · limited ammo">
-                <span>✿</span> Sticky <small>2</small>
+                <img class="weapon-art" src="./art/weapon-sticky.webp" alt="" />
+                Sticky <small>2</small>
               </button>
               <button
                 data-weapon="mine"
                 title="Proximity mine (M) · limited ammo"
               >
-                <span>✸</span> Mine <small>2</small>
+                <img class="weapon-art" src="./art/weapon-mine.webp" alt="" />
+                Mine <small>2</small>
               </button>
             </div>
           </div>
@@ -223,8 +236,8 @@
     <dialog id="menu">
       <form method="dialog">
         <div class="menu-art" aria-hidden="true">
-          <img src="./art/moss-soldier.webp" alt="" /><span>VS</span
-          ><img src="./art/coral-soldier.webp" alt="" />
+          <img src="./art/moss-soldier-paper.webp" alt="" /><span>VS</span
+          ><img src="./art/coral-soldier-paper.webp" alt="" />
         </div>
         <div class="eyebrow">WELCOME TO THE ISLAND</div>
         <h1>Small worms.<br /><em>Big grudges.</em></h1>

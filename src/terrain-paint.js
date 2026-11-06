@@ -26,6 +26,9 @@ export function paintTerrain(ctx, terrain, texture) {
       if (data[row + x] !== 1) continue;
       const grass = grassRow < 0 || data[grassRow + x] === 0;
       const rim = rimRow < 0 || data[rimRow + x] === 0;
+      const cut =
+        (rimRow >= 0 && data[rimRow + x] === 0) ||
+        (grassRow >= 0 && data[grassRow + x] === 0);
       const depth = Math.min(1, (surface[x] - y) / 150);
       const strata = Math.sin(yPhase + strataX[x]);
       let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263)) | 0;
@@ -33,22 +36,32 @@ export function paintTerrain(ctx, terrain, texture) {
       const noise = (((h ^ (h >>> 16)) >>> 0) / 4294967296) * 9 - 4.5;
       let r, g, b;
       if (grass) {
-        r = 133;
-        g = 177;
-        b = 64;
+        r = 200;
+        g = 220;
+        b = 103;
       } else if (rim) {
-        r = 67;
-        g = 101;
-        b = 45;
+        r = 224;
+        g = 197;
+        b = 145;
+      } else if (cut) {
+        r = 196;
+        g = 158;
+        b = 108;
       } else {
-        r = 127 + strata * 13 - depth * 21;
-        g = 83 + strata * 10 - depth * 17;
-        b = 47 + strata * 8 - depth * 7;
+        const band = Math.floor((surface[x] - y) / 44) % 3;
+        const paper = [
+          [190, 150, 102],
+          [166, 117, 80],
+          [141, 91, 67],
+        ][band];
+        r = paper[0] + strata * 6 - depth * 10;
+        g = paper[1] + strata * 5 - depth * 8;
+        b = paper[2] + strata * 4 - depth * 6;
       }
       if (grass && (highlightRow < 0 || data[highlightRow + x] === 0)) {
-        r = 194;
-        g = 211;
-        b = 101;
+        r = 236;
+        g = 237;
+        b = 153;
       }
       const edge =
         x < 4 ||
@@ -58,9 +71,9 @@ export function paintTerrain(ctx, terrain, texture) {
         aboveRow < 0 ||
         data[aboveRow + x] === 0;
       if (edge && !grass && !rim) {
-        r *= 0.67;
-        g *= 0.67;
-        b *= 0.67;
+        r = r * 0.48 + 17;
+        g = g * 0.48 + 31;
+        b = b * 0.48 + 29;
       }
       const i = (outputRow + x) * 4;
       out[i] = r + noise;
@@ -78,7 +91,8 @@ export function paintTerrain(ctx, terrain, texture) {
     const x = (i * 137 + 17) % W,
       y = (i * 83 + 91) % H;
     if (!terrain.solid(x, y)) continue;
-    ctx.fillStyle = i % 3 ? "#a8784e" : "#61442d";
+    ctx.fillStyle =
+      i % 4 === 0 ? "#f0ddb2" : i % 4 === 1 ? "#d17a59" : "#6f5740";
     ctx.beginPath();
     ctx.ellipse(x, H - y, 3 + (i % 8), 2 + (i % 4), 0.4, 0, Math.PI * 2);
     ctx.fill();
@@ -90,7 +104,7 @@ export function paintTerrain(ctx, terrain, texture) {
   for (let x = 55; x < W - 55; x += 5) {
     const y = surface[x];
     if (y < WATER + 30 || Math.abs(y - surface[x + 3]) > 4) continue;
-    ctx.strokeStyle = x % 3 ? "#8baa44" : "#c6d67a";
+    ctx.strokeStyle = x % 3 ? "#a9c45d" : "#e5e8a7";
     ctx.beginPath();
     ctx.moveTo(x, H - y + 1);
     ctx.lineTo(x - 2, H - y - 3 - (x % 4));

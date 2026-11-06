@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap");
 :root {
   font-family: "DM Sans", sans-serif;
   color: #dce4e8;
@@ -813,7 +813,7 @@ main {
   padding: 12px 28px 0;
   background:
     linear-gradient(0deg, #1b2e3d, transparent 70%),
-    url("/art/fern-islands.webp") center 35% / cover;
+    url("/art/paper-islands.webp") center 38% / cover;
   border-radius: 15px 15px 0 0;
 }
 .menu-art img {
@@ -1608,4 +1608,579 @@ dialog h1 {
 }
 #share:hover:not(:disabled) {
   filter: brightness(1.2);
+}
+
+/* ============================================================
+   PAPER SIEGE — cut-paper expedition theme
+   ============================================================ */
+:root {
+  --paper: #f2e8d2;
+  --paper-light: #fbf4e3;
+  --paper-deep: #e4d0ad;
+  --ink: #17383b;
+  --ink-soft: #4b675f;
+  --moss: #708a4b;
+  --lime: #d4e36c;
+  --coral: #e96e57;
+  --tangerine: #e7a34a;
+  --sky: #cfe4d2;
+  --muted: #7c8f80;
+  --display: "Bricolage Grotesque", "Barlow Condensed", sans-serif;
+  color: var(--ink);
+  background: #0f3337;
+}
+body {
+  background-color: #0f3337;
+  background-image:
+    radial-gradient(ellipse at 50% -10%, #245257 0%, #0f3337 58%, #092529 100%),
+    url("/art/paper-grain.webp");
+  background-size:
+    auto,
+    620px 620px;
+  background-blend-mode: normal, soft-light;
+  color: var(--ink);
+}
+#app {
+  position: relative;
+  z-index: 1;
+}
+header {
+  color: var(--paper);
+}
+.brand {
+  color: var(--paper);
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+.brand-light {
+  color: var(--lime);
+  font-weight: 600;
+}
+.brand-icon {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  font-size: 0;
+  color: transparent;
+  filter: drop-shadow(0 3px 0 #07272a) drop-shadow(0 5px 8px #0005);
+}
+.brand small {
+  color: #b9c7ad;
+  letter-spacing: 2.2px;
+}
+.header-center {
+  color: #b7c5b2;
+}
+.live-dot {
+  background: var(--lime);
+  box-shadow: 0 0 0 2px #0b292b;
+}
+.divider {
+  color: #647c6d;
+}
+.icon-button {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  font-family: var(--display);
+  font-weight: 800;
+  box-shadow: 2px 2px 0 #062225;
+  width: 33px;
+  height: 33px;
+}
+.icon-button:hover {
+  background: var(--paper-light);
+  filter: none;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #062225;
+}
+.text-button {
+  color: var(--paper);
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border-bottom: 1px solid #d9e3c633;
+  padding-bottom: 2px;
+}
+main {
+  border: 2px solid #08272a;
+  border-radius: 5px;
+  background: var(--paper);
+  box-shadow:
+    9px 0 0 #08272a45,
+    0 24px 70px #001a1f66;
+}
+.match-bar {
+  background-color: var(--paper);
+  background-image: url("/art/paper-grain.webp");
+  background-size: 520px 520px;
+  background-blend-mode: multiply;
+  border-bottom: 2px solid var(--ink);
+  color: var(--ink);
+}
+.team {
+  color: var(--ink);
+}
+.team-lime {
+  color: #536d39;
+}
+.team-coral {
+  color: #b64e3e;
+}
+.team strong {
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.health-track {
+  height: 6px;
+  background: #d4c29d;
+  border: 1px solid #17383b4d;
+  border-radius: 2px;
+}
+.health-track i {
+  border-radius: 0;
+}
+.team-portrait {
+  width: 64px;
+  height: 64px;
+  padding: 2px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: #f8efda;
+  box-shadow: 2px 2px 0 #17383b44;
+  filter: drop-shadow(0 2px 2px #17383b33);
+}
+.turn span {
+  color: #617b6d;
+}
+.turn b {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.7px;
+  font-weight: 800;
+}
+#series {
+  color: #896040;
+  font-weight: 700;
+}
+#arena {
+  background: #0d3436;
+}
+.location,
+#wind {
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: url("/art/paper-grain.webp");
+  background-size: 320px 320px;
+  background-blend-mode: multiply;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #123a3b66;
+  backdrop-filter: none;
+  font-weight: 700;
+}
+.location span {
+  color: #49625a;
+  font-weight: 500;
+}
+.replay-button {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #123a3b66;
+  font-family: var(--display);
+  font-size: 9px;
+  font-weight: 800;
+}
+.worm-label {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  padding: 3px 7px;
+  text-shadow: none;
+  box-shadow: 2px 2px 0 #17383b55;
+  font-weight: 700;
+}
+.worm-label strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+.worm-label.active {
+  background: var(--lime);
+  border-color: var(--ink);
+  box-shadow:
+    3px 3px 0 var(--ink),
+    0 4px 10px #17383b66;
+}
+.worm-label.active:before {
+  color: var(--ink);
+}
+.arena-bottom {
+  color: #fbf4e1;
+  text-shadow:
+    0 2px 0 #163a3d,
+    0 4px 10px #0007;
+}
+#timer {
+  color: var(--paper-light);
+  font-family: var(--display);
+  font-weight: 800;
+}
+#timer small {
+  color: #d8e1b7;
+}
+#announcement {
+  color: var(--paper-light);
+  text-shadow:
+    0 3px 0 var(--ink),
+    0 6px 18px #000a;
+  font-family: var(--display);
+  font-weight: 800;
+}
+#turn-banner {
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 4px 4px 0 #17383b99;
+  font-family: var(--display);
+}
+.controls {
+  background-color: var(--paper);
+  background-image: url("/art/paper-grain.webp");
+  background-size: 620px 620px;
+  background-blend-mode: multiply;
+  border-top: 2px solid var(--ink);
+  color: var(--ink);
+}
+.eyebrow,
+.slider-label {
+  color: #5b7368;
+  font-weight: 700;
+}
+.slider-label output {
+  color: var(--ink);
+}
+.move-buttons button,
+.weapons button {
+  background: var(--paper-light);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 #17383b66;
+  font-weight: 700;
+}
+.move-buttons button:hover,
+.weapons button:hover {
+  background: #fff8e8;
+  filter: none;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #17383b66;
+}
+.weapons .selected {
+  background: var(--lime);
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.weapons button small {
+  color: #4f6a5d;
+  font-weight: 700;
+}
+.weapon-art {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 5px;
+  filter: drop-shadow(0 1px 0 #fff9);
+}
+.weapons button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#fire {
+  background: var(--lime);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 var(--ink);
+  font-family: var(--display);
+  font-weight: 800;
+}
+#fire:hover {
+  background: #e2ef80;
+  filter: none;
+}
+#fire.charging {
+  background: var(--coral);
+}
+#fire > span:nth-child(2) {
+  color: var(--ink);
+}
+#fire small {
+  color: #395b47;
+  opacity: 0.8;
+}
+#fire:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+input[type="range"] {
+  accent-color: #668047;
+}
+#grenade-settings {
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 3px 3px 0 #17383b66;
+}
+#grenade-settings label {
+  color: var(--ink);
+  font-weight: 700;
+}
+#grenade-settings select {
+  border: 1px solid var(--ink);
+}
+footer {
+  color: #a7baa8;
+}
+footer i {
+  color: #718b78;
+}
+/* ---- menu ---- */
+dialog {
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(180deg, #fbf3dfcc, #f0e3c8e6), url("/art/paper-grain.webp");
+  background-size:
+    auto,
+    700px 700px;
+  background-blend-mode: normal, multiply;
+  border: 2px solid var(--ink);
+  border-radius: 5px;
+  box-shadow:
+    9px 9px 0 #08272a55,
+    0 32px 90px #001c21aa;
+}
+dialog::backdrop {
+  background: #082c30c4;
+  backdrop-filter: blur(8px) saturate(0.8);
+}
+dialog p {
+  color: #3e5b54;
+}
+.eyebrow {
+  color: #60786c;
+}
+h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -1.4px;
+}
+h1 em {
+  color: var(--coral);
+  font-style: normal;
+}
+.instructions {
+  border-top: 1.5px solid #17383b33;
+  border-bottom: 1.5px solid #17383b33;
+}
+.instructions b {
+  color: var(--ink);
+}
+.instructions summary {
+  color: #4b6656;
+  font-weight: 700;
+}
+.instructions summary span {
+  color: #6c8170;
+}
+.mode-label {
+  color: #5b7266;
+  font-weight: 700;
+}
+select {
+  background: #fbf3df;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: inset 0 -2px 0 #17383b14;
+}
+select:focus-visible {
+  outline-color: var(--coral);
+}
+#start {
+  background: var(--lime);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 var(--ink);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+#start:hover {
+  background: #e4ef7d;
+  filter: none;
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.close-help {
+  color: #4e6b5d;
+}
+.menu-art {
+  background:
+    linear-gradient(0deg, #f2e8d2 0%, #f2e8d200 68%),
+    url("/art/paper-islands.webp") center 38% / cover;
+  border-bottom: 2px solid var(--ink);
+  border-radius: 3px 3px 0 0;
+}
+.menu-art span {
+  color: var(--ink);
+  font-family: var(--display);
+  font-weight: 800;
+}
+.menu-art img {
+  filter: drop-shadow(0 5px 0 #17383b33) drop-shadow(0 8px 10px #17383b44);
+}
+.menu-meta {
+  border-top: 1.5px dashed #17383b33;
+  padding-top: 12px;
+}
+#record-summary {
+  color: #5d7367;
+  font-weight: 600;
+}
+#daily {
+  background: #f7ecd6;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  color: var(--ink);
+  box-shadow: 2px 2px 0 #17383b44;
+}
+#daily span {
+  color: var(--ink);
+  font-weight: 800;
+}
+#daily small {
+  color: #5d7367;
+}
+#share {
+  background: #ead8b6;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #17383b44;
+}
+#share:disabled {
+  opacity: 0.35;
+}
+#daily:hover,
+#share:hover:not(:disabled) {
+  filter: brightness(1.03);
+  transform: translate(-1px, -1px);
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline-color: var(--coral);
+}
+.damage-number {
+  color: var(--paper-light);
+  text-shadow:
+    0 2px 0 var(--ink),
+    0 3px 8px #0007;
+}
+.pickup-number {
+  color: var(--lime);
+  text-shadow: 0 2px 0 var(--ink);
+}
+#weather-layer.storm {
+  background: #0a2a2c66;
+}
+@media (max-width: 700px) {
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .weapon-art {
+    width: 21px;
+    height: 21px;
+    margin-right: 3px;
+  }
+  .weapons button {
+    box-shadow: 1px 1px 0 #17383b55;
+  }
+  .team-portrait {
+    display: none;
+  }
+}
+@media (max-width: 400px) {
+  .brand-icon {
+    width: 34px;
+    height: 34px;
+  }
+}
+@media (min-width: 701px) and (min-height: 551px) {
+  main {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .match-bar {
+    border-top: 0;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .controls {
+    border-top-width: 1.5px;
+  }
+  .menu-art {
+    display: none;
+  }
+}
+
+/* Mobile HUD balance and paper focus states. */
+@media (max-width: 700px) {
+  .turn b {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+  .turn span {
+    font-size: 7px;
+  }
+  .turn {
+    min-width: 88px;
+  }
+  .team strong {
+    font-size: 23px;
+  }
+  #series {
+    font-size: 7px;
+  }
+}
+.instructions summary:focus-visible,
+.instructions summary:focus {
+  outline: 2px solid var(--coral);
+  outline-offset: 3px;
+}
+@media (max-width: 700px) {
+  .worm-label {
+    padding: 2px 5px;
+  }
+  .worm-label strong {
+    font-size: 10px;
+  }
 }

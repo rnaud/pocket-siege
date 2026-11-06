@@ -1,6 +1,6 @@
 # Pocket Siege
 
-A Worms-inspired, turn-based artillery game built with Three.js. Original generated character and background art; no Worms assets or branding are used.
+A Worms-inspired, turn-based artillery game built with Three.js. Original generated paper-cut character, prop and background art; no Worms assets or branding are used.
 
 ## Play
 
@@ -33,7 +33,7 @@ npm run dev
 npm run build
 ```
 
-`npm run preview` serves the production build. Character, hurt-frame, and background images are generated original art, optimized in WebP. Terrain and effects are procedural. Google Fonts is optional, with system fallbacks. Three.js is bundled locally. A web app manifest and apple-touch icon make the game installable; Open Graph and Twitter tags use the generated share card.
+`npm run preview` serves the production build. Character, hurt-frame, portrait, weapon-card and background images are generated original paper-cut art, optimized in WebP. Terrain, water and effects are procedural. Google Fonts is optional, with system fallbacks. Three.js is bundled locally. A web app manifest and apple-touch icon make the game installable; Open Graph and Twitter tags use the generated share card.
 
 ## Tests
 
@@ -42,7 +42,7 @@ npx playwright install chromium webkit
 npm test
 ```
 
-Tests cover terrain removal, projectile impacts and turn progression, computer turns, AI weapon/blast planning, crate seeking, ammo spending, proximity mines, match modifiers, the action camera, shot replay, the result card, saved settings, sudden-death water levels, supply crates, weather, best-of-three flow, daily seeds, the local record book, desktop full-window and iPhone layouts in Chromium and WebKit.
+Tests cover terrain removal, projectile impacts and turn progression, computer turns, AI weapon/blast planning, crate seeking, ammo spending, proximity mines, match modifiers, the action camera, shot replay, the result card, saved settings, generated-art loading, label readability, sudden-death water levels, supply crates, weather, best-of-three flow, daily seeds, the local record book, desktop full-window and iPhone layouts in Chromium and WebKit.
 
 ## Deployment
 
@@ -50,7 +50,7 @@ The GitHub Actions workflow builds and deploys `dist/` to GitHub Pages on pushes
 
 ## Implementation
 
-A lightweight water shader animates foam, ripples and bubbles; reduced-motion settings freeze its animation, and sudden death can raise its surface. Three.js renders an orthographic battlefield, animated illustrated soldiers, projectiles, debris, a supply crate and a painted jungle backdrop. Weather is a cheap CSS layer; storms widen the wind range. A binary terrain mask powers collision and circular excavation; a canvas texture displays the same mask, rebuilt from the mask once per frame after a crater. Physics runs at a fixed 120 Hz with swept projectile collision and an optional gravity scale. The computer samples trajectories for every weapon it can afford, scores blast damage, water/edge knockback and friendly fire, seeks nearby crates, retreats after firing, and can reposition before charging. The camera is an orthographic view rectangle that eases between the full island and a fitted action frame; all HUD overlays project through the same view.
+A lightweight water shader animates foam, ripples and bubbles; reduced-motion settings freeze its animation, and sudden death can raise its surface. Three.js renders an orthographic battlefield, animated paper-cut soldiers, projectile models, debris, billboard crates and mines, and a layered paper jungle backdrop. Terrain is painted as flat ochre paper strata with a cream cut rim and chartreuse grass; water uses deep teal inks and cream foam. The weapon rigs keep procedural geometry but use the paper palette with ink edge lines. Weather is a cheap CSS layer; storms widen the wind range. A binary terrain mask powers collision and circular excavation; a canvas texture displays the same mask, rebuilt from the mask once per frame after a crater. Physics runs at a fixed 120 Hz with swept projectile collision and an optional gravity scale. The computer samples trajectories for every weapon it can afford, scores blast damage, water/edge knockback and friendly fire, seeks nearby crates, retreats after firing, and can reposition before charging. The camera is an orthographic view rectangle that eases between the full island and a fitted action frame; all HUD overlays project through the same view.
 
 ## Daily island and records
 
@@ -62,7 +62,7 @@ The production build registers a service worker that precaches the page, CSS, Ja
 
 ## Share and install
 
-The game ships a web app manifest and 192/512 px icons for add-to-home-screen on iOS and Android. Link previews use the generated 1200×630 card at `public/art/og-card.png`; regenerate it and the icons with `python3 scripts/make-brand-assets.py` after changing the art.
+The game ships a web app manifest, paper-seal 192/512 px icons, an apple-touch icon and a favicon for installable play. Link previews use the generated 1200×630 card at `public/art/og-card.png`; regenerate the card, icons and favicon with `python3 scripts/make-brand-assets.py` after changing the art.
 
 ## License
 
@@ -70,12 +70,14 @@ MIT. Worms and Worms Armageddon are trademarks of their respective owners. This 
 
 ## Art direction
 
-The original background and two transparent soldier illustrations were created with the built-in image generation tool. Assets and exact generation prompts are in [`public/art/`](public/art/ART-DIRECTION.md). The share card and home-screen icons are composed from that art by `scripts/make-brand-assets.py`. The terrain uses layered soil, stones, grass fringes, and crater-edge shading. Soldier sprites breathe, bob when walking, and face the aiming direction.
+The current **Paper-Cut Expedition** pass uses layered construction paper, screenprint grain, ink outlines and a cream/teal/moss/coral palette. It replaces the earlier gouache jungle with a paper-cut backdrop and emblem, new body and hurt frames, full portraits, five weapon cards, a crate sprite, paper-grain UI surfaces and a matching OG card. Assets and exact prompts are in [`public/art/ART-DIRECTION.md`](public/art/ART-DIRECTION.md).
+
+OpenAI `gpt-image-1.5` was attempted first but the supplied key had no image credits. The pass was generated with Gemini 3.1 Flash Image; the prompts are provider-neutral and can be rerun with OpenAI once image credits are available. The share card, icons and favicon are composed locally by `scripts/make-brand-assets.py`. Soldier sprites breathe, bob when walking, and face the aiming direction; the terrain is paper strata with a cream cut rim, stone flecks and chartreuse grass.
 
 ## Combat feedback
 
-The crosshair shows aiming direction, without a future trajectory or impact prediction. Weapons and hands rotate independently of the illustrated soldier, and shots originate at the visible muzzle. Launch physics remain the same across desktop and mobile layouts.
+The crosshair shows aiming direction, without a future trajectory or impact prediction. Weapons and hands rotate independently of the paper-cut soldier, and shots originate at the visible muzzle. Launch physics remain the same across desktop and mobile layouts.
 
-Hits trigger an illustrated hurt face, flinch, brief color flash, radial knockback with a little lift, dust trails, directional damage numbers, a short hit-stop, a slow-motion beat on a KO, and health-bar loss. Airborne worms retain horizontal momentum and collide with walls, ceilings and ground. Hard falls cause damage. Turns wait for bodies and death explosions to settle. Firing has recoil, a muzzle flash and a trail behind the actual projectile; grenades show their remaining fuse. The active worm’s label is highlighted with a pointer, labels shift away from the aim reticle, and help or a hidden tab pauses simulation.
+Hits trigger an illustrated hurt face, flinch, brief color flash, radial knockback with a little lift, dust trails, directional damage numbers, a short hit-stop, a slow-motion beat on a KO, and health-bar loss. Airborne worms retain horizontal momentum and collide with walls, ceilings and ground. Hard falls cause damage. Turns wait for bodies and death explosions to settle. Firing has recoil, a muzzle flash and a trail behind the actual projectile; grenades show their remaining fuse. The active worm’s label is highlighted with a pointer, labels stay below the HUD strip and shift away from the aim reticle, and help or a hidden tab pauses simulation.
 
 See [the gameplay audit](GAMEPLAY-AUDIT.md) for corrected behavior, validation, and remaining differences from Worms Armageddon.
