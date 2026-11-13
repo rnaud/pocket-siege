@@ -320,7 +320,7 @@ function createWorm(t, i, x) {
       side: THREE.DoubleSide,
     }),
   );
-  body.position.set(0, 22, 4);
+  body.position.set(0, 22, 24);
   body.scale.set(64, 64, 1);
   g.add(body);
   const rig = createWeaponRig(t);

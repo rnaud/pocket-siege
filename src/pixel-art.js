@@ -22,141 +22,138 @@ export function pixelArt(kind, team = 0, hurt = false) {
   const dark = team ? "#853f48" : "#49694b";
   if (kind === "soldier") {
     const { polygon: poly } = pixelBrush(ctx);
-    const outline = "#382d40",
-      shade = team ? "#bd605f" : "#737631";
-    const body = team ? "#ed8b76" : "#a3a344",
-      rim = team ? "#ffae86" : "#c5bf5d";
-    // The broad belly and curled tail read as a worm, not an upright soldier.
+    const outline = "#433244";
+    const body = team ? "#ed9987" : "#b5bc75";
+    const shade = team ? "#be7079" : "#818a53";
+    const highlight = team ? "#ffd0a6" : "#e3d99a";
+    const face = team ? "#f6af92" : "#d3ca8d";
+    // One soft head, a short neck and a low tapered tail. No raised tail loop
+    // or separate rectangular face panel: the silhouette is a single worm.
     poly(
       [
-        [2, 20],
-        [5, 17],
-        [9, 17],
-        [12, 20],
-        [12, 22],
-        [14, 20],
-        [14, 14],
-        [14, 8],
-        [17, 4],
-        [25, 4],
-        [29, 8],
-        [28, 17],
-        [26, 20],
+        [12, 4],
+        [22, 4],
+        [26, 7],
+        [27, 13],
+        [25, 17],
+        [24, 19],
+        [24, 23],
         [25, 25],
-        [21, 29],
+        [24, 28],
+        [20, 30],
         [10, 30],
-        [4, 28],
-        [1, 24],
+        [5, 28],
+        [2, 25],
+        [3, 23],
+        [5, 24],
+        [8, 26],
+        [12, 26],
+        [13, 23],
+        [12, 19],
+        [11, 17],
+        [9, 13],
+        [9, 8],
       ],
       outline,
     );
     poly(
       [
-        [3, 21],
-        [5, 19],
-        [8, 19],
-        [10, 21],
-        [10, 23],
-        [8, 25],
-        [6, 24],
-        [6, 22],
-        [5, 22],
-        [5, 26],
-        [10, 28],
-        [16, 27],
-        [21, 25],
-        [23, 21],
-        [25, 17],
-        [27, 16],
-        [27, 8],
-        [24, 5],
-        [18, 5],
-        [16, 8],
-        [16, 14],
-        [16, 20],
-        [13, 24],
-        [10, 26],
-        [7, 27],
+        [13, 5],
+        [21, 5],
+        [25, 8],
+        [26, 12],
+        [24, 16],
+        [23, 18],
+        [23, 22],
+        [24, 25],
+        [23, 27],
+        [19, 29],
+        [10, 29],
+        [6, 27],
         [4, 25],
+        [8, 27],
+        [13, 27],
+        [15, 24],
+        [14, 19],
+        [12, 16],
+        [10, 12],
+        [10, 9],
       ],
       body,
     );
     poly(
       [
-        [5, 26],
-        [10, 28],
-        [16, 27],
-        [21, 25],
-        [23, 21],
-        [25, 18],
-        [25, 24],
-        [21, 28],
-        [11, 29],
-        [6, 28],
+        [13, 6],
+        [21, 6],
+        [24, 8],
+        [25, 12],
+        [23, 16],
+        [19, 17],
+        [13, 15],
+        [11, 12],
+        [11, 9],
+      ],
+      face,
+    );
+    poly(
+      [
+        [20, 19],
+        [23, 18],
+        [23, 23],
+        [24, 25],
+        [22, 28],
+        [18, 29],
+        [10, 29],
+        [7, 27],
+        [13, 28],
+        [18, 26],
+        [21, 23],
       ],
       shade,
     );
-    rect(5, 19, 3, 1, rim);
-    rect(3, 21, 1, 3, rim);
-    rect(10, 27, 5, 1, rim);
-    rect(16, 20, 2, 4, rim);
-    // Face projects forward; warm eye whites and separate pupils stay readable.
-    poly(
-      [
-        [19, 8],
-        [26, 7],
-        [28, 9],
-        [28, 17],
-        [25, 19],
-        [19, 18],
-        [17, 15],
-        [17, 11],
-      ],
-      team ? "#ffb394" : "#e5c788",
-    );
-    rect(19, 5, 5, 1, rim);
-    rect(17, 7, 2, 3, rim);
-    rect(19, 9, 3, 7, "#fff0b9");
-    rect(24, 8, 3, 7, "#fff0b9");
-    rect(20, 10, 2, 5, outline);
-    rect(25, 9, 2, 5, outline);
-    rect(18, 8, 4, 1, outline);
-    rect(24, 7, 3, 1, outline);
-    if (hurt === true) {
-      rect(19, 11, 3, 1, outline);
-      rect(24, 10, 3, 1, outline);
-    }
-    rect(22, 18, 3, 2, outline);
-    rect(23, 18, 2, 1, "#e89988");
-    rect(20, 20, 2, 2, team ? "#b95a61" : "#7b7c37");
-    const face = team ? "#ffb394" : "#e5c788";
-    if (["blink", "recoil", "aim"].includes(hurt)) {
-      rect(19, 9, 3, 7, face);
-      rect(19, 12, 3, 1, outline);
-      if (hurt !== "aim") {
-        rect(24, 8, 3, 7, face);
-        rect(24, 11, 3, 1, outline);
+    rect(13, 5, 7, 1, highlight);
+    rect(11, 7, 2, 2, highlight);
+    rect(13, 19, 2, 4, highlight);
+    rect(10, 27, 4, 1, highlight);
+    // Compact round eyes, with one-pixel pupils looking toward the muzzle.
+    const eye = (x, y, closed = false) => {
+      if (closed) {
+        rect(x, y + 2, 4, 1, outline);
+        return;
       }
+      rect(x + 1, y, 3, 1, "#fff0c8");
+      rect(x, y + 1, 5, 3, "#fff0c8");
+      rect(x + 1, y + 4, 3, 1, "#fff0c8");
+      rect(x + 3, y + 1, 1, 2, outline);
+    };
+    eye(13, 9, hurt === true || hurt === "blink" || hurt === "recoil");
+    eye(20, 8, hurt === "blink" || hurt === "recoil");
+    if (hurt === "aim") rect(13, 9, 5, 1, outline);
+    // Smile sits below the eyes instead of a long vertical mouth.
+    rect(19, 16, 4, 1, outline);
+    rect(18, 15, 1, 1, outline);
+    if (hurt === true || hurt === "recoil") {
+      rect(18, 15, 6, 2, outline);
+      rect(19, 15, 4, 1, "#fff0c8");
     }
     if (hurt === "panic") {
-      rect(20, 10, 1, 2, outline);
-      rect(25, 9, 1, 2, outline);
-      rect(21, 17, 5, 5, outline);
-      rect(22, 18, 3, 2, "#fff0b9");
-      rect(13, 12, 3, 2, outline);
-      rect(12, 9, 2, 4, body);
+      rect(18, 15, 5, 4, outline);
+      rect(19, 16, 3, 1, "#fff0c8");
+      rect(12, 7, 4, 1, outline);
+      rect(21, 6, 3, 1, outline);
     }
     if (hurt === "victory") {
-      rect(20, 17, 7, 4, outline);
-      rect(21, 17, 5, 2, "#fff0b9");
-      rect(12, 8, 3, 12, outline);
-      rect(12, 6, 3, 3, rim);
-      rect(13, 9, 1, 9, body);
+      rect(17, 15, 7, 3, outline);
+      rect(18, 15, 5, 1, "#fff0c8");
+      rect(8, 18, 4, 2, outline);
+      rect(7, 15, 3, 4, outline);
+      rect(7, 14, 3, 3, highlight);
+      rect(9, 18, 2, 1, body);
     }
     if (hurt === "walk") {
-      rect(3, 27, 9, 3, outline);
-      rect(5, 26, 8, 2, body);
-      rect(8, 26, 4, 1, rim);
+      rect(4, 26, 4, 2, body);
+      rect(7, 28, 6, 1, shade);
+      rect(14, 25, 3, 2, highlight);
     }
   } else if (kind === "crate") {
     rect(5, 9, 23, 20, ink);
