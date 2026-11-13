@@ -1,12 +1,18 @@
+import { generateTerrain } from "./map-generator.js";
 import { islandTop, islandVoid } from "./island-profile.js";
 export const W = 1200,
   H = 650,
   WATER = 80,
   GRAVITY = 145;
 export class Terrain {
-  constructor(seed = 42) {
+  constructor(seed = 42, layout = "fern") {
     this.data = new Uint8Array(W * H);
     this.seed = seed;
+    this.layout = layout;
+    if (layout !== "fern") {
+      generateTerrain(this.data, W, H, seed, layout);
+      return;
+    }
     for (let x = 13; x < W - 10; x++) {
       const top = H * (1 - islandTop((x / W) * 480, seed) / 270);
       const bottom = 30 + 8 * Math.sin(x * 0.03);

@@ -1,3 +1,4 @@
+import { MAP_LAYOUTS } from "./map-generator.js";
 const KEY = "pocket-siege-settings-v1";
 const MODES = ["ai", "local"];
 const DIFFICULTIES = ["rookie", "regular", "veteran"];
@@ -29,6 +30,7 @@ export function defaultSettings() {
     difficulty: "regular",
     format: "single",
     weather: "clear",
+    mapLayout: "fern",
     modifier: "standard",
     scheme: "classic",
     turnTime: 45,
@@ -54,6 +56,9 @@ export function readSettings(storage) {
     return {
       ...base,
       sound: Boolean(parsed.sound),
+      mapLayout: MAP_LAYOUTS.includes(parsed.mapLayout)
+        ? parsed.mapLayout
+        : base.mapLayout,
       mode: MODES.includes(parsed.mode) ? parsed.mode : base.mode,
       difficulty: DIFFICULTIES.includes(parsed.difficulty)
         ? parsed.difficulty

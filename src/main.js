@@ -80,6 +80,30 @@ scene.background = new THREE.Color("#153b3d");
 const camera = new THREE.OrthographicCamera(0, W, H, 0, 0.1, 2000);
 camera.position.z = 1000;
 const view = { ...FULL_VIEW };
+const targetMarker = document.createElement("canvas");
+targetMarker.width = targetMarker.height = 17;
+targetMarker.setAttribute("aria-label", "Homing target");
+targetMarker.style.cssText =
+  "position:absolute;width:34px;height:34px;image-rendering:pixelated;pointer-events:none;z-index:8";
+const markerBrush = targetMarker.getContext("2d");
+markerBrush.fillStyle = "#342638";
+for (const [x, y, w, h] of [
+  [6, 0, 5, 6],
+  [6, 11, 5, 6],
+  [0, 6, 6, 5],
+  [11, 6, 6, 5],
+])
+  markerBrush.fillRect(x, y, w, h);
+markerBrush.fillStyle = "#ffe4af";
+for (const [x, y, w, h] of [
+  [8, 1, 1, 4],
+  [8, 12, 1, 4],
+  [1, 8, 4, 1],
+  [12, 8, 4, 1],
+  [8, 8, 1, 1],
+])
+  markerBrush.fillRect(x, y, w, h);
+arena.appendChild(targetMarker);
 let overview = false;
 window.addEventListener("siege-overview", (event) => {
   overview = event.detail;
@@ -183,6 +207,8 @@ let format = "single",
   specialOpen = false,
   activeUtility = null,
   targetUtility = null,
+  homingTarget = null,
+  shotgunRemaining = 0,
   rope = { attached: false, anchor: null, length: 0, mesh: null },
   jetpack = {
     active: false,
@@ -455,7 +481,7 @@ function updateAimHUD() {
       Math.max(48, Math.min(arena.clientWidth - 48, p.x)) + "px";
     aimHUD.tag.style.top =
       Math.max(14, Math.min(arena.clientHeight - 25, p.y - 22)) + "px";
-    aimHUD.tag.textContent = ["grenade", "sticky"].includes(projectile.kind)
+    aimHUD.tag.textContent = WEAPONS[projectile.kind].timed
       ? `✹ ${Math.max(0, projectile.fuse - projectile.age).toFixed(1)}s`
       : p.y < 0
         ? projectile.kind === "mortar"
@@ -575,6 +601,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   aimInput = 0;
   retreat = 0;
   shotCount = 0;
+  shotgunRemaining = 0;
+  homingTarget = null;
   fuse = 3;
   bounce = 0.55;
   $("#fuse").value = "3";
@@ -602,7 +630,16 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   fires = [];
   for (const h of hazards) dispose(h.mesh);
   hazards = [];
-  terrain = new Terrain(seed ?? 2 + Math.floor(Math.random() * 40));
+  terrain = new Terrain(
+    seed ?? Math.floor(Math.random() * 0x7fffffff),
+    isDaily ? "fern" : $("#map-layout").value,
+  );
+  $(".location span").textContent = {
+    fern: "FERN ISLAND",
+    highlands: "HIGHLANDS",
+    archipelago: "ARCHIPELAGO",
+    forts: "FORTS",
+  }[terrain.layout];
   paintTerrain(ctx, terrain, texture);
   terrainDirty = false;
   worms = [
@@ -793,6 +830,8 @@ function updateRecordUI() {
     surrender.hidden = !matchStarted || phase === "menu" || phase === "over";
 }
 function beginTurn() {
+  shotgunRemaining = 0;
+  homingTarget = null;
   stopRope();
   stopJetpack();
   targetUtility = null;
@@ -862,7 +901,14 @@ function beginTurn() {
         : "MOSS’S MOVE";
   $("#wind").textContent =
     `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 5).toFixed(1)}`;
-  $(".location span").textContent = daily ? "DAILY ISLAND" : "FERN ISLAND";
+  $(".location span").textContent = daily
+    ? "DAILY ISLAND"
+    : {
+        fern: "FERN ISLAND",
+        highlands: "HIGHLANDS",
+        archipelago: "ARCHIPELAGO",
+        forts: "FORTS",
+      }[terrain.layout];
   updateSeriesHUD();
   const weatherNote =
     weather === "storm"
@@ -890,7 +936,7 @@ function beginTurn() {
 function updateUI() {
   // Called from the 120 Hz simulation; only touch the DOM when the state behind it changed.
   const loadout = ammo[team] ?? {};
-  const key = `${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  const key = `${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   updateHudTeams(worms, team);
@@ -925,7 +971,8 @@ function updateUI() {
     const count = ammoFor(loadout, button.dataset.weapon);
     button.querySelector("small").textContent =
       count === Infinity ? "∞" : count;
-    button.disabled = !canAct() || charging || count <= 0;
+    button.disabled =
+      !canAct() || charging || shotgunRemaining > 0 || count <= 0;
     button.setAttribute(
       "aria-pressed",
       String(button.dataset.weapon === weapon),
@@ -966,6 +1013,7 @@ function updateUI() {
     button.disabled =
       !canAct() ||
       charging ||
+      shotgunRemaining > 0 ||
       (count <= 0 && activeUtility !== kind) ||
       (activeUtility !== null && activeUtility !== kind);
     button.classList.toggle("selected", activeUtility === kind);
@@ -1167,10 +1215,23 @@ function handleUtilityTarget(e) {
   const rect = arena.getBoundingClientRect(),
     x = Math.max(
       20,
-      Math.min(W - 20, ((e.clientX - rect.left) / rect.width) * W),
+      Math.min(
+        W - 20,
+        view.x + ((e.clientX - rect.left) / rect.width) * view.w,
+      ),
     ),
-    y = H - ((e.clientY - rect.top) / rect.height) * H;
+    y = view.y + (1 - (e.clientY - rect.top) / rect.height) * view.h;
   const w = worms[current];
+  if (targetUtility === "homing") {
+    homingTarget = { x, y };
+    targetUtility = null;
+    activeUtility = null;
+    impactFlash(x, y);
+    $("#status").textContent = "Target set. Aim, then hold fire to launch.";
+    updateSliders();
+    updateUI();
+    return;
+  }
   if (targetUtility === "airstrike") {
     if ((ammoFor(ammo[team], "airstrike") ?? 0) <= 0) {
       targetUtility = null;
@@ -1218,7 +1279,7 @@ function handleUtilityTarget(e) {
   }
 }
 function useUtility(kind) {
-  if (!canAct() || charging) return;
+  if (!canAct() || charging || shotgunRemaining) return;
   if (kind === "jetpack" && jetpack.active) {
     stopJetpack();
     closeUtilities();
@@ -1654,6 +1715,7 @@ function saveSettings() {
     difficulty: $("#difficulty").value,
     format: $("#format").value,
     weather: $("#weather").value,
+    mapLayout: $("#map-layout").value,
     modifier: $("#modifier").value,
     scheme: $("#scheme").value,
     turnTime: +$("#turn-time").value,
@@ -1673,6 +1735,7 @@ function applySettings() {
   set("#difficulty", saved.difficulty);
   set("#format", saved.format);
   set("#weather", saved.weather);
+  set("#map-layout", saved.mapLayout);
   set("#modifier", saved.modifier);
   set("#scheme", saved.scheme);
   set("#turn-time", String(saved.turnTime));
@@ -1688,7 +1751,8 @@ function updateSliders() {
   const specialLabel = {
     mine: "PLACE MINE",
     dynamite: "DROP DYNAMITE",
-    shotgun: "FIRE SHOTGUN",
+    shotgun: shotgunRemaining ? "SECOND SHOT" : "FIRE SHOTGUN",
+    homing: homingTarget ? null : "SET TARGET",
     bat: "SWING BAT",
     airstrike: "CALL AIRSTRIKE",
   }[weapon];
@@ -1718,6 +1782,13 @@ function startCharge(source) {
   )
     return;
   wormLocked = true;
+  if (weapon === "homing" && !homingTarget) {
+    targetUtility = "homing";
+    $("#status").textContent =
+      "Click or tap a target. Use MAP to see the whole battlefield.";
+    updateUI();
+    return;
+  }
   if (weapon === "mine") {
     placeMine();
     return;
@@ -1797,6 +1868,7 @@ function injure(w, damage, direction = 0) {
   }
   damageLabel(w, damage, direction);
   if (w === worms[current]) {
+    shotgunRemaining = 0;
     cancelCharge();
     retreat = 0;
     move = 0;
@@ -1924,7 +1996,11 @@ function placeDynamite() {
   tone(430, 0.12, "square");
 }
 function fireShotgun() {
-  if (!canAct() || (ammoFor(ammo[team], "shotgun") ?? 0) <= 0) return;
+  if (
+    !canAct() ||
+    (!shotgunRemaining && (ammoFor(ammo[team], "shotgun") ?? 0) <= 0)
+  )
+    return;
   const w = worms[current],
     origin = shot(w, angle, "shotgun"),
     start = terrain.solid(origin.muzzle.x, origin.muzzle.y)
@@ -1953,7 +2029,11 @@ function fireShotgun() {
     x: start.x + Math.cos(r) * 300,
     y: start.y + Math.sin(r) * 300,
   };
-  spendSpecial("shotgun");
+  if (!shotgunRemaining) {
+    ammo[team].shotgun--;
+    shotgunRemaining = 2;
+  }
+  shotgunRemaining--;
   shotCount++;
   wormLocked = true;
   if (victim) {
@@ -1964,12 +2044,19 @@ function fireShotgun() {
     victim.vx = dir * 230;
     victim.vy = 130;
     impactFlash(hit.x, hit.y);
-    finishAction(`${w.name} hits ${victim.name} with the shotgun.`);
   } else {
     terrain.carve(hit.x, hit.y, 14);
     terrainDirty = true;
     impactFlash(hit.x, hit.y);
-    finishAction("Shotgun blast. Terrain chipped.");
+  }
+  if (shotgunRemaining && w.hp > 0 && !w.knocked) {
+    $("#status").textContent =
+      "One shot left. Move or adjust your aim, then fire again.";
+    updateSliders();
+    updateUI();
+  } else {
+    shotgunRemaining = 0;
+    finishAction("Shotgun volley complete. Retreat!");
   }
   lastShot = {
     kind: "shotgun",
@@ -2047,6 +2134,8 @@ function fire() {
     setWeapon("rocket");
     return;
   }
+  if (kind === "homing" && !homingTarget) return;
+  const selectedTarget = homingTarget ? { ...homingTarget } : null;
   const origin = launchGeometry(w, angle, kind, terrain),
     v = launch(angle, power);
   const launchPoint = terrain.solid(origin.muzzle.x, origin.muzzle.y)
@@ -2074,6 +2163,7 @@ function fire() {
   projectile = {
     ...launchPoint,
     ...v,
+    target: selectedTarget,
     launchX: launchPoint.x,
     launchY: launchPoint.y,
     age: 0,
@@ -2099,11 +2189,13 @@ function fire() {
   phase = "flight";
   bannerTime = 0;
   $("#status").textContent =
-    kind === "rocket"
-      ? "Rocket away. Incoming!"
-      : kind === "mortar"
-        ? "Mortar away. Heavy impact incoming!"
-        : `${kind === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`;
+    kind === "homing"
+      ? "Homing missile away. Tracking your marked target!"
+      : kind === "rocket"
+        ? "Rocket away. Incoming!"
+        : kind === "mortar"
+          ? "Mortar away. Heavy impact incoming!"
+          : `${kind === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`;
   move = 0;
   shotWait = 0;
   tone(550, 0.2, "triangle");
@@ -2671,19 +2763,12 @@ function step(dt) {
       p.y = p.attached.w.y + p.attached.dy;
     }
     if (!p.sleeping && !p.stuck) {
-      if (p.kind === "homing") {
-        const owner = worms[p.owner];
-        const target = worms
-          .filter((t) => t.hp > 0 && t.team !== owner?.team)
-          .sort(
-            (a, b) =>
-              Math.hypot(a.x - p.x, a.y - p.y) -
-              Math.hypot(b.x - p.x, b.y - p.y),
-          )[0];
+      if (p.kind === "homing" && p.age > 0.3) {
+        const target = p.target;
         if (target) {
           const speed = Math.hypot(p.vx, p.vy),
             current = Math.atan2(p.vy, p.vx),
-            desired = Math.atan2(target.y + 17 - p.y, target.x - p.x);
+            desired = Math.atan2(target.y - p.y, target.x - p.x);
           let delta =
             ((desired - current + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
           delta = Math.max(-2.8 * dt, Math.min(2.8 * dt, delta));
@@ -2715,8 +2800,8 @@ function step(dt) {
       }
     }
     let boom =
-      (["rocket", "mortar"].includes(p.kind) && hit) ||
-      (["grenade", "sticky"].includes(p.kind) && p.age >= p.fuse);
+      (!WEAPONS[p.kind].timed && hit) ||
+      (WEAPONS[p.kind].timed && p.age >= p.fuse);
     if (hit && p.kind === "sticky" && !p.stuck) {
       p.stuck = true;
       p.vx = 0;
@@ -2729,7 +2814,7 @@ function step(dt) {
       );
       if (w) p.attached = { w, dx: p.x - w.x, dy: p.y - w.y };
     }
-    if (hit && p.kind === "grenade") {
+    if (hit && WEAPONS[p.kind].bounces) {
       const victim = worms.find(
         (w, i) =>
           w.hp > 0 &&
@@ -2938,6 +3023,22 @@ function frame(now) {
     replayReady = canReplay;
     $("#replay").disabled = !canReplay;
   }
+  const markedTarget =
+    projectile?.kind === "homing" ? projectile.target : homingTarget;
+  targetMarker.hidden =
+    !markedTarget ||
+    menu.open ||
+    (phase !== "aim" && projectile?.kind !== "homing");
+  if (!targetMarker.hidden) {
+    const p = screen(markedTarget.x, markedTarget.y);
+    const scale = Math.max(
+      1,
+      Math.round(arena.clientWidth / renderer.domElement.width),
+    );
+    targetMarker.style.width = targetMarker.style.height = 17 * scale + "px";
+    targetMarker.style.left = (Math.round(p.x / scale) - 8) * scale + "px";
+    targetMarker.style.top = (Math.round(p.y / scale) - 8) * scale + "px";
+  }
   updateAimHUD();
   updateHudPower(charging ? power : 0, weapon);
   updateRopeVisual(worms[current]);
@@ -3048,7 +3149,7 @@ function frame(now) {
     w.rig.mine.visible = active && weapon === "mine";
     w.rig.barrel.visible =
       !active || ["rocket", "mortar", "homing", "shotgun"].includes(weapon);
-    w.rig.grenade.visible = active && ["grenade", "sticky"].includes(weapon);
+    w.rig.grenade.visible = active && WEAPONS[weapon].timed;
     w.rig.grenade.children[0].material.color.setHex(
       weapon === "sticky" ? 0xe96e57 : 0x9caf59,
     );
@@ -3175,11 +3276,14 @@ function frame(now) {
   renderer.render(scene, camera);
 }
 function setWeapon(kind) {
+  if (shotgunRemaining) return;
+  homingTarget = null;
+  if (targetUtility === "homing") targetUtility = null;
   if (ammoFor(ammo[team], kind) <= 0) kind = "rocket";
   specialOpen = false;
   weapon = kind;
   teamWeapon[team] = kind;
-  $("#grenade-settings").hidden = !["grenade", "sticky"].includes(kind);
+  $("#grenade-settings").hidden = !WEAPONS[kind].timed;
   document
     .querySelectorAll("[data-weapon]")
     .forEach((b) => b.classList.toggle("selected", b.dataset.weapon === kind));
@@ -3252,7 +3356,7 @@ function pointerAim(e) {
   if (!canAct() || charging || targetUtility || rope.attached || jetpack.active)
     return;
   const rect = arena.getBoundingClientRect(),
-    x = ((e.clientX - rect.left) / rect.width) * W,
+    x = view.x + ((e.clientX - rect.left) / rect.width) * view.w,
     y = H - ((e.clientY - rect.top) / rect.height) * H,
     w = worms[current];
   let a =
@@ -3348,14 +3452,11 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "F3") setWeapon("mortar");
     if (e.key === "F4") setWeapon("sticky");
     if (e.key.toLowerCase() === "m") setWeapon("mine");
-    if (["grenade", "sticky"].includes(weapon) && /^[1-5]$/.test(e.key)) {
+    if (WEAPONS[weapon].timed && /^[1-5]$/.test(e.key)) {
       fuse = +e.key;
       $("#fuse").value = fuse;
     }
-    if (
-      ["grenade", "sticky"].includes(weapon) &&
-      ["+", "=", "-"].includes(e.key)
-    ) {
+    if (WEAPONS[weapon].timed && ["+", "=", "-"].includes(e.key)) {
       bounce = e.key === "-" ? 0.3 : 0.7;
       $("#bounce").value = bounce;
     }
@@ -3444,6 +3545,7 @@ for (const selector of [
   "#difficulty",
   "#format",
   "#weather",
+  "#map-layout",
   "#modifier",
   "#turn-time",
   "#retreat-time",
@@ -3491,6 +3593,10 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 window.siege = {
   getState: () => ({
     assetsReady,
+    mapLayout: terrain.layout,
+    mapSeed: terrain.seed,
+    shotgunRemaining,
+    homingTarget,
     aim: lastAim,
     phase,
     charging,
@@ -3543,6 +3649,7 @@ window.siege = {
     })),
     projectile: projectile
       ? {
+          target: projectile.target,
           kind: projectile.kind,
           x: Math.round(projectile.x),
           y: Math.round(projectile.y),
@@ -3652,6 +3759,7 @@ window.siege = {
           vy: projectile.vy,
           age: projectile.age,
           fuse: projectile.fuse,
+          target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,
         }

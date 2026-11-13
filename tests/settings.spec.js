@@ -22,6 +22,7 @@ test("settings round-trip and reject unknown values", () => {
     difficulty: "veteran",
     format: "best3",
     weather: "storm",
+    mapLayout: "archipelago",
     modifier: "moon-chaos",
     scheme: "custom",
     turnTime: 60,
@@ -33,6 +34,8 @@ test("settings round-trip and reject unknown values", () => {
   writeSettings({ ...settings, mode: "online", weather: "snow" }, storage);
   expect(readSettings(storage).mode).toBe("ai");
   expect(readSettings(storage).weather).toBe("clear");
+  writeSettings({ ...settings, mapLayout: "invalid" }, storage);
+  expect(readSettings(storage).mapLayout).toBe("fern");
   storage.setItem("pocket-siege-settings-v1", "{nope");
   expect(readSettings(storage)).toEqual(defaultSettings());
 });
