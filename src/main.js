@@ -1,3 +1,4 @@
+import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
 import { landscape } from "./island-art.js";
 import { pixelTexture, mountPixelArt, pixelViewport } from "./pixel-art.js";
@@ -79,6 +80,12 @@ scene.background = new THREE.Color("#153b3d");
 const camera = new THREE.OrthographicCamera(0, W, H, 0, 0.1, 2000);
 camera.position.z = 1000;
 const view = { ...FULL_VIEW };
+let overview = false;
+window.addEventListener("siege-overview", (event) => {
+  overview = event.detail;
+  resize();
+  cameraSnap = true;
+});
 let cameraZoom = 1,
   cameraX = W / 2,
   cameraY = H / 2,
@@ -229,6 +236,12 @@ const hurtMaps = [
   pixelTexture("soldier", 0, true),
   pixelTexture("soldier", 1, true),
 ];
+const poseMaps = Object.fromEntries(
+  ["blink", "aim", "recoil", "panic", "victory", "walk"].map((pose) => [
+    pose,
+    [pixelTexture("soldier", 0, pose), pixelTexture("soldier", 1, pose)],
+  ]),
+);
 const portraitMaps = soldierMaps;
 const crateMap = pixelTexture("crate");
 const mineMap = pixelTexture("mine");
@@ -256,7 +269,7 @@ for (let i = 0; i < 26; i++) {
 const water = createWater(W, WATER);
 group.add(water);
 // Debris and projectiles share GPU resources; only one prototype per kind is built.
-const debrisGeometry = new THREE.SphereGeometry(1, 10, 8);
+const debrisGeometry = new THREE.PlaneGeometry(2, 2);
 const debrisMaterials = [
   new THREE.MeshBasicMaterial({ color: 0xc4a578 }),
   new THREE.MeshBasicMaterial({ color: 0xffce70 }),
@@ -313,6 +326,16 @@ function createWorm(t, i, x) {
   const rig = createWeaponRig(t);
   rig.pivot.position.z = 10;
   g.add(rig.pivot);
+  rig.mine = new THREE.Mesh(
+    new THREE.PlaneGeometry(26, 26),
+    new THREE.MeshBasicMaterial({
+      map: mineMap,
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  rig.mine.position.set(17, 0, 7);
+  rig.pivot.add(rig.mine);
   const stars = createStars();
   g.add(stars);
   stars.visible = false;
@@ -963,7 +986,7 @@ function updateUI() {
               ? "✈ AIM"
               : parachuteArmed
                 ? "☂ CHUTE"
-                : "✦ UTILS";
+                : "KIT";
     utilityToggle.classList.toggle(
       "selected",
       utilitiesOpen ||
@@ -2105,6 +2128,7 @@ function explode(x, y, kind, ownerIndex = -1) {
   terrainDirty = true;
   explosions++;
   shakeUntil = performance.now() + 350;
+  hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
   impactFlash(x, y);
   tone(85, 0.6, "sawtooth");
   if (kind === "cluster") {
@@ -2176,7 +2200,7 @@ function explode(x, y, kind, ownerIndex = -1) {
       updateRecordUI();
     }
   }
-  if (reports.length) hitStop = Math.max(hitStop, 0.06);
+  if (reports.length && !reducedMotion) hitStop = Math.max(hitStop, 0.085);
   $("#status").textContent = reports.length
     ? reports.join("   /   ")
     : "Terrain destroyed. No worms hit.";
@@ -2201,7 +2225,38 @@ function spawnDust(x, y) {
 }
 function impactFlash(x, y) {
   const p = screen(x, y),
-    flash = document.createElement("span");
+    flash = document.createElement("canvas");
+  flash.width = flash.height = 32;
+  const brush = pixelBrush(flash.getContext("2d"));
+  const points = [
+    [16, 0],
+    [19, 9],
+    [27, 4],
+    [24, 12],
+    [31, 16],
+    [23, 20],
+    [28, 28],
+    [19, 24],
+    [16, 31],
+    [12, 23],
+    [4, 28],
+    [8, 19],
+    [0, 15],
+    [9, 12],
+    [5, 3],
+    [13, 8],
+  ];
+  const draw = (scale, color) =>
+    brush.polygon(
+      points.map(([x, y]) => [
+        Math.round(16 + (x - 16) * scale),
+        Math.round(16 + (y - 16) * scale),
+      ]),
+      color,
+    );
+  draw(1, "#b85f65");
+  draw(0.85, "#f2a36f");
+  draw(0.6, "#ffe4af");
   flash.className = "impact-flash";
   flash.style.left = p.x + "px";
   flash.style.top = p.y + "px";
@@ -2781,22 +2836,20 @@ function resize() {
       ),
     ),
   );
-  arena.style.width = `${stageWidth}px`;
-  arena.style.height = `${Math.floor((stageWidth * 9) / 16)}px`;
+  const portrait =
+    !overview && battlefieldFrame.clientHeight > battlefieldFrame.clientWidth;
+  arena.style.width = `${portrait ? battlefieldFrame.clientWidth : stageWidth}px`;
+  arena.style.height = `${portrait ? battlefieldFrame.clientHeight : Math.floor((stageWidth * 9) / 16)}px`;
+  arena.classList.toggle("portrait-camera", portrait);
   const pixels = pixelViewport(arena.clientWidth, arena.clientHeight);
   renderer.setSize(pixels.width, pixels.height, false);
   renderer.domElement.style.width = `${pixels.width * pixels.scale}px`;
   renderer.domElement.style.height = `${pixels.height * pixels.scale}px`;
   renderer.domElement.dataset.pixelScale = pixels.scale;
-  const correction =
-    renderer.domElement.height / H / (renderer.domElement.width / W);
-  if (
-    backdropMap.image.width !== pixels.width ||
-    backdropMap.image.height !== pixels.height
-  ) {
-    backdropMap.image = landscape(pixels.width, pixels.height);
-    backdropMap.needsUpdate = true;
-  }
+  const correction = portrait
+    ? 1
+    : renderer.domElement.height / H / (renderer.domElement.width / W);
+
   for (const w of worms) {
     w.g.scale.x = correction;
     w.visualSize = Math.max(70, (31 * H) / arena.clientHeight);
@@ -2817,12 +2870,23 @@ function frame(now) {
     step(1 / 120);
     accumulator -= 1 / 120;
   }
-  const camTarget = chooseCameraTarget({
+  let camTarget = chooseCameraTarget({
     phase,
     projectile,
     worms,
     active: worms[current],
   });
+  const portrait = !overview && arena.clientHeight > arena.clientWidth;
+  if (portrait) {
+    const focus =
+      projectile ||
+      worms
+        .filter((w) => w.knocked && w.hp > 0)
+        .sort((a, b) => Math.hypot(b.vx, b.vy) - Math.hypot(a.vx, a.vy))[0] ||
+      worms[current];
+    if (focus) camTarget = { zoom: 1, cx: focus.x, cy: focus.y + 110 };
+  }
+  if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
   if (cameraSnap) {
     cameraZoom = camTarget.zoom;
     cameraX = camTarget.cx;
@@ -2834,7 +2898,12 @@ function frame(now) {
     cameraX += (camTarget.cx - cameraX) * ease;
     cameraY += (camTarget.cy - cameraY) * ease;
   }
-  const nextView = cameraView(cameraX, cameraY, cameraZoom);
+  const nextView = cameraView(
+    cameraX,
+    cameraY,
+    cameraZoom,
+    portrait ? arena.clientWidth / arena.clientHeight : W / H,
+  );
   view.x = nextView.x;
   view.y = nextView.y;
   view.w = nextView.w;
@@ -2922,8 +2991,33 @@ function frame(now) {
       Math.round((spriteSize * (13 / 32) - 12 + bounce) / pixelWorldY) *
       pixelWorldY;
     w.body.rotation.z = 0;
+    const panic =
+      w.knocked ||
+      (!w.ground && w.vy < -100) ||
+      (projectile && Math.hypot(projectile.x - w.x, projectile.y - w.y) < 120);
+    const pose =
+      w.hurt > 0.35
+        ? "hurt"
+        : w.recoil > 0
+          ? "recoil"
+          : phase === "over" && w.hp > 0 && lastResult?.winner === w.team
+            ? "victory"
+            : panic
+              ? "panic"
+              : moving && Math.floor(now / 120) % 2
+                ? "walk"
+                : active && phase === "aim"
+                  ? "aim"
+                  : Math.floor((now + w.x * 13) / 180) % 22 === 0
+                    ? "blink"
+                    : "idle";
     w.body.material.map =
-      w.hurt > 0.35 ? hurtMaps[w.team] : soldierMaps[w.team];
+      pose === "hurt"
+        ? hurtMaps[w.team]
+        : poseMaps[pose]?.[w.team] || soldierMaps[w.team];
+    w.body.position.x =
+      Math.round((w.recoil > 0 ? -facing * 4 : 0) / pixelWorldY) * pixelWorldY;
+    w.g.userData.pose = pose;
     w.body.material.color.setHex(
       w.hurt > 0.75 && Math.floor(w.hurt * 14) % 2 ? 0xff806c : 0xffffff,
     );
@@ -2947,8 +3041,13 @@ function frame(now) {
       1,
     );
     w.rig.pivot.visible =
-      active && w.hp > 0 && w.hurt < 0.75 && (charging || w.recoil > 0);
-    w.rig.barrel.visible = !active || ["rocket", "mortar"].includes(weapon);
+      active &&
+      w.hp > 0 &&
+      w.hurt < 0.75 &&
+      (phase === "aim" || charging || w.recoil > 0);
+    w.rig.mine.visible = active && weapon === "mine";
+    w.rig.barrel.visible =
+      !active || ["rocket", "mortar", "homing", "shotgun"].includes(weapon);
     w.rig.grenade.visible = active && ["grenade", "sticky"].includes(weapon);
     w.rig.grenade.children[0].material.color.setHex(
       weapon === "sticky" ? 0xe96e57 : 0x9caf59,
@@ -2967,6 +3066,14 @@ function frame(now) {
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
     const p = screen(w.x, w.renderY + spriteSize * 0.83 - 7);
+    const visible = w.hp > 0 && w.x > view.x + 12 && w.x < view.x + view.w - 12;
+    w.label.style.visibility = visible ? "visible" : "hidden";
+    if (active) {
+      const charge = $("#worm-charge"),
+        cp = screen(w.x, w.renderY - 16);
+      charge.style.left = `${Math.round(cp.x)}px`;
+      charge.style.top = `${Math.round(cp.y)}px`;
+    }
     if (w.hp > 0) {
       const width = w.labelW,
         height = w.labelH;
@@ -2975,7 +3082,7 @@ function frame(now) {
         Math.min(arena.clientWidth - width / 2 - 4, p.x),
       );
       // Labels are positioned by their bottom edge, so compare centers and half-heights.
-      const topSafe = arena.clientWidth < 600 ? 84 : 104;
+      const topSafe = 64;
       const anchorX = p.x,
         anchorY = Math.max(topSafe + height, p.y);
       const overlaps = (x, y) =>
@@ -3422,6 +3529,8 @@ window.siege = {
     breakTimer: Math.round(breakTimer * 10) / 10,
     slowMo: Math.round(slowMo * 10) / 10,
     camera: {
+      w: Math.round(view.w),
+      h: Math.round(view.h),
       x: Math.round(view.x),
       y: Math.round(view.y),
       zoom: Math.round(view.zoom * 100) / 100,
@@ -3512,6 +3621,7 @@ window.siege = {
         hits,
         recoil,
         rig,
+        g,
         renderY,
         moving,
         deathPending,
@@ -3531,7 +3641,7 @@ window.siege = {
         renderY,
         moving,
         weaponRotation: rig.pivot.rotation.z,
-        pose: hurt > 0.35 ? "hurt" : recoil > 0 ? "fire" : "idle",
+        pose: g.userData.pose || "idle",
       }),
     ),
     projectile: projectile

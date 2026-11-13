@@ -1469,3 +1469,317 @@ select:focus-visible {
     text-shadow: 1px 1px 0 #211c2b;
   }
 }
+
+/* Keep the battlefield dominant; inventory is available on demand. */
+.controls {
+  position: relative;
+  flex: 0 0 88px;
+  height: 88px;
+  grid-template-columns: 190px 110px minmax(90px, 1fr) 110px 120px;
+  gap: 12px;
+  padding: 14px 20px;
+  max-width: 1000px;
+}
+.controls > .weapon-panel {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  right: 12px;
+  padding: 16px;
+  background: #38283f;
+  border: 4px solid #efc58b;
+  box-shadow: 0 0 0 2px #211c2b;
+  z-index: 30;
+}
+.controls.inventory-open > .weapon-panel {
+  display: block;
+}
+.controls .weapons {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.controls .weapons button {
+  height: 64px;
+}
+#inventory-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  height: 44px;
+  border: 2px solid #efc58b;
+  background: #5e4055;
+  color: #ffe4af;
+  padding: 4px;
+}
+.controls .move-panel {
+  grid-column: 1;
+  grid-row: 1;
+  height: auto;
+}
+.controls .aim-panel {
+  grid-column: 3;
+  grid-row: 1;
+}
+.controls .power-panel {
+  grid-column: 4;
+  grid-row: 1;
+}
+.controls #fire {
+  grid-column: 5;
+  grid-row: 1;
+  height: 56px;
+  font-size: 16px;
+}
+.controls .move-buttons button {
+  height: 36px;
+}
+.controls .move-heading {
+  margin-bottom: 6px;
+}
+#overview-toggle {
+  width: 52px;
+  height: 24px;
+  border: 2px solid #bd957b;
+  background: #38283f;
+  color: #ffe4af;
+  font-size: 8px;
+  padding: 0;
+}
+.match-bar {
+  height: 48px;
+  top: 8px;
+  max-width: 720px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 16px);
+}
+.team {
+  width: calc(50% - 44px);
+  height: 44px;
+}
+.team .team-portrait {
+  width: 32px;
+  height: 32px;
+  top: 4px;
+  left: 8px;
+}
+.team > div:not(.team-roster) {
+  left: 44px;
+  top: 8px;
+  right: 12px;
+}
+.team b,
+.team strong {
+  font-size: 8px;
+  line-height: 8px;
+}
+.team strong {
+  top: 8px;
+  right: 12px;
+}
+.team strong::after,
+.team-roster {
+  display: none;
+}
+.health-track {
+  height: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+.turn {
+  height: 48px;
+  width: 80px;
+  padding: 8px;
+}
+.turn #timer {
+  font-size: 16px;
+  line-height: 16px;
+}
+.turn #turn-label {
+  display: none;
+}
+.arena-top {
+  top: 64px;
+}
+.worm-label,
+.worm-label strong {
+  font-size: 8px;
+  line-height: 8px;
+}
+.worm-label {
+  color: var(--worm-color) !important;
+  opacity: 0.72;
+  text-shadow: 1px 1px #211c2b;
+}
+.worm-label.active,
+.worm-label.hurt {
+  opacity: 1;
+}
+.worm-label:not(.active):not(.hurt)::after {
+  height: 2px;
+}
+#worm-charge {
+  position: absolute;
+  width: 48px;
+  height: 8px;
+  border: 2px solid #211c2b;
+  background: #5e4055;
+  transform: translateX(-50%);
+  display: none;
+  z-index: 5;
+  pointer-events: none;
+}
+#worm-charge.visible {
+  display: block;
+}
+#worm-charge i {
+  display: block;
+  height: 100%;
+  background: #ffe4af;
+}
+.damage-number {
+  font-size: 16px;
+  color: #ffe4af;
+  text-shadow: 2px 2px #38283f;
+  animation-timing-function: steps(12);
+}
+@media (max-width: 700px) {
+  .controls {
+    flex-basis: 132px;
+    height: 132px;
+    grid-template-columns: 104px 64px minmax(60px, 1fr) 80px;
+    grid-template-rows: 48px 48px;
+    gap: 8px;
+    padding: 12px;
+  }
+  .controls .move-panel {
+    grid-column: 1;
+    grid-row: 1/3;
+  }
+  .controls .move-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .controls .move-buttons button {
+    height: 32px;
+  }
+  .controls #inventory-toggle {
+    grid-column: 2;
+    grid-row: 2;
+    height: 36px;
+  }
+  .controls .aim-panel {
+    grid-column: 2/4;
+    grid-row: 1;
+  }
+  .controls .power-panel {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .controls #fire {
+    grid-column: 4;
+    grid-row: 1/3;
+    height: 88px;
+    font-size: 16px;
+  }
+  .controls #fire small {
+    font-size: 8px;
+  }
+  .controls .move-heading {
+    flex-wrap: wrap;
+    gap: 4px;
+    height: 20px;
+    margin-bottom: 4px;
+  }
+  .controls .move-heading #skip {
+    display: none !important;
+  }
+  .controls .weapons button {
+    height: 56px;
+  }
+  .team .team-portrait {
+    display: none;
+  }
+  .team > div:not(.team-roster) {
+    left: 12px;
+  }
+  header .brand {
+    font-size: 8px;
+  }
+  #battlefield-frame {
+    background: #261e30;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .impact-flash {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+.team .team-roster {
+  display: none;
+}
+.impact-flash {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  clip-path: none;
+  background: none;
+  animation: pixel-burst 0.42s steps(4) forwards;
+}
+@keyframes pixel-burst {
+  0% {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
+}
+@media (max-width: 700px) {
+  .controls .move-heading #skip:not([hidden]) {
+    display: inline-block !important;
+  }
+  .controls .move-heading {
+    font-size: 8px;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 700px) {
+  .controls .move-heading {
+    display: flex;
+    flex-wrap: nowrap;
+    height: 20px;
+    gap: 4px;
+    justify-content: space-between;
+  }
+  .controls .move-heading button {
+    padding: 0;
+    font-size: 8px;
+    min-width: 0;
+    flex: 0 0 auto;
+  }
+  .controls .move-heading #utilities-toggle {
+    max-width: 36px;
+  }
+}
+.impact-flash {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .impact-flash {
+    animation: none;
+    opacity: 0.7;
+  }
+}

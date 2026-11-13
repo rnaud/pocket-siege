@@ -122,13 +122,42 @@ export function pixelArt(kind, team = 0, hurt = false) {
     rect(25, 9, 2, 5, outline);
     rect(18, 8, 4, 1, outline);
     rect(24, 7, 3, 1, outline);
-    if (hurt) {
+    if (hurt === true) {
       rect(19, 11, 3, 1, outline);
       rect(24, 10, 3, 1, outline);
     }
     rect(22, 18, 3, 2, outline);
     rect(23, 18, 2, 1, "#e89988");
     rect(20, 20, 2, 2, team ? "#b95a61" : "#7b7c37");
+    const face = team ? "#ffb394" : "#e5c788";
+    if (["blink", "recoil", "aim"].includes(hurt)) {
+      rect(19, 9, 3, 7, face);
+      rect(19, 12, 3, 1, outline);
+      if (hurt !== "aim") {
+        rect(24, 8, 3, 7, face);
+        rect(24, 11, 3, 1, outline);
+      }
+    }
+    if (hurt === "panic") {
+      rect(20, 10, 1, 2, outline);
+      rect(25, 9, 1, 2, outline);
+      rect(21, 17, 5, 5, outline);
+      rect(22, 18, 3, 2, "#fff0b9");
+      rect(13, 12, 3, 2, outline);
+      rect(12, 9, 2, 4, body);
+    }
+    if (hurt === "victory") {
+      rect(20, 17, 7, 4, outline);
+      rect(21, 17, 5, 2, "#fff0b9");
+      rect(12, 8, 3, 12, outline);
+      rect(12, 6, 3, 3, rim);
+      rect(13, 9, 1, 9, body);
+    }
+    if (hurt === "walk") {
+      rect(3, 27, 9, 3, outline);
+      rect(5, 26, 8, 2, body);
+      rect(8, 26, 4, 1, rim);
+    }
   } else if (kind === "crate") {
     rect(5, 9, 23, 20, ink);
     rect(7, 11, 19, 16, "#a8774e");

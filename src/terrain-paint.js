@@ -345,6 +345,23 @@ export function paintTerrain(ctx, terrain, texture) {
     );
     if (hash(Math.floor(px / 3), 8) > 0.45) mark(px, top, 1, 2, "#b8b047");
   }
+  // Dark undersides and warm floor rims describe the physical cave openings.
+  for (let px = 0; px < 480; px++) {
+    const x = Math.floor(px * X);
+    for (let py = 150; py < 238; py++) {
+      const y = Math.floor(H - py * Y);
+      if (terrain.solid(x, y) && !terrain.solid(x, y - 3)) {
+        mark(px, py - 3, 1, 4, "#4a344c");
+        mark(px, py - 4, 1, 1, "#795268");
+      }
+      if (
+        !terrain.solid(x, y + 3) &&
+        terrain.solid(x, y) &&
+        y < surface[x] - 18
+      )
+        mark(px, py, 1, 2, "#dd956e");
+    }
+  }
   // Secondary moss ledges over the faces, kept within the collision mask.
   for (const [x, y, w] of [
     [7, 219, 33],

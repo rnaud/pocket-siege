@@ -91,6 +91,52 @@ let meter,
   lastPower = -1,
   lastWeapon = "";
 export function mountPixelHUD(arena) {
+  const controls = document.querySelector(".controls");
+  controls.append(document.querySelector("#special-weapons"));
+  const inventory = document.createElement("button");
+  inventory.id = "inventory-toggle";
+  inventory.textContent = "ARSENAL";
+  inventory.setAttribute("aria-expanded", "false");
+  inventory.setAttribute("aria-controls", "weapon-tray");
+  document.querySelector(".weapon-panel").id = "weapon-tray";
+  controls.append(inventory);
+  const closeInventory = () => {
+    controls.classList.remove("inventory-open");
+    inventory.setAttribute("aria-expanded", "false");
+  };
+  document
+    .querySelector("#special-toggle")
+    .addEventListener("click", closeInventory);
+  document
+    .querySelector("#utilities-toggle")
+    .addEventListener("click", closeInventory);
+  inventory.onclick = () => {
+    const open = controls.classList.toggle("inventory-open");
+    inventory.setAttribute("aria-expanded", String(open));
+  };
+  document
+    .querySelectorAll(".weapons button")
+    .forEach((button) => button.addEventListener("click", closeInventory));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeInventory();
+  });
+  const overview = document.createElement("button");
+  overview.id = "overview-toggle";
+  overview.textContent = "MAP";
+  overview.setAttribute("aria-label", "Toggle battlefield overview");
+  overview.setAttribute("aria-pressed", "false");
+  overview.onclick = () => {
+    const on = overview.getAttribute("aria-pressed") !== "true";
+    overview.setAttribute("aria-pressed", String(on));
+    overview.textContent = on ? "FOLLOW" : "MAP";
+    window.dispatchEvent(new CustomEvent("siege-overview", { detail: on }));
+  };
+  document.querySelector("#restart").before(overview);
+  const charge = document.createElement("div");
+  charge.id = "worm-charge";
+  charge.setAttribute("aria-hidden", "true");
+  charge.innerHTML = "<i></i>";
+  arena.append(charge);
   const scoreboard = document.querySelector(".match-bar");
   arena.append(scoreboard);
   document.querySelector(".turn").append(document.querySelector("#timer"));
@@ -142,6 +188,9 @@ export function updateHudPower(power, weapon) {
   const next = Math.round(power);
   if (meter && next !== lastPower) {
     lastPower = next;
+    const charge = document.querySelector("#worm-charge");
+    charge.classList.toggle("visible", next > 0);
+    charge.firstElementChild.style.width = `${next}%`;
     meter.setAttribute("aria-valuenow", String(next));
     document.querySelector("#power-value").textContent = `${next}%`;
     [...meter.children].forEach((pip, i) =>

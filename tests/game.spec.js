@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { Terrain } from "../src/physics.js";
+async function openArsenal(page) {
+  if (!(await page.locator(".weapon-panel").isVisible()))
+    await page.locator("#inventory-toggle").click();
+}
 async function chargeShot(page, milliseconds = 600) {
   await expect(page.locator("#fire")).toBeEnabled();
   await page.keyboard.down("Space");
@@ -50,6 +54,7 @@ test("play a full destructive turn with responsive controls", async ({
     path: `test-results/${info.project.name}-game.png`,
     fullPage: true,
   });
+  await openArsenal(page);
   await page.locator('[data-weapon="grenade"]').click();
   await setAim(page, "90");
   await chargeShot(page);
@@ -154,6 +159,7 @@ test("touch controls fit the screen in portrait and landscape", async ({
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#start").click();
+  await openArsenal(page);
   const controls = [
     "#fire",
     "#angle",
@@ -301,6 +307,7 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await openArsenal(page);
   await page.locator('[data-weapon="grenade"]').click();
   await setAim(page, "90");
   await chargeShot(page);
@@ -411,6 +418,7 @@ test("grenade fuse selection and retreat movement work without granting another 
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await expect(page.locator("#fire")).toBeEnabled();
+  await openArsenal(page);
   await page.locator('[data-weapon="grenade"]').click();
   await page.keyboard.press("5");
   await page.keyboard.press("-");
@@ -512,6 +520,7 @@ for (const weapon of ["mortar", "sticky"])
     await page.goto("/");
     await page.locator("#mode").selectOption("local");
     await page.locator("#start").click();
+    await openArsenal(page);
     await page.locator(`[data-weapon="${weapon}"]`).click();
     await setAim(page, "-60");
     const before = await page.evaluate(
@@ -541,6 +550,7 @@ test("limited weapons spend ammo and update their counts", async ({ page }) => {
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await expect(page.locator('[data-weapon="grenade"] small')).toHaveText("3");
+  await openArsenal(page);
   await page.locator('[data-weapon="grenade"]').click();
   await setAim(page, "90");
   await chargeShot(page, 300);
@@ -835,7 +845,7 @@ test("match modifiers change gravity, blast size and turn length", async ({
 
 test("action camera follows the shot and snaps back for the next turn", async ({
   page,
-}) => {
+}, info) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
@@ -844,11 +854,17 @@ test("action camera follows the shot and snaps back for the next turn", async ({
     el.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await chargeShot(page, 1100);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().camera.zoom), {
-      timeout: 6000,
-    })
-    .toBeGreaterThan(1.02);
+  if (info.project.use.isMobile) {
+    await expect(page.locator("#arena")).toHaveClass(/portrait-camera/);
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().camera.w))
+      .toBeLessThan(1200);
+  } else
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().camera.zoom), {
+        timeout: 6000,
+      })
+      .toBeGreaterThan(1.02);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
       timeout: 20000,
@@ -865,6 +881,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await openArsenal(page);
   await page.locator('[data-weapon="mine"]').click();
   await expect(page.locator("#fire-label")).toHaveText("PLACE MINE");
   await page.locator("#fire").click();
@@ -1138,6 +1155,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await openArsenal(page);
   await page.locator("#special-toggle").click();
   await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(8);
   await page.locator('[data-weapon="shotgun"]').click();
@@ -1154,6 +1172,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await openArsenal(page);
   await page.locator("#special-toggle").click();
   await page.locator('[data-weapon="dynamite"]').click();
   await page.locator("#fire").click();
@@ -1168,6 +1187,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await openArsenal(page);
   await page.locator("#special-toggle").click();
   await page.locator('[data-weapon="airstrike"]').click();
   await page.locator("#fire").click();

@@ -1,4 +1,4 @@
-import { islandTop } from "./island-profile.js";
+import { islandTop, islandVoid } from "./island-profile.js";
 export const W = 1200,
   H = 650,
   WATER = 80,
@@ -14,7 +14,7 @@ export class Terrain {
         const px = (x / W) * 480,
           py = ((H - y) / H) * 270;
         // A small sea arch makes the foreground read as sculpted rock.
-        if (((px - 302) / 13) ** 2 + ((py - 224) / 18) ** 2 < 1) continue;
+        if (islandVoid(px, py)) continue;
         this.data[y * W + x] = 1;
       }
     }
