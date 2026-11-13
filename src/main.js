@@ -1,6 +1,10 @@
+import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
+import { landscape } from "./island-art.js";
+import { pixelTexture, mountPixelArt, pixelViewport } from "./pixel-art.js";
 import { createWater } from "./water.js";
 import * as THREE from "three";
 import "./style.css";
+import "./pixel-hud.css";
 import {
   Terrain,
   W,
@@ -60,8 +64,15 @@ const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const coarsePointer = matchMedia("(pointer: coarse)").matches;
 const arena = $("#arena"),
   menu = $("#menu");
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// Fit the reference composition in the available space on every device.
+const battlefieldFrame = document.createElement("div");
+battlefieldFrame.id = "battlefield-frame";
+arena.before(battlefieldFrame);
+battlefieldFrame.appendChild(arena);
+const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+renderer.setPixelRatio(1);
+mountPixelArt();
+mountPixelHUD(arena);
 $("#scene").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#153b3d");
@@ -73,6 +84,10 @@ let cameraZoom = 1,
   cameraY = H / 2,
   cameraSnap = true;
 function applyView() {
+  const px = view.w / (renderer.domElement.width || 1);
+  const py = view.h / (renderer.domElement.height || 1);
+  view.x = Math.round(view.x / px) * px;
+  view.y = Math.round(view.y / py) * py;
   camera.left = view.x;
   camera.right = view.x + view.w;
   camera.top = view.y + view.h;
@@ -90,9 +105,11 @@ const canvas = document.createElement("canvas");
 canvas.width = W;
 canvas.height = H;
 const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 const texture = new THREE.CanvasTexture(canvas);
 texture.colorSpace = THREE.SRGBColorSpace;
-texture.minFilter = THREE.LinearFilter;
+texture.minFilter = texture.magFilter = THREE.NearestFilter;
+texture.generateMipmaps = false;
 const land = new THREE.Mesh(
   new THREE.PlaneGeometry(W, H),
   new THREE.MeshBasicMaterial({ map: texture, transparent: true }),
@@ -204,41 +221,23 @@ let lastShot = null,
   replayDuration = 1,
   replayReady = false,
   lastResult = null;
-// Original generated art, loaded once and shared by all six soldiers.
-let assetsReady = false;
-const manager = new THREE.LoadingManager();
-const loader = new THREE.TextureLoader(manager);
-function artTexture(file) {
-  const map = loader.load(`${import.meta.env.BASE_URL}art/${file}.webp`);
-  map.colorSpace = THREE.SRGBColorSpace;
-  map.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-  return map;
-}
-const backdropMap = artTexture("paper-islands");
-const soldierMaps = [
-  artTexture("moss-body-paper"),
-  artTexture("coral-body-paper"),
-];
+// Procedural sprites are ready synchronously; no asset downloads are needed.
+const assetsReady = true;
+const backdropMap = pixelTexture("landscape");
+const soldierMaps = [pixelTexture("soldier", 0), pixelTexture("soldier", 1)];
 const hurtMaps = [
-  artTexture("moss-hurt-paper"),
-  artTexture("coral-hurt-paper"),
+  pixelTexture("soldier", 0, true),
+  pixelTexture("soldier", 1, true),
 ];
-const portraitMaps = [
-  artTexture("moss-soldier-paper"),
-  artTexture("coral-soldier-paper"),
-];
-const crateMap = artTexture("crate-paper");
-const mineMap = artTexture("weapon-mine");
+const portraitMaps = soldierMaps;
+const crateMap = pixelTexture("crate");
+const mineMap = pixelTexture("mine");
 const backdrop = new THREE.Mesh(
   new THREE.PlaneGeometry(W, H),
-  new THREE.MeshBasicMaterial({ map: backdropMap, color: 0xded5bf }),
+  new THREE.MeshBasicMaterial({ map: backdropMap }),
 );
 backdrop.position.set(W / 2, H / 2, -180);
 group.add(backdrop);
-manager.onLoad = () => {
-  assetsReady = true;
-  resize();
-};
 const motes = [];
 for (let i = 0; i < 26; i++) {
   const mote = new THREE.Mesh(
@@ -259,8 +258,8 @@ group.add(water);
 // Debris and projectiles share GPU resources; only one prototype per kind is built.
 const debrisGeometry = new THREE.SphereGeometry(1, 10, 8);
 const debrisMaterials = [
-  new THREE.MeshStandardMaterial({ color: 0xc4a578, roughness: 0.9 }),
-  new THREE.MeshStandardMaterial({ color: 0xffce70, roughness: 0.55 }),
+  new THREE.MeshBasicMaterial({ color: 0xc4a578 }),
+  new THREE.MeshBasicMaterial({ color: 0xffce70 }),
 ];
 const debrisPrototype = new THREE.Mesh(debrisGeometry, debrisMaterials[0]);
 debrisPrototype.visible = false;
@@ -331,6 +330,7 @@ function createWorm(t, i, x) {
   g.add(shadow);
   const label = document.createElement("div");
   label.className = "worm-label";
+  label.style.setProperty("--worm-color", t ? "#ef9d89" : "#b7c86a");
   label.style.color = t ? "#a94a3d" : "#4d6b3a";
   label.innerHTML = `${names[t][i]}<strong>100</strong>`;
   $("#labels").appendChild(label);
@@ -415,14 +415,14 @@ function updateAimHUD() {
     const target = { x: origin.x + ux * distance, y: origin.y + uy * distance };
     aimHUD.reticle.setAttribute(
       "transform",
-      `translate(${target.x},${target.y})`,
+      `translate(${Math.round(target.x / 2) * 2},${Math.round(target.y / 2) * 2})`,
     );
     const aimText = charging
       ? `${Math.round(power)}%`
       : `${Math.round(angle)}°`;
     if (aimHUD.text.textContent !== aimText) aimHUD.text.textContent = aimText;
     aimHUD.charge.style.display = charging ? "" : "none";
-    aimHUD.charge.setAttribute("stroke-dasharray", `${power * 1.508} 150.8`);
+    aimHUD.charge.setAttribute("stroke-dasharray", `${power} 100`);
     lastAim = { ...geometry, reticle: target, angle };
   }
   aimHUD.tag.hidden = !projectile;
@@ -870,6 +870,7 @@ function updateUI() {
   const key = `${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
+  updateHudTeams(worms, team);
   for (let t = 0; t < 2; t++) {
     let hp = worms.filter((w) => w.team === t).reduce((s, w) => s + w.hp, 0);
     $("#score" + t).textContent = hp;
@@ -902,6 +903,10 @@ function updateUI() {
     button.querySelector("small").textContent =
       count === Infinity ? "∞" : count;
     button.disabled = !canAct() || charging || count <= 0;
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.weapon === weapon),
+    );
   });
   document
     .querySelectorAll("#fuse,#bounce")
@@ -916,7 +921,11 @@ function updateUI() {
     if (!select.hidden) {
       const roster = worms.filter((w) => w.team === team && w.hp > 0);
       const index = roster.indexOf(worms[current]) + 1;
-      select.textContent = `⇥ WORM ${index}/${roster.length}`;
+      select.textContent = `⇥ ${index}/${roster.length}`;
+      select.setAttribute(
+        "aria-label",
+        `Select worm ${index} of ${roster.length}`,
+      );
     }
   }
   if (skip) {
@@ -1118,7 +1127,7 @@ function addGirder(cx, cy, angle = 0, length = 64) {
   terrainDirty = false;
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(length, 7, 5),
-    new THREE.MeshStandardMaterial({ color: 0x6f8a52, roughness: 0.9 }),
+    new THREE.MeshBasicMaterial({ color: 0x6f8a52 }),
   );
   const ink = new THREE.LineSegments(
     new THREE.EdgesGeometry(mesh.geometry),
@@ -1486,67 +1495,66 @@ function applySuddenDeath() {
   return true;
 }
 function coverDraw(ctx, image, x, y, w, h) {
-  const scale = Math.max(w / image.width, h / image.height),
+  const scale = Math.ceil(Math.max(w / image.width, h / image.height)),
     iw = image.width * scale,
     ih = image.height * scale;
   ctx.drawImage(image, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 async function shareResultCard() {
   if (!lastResult) return;
+  await document.fonts.load('24px "Siege Pixel"');
   const canvas = document.createElement("canvas");
   canvas.width = 1200;
   canvas.height = 630;
   const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
   if (backdropMap.image) coverDraw(ctx, backdropMap.image, 0, 0, 1200, 630);
   else {
     ctx.fillStyle = "#173235";
     ctx.fillRect(0, 0, 1200, 630);
   }
-  const shade = ctx.createLinearGradient(0, 0, 900, 0);
-  shade.addColorStop(0, "rgba(12,38,41,.93)");
-  shade.addColorStop(0.62, "rgba(12,38,41,.56)");
-  shade.addColorStop(1, "rgba(12,38,41,0)");
-  ctx.fillStyle = shade;
-  ctx.fillRect(0, 0, 1200, 630);
+  ctx.fillStyle = "#38283f";
+  ctx.fillRect(0, 0, 630, 630);
   if (portraitMaps[0].image)
-    ctx.drawImage(portraitMaps[0].image, 650, 220, 330, 330);
+    ctx.drawImage(portraitMaps[0].image, 650, 220, 320, 320);
   if (portraitMaps[1].image)
-    ctx.drawImage(portraitMaps[1].image, 875, 270, 300, 300);
+    ctx.drawImage(portraitMaps[1].image, 875, 270, 288, 288);
   const result =
     lastResult.winner === 0
       ? "MOSS COMPANY WINS"
       : lastResult.winner === 1
         ? "CORAL CREW WINS"
         : "MUTUAL DESTRUCTION";
-  ctx.fillStyle = "#d4e36c";
-  ctx.font = 'bold 24px "Bricolage Grotesque", sans-serif';
+  ctx.fillStyle = "#efc58b";
+  ctx.font = '24px "Siege Pixel"';
   ctx.fillText("POCKET SIEGE", 64, 92);
-  ctx.fillStyle = "#fbf4e3";
-  ctx.font = 'bold 56px "Bricolage Grotesque", sans-serif';
+  ctx.fillStyle = "#ffe4af";
+  ctx.font = '32px "Siege Pixel"';
   ctx.fillText(result, 62, 190);
   ctx.fillStyle = "#e7dcc0";
-  ctx.font = 'bold 26px "Bricolage Grotesque", sans-serif';
+  ctx.font = '24px "Siege Pixel"';
   const line = lastResult.series
     ? `BEST OF 3 · ${lastResult.seriesWins[0]}–${lastResult.seriesWins[1]}`
     : `FINAL HEALTH · ${lastResult.score[0]}–${lastResult.score[1]}`;
   ctx.fillText(line, 64, 248);
   if (lastResult.daily) {
-    ctx.fillStyle = "#d4e36c";
-    ctx.font = 'bold 22px "Bricolage Grotesque", sans-serif';
+    ctx.fillStyle = "#efc58b";
+    ctx.font = '16px "Siege Pixel"';
     ctx.fillText(`DAILY ISLAND · ${lastResult.date}`, 64, 292);
   }
-  ctx.fillStyle = "#b9c6aa";
-  ctx.font = 'bold 18px "Bricolage Grotesque", sans-serif';
+  ctx.fillStyle = "#d3aa91";
+  ctx.font = '16px "Siege Pixel"';
   ctx.fillText(
-    `BEST HIT ${record.bestHit}  ·  LONGEST ${record.longest}  ·  ${record.wins}W–${record.losses}L`,
+    `BEST HIT ${record.bestHit} · LONGEST ${record.longest}`,
     64,
     350,
   );
-  ctx.fillStyle = "#fbf4e3";
-  ctx.font = 'bold 21px "Bricolage Grotesque", sans-serif';
+  ctx.fillText(`${record.wins} WINS / ${record.losses} LOSSES`, 64, 382);
+  ctx.fillStyle = "#ffe4af";
+  ctx.font = '16px "Siege Pixel"';
   ctx.fillText("PICK YOUR ANGLE. MAKE A LITTLE CHAOS.", 64, 430);
-  ctx.fillStyle = "#d4e36c";
-  ctx.font = 'bold 18px "Bricolage Grotesque", sans-serif';
+  ctx.fillStyle = "#efc58b";
+  ctx.font = '16px "Siege Pixel"';
   ctx.fillText("rnaud.github.io/pocket-siege", 64, 560);
   const blob = await new Promise((resolve) =>
     canvas.toBlob(resolve, "image/png"),
@@ -1664,15 +1672,16 @@ function updateSliders() {
   $("#fire-label").textContent = specialLabel
     ? specialLabel
     : charging
-      ? "RELEASE TO FIRE"
-      : "HOLD TO FIRE";
+      ? "RELEASE"
+      : "FIRE";
+  $("#fire").classList.toggle("special-action", Boolean(specialLabel));
   $("#fire small").textContent = specialLabel
     ? coarsePointer
-      ? "TAP TARGET OR PLACE"
-      : "PRESS SPACE / CLICK"
+      ? "TAP TO PLACE"
+      : "SPACE / CLICK"
     : coarsePointer
-      ? "HOLD · RELEASE TO FIRE"
-      : "HOLD SPACE · RELEASE TO SHOOT";
+      ? "HOLD / RELEASE"
+      : "HOLD SPACE";
 }
 function startCharge(source) {
   if (
@@ -2758,31 +2767,44 @@ function step(dt) {
 }
 function screen(x, y) {
   return {
-    x: ((x - view.x) / view.w) * arena.clientWidth,
-    y: ((view.y + view.h - y) / view.h) * arena.clientHeight,
+    x: ((x - view.x) / view.w) * renderer.domElement.clientWidth,
+    y: ((view.y + view.h - y) / view.h) * renderer.domElement.clientHeight,
   };
 }
 function resize() {
-  renderer.setSize(arena.clientWidth, arena.clientHeight, false);
-  const correction = arena.clientHeight / H / (arena.clientWidth / W);
-  const aspect = arena.clientWidth / arena.clientHeight;
-  const imageAspect = backdropMap.image
-    ? backdropMap.image.width / backdropMap.image.height
-    : 16 / 9;
-  backdropMap.repeat.set(
-    Math.min(1, aspect / imageAspect),
-    Math.min(1, imageAspect / aspect),
+  const stageWidth = Math.max(
+    1,
+    Math.floor(
+      Math.min(
+        battlefieldFrame.clientWidth,
+        (battlefieldFrame.clientHeight * 16) / 9,
+      ),
+    ),
   );
-  backdropMap.offset.set(
-    (1 - backdropMap.repeat.x) / 2,
-    (1 - backdropMap.repeat.y) / 2,
-  );
+  arena.style.width = `${stageWidth}px`;
+  arena.style.height = `${Math.floor((stageWidth * 9) / 16)}px`;
+  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight);
+  renderer.setSize(pixels.width, pixels.height, false);
+  renderer.domElement.style.width = `${pixels.width * pixels.scale}px`;
+  renderer.domElement.style.height = `${pixels.height * pixels.scale}px`;
+  renderer.domElement.dataset.pixelScale = pixels.scale;
+  const correction =
+    renderer.domElement.height / H / (renderer.domElement.width / W);
+  if (
+    backdropMap.image.width !== pixels.width ||
+    backdropMap.image.height !== pixels.height
+  ) {
+    backdropMap.image = landscape(pixels.width, pixels.height);
+    backdropMap.needsUpdate = true;
+  }
   for (const w of worms) {
     w.g.scale.x = correction;
     w.visualSize = Math.max(70, (31 * H) / arena.clientHeight);
   }
 }
-new ResizeObserver(() => requestAnimationFrame(resize)).observe(arena);
+new ResizeObserver(() => requestAnimationFrame(resize)).observe(
+  battlefieldFrame,
+);
 function frame(now) {
   requestAnimationFrame(frame);
   const frameDt = Math.min((now - last) / 1000, 0.1);
@@ -2848,6 +2870,7 @@ function frame(now) {
     $("#replay").disabled = !canReplay;
   }
   updateAimHUD();
+  updateHudPower(charging ? power : 0, weapon);
   updateRopeVisual(worms[current]);
   const aimBox =
     phase === "aim" && !menu.open && worms[current]?.hp > 0 && lastAim?.reticle
@@ -2880,26 +2903,25 @@ function frame(now) {
       spawnDust(w.x, w.renderY + 12);
     }
 
-    const facing = w.facing * (w.team ? -1 : 1);
+    const facing = w.facing;
     const moving = active && w.moving && w.ground;
     const bounce =
       menu.open || reducedMotion
         ? 0
         : Math.sin(now * (moving ? 0.019 : 0.003) + w.x) * (moving ? 3 : 1.2);
-    w.body.scale.set(
-      size * facing * (1 + bounce * 0.008),
-      size * (1 - bounce * 0.006),
-      1,
+    // Keep sprite texels square, with whole-pixel steps instead of squash/rotation.
+    const pixelWorldY = view.h / renderer.domElement.height;
+    const nativeSize = soldierMaps[w.team].image.width;
+    const spritePixels = Math.max(
+      nativeSize,
+      Math.round(size / pixelWorldY / nativeSize) * nativeSize,
     );
-    w.body.position.y = size / 2 - 12 + bounce;
-    w.body.rotation.z = moving
-      ? Math.sin(now * 0.02) * 0.065
-      : Math.max(-0.15, Math.min(0.15, -w.vx * 0.001));
-    const hurt = w.hurt / 1.4,
-      flinch = reducedMotion ? 0 : Math.sin(hurt * Math.PI * 5) * hurt;
-    w.body.scale.x *= 1 + Math.abs(flinch) * 0.14;
-    w.body.scale.y *= 1 - Math.abs(flinch) * 0.16;
-    w.body.rotation.z += flinch * 0.32 * w.hitDirection;
+    const spriteSize = spritePixels * pixelWorldY;
+    w.body.scale.set(spriteSize * facing, spriteSize, 1);
+    w.body.position.y =
+      Math.round((spriteSize * (13 / 32) - 12 + bounce) / pixelWorldY) *
+      pixelWorldY;
+    w.body.rotation.z = 0;
     w.body.material.map =
       w.hurt > 0.35 ? hurtMaps[w.team] : soldierMaps[w.team];
     w.body.material.color.setHex(
@@ -2908,7 +2930,6 @@ function frame(now) {
     w.body.material.opacity =
       w.hp > 0 || (w.deathPending && !w.dying) ? 1 : Math.min(1, w.dying * 1.4);
     if (w.hp <= 0 && w.dying > 0) {
-      w.body.rotation.z += (1 - w.dying) * w.hitDirection * 1.7;
       w.body.position.y -= 20 * (1 - w.dying);
     }
     const a = active ? angle : w.facing < 0 ? 155 : 25,
@@ -2925,7 +2946,8 @@ function frame(now) {
       (Math.cos((a * Math.PI) / 180) < 0 ? -1 : 1) * geometry.rigScale,
       1,
     );
-    w.rig.pivot.visible = w.hp > 0 && w.hurt < 0.75;
+    w.rig.pivot.visible =
+      active && w.hp > 0 && w.hurt < 0.75 && (charging || w.recoil > 0);
     w.rig.barrel.visible = !active || ["rocket", "mortar"].includes(weapon);
     w.rig.grenade.visible = active && ["grenade", "sticky"].includes(weapon);
     w.rig.grenade.children[0].material.color.setHex(
@@ -2944,7 +2966,7 @@ function frame(now) {
     });
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
-    const p = screen(w.x, w.renderY + size - 7);
+    const p = screen(w.x, w.renderY + spriteSize * 0.83 - 7);
     if (w.hp > 0) {
       const width = w.labelW,
         height = w.labelH;
@@ -2953,24 +2975,56 @@ function frame(now) {
         Math.min(arena.clientWidth - width / 2 - 4, p.x),
       );
       // Labels are positioned by their bottom edge, so compare centers and half-heights.
-      const topSafe = coarsePointer ? 46 : 54;
-      const anchorY = p.y;
-      if (p.y - height < topSafe) p.y = topSafe + height;
-      let guard = 0;
-      while (
-        guard++ < 16 &&
+      const topSafe = arena.clientWidth < 600 ? 84 : 104;
+      const anchorX = p.x,
+        anchorY = Math.max(topSafe + height, p.y);
+      const overlaps = (x, y) =>
         labelBoxes.some(
           (b) =>
-            Math.abs(b.x - p.x) < (b.width + width) / 2 + 5 &&
-            Math.abs(b.y - (p.y - height / 2)) < (b.height + height) / 2 + 5,
-        )
-      ) {
-        // Fan labels downward from the HUD strip; only climb if the floor is near.
-        const down = p.y + height + 6;
-        if (down + height <= arena.clientHeight - 34) p.y = down;
-        else p.y = Math.max(topSafe + height, p.y - height - 6);
+            Math.abs(b.x - x) < (b.width + width) / 2 + 5 &&
+            Math.abs(b.y - (y - height / 2)) < (b.height + height) / 2 + 5,
+        );
+      p.x = anchorX;
+      p.y = anchorY;
+      let placed = false;
+      // Keep labels above the character: first slide sideways around the aim
+      // marker, then climb, and only use lower rows when the sky is crowded.
+      for (const dy of [
+        0,
+        -height - 6,
+        -2 * (height + 6),
+        height + 6,
+        2 * (height + 6),
+        3 * (height + 6),
+      ]) {
+        for (const dx of [
+          0,
+          -width * 0.4,
+          width * 0.4,
+          -width * 0.8,
+          width * 0.8,
+        ]) {
+          const x = Math.round(
+            Math.max(
+              width / 2 + 4,
+              Math.min(arena.clientWidth - width / 2 - 4, anchorX + dx),
+            ),
+          );
+          const y = Math.round(
+            Math.max(
+              topSafe + height,
+              Math.min(arena.clientHeight - 26, anchorY + dy),
+            ),
+          );
+          if (!overlaps(x, y)) {
+            p.x = x;
+            p.y = y;
+            placed = true;
+            break;
+          }
+        }
+        if (placed) break;
       }
-      if (p.y - height < topSafe) p.y = topSafe + height;
       labelBoxes.push({ x: p.x, y: p.y - height / 2, width, height });
     }
     w.label.style.left = p.x + "px";
@@ -3266,7 +3320,7 @@ menu.addEventListener("close", () => {
   if (phase === "menu") reset();
   updateUI();
 });
-if (coarsePointer) $("#fire small").textContent = "HOLD · RELEASE TO FIRE";
+if (coarsePointer) $("#fire small").textContent = "HOLD / RELEASE";
 const difficultyRow = $("#difficulty-row");
 function syncMenuOptions() {
   difficultyRow.hidden = $("#mode").value !== "ai";

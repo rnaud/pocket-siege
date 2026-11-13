@@ -1,3 +1,4 @@
+import { islandTop } from "./island-profile.js";
 export const W = 1200,
   H = 650,
   WATER = 80,
@@ -6,14 +7,16 @@ export class Terrain {
   constructor(seed = 42) {
     this.data = new Uint8Array(W * H);
     this.seed = seed;
-    for (let x = 45; x < W - 45; x++) {
-      const edge = Math.min(1, (x - 45) / 100, (W - 45 - x) / 100);
-      const top =
-        (235 + 65 * Math.sin(x * 0.007 + seed) + 28 * Math.sin(x * 0.019 + 1)) *
-          Math.sqrt(edge) +
-        85;
-      const bottom = 105 + 22 * Math.sin(x * 0.013);
-      for (let y = Math.ceil(bottom); y < top; y++) this.data[y * W + x] = 1;
+    for (let x = 13; x < W - 10; x++) {
+      const top = H * (1 - islandTop((x / W) * 480, seed) / 270);
+      const bottom = 30 + 8 * Math.sin(x * 0.03);
+      for (let y = Math.ceil(bottom); y < top; y++) {
+        const px = (x / W) * 480,
+          py = ((H - y) / H) * 270;
+        // A small sea arch makes the foreground read as sculpted rock.
+        if (((px - 302) / 13) ** 2 + ((py - 224) / 18) ** 2 < 1) continue;
+        this.data[y * W + x] = 1;
+      }
     }
   }
   solid(x, y) {

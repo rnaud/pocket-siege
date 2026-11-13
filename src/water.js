@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-// One lightweight shader: scalloped waves, drifting caustics and tiny bubbles.
+// Discrete palette, stepped wave silhouettes, and grid-aligned ripple clusters.
 export function createWater(width, level) {
   const material = new THREE.ShaderMaterial({
     transparent: true,
@@ -14,19 +14,24 @@ export function createWater(width, level) {
     fragmentShader: `precision mediump float;
       varying vec2 uvWater; uniform float time; uniform vec2 size;
       void main(){
-        vec2 p=uvWater*size;
-        float wave=size.y-8.0+2.5*sin(p.x*.025+time*1.5)+1.2*sin(p.x*.057-time);
+        vec2 p=floor(uvWater*size/3.0)*3.0;
+        float tick=floor(time*6.0)/6.0;
+        float wave=size.y-8.0+floor(sin(p.x*.018+tick)*1.5)*3.0;
         float depth=wave-p.y;
         if(depth<0.0) discard;
-        vec3 color=mix(vec3(.035,.22,.25),vec3(.18,.53,.49),exp(-depth*.035));
-        float ripples=sin(p.x*.045+sin(p.y*.12+time)*1.8+time)*sin(p.y*.24-time*1.1);
-        color+=vec3(.12,.12,.06)*pow(max(0.0,ripples),8.0);
-        float foam=1.0-smoothstep(1.0,3.6,depth);
-        color=mix(color,vec3(.94,.90,.73),foam*.85);
-        vec2 cell=vec2(mod(p.x+sin(time+p.y*.03)*3.0,71.0)-35.5,mod(p.y-time*5.0,31.0)-15.5);
-        float bubble=(1.0-smoothstep(.5,1.1,abs(length(cell)-2.0)))*.25;
-        color+=bubble;
-        gl_FragColor=vec4(color,.88);
+        vec3 color=depth<15.0 ? vec3(.19,.43,.45) :
+          depth<40.0 ? vec3(.14,.37,.40) : vec3(.11,.30,.35);
+        if(depth<3.0) color=vec3(.57,.68,.60);
+        float row=floor(depth/12.0);
+        float cell=floor((p.x+row*37.0)/36.0);
+        float noise=fract(sin(cell*127.1+row*311.7)*43758.5453);
+        float segment=mod(p.x+row*37.0+floor(tick*3.0)*3.0,36.0);
+        if(mod(depth,12.0)<3.0 && noise>.7 && segment<15.0){
+          color=vec3(.32,.53,.54);
+          if(abs(p.x-size.x*.73)<65.0+depth*.7 && noise>.65)
+            color=vec3(.86,.65,.43);
+        }
+        gl_FragColor=vec4(color,1.0);
       }`,
   });
   const baseHeight = level + 8;

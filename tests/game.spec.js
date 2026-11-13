@@ -110,7 +110,7 @@ test("movement, jump, touch aiming, and landscape layout", async ({
     .poll(async () => page.evaluate(() => window.siege.getState().worms[0].y))
     .toBeGreaterThan(jumpY + 10);
   const field = await page.locator("#arena").boundingBox();
-  if (info.project.name === "iphone")
+  if (info.project.use.isMobile)
     await page.touchscreen.tap(
       field.x + field.width * 0.7,
       field.y + field.height * 0.2,
@@ -121,7 +121,7 @@ test("movement, jump, touch aiming, and landscape layout", async ({
       field.y + field.height * 0.2,
     );
   expect(await page.locator("#angle").inputValue()).not.toBe("45");
-  if (info.project.name === "iphone") {
+  if (info.project.use.isMobile) {
     await page.setViewportSize({ width: 844, height: 390 });
     await expect(page.locator("#fire")).toBeInViewport();
     expect(
@@ -131,11 +131,11 @@ test("movement, jump, touch aiming, and landscape layout", async ({
     ).toBe(true);
     await expect
       .poll(() =>
-        page.evaluate(
-          () =>
-            document.querySelector("canvas").width ===
-            document.querySelector("#arena").clientWidth *
-              Math.min(devicePixelRatio, 2),
+        page.evaluate(() =>
+          Number.isInteger(
+            document.querySelector("#scene canvas").clientWidth /
+              document.querySelector("#scene canvas").width,
+          ),
         ),
       )
       .toBe(true);
@@ -148,7 +148,7 @@ test("movement, jump, touch aiming, and landscape layout", async ({
 test("touch controls fit the screen in portrait and landscape", async ({
   page,
 }, info) => {
-  test.skip(info.project.name !== "iphone", "touch layout");
+  test.skip(!info.project.use.isMobile, "touch layout");
   await page.goto("/");
   await expect
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
@@ -443,16 +443,17 @@ async function setAim(page, value) {
     el.dispatchEvent(new Event("input", { bubbles: true }));
   }, value);
 }
-test("desktop hides slider, W/S aim, walking keeps fire stable, charge lives on reticle", async ({
+test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", async ({
   page,
 }, info) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  if (info.project.name === "desktop")
-    await expect(page.locator(".aim-panel")).toBeHidden();
-  else await expect(page.locator(".aim-panel")).toBeVisible();
-  await expect(page.locator("#power-meter")).toHaveCount(0);
+  await expect(page.locator(".aim-panel")).toBeVisible();
+  await expect(page.locator("#power-meter")).toHaveAttribute(
+    "aria-valuenow",
+    "0",
+  );
   const before = Number(await page.locator("#angle").inputValue());
   await page.keyboard.down("w");
   await expect
@@ -482,6 +483,11 @@ test("desktop hides slider, W/S aim, walking keeps fire stable, charge lives on 
   await page.keyboard.down("Space");
   await expect(page.locator(".reticle-charge")).toBeVisible();
   await expect
+    .poll(async () =>
+      Number(await page.locator("#power-meter").getAttribute("aria-valuenow")),
+    )
+    .toBeGreaterThan(0);
+  await expect
     .poll(
       async () =>
         parseFloat(
@@ -492,7 +498,14 @@ test("desktop hides slider, W/S aim, walking keeps fire stable, charge lives on 
       { timeout: 5000 },
     )
     .toBeGreaterThan(10);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-hud-charge.png`,
+  });
   await page.keyboard.up("Space");
+  await expect(page.locator("#power-meter")).toHaveAttribute(
+    "aria-valuenow",
+    "0",
+  );
 });
 for (const weapon of ["mortar", "sticky"])
   test(`${weapon} fires with its own impact behavior`, async ({ page }) => {
@@ -590,41 +603,30 @@ test("active worm label and labels avoid the aim reticle", async ({ page }) => {
   ).toBe(true);
 });
 
-test("share and install metadata resolve to real assets", async ({ page }) => {
+test("share metadata and manifest avoid retired bitmap branding", async ({
+  page,
+}) => {
   await page.goto("/");
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     "content",
-    /og-card\.png$/,
+    /Pocket Siege/,
   );
+  await expect(page.locator('meta[property="og:image"]')).toHaveCount(0);
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     "content",
-    "summary_large_image",
+    "summary",
   );
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
     "href",
     "./manifest.webmanifest",
   );
-  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
-    "href",
-    "./art/apple-touch-icon.png",
-  );
   const manifest = await page.evaluate(async () =>
     (await fetch("./manifest.webmanifest")).json(),
   );
   expect(manifest.name).toBe("Pocket Siege");
-  expect(manifest.icons.map((icon) => icon.sizes)).toEqual([
-    "192x192",
-    "512x512",
-  ]);
-  expect(
-    await page.evaluate(async () => {
-      const [icon, card] = await Promise.all([
-        fetch("./art/icon-192.png"),
-        fetch("./art/og-card.png"),
-      ]);
-      return [icon.status, card.status];
-    }),
-  ).toEqual([200, 200]);
+  expect(manifest.start_url).toBe("./");
+  expect(manifest.display).toBe("standalone");
+  await expect(page.locator('link[href*="/art/"]')).toHaveCount(0);
 });
 
 test("desktop fills the window without page scrolling", async ({
@@ -909,7 +911,7 @@ test("the last shot can be replayed over the battlefield", async ({ page }) => {
     .toBe(false);
 });
 
-test("a finished match enables the result card", async ({ page }) => {
+test("a finished match enables the result card", async ({ page }, info) => {
   await page.goto("/");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.knockout(1));
@@ -921,6 +923,13 @@ test("a finished match enables the result card", async ({ page }) => {
   expect(
     await page.evaluate(() => window.siege.getState().lastResult.winner),
   ).toBe(0);
+  if (!info.project.use.isMobile) {
+    const pendingDownload = page.waitForEvent("download");
+    await page.locator("#share").click();
+    const download = await pendingDownload;
+    expect(await download.failure()).toBeNull();
+    await download.saveAs("test-results/desktop-result-card.png");
+  }
 });
 
 test("saved settings survive a reload", async ({ page }) => {

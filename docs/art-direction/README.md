@@ -1,0 +1,15 @@
+# Sunset island pixel direction
+
+The chosen reference is `pixel-reference.png`. It was generated with the built-in image generation tool as a visual guide and is never loaded by the game. The runtime draws its own pixels; it does not trace, sample, or display this image.
+
+The runtime now follows the reference's composition directly: a high horizon, broad peach cloud masses, large sun, layered purple islands and windswept trees, a low central valley, stepped shoulders, a sea arch, irregular diagonal cliff faces, moss ledges, tall grasses, and peach flower clusters. The island profile is shared with collision geometry, so these are playable, destructible cliffs rather than scenery pasted over the old map.
+
+Characters are authored 32×32 pixel silhouettes with curled tails, full bodies, broad faces, and cream eyes. They have bare heads, as requested after the reference was generated. Weapons are stowed until charging or firing so faces remain readable. Portraits and hurt frames use the same drawing function.
+
+The framebuffer targets roughly 480 logical pixels across and displays at an integer scale. A fitted 16:9 stage preserves the composition on desktop and phones. DOM text and interactive controls remain accessible and sharp.
+
+Implementation: `src/island-profile.js` supplies the playable silhouette; `src/pixel-draw.js` provides integer scanline rasterization; `src/island-art.js` draws the authored backdrop; `src/pixel-art.js` constructs sprites; `src/terrain-paint.js` paints the live collision mask with authored cliff facets and vegetation anchored to intact soil; `src/water.js` draws stepped reflections. No reference-image pixels are sampled or loaded by the game.
+
+## Final reference prompt
+
+Use case stylized-concept. Create an art direction reference for Pocket Siege, a gorgeous side-view pixel art artillery game, at a MEDIUM-LOW logical resolution around 480x270 pixels enlarged crisply. Strike a balance: clearly visible chunky square pixels and economical clusters, but enough detail for expressive 24x24 pixel worm sprites and beautiful shaped rock facets. NOT ultra-blocky 160x90, NOT high-detail pixel painting. Wide landscape. Six small charming moss-green and coral worm soldiers wearing round helmets, large expressive cream eyes, curled tails, no human legs. Destructible island occupies lower half, gently rolling turf silhouette, thick mossy grass with a few tall tufts and small peach flowers; rock uses broad angular rust-orange lit facets, deep plum cracks, muted warm midtones, never horizontal layer-cake stripes. Sunset sky in restrained peach/mauve bands, pale gold sun, 3 layers of hazy blue-purple distant island silhouettes with a few tiny windswept tree silhouettes. Jewel-teal lagoon with sparse crisp gold and pale teal horizontal reflections. Curated palette, atmospheric depth through flat color planes, beautiful composition and pixel cluster design. Every shape resolved to the SAME visible pixel grid, crisp nearest-neighbor, no antialiasing, no noise, no blur, no painterly detail. No UI, no text. This is only a visual reference to recreate in procedural pixel drawing code.

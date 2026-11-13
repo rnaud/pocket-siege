@@ -1,35 +1,11 @@
-const CACHE = "pocket-siege-v4";
+const CACHE = "pocket-siege-pixel-hud-v6";
 
 async function precache() {
   const cache = await caches.open(CACHE);
   const page = await fetch("./", { cache: "reload" });
   await cache.put("./", page.clone());
   const html = await page.text();
-  const urls = new Set(["./manifest.webmanifest"]);
-  // Art loaded by JS or CSS is not discoverable from the HTML alone.
-  for (const path of [
-    "art/paper-islands.webp",
-    "art/paper-grain.webp",
-    "art/moss-body-paper.webp",
-    "art/coral-body-paper.webp",
-    "art/moss-hurt-paper.webp",
-    "art/coral-hurt-paper.webp",
-    "art/moss-soldier-paper.webp",
-    "art/coral-soldier-paper.webp",
-    "art/weapon-rocket.webp",
-    "art/weapon-grenade.webp",
-    "art/weapon-mortar.webp",
-    "art/weapon-sticky.webp",
-    "art/weapon-mine.webp",
-    "art/crate-paper.webp",
-    "art/paper-emblem.webp",
-    "art/favicon.png",
-    "art/icon-192.png",
-    "art/icon-512.png",
-    "art/apple-touch-icon.png",
-  ]) {
-    urls.add(new URL(path, self.registration.scope).href);
-  }
+  const urls = new Set(["./manifest.webmanifest", "./fonts/siege-pixel.ttf"]);
   for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
     const value = match[1];
     if (!value || value.startsWith("http") || value.startsWith("data:"))

@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap");
 :root {
   font-family: "DM Sans", sans-serif;
   color: #dce4e8;
@@ -813,10 +812,10 @@ main {
   padding: 12px 28px 0;
   background:
     linear-gradient(0deg, #1b2e3d, transparent 70%),
-    url("/art/paper-islands.webp") center 38% / cover;
+    none center 38% / cover;
   border-radius: 15px 15px 0 0;
 }
-.menu-art img {
+.menu-art canvas {
   width: 135px;
   height: 135px;
   object-fit: contain;
@@ -852,7 +851,7 @@ dialog h1 {
     margin: -24px -24px 16px;
     height: 120px;
   }
-  .menu-art img {
+  .menu-art canvas {
     width: 115px;
     height: 115px;
   }
@@ -1633,7 +1632,7 @@ body {
   background-color: #0f3337;
   background-image:
     radial-gradient(ellipse at 50% -10%, #245257 0%, #0f3337 58%, #092529 100%),
-    url("/art/paper-grain.webp");
+    none;
   background-size:
     auto,
     620px 620px;
@@ -1714,7 +1713,7 @@ main {
 }
 .match-bar {
   background-color: var(--paper);
-  background-image: url("/art/paper-grain.webp");
+  background-image: none;
   background-size: 520px 520px;
   background-blend-mode: multiply;
   border-bottom: 2px solid var(--ink);
@@ -1774,7 +1773,7 @@ main {
 #wind {
   color: var(--ink);
   background-color: var(--paper);
-  background-image: url("/art/paper-grain.webp");
+  background-image: none;
   background-size: 320px 320px;
   background-blend-mode: multiply;
   border: 1.5px solid var(--ink);
@@ -1853,7 +1852,7 @@ main {
 }
 .controls {
   background-color: var(--paper);
-  background-image: url("/art/paper-grain.webp");
+  background-image: none;
   background-size: 620px 620px;
   background-blend-mode: multiply;
   border-top: 2px solid var(--ink);
@@ -1960,8 +1959,7 @@ footer i {
 dialog {
   color: var(--ink);
   background-color: var(--paper);
-  background-image:
-    linear-gradient(180deg, #fbf3dfcc, #f0e3c8e6), url("/art/paper-grain.webp");
+  background-image: linear-gradient(180deg, #fbf3dfcc, #f0e3c8e6), none;
   background-size:
     auto,
     700px 700px;
@@ -2043,7 +2041,7 @@ select:focus-visible {
 .menu-art {
   background:
     linear-gradient(0deg, #f2e8d2 0%, #f2e8d200 68%),
-    url("/art/paper-islands.webp") center 38% / cover;
+    none center 38% / cover;
   border-bottom: 2px solid var(--ink);
   border-radius: 3px 3px 0 0;
 }
@@ -2052,7 +2050,7 @@ select:focus-visible {
   font-family: var(--display);
   font-weight: 800;
 }
-.menu-art img {
+.menu-art canvas {
   filter: drop-shadow(0 5px 0 #17383b33) drop-shadow(0 8px 10px #17383b44);
 }
 .menu-meta {
@@ -2253,7 +2251,7 @@ select:focus-visible {
   width: min(520px, calc(100vw - 50px));
   padding: 10px;
   background-color: var(--paper);
-  background-image: url("/art/paper-grain.webp");
+  background-image: none;
   background-size: 420px 420px;
   background-blend-mode: multiply;
   border: 2px solid var(--ink);
@@ -2358,7 +2356,7 @@ select:focus-visible {
   width: min(560px, calc(100vw - 50px));
   padding: 10px;
   background-color: var(--paper);
-  background-image: url("/art/paper-grain.webp");
+  background-image: none;
   background-size: 420px 420px;
   background-blend-mode: multiply;
   border: 2px solid var(--ink);
@@ -2436,4 +2434,233 @@ select:focus-visible {
   .special-head small {
     display: none;
   }
+}
+
+/* Native pixel presentation: generated canvases, hard edges, no paper overlays. */
+#scene {
+  overflow: hidden;
+}
+#scene canvas,
+canvas[data-art] {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+canvas[data-art] {
+  object-fit: contain;
+  filter: none;
+  transform: none;
+}
+body {
+  background: #17343b;
+}
+button,
+select,
+dialog,
+.team-card,
+#arena,
+.weapon,
+.menu-art {
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+}
+#arena {
+  filter: none;
+}
+#menu,
+.menu-art {
+  background: #f2e8d2;
+}
+.menu-art {
+  background: #365e69;
+}
+.menu-art canvas {
+  width: 128px;
+  height: 128px;
+}
+.brand-icon {
+  width: 32px;
+  height: 32px;
+}
+.weapon-art {
+  width: 32px;
+  height: 32px;
+}
+
+canvas.team-portrait {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+.menu-art canvas {
+  filter: none;
+  transform: none;
+}
+main {
+  box-shadow: 4px 4px 0 #08272a;
+  border-radius: 0;
+}
+dialog::backdrop {
+  backdrop-filter: none;
+}
+
+/* Dusk palette: quiet framing around the warm island artwork. */
+body {
+  background: #272b3c;
+}
+header {
+  color: #f1dfc3;
+}
+.match-bar,
+.controls {
+  background: #303344;
+  color: #ede0c7;
+  border-color: #484553;
+}
+.team strong,
+.turn b,
+.slider-label output {
+  color: #f3e5cd;
+}
+.team-lime {
+  color: #bdca84;
+}
+.team-coral {
+  color: #efa18d;
+}
+.turn span,
+.eyebrow,
+.slider-label,
+.loadout-heading,
+.move-heading {
+  color: #a4a3ac;
+}
+.health-track {
+  background: #464455;
+  border: 0;
+}
+.team-portrait {
+  background: transparent;
+  box-shadow: none;
+}
+canvas.team-portrait {
+  width: 48px;
+  height: 48px;
+}
+.move-buttons button,
+.weapons button {
+  background: #3c4051;
+  color: #f1dfc3;
+  border-color: #66616c;
+  box-shadow: 0 2px 0 #222634;
+}
+.move-buttons button:hover,
+.weapons button:hover {
+  background: #4b4b5c;
+}
+.weapons button small {
+  color: #c5c1b3;
+}
+.weapons .selected {
+  background: #b7c27c;
+  border-color: #d5d99e;
+  color: #283c39;
+}
+.weapons .selected small {
+  color: #3e5543;
+}
+#fire {
+  background: #eab183;
+  color: #343644;
+  border-color: #f4d0a3;
+  box-shadow: 3px 3px 0 #1f2633;
+}
+#fire:hover {
+  background: #f5c798;
+}
+#fire > span:nth-child(2),
+#fire small {
+  color: #343644;
+}
+.menu-art {
+  background: #81758c;
+}
+.menu-art canvas {
+  width: 144px;
+  height: 144px;
+  flex-shrink: 0;
+}
+.menu-art canvas[data-team="1"] {
+  transform: scaleX(-1);
+}
+.menu-art span {
+  text-shadow: none;
+  color: #f7dfb9;
+}
+.worm-label {
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #34364466;
+}
+@media (max-width: 700px) {
+  .menu-art canvas {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+/* Preserve the reference composition instead of stretching a 16:9 island. */
+@media (min-width: 701px) and (min-height: 551px) {
+  header {
+    flex: 0 0 48px;
+    height: 48px;
+  }
+  .match-bar {
+    flex: 0 0 56px;
+    height: 56px;
+  }
+  .controls {
+    flex: 0 0 112px;
+    height: 112px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  #arena {
+    width: min(100%, calc((100svh - 216px) * 16 / 9));
+    align-self: center;
+  }
+  main {
+    background: #272b3c;
+  }
+}
+canvas.team-portrait {
+  width: 64px;
+  height: 64px;
+}
+.menu-art canvas {
+  width: 128px;
+  height: 128px;
+}
+@media (max-width: 700px) {
+  .menu-art canvas {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+#battlefield-frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #272b3c;
+}
+#battlefield-frame #arena {
+  flex: none;
+  min-height: 0;
+  max-width: 100%;
+  align-self: auto;
 }
