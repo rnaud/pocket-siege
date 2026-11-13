@@ -792,7 +792,7 @@ kbd {
 /* Field kit, special ammunition, setup and help share the same pixel language. */
 #utilities,
 #special-weapons,
-#grenade-settings {
+:is(#grenade-settings, #airstrike-settings) {
   color: #ffe4af;
   background: #38283f;
   border: 2px solid #efc58b;
@@ -837,12 +837,12 @@ kbd {
   color: #efc58b;
   font-size: 16px;
 }
-#grenade-settings label,
-#grenade-settings select {
+:is(#grenade-settings, #airstrike-settings) label,
+:is(#grenade-settings, #airstrike-settings) select {
   color: #ffe4af;
   font-size: 8px;
 }
-#grenade-settings select {
+:is(#grenade-settings, #airstrike-settings) select {
   background: #281f32;
   border: 2px solid #946a7d;
 }
@@ -1245,7 +1245,7 @@ kbd {
     right: 4px;
     width: auto;
   }
-  #grenade-settings {
+  :is(#grenade-settings, #airstrike-settings) {
     right: 8px;
   }
   #menu {
@@ -1782,4 +1782,9 @@ select:focus-visible {
     animation: none;
     opacity: 0.7;
   }
+}
+
+/* Keep the temporary turn announcement clear of the targeting controls. */
+body:has(#airstrike-settings:not([hidden])) #turn-banner {
+  display: none;
 }

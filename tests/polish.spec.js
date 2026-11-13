@@ -63,7 +63,20 @@ test("generated expressions remain opaque pixel art and distinct", async ({
   await page.goto("/");
   const result = await page.evaluate(async () => {
     const { pixelArt } = await import("/src/pixel-art.js");
-    const poses = [false, true, "blink", "aim", "panic", "victory", "walk"];
+    const poses = [
+      false,
+      true,
+      "blink",
+      "aim",
+      "panic",
+      "victory",
+      "walk",
+      "walk2",
+      "walk3",
+      "jump",
+      "fall",
+      "land",
+    ];
     const signatures = poses.map((pose) => {
       const c = pixelArt("soldier", 0, pose),
         data = c.getContext("2d").getImageData(0, 0, 32, 32).data;
@@ -73,5 +86,5 @@ test("generated expressions remain opaque pixel art and distinct", async ({
     });
     return new Set(signatures).size;
   });
-  expect(result).toBe(7);
+  expect(result).toBe(12);
 });

@@ -3,6 +3,7 @@ import { WATER } from "./physics.js";
 // One source of truth for damage, blast size, flight behavior and inventory.
 export const WEAPONS = {
   rocket: {
+    impulse: 390,
     label: "Bazooka",
     icon: "➶",
     radius: 53,
@@ -15,6 +16,7 @@ export const WEAPONS = {
     key: "F1",
   },
   grenade: {
+    impulse: 310,
     label: "Grenade",
     icon: "✹",
     radius: 60,
@@ -27,6 +29,7 @@ export const WEAPONS = {
     key: "F2",
   },
   mortar: {
+    impulse: 260,
     label: "Mortar",
     icon: "◆",
     radius: 76,
@@ -87,6 +90,7 @@ export const WEAPONS = {
     special: "drop",
   },
   cluster: {
+    impulse: 240,
     label: "Cluster",
     icon: "✸",
     radius: 50,
@@ -111,6 +115,7 @@ export const WEAPONS = {
     special: "airstrike",
   },
   napalm: {
+    impulse: 220,
     label: "Napalm",
     icon: "♨",
     radius: 52,
@@ -147,6 +152,7 @@ export const WEAPONS = {
     special: "homing",
   },
   holy: {
+    impulse: 480,
     label: "Holy grenade",
     icon: "✧",
     radius: 100,
@@ -159,12 +165,24 @@ export const WEAPONS = {
     special: "holy",
   },
   bomblet: {
+    impulse: 180,
     label: "Bomblet",
     icon: "·",
     radius: 38,
     damage: 24,
     wind: false,
     speed: 0,
+    timed: true,
+    bounces: false,
+    ammo: 0,
+  },
+  shrapnel: {
+    impulse: 140,
+    label: "Shrapnel",
+    radius: 24,
+    damage: 12,
+    wind: false,
+    speed: 1,
     timed: true,
     bounces: false,
     ammo: 0,

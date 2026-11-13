@@ -1,3 +1,4 @@
+import { cavernBounds } from "./map-generator.js";
 import { W, H, WATER } from "./physics.js";
 import { pixelBrush, hash } from "./pixel-draw.js";
 
@@ -314,7 +315,11 @@ export function paintTerrain(ctx, terrain, texture) {
   ctx.save();
   ctx.globalCompositeOperation = "source-atop";
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(cliffs(), 0, 0, W, H);
+  if (terrain.layout === "fern") ctx.drawImage(cliffs(), 0, 0, W, H);
+  else {
+    const top = H - Math.max(...surface);
+    ctx.drawImage(cliffs(), 0, 120, 480, 150, 0, top, W, H - top);
+  }
   const b = pixelBrush(ctx),
     X = W / 480,
     Y = H / 270;
@@ -393,6 +398,21 @@ export function paintTerrain(ctx, terrain, texture) {
     );
   }
   ctx.restore();
+  if (terrain.layout === "caverns") {
+    // Distant cave walls are scenery, separate from the destructible collision mask.
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-over";
+    for (let px = 6; px < 474; px++) {
+      const { floor, roof } = cavernBounds((px * W) / 480);
+      const top = Math.floor((H - roof) / Y),
+        bottom = Math.ceil((H - floor) / Y);
+      mark(px, top, 1, bottom - top, "#3d3c51");
+      if (px % 27 < 2)
+        mark(px, top + 5, 1, Math.max(1, bottom - top - 8), "#494354");
+      mark(px, bottom - 4, 1, 4, "#514352");
+    }
+    ctx.restore();
+  }
   // Sparse, tall grasses and four-petal flowers are explicit pixel clusters.
   const vegetation = (px, py, flower = false) => {
     for (const [dx, dy, h] of [

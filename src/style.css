@@ -1082,7 +1082,7 @@ dialog h1 {
 .controls {
   position: relative;
 }
-#grenade-settings {
+:is(#grenade-settings, #airstrike-settings) {
   position: absolute;
   right: 190px;
   bottom: calc(100% + 8px);
@@ -1095,23 +1095,23 @@ dialog h1 {
   padding: 8px 12px;
   box-shadow: 0 4px 14px #112a3b55;
 }
-#grenade-settings[hidden] {
+:is(#grenade-settings, #airstrike-settings)[hidden] {
   display: none;
 }
-#grenade-settings label {
+:is(#grenade-settings, #airstrike-settings) label {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 8px;
   letter-spacing: 1px;
 }
-#grenade-settings select {
+:is(#grenade-settings, #airstrike-settings) select {
   width: auto;
   font-size: 11px;
   padding: 5px;
 }
 @media (max-width: 700px) {
-  #grenade-settings {
+  :is(#grenade-settings, #airstrike-settings) {
     right: 12px;
     bottom: calc(100% + 45px);
   }
@@ -1935,18 +1935,18 @@ main {
 input[type="range"] {
   accent-color: #668047;
 }
-#grenade-settings {
+:is(#grenade-settings, #airstrike-settings) {
   background: var(--paper);
   color: var(--ink);
   border: 2px solid var(--ink);
   border-radius: 3px;
   box-shadow: 3px 3px 0 #17383b66;
 }
-#grenade-settings label {
+:is(#grenade-settings, #airstrike-settings) label {
   color: var(--ink);
   font-weight: 700;
 }
-#grenade-settings select {
+:is(#grenade-settings, #airstrike-settings) select {
   border: 1px solid var(--ink);
 }
 footer {

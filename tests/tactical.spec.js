@@ -2,7 +2,13 @@ import { test, expect } from "@playwright/test";
 import { Terrain, stepWorm, bodyBlocked } from "../src/physics.js";
 
 test("seeded maps provide six stable, clear starting positions", () => {
-  for (const layout of ["highlands", "archipelago", "forts"]) {
+  for (const layout of [
+    "highlands",
+    "archipelago",
+    "forts",
+    "caverns",
+    "bridges",
+  ]) {
     for (let seed = 0; seed < 20; seed++) {
       const terrain = new Terrain(seed, layout);
       for (const x of [180, 340, 490, 710, 860, 1020]) {

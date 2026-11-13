@@ -141,23 +141,27 @@ export function blastImpulse(w, x, y, radius, strength = 270) {
 }
 export function walkWorm(w, terrain, direction, dt) {
   if (!w.ground || w.knocked) return false;
-  const x = w.x + direction * 42 * dt;
-  // A little more headroom than before lets the worm clear terrain steps
-  // without stopping; settling back down keeps downhill walking grounded.
-  for (let rise = 0; rise <= 10; rise++) {
-    if (!bodyBlocked(terrain, x, w.y + rise)) {
+  const steps = Math.max(1, Math.ceil(42 * dt));
+  let moved = false;
+  for (let step = 0; step < steps; step++) {
+    const x = w.x + (Math.sign(direction) * 42 * dt) / steps;
+    let found = false;
+    for (let rise = 0; rise <= 6; rise++) {
+      if (bodyBlocked(terrain, x, w.y + rise)) continue;
       let y = w.y + rise;
-      for (let drop = 1; drop <= 4; drop++) {
-        if (bodyBlocked(terrain, x, y - 1)) break;
-        y -= 1;
-      }
+      for (let drop = 0; drop < 6 && !bodyBlocked(terrain, x, y - 1); drop++)
+        y--;
       w.x = x;
       w.y = y;
-      return true;
+      w.ground = bodyBlocked(terrain, x, y - 1);
+      found = moved = true;
+      break;
     }
+    if (!found || !w.ground) break;
   }
-  return false;
+  return moved;
 }
+
 function approachZero(value, amount) {
   return Math.sign(value) * Math.max(0, Math.abs(value) - amount);
 }
@@ -251,4 +255,40 @@ export function reflectVelocity(p, n, restitution = 0.55) {
 }
 export function chargePower(seconds) {
   return Math.min(100, Math.max(0, (seconds / 2) * 100));
+}
+
+// Sample intervening rock before a blast carves it away. Thick cover attenuates
+// damage, while exposed targets receive the full radial blast.
+export function blastExposure(terrain, x, y, targetX, targetY) {
+  const distance = Math.hypot(targetX - x, targetY - y);
+  const steps = Math.ceil(distance / 4);
+  let rock = 0;
+  for (let i = 2; i < steps - 1; i++) {
+    if (
+      terrain.solid(
+        x + ((targetX - x) * i) / steps,
+        y + ((targetY - y) * i) / steps,
+      )
+    )
+      rock++;
+  }
+  return rock > 6 ? 0.45 : rock > 2 ? 0.75 : 1;
+}
+
+export function clearBodyPath(terrain, x, y, targetX, targetY) {
+  const steps = Math.max(
+    1,
+    Math.ceil(Math.hypot(targetX - x, targetY - y) / 2),
+  );
+  for (let i = 1; i <= steps; i++) {
+    if (
+      bodyBlocked(
+        terrain,
+        x + ((targetX - x) * i) / steps,
+        y + ((targetY - y) * i) / steps,
+      )
+    )
+      return false;
+  }
+  return true;
 }

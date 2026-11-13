@@ -1,5 +1,12 @@
 // Seeded geometry only: the renderer paints the resulting destructible mask.
-export const MAP_LAYOUTS = ["fern", "highlands", "archipelago", "forts"];
+export const MAP_LAYOUTS = [
+  "fern",
+  "highlands",
+  "archipelago",
+  "forts",
+  "caverns",
+  "bridges",
+];
 export function generateTerrain(data, width, height, seed, layout) {
   let state = seed >>> 0;
   const random = () => {
@@ -8,6 +15,10 @@ export function generateTerrain(data, width, height, seed, layout) {
   };
   const anchors = [0, 180, 340, 490, 710, 860, 1020, 1200];
   const heights = anchors.map(() => 240 + Math.floor(random() * 145));
+  // Opposing teams get matched starting elevations; seeds vary the shared profile.
+  heights[6] = heights[1];
+  heights[5] = heights[2];
+  heights[4] = heights[3];
   for (let x = 14; x < width - 14; x++) {
     const u = (x * 1200) / width;
     let i = 0;
@@ -29,7 +40,40 @@ export function generateTerrain(data, width, height, seed, layout) {
       );
       top = distance < 48 ? top + 60 : 160;
     }
+    if (layout === "caverns") top += 75;
+    const bridge = layout === "bridges" && u > 525 && u < 675;
+    if (bridge) top = heights[3];
     top = Math.floor((top * height) / 650);
-    for (let y = 30; y < top; y++) data[y * width + x] = 1;
+    const cave = cavernBounds(u);
+    for (let y = 30; y < top; y++) {
+      const v = (y * 650) / height;
+      if (bridge && y < top - (12 * height) / 650) continue;
+      // Open entrances and wide underground galleries beneath protected spawns.
+      if (layout === "caverns" && v > cave.floor && v < cave.roof) continue;
+      if (
+        layout === "highlands" &&
+        Math.abs(v - (150 + 7 * Math.sin(u / 110))) < 30 &&
+        (u < 140 || u > 1060)
+      )
+        continue;
+      // Arched undercuts give the outer islands shelter and fragile overhangs.
+      if (
+        layout === "archipelago" &&
+        ((u - 240) / 85) ** 2 + ((v - 155) / 40) ** 2 < 1
+      )
+        continue;
+      if (
+        layout === "archipelago" &&
+        ((u - 960) / 85) ** 2 + ((v - 155) / 40) ** 2 < 1
+      )
+        continue;
+      data[y * width + x] = 1;
+    }
   }
+}
+
+// Arched chambers share a walkable floor, with enough headroom throughout.
+export function cavernBounds(x) {
+  const floor = 145 + 7 * Math.sin(x / 110);
+  return { floor, roof: floor + 68 + 26 * (0.5 + 0.5 * Math.cos(x / 95)) };
 }

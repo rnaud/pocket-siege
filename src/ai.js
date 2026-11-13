@@ -1,5 +1,6 @@
 import {
   W,
+  blastExposure,
   WATER,
   BODY,
   launch,
@@ -126,13 +127,14 @@ function blastPoint(
   return { x: p.x, y: p.y, water: p.y < waterLevel };
 }
 
-function scoreBlast(
+export function scoreBlast(
   point,
   kind,
   worms,
   me,
   blastScale = 1,
   waterLevel = WATER,
+  terrain = null,
 ) {
   if (!point || point.blocked || point.water || point.out) return -100;
   const meta = WEAPONS[kind],
@@ -147,18 +149,33 @@ function scoreBlast(
       distance = Math.hypot(dx, dy);
     if (w.team !== me.team) nearest = Math.min(nearest, distance);
     if (distance >= radius) continue;
-    const damage = Math.min(w.hp, (1 - distance / radius) * maxDamage);
+    const exposure = terrain
+      ? blastExposure(terrain, point.x, point.y, w.x, w.y + BODY.cy)
+      : 1;
+    const damage = Math.min(
+      w.hp,
+      (1 - distance / radius) * maxDamage * exposure,
+    );
     const nx = distance > 0.001 ? dx / distance : 0,
       ny = distance > 0.001 ? dy / distance : 1;
     const nearEdge = (w.x < 150 && nx < -0.15) || (w.x > W - 150 && nx > 0.15),
       nearWater = w.y - 10 < waterLevel + 55,
       lifted = ny + 0.4 > 0;
+    const projectedX =
+      w.x + nx * (meta.impulse ?? 350) * (1 - distance / radius) * 0.35;
+    const waterPush =
+      terrain &&
+      !terrain.solid(projectedX, waterLevel + 12) &&
+      Math.abs(projectedX - w.x) > 22;
     if (w.team === me.team) {
-      score -= damage * 1.5;
+      score -= damage * (w === me ? 2 : 1.8);
+      if (waterPush) score -= w.hp * 0.8;
+      if (damage >= w.hp) score -= 40;
       if (w === me && nearEdge) score -= 24;
       if (w === me && nearWater && lifted) score -= 18;
     } else {
       score += damage;
+      if (waterPush) score += Math.min(w.hp, 45);
       if (damage >= w.hp) score += 20;
       if (nearEdge) score += 10;
       if (nearWater && lifted) score += 6;
@@ -196,6 +213,7 @@ function evaluate(context, kind, angle, power) {
         context.me,
         context.blastScale,
         context.waterLevel,
+        context.terrain,
       ) + (kind === "rocket" ? 0 : -3),
   };
 }
@@ -307,6 +325,7 @@ export function planMove({
   waterLevel = WATER,
   difficulty = "regular",
   crate = null,
+  worms = [],
   random = Math.random,
 }) {
   const profile = DIFFICULTIES[difficulty] ?? DIFFICULTIES.regular;
@@ -314,13 +333,20 @@ export function planMove({
   const nearWater = me.y - 10 < waterLevel + 55,
     nearEdge = me.x < 110 || me.x > W - 110;
   const crateDistance = crate ? Math.abs(crate.x - me.x) : Infinity;
-  if (!nearWater && !nearEdge && crateDistance > 150) return null;
+  if (!nearWater && !nearEdge && crateDistance > 150) {
+    return random() <= profile.moveChance
+      ? planRetreat({ terrain, me, worms, waterLevel })
+      : null;
+  }
   if (random() > profile.moveChance) return null;
   if (crate && crateDistance < 150 && crateDistance > 30) {
     const direction = Math.sign(crate.x - me.x) || 1,
       probe = { ...me, vx: 0, vy: 0, knocked: false, ground: true };
     const steps = Math.min(120, Math.ceil((crateDistance - 24) / (42 * STEP)));
-    for (let i = 0; i < steps; i++) walkWorm(probe, terrain, direction, STEP);
+    for (let i = 0; i < steps; i++) {
+      walkWorm(probe, terrain, direction, STEP);
+      if (!probe.ground || probe.y - 10 <= waterLevel + 15) return null;
+    }
     const reached = Math.abs(probe.x - crate.x) < 34;
     if (reached && probe.y - 10 > waterLevel + 15)
       return { direction, time: Math.min(2.5, (crateDistance - 24) / 42) };
@@ -334,4 +360,49 @@ export function planMove({
   // Near the water, only climb. Walking toward the middle downhill is a trap.
   if (nearWater ? !climbed : !leftEdge) return null;
   return { direction, time: 0.5 };
+}
+
+function positionScore(terrain, me, enemies, waterLevel, danger = null) {
+  if (me.y - 10 < waterLevel + 16 || me.x < 25 || me.x > W - 25) return -1000;
+  let score = Math.min(20, (me.y - waterLevel) / 12);
+  for (const enemy of enemies) {
+    score +=
+      (1 - blastExposure(terrain, enemy.x, enemy.y + 20, me.x, me.y + 20)) * 24;
+    if (Math.abs(enemy.x - me.x) < 90) score -= 12;
+  }
+  if (danger)
+    score += Math.min(50, Math.hypot(me.x - danger.x, me.y - danger.y) / 4);
+  return score;
+}
+
+// Simulate the whole route, stopping before unsupported steps or water hazards.
+export function planRetreat({
+  terrain,
+  me,
+  worms = [],
+  waterLevel = WATER,
+  danger = null,
+}) {
+  if (!me.ground || me.hp <= 0) return null;
+  const enemies = worms.filter((w) => w.hp > 0 && w.team !== me.team);
+  const initial = positionScore(terrain, me, enemies, waterLevel, danger);
+  let best = null;
+  for (const direction of [-1, 1]) {
+    const probe = { ...me, vx: 0, vy: 0, knocked: false };
+    for (let i = 1; i <= 72; i++) {
+      const old = { x: probe.x, y: probe.y };
+      if (
+        !walkWorm(probe, terrain, direction, STEP) ||
+        !probe.ground ||
+        !terrain.solid(probe.x, probe.y - 12) ||
+        probe.y < old.y - 5 ||
+        probe.y - 10 < waterLevel + 16
+      )
+        break;
+      const score = positionScore(terrain, probe, enemies, waterLevel, danger);
+      if (score > initial + 1 && (!best || score > best.score))
+        best = { direction, time: i * STEP, score };
+    }
+  }
+  return best ? { direction: best.direction, time: best.time } : null;
 }

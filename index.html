@@ -294,6 +294,15 @@
               </button>
             </div>
           </div>
+          <div id="airstrike-settings" hidden>
+            <label
+              >APPROACH
+              <select id="strike-direction" aria-label="Airstrike direction">
+                <option value="1">LEFT → RIGHT</option>
+                <option value="-1">RIGHT → LEFT</option>
+              </select></label
+            >
+          </div>
           <div id="grenade-settings" hidden>
             <label
               >FUSE
@@ -419,6 +428,8 @@
               <option value="highlands">Highlands · rolling cover</option>
               <option value="archipelago">Archipelago · water gaps</option>
               <option value="forts">Forts · exposed towers</option>
+              <option value="caverns">Caverns · underground routes</option>
+              <option value="bridges">Bridges · fragile crossings</option>
             </select>
             <label class="mode-label" for="weather">WEATHER</label
             ><select id="weather">

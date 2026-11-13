@@ -1,4 +1,4 @@
-const CACHE = "pocket-siege-tactical-maps-v9";
+const CACHE = "pocket-siege-combat-depth-v10";
 
 async function precache() {
   const cache = await caches.open(CACHE);

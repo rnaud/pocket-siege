@@ -1,3 +1,5 @@
+import { playSound } from "./sound.js";
+import { fragments, airstrikePattern } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
 import { landscape } from "./island-art.js";
@@ -8,6 +10,8 @@ import "./style.css";
 import "./pixel-hud.css";
 import {
   Terrain,
+  clearBodyPath,
+  blastExposure,
   W,
   H,
   WATER,
@@ -43,7 +47,7 @@ import {
   ammoFor,
   waterLevelForRound,
 } from "./weapons.js";
-import { planTurn, planMove } from "./ai.js";
+import { planTurn, planMove, planRetreat } from "./ai.js";
 import { chooseCameraTarget, cameraView, FULL_VIEW } from "./camera.js";
 import {
   applyMatchResult,
@@ -231,6 +235,7 @@ let shotFuse = null,
   aiMoveTime = 0,
   aiMoveDirection = 0,
   aiRetreatTime = 0,
+  aiRetreatDirection = 0,
   lastAiPlanMs = 0,
   aiPlan = null,
   hitStop = 0;
@@ -263,7 +268,19 @@ const hurtMaps = [
   pixelTexture("soldier", 1, true),
 ];
 const poseMaps = Object.fromEntries(
-  ["blink", "aim", "recoil", "panic", "victory", "walk"].map((pose) => [
+  [
+    "blink",
+    "aim",
+    "recoil",
+    "panic",
+    "victory",
+    "walk",
+    "walk2",
+    "walk3",
+    "jump",
+    "fall",
+    "land",
+  ].map((pose) => [
     pose,
     [pixelTexture("soldier", 0, pose), pixelTexture("soldier", 1, pose)],
   ]),
@@ -504,6 +521,17 @@ function announce(text) {
   $("#announcement").style.opacity = 1;
   announceUntil = performance.now() + 2200;
 }
+const soundTimes = new Map();
+function sfx(kind) {
+  if (!sound) return;
+  const now = performance.now();
+  if (now - (soundTimes.get(kind) ?? -1000) < (kind === "bounce" ? 100 : 45))
+    return;
+  soundTimes.set(kind, now);
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  audio.resume();
+  playSound(audio, kind);
+}
 function tone(freq, duration = 0.1, type = "sine") {
   if (!sound) return;
   audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -639,6 +667,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     highlands: "HIGHLANDS",
     archipelago: "ARCHIPELAGO",
     forts: "FORTS",
+    caverns: "CAVERNS",
+    bridges: "BRIDGES",
   }[terrain.layout];
   paintTerrain(ctx, terrain, texture);
   terrainDirty = false;
@@ -740,6 +770,12 @@ function stepBombs(dt) {
   for (let i = bombs.length - 1; i >= 0; i--) {
     const b = bombs[i];
     b.fuse -= dt;
+    if (
+      b.grounded &&
+      b.fuse < 1.5 &&
+      Math.floor(b.fuse * 4) !== Math.floor((b.fuse + dt) * 4)
+    )
+      sfx("fuse");
     if (!b.grounded) {
       integrate(b, dt, 0, gravityScale);
       b.mesh.position.set(b.x, b.y, 40);
@@ -908,6 +944,8 @@ function beginTurn() {
         highlands: "HIGHLANDS",
         archipelago: "ARCHIPELAGO",
         forts: "FORTS",
+        caverns: "CAVERNS",
+        bridges: "BRIDGES",
       }[terrain.layout];
   updateSeriesHUD();
   const weatherNote =
@@ -1374,12 +1412,11 @@ function stepJetpack(w, dt) {
     py = w.y;
   w.x = Math.max(12, Math.min(W - 12, w.x + w.vx * dt));
   w.y = Math.max(12, Math.min(H, w.y + w.vy * dt));
-  if (terrain.solid(w.x, w.y + 12)) {
+  if (!clearBodyPath(terrain, px, py, w.x, w.y)) {
     w.x = px;
     w.y = py;
     w.vx = 0;
     w.vy = 0;
-    stopJetpack();
   }
   w.ground = false;
   w.moving = Boolean(move);
@@ -1434,8 +1471,6 @@ function fireRope() {
   };
   rope.mesh = makeRopeLine(hit, w);
   w.ground = false;
-  w.vx = 0;
-  w.vy = 0;
   activeUtility = "rope";
   wormLocked = true;
   utilitiesOpen = false;
@@ -1460,7 +1495,7 @@ function stepRope(w, dt) {
   if (aimInput)
     rope.length = Math.max(34, Math.min(300, rope.length - aimInput * 95 * dt));
   let dx = w.x - a.x,
-    dy = w.y - a.y,
+    dy = w.y + 18 - a.y,
     len = Math.hypot(dx, dy) || 1;
   const tx = -dy / len,
     ty = dx / len;
@@ -1474,22 +1509,25 @@ function stepRope(w, dt) {
   w.x += w.vx * dt;
   w.y += w.vy * dt;
   dx = w.x - a.x;
-  dy = w.y - a.y;
+  dy = w.y + 18 - a.y;
   len = Math.hypot(dx, dy) || 1;
   const nx = dx / len,
     ny = dy / len;
-  w.x = a.x + nx * rope.length;
-  w.y = a.y + ny * rope.length;
-  const radial = w.vx * nx + w.vy * ny;
-  w.vx -= radial * nx;
-  w.vy -= radial * ny;
+  if (len > rope.length) {
+    w.x = a.x + nx * rope.length;
+    w.y = a.y + ny * rope.length - 18;
+    const radial = Math.max(0, w.vx * nx + w.vy * ny);
+    w.vx -= radial * nx;
+    w.vy -= radial * ny;
+  }
   w.ground = false;
   w.moving = Boolean(move);
   w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
-  if (terrain.solid(w.x, w.y + 12)) {
+  if (!clearBodyPath(terrain, px, py, w.x, w.y)) {
     w.x = px;
     w.y = py;
-    stopRope();
+    w.vx = 0;
+    w.vy = 0;
   }
 }
 function updateRopeVisual(w) {
@@ -1860,6 +1898,7 @@ function injure(w, damage, direction = 0) {
   if (w.hp <= 0 || damage <= 0) return;
   w.hp = Math.max(0, w.hp - damage);
   w.hurt = 1.4;
+  sfx("hit");
   w.hits++;
   if (direction) w.hitDirection = direction;
   if (w.hp === 0) {
@@ -1966,17 +2005,17 @@ function spawnBomb({
   });
 }
 function spawnAirstrike(x) {
-  for (let i = -2; i <= 2; i++) {
-    spawnBomb({
-      x: x + i * 34 + (Math.random() - 0.5) * 12,
-      y: H - 8,
-      vx: (Math.random() - 0.5) * 18,
-      vy: -20 - Math.random() * 20,
-      fuse: 2.8,
-      owner: current,
-      kind: "bomblet",
-    });
+  const direction = Number($("#strike-direction").value);
+  for (const bomb of airstrikePattern(
+    x,
+    terrain.surface(x),
+    direction,
+    H,
+    GRAVITY * gravityScale,
+  )) {
+    spawnBomb({ ...bomb, fuse: 5, owner: current, kind: "bomblet" });
   }
+  sfx("airstrike");
 }
 function placeDynamite() {
   if (!canAct() || (ammoFor(ammo[team], "dynamite") ?? 0) <= 0) return;
@@ -2064,7 +2103,7 @@ function fireShotgun() {
     points: [start, hit],
     impact: { ...hit, kind: "shotgun" },
   };
-  tone(180, 0.18, "square");
+  sfx("shotgun");
 }
 function fireBat() {
   if (!canAct() || (ammoFor(ammo[team], "bat") ?? 0) <= 0) return;
@@ -2151,7 +2190,19 @@ function fire() {
   w.recoil = 0.3;
   charging = false;
   chargeSource = null;
-  if (fromAi) aiRetreatTime = 1.1;
+  if (fromAi) {
+    const route = planRetreat({
+      terrain,
+      me: w,
+      worms,
+      waterLevel,
+      danger: worms
+        .filter((t) => t.hp > 0 && t.team !== w.team)
+        .sort((a, b) => Math.abs(a.x - w.x) - Math.abs(b.x - w.x))[0],
+    });
+    aiRetreatTime = route?.time ?? 0;
+    aiRetreatDirection = route?.direction ?? 0;
+  }
   updateSliders();
   firedPower = power;
   shotCount++;
@@ -2198,7 +2249,7 @@ function fire() {
           : `${kind === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`;
   move = 0;
   shotWait = 0;
-  tone(550, 0.2, "triangle");
+  sfx(kind);
   updateUI();
 }
 function explode(x, y, kind, ownerIndex = -1) {
@@ -2213,27 +2264,21 @@ function explode(x, y, kind, ownerIndex = -1) {
       : {
           radius: WEAPONS[kind].radius * scale,
           damage: WEAPONS[kind].damage * scale,
-          impulse: 380 * scale,
+          impulse: (WEAPONS[kind].impulse ?? 350) * scale,
         };
   const { radius, damage: maxDamage, impulse } = profile;
+  const exposure = new Map(
+    worms.map((w) => [w, blastExposure(terrain, x, y, w.x, w.y + 17)]),
+  );
   terrain.carve(x, y, radius);
   terrainDirty = true;
   explosions++;
   shakeUntil = performance.now() + 350;
   hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
   impactFlash(x, y);
-  tone(85, 0.6, "sawtooth");
-  if (kind === "cluster") {
-    for (let i = 0; i < 4; i++)
-      spawnBomb({
-        x: x + (Math.random() - 0.5) * 40,
-        y: y + 18 + Math.random() * 18,
-        vx: (Math.random() - 0.5) * 160,
-        vy: 70 + Math.random() * 90,
-        fuse: 0.7 + Math.random() * 0.5,
-        owner: ownerIndex,
-        kind: "bomblet",
-      });
+  sfx("explosion");
+  for (const fragment of fragments(kind)) {
+    spawnBomb({ x, y: y + 8, ...fragment, owner: ownerIndex });
   }
   if (kind === "napalm") {
     for (let i = 0; i < 3; i++)
@@ -2274,9 +2319,18 @@ function explode(x, y, kind, ownerIndex = -1) {
   let dealt = 0;
   for (const w of worms) {
     if (w.hp <= 0) continue;
-    const factor = blastImpulse(w, x, y, radius + 34, impulse);
+    const factor = blastImpulse(
+      w,
+      x,
+      y,
+      radius + 34,
+      impulse * exposure.get(w),
+    );
     if (factor > 0) {
-      const damage = Math.max(1, Math.round(factor * maxDamage));
+      const damage = Math.max(
+        1,
+        Math.round(factor * maxDamage * exposure.get(w)),
+      );
       const direction = Math.sign(w.x - x) || 1;
       injure(w, damage, direction);
       if (ownerIndex >= 0 && worms[ownerIndex]?.team !== w.team)
@@ -2356,9 +2410,22 @@ function impactFlash(x, y) {
   setTimeout(() => flash.remove(), 600);
 }
 function damageLabel(w, n, direction = 0) {
+  const now = performance.now();
+  if (
+    typeof n === "number" &&
+    w.damageNotice?.el.isConnected &&
+    now < w.damageNotice.until
+  ) {
+    w.damageNotice.total += n;
+    w.damageNotice.until = now + 220;
+    w.damageNotice.el.textContent = `${direction < 0 ? "←" : direction > 0 ? "→" : ""}−${w.damageNotice.total}`;
+    return;
+  }
   const p = screen(w.x, w.y + 30),
     el = document.createElement("span");
   el.className = "damage-number";
+  if (typeof n === "number")
+    w.damageNotice = { el, total: n, until: now + 220 };
   el.textContent =
     typeof n === "number"
       ? `${direction < 0 ? "←" : direction > 0 ? "→" : ""}−${n}`
@@ -2500,7 +2567,12 @@ function jump(kind = "forward") {
   wormLocked = true;
   const w = worms[current];
   const double = lastJump.kind === kind && jumpClock - lastJump.time < 0.28;
-  if (!w.ground && !double) return;
+  if (!w.ground && !double && !(w.groundGrace > 0)) {
+    if (w.vy < 0) w.jumpQueued = { kind, until: jumpClock + 0.12 };
+    return;
+  }
+  w.groundGrace = 0;
+  w.jumpQueued = null;
   if (kind === "backflip" || (kind === "up" && double)) {
     w.vy = 190;
     w.vx = -w.facing * 50;
@@ -2513,7 +2585,7 @@ function jump(kind = "forward") {
   }
   w.ground = false;
   lastJump = { kind: double ? null : kind, time: jumpClock };
-  tone(300, 0.1);
+  sfx("jump");
 }
 function startAiTurn() {
   const w = worms[current];
@@ -2538,6 +2610,7 @@ function startAiTurn() {
     waterLevel,
     difficulty,
     crate,
+    worms,
     random: Math.random,
   });
   if (reposition && w.ground) {
@@ -2667,15 +2740,14 @@ function step(dt) {
     aiRetreatTime = Math.max(0, aiRetreatTime - dt);
     const w = worms[current];
     if (w.ground && !w.knocked) {
-      const target = worms
-        .filter((t) => t.team !== w.team && t.hp > 0)
-        .sort((a, b) => Math.abs(a.x - w.x) - Math.abs(b.x - w.x))[0];
-      let direction = target ? (target.x > w.x ? -1 : 1) : -w.facing;
-      if (w.y - 10 < waterLevel + 35) direction = w.x < W / 2 ? 1 : -1;
-      w.moving = walkWorm(w, terrain, direction, dt);
+      w.moving =
+        aiRetreatDirection !== 0 &&
+        walkWorm(w, terrain, aiRetreatDirection, dt);
     }
   }
   for (const w of worms) {
+    w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
+    w.landing = Math.max(0, (w.landing || 0) - dt);
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
     if (w.dying > 0) {
@@ -2705,7 +2777,20 @@ function step(dt) {
       }
       result = stepWorm(w, terrain, dt, gravityScale);
     }
+    if (result.landed && w.ground && !w.landing) {
+      w.landing = 0.16;
+      sfx("land");
+    }
     if (result.fallDamage) injure(w, result.fallDamage);
+    if (
+      w === worms[current] &&
+      w.ground &&
+      w.jumpQueued &&
+      jumpClock <= w.jumpQueued.until &&
+      !result.fallDamage
+    )
+      jump(w.jumpQueued.kind);
+    if (w.jumpQueued && jumpClock > w.jumpQueued.until) w.jumpQueued = null;
     if (w.y - 10 < waterLevel || w.x < -30 || w.x > W + 30) {
       w.hp = 0;
       w.deathPending = false;
@@ -2779,6 +2864,12 @@ function step(dt) {
       integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     }
     p.age += dt;
+    if (
+      WEAPONS[p.kind].timed &&
+      p.fuse - p.age < 1.5 &&
+      Math.floor(p.age * 4) !== Math.floor((p.age - dt) * 4)
+    )
+      sfx("fuse");
     let hit = p.blocked;
     p.blocked = false;
     const distance = Math.hypot(p.x - ox, p.y - oy),
@@ -2826,6 +2917,7 @@ function step(dt) {
         : terrainNormal(terrain, p.x, p.y, p.vx, p.vy);
       const l = Math.hypot(n.x, n.y) || 1;
       n = { x: n.x / l, y: n.y / l };
+      if (Math.hypot(p.vx, p.vy) > 30) sfx("bounce");
       reflectVelocity(p, n, p.bounce);
       p.x = ox + n.x * 0.3;
       p.y = oy + n.y * 0.3;
@@ -3029,6 +3121,7 @@ function frame(now) {
     !markedTarget ||
     menu.open ||
     (phase !== "aim" && projectile?.kind !== "homing");
+  targetMarker.style.display = targetMarker.hidden ? "none" : "block";
   if (!targetMarker.hidden) {
     const p = screen(markedTarget.x, markedTarget.y);
     const scale = Math.max(
@@ -3105,13 +3198,21 @@ function frame(now) {
             ? "victory"
             : panic
               ? "panic"
-              : moving && Math.floor(now / 120) % 2
-                ? "walk"
-                : active && phase === "aim"
-                  ? "aim"
-                  : Math.floor((now + w.x * 13) / 180) % 22 === 0
-                    ? "blink"
-                    : "idle";
+              : !w.ground
+                ? w.vy > 0
+                  ? "jump"
+                  : "fall"
+                : w.landing > 0
+                  ? "land"
+                  : moving
+                    ? ["walk", "walk2", "walk3", "walk2"][
+                        Math.floor(now / 110) % 4
+                      ]
+                    : active && phase === "aim"
+                      ? "aim"
+                      : Math.floor((now + w.x * 13) / 180) % 22 === 0
+                        ? "blink"
+                        : "idle";
     w.body.material.map =
       pose === "hurt"
         ? hurtMaps[w.team]
@@ -3284,6 +3385,7 @@ function setWeapon(kind) {
   weapon = kind;
   teamWeapon[team] = kind;
   $("#grenade-settings").hidden = !WEAPONS[kind].timed;
+  $("#airstrike-settings").hidden = kind !== "airstrike";
   document
     .querySelectorAll("[data-weapon]")
     .forEach((b) => b.classList.toggle("selected", b.dataset.weapon === kind));
