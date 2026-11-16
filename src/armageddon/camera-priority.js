@@ -39,3 +39,13 @@ export class NativeCameraPriority {
     return null;
   }
 }
+
+// 004E4C16..004E4C76. The lower world boundary does not affect priority.
+export function nativeProjectileCameraRequest(body, [left, right, top]) {
+  const priority = body.submerged
+    ? 10
+    : body.x < left || body.x > right || body.y < top
+      ? 8
+      : 5;
+  return [priority, body.x, body.y];
+}

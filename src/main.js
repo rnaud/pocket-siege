@@ -1,5 +1,5 @@
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
-import { NativeCameraPriority } from "./armageddon/camera-priority.js";
+import { NativeCameraPriority, nativeProjectileCameraRequest } from "./armageddon/camera-priority.js";
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
@@ -4156,16 +4156,19 @@ function step(dt) {
   updateOriginalDebris();
   updateOriginalSmoke();
   stepWaterBubbles();
-  const strikeMissiles = bombs.filter((b) => b.nativeWeaponKind === "airstrike");
-  for (const missile of strikeMissiles) {
-    const body = missile.nativeBody;
-    const priority = body.submerged
-      ? 10
-      : body.x < 0 || body.x > W * 65536 || body.y < 0 ? 8 : 5;
-    nativeCamera.offer(priority, body.x, body.y);
+  const trackedProjectiles = bombs.filter((b) => b.nativeBody);
+  if (projectile?.nativeBody) trackedProjectiles.push(projectile);
+  if (!nativeCameraFraming && trackedProjectiles.length) {
+    nativeCamera.reset();
+    nativeCameraFraming = new NativeCameraFraming(
+      Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
+    );
+  }
+  for (const tracked of trackedProjectiles) {
+    nativeCamera.offer(...nativeProjectileCameraRequest(tracked.nativeBody, [0, W * 65536, -256 * 65536]));
   }
   const bounds = nativeCamera.select(matchRandom.frame);
-  if (nativeCameraFraming && (airstrikes.length || strikeMissiles.length)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length)) {
     const aspect = arena.clientHeight > arena.clientWidth
       ? arena.clientWidth / arena.clientHeight : W / H;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];

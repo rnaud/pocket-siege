@@ -883,7 +883,9 @@ test("action camera follows the shot and snaps back for the next turn", async ({
     el.value = "45";
     el.dispatchEvent(new Event("input", { bubbles: true }));
   });
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await chargeShot(page, 1100);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).not.toBeNull();
   if (info.project.use.isMobile) {
     await expect(page.locator("#arena")).toHaveClass(/portrait-camera/);
     await expect
@@ -894,7 +896,7 @@ test("action camera follows the shot and snaps back for the next turn", async ({
       .poll(() => page.evaluate(() => window.siege.getState().camera.zoom), {
         timeout: 6000,
       })
-      .toBeGreaterThan(1.02);
+      .toBe(1);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
       timeout: 20000,
@@ -905,6 +907,7 @@ test("action camera follows the shot and snaps back for the next turn", async ({
       timeout: 3000,
     })
     .toBe(1);
+  expect(await page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
 });
 
 test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {

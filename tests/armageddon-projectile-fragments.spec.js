@@ -28,9 +28,11 @@ test("live cluster children use native secondary sprites, damage and lifecycle",
   await page.waitForTimeout(500);
   await page.locator("#fire").dispatchEvent("pointerup", { pointerId: 1 });
   await expect.poll(() => page.evaluate(() => window.siege.getState().bombs.length), { intervals: [20, 50, 100] }).toBe(5);
+  expect(await page.evaluate(() => window.siege.getState().nativeCameraFocus)).not.toBeNull();
   const children = await page.evaluate(() => window.siege.getState().bombs);
   expect(children.map(b => b.nativeRepeat)).toEqual([1,2,3,4,5]);
   expect(children.every(b => b.nativeDamage === 20 && b.sprite === "clustlet")).toBe(true);
   await expect.poll(() => page.evaluate(() => window.siege.getState().bombs.length), { timeout: 15000 }).toBe(0);
   expect(await page.evaluate(() => window.siege.getState().explosions)).toBeGreaterThan(1);
+  expect(await page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
 });
