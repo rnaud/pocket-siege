@@ -1,0 +1,789 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entry": "004FA490",
+  "initializer": "004B90A0",
+  "input_scope": "Zeroed context except 0x11d57=1 and percentage divisors 0x11c98/0x11cde=100; localized names empty. Not standard-match defaults.",
+  "vectors": [
+    {
+      "weapon_id": 0,
+      "fields": {
+        "0x68": 0,
+        "0x6c": 0,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 0
+    },
+    {
+      "weapon_id": 1,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 3,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 639
+      },
+      "animation_id": 443
+    },
+    {
+      "weapon_id": 2,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 7,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 648
+      },
+      "animation_id": 461
+    },
+    {
+      "weapon_id": 3,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 3,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 657
+      },
+      "animation_id": 443
+    },
+    {
+      "weapon_id": 4,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 7,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 628
+      },
+      "animation_id": 461
+    },
+    {
+      "weapon_id": 5,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 8,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 636
+      },
+      "animation_id": 470
+    },
+    {
+      "weapon_id": 6,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 2,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 653
+      },
+      "animation_id": 151
+    },
+    {
+      "weapon_id": 7,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 2,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 658
+      },
+      "animation_id": 182
+    },
+    {
+      "weapon_id": 8,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 2,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 662
+      },
+      "animation_id": 200
+    },
+    {
+      "weapon_id": 9,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 18,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 404
+    },
+    {
+      "weapon_id": 10,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 21,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 11,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 5,
+        "0x70": 2,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 506
+    },
+    {
+      "weapon_id": 12,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 6,
+        "0x70": 2,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 521
+    },
+    {
+      "weapon_id": 13,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 1,
+        "0x70": 2,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 494
+    },
+    {
+      "weapon_id": 14,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 4,
+        "0x70": 2,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 551
+    },
+    {
+      "weapon_id": 15,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 10,
+        "0x70": 4,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 533
+    },
+    {
+      "weapon_id": 16,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 1,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 401
+    },
+    {
+      "weapon_id": 17,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 3,
+        "0x70": 99,
+        "0x74": 100,
+        "0x98": 0
+      },
+      "animation_id": 401
+    },
+    {
+      "weapon_id": 18,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 4,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 401
+    },
+    {
+      "weapon_id": 19,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 5,
+        "0x70": 5,
+        "0x74": 30,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 20,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 9,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 305
+    },
+    {
+      "weapon_id": 21,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 665
+      },
+      "animation_id": 239
+    },
+    {
+      "weapon_id": 22,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 1,
+        "0x74": 48,
+        "0x98": 0
+      },
+      "animation_id": 257
+    },
+    {
+      "weapon_id": 23,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 626
+      },
+      "animation_id": 269
+    },
+    {
+      "weapon_id": 24,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 626
+      },
+      "animation_id": 269
+    },
+    {
+      "weapon_id": 25,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 626
+      },
+      "animation_id": 269
+    },
+    {
+      "weapon_id": 26,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 620
+      },
+      "animation_id": 293
+    },
+    {
+      "weapon_id": 27,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 0,
+        "0x70": 673,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 28,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 70,
+        "0x70": 674,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 29,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 200,
+        "0x70": 675,
+        "0x74": 5,
+        "0x98": 0
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 30,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 0,
+        "0x70": 673,
+        "0x74": 5,
+        "0x98": 50
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 31,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 0,
+        "0x70": 673,
+        "0x74": 5,
+        "0x98": 0
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 32,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 11,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 122
+    },
+    {
+      "weapon_id": 33,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 8,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 154
+    },
+    {
+      "weapon_id": 34,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 17,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 104
+    },
+    {
+      "weapon_id": 35,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 2,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 164
+    },
+    {
+      "weapon_id": 36,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 17,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 104
+    },
+    {
+      "weapon_id": 37,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 6,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 479
+    },
+    {
+      "weapon_id": 38,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 7,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 0
+    },
+    {
+      "weapon_id": 39,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 12,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 0
+    },
+    {
+      "weapon_id": 40,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 10,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 389
+    },
+    {
+      "weapon_id": 41,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 22,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 42,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 2,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 662
+      },
+      "animation_id": 200
+    },
+    {
+      "weapon_id": 43,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 2,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 654
+      },
+      "animation_id": 218
+    },
+    {
+      "weapon_id": 44,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 9,
+        "0x70": 1,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 452
+    },
+    {
+      "weapon_id": 45,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 616
+      },
+      "animation_id": 299
+    },
+    {
+      "weapon_id": 46,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 260,
+        "0x70": 0,
+        "0x74": 1,
+        "0x98": 0
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 47,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 2,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 664
+      },
+      "animation_id": 209
+    },
+    {
+      "weapon_id": 48,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 618
+      },
+      "animation_id": 287
+    },
+    {
+      "weapon_id": 49,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 668
+      },
+      "animation_id": 251
+    },
+    {
+      "weapon_id": 50,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 0,
+        "0x70": 681,
+        "0x74": 5,
+        "0x98": 0
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 51,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 0,
+        "0x70": 684,
+        "0x74": 5,
+        "0x98": 0
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 52,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 1,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 614
+      },
+      "animation_id": 263
+    },
+    {
+      "weapon_id": 53,
+      "fields": {
+        "0x68": 2,
+        "0x6c": 0,
+        "0x70": 2,
+        "0x74": 2,
+        "0x98": 617
+      },
+      "animation_id": 281
+    },
+    {
+      "weapon_id": 54,
+      "fields": {
+        "0x68": 3,
+        "0x6c": 0,
+        "0x70": 0,
+        "0x74": 1,
+        "0x98": 100
+      },
+      "animation_id": 380
+    },
+    {
+      "weapon_id": 55,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 16,
+        "0x70": 120,
+        "0x74": 2,
+        "0x98": 0
+      },
+      "animation_id": 110
+    },
+    {
+      "weapon_id": 56,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 24,
+        "0x70": 2,
+        "0x74": 0,
+        "0x98": 6
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 57,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 14,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 356
+    },
+    {
+      "weapon_id": 58,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 13,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 311
+    },
+    {
+      "weapon_id": 59,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 15,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 365
+    },
+    {
+      "weapon_id": 60,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 20,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 575
+    },
+    {
+      "weapon_id": 61,
+      "fields": {
+        "0x68": 1,
+        "0x6c": 7,
+        "0x70": 3,
+        "0x74": 2,
+        "0x98": 643
+      },
+      "animation_id": 461
+    },
+    {
+      "weapon_id": 62,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 23,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 63,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 0,
+        "0x74": 0,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 64,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 0,
+        "0x74": 1,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 65,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 0,
+        "0x74": 2,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 66,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 0,
+        "0x74": 3,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 67,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 1,
+        "0x74": 4,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 68,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 1,
+        "0x74": 5,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 69,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 1,
+        "0x74": 6,
+        "0x98": 0
+      },
+      "animation_id": 227
+    },
+    {
+      "weapon_id": 70,
+      "fields": {
+        "0x68": 4,
+        "0x6c": 19,
+        "0x70": 1,
+        "0x74": 7,
+        "0x98": 0
+      },
+      "animation_id": 227
+    }
+  ]
+}

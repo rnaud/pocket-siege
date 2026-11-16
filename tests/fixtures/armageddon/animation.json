@@ -1,0 +1,3204 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "method": "Original x86 routines executed in Unicorn; real SPR metadata and explicit queue states.",
+  "addresses": {
+    "sample": "004B0260",
+    "metadata": "004AFC10",
+    "advance": "004FD3B0"
+  },
+  "operations": [
+    {
+      "action": "enqueue",
+      "id": 1,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        1,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 2,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        2,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 3,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        3,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 4,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        4,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 5,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        5,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 6,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        6,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 7,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        7,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 8,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        8,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 9,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        9,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 10,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        10,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 11,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        11,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 12,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        12,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 13,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        13,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 14,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        14,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 15,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        15,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 16,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 17,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 18,
+      "progress": 123,
+      "metadata": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 5
+      },
+      "state": [
+        1,
+        123,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        6673,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        13223,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        19773,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        26323,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        32873,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        39423,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        45973,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        52523,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        1,
+        59073,
+        1638400,
+        0,
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        6673,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        13223,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        19773,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        26323,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        32873,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        39423,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        45973,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        52523,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        2,
+        59073,
+        1638400,
+        0,
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        3,
+        6673,
+        1638400,
+        0,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "action": "advance",
+      "state": [
+        3,
+        13223,
+        1638400,
+        0,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "action": "setProgress",
+      "progress": 555,
+      "state": [
+        3,
+        13223,
+        1638400,
+        0,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "action": "clear",
+      "state": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "action": "enqueue",
+      "id": 20,
+      "progress": 32768,
+      "metadata": {
+        "rate": 0,
+        "loop": 0,
+        "span": 32
+      },
+      "state": [
+        20,
+        32768,
+        0,
+        0,
+        32,
+        1,
+        1
+      ]
+    },
+    {
+      "action": "setProgress",
+      "progress": 65535,
+      "state": [
+        20,
+        65535,
+        0,
+        0,
+        32,
+        1,
+        1
+      ]
+    }
+  ],
+  "tick": 1310,
+  "samples": [
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 32767,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 32768,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 65534,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 65535,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 131071,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 0,
+      "progress": 2147483647,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 32767,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 32768,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 65534,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 65535,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 131071,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 1,
+      "progress": 2147483647,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 32767,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 32768,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 65534,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 65535,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 131071,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 2,
+      "progress": 2147483647,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 32767,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 32768,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 65534,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 65535,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 131071,
+      "frame": 0
+    },
+    {
+      "count": 1,
+      "flags": 3,
+      "progress": 2147483647,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 32767,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 32768,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 65536,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 65537,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 0,
+      "progress": 2147483647,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": -131073,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": -1,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 32767,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 32768,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 1,
+      "progress": 2147483647,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 32767,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 32768,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 65536,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 65537,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 2,
+      "progress": 2147483647,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": -131073,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": -1,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 32767,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 32768,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 2,
+      "flags": 3,
+      "progress": 2147483647,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 32767,
+      "frame": 9
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 32768,
+      "frame": 10
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 65534,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 65535,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 65536,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 65537,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 131071,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 0,
+      "progress": 2147483647,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": -131073,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": -1,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 2048,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 32767,
+      "frame": 9
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 32768,
+      "frame": 10
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 65534,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 65535,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 131071,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 1,
+      "progress": 2147483647,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 2048,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 32767,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 32768,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 65536,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 65537,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 2,
+      "progress": 2147483647,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": -131073,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": -1,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 2048,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 32767,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 32768,
+      "frame": 19
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 20,
+      "flags": 3,
+      "progress": 2147483647,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 2048,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 32767,
+      "frame": 15
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 32768,
+      "frame": 16
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 65534,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 65535,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 65536,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 65537,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 131071,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 0,
+      "progress": 2147483647,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": -131073,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": -1,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 2048,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 32767,
+      "frame": 15
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 32768,
+      "frame": 16
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 65534,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 65535,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 131071,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 1,
+      "progress": 2147483647,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": -131073,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": -1,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 2048,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 32767,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 32768,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 65536,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 65537,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 2,
+      "progress": 2147483647,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": -131073,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": -65536,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": -1,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 0,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 1,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 2048,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 32767,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 32768,
+      "frame": 31
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 65534,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 65535,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 65536,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 65537,
+      "frame": 0
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 131071,
+      "frame": 1
+    },
+    {
+      "count": 32,
+      "flags": 3,
+      "progress": 2147483647,
+      "frame": 1
+    }
+  ],
+  "metadata": [
+    {
+      "name": "wbrth1",
+      "rate": 1638400,
+      "flags": 3,
+      "count": 20,
+      "result": {
+        "rate": 1638400,
+        "loop": 1,
+        "span": 39
+      }
+    },
+    {
+      "name": "wblink1",
+      "rate": 1638400,
+      "flags": 3,
+      "count": 6,
+      "result": {
+        "rate": 1638400,
+        "loop": 1,
+        "span": 11
+      }
+    },
+    {
+      "name": "wwalk",
+      "rate": 0,
+      "flags": 1,
+      "count": 15,
+      "result": {
+        "rate": 0,
+        "loop": 1,
+        "span": 15
+      }
+    },
+    {
+      "name": "wjump",
+      "rate": 1638400,
+      "flags": 0,
+      "count": 10,
+      "result": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 10
+      }
+    },
+    {
+      "name": "wfall",
+      "rate": 1638400,
+      "flags": 3,
+      "count": 2,
+      "result": {
+        "rate": 1638400,
+        "loop": 1,
+        "span": 3
+      }
+    },
+    {
+      "name": "wland1",
+      "rate": 1638400,
+      "flags": 0,
+      "count": 6,
+      "result": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 6
+      }
+    },
+    {
+      "name": "wfly1",
+      "rate": 0,
+      "flags": 1,
+      "count": 32,
+      "result": {
+        "rate": 0,
+        "loop": 1,
+        "span": 32
+      }
+    },
+    {
+      "name": "wdie",
+      "rate": 2293760,
+      "flags": 0,
+      "count": 60,
+      "result": {
+        "rate": 2293760,
+        "loop": 0,
+        "span": 60
+      }
+    },
+    {
+      "name": "wwinner",
+      "rate": 2293760,
+      "flags": 1,
+      "count": 14,
+      "result": {
+        "rate": 2293760,
+        "loop": 1,
+        "span": 14
+      }
+    },
+    {
+      "name": "wbaz",
+      "rate": 0,
+      "flags": 0,
+      "count": 32,
+      "result": {
+        "rate": 0,
+        "loop": 0,
+        "span": 32
+      }
+    },
+    {
+      "name": "wthrgrn",
+      "rate": 0,
+      "flags": 0,
+      "count": 32,
+      "result": {
+        "rate": 0,
+        "loop": 0,
+        "span": 32
+      }
+    },
+    {
+      "name": "wminlnk",
+      "rate": 1638400,
+      "flags": 0,
+      "count": 10,
+      "result": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 10
+      }
+    },
+    {
+      "name": "wicelk3",
+      "rate": 2293760,
+      "flags": 0,
+      "count": 20,
+      "result": {
+        "rate": 2293760,
+        "loop": 0,
+        "span": 20
+      }
+    },
+    {
+      "name": "wicelk2",
+      "rate": 2293760,
+      "flags": 0,
+      "count": 20,
+      "result": {
+        "rate": 2293760,
+        "loop": 0,
+        "span": 20
+      }
+    },
+    {
+      "name": "wicestnd",
+      "rate": 1638400,
+      "flags": 0,
+      "count": 1,
+      "result": {
+        "rate": 1638400,
+        "loop": 0,
+        "span": 1
+      }
+    }
+  ],
+  "queues": [
+    {
+      "name": "breathing",
+      "current": [
+        35,
+        0,
+        1638400,
+        1,
+        39
+      ],
+      "queued": [],
+      "read_index": 0,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            35,
+            839,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            35,
+            1678,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            35,
+            8390,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            35,
+            16780,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            35,
+            24331,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            35,
+            25170,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            35,
+            33560,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            35,
+            50340,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            35,
+            100680,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "freeze-entry",
+      "current": [
+        572,
+        0,
+        2293760,
+        0,
+        20
+      ],
+      "queued": [
+        [
+          584,
+          0,
+          1638400,
+          0,
+          1
+        ]
+      ],
+      "read_index": 0,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            572,
+            2292,
+            2293760,
+            0,
+            20,
+            1,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            572,
+            4584,
+            2293760,
+            0,
+            20,
+            1,
+            0
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            572,
+            22920,
+            2293760,
+            0,
+            20,
+            1,
+            0
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            572,
+            45840,
+            2293760,
+            0,
+            20,
+            1,
+            0
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            584,
+            32725,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            584,
+            65475,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            584,
+            392975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            584,
+            1047975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            584,
+            3012975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "controlled-to-timed",
+      "current": [
+        443,
+        32768,
+        0,
+        0,
+        32
+      ],
+      "queued": [
+        [
+          35,
+          0,
+          1638400,
+          1,
+          39
+        ]
+      ],
+      "read_index": 15,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            35,
+            0,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            35,
+            839,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            35,
+            7551,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            35,
+            15941,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            35,
+            23492,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            35,
+            24331,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            35,
+            32721,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            35,
+            49501,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            35,
+            99841,
+            1638400,
+            1,
+            39,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "loop-boundary",
+      "current": [
+        35,
+        65000,
+        1638400,
+        1,
+        39
+      ],
+      "queued": [
+        [
+          35,
+          0,
+          1638400,
+          1,
+          39
+        ]
+      ],
+      "read_index": 14,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            35,
+            838,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            35,
+            1677,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            35,
+            8389,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            35,
+            16779,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            35,
+            24330,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            35,
+            25169,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            35,
+            33559,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            35,
+            50339,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            35,
+            100679,
+            1638400,
+            1,
+            39,
+            15,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "name": "already-finished",
+      "current": [
+        572,
+        65536,
+        2293760,
+        0,
+        20
+      ],
+      "queued": [
+        [
+          584,
+          0,
+          1638400,
+          0,
+          1
+        ]
+      ],
+      "read_index": 0,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            584,
+            32725,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            584,
+            65475,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            584,
+            327475,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            584,
+            654975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            584,
+            949725,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            584,
+            982475,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            584,
+            1309975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            584,
+            1964975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            584,
+            3929975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "three-items",
+      "current": [
+        1,
+        65000,
+        1638400,
+        0,
+        1
+      ],
+      "queued": [
+        [
+          2,
+          0,
+          1638400,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1638400,
+          0,
+          1
+        ],
+        [
+          4,
+          0,
+          1638400,
+          1,
+          3
+        ]
+      ],
+      "read_index": 15,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            2,
+            32750,
+            1638400,
+            0,
+            1,
+            2,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            2,
+            65500,
+            1638400,
+            0,
+            1,
+            2,
+            0
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            4,
+            65496,
+            1638400,
+            1,
+            3,
+            2,
+            2
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            4,
+            174656,
+            1638400,
+            1,
+            3,
+            2,
+            2
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            4,
+            272900,
+            1638400,
+            1,
+            3,
+            2,
+            2
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            4,
+            283816,
+            1638400,
+            1,
+            3,
+            2,
+            2
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            4,
+            392976,
+            1638400,
+            1,
+            3,
+            2,
+            2
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            4,
+            611296,
+            1638400,
+            1,
+            3,
+            2,
+            2
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            4,
+            1266256,
+            1638400,
+            1,
+            3,
+            2,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "name": "negative-rate",
+      "current": [
+        1,
+        100,
+        -1638400,
+        1,
+        20
+      ],
+      "queued": [
+        [
+          2,
+          0,
+          1638400,
+          0,
+          1
+        ]
+      ],
+      "read_index": 0,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            2,
+            32725,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            2,
+            65475,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            2,
+            327475,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            2,
+            654975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            2,
+            949725,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            2,
+            982475,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            2,
+            1309975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            2,
+            1964975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            2,
+            3929975,
+            1638400,
+            0,
+            1,
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "current": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "queued": [],
+      "read_index": 0,
+      "snapshots": [
+        {
+          "tick": 1,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 10,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 20,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 29,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 30,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 40,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 60,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "tick": 120,
+          "state": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

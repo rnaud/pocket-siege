@@ -70,6 +70,19 @@ for index in range(71):
                     'alternate_name':record[37:70].split(b'\0')[0].decode('ascii'),
                     'fields':{hex(offset):struct.unpack_from('<i',record,offset)[0]
                               for offset in range(0x48,0x208,4)}})
+# The original selector consumes weapon type/action/sprite fields, not localized names.
+weapon_art = []
+for record in records:
+    pointer = context + 0x125bc + record['index'] * 0x208
+    cpu.mem_write(owner + 0x354,struct.pack('<I',pointer))
+    cpu.mem_write(stack + 0xff00,struct.pack('<2I',stop,pointer))
+    cpu.reg_write(UC_X86_REG_ECX,owner)
+    cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+    cpu.emu_start(0x4fa490,stop,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=stop: raise RuntimeError('Weapon animation selector instruction limit')
+    weapon_art.append({'weapon_id':record['index'],
+      'fields':{key:record['fields'][key] for key in ['0x68','0x6c','0x70','0x74','0x98']},
+      'animation_id':cpu.reg_read(UC_X86_REG_EAX)})
 inventory = []
 def invoke(address, arguments):
     cpu.mem_write(stack+0xff00,struct.pack('<I',stop)+b''.join(struct.pack('<i',v) for v in arguments))
@@ -136,5 +149,5 @@ args.output.parent.mkdir(parents=True,exist_ok=True)
 args.output.write_text(json.dumps({'executable_sha256':digest,
     'entry':'004B90A0','method':'Original x86 instructions executed with Unicorn',
     'inputs':'Zeroed context except 0x11d57=1 and percentage divisors 0x11c98/0x11cde=100; localized names empty. Not standard-match defaults.',
-    'records':records,'inventory_vectors':inventory,'delay_vectors':delay_vectors},indent=2)+'\n')
+    'records':records,'weapon_art':weapon_art,'inventory_vectors':inventory,'delay_vectors':delay_vectors},indent=2)+'\n')
 print(f'Captured {len(records)} weapon records, {len(inventory)} inventory vectors and {len(delay_vectors)} delay vectors')

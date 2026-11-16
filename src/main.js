@@ -3315,7 +3315,7 @@ function frame(now) {
       1,
     );
     w.rig.pivot.visible =
-      !original?.aimed &&
+      !original?.equipped &&
       active &&
       w.hp > 0 &&
       w.hurt < 0.75 &&

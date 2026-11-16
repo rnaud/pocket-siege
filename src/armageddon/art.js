@@ -1,3 +1,11 @@
+import {
+  NativeAnimationPlayer,
+  animationMetadata,
+  nativeSpriteFrame,
+} from "./animation.js";
+import { nativeWeaponAnimation } from "./weapon-animation.js";
+import weaponFields from "./weapon-art-fields.json";
+import { WEAPON_SLOTS } from "./delays.js";
 import { nativeFreezeAnimation } from "./freeze.js";
 import spriteIds from "./sprite-ids.json";
 import * as THREE from "three";
@@ -8,24 +16,35 @@ const spriteIdByName = new Map(
 );
 const freezeEntry = spriteIds.sprites[0x23c].name;
 const freezeIdle = spriteIds.sprites[0x248].name;
+const weaponSprites = Object.fromEntries(
+  Object.entries(WEAPON_SLOTS).map(([kind, id]) => [
+    kind,
+    nativeWeaponAnimation(weaponFields[id]),
+  ]),
+);
 const names = [
-  freezeEntry,
-  spriteIds.sprites[0x242].name,
-  freezeIdle,
-  "wbrth1",
-  "wblink1",
-  "wwalk",
-  "wjump",
-  "wfall",
-  "wland1",
-  "wfly1",
-  "wwinner",
-  "wdie",
-  "wbaz",
-  "wshotg",
-  "wshotf",
-  "wparacht",
-  "wjetfly1",
+  ...new Set([
+    ...Object.values(weaponSprites)
+      .filter(Boolean)
+      .map((id) => spriteIds.sprites[id].name),
+    freezeEntry,
+    spriteIds.sprites[0x242].name,
+    freezeIdle,
+    "wbrth1",
+    "wblink1",
+    "wwalk",
+    "wjump",
+    "wfall",
+    "wland1",
+    "wfly1",
+    "wwinner",
+    "wdie",
+    "wbaz",
+    "wshotg",
+    "wshotf",
+    "wparacht",
+    "wjetfly1",
+  ]),
 ];
 const animations = new Map();
 export async function loadOriginalArt() {
@@ -35,8 +54,10 @@ export async function loadOriginalArt() {
         `${import.meta.env.BASE_URL}armageddon/sprites/${name}.spr`,
       );
       if (!response.ok) throw new Error(`Cannot load ${name}`);
+      const sprite = decodeSprite(await response.arrayBuffer());
       animations.set(name, {
-        sprite: decodeSprite(await response.arrayBuffer()),
+        sprite,
+        metadata: animationMetadata(sprite),
         textures: [],
       });
     }),
@@ -84,47 +105,63 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       recoil: "wbrth1",
       aim: "wbrth1",
     }[pose] || "wwalk";
-  let aimed = false;
-  if (
-    active &&
-    pose === "aim" &&
-    ["rocket", "homing", "mortar", "shotgun"].includes(weapon)
-  ) {
-    name = weapon === "shotgun" ? "wshotg" : "wbaz";
-    aimed = true;
+  let equipped = false;
+  if (active && pose === "aim" && weaponSprites[weapon]) {
+    name = spriteIds.sprites[weaponSprites[weapon]].name;
+    equipped = true;
   }
-  if (worm.frozen > 0 && worm.hp > 0) {
-    aimed = false;
-    // 004F5C80 queues 0x23C then 0x248 for entry from an ordinary state.
-    // Exact task rates remain unported; keep the existing 25 fps adapter.
-    if (worm.originalFreezeStart == null) {
-      worm.originalFreezeStart = frame;
-      const queue = nativeFreezeAnimation(
-        spriteIdByName.get(worm.originalAnimation),
-      );
-      worm.originalFreezeEntry = spriteIds.sprites[queue.sprites[0]].name;
-    }
-    const entry = worm.originalFreezeEntry;
-    const entryFrames = animations.get(entry)?.sprite.frames.length ?? 0;
-    name =
-      frame - worm.originalFreezeStart < entryFrames * 2 ? entry : freezeIdle;
-  } else worm.originalFreezeStart = null;
   if (worm.hp <= 0) name = "wdie";
-  if (worm.originalAnimation !== name) {
-    worm.originalAnimation = name;
+  const frozen = worm.frozen > 0 && worm.hp > 0;
+  const key = frozen ? "frozen" : name;
+  let player = worm.originalPlayer;
+  if (!player) player = worm.originalPlayer = new NativeAnimationPlayer();
+  if (worm.originalAnimationKey !== key) {
+    const previousId = player.current.id;
+    player.clear();
+    const ids = frozen
+      ? nativeFreezeAnimation(previousId).sprites
+      : [spriteIdByName.get(name)];
+    if (ids.some((id) => !animations.has(spriteIds.sprites[id]?.name)))
+      return null;
+    for (const id of ids)
+      player.enqueue(id, animations.get(spriteIds.sprites[id].name).metadata);
+    worm.originalAnimationKey = key;
     worm.originalAnimationStart = frame;
+    worm.originalPlayerFrame = frame;
   }
+  while (worm.originalPlayerFrame < frame) {
+    player.advance();
+    worm.originalPlayerFrame++;
+  }
+  name = spriteIds.sprites[player.current.id]?.name;
   const animation = animations.get(name);
   if (!animation) return null;
-  const count = animation.sprite.frames.length;
-  const age = Math.max(0, frame - worm.originalAnimationStart);
-  const pitch = Math.asin(Math.sin((angle * Math.PI) / 180));
-  // Aim strips contain 32 orientations. Other strips run at 25 fps initially;
-  // task-specific rates/transitions remain tracked in the port manifest.
-  const index = aimed
-    ? Math.round((pitch / Math.PI + 0.5) * (count - 1))
-    : ["wdie", "wjump", "wland1"].includes(name)
-      ? Math.min(count - 1, Math.floor(age / 2))
-      : Math.floor(age / 2) % count;
-  return { map: texture(name, index), name, index, aimed };
+  const { sprite } = animation;
+  const count = sprite.frames.length;
+  const aimed = equipped && !player.current.rate && !frozen;
+  if (aimed) {
+    const pitch = Math.asin(Math.sin((angle * Math.PI) / 180));
+    player.setProgress(Math.round((pitch / Math.PI + 0.5) * 0xffff));
+  } else if (!player.current.rate) {
+    // Motion-driven strips need the original locomotion/velocity driver.
+    // Keep the existing browser motion cadence until that physics is ported.
+    player.setProgress(
+      Math.floor(
+        ((frame - worm.originalAnimationStart) * 0x10000) / (count * 2),
+      ),
+    );
+  }
+  const index = nativeSpriteFrame(
+    count,
+    sprite.metadata[2],
+    player.current.progress,
+  );
+  worm.originalAnimation = name;
+  return {
+    map: texture(name, index),
+    name,
+    index,
+    aimed,
+    equipped: equipped && !frozen,
+  };
 }
