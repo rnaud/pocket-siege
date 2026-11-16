@@ -28,3 +28,29 @@ export function nativeFirePunchRequest(record, x, y, facing) {
     8, 0x65, 0x2a5, 0x20c4c, 1,
   ];
 }
+
+// 004F7290. Body getters are sampled after the physics update; motionActive
+// is the native +0xf4 getter. Random draws must use the match logic stream.
+export function nativeFirePunchTick(body, record, random) {
+  const { x, y, vy, sprite, motionActive, facing } = body;
+  const calls = [{ operation: "camera" }];
+  if (vy >= 0 && sprite !== 0x1b1) {
+    calls.push({ operation: "clear" }, { operation: "queue", sprite: 0x1b1 });
+  }
+  if (!motionActive) calls.push({ operation: "state", value: 0x6a });
+  else if (vy < 0) {
+    const particleVy = (random() & 0xffff) - 0x8000;
+    const particleVx = (random() & 0xffff) - 0x8000;
+    const particleY = (y + (random() & 0xffff) * 4 - 0x20000) | 0;
+    const particleX = (x + (random() & 0xffff) * 4 - 0x20000) | 0;
+    calls.push({ operation: "particle", request: [
+      0xe0000, particleX, particleY, 0, particleVx, particleVy,
+      0, 0, 0x2a6, 0, 0x10000, 0x51e,
+    ] });
+    calls.push({ operation: "area", request: nativeFirePunchRequest(record, x, y, facing) });
+  }
+  if (vy < 0) calls.push({
+    operation: "terrain", request: [3, x >> 16, (((y + vy) | 0) >> 16) - 2],
+  });
+  return calls;
+}
