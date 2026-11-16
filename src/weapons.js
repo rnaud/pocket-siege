@@ -180,6 +180,10 @@ export const WEAPONS = {
     ammo: 3,
     special: "melee",
   },
+  dragonball: {
+    label: "Dragon Ball", icon: "🔥", radius: 4, damage: 30,
+    wind: false, speed: 300, timed: false, bounces: false, ammo: 3, special: "dragonball",
+  },
   firepunch: {
     label: "Fire punch", icon: "✊", radius: 16, damage: 30,
     wind: false, speed: 0, timed: false, bounces: false, ammo: 3, special: "firepunch",
@@ -263,6 +267,7 @@ export const WEAPONS = {
 
 export const SPECIAL_WEAPONS = [
   "firepunch",
+  "dragonball",
   "axe",
   "prod",
   "uzi", "minigun",
@@ -294,6 +299,7 @@ export const PROJECTILE_ORDER = [
 export const freshAmmo = () => ({
   axe: WEAPONS.axe.ammo,
   firepunch: WEAPONS.firepunch.ammo,
+  dragonball: WEAPONS.dragonball.ammo,
   prod: WEAPONS.prod.ammo,
   uzi: WEAPONS.uzi.ammo,
   minigun: WEAPONS.minigun.ammo,

@@ -144,8 +144,8 @@
     {
       "slot": 17,
       "native_name": "DragonBall",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "dragonball",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 3
     },

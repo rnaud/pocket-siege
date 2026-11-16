@@ -18,6 +18,7 @@ export const HUD_ICONS = Object.freeze({
   banana: "banana",
   axe: "axe",
   firepunch: "firepnch",
+  dragonball: "dragball",
   airstrike: "airstrke",
   postal: "postal",
   napalm: "petrolbm",

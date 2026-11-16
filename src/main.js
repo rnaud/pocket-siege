@@ -1,3 +1,4 @@
+import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
@@ -1325,7 +1326,7 @@ function updateUI() {
     weapon === "mine" ||
     weapon === "dynamite" ||
     WEAPONS[weapon]?.special === "airstrike" ||
-    ["prod", "axe", "firepunch"].includes(weapon);
+    ["prod", "axe", "firepunch", "dragonball"].includes(weapon);
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = availableAmmo(loadout, button.dataset.weapon);
     const delay = weaponDelay(weaponDelays[team], button.dataset.weapon);
@@ -2151,6 +2152,7 @@ function updateSliders() {
     prod: "PROD",
     axe: "SWING AXE",
     firepunch: "FIRE PUNCH",
+    dragonball: "DRAGON BALL",
     homing: homingTarget ? null : "SET TARGET",
     pigeon: homingTarget ? null : "SET TARGET",
     magic: homingTarget ? null : "SET TARGET",
@@ -2204,6 +2206,7 @@ function startCharge(source) {
     fireBulletWeapon(false, weapon);
     return;
   }
+  if (weapon === "dragonball") { fireDragonBall(); return; }
   if (weapon === "firepunch") { firePunch(); return; }
   if (weapon === "axe") { fireAxe(); return; }
   if (weapon === "prod") { fireProd(); return; }
@@ -2526,7 +2529,10 @@ function placeDynamite() {
   finishAction("Dynamite dropped. Five-second fuse — retreat!");
 }
 function applyNativeAreaRequest(targets, request) {
-    for (const dispatch of nativeAreaDamage(targets, request)) {
+  applyNativeHitPackets(targets, nativeAreaDamage(targets, request));
+}
+function applyNativeHitPackets(targets, dispatches) {
+    for (const dispatch of dispatches) {
       if (dispatch.sound?.[0] === 0x61) sfx("batimpact");
       if (dispatch.sound?.[0] === 0x21) sfx("axeimpact");
       if (dispatch.sound?.[0] === 0x65) sfx("firepunchimpact");
@@ -2601,8 +2607,8 @@ function beginWeaponPreparation(worm, kind, aim) {
   if (sound && worm.originalPreparation.sounds.length) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    // Current supported preparation entries emit only speech slot10 (Fire
-    // Punch). Tick-time shotgun reload remains a separate sound-effect event.
+    // Fire Punch/Dragon Ball emit speech slots10/15. Tick-time shotgun
+    // reload remains a separate sound-effect event.
     for (const slot of worm.originalPreparation.sounds)
       playNativeSpeech(audio, slot);
   }
@@ -2763,6 +2769,65 @@ function dispatchFirePunchCalls(w, calls) {
     }
   }
 }
+function fireDragonBall(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "dragonball") <= 0) return;
+  const w = worms[current];
+  if (!prepared && beginWeaponPreparation(w, "dragonball", angle)) {
+    pendingFire = {worm:w, angle, kind:"dragonball", stage:"prepare"};
+    wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
+    updateUI(); return;
+  }
+  const config = nativeHitscanWeapon("dragonball");
+  const launch = nativeBulletLaunch(config, w, w.facing < 0 ? 180 : 0, H, () => matchRandom.logicUint());
+  const body = nativeDragonBallBody(config.record,
+    [team + 1, current, launch.x, launch.y, launch.vx, launch.vy, 0, 0, 0, 30, 0]);
+  spendSpecial("dragonball"); shotCount++;
+  startOriginalRecoil(w, "dragonball", angle, matchRandom.frame);
+  projectile = {kind:"dragonball", owner:current, age:0, x:body.x/65536, y:H-body.y/65536,
+    vx:body.direction/65536*300, vy:0, nativeDragonBall:body,
+    mesh:createOriginalVisual(nativeSpriteIds.sprites[body.sprite].name)};
+  projectile.mesh.scale.x = body.direction < 0 ? -1 : 1;
+  projectile.mesh.position.set(projectile.x, projectile.y, 40);
+  group.add(projectile.mesh);
+  lastShot = {kind:"dragonball", shooter:w.name, points:[{x:projectile.x,y:projectile.y}], impact:null};
+  phase = "flight"; retreat = retreatSeconds; shotWait = 0;
+  move = aimInput = 0; charging = false; chargeSource = null;
+  sfx("dragonball");
+  $("#status").textContent = "Dragon Ball away. Retreat!";
+  updateUI();
+}
+function stepDragonBall() {
+  const p = projectile;
+  const targets = [...nativeWormHitscanBodies(worms, worms[p.owner], H), ...nativeMineHitBodies(mines)]
+    .sort((a,b) => a.type - b.type);
+  const result = nativeDragonBallEvent(p.nativeDragonBall, 0x3ea,
+    {left:0,right:W*65536}, {
+      solid:(x,y)=>terrain.solid(x,H-y),
+      hit:body=>{
+        const hit = nativeDragonBallHit(body, targets);
+        for (const call of hit.calls) {
+          if (call.operation === "damage") applyNativeHitPackets(targets,[{body:call.receiver,packet:call.request}]);
+          if (call.operation === "sound") sfx("dragonballimpact");
+        }
+        return hit.hit;
+      },
+    });
+  p.nativeDragonBall = result.body; p.age += LOGIC_STEP_SECONDS;
+  p.x = result.body.x/65536; p.y = H-result.body.y/65536;
+  p.mesh.position.set(Math.round(p.x),Math.round(p.y),40);
+  updateOriginalProjectile(p.mesh,p.kind,p.vx,0,p.age,false,false,
+    {sprite:result.body.sprite,progress:result.body.progress});
+  if (lastShot) lastShot.points.push({x:p.x,y:p.y});
+  for (const call of result.calls) {
+    if (call.operation === "particle") spawnNativeParticleRequest(call.request);
+    if (call.operation === "camera") pendingWormCamera.push(call.request);
+    if (call.operation === "delete") {
+      if (lastShot) lastShot.impact = {x:p.x,y:p.y,kind:p.kind};
+      releaseProjectileMesh(p.mesh); projectile = null;
+      phase = "settle"; shotWait = 0; updateUI();
+    }
+  }
+}
 function firePunch(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team], "firepunch") <= 0) return;
   const w = worms[current];
@@ -2876,6 +2941,7 @@ function fire() {
     fireBulletWeapon(false, kind);
     return;
   }
+  if (kind === "dragonball") { fireDragonBall(); return; }
   if (kind === "firepunch") { firePunch(); return; }
   if (kind === "axe") { fireAxe(); return; }
   if (kind === "prod") { fireProd(); return; }
@@ -4278,7 +4344,8 @@ function step(dt) {
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;
-        if (pending.kind === "firepunch") firePunch(true);
+        if (pending.kind === "dragonball") fireDragonBall(true);
+        else if (pending.kind === "firepunch") firePunch(true);
         else if (pending.kind === "axe") fireAxe(true);
         else if (pending.kind === "prod") fireProd(true);
         else if (pending.kind === "bat") fireBat(true);
@@ -4287,7 +4354,8 @@ function step(dt) {
     }
   }
   if (phase === "aim") updateUI();
-  if (projectile) {
+  if (projectile?.nativeDragonBall) stepDragonBall();
+  else if (projectile) {
     const p = projectile;
     if (sound && p.nativeTimer?.loopSound && !p.nativeFusePlayback) {
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -4504,7 +4572,7 @@ function step(dt) {
   stepWaterBubbles();
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
-  const teleportTracking = worms.some((w) => w.originalTeleport);
+  const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
   if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || teleportTracking || pendingWormCamera.length)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(

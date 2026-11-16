@@ -66,7 +66,7 @@ const names = [
     "shotcase",
     "uzicase",
     "shothit",
-    "basehit", "firehit", "kamismk", "wpncup", "wpnctop", "wpncbak", "wpnclnk",
+    "basehit", "firehit", "kamismk", "wpncup", "wpnctop", "wpncbak", "wpnclnk", "wfirbl1", "wfirbl2", "fireball",
     "wormhit1",
     "wormhit2",
     "uzihit",
@@ -575,7 +575,7 @@ export function stepOriginalAxe(worm, percent, height) {
 }
 
 export function startOriginalPreparation(worm, weapon, angle) {
-  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch"].includes(weapon)) return false;
+  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch", "dragonball"].includes(weapon)) return false;
   const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
   const record = weaponFields[WEAPON_SLOTS[weapon]];
   const state = nativePreparation(
