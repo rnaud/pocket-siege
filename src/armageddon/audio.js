@@ -14,6 +14,7 @@ const sounds = {
   batimpact: "baseballbatimpact",
   axeimpact: "vikingaxeimpact",
   firepunchimpact: "firepunchimpact",
+  drillimpact: "drillimpact",
   dragonball: "dragonballrelease",
   dragonballimpact: "dragonballimpact",
   axerelease: "vikingaxerelease",
@@ -67,8 +68,12 @@ function loadOriginalClip(context, name) {
 function playOriginalClip(context, name, fallback, level, loop = false) {
   const requested = performance.now();
   let cancelled = false,
-    activeSource = null;
+    activeSource = null, activeGain = null;
   const playback = {
+    setVolume(value) {
+      level = value;
+      if (activeGain) activeGain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
+    },
     stop() {
       cancelled = true;
       if (activeSource) {
@@ -83,6 +88,7 @@ function playOriginalClip(context, name, fallback, level, loop = false) {
       const source = context.createBufferSource(),
         gain = context.createGain();
       activeSource = source;
+      activeGain = gain;
       source.buffer = buffer;
       source.loop = loop;
       gain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
@@ -198,4 +204,10 @@ export function playNativeMineSound(context, request) {
   const name = {88:"minearm",89:"minetick",90:"minedud"}[request[0]];
   if (!name) return null;
   return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[3] / 65536);
+}
+
+// Descriptor0055F308 maps native84 to Drill.wav (85 at0055F310 is impact).
+// The host applies tick-requested volume changes.
+export function playNativeDrillLoop(context) {
+  return playOriginalClip(context, "sounds/drill.wav", () => {}, 1, true);
 }

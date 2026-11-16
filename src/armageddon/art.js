@@ -155,7 +155,7 @@ const names = [
     "wbaz",
     "wshotg",
     "wprod",
-    "waxelk2", "waxeswn", "waxebak",
+    "waxelk2", "waxeswn", "waxebak", "wdrill",
     "wshotf",
     "wshotp",
     "wparacht",
@@ -537,6 +537,14 @@ export function stepOriginalLanding(worm) {
     worm.originalLanding = null;
 }
 
+export function startOriginalDrill(worm) {
+  const player = new NativeAnimationPlayer();
+  player.enqueue(157, animations.get("wdrill").metadata);
+  worm.originalDrill = { player };
+  worm.originalRecoil = worm.originalPreparation = worm.originalJump = worm.originalLanding = null;
+  worm.originalAnimationKey = null;
+}
+
 export function startOriginalFirePunch(worm) {
   const player = new NativeAnimationPlayer();
   player.enqueue(432, animations.get("wpncup").metadata);
@@ -575,7 +583,7 @@ export function stepOriginalAxe(worm, percent, height) {
 }
 
 export function startOriginalPreparation(worm, weapon, angle) {
-  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch", "dragonball"].includes(weapon)) return false;
+  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch", "dragonball", "drill"].includes(weapon)) return false;
   const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
   const record = weaponFields[WEAPON_SLOTS[weapon]];
   const state = nativePreparation(
@@ -1015,7 +1023,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     !(worm.hurt > 0.35) &&
     !worm.ground &&
     !worm.originalPreparation &&
-    !worm.originalRecoil && !worm.originalAxe && !worm.originalFirePunch
+    !worm.originalRecoil && !worm.originalAxe && !worm.originalFirePunch && !worm.originalDrill
   ) {
     const name = spriteIds.sprites[jumping.current.id].name;
     const sprite = animations.get(name).sprite;
@@ -1134,7 +1142,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     worm.ground &&
     !worm.moving &&
     !worm.originalPreparation &&
-    !worm.originalRecoil && !worm.originalAxe && !worm.originalFirePunch
+    !worm.originalRecoil && !worm.originalAxe && !worm.originalFirePunch && !worm.originalDrill
   ) {
     const name = spriteIds.sprites[landing.current.id].name;
     const sprite = animations.get(name).sprite;
@@ -1152,8 +1160,8 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     };
   }
 
-  if (worm.originalPreparation || worm.originalAxe || worm.originalFirePunch) {
-    const player = worm.originalFirePunch?.player ?? worm.originalAxe?.player ?? worm.originalPlayer;
+  if (worm.originalPreparation || worm.originalAxe || worm.originalFirePunch || worm.originalDrill) {
+    const player = worm.originalDrill?.player ?? worm.originalFirePunch?.player ?? worm.originalAxe?.player ?? worm.originalPlayer;
     const name = spriteIds.sprites[player.current.id].name;
     const sprite = animations.get(name).sprite;
     const index = nativeSpriteFrame(

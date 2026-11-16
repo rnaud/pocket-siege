@@ -2745,3 +2745,9 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #weapon-tray .weapons .slot-key { left: 3px; bottom: 2px; border: 0; background: none; width: auto; height: 10px; line-height: 10px; }
 
 #weapon-tray .weapons button { display: block; position: relative; }
+
+@media(min-width: 851px) {
+  #menu#menu form { height: 100dvh; min-height: 0; }
+  #menu#menu .frontend-panels { min-height: 0; overflow: auto; padding: 3px 4px 4px 0; }
+  #menu#menu .frontend-footer { flex: none; }
+}

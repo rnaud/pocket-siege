@@ -1,3 +1,6 @@
+import { nativeDrillEntry, nativeDrillTick } from "./armageddon/drill.js";
+import { startOriginalDrill } from "./armageddon/art.js";
+import { playNativeDrillLoop } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
@@ -739,6 +742,7 @@ function stopProjectileSound(p = projectile) {
 }
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   cancelCharge();
+  stopDrill();
   uiKey = "";
   timerKey = "";
   selectionTick = 0;
@@ -2208,6 +2212,7 @@ function startCharge(source) {
     return;
   }
   if (weapon === "dragonball") { fireDragonBall(); return; }
+  if (weapon === "drill") { fireDrill(); return; }
   if (weapon === "firepunch") { firePunch(); return; }
   if (weapon === "axe") { fireAxe(); return; }
   if (weapon === "prod") { fireProd(); return; }
@@ -2536,6 +2541,7 @@ function applyNativeHitPackets(targets, dispatches) {
     for (const dispatch of dispatches) {
       if (dispatch.sound?.[0] === 0x61) sfx("batimpact");
       if (dispatch.sound?.[0] === 0x21) sfx("axeimpact");
+      if (dispatch.sound?.[0] === 0x55) sfx("drillimpact");
       if (dispatch.sound?.[0] === 0x65) sfx("firepunchimpact");
       if (dispatch.effect) spawnNativeParticleRequest(dispatch.effect);
       if (!dispatch.packet) continue;
@@ -2829,6 +2835,52 @@ function stepDragonBall() {
     }
   }
 }
+function stopDrill(pending = pendingFire) {
+  if (pending?.kind !== "drill") return;
+  pending.playback?.stop();
+  pending.worm.originalDrill = null;
+}
+function fireDrill(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "drill") <= 0) return;
+  const w = worms[current];
+  if (!prepared && beginWeaponPreparation(w, "drill", angle)) {
+    pendingFire = { worm:w, angle, kind:"drill", stage:"prepare" };
+    wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
+    updateUI(); return;
+  }
+  spendSpecial("drill"); shotCount++;
+  const entry = nativeDrillEntry({ loopHandle:0 }, nativeHitscanWeapon("drill").record, w.nativeDrillCounter ?? 0);
+  w.nativeDrillCounter = entry.counter;
+  startOriginalDrill(w);
+  pendingFire = { worm:w, angle, kind:"drill", stage:"drill", spent:true, body:entry.body };
+  updateUI();
+}
+function stepDrill(pending) {
+  const w = pending.worm;
+  const result = nativeDrillTick({ ...pending.body,
+    x:Math.round(w.x*65536), y:Math.round((H-w.y)*65536), facing:w.facing,
+  }, nativeHitscanWeapon("drill").record, () => matchRandom.logicUint(), {
+    startLoop: () => {
+      if (!sound) return 0;
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      pending.playback = playNativeDrillLoop(audio);
+      return 1;
+    },
+    overlap: (x,y) => bodyBlocked(terrain,x/65536,H-y/65536),
+  });
+  pending.body = result.body;
+  w.originalDrill.player.advance();
+  dispatchFirePunchCalls(w, result.calls);
+  for (const call of result.calls) {
+    if (call.operation === "volume") pending.playback?.setVolume(sound ? call.request[1]/65536 : 0);
+    if (call.operation === "state") {
+      stopDrill(pending); pendingFire = null;
+      finishAction("Drilling complete. Retreat!");
+    }
+  }
+}
+
 function firePunch(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team], "firepunch") <= 0) return;
   const w = worms[current];
@@ -2943,6 +2995,7 @@ function fire() {
     return;
   }
   if (kind === "dragonball") { fireDragonBall(); return; }
+  if (kind === "drill") { fireDrill(); return; }
   if (kind === "firepunch") { firePunch(); return; }
   if (kind === "axe") { fireAxe(); return; }
   if (kind === "prod") { fireProd(); return; }
@@ -4303,9 +4356,12 @@ function step(dt) {
       w.originalPreparation = null;
       w.originalAxe = null;
       if (w.originalFirePunch) { w.originalFirePunch = null; w.nativeFlight = null; }
+      stopDrill(pending);
       stopBurstSound(pending.burst);
       pendingFire = null;
       if ((pending.burst?.spent || pending.spent) && phase === "aim") finishAction("Firing interrupted. Retreat!");
+    } else if (pending.stage === "drill") {
+      stepDrill(pending);
     } else if (pending.stage === "firepunch") {
       // Native body/state tick runs in the worm loop above.
     } else if (pending.stage === "firepunch-recoil") {
@@ -4345,7 +4401,8 @@ function step(dt) {
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;
-        if (pending.kind === "dragonball") fireDragonBall(true);
+        if (pending.kind === "drill") fireDrill(true);
+        else if (pending.kind === "dragonball") fireDragonBall(true);
         else if (pending.kind === "firepunch") firePunch(true);
         else if (pending.kind === "axe") fireAxe(true);
         else if (pending.kind === "prod") fireProd(true);
