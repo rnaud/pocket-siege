@@ -1813,3 +1813,45 @@ body:has(#airstrike-settings:not([hidden])) #turn-banner {
   width: 100%;
   min-width: 0;
 }
+
+/* Original HUD IMG pixels remain 1:1, including on compact touch layouts. */
+.controls canvas.original-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  max-width: none;
+  flex: none;
+  margin: 0;
+  image-rendering: pixelated;
+}
+.utilities-grid canvas.original-icon,
+.special-grid canvas.original-icon {
+  display: block;
+  margin: 0 auto 2px;
+}
+.controls button:has(> canvas.original-icon) {
+  background: #000;
+}
+.utilities-grid button:has(> canvas.original-icon),
+.special-grid button:has(> canvas.original-icon) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  height: auto;
+  padding: 4px;
+}
+.utilities-grid button:has(> canvas.original-icon) small,
+.special-grid button:has(> canvas.original-icon) small {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+}
+
+body:has(#utilities:not([hidden])) #announcement,
+body:has(.controls.inventory-open) #announcement {
+  visibility: hidden;
+}

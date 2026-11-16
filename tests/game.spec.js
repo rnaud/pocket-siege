@@ -1,5 +1,20 @@
 import { test, expect } from "@playwright/test";
 import { Terrain } from "../src/physics.js";
+// Gameplay assertions need reproducible terrain: random original decorations
+// can obstruct a replay shot or put a jump above a lethal drop.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = crypto.getRandomValues.bind(crypto);
+    crypto.getRandomValues = (array) => {
+      if (array instanceof Uint32Array && array.length === 1) {
+        array[0] = 42;
+        return array;
+      }
+      return original(array);
+    };
+  });
+});
+
 async function openArsenal(page) {
   if (!(await page.locator(".weapon-panel").isVisible()))
     await page.locator("#inventory-toggle").click();

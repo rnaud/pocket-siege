@@ -1,4 +1,8 @@
 import {
+  loadOriginalHUDIcons,
+  updateOriginalHUDIcons,
+} from "./armageddon/hud-icons.js";
+import {
   addNativeParticle,
   stepNativeParticles,
 } from "./armageddon/particles.js";
@@ -330,6 +334,7 @@ const originalAssets = Promise.all([
   loadOriginalArt(),
   loadOriginalTerrain(),
   loadOriginalWater(),
+  loadOriginalHUDIcons(),
 ]);
 originalAssets
   .then(() =>
@@ -340,6 +345,7 @@ originalAssets
   )
   .then(() => {
     assetsReady = true;
+    updateOriginalHUDIcons();
     terrainDirty = true;
   })
   .catch((error) => {
@@ -1190,6 +1196,7 @@ function updateUI() {
       (activeUtility !== null && activeUtility !== kind);
     button.classList.toggle("selected", activeUtility === kind);
   });
+  updateOriginalHUDIcons();
   const utilityToggle = $("#utilities-toggle");
   if (utilityToggle) {
     utilityToggle.hidden = !canAct();
