@@ -98,3 +98,13 @@ Worms use compact heads and distinct whole-body walk, jump, fall, landing, aimin
 Hits trigger an illustrated hurt face, brief color flash, radial knockback with a little lift, dust trails, directional damage numbers, a short hit-stop, a slow-motion beat on a KO, and health-bar loss. Airborne worms retain horizontal momentum and collide with walls, ceilings and ground. Hard falls cause damage. Turns wait for bodies and death explosions to settle. Firing has recoil, a muzzle flash and a trail behind the actual projectile; grenades show their remaining fuse. The active worm’s label is highlighted with a pointer, labels stay below the HUD strip and shift away from the aim reticle, and help or a hidden tab pauses simulation.
 
 See [the gameplay audit](GAMEPLAY-AUDIT.md) for corrected behavior and validation, and [the Worms mechanics research](MECHANICS-RESEARCH.md) for a sourced gap analysis and prioritized roadmap.
+
+### Targeted checks before committing
+
+`npm install` installs the repository's pre-commit hook (CI is excluded). For an existing checkout, run `npm run hooks:install` once. Existing custom hooks are preserved.
+
+The hook checks staged runtime/test changes using Playwright's `--only-changed` dependency selection. Browser-facing changes also run a small desktop smoke set covering setup, loading, weapon selection, icons, and firing; runtime changes build for production. Native-kernel-only edits run their related checks without the UI smoke set. No iPhone project is used. The full suite stays in CI.
+
+Use `npm run test:related -- --plan` to inspect the commands, or `npm run test:related` to run them. Docs-only commits skip checks. Stage code before running: the hook rejects unstaged runtime/test files so it cannot validate worktree changes that are absent from the commit. It never stashes or resets your work. Local smoke tests use port 5188 and installed Chrome on macOS, or Playwright Chromium elsewhere.
+
+Import selection cannot prove complete behavioral coverage, especially for browser-loaded code. Keep the smoke mapping in `scripts/test-related.mjs` aligned with affected user flows.

@@ -272,8 +272,8 @@
     {
       "slot": 33,
       "native_name": "PneumaticDrill",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "drill",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 8
     },

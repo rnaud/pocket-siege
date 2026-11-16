@@ -1318,20 +1318,20 @@ function updateUI() {
     w.label.classList.toggle("active", i === current && phase !== "over");
     w.label.classList.toggle("frozen", w.frozen > 0);
   }
-  $("#fire").disabled =
+  $("#fire").disabled = !canStopDrill() && (
     (!shotgunRemaining && availableAmmo(loadout, weapon) <= 0) ||
     !canAct() ||
     worms[current]?.knocked ||
     Boolean(targetUtility) ||
     rope.attached ||
-    jetpack.active;
+    jetpack.active);
   $("#angle").disabled =
     !canAct() ||
     charging ||
     weapon === "mine" ||
     weapon === "dynamite" ||
     WEAPONS[weapon]?.special === "airstrike" ||
-    ["prod", "axe", "firepunch", "dragonball"].includes(weapon);
+    ["prod", "axe", "firepunch", "dragonball", "drill"].includes(weapon);
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = availableAmmo(loadout, button.dataset.weapon);
     const delay = weaponDelay(weaponDelays[team], button.dataset.weapon);
@@ -2147,7 +2147,7 @@ function updateSliders() {
   $("#angle").value = angle;
   $("#angle-value").textContent = Math.round(angle) + "°";
   $("#fire").classList.toggle("charging", charging);
-  const specialLabel = {
+  const specialLabel = canStopDrill() ? "STOP DRILL" : {
     mine: "PLACE MINE",
     dynamite: "DROP DYNAMITE",
     shotgun: shotgunRemaining ? "SECOND SHOT" : "FIRE SHOTGUN",
@@ -2158,6 +2158,7 @@ function updateSliders() {
     axe: "SWING AXE",
     firepunch: "FIRE PUNCH",
     dragonball: "DRAGON BALL",
+    drill: "DRILL",
     homing: homingTarget ? null : "SET TARGET",
     pigeon: homingTarget ? null : "SET TARGET",
     magic: homingTarget ? null : "SET TARGET",
@@ -2179,7 +2180,21 @@ function updateSliders() {
       ? "HOLD / RELEASE"
       : "HOLD SPACE";
 }
+function canStopDrill() {
+  const w = worms[current];
+  return pendingFire?.stage === "drill" && pendingFire.worm === w &&
+    phase === "aim" && !menu.open && w.hp > 0 && !w.knocked && !w.frozen && w.hurt <= 0.35;
+}
 function startCharge(source) {
+  // Original004F9FA0: Fire while in state6E returns directly to state65.
+  // This precedes ammunition/ground checks: the action already spent its shot.
+  if (canStopDrill()) {
+    stopDrill(); pendingFire = null;
+    finishAction("Drilling stopped. Retreat!");
+    updateSliders();
+    return;
+  }
+
   if (!shotgunRemaining && availableAmmo(ammo[team], weapon) <= 0) return;
   if (
     charging ||
@@ -2855,6 +2870,7 @@ function fireDrill(prepared = false) {
   attachNativeDrillFlight(w, { height:H });
   startOriginalDrill(w);
   pendingFire = { worm:w, angle, kind:"drill", stage:"drill", spent:true, body:entry.body };
+  updateSliders();
   updateUI();
 }
 function stepDrill(pending) {
@@ -2879,6 +2895,7 @@ function stepDrill(pending) {
     if (call.operation === "state") {
       stopDrill(pending); pendingFire = null;
       finishAction("Drilling complete. Retreat!");
+      updateSliders();
     }
   }
 }
