@@ -1,0 +1,17 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entry": "004F8C50",
+  "calls": [
+    {
+      "operation": "clear"
+    },
+    {
+      "operation": "queue",
+      "sprite_id": 128
+    },
+    {
+      "operation": "queue",
+      "sprite_id": 129
+    }
+  ]
+}

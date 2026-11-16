@@ -95,6 +95,7 @@ const names = [
     "wshotf",
     "wshotp",
     "wparacht",
+    "wparalnk",
     "wjetfly1",
   ]),
 ];
@@ -361,6 +362,26 @@ export function stepOriginalJump(worm) {
   player.advance();
 }
 
+// 004F8C50 clears the animator and queues the opening link then the canopy.
+export function startOriginalParachute(worm) {
+  if (!animations.has("wparalnk")) return false;
+  const player = new NativeAnimationPlayer();
+  for (const id of [0x80, 0x81])
+    player.enqueue(id, animations.get(spriteIds.sprites[id].name).metadata);
+  worm.originalParachute = player;
+  worm.originalJump = null;
+  worm.originalLanding = null;
+  return true;
+}
+export function stepOriginalParachute(worm) {
+  if (!worm.originalParachute) return;
+  if (worm.hp <= 0 || worm.frozen || worm.knocked || worm.hurt > 0.35) {
+    worm.originalParachute = null;
+    return;
+  }
+  worm.originalParachute.advance();
+}
+
 // Browser landing adapter. Physics still supplies impact speed in pixels/second;
 // native velocity is signed 16.16 pixels per 50 Hz tick, positive downward.
 export function startOriginalLanding(worm, speed, previousState = 0x65) {
@@ -511,6 +532,30 @@ export function stepOriginalDrowning(worm) {
 }
 
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  if (
+    worm.originalParachute &&
+    worm.hp > 0 &&
+    !worm.frozen &&
+    !worm.knocked &&
+    !worm.ground
+  ) {
+    const player = worm.originalParachute;
+    const name = spriteIds.sprites[player.current.id].name;
+    const sprite = animations.get(name).sprite;
+    const index = nativeSpriteFrame(
+      sprite.frames.length,
+      sprite.metadata[2],
+      player.current.progress,
+    );
+    return {
+      map: texture(name, index),
+      name,
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
+
   if (worm.drowned && worm.originalDrowning) {
     const { name, player } = worm.originalDrowning;
     const sprite = animations.get(name).sprite;

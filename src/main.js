@@ -44,6 +44,8 @@ import {
   stepOriginalLanding,
   startOriginalJump,
   stepOriginalJump,
+  startOriginalParachute,
+  stepOriginalParachute,
   startOriginalDrowning,
   stepOriginalDrowning,
 } from "./armageddon/art.js";
@@ -1532,6 +1534,7 @@ function startJetpack() {
   activeUtility = "jetpack";
   wormLocked = true;
   const w = worms[current];
+  w.originalParachute = null;
   w.ground = false;
   w.vx = 0;
   w.vy = 0;
@@ -1617,6 +1620,7 @@ function fireRope() {
   };
   rope.mesh = makeRopeLine(hit, w);
   w.ground = false;
+  w.originalParachute = null;
   activeUtility = "rope";
   wormLocked = true;
   utilitiesOpen = false;
@@ -3049,6 +3053,7 @@ function step(dt) {
     w.landing = Math.max(0, (w.landing || 0) - dt);
     stepOriginalLanding(w);
     stepOriginalJump(w);
+    stepOriginalParachute(w);
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
     if (w.dying > 0) {
@@ -3079,15 +3084,25 @@ function step(dt) {
       if (w === worms[current] && parachuteArmed && !w.ground && w.vy < -240) {
         parachuteArmed = false;
         utilityAmmo[team].parachute = spendAmmo(utilityAmmo[team].parachute);
+        startOriginalParachute(w);
         w.vy = Math.max(w.vy, -70);
         $("#status").textContent = `${w.name}'s parachute deploys.`;
         updateUI();
       }
+      // Preserve the existing browser fall-speed limit throughout deployment;
+      // the original body-force/drag transition is a separate physics port.
+      if (w.originalParachute) w.vy = Math.max(w.vy, -70);
       result = stepWorm(w, terrain, dt, gravityScale);
+      if (w.originalParachute) w.vy = Math.max(w.vy, -70);
     }
     if (result.landed && w.ground && !w.landing) {
       w.landing = 0.16;
-      const landingSound = startOriginalLanding(w, result.landingSpeed);
+      const landingSound = startOriginalLanding(
+        w,
+        result.landingSpeed,
+        w.originalParachute ? 0x7d : 0x65,
+      );
+      w.originalParachute = null;
       if (landingSound && sound) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
@@ -3107,6 +3122,7 @@ function step(dt) {
     if (w.y - 10 < waterLevel || w.x < -30 || w.x > W + 30) {
       w.hp = 0;
       w.deathPending = false;
+      w.originalParachute = null;
       w.drowned = true;
       w.dying = 0.65;
       w.y = Math.min(w.y, waterLevel - 8);
@@ -3631,7 +3647,11 @@ function frame(now) {
       // Original 60px canvases have a baseline at row 43. Native worms face left.
       const scale = Math.max(1, Math.round((size / pixelWorldY / 60) * 1.45));
       const unit = scale * pixelWorldY;
-      w.body.scale.set(-facing * 60 * unit, 60 * unit, 1);
+      w.body.scale.set(
+        -facing * original.map.image.width * unit,
+        original.map.image.height * unit,
+        1,
+      );
       w.body.position.set(0, 13 * unit, 24);
       w.g.userData.originalSprite = original.name;
       w.g.userData.originalFrame = original.index;
@@ -4374,6 +4394,12 @@ window.siege = {
         pose: g.userData.pose || "idle",
         originalSprite: g.userData.originalSprite,
         originalFrame: g.userData.originalFrame,
+        originalCanvas: g.children[0]?.material.map?.image
+          ? {
+              width: g.children[0].material.map.image.width,
+              height: g.children[0].material.map.image.height,
+            }
+          : null,
       }),
     ),
     projectile: projectile
@@ -4417,6 +4443,14 @@ if (import.meta.env.DEV) {
     },
     triggerSuddenDeath() {
       return applySuddenDeath();
+    },
+    dropWormForParachute(index = current) {
+      const w = worms[index];
+      w.y = H - 15;
+      w.vy = -250;
+      w.vx = 0;
+      w.ground = false;
+      parachuteArmed = true;
     },
     submergeWorm(index = current, frozen = false) {
       const w = worms[index];
