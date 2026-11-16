@@ -1,4 +1,8 @@
 import {
+  loadOriginalNumbers,
+  updateOriginalTimer,
+} from "./armageddon/number-hud.js";
+import {
   loadOriginalWindHUD,
   updateOriginalWindHUD,
 } from "./armageddon/wind-hud.js";
@@ -359,6 +363,7 @@ const originalAssets = Promise.all([
   loadOriginalWater(),
   loadOriginalHUDIcons(),
   loadOriginalWindHUD(),
+  loadOriginalNumbers(),
   loadOriginalGirders(),
 ]);
 originalAssets
@@ -372,6 +377,7 @@ originalAssets
     assetsReady = true;
     updateOriginalHUDIcons();
     updateOriginalWindHUD(wind);
+    timerKey = "";
     terrainDirty = true;
   })
   .catch((error) => {
@@ -3886,10 +3892,12 @@ function frame(now) {
       `Round over. Next island in ${Math.ceil(breakTimer)}…`;
   }
   $("#turn-banner").classList.toggle("shown", bannerTime > 0 && !menu.open);
-  const timerHtml = `${retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time))}<small> ${retreat > 0 ? "RETREAT" : "SEC"}</small>`;
-  if (timerHtml !== timerKey) {
-    timerKey = timerHtml;
-    $("#timer").innerHTML = timerHtml;
+  const timerValue =
+    retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time));
+  const timerState = `${timerValue}:${retreat > 0}`;
+  if (timerState !== timerKey) {
+    timerKey = timerState;
+    updateOriginalTimer(timerValue, retreat > 0);
   }
   if (now > announceUntil && $("#announcement").style.opacity !== "0")
     $("#announcement").style.opacity = 0;

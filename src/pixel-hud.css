@@ -1879,3 +1879,27 @@ body:has(.controls.inventory-open) #announcement {
   height: 13px;
   image-rendering: pixelated;
 }
+
+/* Original IMG digits, displayed at an exact integer pixel scale. */
+#timer.original-timer {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  line-height: 22px;
+}
+#timer.original-timer canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+#timer .original-timer-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.turn:has(#timer.original-timer) {
+  gap: 0;
+}
