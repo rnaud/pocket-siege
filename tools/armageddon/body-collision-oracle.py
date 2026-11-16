@@ -75,30 +75,34 @@ for state in list(range(0x60,0x90))+[-1,0x100]:
             'incoming_out':list(struct.unpack('<2i',cpu.mem_read(incoming+0x9c,8))),'result':cpu.reg_read(UC_X86_REG_EAX)})
 # Complex terrain response, including the enclosing stop threshold routine.
 probe=owner+0x3700
-write(vtable+0x100,probe)
-cpu.mem_write(probe,b'\xc2\x08\x00')
+# Execute the original mutating position method, not a virtual return stub.
+context,manager,manager_vtable=owner+0x4000,owner+0x5000,owner+0x5100
+write(owner+0x38,context);write(context+0x7d4,manager);write(manager,manager_vtable)
+write(manager_vtable+0xc,probe);write(vtable+0x100,0x4d1260)
+cpu.mem_write(probe,b'\xc2\x0c\x00')
 queries=[]
 pattern=[]
 def query_hook(cpu,address,size,user):
     if address != probe: return
     sp=cpu.reg_read(UC_X86_REG_ESP)
-    queries.append(list(struct.unpack('<2i',cpu.mem_read(sp+4,8))))
+    if read(sp+4)!=owner:raise RuntimeError('Unexpected moving body')
+    queries.append(list(struct.unpack('<2i',cpu.mem_read(sp+8,8))))
     cpu.reg_write(UC_X86_REG_EAX,pattern[len(queries)-1])
 cpu.hook_add(UC_HOOK_CODE,query_hook)
 complex_cases=[]
 for velocity in [[8<<16,-3<<16],[-8<<16,3<<16],[0,0],[0x6665,0],[0x3333,0x3333]]:
     for tangent in [0,0xcccc,65536,-65537,0x7fffffff]:
         for side in [0,1,2,3,4,99]:
-            for pattern in [[0,0],[1,0],[0,7]]:
+            for pattern in [[0,0],[1,0],[0,7],[1,7]]:
                 for entry in [0x4f4700,0x4f4860]:
-                    body={'x':0x7fff8000,'y':-0x7fff8000,'vx':velocity[0],'vy':velocity[1], 'tangent':tangent,'restitutionX':0x9999,'restitutionY':0x8000,'complex':1}
-                    for name,offset in [('x',0x90),('y',0x94),('vx',0x9c),('vy',0xa0),('tangent',0x80),('restitutionX',0x78),('restitutionY',0x7c),('complex',0x4c)]:write(owner+offset,body[name]&0xffffffff)
+                    body={'x':0x7fff8000,'y':-0x7fff8000,'vx':velocity[0],'vy':velocity[1], 'tangent':tangent,'restitutionX':0x9999,'restitutionY':0x8000,'complex':1,'sleeping':9}
+                    for name,offset in [('x',0x90),('y',0x94),('vx',0x9c),('vy',0xa0),('tangent',0x80),('restitutionX',0x78),('restitutionY',0x7c),('complex',0x4c),('sleeping',0xb8)]:write(owner+offset,body[name]&0xffffffff)
                     write(incoming+0x9c,0x3333);write(incoming+0xa0,0)
                     queries=[]
                     cpu.mem_write(stack+0xff00,struct.pack('<3I',stop,incoming,side))
                     cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
                     cpu.emu_start(entry,stop,count=10000)
                     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Complex bounce did not return')
-                    complex_cases.append({'body':body,'side':side,'pattern':pattern,'entry':f'{entry:08X}','queries':queries,'body_out':list(struct.unpack('<2i',cpu.mem_read(owner+0x9c,8))),'other_out':list(struct.unpack('<2i',cpu.mem_read(incoming+0x9c,8)))})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F4990','method':'Original routine executes with explicit body velocities, masses, tangential damping and contact sides. No callbacks stubbed for the base routine. Worm gate cases execute 004D6AD0 with explicit state/position/type getters; incoming type is 0x0f and the original momentum routine executes normally.','cases':cases,'worm_projectile_gates':gates,'complex_bounces':complex_cases},indent=2)+'\n')
+                    complex_cases.append({'body':body,'side':side,'pattern':pattern,'entry':f'{entry:08X}','queries':queries,'position_out':list(struct.unpack('<2i',cpu.mem_read(owner+0x90,8))),'sleeping_out':read(owner+0xb8),'body_out':list(struct.unpack('<2i',cpu.mem_read(owner+0x9c,8))),'other_out':list(struct.unpack('<2i',cpu.mem_read(incoming+0x9c,8)))})
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F4990','method':'Original routine executes with explicit body velocities, masses, tangential damping and contact sides. No callbacks stubbed for the base routine. Worm gate cases execute 004D6AD0 with explicit state/position/type getters; incoming type is 0x0f and the original momentum routine executes normally.','cases':cases,'worm_projectile_gates':gates,'complex_method':'Complex bounce executes original 004D1260; only the collision manager hit predicate is supplied. Position, sleep and velocity outputs are captured.','complex_bounces':complex_cases},indent=2)+'\n')
 print(f'Captured {len(cases)} collisions, {len(gates)} gates, {len(complex_cases)} complex bounces')

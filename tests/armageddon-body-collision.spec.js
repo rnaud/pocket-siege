@@ -40,7 +40,7 @@ import {
   nativeSimpleBounce,
 } from "../src/armageddon/motion.js";
 test("complex terrain bounce matches native probes, overflow and stop ordering", () => {
-  expect(fixture.complex_bounces).toHaveLength(900);
+  expect(fixture.complex_bounces).toHaveLength(1200);
   for (const v of fixture.complex_bounces) {
     const queries = [];
     const collide = (x, y) => {
@@ -55,7 +55,13 @@ test("complex terrain bounce matches native probes, overflow and stop ordering",
           }
         : nativeSimpleBounce(v.body, { vx: 0x3333, vy: 0 }, v.side, collide);
     expect({ ...result, queries }, JSON.stringify(v)).toEqual({
-      body: { vx: v.body_out[0], vy: v.body_out[1] },
+      body: {
+        x: v.position_out[0],
+        y: v.position_out[1],
+        sleeping: v.sleeping_out,
+        vx: v.body_out[0],
+        vy: v.body_out[1],
+      },
       other: { vx: v.other_out[0], vy: v.other_out[1] },
       queries: v.queries,
     });

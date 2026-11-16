@@ -95,31 +95,44 @@ export function nativeSweep({ x, y, vx, vy }, fraction, collide, side = 99) {
 }
 
 // 004F4860, simple-body branch (body+0x4c == 0). Coefficients are
-// signed 16.16: horizontal restitution, vertical restitution, tangential drag.
-// The original also stops the contacted body below the Manhattan-speed cutoff.
-// 004F4700. Complex bodies probe one pixel above/below the leading edge.
-// A blocked probe damps horizontal speed without reflecting either axis.
+// 004D1260: virtual +0x100 attempts a position change through the manager.
+// The manager predicate returns a hit ID; this method returns 1 on CLEAR.
+export function nativeTryBodyPosition(body, x, y, collide) {
+  if (collide(x, y))
+    return { x: body.x, y: body.y, sleeping: body.sleeping, result: 0 };
+  return { x, y, sleeping: 0, result: 1 };
+}
+
+// 004F4700 with the real +0x100 movement method. Complex bodies try stepping
+// one pixel up, then down, at the leading edge. Successful movement damps vx;
+// only two rejected moves reflect velocity. Position and sleep changes matter.
 export function nativeComplexBounce(body, side, collide) {
   let { vx, vy } = body;
+  let position = { x: body.x, y: body.y, sleeping: body.sleeping };
   if (side === 1 || side === 3) {
     vx = fixedMultiply(vx, body.tangent);
     vy = -fixedMultiply(vy, body.restitutionY) | 0;
   } else if (side === 2 || side === 4) {
     const x = add(body.x, vx < 0 ? -65536 : 65536);
-    if (collide(x, add(body.y, -65536)) || collide(x, add(body.y, 65536))) {
+    let attempt = nativeTryBodyPosition(body, x, add(body.y, -65536), collide);
+    if (!attempt.result)
+      attempt = nativeTryBodyPosition(body, x, add(body.y, 65536), collide);
+    if (attempt.result) {
+      position = { x: attempt.x, y: attempt.y, sleeping: attempt.sleeping };
       vx = fixedMultiply(vx, Math.trunc(Math.imul(body.tangent, 30) / 32));
     } else {
       vx = -fixedMultiply(vx, body.restitutionX) | 0;
       vy = fixedMultiply(vy, body.tangent);
     }
   }
-  return { vx, vy };
+  return { ...position, vx, vy };
 }
 
 export function nativeSimpleBounce(body, other, side, collide) {
   let { vx, vy } = body;
+  let position = {};
   if (body.complex) {
-    ({ vx, vy } = nativeComplexBounce(body, side, collide));
+    ({ vx, vy, ...position } = nativeComplexBounce(body, side, collide));
   } else if (side === 1 || side === 3) {
     vx = fixedMultiply(vx, body.tangent);
     vy = -fixedMultiply(vy, body.restitutionY) | 0;
@@ -129,7 +142,10 @@ export function nativeSimpleBounce(body, other, side, collide) {
   }
   const stop = (x, y) =>
     add(abs(x), abs(y)) < 0x6666 ? { vx: 0, vy: 0 } : { vx: x, vy: y };
-  return { body: stop(vx, vy), other: stop(other.vx, other.vy) };
+  return {
+    body: { ...position, ...stop(vx, vy) },
+    other: stop(other.vx, other.vy),
+  };
 }
 
 // 004C9F10: bodies carrying flag 0x400000 can skim the water surface.
