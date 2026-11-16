@@ -1,0 +1,6088 @@
+{
+  "-beach": {
+    "archive_sha256": "e860d7a925e52138cefb4ece1e3ec97b6e81d59d3d8f54e3603b6cea3afdc435",
+    "objects": [
+      {
+        "name": "beer",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "coke",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "board",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "goggles",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "icecream",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "snorkle",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "shell",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      }
+    ]
+  },
+  "-desert": {
+    "archive_sha256": "83a2998b80a4e59f2cca425d7bc39aaaab3a2a42042bdfefe83587d6c7a45122",
+    "objects": [
+      {
+        "name": "tent",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "wagon",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "cactus1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "cactus2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "cactus3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "cactus4",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "cactus5",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock4",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock5",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock6",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "skull",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      }
+    ]
+  },
+  "-farm": {
+    "archive_sha256": "9ddb306e7a79789052773f32183e6865d435f9dd7b095c399d79e6f6197c7024",
+    "objects": [
+      {
+        "name": "can",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "sheep1",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "sheep2",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "flower",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "rock1",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "rock2",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "rock3",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "rock4",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "spade",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      },
+      {
+        "name": "gate",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "a4dab6cc67eb0bc9958bc681ae91b97dd7118cceb8864b71ef85758f8f3f967b"
+      }
+    ]
+  },
+  "-forest": {
+    "archive_sha256": "cd95a1595fffccefeb31ff9872956dd86218c87c8fc8d2d2c2a691e08151a318",
+    "objects": [
+      {
+        "name": "tree1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "tree2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "tree3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "tree4",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "tree5",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "rock2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "bush",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      }
+    ]
+  },
+  "-hell": {
+    "archive_sha256": "c09bfb3a4e01227e3421021450a95491bf8c0c6259cc7bbd2745e78f60479036",
+    "objects": [
+      {
+        "name": "skull",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "demon",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "scyth",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "cross",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "fork",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "gallows",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "art": {
+    "archive_sha256": "e714cf16b7614f7bcdfa9733e17885eead64f1f05240187ebe579354947a2f7b",
+    "objects": [
+      {
+        "name": "dividers",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndividers.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "6033174db61536f9d3dd2fe7b639476e0745d23709a47aa783a3faa3d0a64f0c"
+      },
+      {
+        "name": "marker",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmarker.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "fce9c7dafe42f496c56e0ead9e7e29d9f9f1f47d9f716c731365c4698918ebc6"
+      },
+      {
+        "name": "marker2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmarker2.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "000b8beae482c37259e177885816a1f9b440d41fd5c51047b6fc9d07b63fc980"
+      },
+      {
+        "name": "pencil1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\npencil1.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "ac710539b4a7d0a5f8273627caa47561373a07ae9dbf2a40db5de0b59ba7567d"
+      },
+      {
+        "name": "pencil2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\npencil2.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "db71a1712d4b52ad4b02b331708f69eec56fa47b76e72f7c3083a509bde2f060"
+      },
+      {
+        "name": "paint",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\npaint.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "61a2d5948c0eca60e0ed762e68b356ba3dff7c155e924cf3fe5c49f5e61d0649"
+      },
+      {
+        "name": "bigbrush",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbigbrush.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "ef5e71a67ac888f67ed8c2efa581b93267dd6ea2eb034e9637f331ad92ea2c37"
+      },
+      {
+        "name": "tape",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntape.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "5d0b3ad0c6899656660eed201a4c960a728735a63ab1f422dd3f318720bd4d3d"
+      },
+      {
+        "name": "eraser",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\neraser.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "a28c381b2e48be3deaf9bba8c70aab1077e26baee6ca6c296918d051daa1c4c1"
+      },
+      {
+        "name": "inkwell",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ninkwell.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "eebc57c5b35e7eac7bf6daaa714fe59732d707d9f921c00ae7f3328b3e53d1b5"
+      },
+      {
+        "name": "litlbrsh",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\nlitlbrsh.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "fb1abb17bfcbc76e5ca31a64187cc014cbadcb0fcd0847244952176bf71e037f"
+      },
+      {
+        "name": "manaquin",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmanaquin.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "36482d04911b44761baae67a7767b0c828632d13a3a4d7b6a8948cf8d0aea831"
+      },
+      {
+        "name": "orngbrsh",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\norngbrsh.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "b4bb037a2a5a49711ff189f0b2cb64131658bd7d35340446074a981517bf2fca"
+      },
+      {
+        "name": "scissors",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\nscissors.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "4ac28b6987d2d8cf089c9b1faa70f3264a9de6885880c1c3fddf8c1ddbd3fdbb"
+      },
+      {
+        "name": "sharpner",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nsharpner.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "75b2a272564c8b8312bc3e96deb064dfb6a5c9837ad1a883b3b43b619ef9d42c"
+      },
+      {
+        "name": "thumtack",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nthumtack.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "ea15efb36e0dc7ebf6688e563965dbb7bcaa8428b0a2b139b30fb76af57eb43a"
+      },
+      {
+        "name": "litltube",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\nlitltube.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "328ff8c805168354a605322e0a91ebcb0af3893d92401667602224209c1a70c4"
+      },
+      {
+        "name": "brush",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "spraycan",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "roller",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "crayon",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      }
+    ]
+  },
+  "cheese": {
+    "archive_sha256": "913fa70379b39997c52ee3d04443ddf02534246ec4f4e247aac821742f260e7f",
+    "objects": [
+      {
+        "name": "chezroc1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nchezroc1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "a3479d8b9214fe8297b711bd2da5b03be387dd57cf4f3d2d38f128858fb889a4"
+      },
+      {
+        "name": "chezroc2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nchezroc2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "f7f60d739ea8b4ebcf6d1ce52159dbcf99df77797441010a776e2d3708af19cd"
+      },
+      {
+        "name": "drill",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndrill.img\r\n0\r\n\r\n\r\n",
+        "sha256": "446e49c2a87a8f5a0f4577479d42649b9037d5f79f14e4338c03b4c751995022"
+      },
+      {
+        "name": "launcher",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nlauncher.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4163118c51c244e41e90606d32e87fcd6f89088cb756f54ae0026c55aaef90ef"
+      },
+      {
+        "name": "nurobo",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nnurobo.img\r\n0\r\n\r\n\r\n",
+        "sha256": "7a17082a729db4d2dc76dfa5367fd0440b5c9d30a4dfa497a22372f5f19ac457"
+      },
+      {
+        "name": "satdish",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nsatdish.img\r\n0\r\n\r\n\r\n",
+        "sha256": "1a2024789571fcc5739968f54d1f0c461d2161a8c44227f25043e73aab4f2f9c"
+      },
+      {
+        "name": "plant1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nplant1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "decf28e70d9ce4e3f05df4d7f82d6187ea413ddef1eeec486bf83ba438303be9"
+      },
+      {
+        "name": "plant2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nplant2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "214109ebe8dd4e24f62aff938124742175ef3205a49d6196c4cca41f25e0a039"
+      },
+      {
+        "name": "scope",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nscope.img\r\n0\r\n\r\n\r\n",
+        "sha256": "ac2482cecf04510fa3b5b7267ec9db88714221693a0e21a2d44d3bf7c7f2d444"
+      },
+      {
+        "name": "raygun",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nraygun.img\r\n0\r\n\r\n\r\n",
+        "sha256": "0013bcfe2e95f2804677864410e85ebcd4ffe494a9923012c3cd83c087a7dc3f"
+      },
+      {
+        "name": "ufo",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nufo.img\r\n0\r\n\r\n\r\n",
+        "sha256": "09df74ec59f6faa6a8abaf872376e27fd6a7c3d3eca77eef6afe4d7e2377bef3"
+      },
+      {
+        "name": "tower",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntower.img\r\n0\r\n\r\n\r\n",
+        "sha256": "5d3f1d285a092abecbeb55547896183492d26b5e1a8b2b3016f9c576fc306670"
+      },
+      {
+        "name": "thingy",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nthingy.img\r\n0\r\n\r\n\r\n",
+        "sha256": "430c153438b54ee40ecc587dd0669f86a137071d7871a195a5fe8e568dfd0b28"
+      },
+      {
+        "name": "pod1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\npod1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "e1310150c92fa9db1b03044d49f1dd40b040af3d8a4ffe096a4ac7e4cd660be5"
+      },
+      {
+        "name": "pod2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n0\r\npod2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4ec6fd7bc5273a3976fd5624eb2dd6b88f8fbb1eb51aca68741abee233d34be6"
+      },
+      {
+        "name": "pod3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n0\r\npod3.img\r\n0\r\n\r\n\r\n",
+        "sha256": "93415efc4b831a447eb1a1909b965b3d32d4d31c6f858a0267812ae767bf1f01"
+      },
+      {
+        "name": "pod4",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\npod4.img\r\n0\r\n\r\n\r\n",
+        "sha256": "7eaf7ed257089fa9aa656665e6ee08a7053677d3e806bc6d3f57b57cf7c5d3c2"
+      },
+      {
+        "name": "pod5",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\npod5.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4cc54075b73027aad8fe5f26e4f4ff0c3e52de0263cbd6727ad67947ccd90e27"
+      },
+      {
+        "name": "clamp",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "3e1c49aa19769a150fa64da46763e015d498507627fb8944f2cfcb885121502d"
+      },
+      {
+        "name": "claw",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "3e1c49aa19769a150fa64da46763e015d498507627fb8944f2cfcb885121502d"
+      },
+      {
+        "name": "eyestalk",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "3e1c49aa19769a150fa64da46763e015d498507627fb8944f2cfcb885121502d"
+      },
+      {
+        "name": "roofplnt",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "3e1c49aa19769a150fa64da46763e015d498507627fb8944f2cfcb885121502d"
+      }
+    ]
+  },
+  "constr~1": {
+    "archive_sha256": "c57523eac4c04a1b8c6dfdd996852f50744ab7a68bd698541b693a4e3a68c7ba",
+    "objects": [
+      {
+        "name": "bensin",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbensin.img\r\n0\r\n\r\n",
+        "sha256": "237f920345e1bbf6de3c404d33015d076f140e6f50a9b3785ede1c0323c97241"
+      },
+      {
+        "name": "brick1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbrick1.img\r\n0\r\n\r\n",
+        "sha256": "5a9e1156c1af3ae14d2c4424f4f80055d6a2e418fce76326b06c5e9e49eee4b5"
+      },
+      {
+        "name": "brick2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbrick2.img\r\n0\r\n\r\n",
+        "sha256": "49ae5994061781878956cf0dd18156b92944691b2ae9fc43a6fcc0a530b7ee85"
+      },
+      {
+        "name": "bricks",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbricks.img\r\n0\r\n\r\n",
+        "sha256": "f1ed6096df1e6df848d29ba19699f28d75b96059a3a111ec8109da1d0d7c5de2"
+      },
+      {
+        "name": "cemtube",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncemtube.img\r\n0\r\n\r\n",
+        "sha256": "1f3e8c63e097f5dcd5a60690a503677bef63536cfb44fda5ddb894243472785f"
+      },
+      {
+        "name": "cone1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncone1.img\r\n0\r\n\r\n",
+        "sha256": "22d84cfca6b200150d1f0f4ad37566bc1f29b22b1960f7051e241b6277dbc1f7"
+      },
+      {
+        "name": "cone2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncone2.img\r\n0\r\n\r\n",
+        "sha256": "d4cc766a2b413d0ca874221960050caed51a257647fa82c42da30a5168a860b0"
+      },
+      {
+        "name": "contain",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncontain.img\r\n0\r\n\r\n",
+        "sha256": "6244d9fc2b72bb58be777a51ad2a13cd0517c1a2e74e3aa3ca61bb2c4441b13c"
+      },
+      {
+        "name": "crane",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncrane.img\r\n0\r\n\r\n",
+        "sha256": "b45c4d6f4c916f42df39431403e3397febbc75ec4074d131a913894b144ecc53"
+      },
+      {
+        "name": "digger",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndigger.img\r\n0\r\n\r\n",
+        "sha256": "badbc9d93edb7c5142a5b2193cce08e5068bafda74649370559bd9d91fae0b18"
+      },
+      {
+        "name": "drum",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndrum.img\r\n0\r\n\r\n",
+        "sha256": "6e15a2ebd6c545edfc3d8dbfdd0e9498022eace952d34472626e84347ccf1b5d"
+      },
+      {
+        "name": "dumper",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndumper.img\r\n0\r\n\r\n",
+        "sha256": "f8ca3c6b2cbc51aa863a221721a58d727af02c651cf1192655ec17bb33023ddb"
+      },
+      {
+        "name": "roof1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroof1.img\r\n0\r\n\r\n",
+        "sha256": "d035b3fa9141010eeb10126ba077570a72551189336b812a6af5db81aa072941"
+      },
+      {
+        "name": "roof2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroof2.img\r\n0\r\n\r\n",
+        "sha256": "7b417bec4ac53b86dc684dec5f2d2f4f54b6153d06152686b4c05c292e035d57"
+      },
+      {
+        "name": "roof3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroof3.img\r\n0\r\n\r\n",
+        "sha256": "383d912a2c1431b274b73293e89d5577160df674ec6f682f6921ad6f125cc8b1"
+      },
+      {
+        "name": "scaffold",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nscaffold.img\r\n0\r\n\r\n",
+        "sha256": "70845de372e9dd40bead7b0593309a5296fa61583b47515847e86d96a26362e1"
+      },
+      {
+        "name": "side1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\nside1.img\r\n0\r\n\r\n",
+        "sha256": "0fe4584c2ad83cadc7a732644d53832c1d5383bca26c63521a030593984e8396"
+      },
+      {
+        "name": "side2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\nside2.img\r\n0\r\n\r\n",
+        "sha256": "284414d6d8e99802805e6043eccfc58639bbaa2bc74b2361a5b4bbfc559548cb"
+      },
+      {
+        "name": "side3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\nside3.img\r\n0\r\n\r\n",
+        "sha256": "ea3be6c2015b5016ceb279234e204abecc190638491ad8f6ca2c0ca06c47d750"
+      },
+      {
+        "name": "tonka",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntonka.img\r\n0\r\n\r\n",
+        "sha256": "01f5a676aa4d67a155edbd9c426a40a299511c238e5d8e6d6f64b0ead2d65c79"
+      },
+      {
+        "name": "pipe",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\npipe.img\r\n0\r\n\r\n",
+        "sha256": "6b58549eb0ce5686e7370961f7f743951da22e9c987a3ac1b34ed6ad5ad6afd9"
+      }
+    ]
+  },
+  "desert": {
+    "archive_sha256": "c744170b980e744108a75cf38af9be875ef0b4e2e0ce2f9af7076de2732bcf57",
+    "objects": [
+      {
+        "name": "floor1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor5",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor6",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor7",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor8",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor9",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor10",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor11",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor12",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor13",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "left1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "right1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "right2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      }
+    ]
+  },
+  "dungeon": {
+    "archive_sha256": "c45ed70015a71a0d303a8aee96d291b31a84b0b12d57b625166f5f75242c7b97",
+    "objects": [
+      {
+        "name": "caveroof",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "cavestn1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "cavestn2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "crown",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "dragon",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "gems1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "gems2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "monster",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "pelare",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "skeleton",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "skull1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "skull2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "skulpole",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "skulspik",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "spear",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "sidehead",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "stonroof",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "stonrubl",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "sword1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "sword2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "tresure1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "tresure2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "wine1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "wine2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "wine3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      }
+    ]
+  },
+  "easter": {
+    "archive_sha256": "7f4179457d23589997ba75810d773465589c532a48275ba423fb735784cc46c4",
+    "objects": [
+      {
+        "name": "bunny1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "bunny2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "candy1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "candy2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "chicken",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "cracked",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "egg1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "eggcup1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "leftrock",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "leftgras",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "rghtrock",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "rghtgras",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "roofbuny",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "spoon",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "statue1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "statue2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "statue3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "stone1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "stone2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "forest": {
+    "archive_sha256": "9bd99816cb69e54a93af495d3edc9ebddae905d05a5a794cf0018a4e737459d3",
+    "objects": [
+      {
+        "name": "rock1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nrock1.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "39c1b2dcc98977ed5986d77fca01f87ecb45b16c523aa2299bf7df9cc613deec"
+      },
+      {
+        "name": "tree1",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntree1.img\r\n0\r\n\r\n",
+        "sha256": "ece753c08e017516f2a70dd5e4dda4dc4ef6421c3fe13ebef5e4fe5536ec0ec5"
+      },
+      {
+        "name": "tree2",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntree2.img\r\n0\r\n\r\n",
+        "sha256": "211ddc86064707caaa75de5ac5f0d7c92f0cc3dfc8446bcdbfabbf100f442792"
+      },
+      {
+        "name": "2flowers",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n2flowers.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "a24440f66b8131aae4d7e07565c4e9772cf46e8d2ba0b8ebcb297b29c2f19f62"
+      },
+      {
+        "name": "2rocks",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n2rocks.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "5b2dc2a1a586ef70504d34b13afbeaadede73b7d2ab4f4a1bdaaaa7ea05749da"
+      },
+      {
+        "name": "bshbloom",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbshbloom.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "8529d37a8132ded96a63ea1b596d9b489f9a8f67ce2822cee51cf83c619f7602"
+      },
+      {
+        "name": "craigtre",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\ncraigtre.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "61abea90538453b77150feb45598499dfcf73def067bf68045fba8fb2262f4ee"
+      },
+      {
+        "name": "ivynest",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\nivynest.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "ed05b751fc2214211ff130f048e0c69e7292e3702760340f874177e2149dc3f3"
+      },
+      {
+        "name": "root1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroot1.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "9a58c32ce70b69c0eb2354cee2e37c6b28da9e32d972af9e1e3989159d72aeac"
+      },
+      {
+        "name": "root2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroot2.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "6a3f75a466df6342785d0a16017dc1dfc60048ff4deafd979372bbbfb0f19167"
+      },
+      {
+        "name": "root3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroot3.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "a43e1de34f1caad3ecfe172e475536926dbbd1ed975783f368c7c47f9307a92a"
+      },
+      {
+        "name": "sideflwr",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\nsideflwr.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "a130a8b58a58c3ee1f3e860ce9110a171bd6c8dd90a181d51f5878120e63d9e7"
+      },
+      {
+        "name": "sqwtbush",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nsqwtbush.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "b74bb5350f596aba09747efabccb60951ce21b8259660ba9a21ae13d38031428"
+      },
+      {
+        "name": "tallbush",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntallbush.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "6f09b2efe16a1de4803d5b3d72f01ef1972816ed4ba4ba6955fa234cac918f2c"
+      },
+      {
+        "name": "tuft",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntuft.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "d0e3bb05a4e819cad3470b29106230d0f94aae17221976db1153818bb0a1238b"
+      },
+      {
+        "name": "yelflowr",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nyelflowr.img\r\n0\r\n\r\n\r\n\r\n",
+        "sha256": "ee57a46f3461bd3f3427c71f7f0e7b28aea1e2636544270949d981024d9f4003"
+      }
+    ]
+  },
+  "fruit": {
+    "archive_sha256": "54d8d92e505bb4c66d3ae102661403cafae99b59adb8e120614ff253fc0bc2f1",
+    "objects": [
+      {
+        "name": "pineappl",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "apple1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "banana1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "banana2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "bowl1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "carrott",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "cherry1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "cherry2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "grapes1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "grapes2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "leaf1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "leaf2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "leafhng1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "leafhng2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "orange",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "pear",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "side1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "side2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "cherry",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "berry",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "gulf": {
+    "archive_sha256": "d7b7f5e5b82505983dfbdd77d0df949be541d6c39456f98f68174b540e6df6c3",
+    "objects": [
+      {
+        "name": "chopper",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nchopper.img\r\n0\r\n\r\n\r\n",
+        "sha256": "73e68faa9aae7266bcc0d380e8813fb65216ef5e870670d5da8c17ab5c9b3822"
+      },
+      {
+        "name": "drums",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndrums.img\r\n0\r\n\r\n\r\n",
+        "sha256": "5e01027d2aa9b261442344ac85b1e30fb5222272680d23a62ad6fb98ddff0fab"
+      },
+      {
+        "name": "jet",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\njet.img\r\n0\r\n\r\n\r\n",
+        "sha256": "5fe2f5d81635082f96f0daa47b54cbe80792e27dcf539e2d98d5325352ef348c"
+      },
+      {
+        "name": "launcher",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nlauncher.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4163118c51c244e41e90606d32e87fcd6f89088cb756f54ae0026c55aaef90ef"
+      },
+      {
+        "name": "scud",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nscud.img\r\n0\r\n\r\n\r\n",
+        "sha256": "16aac01d3fc1527a87cc8b419b8ce886c5f9ecbede5cf312798745d3c556b016"
+      },
+      {
+        "name": "shell",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nshell.img\r\n0\r\n\r\n\r\n",
+        "sha256": "b38567b4ec8b4ef6c731c44ef1b30aeea55f1ef70077b8808956d4e12dedde4b"
+      },
+      {
+        "name": "tank",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntank.img\r\n0\r\n\r\n\r\n",
+        "sha256": "fa2f4fcd3b53d14f47f7982813406db527d9ac5465e3259e6f0c4511c7991e21"
+      },
+      {
+        "name": "whytflag",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nwhytflag.img\r\n0\r\n\r\n\r\n",
+        "sha256": "6bf3bf3fcd4351434dc73876652501b991673126c0002035072b034fed0f79c8"
+      },
+      {
+        "name": "cactus1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\ncactus1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "cd7f33fe40ac4c98927f2a753611651cc8056acec1d761adf4aeee62a536a3ff"
+      },
+      {
+        "name": "cactus2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\ncactus2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "a29b9d27aae73fea2507b667966bf394d729defc2ee34c99ac6494792edcbceb"
+      },
+      {
+        "name": "cactus3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n0\r\ncactus3.img\r\n0\r\n\r\n\r\n",
+        "sha256": "81088a6b90b80fc2de0998bd7201516db2adee453c50d34c5e363f10c0675bee"
+      },
+      {
+        "name": "cactus4",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n0\r\ncactus4.img\r\n0\r\n\r\n\r\n",
+        "sha256": "ad4e5b30299a7b278e6b5252d12929fc4a2f8a9988cee7126ab59285e33c1cbe"
+      },
+      {
+        "name": "minesign",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nminesign.img\r\n0\r\n\r\n\r\n",
+        "sha256": "9965c5caa929d82b5f416edc24438a8708c7e33241a17f47748418a06b42705f"
+      },
+      {
+        "name": "sandbags",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nsandbags.img\r\n0\r\n\r\n\r\n",
+        "sha256": "88b4e6f5470426b5b28a9d7c5c3e5d574ed494221dcfc8615b864476ff78afd0"
+      },
+      {
+        "name": "missiles",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "3e1c49aa19769a150fa64da46763e015d498507627fb8944f2cfcb885121502d"
+      },
+      {
+        "name": "radar",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "3e1c49aa19769a150fa64da46763e015d498507627fb8944f2cfcb885121502d"
+      },
+      {
+        "name": "sirens",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "3e1c49aa19769a150fa64da46763e015d498507627fb8944f2cfcb885121502d"
+      }
+    ]
+  },
+  "hell": {
+    "archive_sha256": "82bbbc12e427010280795687e417b0c8bec0b1eeb51306a4075e6b006622edf2",
+    "objects": [
+      {
+        "name": "skull",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "rock1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "rock2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "tooth2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "tooth1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "tooth3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "rock3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "roof1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "side1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "side2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "side3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "side4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "druid1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "roof5",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "door",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "druid2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "surprise",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "scythdn",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "scythup",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "sidewing",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "taildn",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "hospital": {
+    "archive_sha256": "e6cc1e57fce53d2b3afcb78cd07078624fbfb6ce5be0ffb09c4a6434abbef75e",
+    "objects": [
+      {
+        "name": "scissors",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "stetho",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "testtube",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "bed",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "saw",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "firstaid",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "klamp",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "left",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "scope",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "needle",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "poison",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "right",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "light",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roofscis",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "scalpell",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "jungle": {
+    "archive_sha256": "06eb599d94c740d49a5a8f0c4f0d8a8fdbb6381aff201fef948a28fcab3fa54d",
+    "objects": [
+      {
+        "name": "floor1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor5",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor6",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor7",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor8",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor9",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor10",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "roof1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof5",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof6",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof7",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "left1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "right1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "right2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      }
+    ]
+  },
+  "manhat~1": {
+    "archive_sha256": "3ba922f654e75796251ef809d3447ab5efbff230ea04c97ce6634edc0194e2fd",
+    "objects": [
+      {
+        "name": "autonews",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nautonews.img\r\n0\r\n\r\n\r\n",
+        "sha256": "e611338baad12af4cf7dce36e2cf78a0b0bdf243f756f5ac68a52cbfa14b51de"
+      },
+      {
+        "name": "hydrant",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n3\r\nhydrant.img\r\n0\r\n\r\n\r\n",
+        "sha256": "b60f29ab67ce5252caff0891f6afec16a7788df1cf866cf896b04c6bad429312"
+      },
+      {
+        "name": "phone",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nphone.img\r\n0\r\n\r\n\r\n",
+        "sha256": "6d0caa91d3e22e9dbbf759f77e3559c98b0409f355a640f13a0294c3a505c574"
+      },
+      {
+        "name": "postbox",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n3\r\npostbox.img\r\n0\r\n\r\n\r\n",
+        "sha256": "7f55f000cb8947cf490da64e98961a59236254601ddaf944ae8c90798ed25bd7"
+      },
+      {
+        "name": "stoplite",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nstoplite.img\r\n0\r\n\r\n\r\n",
+        "sha256": "9b989291fb5f087707329142ea0e397e2e716fd705c58ed20c9aad4e6a2ea5c7"
+      },
+      {
+        "name": "taxicab",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntaxicab.img\r\n0\r\n\r\n\r\n",
+        "sha256": "0d25cd24ce8bda8d2b49573638251c55e208520b05c082824d075c5fc17a41db"
+      },
+      {
+        "name": "dogstand",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndogstand.img\r\n0\r\n\r\n\r\n",
+        "sha256": "93e0c54e0b3aee12c3818ae9ad9ccd606d7115dbf5bab6e40f1cdd766b67b2e2"
+      },
+      {
+        "name": "pipes1",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n0\r\npipes1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "557cff687f50d296231a8b6c2bf8d02a0569d9115cad2ee6be279bb8f109946b"
+      },
+      {
+        "name": "pipes2",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n1\r\npipes2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4b34f2c3ea80aea9a4c8e3d81623e8f256400b31a7f357adaaf7062cd2e1cc6d"
+      },
+      {
+        "name": "pipes3",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n1\r\npipes3.img\r\n0\r\n\r\n\r\n",
+        "sha256": "d4081c4e551d13ed4953932fdc6c9cba036c3691582b9d78b6d06cbfbcbaf5bf"
+      },
+      {
+        "name": "pipes4",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n0\r\npipes4.img\r\n0\r\n\r\n\r\n",
+        "sha256": "3f3df88c9c559d5d7f0ad8393f7a86e7a991cd49da93c6a1c55843b0f34a8ba1"
+      },
+      {
+        "name": "pipes5",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n0\r\npipes5.img\r\n0\r\n\r\n\r\n",
+        "sha256": "3839b54777ad69b513818d08be812eb600e00a7ef88f40bb1d6d6fdf53f7ada0"
+      },
+      {
+        "name": "roofflag",
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "3\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "8a258585e3f73aaeea80716aaf7a6210210ff43484b2ecf18581a19a41a3ebfc"
+      }
+    ]
+  },
+  "medieval": {
+    "archive_sha256": "2b864609b801088ece8b5528645ce633d70729285cf1aeeec8afff1994a65a01",
+    "objects": [
+      {
+        "name": "castle1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncastle1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "a1243e93538be93041c95e4e2d680a5cb8182d8f0383fbee1f2ad223e6e0f62e"
+      },
+      {
+        "name": "tower1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntower1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "b51e7f6f2cd81b43e1765b263cab9c48865baa0ed774926c2c5a2b353a8e7cbb"
+      },
+      {
+        "name": "tower2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntower2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "d4f800732f3f1e1ffdb1c394d16d40a795b2b404024b2b45e19f4b33104a193d"
+      },
+      {
+        "name": "tudor",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntudor.img\r\n0\r\n\r\n\r\n",
+        "sha256": "7d6712f0385f9b6c1ecf079287c4fa9e1f58e7ef4c1990b969c441cfe9b1061e"
+      },
+      {
+        "name": "tree1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntree1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "f2d51eeb9696cf72fc629fa85d7751f0cccfeff5132a1b5eb04af5eb39cc687a"
+      },
+      {
+        "name": "mush1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmush1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "d57502db0d325347882dc19af0f400ba210d60b68078583fa066204cbc6408c0"
+      },
+      {
+        "name": "mush2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmush2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "0a1c2ae2c3deee2ea47af86e4657c81945a7f8feaad82cc34103482aee1b4850"
+      },
+      {
+        "name": "mush3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmush3.img\r\n0\r\n\r\n\r\n",
+        "sha256": "3f38cb63675b9d4367b06def024663fb0baa23d93fdb09bb9a3da38d92dca5f2"
+      },
+      {
+        "name": "root1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroot1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "0330febb910e38ae105fb6da43b6b4e6356a721a2e766589859e9cc2548df850"
+      },
+      {
+        "name": "root4",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n1\r\nroot4.img\r\n0\r\n\r\n\r\n",
+        "sha256": "50a357d4bca8460faf33e35576029cfc65d26c20916edcd42fe43367a4785bc2"
+      },
+      {
+        "name": "root3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n0\r\nroot3.img\r\n0\r\n\r\n\r\n",
+        "sha256": "8f6c5317208df4c40b55bd3367eeb68f93eca82f810c16599ddf35fc9cf977e3"
+      },
+      {
+        "name": "bush",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbush.img\r\n0\r\n\r\n\r\n",
+        "sha256": "8ffbbc459e63ff576bba6579e1237824411a79ec1d7167b993a5b20af04ccc60"
+      },
+      {
+        "name": "tree2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntree2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "fd2a0a5d62ad4071b0f967087b4bfdb7a87316b4a2f88200222d46f0271ceabb"
+      },
+      {
+        "name": "barn",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbarn.img\r\n0\r\n\r\n\r\n",
+        "sha256": "795c1f64a9f4c53e13b2b685247fa45a2811a093d971905c28a502f994705c54"
+      },
+      {
+        "name": "cataplt",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncataplt.img\r\n0\r\n\r\n\r\n",
+        "sha256": "cb6eb279ef32f2e247ce61892d1ecd0d84e40064c557c458904efd9bb13f0df3"
+      },
+      {
+        "name": "ivy1",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nivy1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "eb247cee15b94511210c253a7446be85f200fc66864cb866fc3751f59537768b"
+      },
+      {
+        "name": "ivy2",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nivy2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "a0c0e438a4125197975a2f2a61ea197bc4b3ab2bf527285728adfa4d5c2bdc7c"
+      },
+      {
+        "name": "ivy3",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nivy3.img\r\n0\r\n\r\n\r\n",
+        "sha256": "1b1542a13b2bd7a991e299d60fe867a477e881de49ccd30a5ef01a7472ce24a2"
+      },
+      {
+        "name": "platform",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nplatform.img\r\n0\r\n\r\n\r\n",
+        "sha256": "5449a87413e8f434a5a9e770bea56d888e6ac28befafb2c3f8d79b60fadb6f5a"
+      }
+    ]
+  },
+  "music": {
+    "archive_sha256": "a3d76241a1a5948266d63f2004cdf86501f6a144e3b733b9f221f95e80cb5020",
+    "objects": [
+      {
+        "name": "drums",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "amp1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "amp2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "amp3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "amp4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "amp5",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "amp6",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "guitar",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "keyboard",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "mic",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "stand",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "pedal",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "cables",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "light1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "light2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "light3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      }
+    ]
+  },
+  "pirate": {
+    "archive_sha256": "abefb1a540a7e2daa5f8bdd791f48101acafe640552c4272f5fbdff8f003c9c0",
+    "objects": [
+      {
+        "name": "cannon",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncannon.img\r\n0\r\n\r\n\r\n",
+        "sha256": "08e0c220288cae47f94b70225351df35f3983d3f525a1e35bddd94e6cc67cfd7"
+      },
+      {
+        "name": "flag",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\nflag.img\r\n0\r\n\r\n\r\n",
+        "sha256": "71ac078cfcfeebe30df2c9ef0753147b0dcd4b1569621e819ae23d27db6477f0"
+      },
+      {
+        "name": "palm1",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\npalm1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "2c588e2fca53377b312dcab4303c8efc11b51ef126e5e5e24f6e822a4aac26cd"
+      },
+      {
+        "name": "palm2",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\npalm2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "95d55133a68ee07e495dc23d31311c9d03a0a9a3a8c75331e711cd9670bbb57f"
+      },
+      {
+        "name": "sabre",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nsabre.img\r\n0\r\n\r\n\r\n",
+        "sha256": "8093db3eff25dec1689136e5699d1cd317032c1c64d2d69f6dc6780e95a9fc9f"
+      },
+      {
+        "name": "treasure",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntreasure.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4303a6579efeee736dc9506707f92d5d1ba7bc38263976d008f20dbc9e3a8da5"
+      },
+      {
+        "name": "bottle",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\nbottle.img\r\n0\r\n\r\n\r\n",
+        "sha256": "6468faedbfaac98e4e5c7e077b52c53aab3114d847c2cae8c8519ea825651d5f"
+      },
+      {
+        "name": "canballs",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncanballs.img\r\n0\r\n\r\n\r\n",
+        "sha256": "87bf5408090bbdfa50f19fc105f4ff81509af5adafb536ffe588aa30fed566a4"
+      },
+      {
+        "name": "hook",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\nhook.img\r\n0\r\n\r\n\r\n",
+        "sha256": "964b15e70d7a6fd7264a077e3b844b78be4c4145662840c4c9ca1e61c9b2e04d"
+      },
+      {
+        "name": "jewel1",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\njewel1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "f6b7e9bfea1ff3d8944755f79c47b70789ca70998a15015d92fc732cde4064d6"
+      },
+      {
+        "name": "rowboat",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n3\r\nrowboat.img\r\n0\r\n\r\n\r\n",
+        "sha256": "b11929d355023970504a6ba927601293551cebdb811a5cec7fa1d188085c2efd"
+      },
+      {
+        "name": "roofankr",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroofankr.img\r\n0\r\n\r\n\r\n",
+        "sha256": "b5b17549c78ed87e29a8b72b939c2470b2ea95d4389a82593c3c03f4e1f79536"
+      },
+      {
+        "name": "roofrope",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n2\r\nroofrope.img\r\n0\r\n\r\n\r\n",
+        "sha256": "70731c639da317fb398e133a1b0672df89a2ad5ad72cc5d6216d3b90ac74615d"
+      },
+      {
+        "name": "sidplnt1",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n1\r\nsidplnt1.img\r\n0\r\n\r\n\r\n",
+        "sha256": "b63d49c67e3f1ecc444de607f25494f4d636947d2cc766f35125c7332051f67c"
+      },
+      {
+        "name": "sidplnt2",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n0\r\nsidplnt2.img\r\n0\r\n\r\n\r\n",
+        "sha256": "6a2c3347d2f30460390966e7450ed44f18c970a699406d493fc078a120d3044f"
+      },
+      {
+        "name": "sidplnt3",
+        "fields": [
+          4,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "4\r\n0\r\n0\r\n1\r\n1\r\n0\r\nsidplnt3.img\r\n0\r\n\r\n\r\n",
+        "sha256": "d494085668e6ceae87baa7c233612ba05b53d0ae1f471a988b9830f9d1f5b0c4"
+      }
+    ]
+  },
+  "snow": {
+    "archive_sha256": "7b71a28175dda1ae5e1f20bfd267c913742f4de8460da51b12f78db07f801543",
+    "objects": [
+      {
+        "name": "snowman",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "fridge",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "smallice",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "icetree",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "d6db18cf554d5080288ea8b8ed3216e475ca452c722bec07464ae48d419b48ff"
+      },
+      {
+        "name": "xmastree",
+        "fields": [
+          2,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "2\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "cca24e7807a98284df3d7dd1effd568885d54cccbd09c209aae6708b517b3bda"
+      },
+      {
+        "name": "present",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "ecb6b6845066c8295752c7cce2d6e189acd5ccd5c32ef317a3d4eb52dcf63ac6"
+      },
+      {
+        "name": "present2",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "ecb6b6845066c8295752c7cce2d6e189acd5ccd5c32ef317a3d4eb52dcf63ac6"
+      },
+      {
+        "name": "side1",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "31e19c59994102413eb68a673cb2da2282838668b7ad6c3c4cfe656f2e6be7d7"
+      },
+      {
+        "name": "side2",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "31e19c59994102413eb68a673cb2da2282838668b7ad6c3c4cfe656f2e6be7d7"
+      },
+      {
+        "name": "side3",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "31e19c59994102413eb68a673cb2da2282838668b7ad6c3c4cfe656f2e6be7d7"
+      },
+      {
+        "name": "roof1",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "14fa2e889d7c1f351b7fb6f125e78d769e50e92ae9681e8b320b11578fa2aec1"
+      },
+      {
+        "name": "roof2",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "14fa2e889d7c1f351b7fb6f125e78d769e50e92ae9681e8b320b11578fa2aec1"
+      },
+      {
+        "name": "roof3",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "14fa2e889d7c1f351b7fb6f125e78d769e50e92ae9681e8b320b11578fa2aec1"
+      },
+      {
+        "name": "snowbod",
+        "fields": [
+          20,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "20\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "ecb6b6845066c8295752c7cce2d6e189acd5ccd5c32ef317a3d4eb52dcf63ac6"
+      }
+    ]
+  },
+  "space": {
+    "archive_sha256": "839e4a723649d5448acd713ff56e1523f194b9db7cb35836b5d6987f176c7887",
+    "objects": [
+      {
+        "name": "buildng1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "buildng2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "buildng3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "buildng4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "buildng5",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "cannon",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "dish",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "mcdons",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "roof1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "side1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "side2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "side3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      }
+    ]
+  },
+  "sports": {
+    "archive_sha256": "374f2e3f20fa73c0d95554295565f625531b6e132a0f3278ff8952067ea1b3ad",
+    "objects": [
+      {
+        "name": "dunknet",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndunknet.img\r\n0\r\n\r\n\r\n",
+        "sha256": "60c087bbe7efcf3aea37cb945fe6a5263a872cdca30303675f4c23312a0b2f8a"
+      },
+      {
+        "name": "hijump",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nhijump.img\r\n0\r\n\r\n\r\n",
+        "sha256": "60c6412c3fa370debebf0f43cd790dbcdd6695b0e49e8f92668cea01e2e59cfd"
+      },
+      {
+        "name": "hoops",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nhoops.img\r\n0\r\n\r\n\r\n",
+        "sha256": "d7e1faf32d5a6394bee5547f02412684556ef8f212fbdce19f4ffb30dbaf7c0a"
+      },
+      {
+        "name": "hurdle",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nhurdle.img\r\n0\r\n\r\n\r\n",
+        "sha256": "9eb39f03e1fcd00b60a68d081b1b45a4e3f8584c974627446fc43fc988768e09"
+      },
+      {
+        "name": "plinth",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nplinth.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4b8e0570715132bae3aaf521d9a0ac471b226f6a89cdd21b2539074561982a2e"
+      },
+      {
+        "name": "rugby",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nrugby.img\r\n0\r\n\r\n\r\n",
+        "sha256": "1d8d0e09dbbae6b760d1bb918aed1e845759b5c73cca955865f3010202973eb0"
+      },
+      {
+        "name": "trophy",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntrophy.img\r\n0\r\n\r\n\r\n",
+        "sha256": "ddef6179594adbb063a8693d65bbd2c72c16873f02f6efff8d0617f4a5e9f50c"
+      },
+      {
+        "name": "vault",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nvault.img\r\n0\r\n\r\n\r\n",
+        "sha256": "f7ef10b30d846caf7ab24097b72182ff934b88a7ca14277dc800879b6cc493d8"
+      },
+      {
+        "name": "weights",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nweights.img\r\n0\r\n\r\n\r\n",
+        "sha256": "9c4295e824500222429ee8f15f88e4e63952f179a8c9d91596225b3a382532db"
+      },
+      {
+        "name": "arrow",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\narrow.img\r\n0\r\n\r\n\r\n",
+        "sha256": "6e1d80ba292f7c67346d957811192b899b6782bbc813d989458e5337f876bfa0"
+      },
+      {
+        "name": "ftblhelm",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nftblhelm.img\r\n0\r\n\r\n\r\n",
+        "sha256": "d0cb1fb9bb017f82d035c6e8a3c31e8141404b296395fb47262735e49d88dda9"
+      },
+      {
+        "name": "medal",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nmedal.img\r\n0\r\n\r\n\r\n",
+        "sha256": "ad178d11451efa20286b4110e2968263f493907a117376f78ea4b22077c26fd3"
+      },
+      {
+        "name": "roofbars",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n2\r\nmedal.img\r\n0\r\n\r\n\r\n",
+        "sha256": "ad178d11451efa20286b4110e2968263f493907a117376f78ea4b22077c26fd3"
+      },
+      {
+        "name": "trainer",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\ntrainer.img\r\n0\r\n\r\n\r\n",
+        "sha256": "99f2a2560ec6a26e2a9ba3dd0984a2324dceb40c9d430f675834f4375c66656a"
+      },
+      {
+        "name": "whistle",
+        "fields": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "1\r\n0\r\n0\r\n1\r\n1\r\n3\r\nwhistle.img\r\n0\r\n\r\n\r\n",
+        "sha256": "4b03f4dfe4c6056bdcf8c86094d43ea18a0d8cd16625c9182e39c2c76c8c5373"
+      }
+    ]
+  },
+  "tentacle": {
+    "archive_sha256": "36c3225bae6a1845a71369aff895ca2ca8ba697e05e05621c90226af2e659299",
+    "objects": [
+      {
+        "name": "alien1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "alien2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "alien3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "alien4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "alien5",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "freak",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "moon",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "roof1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "floor1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "star",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "floor3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "time": {
+    "archive_sha256": "0b7f0912a6ef82c83b93f8241b02fa1865193c286c6a0e46b0196feeafc3e479",
+    "objects": [
+      {
+        "name": "cuckoo",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncuckoo.img\r\n0\r\n\r\n",
+        "sha256": "a260a100eca41f7d5f786d032b1432cbea2f8775c5c667c13da295076d56fc82"
+      },
+      {
+        "name": "candle",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ncandle.img\r\n0\r\n\r\n",
+        "sha256": "6763f51c07d5ddf1c6de43e3d01350386b2c3582f9bb952efdf2fd83b489a09c"
+      },
+      {
+        "name": "grandpa",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ngrandpa.img\r\n0\r\n\r\n",
+        "sha256": "730069e7dbf74a2f30ce1f352b16c57a447fc8f13248a7ef702b60436238c3c1"
+      },
+      {
+        "name": "dot",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\ndot.img\r\n0\r\n\r\n",
+        "sha256": "04b7c44dc7b4dce5fd124031c943b5e74f3460cb82158298cb85f7e861908218"
+      },
+      {
+        "name": "hand01",
+        "fields": [
+          30,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "30\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n",
+        "sha256": "0d664e520cbc6009d122d6d06683d416cc2d40368e215a101c30d766a88297ee"
+      },
+      {
+        "name": "hand02",
+        "fields": [
+          30,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "30\r\n0\r\n0\r\n1\r\n1\r\n0\r\nhand02.img\r\n0\r\n\r\n",
+        "sha256": "e94da07712a88c0fa7fb5fa0fb43f6e8e07a00f3cc225b38c70bf11c0bbed75d"
+      },
+      {
+        "name": "hourglaz",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nhourglaz.img\r\n0\r\n\r\n",
+        "sha256": "d85c00a96a08550e5642963f5a4f433625383d7fe928e6eff3c321741bc6ffe4"
+      },
+      {
+        "name": "leaf",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nleaf.img\r\n0\r\n\r\n",
+        "sha256": "ee0d200c29de11ad13c34de1a423d8be4a0bc38962d689f3d70abe2a34de0b32"
+      },
+      {
+        "name": "mickeym2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmickeym2.img\r\n0\r\n\r\n",
+        "sha256": "d9b46c3955df5345b09dfd38fdb8af7a24e50375acf9cce9d7f3e27d3e37e9d7"
+      },
+      {
+        "name": "mtronom1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmtronom1.img\r\n0\r\n\r\n",
+        "sha256": "097402a65b43a78bf388af5d7dcd476762647251fd9d59b5387866efcbacea98"
+      },
+      {
+        "name": "mtronom2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nmtronom2.img\r\n0\r\n\r\n",
+        "sha256": "06a1d3cf5257632d039a9278c806b8347777f10e577b8ca05dd9f7dbedba660e"
+      },
+      {
+        "name": "numer01",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nnumer01.img\r\n0\r\n\r\n",
+        "sha256": "eb4a07088c18a65341c43a3fc4bf450201e517c3571caae346c2919bfd57ac35"
+      },
+      {
+        "name": "numer02",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nnumer02.img\r\n0\r\n\r\n",
+        "sha256": "cd5d93f774f2f4f0eac2684320814cf92b751b793feff65b535a0635ad00bc90"
+      },
+      {
+        "name": "pocket",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\npocket.img\r\n0\r\n\r\n",
+        "sha256": "3b19fffe59e3051c20431e24315f86d636bf26eca9edfdb44d8ff7afb07848e6"
+      },
+      {
+        "name": "sundial",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\nsundial.img\r\n0\r\n\r\n",
+        "sha256": "28641fba24ce3231698aa64304ce170c8df1a76668fbc87c7249e242adf0aae3"
+      }
+    ]
+  },
+  "tools": {
+    "archive_sha256": "93fb19097a2291cc7ffa72a9b14ea9803797549b74f65a0a66960589bea65c98",
+    "objects": [
+      {
+        "name": "angle",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "bolt",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "cutters",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "monkey",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "nail1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "nail2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "nut1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "nut2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "pliers",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "drill",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "hammer",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "saw",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "hook",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "screw",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "spanner",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "measure",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "tribal": {
+    "archive_sha256": "891fdc3f30de3a8b9ab4298ff085b031944e6ab535944bd5fad01b3ea4f96455",
+    "objects": [
+      {
+        "name": "hut1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "sticks1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "sticks2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "sticks3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "stones1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "stones2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "stones3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "washline",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "bonecage",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "skull",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "skull2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "bush1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  },
+  "urban": {
+    "archive_sha256": "5552eff64778a3564526e497ff2e420a4caad8004bf564b2d3d89036660edbd8",
+    "objects": [
+      {
+        "name": "bomb",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "trash",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "left1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "left2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n0\r\n\r\n\r\n",
+        "sha256": "01e7a19c5ba4456344f9dd5aeacd106b1219363e43a6c487d7867414c35a7dc5"
+      },
+      {
+        "name": "right",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n1\r\n\r\n\r\n",
+        "sha256": "b4a5cb0b1f3f4bf137b09202d2c85858df7f6bcd75f9c9d4b0a9019e0b339528"
+      },
+      {
+        "name": "roof1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "roof2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n2\r\n\r\n\r\n",
+        "sha256": "1f80d4d4b4fe6b196e5a40fa626508ded5279e565bb06d0eaeb6998b9fa7578a"
+      },
+      {
+        "name": "rubble1",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "rubble2",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "rubble3",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "rubble4",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      },
+      {
+        "name": "light",
+        "fields": [
+          10,
+          0,
+          0,
+          1,
+          1,
+          3
+        ],
+        "definition": "10\r\n0\r\n0\r\n1\r\n1\r\n3\r\n\r\n\r\n",
+        "sha256": "14e0eabe21e925823895257fc4a522f22dbebc8ed74a70a41d275c50b200d676"
+      }
+    ]
+  }
+}
