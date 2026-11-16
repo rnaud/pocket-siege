@@ -19,7 +19,7 @@ import { nativeAreaDamage } from "./armageddon/area-damage.js";
 import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
 import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
-import { nativeHitscanBody } from "./armageddon/hitscan-body.js";
+import { nativeHitscanBody, nativeWormHitscanBodies } from "./armageddon/hitscan-body.js";
 import { nativeHitscanRays } from "./armageddon/hitscan-spread.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { nativeCasing } from "./armageddon/casing.js";
@@ -2425,17 +2425,7 @@ function fireShotgun(prepared = false) {
     nativeShotgunRay.spread,
     () => matchRandom.logicUint(),
   )[0];
-  // Native body projection; current host bodies place their collision centre
-  // 17 pixels above the foot anchor.
-  const targets = worms
-    .filter((t) => t.hp > 0)
-    .map((t) => ({
-      x: Math.round(t.x * 65536),
-      y: Math.round((H - t.y - 17) * 65536),
-      type: 2,
-      self: t === w,
-      worm: t,
-    }));
+  const targets = nativeWormHitscanBodies(worms, w, H);
   const bodyHit = nativeHitscanBody(
     targets,
     ray[2] >> 16,

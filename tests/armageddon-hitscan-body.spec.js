@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hitscan-body.json" with { type: "json" };
-import { nativeHitscanBody } from "../src/armageddon/hitscan-body.js";
+import { nativeHitscanBody, nativeWormHitscanBodies } from "../src/armageddon/hitscan-body.js";
 test("nearest eligible body distance matches original x86 filtering and projections", () => {
   expect(fixture.cases).toHaveLength(432);
   for (const row of fixture.cases) {
@@ -29,4 +29,23 @@ test("native selection keeps the nearest target and excludes the shooter", () =>
     distance: -1,
     body: null,
   });
+});
+
+test("live hitscan adapter uses native centers and current registry categories", () => {
+  const shooter = { x: 0, y: 80, hp: 100 };
+  const standing = { x: 30, y: 80, hp: 100 };
+  const hurt = { x: 40, y: 80, hp: 100, originalHurt: { state: 0x80 } };
+  const airborne = { x: 50, y: 80, hp: 100, originalJump: {} };
+  const frozen = { x: 60, y: 80, hp: 100, frozen: true };
+  const dead = { x: 20, y: 80, hp: 0 };
+  const bodies = nativeWormHitscanBodies([frozen, airborne, hurt, standing, shooter, dead], shooter, 100);
+  expect(bodies.map(b => b.type)).toEqual([2,2,3,4,6]);
+  for (const b of bodies) expect(b.y).toBe(20 << 16);
+  for (const [type, target] of [[2,standing],[3,hurt],[4,airborne],[6,frozen]]) {
+    expect(nativeHitscanBody(bodies, 0, 20, 65536, 0, 100, 1 << type).body?.worm).toBe(target);
+  }
+  // A centerline shot used to miss because of the obsolete 17-pixel offset.
+  expect(nativeHitscanBody(bodies, 0, 20, 65536, 0, 100, -1).body?.worm).toBe(standing);
+  // The native perpendicular boundary is strict: exactly sixteen pixels misses.
+  expect(nativeHitscanBody(bodies, 0, 36, 65536, 0, 100, -1).body).toBeNull();
 });

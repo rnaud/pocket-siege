@@ -1,3 +1,4 @@
+import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
 import { fixedMultiply } from "./numeric.js";
 // 004FBEA0. Origin is integer pixels; direction and body positions are 16.16.
 // The native routine returns distance; body identity is retained for the host adapter.
@@ -25,4 +26,16 @@ export function nativeHitscanBody(bodies, x, y, dx, dy, limit, mask) {
     }
   }
   return { distance, body };
+}
+
+// Worm getter004D0F50 returns the body center without a sprite/foot offset.
+// Enumerate in native registry category order; retain host identity for damage.
+export function nativeWormHitscanBodies(worms, shooter, height) {
+  return worms.filter(worm => worm.hp > 0).map(worm => ({
+    x: Math.round(worm.x * 65536) | 0,
+    y: Math.round((height - worm.y) * 65536) | 0,
+    type: nativeWormCollisionType(nativeWormState(worm)),
+    self: worm === shooter,
+    worm,
+  })).sort((a, b) => a.type - b.type);
 }
