@@ -2,10 +2,11 @@ import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
 import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
 import { nativeMineBlast } from "./armageddon/mine-blast.js";
 import { nativeMineContact } from "./armageddon/mine-contact.js";
+import { nativeMineArt } from "./armageddon/mine-art.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
-import { nativeMineTimer, nativeMineInitialTimer, nativeMineSprite, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
+import { nativeMineTimer, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
 import { playNativeMineSound } from "./armageddon/audio.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
@@ -4693,7 +4694,8 @@ function frame(now) {
       crate.mesh.userData.beacon.rotation.y = now * 0.002;
   }
   for (const mine of mines) {
-    updateOriginalObject(mine.mesh, nativeMineSprite(mine.nativeTimer), 0, mine.nativeBody.angle);
+    const art = nativeMineArt(mine.nativeBody, mine.nativeTimer);
+    updateOriginalObject(mine.mesh, art.name, 0, art.progress);
     if (mine.mesh.userData.light)
       mine.mesh.userData.light.visible =
         mine.arm > 0 ? Math.floor(now / 160) % 2 === 0 : true;
@@ -5269,6 +5271,7 @@ window.siege = {
       nativeTimer: { ...m.nativeTimer },
       nativeBody: { ...m.nativeBody },
       sprite: m.mesh.userData.originalSprite,
+      frame: m.mesh.userData.originalFrame,
       team: m.team,
     })),
     daily: daily ? { date: daily.date, seed: daily.seed } : null,
@@ -5467,6 +5470,14 @@ if (import.meta.env.DEV) {
     },
     explodeAt(x = 600, y = 350, kind = "cluster") {
       explode(x, y, kind, 0);
+    },
+    submergeMine(index = 0) {
+      const mine = mines[index];
+      if (!mine) return;
+      Object.assign(mine.nativeBody, {
+        x: 8 * 65536, y: Math.round((H - waterLevel + 5) * 65536),
+        vx: 0, vy: 0, angle: 32768, submerged: 1,
+      });
     },
     setAmmo(teamIndex = 0, kind = "grenade", value = 5) {
       ammo[teamIndex][kind] = value;
