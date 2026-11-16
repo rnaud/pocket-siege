@@ -14,6 +14,8 @@ from unicorn.x86_const import UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EAX, UC
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
+parser.add_argument('--scheme-resource-id', type=int)
+parser.add_argument('--records-only', action='store_true')
 args = parser.parse_args()
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -37,6 +39,12 @@ cpu.mem_write(owner + 0x2a0, struct.pack('<I',context))
 cpu.mem_write(context + 0x11d57,b'\x01')
 for offset in (0x11c98,0x11cde):
     cpu.mem_write(context + offset,b'\x64') # Explicit nonzero percentage divisors.
+inputs = 'Zeroed context except 0x11d57=1 and percentage divisors 0x11c98/0x11cde=100; localized names empty. Not standard-match defaults.'
+if args.scheme_resource_id is not None:
+    expanded = json.loads(Path('src/armageddon/scheme-runtime-data.json').read_text())
+    scheme = next(s for s in expanded['schemes'] if s['resource_id'] == args.scheme_resource_id)
+    cpu.mem_write(context + expanded['context_offset'], bytes(scheme['bytes']))
+    inputs = f'Expanded built-in scheme resource {args.scheme_resource_id}; frontend handicaps zero; remaining context zero; localized names empty.'
 # The only virtual calls in this initializer are localized display-name getters.
 # Substitute empty strings explicitly; they do not feed numeric configuration.
 # This is a controlled input, not recovered localization or a patched initializer.
@@ -70,6 +78,11 @@ for index in range(71):
                     'alternate_name':record[37:70].split(b'\0')[0].decode('ascii'),
                     'fields':{hex(offset):struct.unpack_from('<i',record,offset)[0]
                               for offset in range(0x48,0x208,4)}})
+if args.records_only:
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004B90A0','inputs':inputs,'records':records},indent=2)+'\n')
+    print(f'Captured {len(records)} records for scheme {args.scheme_resource_id}')
+    raise SystemExit(0)
 # The original selector consumes weapon type/action/sprite fields, not localized names.
 weapon_art = []
 for record in records:
@@ -148,6 +161,6 @@ cpu.hook_del(hook)
 args.output.parent.mkdir(parents=True,exist_ok=True)
 args.output.write_text(json.dumps({'executable_sha256':digest,
     'entry':'004B90A0','method':'Original x86 instructions executed with Unicorn',
-    'inputs':'Zeroed context except 0x11d57=1 and percentage divisors 0x11c98/0x11cde=100; localized names empty. Not standard-match defaults.',
+    'inputs':inputs,
     'records':records,'weapon_art':weapon_art,'inventory_vectors':inventory,'delay_vectors':delay_vectors},indent=2)+'\n')
 print(f'Captured {len(records)} weapon records, {len(inventory)} inventory vectors and {len(delay_vectors)} delay vectors')
