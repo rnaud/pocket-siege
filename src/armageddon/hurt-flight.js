@@ -10,7 +10,8 @@ const byte = (address) => scheme.bytes[address - schemes.context_offset];
 const fixed = (value) => Math.round(value * 65536) | 0;
 
 // Constructor fields from 004F4000/004D5A40, entering hurt from ordinary
-// unrestrained state. Native collision mask/registry is still a host predicate.
+// unrestrained state. Live terrain queries use the native mask through a host
+// predicate; full native body-registry dispatch remains to be connected.
 export function attachNativeHurtFlight(worm, height) {
   const x = fixed(worm.x),
     y = fixed(height - worm.y);

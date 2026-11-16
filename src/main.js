@@ -573,7 +573,7 @@ function createWorm(t, i, x, spawnY = null) {
   group.add(g);
   const y =
     spawnY ??
-    Math.max(...[-16, -8, 0, 8, 16].map((dx) => terrain.surface(x + dx))) + 12;
+    Math.max(...[-4, -2, 0, 2, 4].map((dx) => terrain.surface(x + dx))) + 8;
   return {
     team: t,
     name: names[t][i],
@@ -4241,15 +4241,18 @@ function frame(now) {
     );
     if (original) {
       w.body.material.map = original.map;
-      // Original 60px canvases have a baseline at row 43. Native worms face left.
-      const scale = Math.max(1, Math.round((size / pixelWorldY / 60) * 1.45));
-      const unit = terrain.pixels ? 1 : scale * pixelWorldY;
+      // 004AFB00/00498890 center the canvas on the physics body. Preserve
+      // one source pixel per world pixel on generated and authored terrain.
       w.body.scale.set(
-        -(original.facing ?? facing) * original.map.image.width * unit,
-        original.map.image.height * unit,
+        -(original.facing ?? facing) * original.map.image.width,
+        original.map.image.height,
         1,
       );
-      w.body.position.set(0, 13 * unit, 24);
+      w.body.position.set(0, 0, 24);
+      w.g.scale.x = 1;
+      // Render queue004C3FA0 discards fractional body coordinates.
+      w.renderY = Math.ceil(w.y);
+      w.g.position.set(Math.floor(w.x), w.renderY, 15);
       w.g.userData.originalSprite = original.name;
       w.g.userData.originalFrame = original.index;
     }
@@ -4314,10 +4317,7 @@ function frame(now) {
     );
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
-    const p = screen(
-      w.x,
-      w.renderY + (terrain.pixels ? 36 : spriteSize * 0.83 - 7),
-    );
+    const p = screen(w.x, w.renderY + (original ? 24 : spriteSize * 0.83 - 7));
     const visible = w.hp > 0 && w.x > view.x + 12 && w.x < view.x + view.w - 12;
     w.label.style.visibility = visible ? "visible" : "hidden";
     if (active) {
@@ -5055,6 +5055,16 @@ window.siege = {
         pose: g.userData.pose || "idle",
         originalSprite: g.userData.originalSprite,
         originalFrame: g.userData.originalFrame,
+        originalTransform: g.userData.originalSprite
+          ? {
+              x: g.position.x,
+              y: g.position.y,
+              offsetX: g.children[0].position.x,
+              offsetY: g.children[0].position.y,
+              width: Math.abs(g.children[0].scale.x * g.scale.x),
+              height: g.children[0].scale.y,
+            }
+          : null,
         originalCanvas: g.children[0]?.material.map?.image
           ? {
               width: g.children[0].material.map.image.width,

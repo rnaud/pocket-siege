@@ -121,7 +121,7 @@ test("all authored maps support six separated, grounded worm spawns including ca
       expect(Math.abs(worm.y - positions[i].y), asset.id).toBeLessThan(1);
       for (const other of worms.slice(0, i))
         expect(
-          Math.abs(worm.x - other.x) >= 40 || Math.abs(worm.y - other.y) >= 60,
+          Math.abs(worm.x - other.x) >= 32 || Math.abs(worm.y - other.y) >= 32,
           asset.id,
         ).toBe(true);
     }

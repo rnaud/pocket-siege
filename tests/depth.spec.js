@@ -31,7 +31,8 @@ test("walking sweeps walls and releases support at a ledge", () => {
     1,
     2,
   );
-  expect(w.x).toBeLessThan(125);
+  // Shape 3 extends four pixels to the right of its integer body anchor.
+  expect(w.x).toBeLessThan(136);
   const edge = worm(100);
   walkWorm(edge, { solid: (x, y) => x < 120 && y < 300 }, 1, 2);
   expect(edge.ground).toBe(false);

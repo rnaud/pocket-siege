@@ -26,9 +26,9 @@ test("blast direction is radial, preserves momentum, and weaker with distance", 
     b = worm(80, 100),
     below = worm(0, 40);
   a.vx = 20;
-  blastImpulse(a, 0, 117, 130);
-  blastImpulse(b, 0, 117, 130);
-  blastImpulse(below, 0, 117, 130);
+  blastImpulse(a, 0, 100, 130);
+  blastImpulse(b, 0, 100, 130);
+  blastImpulse(below, 0, 100, 130);
   expect(a.vx).toBeGreaterThan(b.vx);
   // Blasts add a little lift, so an even side hit still pops the worm upward.
   expect(a.vy).toBeGreaterThan(0);
@@ -68,11 +68,12 @@ test("swept body rebounds from walls and ceilings without tunneling", () => {
   expect(w.x).toBeLessThan(83);
   expect(w.vx).toBeLessThan(0);
   expect(bodyBlocked(terrain, w.x, w.y)).toBe(false);
-  const up = worm(0, 100);
+  const up = worm(0, 150);
   up.vy = 500;
   up.knocked = true;
   for (let i = 0; i < 20; i++) stepWorm(up, terrain, 1 / 120);
-  expect(up.y).toBeLessThanOrEqual(156);
+  expect(up.y).toBeLessThan(192);
+  expect(bodyBlocked(terrain, up.x, up.y)).toBe(false);
   expect(up.vy).toBeLessThan(0);
 });
 test("hard falls cause damage and settle; gentle landings do not", () => {
@@ -88,7 +89,10 @@ test("hard falls cause damage and settle; gentle landings do not", () => {
   expect(lowDamage).toBe(0);
   expect(high.ground).toBe(true);
   expect(high.vy).toBe(0);
-  expect(high.y).toBeGreaterThanOrEqual(10);
+  expect(high.y).toBeGreaterThan(6);
+  expect(high.y).toBeLessThanOrEqual(7);
+  expect(bodyBlocked(floor, high.x, high.y)).toBe(false);
+  expect(bodyBlocked(floor, high.x, high.y - 1)).toBe(true);
 });
 test("contact friction stops sliding and projectile hits include the head", () => {
   const w = worm(0, 10);
@@ -98,8 +102,8 @@ test("contact friction stops sliding and projectile hits include the head", () =
   for (let i = 0; i < 200; i++) stepWorm(w, floor, 1 / 120);
   expect(w.vx).toBe(0);
   expect(w.knocked).toBe(false);
-  expect(hitsWorm(w, w.x, w.y + 40)).toBe(true);
-  expect(hitsWorm(w, w.x, w.y + 55)).toBe(false);
+  expect(hitsWorm(w, w.x, w.y + 8)).toBe(true);
+  expect(hitsWorm(w, w.x, w.y + 10)).toBe(false);
 });
 test("charge power grows with hold duration, caps, and bounce reflects normal", () => {
   expect(chargePower(0.2)).toBe((8730 / 65536) * 100);

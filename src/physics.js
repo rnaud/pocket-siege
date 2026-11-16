@@ -4,6 +4,7 @@ import { nativeSweep } from "./armageddon/motion.js";
 import { generateTerrain } from "./map-generator.js";
 import { islandTop, islandVoid } from "./island-profile.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
+import collisionShapes from "./armageddon/collision-shapes.json" with { type: "json" };
 export let W = 1200,
   H = 650;
 export function setWorldDimensions(width = 1200, height = 650) {
@@ -136,21 +137,34 @@ export function launchGeometry(w, angle, kind = "rocket", terrain = null) {
   return { ...result, blocked: false };
 }
 
-// One collision body is used for movement and projectile hits, including the head.
-export const BODY = { rx: 17, ry: 27, cy: 17 };
-const outline = Array.from({ length: 24 }, (_, i) => ({
-  x: Math.cos((i * Math.PI) / 12) * BODY.rx,
-  y: BODY.cy + Math.sin((i * Math.PI) / 12) * BODY.ry,
-}));
+// Native worm shape 3. Host positions now denote the physics body/canvas
+// center. Source bitmap rows are downward-positive; host terrain rows are
+// upward-positive, with row H-1 corresponding to original row zero.
+export const WORM_MASK = collisionShapes.shapes[3];
+export const BODY = {
+  rx: WORM_MASK.width / 2,
+  ry: WORM_MASK.height / 2,
+  cy: 0,
+};
 export function bodyBlocked(terrain, x, y) {
-  return outline.some((p) => terrain.solid(x + p.x, y + p.y));
+  const left = Math.floor(x) - WORM_MASK.anchorX,
+    top = Math.ceil(y) - 1 + WORM_MASK.anchorY;
+  return WORM_MASK.planes[0].points.some(([px, py]) =>
+    terrain.solid(left + px, top - py),
+  );
 }
 export function hitsWorm(w, x, y, radius = 0) {
-  return (
-    ((x - w.x) / (BODY.rx + radius)) ** 2 +
-      ((y - w.y - BODY.cy) / (BODY.ry + radius)) ** 2 <=
-    1
-  );
+  const left = Math.floor(w.x) - WORM_MASK.anchorX,
+    top = Math.ceil(w.y) - 1 + WORM_MASK.anchorY;
+  // Host projectiles still supply circular radii. Test those against actual
+  // occupied worm pixels; projectile-specific native masks are a separate port.
+  return WORM_MASK.planes[0].points.some(([px, py]) => {
+    const dx = Math.max(left + px - x, 0, x - (left + px + 1)),
+      dy = Math.max(top - py - y, 0, y - (top - py + 1));
+    if (!radius)
+      return Math.floor(x) === left + px && Math.floor(y) === top - py;
+    return dx * dx + dy * dy <= radius * radius;
+  });
 }
 export function blastImpulse(w, x, y, radius, strength = 270) {
   const dx = w.x - x,

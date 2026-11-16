@@ -1,4 +1,11 @@
-import { bodyBlocked } from "../physics.js";
+import { bodyBlocked, WORM_MASK } from "../physics.js";
+
+const occupied = new Set(
+  WORM_MASK.planes[0].points.map(([x, y]) => `${x},${y}`),
+);
+const supportEdge = WORM_MASK.planes[0].points.filter(
+  ([x, y]) => !occupied.has(`${x},${y + 1}`),
+);
 
 // Host spawn adapter for imported geometry. Mission/native placement rules
 // remain separate; this searches walkable surfaces, including inside caves.
@@ -8,8 +15,11 @@ export function originalMapSpawns(terrain, waterLevel, fractions) {
     for (let y = terrain.height - 50; y > waterLevel + 24; y--) {
       if (
         terrain.solid(x, y) ||
-        ![-16, -8, 0, 8, 16].some(
-          (dx) => terrain.solid(x + dx, y - 11) || terrain.solid(x + dx, y - 8),
+        !supportEdge.some(([px, py]) =>
+          terrain.solid(
+            x + px - WORM_MASK.anchorX,
+            y + WORM_MASK.anchorY - py - 2,
+          ),
         )
       )
         continue;
@@ -25,7 +35,9 @@ export function originalMapSpawns(terrain, waterLevel, fractions) {
     for (const point of candidates) {
       if (
         chosen.some(
-          (p) => Math.abs(p.x - point.x) < 40 && Math.abs(p.y - point.y) < 60,
+          // Native idle artwork spans 24x26 pixels; a 32px separation leaves
+          // visible room while accommodating the small training platforms.
+          (p) => Math.abs(p.x - point.x) < 32 && Math.abs(p.y - point.y) < 32,
         )
       )
         continue;
