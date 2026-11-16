@@ -116,6 +116,18 @@ export const WEAPONS = {
     ammo: 1,
     special: "airstrike",
   },
+  banana: {
+    label: "Banana Bomb",
+    icon: "✸",
+    radius: 80,
+    damage: 75,
+    wind: false,
+    speed: 1,
+    timed: true,
+    bounces: true,
+    ammo: 1,
+    special: "banana",
+  },
   napalm: {
     impulse: 220,
     label: "Napalm",
@@ -203,6 +215,7 @@ export const WEAPONS = {
 };
 
 export const SPECIAL_WEAPONS = [
+  "banana",
   "shotgun",
   "dynamite",
   "cluster",
@@ -214,6 +227,7 @@ export const SPECIAL_WEAPONS = [
 ];
 export const WEAPON_ORDER = ["rocket", "grenade", "mortar", "sticky"];
 export const PROJECTILE_ORDER = [
+  "banana",
   ...WEAPON_ORDER,
   "cluster",
   "homing",
@@ -221,6 +235,7 @@ export const PROJECTILE_ORDER = [
   "holy",
 ];
 export const freshAmmo = () => ({
+  banana: WEAPONS.banana.ammo,
   grenade: WEAPONS.grenade.ammo,
   mortar: WEAPONS.mortar.ammo,
   sticky: WEAPONS.sticky.ammo,

@@ -42,8 +42,8 @@ test("all 140 original HUD icon variants preserve source pixels", async ({
   expect(result).toEqual({
     count: 140,
     mismatches: 0,
-    mapped: 18,
-    mounted: 18,
+    mapped: 19,
+    mounted: 19,
     error: null,
   });
 });

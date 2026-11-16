@@ -1,0 +1,577 @@
+{
+  "source": "WA 3.0.0.0 0043F2E0 mission inventory names/slots; resource195 constructor records; current src/weapons.js and src/utilities.js routing. No entry is asserted fully ported.",
+  "host_only_variants": [
+    "sticky",
+    "napalm (not native NapalmStrike or PetrolBomb behavior)"
+  ],
+  "slots": [
+    {
+      "slot": 0,
+      "native_name": null,
+      "host_action": null,
+      "status": "unresolved-name",
+      "native_action_type": 0,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 1,
+      "native_name": "Bazooka",
+      "host_action": "rocket",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 3
+    },
+    {
+      "slot": 2,
+      "native_name": "HomingMissile",
+      "host_action": "homing",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 7
+    },
+    {
+      "slot": 3,
+      "native_name": "Mortar",
+      "host_action": "mortar",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 3
+    },
+    {
+      "slot": 4,
+      "native_name": "HomingPigeon",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 7
+    },
+    {
+      "slot": 5,
+      "native_name": "SheepLauncher",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 8
+    },
+    {
+      "slot": 6,
+      "native_name": "Grenade",
+      "host_action": "grenade",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 2
+    },
+    {
+      "slot": 7,
+      "native_name": "ClusterBomb",
+      "host_action": "cluster",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 2
+    },
+    {
+      "slot": 8,
+      "native_name": "BananaBomb",
+      "host_action": "banana",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 2
+    },
+    {
+      "slot": 9,
+      "native_name": "Axe",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 18
+    },
+    {
+      "slot": 10,
+      "native_name": "EarthQuake",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 21
+    },
+    {
+      "slot": 11,
+      "native_name": "Shotgun",
+      "host_action": "shotgun",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 5
+    },
+    {
+      "slot": 12,
+      "native_name": "Handgun",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 6
+    },
+    {
+      "slot": 13,
+      "native_name": "Uzi",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 1
+    },
+    {
+      "slot": 14,
+      "native_name": "Minigun",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 4
+    },
+    {
+      "slot": 15,
+      "native_name": "Longbow",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 10
+    },
+    {
+      "slot": 16,
+      "native_name": "FirePunch",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 1
+    },
+    {
+      "slot": 17,
+      "native_name": "DragonBall",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 3
+    },
+    {
+      "slot": 18,
+      "native_name": "Kamikaze",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 4
+    },
+    {
+      "slot": 19,
+      "native_name": "SuicideBomber",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 5
+    },
+    {
+      "slot": 20,
+      "native_name": "Prod",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 9
+    },
+    {
+      "slot": 21,
+      "native_name": "Dynamite",
+      "host_action": "dynamite",
+      "status": "partial",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 22,
+      "native_name": "Mine",
+      "host_action": "mine",
+      "status": "partial",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 23,
+      "native_name": "Sheep",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 24,
+      "native_name": "SuperSheep",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 25,
+      "native_name": "AquaSheep",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 26,
+      "native_name": "MoleBomb",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 27,
+      "native_name": "AirStrike",
+      "host_action": "airstrike",
+      "status": "partial",
+      "native_action_type": 3,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 28,
+      "native_name": "NapalmStrike",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 70
+    },
+    {
+      "slot": 29,
+      "native_name": "PostalStrike",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 200
+    },
+    {
+      "slot": 30,
+      "native_name": "MineStrike",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 31,
+      "native_name": "MoleSquadron",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 32,
+      "native_name": "BlowTorch",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 11
+    },
+    {
+      "slot": 33,
+      "native_name": "PneumaticDrill",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 8
+    },
+    {
+      "slot": 34,
+      "native_name": "Girder",
+      "host_action": "girder",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 17
+    },
+    {
+      "slot": 35,
+      "native_name": "BaseballBat",
+      "host_action": "bat",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 2
+    },
+    {
+      "slot": 36,
+      "native_name": "BridgeKit",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 17
+    },
+    {
+      "slot": 37,
+      "native_name": "Batrope",
+      "host_action": "rope",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 6
+    },
+    {
+      "slot": 38,
+      "native_name": "Bungee",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 7
+    },
+    {
+      "slot": 39,
+      "native_name": "Parachute",
+      "host_action": "parachute",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 12
+    },
+    {
+      "slot": 40,
+      "native_name": "Teleport",
+      "host_action": "teleport",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 10
+    },
+    {
+      "slot": 41,
+      "native_name": "Scales",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 22
+    },
+    {
+      "slot": 42,
+      "native_name": "SuperBananaBomb",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 2
+    },
+    {
+      "slot": 43,
+      "native_name": "HolyHandGrenade",
+      "host_action": "holy",
+      "status": "partial",
+      "native_action_type": 1,
+      "native_action_subtype": 2
+    },
+    {
+      "slot": 44,
+      "native_name": "FlameThrower",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 9
+    },
+    {
+      "slot": 45,
+      "native_name": "SallyArmy",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 46,
+      "native_name": "MBBomb",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 260
+    },
+    {
+      "slot": 47,
+      "native_name": "PetrolBomb",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 2
+    },
+    {
+      "slot": 48,
+      "native_name": "Skunk",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 49,
+      "native_name": "MingVase",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 50,
+      "native_name": "SheepStrike",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 51,
+      "native_name": "CarpetBomb",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 52,
+      "native_name": "MadCow",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 1
+    },
+    {
+      "slot": 53,
+      "native_name": "OldWoman",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 2,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 54,
+      "native_name": "Donkey",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 3,
+      "native_action_subtype": 0
+    },
+    {
+      "slot": 55,
+      "native_name": "NuclearBomb",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 16
+    },
+    {
+      "slot": 56,
+      "native_name": "Armageddon",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 24
+    },
+    {
+      "slot": 57,
+      "native_name": null,
+      "host_action": null,
+      "status": "unresolved-name",
+      "native_action_type": 4,
+      "native_action_subtype": 14
+    },
+    {
+      "slot": 58,
+      "native_name": null,
+      "host_action": null,
+      "status": "unresolved-name",
+      "native_action_type": 4,
+      "native_action_subtype": 13
+    },
+    {
+      "slot": 59,
+      "native_name": "SelectWorm",
+      "host_action": "select-worm",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 15
+    },
+    {
+      "slot": 60,
+      "native_name": "Freeze",
+      "host_action": "freeze",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 20
+    },
+    {
+      "slot": 61,
+      "native_name": "MagicBullet",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 1,
+      "native_action_subtype": 7
+    },
+    {
+      "slot": 62,
+      "native_name": "JetPack",
+      "host_action": "jetpack",
+      "status": "partial",
+      "native_action_type": 4,
+      "native_action_subtype": 23
+    },
+    {
+      "slot": 63,
+      "native_name": "LowGravity",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    },
+    {
+      "slot": 64,
+      "native_name": "FastWalk",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    },
+    {
+      "slot": 65,
+      "native_name": "LaserSight",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    },
+    {
+      "slot": 66,
+      "native_name": "Invisibility",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    },
+    {
+      "slot": 67,
+      "native_name": "DamageX2",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    },
+    {
+      "slot": 68,
+      "native_name": "CrateSpy",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    },
+    {
+      "slot": 69,
+      "native_name": "DoubleTime",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    },
+    {
+      "slot": 70,
+      "native_name": "CrateShower",
+      "host_action": null,
+      "status": "missing",
+      "native_action_type": 4,
+      "native_action_subtype": 19
+    }
+  ]
+}

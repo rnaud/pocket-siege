@@ -82,6 +82,7 @@ const names = [
     "hmissil2",
     "grenade",
     "cluster",
+    "banana",
     "hgrenade",
     "hexhaust",
     "skdsmoke",
@@ -224,9 +225,14 @@ export const projectileSprites = {
   homing: "hmissil1",
   grenade: "grenade",
   cluster: "cluster",
+  banana: "banana",
   holy: "hgrenade",
   napalm: "petrolbm",
 };
+export function createNativeProjectileVisual(render) {
+  const name = spriteIds.sprites[render?.sprite]?.name;
+  return name ? createOriginalVisual(name) : null;
+}
 
 export function originalVisual(name, index = 0) {
   const animation = animations.get(name);

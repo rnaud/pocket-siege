@@ -125,6 +125,7 @@ import {
   loadOriginalArt,
   originalVisual,
   createOriginalVisual,
+  createNativeProjectileVisual,
   createOriginalObject,
   updateOriginalObject,
   updateOriginalProjectile,
@@ -2915,7 +2916,7 @@ function explodeProjectile(p) {
         if (packet) explode(child.x, child.y, child.kind, child.owner, packet);
         return;
       }
-      child.mesh = createOriginalVisual("clustlet") || createProjectile("grenade");
+      child.mesh = createNativeProjectileVisual(child.nativeRender) || createProjectile("grenade");
       child.mesh.position.set(child.x, child.y, 40);
       group.add(child.mesh);
       bombs.push(child);

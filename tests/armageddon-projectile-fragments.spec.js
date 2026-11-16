@@ -12,7 +12,8 @@ test("fragment payloads and random consumption match original projectile emissio
   }
 });
 
-test("live cluster children use native secondary sprites, damage and lifecycle", async ({ page }) => {
+for (const [kind, sprite, damage] of [["cluster", "clustlet", 20], ["banana", "banana", 75]])
+test(`live ${kind} children use native secondary sprites, damage and lifecycle`, async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
@@ -20,7 +21,7 @@ test("live cluster children use native secondary sprites, damage and lifecycle",
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
   await page.locator("#special-toggle").click();
-  await page.locator('[data-weapon="cluster"]').click();
+  await page.locator(`[data-weapon="${kind}"]`).click();
   await page.locator("#fuse").selectOption("1");
   await page.locator("#angle").fill("90");
   await page.locator("#angle").dispatchEvent("input");
@@ -31,7 +32,7 @@ test("live cluster children use native secondary sprites, damage and lifecycle",
   expect(await page.evaluate(() => window.siege.getState().nativeCameraFocus)).not.toBeNull();
   const children = await page.evaluate(() => window.siege.getState().bombs);
   expect(children.map(b => b.nativeRepeat)).toEqual([1,2,3,4,5]);
-  expect(children.every(b => b.nativeDamage === 20 && b.sprite === "clustlet")).toBe(true);
+  expect(children.every(b => b.nativeDamage === damage && b.sprite === sprite)).toBe(true);
   await expect.poll(() => page.evaluate(() => window.siege.getState().bombs.length), { timeout: 15000 }).toBe(0);
   expect(await page.evaluate(() => window.siege.getState().explosions)).toBeGreaterThan(1);
   expect(await page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
