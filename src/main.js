@@ -1,3 +1,4 @@
+import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
 import { nativeDamageAccounting } from "./armageddon/damage-accounting.js";
@@ -2448,15 +2449,45 @@ function fireShotgun(prepared = false) {
   wormLocked = true;
   if (resolution.area) {
     // 004F7DA0 selects every nearby body, including self, and emits 0x433.
-    // HP/state handling still uses the host adapter around the native packet.
     for (const dispatch of nativeAreaDamage(targets, resolution.area)) {
       if (!dispatch.packet) continue;
       const victim = targets[dispatch.body].worm;
-      const [, , , vx, vy, damage] = dispatch.packet;
-      injure(victim, damage, Math.sign(vx));
-      applyNativeWeaponImpulse(victim, vx, vy);
-      victim.knocked = true;
-      victim.ground = false;
+      const [, , , vx, vy] = dispatch.packet;
+      const response = nativeDirectHitResponse(
+        {
+          state: victim.frozen > 0 ? 0x88 : 0x65,
+          vx: Math.round((victim.vx * 65536) / 50),
+          vy: Math.round((-victim.vy * 65536) / 50),
+          x: Math.round(victim.x * 65536),
+          y: Math.round((H - victim.y) * 65536),
+          fieldB0: 0,
+          accumulated: victim.nativeBlastAccumulated ?? 0,
+          seen: victim.nativeDirectHitFrame === matchRandom.frame ? 1 : 0,
+        },
+        dispatch.packet,
+        0, // Shotgun kind 3 does not read the scheme delay byte.
+      );
+      if (response.result.seen) victim.nativeDirectHitFrame = matchRandom.frame;
+      victim.nativeBlastAccumulated = response.result.accumulated;
+      victim.nativeBlastResponseState = response.result.state;
+      for (const call of response.output) {
+        if (call.base) {
+          applyNativeWeaponImpulse(victim, vx, vy);
+          victim.knocked = true;
+          victim.ground = false;
+        }
+        if (call.sound) sfx("frozenhit");
+        if (call.blood)
+          for (const request of nativeBloodBurst(
+            ...call.blood,
+            nativeBloodAmount,
+            0,
+            Math.round(0x3d70 * gravityScale),
+            () => matchRandom.logicUint(),
+          ))
+            spawnNativeParticleRequest(request);
+        if (call.health) injure(victim, call.health[0], Math.sign(vx));
+      }
     }
     terrain.craterRim ??= new Uint8Array(W * H);
     carveNativeCrater(
