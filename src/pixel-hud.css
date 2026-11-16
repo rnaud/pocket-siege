@@ -1952,3 +1952,221 @@ body:has(.controls.inventory-open) #announcement {
 #aim-guide:has(.original-charge-blobs[data-original-sprite]) .reticle-charge {
   display: none !important;
 }
+
+/* Native match HUD geometry and palette; touch controls retain their host layout. */
+body.native-game-hud {
+  --hud-cream: #fff;
+  --hud-gold: #ddd;
+  --hud-green: #80ff80;
+  --hud-coral: #ff8080;
+  background: #000;
+}
+.native-game-hud .match-bar {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.native-game-hud .team {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 320px;
+  max-width: calc(100% - 16px);
+  height: 26px;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.native-game-hud .team-coral {
+  top: 38px;
+}
+.native-game-hud .team .team-portrait,
+.native-game-hud .team .team-roster,
+.native-game-hud .team > .pixel-panel-frame,
+.native-game-hud .team strong,
+.native-game-hud .health-track > i {
+  display: none;
+}
+.native-game-hud .team > div:not(.team-roster) {
+  inset: 0;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.native-game-hud .team b {
+  width: 100px;
+  flex: none;
+  font-size: 10px;
+  line-height: 12px;
+  text-align: right;
+  color: inherit;
+  text-shadow:
+    1px 1px #000,
+    -1px -1px #000;
+}
+.native-game-hud .team.active-team b::before {
+  content: "▶ ";
+  color: #fff;
+}
+.native-game-hud .health-track {
+  width: 208px;
+  min-width: 0;
+  height: 26px;
+  margin: 0;
+  background: none;
+  box-shadow: none;
+}
+.native-game-hud .native-team-health {
+  display: block;
+  max-width: none;
+  image-rendering: pixelated;
+}
+.native-game-hud .turn {
+  top: auto;
+  bottom: 12px;
+  left: 12px;
+  transform: none;
+  width: auto;
+  height: auto;
+  padding: 0;
+  gap: 4px;
+  align-items: flex-start;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.native-game-hud .turn #round {
+  color: #ddd;
+}
+.native-game-hud .turn #turn-label {
+  display: none;
+}
+.native-game-hud #wind.original-wind {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 6;
+  color: #fff;
+  width: 193px;
+}
+.native-game-hud .arena-top {
+  top: 10px;
+  right: 12px;
+  left: auto;
+}
+.native-game-hud .arena-top .location {
+  display: none;
+}
+.native-game-hud .arena-bottom {
+  bottom: 58px;
+  background: none;
+  border: 0;
+}
+.native-game-hud .arena-bottom > span:first-child {
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  padding: 4px;
+}
+.native-game-hud .controls {
+  background: #101010;
+}
+.native-game-hud #inventory-toggle,
+.native-game-hud #overview-toggle,
+.native-game-hud .controls button,
+.native-game-hud header button {
+  background: #181818;
+  border-color: #9d9d9d;
+  color: #fff;
+  box-shadow: none;
+  clip-path: none;
+}
+.native-game-hud .controls button.selected {
+  background: #303060;
+  border-color: #fff;
+}
+.native-game-hud .weapon-panel,
+.native-game-hud .utilities-panel,
+.native-game-hud .special-panel {
+  background: #080808;
+  border-color: #9d9d9d;
+  box-shadow: 0 0 0 2px #000;
+}
+.native-game-hud .power-panel #power-meter {
+  border-color: #9d9d9d;
+  background: #000;
+}
+.native-game-hud #power-meter i.lit {
+  background: #fff;
+}
+.native-game-hud header {
+  background: #101010;
+  border-color: #9d9d9d;
+}
+@media (max-width: 420px) {
+  .native-game-hud .team {
+    width: 304px;
+  }
+  .native-game-hud .team b {
+    width: 88px;
+  }
+  .native-game-hud .arena-top {
+    top: 70px;
+  }
+  .native-game-hud #wind.original-wind {
+    right: 8px;
+  }
+}
+.native-game-hud .match-bar {
+  transform: none;
+  max-width: none;
+}
+.native-game-hud .controls #fire {
+  background: #181818;
+  color: #fff;
+  border: 2px solid #9d9d9d;
+  box-shadow: none;
+}
+.native-game-hud .controls #fire.charging {
+  background: #303060;
+  border-color: #fff;
+}
+.native-game-hud .slider-label output,
+.native-game-hud .power-heading,
+.native-game-hud .controls .move-heading {
+  color: #fff;
+}
+.native-game-hud .team.active-team::after {
+  display: none;
+}
+.native-game-hud .controls #fire small,
+.native-game-hud .controls .slider-label,
+.native-game-hud .controls .slider-label label,
+.native-game-hud .controls .slider-label output,
+.native-game-hud .controls .power-heading,
+.native-game-hud #power-value {
+  color: #fff;
+}
+.native-game-hud #power-meter i {
+  background: #252525;
+}
+.native-game-hud #power-meter i.lit {
+  background: #fff;
+}
+.native-game-hud #turn-banner {
+  background: #000;
+  color: #fff;
+  border: 1px solid #9d9d9d;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px #000;
+  bottom: 104px;
+}
+.native-game-hud #restart {
+  background: #181818;
+  color: #fff;
+  border-color: #9d9d9d;
+}
+.native-game-hud input[type="range"] {
+  accent-color: #9d9d9d;
+}

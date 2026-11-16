@@ -1,4 +1,7 @@
-import { pixelBrush } from "./pixel-draw.js";
+import {
+  paintNativeHUDFrame,
+  paintNativeTeamHealth,
+} from "./armageddon/hud-frame.js";
 
 const frames = new Set();
 function frame(element, ornate = false) {
@@ -14,76 +17,12 @@ function frame(element, ornate = false) {
     canvas.height = h;
     canvas.style.width = `${w * 2}px`;
     canvas.style.height = `${h * 2}px`;
-    const { polygon, rect } = pixelBrush(canvas.getContext("2d"));
-    const shape = (inset, color) => {
-      const x = inset,
-        y = inset,
-        r = w - 1 - inset,
-        b = h - 1 - inset,
-        k = ornate ? 5 : 3;
-      polygon(
-        [
-          [x + k, y],
-          [r - k, y],
-          [r - k, y + 2],
-          [r - 2, y + 2],
-          [r - 2, y + k],
-          [r, y + k],
-          [r, b - k],
-          [r - 2, b - k],
-          [r - 2, b - 2],
-          [r - k, b - 2],
-          [r - k, b],
-          [x + k, b],
-          [x + k, b - 2],
-          [x + 2, b - 2],
-          [x + 2, b - k],
-          [x, b - k],
-          [x, y + k],
-          [x + 2, y + k],
-          [x + 2, y + 2],
-          [x + k, y + 2],
-        ],
-        color,
-      );
-    };
-    shape(0, "#211c2b");
-    shape(1, "#a8755b");
-    shape(2, "#efc58b");
-    shape(3, "#5e4055");
-    shape(4, "#38283f");
-    rect(8, 4, w - 16, 1, "#956577");
-    if (ornate) {
-      for (const x of [5, w - 7]) {
-        rect(x, 8, 2, 2, "#edc98b");
-        rect(x, h - 11, 2, 2, "#926277");
-      }
-    }
+    paintNativeHUDFrame(canvas, w, h, "#101010");
   };
   const observer = new ResizeObserver(paint);
   observer.observe(element);
   frames.add(observer);
   paint();
-}
-
-function roster(parent, team) {
-  const group = document.createElement("div");
-  group.className = "team-roster";
-  group.setAttribute("aria-label", "3 worms alive");
-  for (let i = 0; i < 3; i++) {
-    const c = document.createElement("canvas");
-    c.width = 8;
-    c.height = 8;
-    c.setAttribute("aria-hidden", "true");
-    const { rect } = pixelBrush(c.getContext("2d"));
-    rect(3, 1, 4, 5, team ? "#ee9c89" : "#b8bf6e");
-    rect(2, 5, 4, 2, team ? "#ee9c89" : "#b8bf6e");
-    rect(0, 5, 3, 1, team ? "#b56d76" : "#828747");
-    rect(4, 2, 1, 2, "#fff0bd");
-    rect(6, 2, 1, 2, "#fff0bd");
-    group.append(c);
-  }
-  parent.append(group);
 }
 
 let meter,
@@ -141,10 +80,13 @@ export function mountPixelHUD(arena) {
   arena.append(scoreboard);
   document.querySelector(".turn").append(document.querySelector("#timer"));
   document.querySelectorAll(".team").forEach((team, i) => {
-    frame(team, true);
-    roster(team, i);
+    const health = document.createElement("canvas");
+    health.className = "native-team-health";
+    health.setAttribute("aria-hidden", "true");
+    team.querySelector(".health-track").append(health);
   });
-  frame(document.querySelector(".turn"));
+  document.body.classList.add("native-game-hud");
+  arena.append(document.querySelector("#wind"));
   frame(document.querySelector(".controls"), true);
   frame(document.querySelector("#menu"), true);
   document.querySelector(".team-lime b").textContent = "MOSS";
@@ -208,10 +150,15 @@ export function updateHudTeams(worms, activeTeam) {
   document.querySelectorAll(".team").forEach((panel, t) => {
     const alive = worms.filter((w) => w.team === t && w.hp > 0).length;
     panel.classList.toggle("active-team", t === activeTeam);
-    const roster = panel.querySelector(".team-roster");
-    roster.setAttribute("aria-label", `${alive} worms alive`);
-    [...roster.children].forEach((icon, i) =>
-      icon.classList.toggle("lost", i >= alive),
+    const hp = worms
+      .filter((w) => w.team === t)
+      .reduce((total, w) => total + Math.max(0, w.hp), 0);
+    const health = panel.querySelector(".native-team-health");
+    if (health)
+      paintNativeTeamHealth(health, hp, 300, t ? "#ff8080" : "#80ff80");
+    panel.setAttribute(
+      "aria-label",
+      `${t ? "Coral" : "Moss"}: ${hp} health, ${alive} worms alive`,
     );
   });
 }

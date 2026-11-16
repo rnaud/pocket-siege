@@ -71,6 +71,6 @@ test("original timer digits preserve every glyph pixel at integer scale", async 
   expect(size.width).toBe(32);
   expect(size.height).toBe(22);
   const frame = await page.locator(".turn").boundingBox();
-  expect(size.y + size.height).toBeLessThanOrEqual(frame.y + frame.height - 8);
+  expect(size.y + size.height).toBeLessThanOrEqual(frame.y + frame.height);
   await page.screenshot({ path: info.outputPath("original-timer.png") });
 });

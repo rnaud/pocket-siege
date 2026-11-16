@@ -63,13 +63,22 @@ test("live native death blast selects the rolling hurt pose", async ({
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  await page.evaluate(() => {
-    const w = window.siege.getState().worms[0];
-    window.siege.debug.explodeAt(w.x - 20, w.y, "death");
-  });
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.siege.getState().worms[0].originalSprite),
-    )
-    .toBe("wroll");
+  const observed = await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        window.siege.debug.resetSeed(42);
+        const w = window.siege.getState().worms[0];
+        window.siege.debug.explodeAt(w.x - 20, w.y, "death");
+        // Observe each rendered frame: remote CI polling can miss this short pose.
+        const deadline = performance.now() + 5000;
+        const sample = () => {
+          if (window.siege.getState().worms[0].originalSprite === "wroll")
+            resolve(true);
+          else if (performance.now() >= deadline) resolve(false);
+          else requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }),
+  );
+  expect(observed).toBe(true);
 });
