@@ -1791,14 +1791,16 @@ body:has(#airstrike-settings:not([hidden])) #turn-banner {
 
 .weapon-delay-options {
   margin: 12px 0;
-  border: 2px solid #53675b;
+  border: 2px solid var(--hud-edge);
   padding: 10px;
-  background: #172c28;
-  color: #e0e6bf;
+  background: var(--hud-plum);
+  color: var(--hud-gold);
 }
 .weapon-delay-options summary {
   cursor: pointer;
   font: inherit;
+  font-size: 8px;
+  line-height: 12px;
   min-height: 28px;
 }
 .weapon-delay-options .pace-row {
