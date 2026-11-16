@@ -228,3 +228,16 @@ test("native far-distance limit detonates while active homing receives its extra
   homing.y = 650 - 936;
   expect(stepNativeProjectile(homing, environment, () => 0).removed).toBe(true);
 });
+
+test("projectile timed animation advances once per simulation tick using launch-derived rate", () => {
+  const p = projectile("grenade", { vx: 0, vy: 0 });
+  p.nativeBody.gravityScale = 0;
+  p.nativeArt.primary.mode = 4;
+  p.nativeArt.progress = 65535;
+  const rate = p.nativeArt.rate;
+  stepNativeProjectile(p, environment, () => 0);
+  expect(p.nativeRender.progress).toBe(65535 + Math.trunc(rate / 100));
+  stepNativeProjectile(p, environment, () => 0);
+  expect(p.nativeRender.progress).toBe(65535 + 2 * Math.trunc(rate / 100));
+  expect(p.nativeArt.rate).toBe(rate);
+});

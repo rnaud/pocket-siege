@@ -1,6 +1,6 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
-import { nativeProjectileArt } from "./projectile-art.js";
+import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
 import { nativeProjectileTimer } from "./projectile-timer.js";
 import { nativeProjectileContact } from "./projectile-contact.js";
@@ -130,6 +130,7 @@ export function attachNativeProjectile(p, height) {
     primary: { sprite: words[6], mode: words[7] },
     secondary: { sprite: words[25], mode: words[26] },
     total: words[17], progress: 0,
+    rate: nativeProjectileAnimationRate(payload.x, payload.y),
   };
   updateNativeProjectileArt(p);
   return true;
@@ -175,6 +176,8 @@ export function stepNativeProjectile(
   collide,
 ) {
   const sounds = [], events = [];
+  const art = p.nativeGuidance?.initialized ? p.nativeArt.secondary : p.nativeArt.primary;
+  p.nativeArt.progress = nativeProjectileAnimationTick(art.mode, p.nativeArt.rate, p.nativeArt.progress);
   const waterSound = (body, skim) => {
     const event = nativeWaterSound(body, skim);
     body.splashSuppress = event.suppress;
