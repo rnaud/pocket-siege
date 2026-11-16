@@ -1,3 +1,4 @@
+import { updateOriginalSelection } from "./armageddon/selection-hud.js";
 import {
   loadOriginalNumbers,
   updateOriginalTimer,
@@ -346,6 +347,7 @@ let charging = false,
   shotCount = 0,
   lastJump = { kind: null, time: -1 },
   jumpClock = 0;
+let selectionTick = 0;
 let uiKey = "",
   terrainDirty = false,
   timerKey = "";
@@ -683,6 +685,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   cancelCharge();
   uiKey = "";
   timerKey = "";
+  selectionTick = 0;
   if (!keepSeries) {
     seriesWins = [0, 0];
     seriesRound = 1;
@@ -3058,6 +3061,7 @@ function step(dt) {
     }
     return;
   }
+  selectionTick = (selectionTick + 1) | 0;
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -3794,6 +3798,12 @@ function frame(now) {
       star.position.set(Math.cos(a) * 17, Math.sin(a) * 5, 0);
       star.rotation.z = a;
     });
+    updateOriginalSelection(
+      w.label,
+      w.team,
+      selectionTick,
+      active && w.hp > 0 && phase !== "over",
+    );
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
     const p = screen(

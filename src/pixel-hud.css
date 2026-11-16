@@ -1903,3 +1903,19 @@ body:has(.controls.inventory-open) #announcement {
 .turn:has(#timer.original-timer) {
   gap: 0;
 }
+
+.worm-label.has-original-selection.active::before {
+  display: none;
+}
+.worm-label .original-selection {
+  position: absolute;
+  left: calc(50% - 30px);
+  top: -44px;
+  width: 60px;
+  height: 60px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.worm-label .original-selection[hidden] {
+  display: none;
+}
