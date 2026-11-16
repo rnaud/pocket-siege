@@ -38,4 +38,19 @@ test("live submerged mines use original water artwork at zero rotation", async (
       }),
     )
     .toEqual({ sprite: "water/mineoff", frame: 0 });
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.siege.getState().mines[0]?.nativeBody.flags),
+    )
+    .toBe(0x400000);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.siege.getState().waterBubbles.length),
+    )
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().mines.length), {
+      timeout: 6000,
+    })
+    .toBe(0);
 });

@@ -3,6 +3,7 @@ import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armagedd
 import { nativeMineBlast } from "./armageddon/mine-blast.js";
 import { nativeMineContact } from "./armageddon/mine-contact.js";
 import { nativeMineArt } from "./armageddon/mine-art.js";
+import { nativeMineWater } from "./armageddon/mine-water.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
@@ -2334,6 +2335,7 @@ function placeMine() {
     team,
     arm: nativeMineInitialTimer().arm / 1000,
     nativeTimer: { ...nativeMineInitialTimer(), damage: NATIVE_MINE_DAMAGE, placed: 1, forceBlast: 0, dud: 0 },
+    nativeWater: { bubbleProgress: 0, waterFlagsSet: 0, splashActive: 0 },
     mesh,
     bob: visualRandom() * Math.PI * 2,
   };
@@ -4020,6 +4022,26 @@ function step(dt) {
       if ((mine.nativeBody.y >> 16) >= nativeProjectileDepth(Math.floor(H - waterLevel))) {
         mines.splice(i, 1);
         dispose(mine.mesh);
+        continue;
+      }
+      const water = nativeMineWater({
+        ...mine.nativeWater, flags: mine.nativeBody.flags, forceBlast: mine.nativeTimer.forceBlast,
+      }, {
+        ...mine.nativeBody, awake: nativeBodyAwake(mine.nativeBody),
+      }, () => matchRandom.visualUint());
+      const { flags, forceBlast, ...waterState } = water.body;
+      mine.nativeWater = waterState;
+      mine.nativeBody.flags = flags;
+      mine.nativeTimer.forceBlast = forceBlast;
+      for (const call of water.calls) {
+        if (call.operation === "bubble") {
+          const [x, y, , , size] = call.request;
+          spawnWaterBubble(x / 65536, H - y / 65536, 0, size);
+        } else if (call.operation === "sound" && sound) {
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          playNativeWaterSound(audio, call.request);
+        }
       }
       continue;
     }
@@ -5269,6 +5291,7 @@ window.siege = {
       y: Math.round(m.y),
       arm: Math.round(m.arm * 10) / 10,
       nativeTimer: { ...m.nativeTimer },
+      nativeWater: { ...m.nativeWater },
       nativeBody: { ...m.nativeBody },
       sprite: m.mesh.userData.originalSprite,
       frame: m.mesh.userData.originalFrame,
