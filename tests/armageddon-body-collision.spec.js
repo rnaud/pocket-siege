@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
-import { nativeBodyCollision } from "../src/armageddon/body-collision.js";
+import {
+  nativeBodyCollision,
+  nativeWormProjectileCollision,
+} from "../src/armageddon/body-collision.js";
 const fixture = JSON.parse(
   fs.readFileSync(
     new URL("./fixtures/armageddon/body-collision.json", import.meta.url),
@@ -11,6 +14,20 @@ test("two-body collision reproduces native momentum, damping and early-return or
   for (const v of fixture.cases) {
     const result = nativeBodyCollision(v.receiver, v.incoming, v.side);
     expect(result, JSON.stringify(v)).toEqual({
+      receiver: { vx: v.receiver_out[0], vy: v.receiver_out[1] },
+      incoming: { vx: v.incoming_out[0], vy: v.incoming_out[1] },
+      result: v.result,
+    });
+  }
+});
+
+test("worm projectile contact uses native state-gated momentum response", () => {
+  expect(fixture.worm_projectile_gates).toHaveLength(200);
+  for (const v of fixture.worm_projectile_gates) {
+    expect(
+      nativeWormProjectileCollision(v.state, v.receiver, v.incoming, v.side),
+      JSON.stringify(v),
+    ).toEqual({
       receiver: { vx: v.receiver_out[0], vy: v.receiver_out[1] },
       incoming: { vx: v.incoming_out[0], vy: v.incoming_out[1] },
       result: v.result,

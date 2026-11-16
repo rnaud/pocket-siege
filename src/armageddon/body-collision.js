@@ -39,3 +39,15 @@ export function nativeBodyCollision(receiver, incoming, side) {
   b.vy = add(b.vy, -fixedDivide(impulseY, incoming.mass));
   return { receiver: stop(a), incoming: stop(b), result: 1 };
 }
+
+// 004D6AD0 ordinary-projectile branch (incoming type 0x0f). Worm/rope
+// collisions take other branches and are deliberately outside this adapter.
+export function nativeWormProjectileCollision(state, receiver, incoming, side) {
+  if (state !== 0x79 && (state < 0x7e || state > 0x81))
+    return {
+      receiver: { vx: receiver.vx, vy: receiver.vy },
+      incoming: { vx: incoming.vx, vy: incoming.vy },
+      result: 0,
+    };
+  return nativeBodyCollision(receiver, incoming, side);
+}

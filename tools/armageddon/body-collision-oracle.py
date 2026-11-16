@@ -50,5 +50,28 @@ for a,b in pairs:
                 cases.append({'receiver':{'vx':a[0],'vy':a[1],'mass':masses[0],'tangent':tangent},'incoming':{'vx':b[0],'vy':b[1],'mass':masses[1]},'side':side,
                     'receiver_out':list(struct.unpack('<2i',cpu.mem_read(owner+0x9c,8))),
                     'incoming_out':list(struct.unpack('<2i',cpu.mem_read(incoming+0x9c,8))),'result':cpu.reg_read(UC_X86_REG_EAX)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F4990','method':'Original routine executes with explicit body velocities, masses, tangential damping and contact sides. No callbacks stubbed.','cases':cases},indent=2)+'\n')
+# Execute the real worm receiver callback with explicit ordinary-projectile type.
+vtable,other_vtable,position,state_getter,type_getter=owner+0x3000,owner+0x3200,owner+0x3400,owner+0x3500,owner+0x3600
+write(owner,vtable);write(incoming,other_vtable)
+write(vtable+0x7c,state_getter);write(vtable+0x5c,position)
+write(other_vtable+0x5c,position);write(other_vtable+0x50,type_getter)
+cpu.mem_write(position,b'\x8b\x44\x24\x04\xc7\x00\x00\x00\x00\x00\x8b\x44\x24\x08\xc7\x00\x00\x00\x00\x00\xc2\x08\x00')
+cpu.mem_write(state_getter,b'\x8b\x81\x04\x04\x00\x00\xc3')
+cpu.mem_write(type_getter,b'\xb8\x0f\x00\x00\x00\xc3')
+gates=[]
+for state in list(range(0x60,0x90))+[-1,0x100]:
+    for side in [1,2,3,4]:
+        a={'vx':65536,'vy':-32768,'mass':65536,'tangent':0xf5c2}
+        b={'vx':-8<<16,'vy':3<<16,'mass':65536}
+        for target,values in [(owner,a),(incoming,b)]:
+            for name,offset in [('vx',0x9c),('vy',0xa0),('mass',0x58)]:write(target+offset,values[name]&0xffffffff)
+        write(owner+0x80,a['tangent']);write(owner+0x404,state&0xffffffff)
+        cpu.mem_write(stack+0xff00,struct.pack('<3I',stop,incoming,side))
+        cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+        cpu.emu_start(0x4d6ad0,stop,count=10000)
+        if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Worm collision gate did not return')
+        gates.append({'state':state,'receiver':a,'incoming':b,'side':side,
+            'receiver_out':list(struct.unpack('<2i',cpu.mem_read(owner+0x9c,8))),
+            'incoming_out':list(struct.unpack('<2i',cpu.mem_read(incoming+0x9c,8))),'result':cpu.reg_read(UC_X86_REG_EAX)})
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F4990','method':'Original routine executes with explicit body velocities, masses, tangential damping and contact sides. No callbacks stubbed for the base routine. Worm gate cases execute 004D6AD0 with explicit state/position/type getters; incoming type is 0x0f and the original momentum routine executes normally.','cases':cases,'worm_projectile_gates':gates},indent=2)+'\n')
 print(f'Captured {len(cases)} two-body collisions')
