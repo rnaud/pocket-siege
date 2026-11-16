@@ -69,6 +69,7 @@ export function attachNativeProjectile(p, height) {
     bounce: Math.round(p.bounce * 100),
   };
   const selected = nativeProjectileSelection(block, payload);
+  p.nativeTrail = { fields: selected.words.slice(8, 12), progress: 0 };
   p.nativeBody = nativeProjectileBody(
     {
       restitutionY: 0,

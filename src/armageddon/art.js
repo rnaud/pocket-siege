@@ -38,6 +38,8 @@ const names = [
     "grenade",
     "cluster",
     "hgrenade",
+    "hexhaust",
+    "skdsmoke",
     "exfoom",
     "expow",
     "expoot",

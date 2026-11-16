@@ -1,3 +1,8 @@
+import {
+  addNativeParticle,
+  stepNativeParticles,
+} from "./armageddon/particles.js";
+import nativeSpriteIds from "./armageddon/sprite-ids.json";
 import { nativeBubble, nativeBubbleTick } from "./armageddon/bubble.js";
 import { nativeSpriteFrame } from "./armageddon/animation.js";
 import {
@@ -414,13 +419,6 @@ const debrisPrototype = new THREE.Mesh(debrisGeometry, debrisMaterials[0]);
 debrisPrototype.visible = false;
 debrisPrototype.frustumCulled = false;
 group.add(debrisPrototype);
-const dustGeometry = new THREE.SphereGeometry(1, 6, 4);
-const dustMaterial = new THREE.MeshBasicMaterial({
-  color: 0xd9c9a6,
-  transparent: true,
-  opacity: 0.42,
-  depthWrite: false,
-});
 const projectilePrototypes = Object.fromEntries(
   PROJECTILE_ORDER.map((kind) => {
     const prototype = createProjectile(kind);
@@ -604,16 +602,8 @@ function updateAimHUD() {
           ? "↑ MORTAR"
           : "↑ ROCKET"
         : "➶";
-    aimHUD.trail.setAttribute(
-      "d",
-      projectile.trail
-        .map((v, i) => {
-          const t = screen(v.x, v.y);
-          return `${i ? "L" : "M"}${t.x},${t.y}`;
-        })
-        .join(" "),
-    );
-  } else aimHUD.trail.setAttribute("d", "");
+  }
+  aimHUD.trail.setAttribute("d", "");
 }
 function announce(text) {
   $("#announcement").textContent = text;
@@ -751,6 +741,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   }
   for (const effect of originalEffects) dispose(effect.mesh);
   originalEffects.length = 0;
+  for (const p of nativeParticles) dispose(p.mesh);
+  nativeParticles.length = 0;
   for (const bubble of waterBubbles) dispose(bubble.mesh);
   waterBubbles.length = 0;
   for (const p of particles) releaseParticle(p.mesh);
@@ -2414,7 +2406,6 @@ function fire() {
     attached: null,
     kind,
     mesh: projectileMesh(kind),
-    trail: [],
     blocked: launchPoint === origin.muzzle ? origin.blocked : false,
   };
   attachNativeProjectile(projectile, H);
@@ -2554,21 +2545,87 @@ function releaseParticle(mesh) {
   else group.remove(mesh);
 }
 function spawnDust(x, y) {
-  const mesh = new THREE.Mesh(dustGeometry, dustMaterial),
-    size = 2 + visualRandom() * 3;
-  mesh.position.set(x, y, 30);
-  mesh.scale.setScalar(size);
+  const art = originalVisual("skdsmoke");
+  if (art)
+    spawnNativeParticle(
+      "skdsmoke",
+      x,
+      y,
+      0,
+      0,
+      Math.trunc((0x51e * art.rate) / art.count),
+    );
+}
+const nativeParticles = [];
+function spawnNativeParticle(name, x, y, vx, vy, step) {
+  if (nativeParticles.length >= 64) return;
+  const mesh = createOriginalVisual(name);
+  if (!mesh) return;
+  mesh.position.set(Math.round(x), Math.round(y), 35);
   group.add(mesh);
-  particles.push({
+  addNativeParticle(nativeParticles, {
     mesh,
-    size,
-    x,
-    y,
-    vx: (visualRandom() - 0.5) * 18,
-    vy: 8 + visualRandom() * 14,
-    life: 0.4,
-    max: 0.4,
+    name,
+    x: Math.round(x * 65536),
+    y: Math.round((H - y) * 65536),
+    vx: vx | 0,
+    vy: vy | 0,
+    ax: 0,
+    ay: 0,
+    progress: 0,
+    end: 65536,
+    step: step | 0,
   });
+}
+function updateNativeParticles() {
+  for (const p of stepNativeParticles(nativeParticles)) dispose(p.mesh);
+  for (const p of nativeParticles) {
+    const art = originalVisual(p.name);
+    const index = nativeSpriteFrame(art.count, art.flags, p.progress);
+    p.mesh.material.map = originalVisual(p.name, index).map;
+    p.mesh.userData.originalFrame = index;
+    p.mesh.position.set(
+      Math.round(p.x / 65536),
+      Math.round(H - p.y / 65536),
+      35,
+    );
+  }
+}
+function emitProjectileTrail(p) {
+  const trail = p.nativeTrail;
+  if (!trail) return;
+  const [id, rate, speed, bubbles] = trail.fields;
+  const inWater = p.y < waterLevel;
+  // 004E44A0 accumulates source record rates in 16.16, independently of
+  // rendering. The browser supplies the water and resting-state predicates.
+  trail.progress =
+    (trail.progress +
+      Math.trunc(((inWater ? bubbles : rate) << 16) / (inWater ? 200 : 25))) |
+    0;
+  while (trail.progress > 65535) {
+    trail.progress -= 65536;
+    if (inWater) {
+      spawnWaterBubble(
+        p.x,
+        p.y,
+        0,
+        ((matchRandom.visualUint() >>> 16) % 3) + 1,
+      );
+    } else if (id && !p.sleeping) {
+      const vy = (matchRandom.visualUint() & 65535) - 32768;
+      const vx = (matchRandom.visualUint() & 65535) - 32768;
+      const name = nativeSpriteIds.sprites[id]?.name;
+      if (name)
+        spawnNativeParticle(
+          name,
+          p.x,
+          p.y,
+          vx,
+          vy,
+          Math.trunc(Math.imul(speed, 0x147a) / 100),
+        );
+    }
+  }
 }
 const originalEffects = [];
 const waterBubbles = [];
@@ -3168,6 +3225,7 @@ function step(dt) {
       } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     }
     p.age += dt;
+    emitProjectileTrail(p);
     if (
       WEAPONS[p.kind].timed &&
       p.fuse - p.age < 1.5 &&
@@ -3251,10 +3309,7 @@ function step(dt) {
     )
       p.mesh.rotation.z =
         p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
-    if (Math.floor(p.age * 60) !== Math.floor((p.age - dt) * 60)) {
-      p.trail.push({ x: p.x, y: p.y });
-      if (p.trail.length > 28) p.trail.shift();
-    }
+
     if (
       boom ||
       p.y < (p.nativeBody ? 0 : waterLevel) ||
@@ -3320,6 +3375,7 @@ function step(dt) {
     p.mesh.position.set(p.x, p.y, 35);
     if (p.mesh.userData.originalTerrainDebris) {
       p.age += dt;
+      emitProjectileTrail(p);
       updateTerrainDebris(p.mesh, p.age);
     } else p.mesh.scale.setScalar(Math.max(0.01, (p.life / p.max) * p.size));
     if (p.life <= 0) {
@@ -3328,6 +3384,7 @@ function step(dt) {
     }
   }
   stepOriginalEffects(dt);
+  updateNativeParticles();
   stepWaterBubbles();
   matchRandom.finishFrame();
 }
@@ -4134,6 +4191,12 @@ window.siege = {
       frame: b.mesh.userData.originalFrame,
       x: b.mesh.position.x,
       y: b.mesh.position.y,
+    })),
+    nativeParticles: nativeParticles.map((p) => ({
+      sprite: p.name,
+      frame: p.mesh.userData.originalFrame,
+      x: p.mesh.position.x,
+      y: p.mesh.position.y,
     })),
     debrisSprites: particles
       .filter((p) => p.mesh.userData.originalTerrainDebris)
