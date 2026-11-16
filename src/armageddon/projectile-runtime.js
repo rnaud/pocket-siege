@@ -1,3 +1,4 @@
+import { nativeWaterSound, enqueueNativeSound } from "./water-audio.js";
 import records from "./scheme-weapon-data.json" with { type: "json" };
 import { WEAPON_SLOTS } from "./delays.js";
 import {
@@ -100,6 +101,12 @@ export function stepNativeProjectile(
   },
   collide,
 ) {
+  const sounds = [];
+  const waterSound = (body, skim) => {
+    const event = nativeWaterSound(body, skim);
+    body.splashSuppress = event.suppress;
+    if (event.sound) enqueueNativeSound(sounds, event.sound);
+  };
   let firstHit = 0,
     contacts = 0;
   const body = {
@@ -120,6 +127,8 @@ export function stepNativeProjectile(
     },
     {
       awake: nativeBodyAwake,
+      skim: (body) => waterSound(body, true),
+      waterChanged: (body) => waterSound(body, false),
       collide: (x, y) => collide(x / 65536, height - y / 65536),
       bounce: (body, hit, side) => {
         firstHit ||= hit;
@@ -140,5 +149,5 @@ export function stepNativeProjectile(
   p.y = height - p.nativeBody.y / 65536;
   p.vx = (p.nativeBody.vx / 65536) * 50;
   p.vy = (-p.nativeBody.vy / 65536) * 50;
-  return { hit: firstHit, contacts };
+  return { hit: firstHit, contacts, sounds };
 }

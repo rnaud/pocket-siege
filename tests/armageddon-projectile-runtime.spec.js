@@ -93,3 +93,27 @@ test("crossing the integer water boundary allows native skimming on the followin
   expect(p.y).toBeGreaterThan(80);
   expect(p.vy).toBeGreaterThan(0);
 });
+
+test("live water transitions emit one splash and skimming emits its separate cue", () => {
+  const sinking = projectile("grenade", { y: 78, vx: 0, vy: -100 });
+  const first = stepNativeProjectile(
+    sinking,
+    { ...environment, bounces: true },
+    () => 0,
+  );
+  expect(first.sounds).toHaveLength(1);
+  expect(first.sounds[0][0]).toBe(0x39);
+  const second = stepNativeProjectile(
+    sinking,
+    { ...environment, frame: 2, bounces: true },
+    () => 0,
+  );
+  expect(second.sounds).toEqual([]);
+  const skimming = projectile("grenade", { y: 78, vx: 600, vy: -50 });
+  const skim = stepNativeProjectile(
+    skimming,
+    { ...environment, bounces: true },
+    () => 0,
+  );
+  expect(skim.sounds).toEqual([[0x3a, 0, 65536, 65536, 0]]);
+});

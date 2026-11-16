@@ -1,4 +1,6 @@
 const sounds = {
+  splash: "splash",
+  splish: "splish",
   freeze: "freeze",
   unfreeze: "unfreeze",
   frozenhit: "frozenwormimpact",
@@ -21,7 +23,7 @@ const sounds = {
   airstrike: "airstrike",
 };
 const contexts = new WeakMap();
-export function playOriginalSound(context, kind, fallback) {
+export function playOriginalSound(context, kind, fallback, level = 1) {
   const name = sounds[kind];
   if (!name) {
     fallback();
@@ -50,7 +52,7 @@ export function playOriginalSound(context, kind, fallback) {
       const source = context.createBufferSource(),
         gain = context.createGain();
       source.buffer = buffer;
-      gain.gain.value = 0.35;
+      gain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
       source.connect(gain);
       gain.connect(context.destination);
       source.onended = () => {
@@ -63,4 +65,12 @@ export function playOriginalSound(context, kind, fallback) {
       cache.delete(name);
       fallback();
     });
+}
+
+// Native IDs verified at descriptors 0055F258 / 0055F260. Browser gain is a
+// host adapter; native priority, spatial mixing and backend attenuation remain.
+export function playNativeWaterSound(context, request) {
+  const kind =
+    request[0] === 0x39 ? "splash" : request[0] === 0x3a ? "splish" : null;
+  if (kind) playOriginalSound(context, kind, () => {}, request[3] / 65536);
 }

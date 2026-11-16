@@ -20,7 +20,7 @@ import {
   startOriginalPreparation,
   stepOriginalPreparation,
 } from "./armageddon/art.js";
-import { playOriginalSound } from "./armageddon/audio.js";
+import { playOriginalSound, playNativeWaterSound } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
 import { fragments, airstrikePattern } from "./weapon-behavior.js";
@@ -2993,6 +2993,12 @@ function step(dt) {
             return i < 0 ? 0 : i + 2;
           },
         );
+        if (sound && nativeContact.sounds.length) {
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          for (const event of nativeContact.sounds)
+            playNativeWaterSound(audio, event);
+        }
         if (nativeContact.contacts && WEAPONS[p.kind].bounces) sfx("bounce");
       } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     }
