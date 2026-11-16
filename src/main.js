@@ -1,3 +1,4 @@
+import { updateOriginalCrosshair } from "./armageddon/crosshair-hud.js";
 import { updateOriginalSelection } from "./armageddon/selection-hud.js";
 import {
   loadOriginalNumbers,
@@ -595,6 +596,7 @@ function updateAimHUD() {
   aimHUD.guide.style.display = visible ? "" : "none";
   if (!visible) lastAim = null;
   if (visible) {
+    updateOriginalCrosshair(aimHUD.crosshair, worms[current].team, angle);
     const geometry = shot(worms[current]);
     const origin = screen(geometry.pivot.x, geometry.pivot.y);
     const r = (angle * Math.PI) / 180,

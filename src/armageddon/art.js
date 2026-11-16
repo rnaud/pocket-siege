@@ -43,6 +43,7 @@ const weaponSprites = Object.fromEntries(
 const names = [
   ...new Set([
     ...["r", "b", "g", "y", "p", "c"].flatMap((color) => [
+      `crshair${color}`,
       `arrowdn${color}`,
       `arrowsd${color}`,
     ]),
