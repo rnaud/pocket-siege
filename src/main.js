@@ -1,3 +1,4 @@
+import { carveNativeCrater } from "./armageddon/crater-mask.js";
 import { nativeAreaDamage } from "./armageddon/area-damage.js";
 import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
 import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
@@ -2430,7 +2431,14 @@ function fireShotgun(prepared = false) {
       victim.knocked = true;
       victim.ground = false;
     }
-    terrain.carve(hit.x, hit.y, 14);
+    carveNativeCrater(
+      terrain.data,
+      W,
+      H,
+      effect[1] >> 16,
+      effect[2] >> 16,
+      Math.imul(nativeShotgunResolution.extentFactor, effect[4]),
+    );
     terrainDirty = true;
   }
   spawnExplosionArt(
