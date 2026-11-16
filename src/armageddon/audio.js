@@ -29,6 +29,9 @@ export function playOriginalSound(context, kind, fallback, level = 1) {
     fallback();
     return;
   }
+  playOriginalClip(context, `sounds/${name}.wav`, fallback, level);
+}
+function playOriginalClip(context, name, fallback, level) {
   let cache = contexts.get(context);
   if (!cache) {
     cache = new Map();
@@ -37,7 +40,7 @@ export function playOriginalSound(context, kind, fallback, level = 1) {
   if (!cache.has(name))
     cache.set(
       name,
-      fetch(`${import.meta.env.BASE_URL}armageddon/sounds/${name}.wav`)
+      fetch(`${import.meta.env.BASE_URL}armageddon/${name}`)
         .then((r) => {
           if (!r.ok) throw new Error(name);
           return r.arrayBuffer();
@@ -80,4 +83,18 @@ export function playNativeWaterSound(context, request) {
 export function playNativeLandingSound(context, request) {
   if (request[0] === 0x23)
     playOriginalSound(context, "land", () => {}, request[3] / 65536);
+}
+
+// Speech table entries 0055F48C / 0055F564 map IDs 6 / 33 to these files.
+// English is the host team's default until native team speech selection lands.
+export function playNativeDeathVoice(context, request) {
+  const name =
+    request[0] === 6 ? "byebye" : request[0] === 33 ? "ohdear" : null;
+  if (name)
+    playOriginalClip(
+      context,
+      `voices/english/${name}.wav`,
+      () => {},
+      request[3] / 65536,
+    );
 }

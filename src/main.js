@@ -86,6 +86,7 @@ import {
   playOriginalSound,
   playNativeWaterSound,
   playNativeLandingSound,
+  playNativeDeathVoice,
 } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
@@ -3169,7 +3170,12 @@ function step(dt) {
       }
       if (w.deathPending && !w.drowned) {
         if (!w.originalDeath) startOriginalDeath(w);
-        w.dying = stepOriginalDeath(w) ? 0 : 1;
+        w.dying = stepOriginalDeath(w, () => matchRandom.visualUint()) ? 0 : 1;
+        if (w.originalDeathVoice && sound) {
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          playNativeDeathVoice(audio, w.originalDeathVoice);
+        }
       } else w.dying = Math.max(0, w.dying - dt);
       if (w.dying === 0 && w.deathPending) {
         w.deathPending = false;

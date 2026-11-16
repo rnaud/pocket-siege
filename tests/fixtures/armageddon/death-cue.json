@@ -1,0 +1,2719 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "block": "004DE582\u2013004DE5F6 / 004DE6A5",
+  "method": "Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return.",
+  "cases": [
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -1,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 0,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          33,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 1,
+        "sound": [
+          6,
+          3,
+          65536,
+          65536,
+          0
+        ],
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": true,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 10,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -1,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 0,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17245,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 17246,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65535,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 65536,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 131071,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": 2147483647,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 0,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 0
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": 1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": 1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 0,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 65535,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 65536,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    },
+    {
+      "sprite": 11,
+      "progress": -2147483648,
+      "spoken": -1,
+      "random": 4294967295,
+      "result": {
+        "randomCalls": 0,
+        "sound": null,
+        "complete": false,
+        "spoken": -1
+      }
+    }
+  ]
+}

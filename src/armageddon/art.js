@@ -1,3 +1,4 @@
+import { nativeDeathCue } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
 import { nativeFlightSprite, nativeFlightProgress } from "./flight-art.js";
@@ -692,15 +693,25 @@ export function startOriginalDeath(worm) {
   const player = new NativeAnimationPlayer();
   player.enqueue(10, animation.metadata);
   worm.originalDeath = player;
+  worm.originalDeathSpoken = 0;
+  worm.originalDeathVoice = null;
   worm.originalJump = worm.originalLanding = worm.originalRecoil = null;
   worm.originalPreparation = null;
   return true;
 }
-export function stepOriginalDeath(worm) {
+export function stepOriginalDeath(worm, random = () => 0) {
   const player = worm.originalDeath;
   if (!player) return false;
   player.advance();
-  return (player.current.progress & 0xffff0000) > 0xffff;
+  const cue = nativeDeathCue(
+    10,
+    player.current.progress,
+    worm.originalDeathSpoken,
+    random,
+  );
+  worm.originalDeathSpoken = cue.spoken;
+  worm.originalDeathVoice = cue.sound;
+  return cue.complete;
 }
 
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {

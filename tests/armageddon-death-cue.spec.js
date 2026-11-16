@@ -1,0 +1,79 @@
+import { test, expect } from "@playwright/test";
+import fixture from "./fixtures/armageddon/death-cue.json" with { type: "json" };
+import { nativeDeathCue } from "../src/armageddon/death-cue.js";
+test("death voice threshold, random consumption and completion match original x86", () => {
+  expect(fixture.cases).toHaveLength(216);
+  for (const row of fixture.cases) {
+    let calls = 0;
+    const result = nativeDeathCue(row.sprite, row.progress, row.spoken, () => {
+      calls++;
+      return row.random;
+    });
+    expect(result).toEqual(row.result);
+    expect(calls).toBe(row.result.randomCalls);
+  }
+});
+test("native death playback emits one original English voice at the animation threshold", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  const result = await page.evaluate(async () => {
+    const { startOriginalDeath, stepOriginalDeath } =
+      await import("/src/armageddon/art.js");
+    const { playNativeDeathVoice } = await import("/src/armageddon/audio.js");
+    const events = [],
+      starts = [],
+      bytes = [];
+    const context = {
+      destination: {},
+      decodeAudioData: async (data) => {
+        bytes.push(data.byteLength);
+        return {};
+      },
+      createGain: () => ({ gain: { value: 0 }, connect() {}, disconnect() {} }),
+      createBufferSource: () => ({
+        connect() {},
+        disconnect() {},
+        start() {
+          starts.push(true);
+        },
+      }),
+    };
+    for (const random of [0, 0x10000]) {
+      const worm = {};
+      startOriginalDeath(worm);
+      let calls = 0,
+        ticks = 0,
+        previous = 0;
+      while (ticks++ < 100) {
+        const complete = stepOriginalDeath(worm, () => {
+          calls++;
+          return random;
+        });
+        if (worm.originalDeathVoice) {
+          events.push({
+            sound: worm.originalDeathVoice[0],
+            previous,
+            progress: worm.originalDeath.current.progress,
+          });
+          playNativeDeathVoice(context, worm.originalDeathVoice);
+        }
+        previous = worm.originalDeath.current.progress;
+        if (complete) break;
+      }
+      if (calls !== 1) throw new Error(`RNG called ${calls} times`);
+    }
+    const deadline = performance.now() + 2000;
+    while (starts.length < 2 && performance.now() < deadline)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    return { events, starts: starts.length, bytes };
+  });
+  expect(result.events.map((event) => event.sound)).toEqual([33, 6]);
+  for (const event of result.events) {
+    expect(event.previous).toBeLessThanOrEqual(0x435d);
+    expect(event.progress).toBeGreaterThan(0x435d);
+  }
+  expect(result.starts).toBe(2);
+  expect(result.bytes.every((size) => size > 44)).toBe(true);
+});
