@@ -240,8 +240,8 @@
     {
       "slot": 29,
       "native_name": "PostalStrike",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "postal",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 200
     },

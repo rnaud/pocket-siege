@@ -39,10 +39,11 @@ import {
   createNativeAirstrike,
   stepNativeAirstrike,
 } from "../src/armageddon/projectile-runtime.js";
-test("live airstrike adapter releases five original missile bodies on consecutive ticks", () => {
+for (const [kind, carrierId, spriteId, damage, push, offset, timer] of [["airstrike", 673, 649, 30, 115, 50, 9000], ["postal", 675, 651, 50, 100, 0, 20000]])
+test(`live ${kind} adapter releases five original missile bodies on consecutive ticks`, () => {
   for (const direction of [-1, 1]) {
-    const strike = createNativeAirstrike(600, 300, direction, 0, 650);
-    expect(strike.sprite).toBe(673);
+    const strike = createNativeAirstrike(600, 300, direction, 0, 650, 1, kind);
+    expect(strike.sprite).toBe(carrierId);
     expect(strike.sound).toBe(52);
     const missiles = [],
       ticks = [];
@@ -57,20 +58,19 @@ test("live airstrike adapter releases five original missile bodies on consecutiv
     expect(missiles).toHaveLength(5);
     expect(ticks.slice(1)).toEqual(ticks.slice(0, -1).map((t) => t + 1));
     for (const p of missiles) {
-      expect(p.nativeBody.sprite).toBe(649);
-      expect(p.nativeTimer.remaining).toBe(9000);
+      expect(p.nativeBody.sprite).toBe(spriteId);
+      expect(p.nativeTimer.remaining).toBe(timer);
       expect(p.vx).toBe(direction * 200);
       expect(p.vy).toBeCloseTo(0);
       expect(p.nativeDetonation).toMatchObject({
-        damage: 30,
-        push: 115,
-        offset: 50,
+        damage, push, offset,
       });
     }
   }
 });
 
-test("live aircraft releases original missiles and resolves its strike", async ({
+for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl", 30], ["postal", "postbox", "letter1", 50]])
+test(`live ${kind} aircraft releases original missiles and resolves its strike`, async ({
   page,
 }) => {
   await page.goto("/");
@@ -80,7 +80,7 @@ test("live aircraft releases original missiles and resolves its strike", async (
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
   await page.locator("#special-toggle").click();
-  await page.locator('[data-weapon="airstrike"]').click();
+  await page.locator(`[data-weapon="${kind}"]`).click();
   await page.locator("#fire").click();
   const box = await page.locator("#arena").boundingBox();
   await page.evaluate(() => {
@@ -102,13 +102,14 @@ test("live aircraft releases original missiles and resolves its strike", async (
   const strike = await page.evaluate(
     () => window.siege.getState().airstrikes[0],
   );
-  expect(strike.sprite).toBe("airjetg");
+  expect(strike.sprite).toBe(carrier);
+  expect(await page.evaluate(kind => window.siege.getState().ammo[0][kind], kind)).toBe(0);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().bombs.length))
     .toBe(5);
   const missiles = await page.evaluate(() => window.siege.getState().bombs);
   expect(
-    missiles.every((b) => b.sprite === "airmisl" && b.nativeDamage === 30),
+    missiles.every((b) => b.sprite === sprite && b.nativeDamage === damage),
   ).toBe(true);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().bombs.length), {

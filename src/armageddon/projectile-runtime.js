@@ -39,6 +39,7 @@ const kinds = new Set([
   "dynamite",
   "mine",
   "airstrike",
+  "postal",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
 // presets remain modifiers around this baseline until scheme UI is ported.
@@ -225,15 +226,16 @@ export function nativeProjectileChildren(p, height, random, construct = () => {}
   return children;
 }
 
-export function createNativeAirstrike(x, y, direction, owner, height, gravityScale = 1) {
-  const record = weaponRecord("airstrike");
+export function createNativeAirstrike(x, y, direction, owner, height, gravityScale = 1, kind = "airstrike") {
+  const record = weaponRecord(kind);
+  if (!record || record["0x68"] !== 3) throw new RangeError("Not a native strike weapon");
   const config = {
     count: record["0x74"], spacing: record["0x78"], speed: record["0x7c"],
     kind: record["0x84"], airborne: record["0xc8"], direction: direction << 16,
     targetX: fixed(x), targetY: fixed(height - y),
   };
   return { config, body: nativeAirstrikeInitial(config, Math.round(0x3d70 * gravityScale)),
-    owner, sprite: record["0x70"], sound: record["0x80"],
+    owner, kind, sprite: record["0x70"], sound: record["0x80"],
     payload: [owner,0,0,0,direction << 16,0,config.targetX,config.targetY,0,0,0] };
 }
 
@@ -241,7 +243,7 @@ export function stepNativeAirstrike(strike, height) {
   const result = nativeAirstrikeTick(strike.body, strike.config, strike.payload);
   strike.body = result.body;
   const missiles = result.calls.filter(c => c.operation === "missile").map(({payload}) => {
-    const p = { kind: "bomblet", nativeWeaponKind: "airstrike", nativeBlockOffset: 0x88,
+    const p = { kind: "bomblet", nativeWeaponKind: strike.kind, nativeBlockOffset: 0x88,
       x: payload[2] / 65536, y: height - payload[3] / 65536,
       vx: payload[4] / 65536 * 50, vy: -payload[5] / 65536 * 50,
       owner: strike.owner, fuse: 0, bounce: 0, age: 0 };

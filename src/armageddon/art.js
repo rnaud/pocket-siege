@@ -103,6 +103,8 @@ const names = [
     "dynamite",
     "airmisl",
     "airjetg",
+    "postbox",
+    "letter1",
     "clustlet",
     "petrolbm",
     ...Object.values(weaponSprites)

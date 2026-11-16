@@ -1357,7 +1357,7 @@ function updateUI() {
     charging ||
     weapon === "mine" ||
     weapon === "dynamite" ||
-    weapon === "airstrike" ||
+    WEAPONS[weapon]?.special === "airstrike" ||
     weapon === "bat";
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = availableAmmo(loadout, button.dataset.weapon);
@@ -1436,7 +1436,7 @@ function updateUI() {
           ? "◎ AIM"
           : targetUtility === "girder"
             ? "▰ AIM"
-            : targetUtility === "airstrike"
+            : WEAPONS[targetUtility]?.special === "airstrike"
               ? "✈ AIM"
               : parachuteArmed
                 ? "☂ CHUTE"
@@ -1635,16 +1635,17 @@ function handleUtilityTarget(e) {
     updateUI();
     return;
   }
-  if (targetUtility === "airstrike") {
-    if ((availableAmmo(ammo[team], "airstrike") ?? 0) <= 0) {
+  if (WEAPONS[targetUtility]?.special === "airstrike") {
+    if ((availableAmmo(ammo[team], targetUtility) ?? 0) <= 0) {
       targetUtility = null;
       activeUtility = null;
       updateUI();
       return;
     }
-    ammo[team].airstrike = spendAmmo(ammo[team].airstrike);
-    spawnAirstrike(x, y);
-    finishUtilityTurn("Air strike called. Bombs away!");
+    const strikeKind = targetUtility;
+    ammo[team][strikeKind] = spendAmmo(ammo[team][strikeKind]);
+    spawnAirstrike(x, y, strikeKind);
+    finishUtilityTurn(`${WEAPONS[strikeKind].label} called. Bombs away!`);
     return;
   }
   if (targetUtility === "teleport") {
@@ -2179,6 +2180,7 @@ function updateSliders() {
     homing: homingTarget ? null : "SET TARGET",
     bat: "SWING BAT",
     airstrike: "CALL AIRSTRIKE",
+    postal: "CALL POSTAL STRIKE",
   }[weapon];
   $("#fire-label").textContent = specialLabel
     ? specialLabel
@@ -2230,7 +2232,7 @@ function startCharge(source) {
     fireBat();
     return;
   }
-  if (weapon === "airstrike") {
+  if (WEAPONS[weapon]?.special === "airstrike") {
     beginAirstrikeTargeting();
     return;
   }
@@ -2469,10 +2471,10 @@ function queueWormCamera(w) {
   });
   if (request) pendingWormCamera.push(request);
 }
-function spawnAirstrike(x, y) {
+function spawnAirstrike(x, y, kind = "airstrike") {
   const direction = Number($("#strike-direction").value);
-  const strike = createNativeAirstrike(x,y,direction,current,H,gravityScale);
-  strike.mesh = createOriginalVisual("airjetg");
+  const strike = createNativeAirstrike(x,y,direction,current,H,gravityScale,kind);
+  strike.mesh = createNativeProjectileVisual({sprite: strike.sprite});
   if (strike.mesh) {
     strike.mesh.position.set(strike.body.x / 65536,H - strike.body.y / 65536,45);
     strike.mesh.scale.x = Math.abs(strike.mesh.scale.x) * (direction > 0 ? -1 : 1);
@@ -2500,13 +2502,13 @@ function stepAirstrikes() {
         if(packet) explode(missile.x,missile.y,missile.kind,missile.owner,packet);
         continue;
       }
-      missile.mesh=createOriginalVisual("airmisl") || createProjectile("grenade");
+      missile.mesh=createNativeProjectileVisual(missile.nativeRender) || createProjectile("grenade");
       missile.mesh.position.set(missile.x,missile.y,40);
       group.add(missile.mesh); bombs.push(missile);
     }
     if(strike.mesh) {
       strike.mesh.position.set(strike.body.x/65536,H-strike.body.y/65536,45);
-      updateOriginalObject(strike.mesh,"airjetg",0,strike.body.progress);
+      updateOriginalObject(strike.mesh,strike.mesh.userData.originalSprite,0,strike.body.progress);
     }
     if(result.removed) {
       if(strike.mesh) dispose(strike.mesh);
@@ -2760,12 +2762,12 @@ function fireBat() {
   }
 }
 function beginAirstrikeTargeting() {
-  if ((availableAmmo(ammo[team], "airstrike") ?? 0) <= 0) return;
-  targetUtility = "airstrike";
-  activeUtility = "airstrike";
+  if ((availableAmmo(ammo[team], weapon) ?? 0) <= 0) return;
+  targetUtility = weapon;
+  activeUtility = weapon;
   specialOpen = false;
   wormLocked = true;
-  $("#status").textContent = "Click or tap the island to call the airstrike.";
+  $("#status").textContent = `Click or tap the island to call ${WEAPONS[weapon].label}.`;
   updateUI();
 }
 function fire() {
@@ -2791,7 +2793,7 @@ function fire() {
     fireBat();
     return;
   }
-  if (kind === "airstrike") {
+  if (WEAPONS[kind]?.special === "airstrike") {
     beginAirstrikeTargeting();
     return;
   }
@@ -4825,7 +4827,7 @@ function setWeapon(kind) {
   weapon = kind;
   teamWeapon[team] = kind;
   $("#grenade-settings").hidden = !WEAPONS[kind].timed;
-  $("#airstrike-settings").hidden = kind !== "airstrike";
+  $("#airstrike-settings").hidden = WEAPONS[kind]?.special !== "airstrike";
   document
     .querySelectorAll("[data-weapon]")
     .forEach((b) => b.classList.toggle("selected", b.dataset.weapon === kind));

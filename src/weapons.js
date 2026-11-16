@@ -128,6 +128,18 @@ export const WEAPONS = {
     ammo: 1,
     special: "banana",
   },
+  postal: {
+    label: "Postal Strike",
+    icon: "✈",
+    radius: 60,
+    damage: 50,
+    wind: false,
+    speed: 0,
+    timed: false,
+    bounces: false,
+    ammo: 1,
+    special: "airstrike",
+  },
   napalm: {
     impulse: 220,
     label: "Napalm",
@@ -215,6 +227,7 @@ export const WEAPONS = {
 };
 
 export const SPECIAL_WEAPONS = [
+  "postal",
   "banana",
   "shotgun",
   "dynamite",
@@ -235,6 +248,7 @@ export const PROJECTILE_ORDER = [
   "holy",
 ];
 export const freshAmmo = () => ({
+  postal: WEAPONS.postal.ammo,
   banana: WEAPONS.banana.ammo,
   grenade: WEAPONS.grenade.ammo,
   mortar: WEAPONS.mortar.ammo,
