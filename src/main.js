@@ -1,3 +1,4 @@
+import { nativeBlastResponse } from "./armageddon/blast-response.js";
 import { nativeDamageAccounting } from "./armageddon/damage-accounting.js";
 import { nativeBlastDamage } from "./armageddon/blast-damage.js";
 import {
@@ -2750,12 +2751,36 @@ function explode(x, y, kind, ownerIndex = -1) {
         w.knocked = true;
         w.ground = false;
       }
+    let receivedDamage = native?.damage;
+    if (native) {
+      const response = nativeBlastResponse(
+        {
+          state: w.frozen > 0 ? 0x88 : 0x65,
+          vx: Math.round((w.vx * 65536) / 50),
+          vy: Math.round((-w.vy * 65536) / 50),
+          fieldB0: 0,
+          accumulated: w.nativeBlastAccumulated ?? 0,
+          facing: w.facing,
+          x: Math.round(w.x * 65536),
+          y: Math.round((H - w.y) * 65536),
+        },
+        native.damage,
+        false,
+        1,
+        [Math.round(x * 65536), Math.round((H - y) * 65536)],
+      );
+      w.nativeBlastAccumulated = response.result.accumulated;
+      w.nativeBlastResponseState = response.result.state;
+      w.facing = response.result.facing;
+      receivedDamage =
+        response.output.find((call) => call.health)?.health[0] ?? 0;
+    }
     const factor = native
-      ? native.damage
+      ? receivedDamage
       : blastImpulse(w, x, y, radius + 34, impulse * exposure.get(w));
     if (factor > 0) {
       const damage = native
-        ? native.damage
+        ? receivedDamage
         : Math.max(1, Math.round(factor * maxDamage * exposure.get(w)));
       const direction = Math.sign(w.x - x) || 1;
       if (w.frozen > 0) {
