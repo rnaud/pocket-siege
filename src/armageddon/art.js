@@ -41,6 +41,20 @@ const names = [
     "expow",
     "expoot",
     "exbiff",
+    "wcrate1",
+    "wcrate2",
+    "mcrate1",
+    "mcrate2",
+    "ucrate1",
+    "ucrate2",
+    "mineoff",
+    "mineon",
+    "oildrum1",
+    "flame1",
+    "dynamite",
+    "airmisl",
+    "clustlet",
+    "petrolbm",
     ...Object.values(weaponSprites)
       .filter(Boolean)
       .map((id) => spriteIds.sprites[id].name),
@@ -138,6 +152,7 @@ export const projectileSprites = {
   grenade: "grenade",
   cluster: "cluster",
   holy: "hgrenade",
+  napalm: "petrolbm",
 };
 
 export function originalVisual(name, index = 0) {
@@ -149,7 +164,52 @@ export function originalVisual(name, index = 0) {
     height: animation.sprite.height,
     count: animation.sprite.frames.length,
     rate: animation.metadata.rate / 65536,
+    flags: animation.sprite.metadata[2],
+    bottom: animation.sprite.frames[0].bottom,
   };
+}
+
+// A reusable native-size sprite with an explicit foot anchor. Frame selection
+// honors the original loop/ping-pong flags; only the host event driver is new.
+export function createOriginalObject(name, footOffset = 0) {
+  const frame = originalVisual(name);
+  if (!frame) return null;
+  const group = new THREE.Group();
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }),
+  );
+  group.add(plane);
+  group.userData.originalPlane = plane;
+  group.userData.footOffset = footOffset;
+  updateOriginalObject(group, name, 0);
+  return group;
+}
+
+export function updateOriginalObject(group, name, age, progress = null) {
+  const plane = group.userData.originalPlane;
+  const frame = originalVisual(name);
+  if (!plane || !frame) return false;
+  const ticks = Math.max(0, Math.round(age * 50));
+  let playback = group.userData.originalPlayback;
+  if (!playback || playback.name !== name || ticks < playback.ticks) {
+    const player = new NativeAnimationPlayer();
+    player.enqueue(spriteIdByName.get(name), animations.get(name).metadata);
+    playback = group.userData.originalPlayback = { name, player, ticks: 0 };
+  }
+  while (playback.ticks < ticks) {
+    playback.player.advance();
+    playback.ticks++;
+  }
+  const position = progress ?? playback.player.current.progress;
+  const index = nativeSpriteFrame(frame.count, frame.flags, position);
+  plane.material.map = texture(name, index);
+  plane.scale.set(frame.width, frame.height, 1);
+  plane.position.y =
+    frame.bottom - frame.height / 2 + group.userData.footOffset;
+  group.userData.originalSprite = name;
+  group.userData.originalFrame = index;
+  return true;
 }
 
 export function createOriginalVisual(name) {

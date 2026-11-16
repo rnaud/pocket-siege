@@ -17,6 +17,8 @@ import {
   loadOriginalArt,
   originalVisual,
   createOriginalVisual,
+  createOriginalObject,
+  updateOriginalObject,
   updateOriginalProjectile,
   projectileSprites,
   originalWormFrame,
@@ -775,6 +777,10 @@ function updateSeriesHUD() {
 function applyWeather() {
   $("#weather-layer").className = weather === "clear" ? "" : weather;
 }
+function crateSprite(kind, falling) {
+  const prefix = kind === "health" ? "m" : kind === "utility" ? "u" : "w";
+  return `${prefix}crate${falling ? 2 : 1}`;
+}
 function spawnCrate() {
   if (crate || !terrain) return;
   for (let tries = 0; tries < 40; tries++) {
@@ -783,7 +789,9 @@ function spawnCrate() {
     if (ground < waterLevel + 30) continue;
     if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
     const kind = PICKUP_KINDS[Math.floor(logicRandom() * PICKUP_KINDS.length)],
-      mesh = createCrate(kind, crateMap),
+      mesh =
+        createOriginalObject(crateSprite(kind, true), -10) ||
+        createCrate(kind, crateMap),
       targetY = ground + 10;
     mesh.position.set(x, H + 34, 18);
     group.add(mesh);
@@ -795,6 +803,7 @@ function spawnCrate() {
       mesh,
       bob: visualRandom() * Math.PI * 2,
       falling: true,
+      artAge: 0,
       vy: 0,
     };
     return;
@@ -810,7 +819,7 @@ function spawnHazards() {
       if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 70)) continue;
       if (crate && Math.abs(crate.x - x) < 55) continue;
       if (hazards.some((h) => Math.abs(h.x - x) < 70)) continue;
-      const mesh = createBarrel();
+      const mesh = createOriginalObject("oildrum1", -14) || createBarrel();
       mesh.position.set(x, ground + 14, 17);
       group.add(mesh);
       hazards.push({ x, y: ground + 14, mesh });
@@ -819,17 +828,14 @@ function spawnHazards() {
   }
 }
 function spawnFire(x, y, owner = -1) {
-  const mesh = new THREE.Mesh(
-    new THREE.CircleGeometry(28 + visualRandom() * 10, 16),
-    new THREE.MeshBasicMaterial({
-      color: visualRandom() < 0.5 ? 0xff8b3c : 0xffc04d,
-      transparent: true,
-      opacity: 0.62,
-      depthWrite: false,
-    }),
-  );
-  mesh.position.set(x, y + 8, 26);
-  mesh.scale.y = 0.5;
+  const mesh = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const flame = createOriginalObject("flame1");
+    if (!flame) continue;
+    flame.position.x = (i - 1) * 18;
+    mesh.add(flame);
+  }
+  mesh.position.set(Math.round(x), Math.round(y), 26);
   group.add(mesh);
   fires.push({ x, y, owner, mesh, life: 5.5, tick: 0 });
 }
@@ -837,6 +843,26 @@ function stepBombs(dt) {
   for (let i = bombs.length - 1; i >= 0; i--) {
     const b = bombs[i];
     b.fuse -= dt;
+    b.age += dt;
+    if (b.grounded) {
+      updateOriginalObject(
+        b.mesh,
+        b.sprite,
+        b.age,
+        Math.min(65535, Math.floor((b.age / b.initialFuse) * 65536)),
+      );
+    } else if (b.mesh.userData.originalSprite) {
+      const frame = originalVisual(b.sprite);
+      const turn =
+        b.sprite === "airmisl"
+          ? Math.atan2(b.vx, b.vy) / (Math.PI * 2)
+          : b.age * 0.8;
+      const index =
+        ((Math.round(turn * frame.count) % frame.count) + frame.count) %
+        frame.count;
+      b.mesh.material.map = originalVisual(b.sprite, index).map;
+      b.mesh.userData.originalFrame = index;
+    }
     if (
       b.grounded &&
       b.fuse < 1.5 &&
@@ -872,11 +898,11 @@ function stepFires(dt) {
           injure(w, 4, 0);
       }
     }
-    f.mesh.scale.x = 0.9 + Math.sin(performance.now() * 0.01 + f.x) * 0.08;
+    f.mesh.children.forEach((flame, i) =>
+      updateOriginalObject(flame, "flame1", 5.5 - f.life + i * 0.17),
+    );
     if (f.life <= 0) {
-      group.remove(f.mesh);
-      f.mesh.geometry.dispose();
-      f.mesh.material.dispose();
+      dispose(f.mesh);
       fires.splice(i, 1);
     }
   }
@@ -2017,7 +2043,7 @@ function placeMine() {
     return;
   }
   const w = worms[current],
-    mesh = createMine(mineMap);
+    mesh = createOriginalObject("mineoff", 4) || createMine(mineMap);
   mesh.position.set(w.x, w.y - 4, 18);
   group.add(mesh);
   mines.push({
@@ -2067,8 +2093,12 @@ function spawnBomb({
   owner = -1,
   kind = "bomblet",
   grounded = false,
+  sprite = kind === "dynamite" ? "dynamite" : "clustlet",
 }) {
-  const mesh = createProjectile("grenade");
+  const mesh =
+    (grounded
+      ? createOriginalObject(sprite, -4)
+      : createOriginalVisual(sprite)) || createProjectile("grenade");
   mesh.position.set(x, y, 40);
   const ball = mesh.children[0];
   if (ball?.material?.color)
@@ -2093,6 +2123,9 @@ function spawnBomb({
     mesh,
     grounded,
     impact: !grounded,
+    sprite,
+    initialFuse: fuse,
+    age: 0,
   });
 }
 function spawnAirstrike(x) {
@@ -2104,7 +2137,13 @@ function spawnAirstrike(x) {
     H,
     GRAVITY * gravityScale,
   )) {
-    spawnBomb({ ...bomb, fuse: 5, owner: current, kind: "bomblet" });
+    spawnBomb({
+      ...bomb,
+      fuse: 5,
+      owner: current,
+      kind: "bomblet",
+      sprite: "airmisl",
+    });
   }
   sfx("airstrike");
 }
@@ -3121,6 +3160,11 @@ function step(dt) {
   }
   stepBombs(dt);
   stepFires(dt);
+  if (crate) crate.artAge = (crate.artAge || 0) + dt;
+  for (const hazard of hazards) {
+    hazard.artAge = (hazard.artAge || 0) + dt;
+    updateOriginalObject(hazard.mesh, "oildrum1", hazard.artAge);
+  }
   if (crate?.falling) {
     crate.vy -= 220 * dt;
     crate.y += crate.vy * dt;
@@ -3128,6 +3172,7 @@ function step(dt) {
     if (crate.y <= crate.targetY) {
       crate.y = crate.targetY;
       crate.falling = false;
+      crate.artAge = 0;
       crate.vy = 0;
       announce("SUPPLY CRATE LANDED");
     }
@@ -3522,12 +3567,17 @@ function frame(now) {
     w.label.style.top = p.y + "px";
   }
   if (crate) {
-    crate.mesh.position.y = crate.y + Math.sin(now * 0.003 + crate.bob) * 2;
+    crate.mesh.position.y = Math.round(crate.y);
+    updateOriginalObject(
+      crate.mesh,
+      crateSprite(crate.kind, crate.falling),
+      crate.artAge || 0,
+    );
     if (crate.mesh.userData.beacon)
       crate.mesh.userData.beacon.rotation.y = now * 0.002;
   }
   for (const mine of mines) {
-    mine.mesh.rotation.z = Math.sin(now * 0.002 + mine.bob) * 0.08;
+    updateOriginalObject(mine.mesh, mine.arm > 0 ? "mineoff" : "mineon", 0);
     if (mine.mesh.userData.light)
       mine.mesh.userData.light.visible =
         mine.arm > 0 ? Math.floor(now / 160) % 2 === 0 : true;
@@ -3959,7 +4009,16 @@ window.siege = {
       y: Math.round(view.y),
       zoom: Math.round(view.zoom * 100) / 100,
     },
-    crate: crate ? { x: crate.x, y: crate.y, kind: crate.kind } : null,
+    crate: crate
+      ? {
+          x: crate.x,
+          y: crate.y,
+          kind: crate.kind,
+          falling: crate.falling,
+          sprite: crate.mesh.userData.originalSprite,
+          frame: crate.mesh.userData.originalFrame,
+        }
+      : null,
     girders: girders.map((g) => ({
       x: Math.round(g.cx),
       y: Math.round(g.cy),
@@ -3981,17 +4040,25 @@ window.siege = {
       y: Math.round(b.y),
       kind: b.kind,
       fuse: Math.round(b.fuse * 10) / 10,
+      sprite: b.mesh.userData.originalSprite,
+      frame: b.mesh.userData.originalFrame,
     })),
     fires: fires.map((f) => ({
       x: Math.round(f.x),
       y: Math.round(f.y),
       life: Math.round(f.life * 10) / 10,
+      sprites: f.mesh.children.map((flame) => flame.userData.originalSprite),
     })),
-    hazards: hazards.map((h) => ({ x: Math.round(h.x), y: Math.round(h.y) })),
+    hazards: hazards.map((h) => ({
+      x: Math.round(h.x),
+      y: Math.round(h.y),
+      sprite: h.mesh.userData.originalSprite,
+    })),
     mines: mines.map((m) => ({
       x: Math.round(m.x),
       y: Math.round(m.y),
       arm: Math.round(m.arm * 10) / 10,
+      sprite: m.mesh.userData.originalSprite,
       team: m.team,
     })),
     daily: daily ? { date: daily.date, seed: daily.seed } : null,
