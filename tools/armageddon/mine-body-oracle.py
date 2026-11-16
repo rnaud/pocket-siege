@@ -41,7 +41,7 @@ def hook(cpu,address,size,user):
   sp=cpu.reg_read(UC_X86_REG_ESP);queries.append([signed(read(sp+8)),signed(read(sp+12)),read(owner+0x40)])
   cpu.reg_write(UC_X86_REG_EAX,hit)
 cpu.hook_add(UC_HOOK_CODE,hook)
-fields={'type':0x3c,'shape':0x44,'complex':0x4c,'mass':0x58,'enabled':0x48,'suspended':0x54,'sleeping':0xb8,'submerged':0xbc,'contact':0xc0,'moving':0xc4,'x':0x90,'y':0x94,'vx':0x9c,'vy':0xa0,'angle':0x98,'angularVelocity':0xa4,'radius':0x5c,'flags':0x40,'gravityScale':0x6c,'windScale':0x68,'drag':0x64,'skimScale':0xb4,'waterDrag':0x60,'restitutionX':0x78,'restitutionY':0x7c,'tangent':0x80}
+fields={'impulseScale':0xd8,'accumulated':0xe0,'type':0x3c,'shape':0x44,'complex':0x4c,'mass':0x58,'enabled':0x48,'suspended':0x54,'sleeping':0xb8,'submerged':0xbc,'contact':0xc0,'moving':0xc4,'x':0x90,'y':0x94,'vx':0x9c,'vy':0xa0,'angle':0x98,'angularVelocity':0xa4,'radius':0x5c,'flags':0x40,'gravityScale':0x6c,'windScale':0x68,'drag':0x64,'skimScale':0xb4,'waterDrag':0x60,'restitutionX':0x78,'restitutionY':0x7c,'tangent':0x80}
 cases=[]
 for friction in [0,66,96]:
  for arm in [-1,0,4000]:

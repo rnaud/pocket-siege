@@ -1,5 +1,6 @@
 import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
 import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
+import { nativeMineBlast } from "./armageddon/mine-blast.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
@@ -2969,6 +2970,13 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   }
   const reports = [];
   let dealt = 0;
+  if (nativeStrength !== null) {
+    const packet = nativePacket ?? [1, Math.round(x * 65536), Math.round((H - y) * 65536), nativePush, nativeStrength, 0];
+    for (const mine of mines) {
+      if (mine.nativeBody)
+        mine.nativeBody = nativeMineBlast(mine.nativeBody, packet).body;
+    }
+  }
   for (const w of worms) {
     if (w.hp <= 0) continue;
     const nativeState = nativeWormState(w);

@@ -10,6 +10,8 @@ export function nativeMineBase(friction) {
     shape: 2,
     complex: 0,
     mass: 65536,
+    impulseScale: 65536,
+    accumulated: 0,
     enabled: 0,
     suspended: 0,
     sleeping: 0,
