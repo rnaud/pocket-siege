@@ -86,6 +86,7 @@ import {
   stepNativeProjectile,
   nativeProjectileDetonationEvents,
   nativeProjectileChildren,
+  nativeProjectilePlacementHit,
 } from "./armageddon/projectile-runtime.js";
 import { nativeWormState } from "./armageddon/worm-collision-type.js";
 import { nativeChargeTick } from "./armageddon/power.js";
@@ -4007,12 +4008,18 @@ function step(dt) {
           : null;
         explode(p.x, p.y, p.kind, p.owner, nativePacket);
         if (p.nativeDetonation) {
-          for (const child of nativeProjectileChildren(p, H, () => matchRandom.logicUint())) {
+          nativeProjectileChildren(p, H, () => matchRandom.logicUint(), child => {
+            if (nativeProjectilePlacementHit(child, terrain, worms, H)) {
+              const packet = nativeProjectileDetonationEvents(child, () => matchRandom.logicUint())
+                .find(event => event.operation === "blast")?.request;
+              if (packet) explode(child.x, child.y, child.kind, child.owner, packet);
+              return;
+            }
             child.mesh = createOriginalVisual("clustlet") || createProjectile("grenade");
             child.mesh.position.set(child.x, child.y, 40);
             group.add(child.mesh);
             bombs.push(child);
-          }
+          });
         }
       }
       releaseProjectileMesh(p.mesh);

@@ -4,7 +4,7 @@ const abs = v => ((v ^ (v >> 31)) - (v >> 31)) | 0;
 
 // 004E2CA0. Returns each child constructor's eleven-word payload in emission
 // order; allocation and child construction are supplied by the caller.
-export function nativeProjectileFragments(body, payload, x, y, random) {
+export function nativeProjectileFragments(body, payload, x, y, random, construct = () => {}) {
   let direction = body.direction;
   if (direction < 0) {
     if (abs(body.impactVx) < abs(body.impactVy)) direction = body.impactVy < 0 ? 180 : 0;
@@ -28,6 +28,8 @@ export function nativeProjectileFragments(body, payload, x, y, random) {
       child[5] = Math.imul(fixedMultiply(nativeCos(angle), strength), -24);
     }
     children.push(child);
+    // A rejected child can detonate and consume RNG before the next emission.
+    construct(child);
   }
   return children;
 }

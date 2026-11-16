@@ -5,6 +5,7 @@ import {
   stepNativeProjectile,
   nativeProjectileDetonationEvents,
   nativeProjectileChildren,
+  nativeProjectilePlacementHit,
 } from "../src/armageddon/projectile-runtime.js";
 const environment = {
   height: 650,
@@ -282,4 +283,21 @@ test("cluster and mortar emit five native secondary bodies with separate blast r
       expect(child.y).not.toBe(before);
     }
   }
+});
+
+
+test("native placement rejects terrain at spawn instead of excluding its initial overlap", () => {
+  const p = projectile("cluster", { x: 200, y: 400 });
+  const terrain = { solid: (x,y) => x >= 195 && x <= 205 && y >= 395 && y <= 405 };
+  expect(nativeProjectilePlacementHit(p, terrain, [], 650)).toBe(1);
+  const clear = projectile("cluster", { x: 220, y: 400 });
+  expect(nativeProjectilePlacementHit(clear, terrain, [], 650)).toBe(0);
+});
+
+test("secondary construction runs between random draws for successive fragments", () => {
+  const p = projectile("cluster");
+  const order = [];
+  nativeProjectileChildren(p, 650, () => { order.push("random"); return 42; },
+    child => order.push(child.nativeRepeat));
+  expect(order).toEqual(["random","random",1,"random","random",2,"random","random",3,"random","random",4,"random","random",5]);
 });

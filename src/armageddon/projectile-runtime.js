@@ -1,6 +1,7 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
 import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileFragments } from "./projectile-fragments.js";
+import { nativeProjectilePlacement } from "./projectile-placement.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
@@ -85,6 +86,7 @@ export function attachNativeProjectile(p, height) {
     bounce: Math.round(p.bounce * 100),
   };
   const selected = nativeProjectileSelection(block, payload);
+  p.nativePlacementFlags = selected.config.flags | 2;
   p.nativeFragmentConfig = {
     count: block[47], speed: block[48], variance: block[49],
     direction: block[50], spread: block[51], mode: block[75],
@@ -163,14 +165,22 @@ export function nativeProjectileDetonationEvents(p, random) {
   return nativeProjectileDetonation(p.nativeDetonation, p.nativeBody.x, p.nativeBody.y, random);
 }
 
-export function nativeProjectileChildren(p, height, random) {
+export function nativeProjectilePlacementHit(p, terrain, worms, height) {
+  const result = nativeProjectilePlacement({ ...p.nativeBody, flags: p.nativePlacementFlags },
+    p.nativeBody.x, p.nativeBody.y, (body, x, y) =>
+      nativeSceneCollision(p, body, x / 65536, height - y / 65536, terrain, worms, height));
+  p.nativePlacementHit = result.hit;
+  return result.hit;
+}
+
+export function nativeProjectileChildren(p, height, random, construct = () => {}) {
   if (p.nativeDetonation.secondary !== 1 || p.nativeDetonation.repeat) return [];
   const body = p.nativeBody;
-  const payloads = nativeProjectileFragments({ ...p.nativeFragmentConfig,
+  const children = [];
+  nativeProjectileFragments({ ...p.nativeFragmentConfig,
     impactVx: body.impactVx, impactVy: body.impactVy,
     vx: body.vx, vy: body.vy, facing: body.facing,
-  }, p.nativePayload, body.x, body.y, random);
-  return payloads.map(payload => {
+  }, p.nativePayload, body.x, body.y, random, payload => {
     const child = {
       kind: p.kind === "mortar" ? "shrapnel" : "bomblet",
       nativeWeaponKind: p.nativeWeaponKind ?? p.kind, nativeRepeat: payload[8],
@@ -179,8 +189,10 @@ export function nativeProjectileChildren(p, height, random) {
       fuse: payload[10] / 1000, bounce: payload[9] / 100, age: 0,
     };
     attachNativeProjectile(child, height);
-    return child;
+    children.push(child);
+    construct(child);
   });
+  return children;
 }
 
 // Owner age is irrelevant to the original manager: every body overlapping the
