@@ -3944,10 +3944,9 @@ function step(dt) {
 
     if (
       boom ||
-      p.y < (p.nativeBody ? 0 : waterLevel) ||
-      p.x < -50 ||
-      p.x > W + 50 ||
-      p.age > 12
+      (p.nativeBody ? p.nativeRemoved : (
+        p.y < waterLevel || p.x < -50 || p.x > W + 50 || p.age > 12
+      ))
     ) {
       if (boom && p.y > waterLevel) {
         if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };

@@ -1,4 +1,5 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
+import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
 import { nativeProjectileTimer } from "./projectile-timer.js";
@@ -166,6 +167,7 @@ export function stepNativeProjectile(
     wind = 0,
     gravityScale = 1,
     frame = 0,
+    depth = nativeProjectileDepth(Math.floor(height - waterLevel)),
     random = () => 0,
     collisionBody = () => ({ type: 1, vx: 0, vy: 0 }),
     updateCollisionBody = () => {},
@@ -237,7 +239,13 @@ export function stepNativeProjectile(
   p.nativeTimer = timer.body;
   p.nativeBody.state = timer.body.state;
   events.push(...timer.calls.map(call => ({ ...call, timer: true })));
-  if (p.nativeBody.mode === 1 && p.nativeGuidance) {
+  const lifetime = nativeProjectileLifetime({ ...p.nativeBody,
+    secondary: p.nativeGuidance?.initialized ?? 0,
+  }, { depth, submerged: p.nativeBody.submerged, awake: nativeBodyAwake(p.nativeBody) });
+  p.nativeRemoved = lifetime.some(call => call.operation === "delete");
+  if (lifetime.some(call => call.operation === "state")) p.nativeBody.state = 1;
+  events.push(...lifetime.map(call => ({ ...call, lifetime: true })));
+  if (!p.nativeRemoved && p.nativeBody.mode === 1 && p.nativeGuidance) {
     if (p.nativeBody.submerged && (p.nativeBody.hitMask & 0x400000))
       p.nativeBody.mode = 0;
     else {
@@ -257,5 +265,6 @@ export function stepNativeProjectile(
   p.y = height - p.nativeBody.y / 65536;
   p.vx = (p.nativeBody.vx / 65536) * 50;
   p.vy = (-p.nativeBody.vy / 65536) * 50;
-  return { hit: firstHit, contacts, sounds, events, detonate: p.nativeBody.state === 1 };
+  return { hit: firstHit, contacts, sounds, events,
+    removed: p.nativeRemoved, detonate: !p.nativeRemoved && p.nativeBody.state === 1 };
 }

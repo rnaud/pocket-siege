@@ -201,3 +201,30 @@ test("native grenade visual progress follows body rotation instead of host age",
   expect(p.nativeRender.progress).toBe(p.nativeBody.angle);
   expect(p.nativeRender.progress).not.toBe(0);
 });
+
+test("native lifetime preserves long flights outside the browser map and removes bodies at native depth", () => {
+  const p = projectile("holy", { x: -60, y: 300, vx: 0, vy: 0, age: 13 });
+  p.nativeBody.gravityScale = 0;
+  p.nativeTimer.remaining = 1000;
+  let result = stepNativeProjectile(p, environment, () => 0);
+  expect(result.removed).toBe(false);
+  expect(result.detonate).toBe(false);
+  // Water is native y570: the minimum camera depth is768, plus40.
+  p.y = 650 - 808;
+  result = stepNativeProjectile(p, environment, () => 0);
+  expect(result.removed).toBe(true);
+  expect(result.detonate).toBe(false);
+  expect(result.events).toContainEqual({ operation: "delete", request: [1], lifetime: true });
+});
+
+test("native far-distance limit detonates while active homing receives its extra depth", () => {
+  const p = projectile("rocket", { x: 13460, y: 400, vx: 0, vy: 0 });
+  p.nativeBody.gravityScale = 0;
+  expect(stepNativeProjectile(p, environment, () => 0).detonate).toBe(true);
+  const homing = projectile("homing", { x: 200, y: 650 - 808, vx: 0, vy: 0 });
+  homing.nativeBody.gravityScale = 0;
+  homing.nativeGuidance.initialized = 1;
+  expect(stepNativeProjectile(homing, environment, () => 0).removed).toBe(false);
+  homing.y = 650 - 936;
+  expect(stepNativeProjectile(homing, environment, () => 0).removed).toBe(true);
+});
