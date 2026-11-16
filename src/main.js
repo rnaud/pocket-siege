@@ -1,4 +1,8 @@
 import {
+  createImpactBag,
+  nativeExplosionArt,
+} from "./armageddon/explosion-art.js";
+import {
   nativeDeathSmoke,
   nativeSmokeBody,
   nativeSmokeTick,
@@ -818,6 +822,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
   smokeRandom = matchSeed >>> 0;
+  impactBag = createImpactBag();
   bubbleSeed = matchSeed >>> 0;
   const layout = isDaily ? "fern" : $("#map-layout").value;
   const authored = createOriginalMap(layout);
@@ -2562,7 +2567,7 @@ function explode(x, y, kind, ownerIndex = -1) {
   explosions++;
   shakeUntil = performance.now() + 350;
   hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
-  impactFlash(x, y, "exfoom");
+  spawnExplosionArt(x, y, kind === "death" ? 30 : Math.round(maxDamage));
   sfx("explosion");
   for (const fragment of fragments(kind)) {
     spawnBomb({ x, y: y + 8, ...fragment, owner: ownerIndex });
@@ -2665,6 +2670,29 @@ function spawnDust(x, y) {
 }
 const originalSmoke = [];
 let smokeRandom = 0;
+let impactBag = createImpactBag();
+function spawnExplosionArt(x, y, strength) {
+  const requests = nativeExplosionArt(
+    1,
+    Math.round(x * 65536),
+    Math.round((H - y) * 65536),
+    strength,
+    () => matchRandom.visualUint(),
+    impactBag,
+  );
+  spawnOriginalSmoke(requests.smoke);
+  for (const request of requests.effects) {
+    const name = nativeSpriteIds.sprites[request[8]].name;
+    spawnNativeParticle(
+      name,
+      request[1] / 65536,
+      H - request[2] / 65536,
+      request[3],
+      request[4],
+      request[11],
+    );
+  }
+}
 function spawnDeathSmoke(worm) {
   const requests = nativeDeathSmoke(
     Math.round(worm.x * 65536),
@@ -2672,6 +2700,9 @@ function spawnDeathSmoke(worm) {
     new TextEncoder().encode(worm.name).length,
     () => matchRandom.visualUint(),
   );
+  spawnOriginalSmoke(requests);
+}
+function spawnOriginalSmoke(requests) {
   for (const request of requests) {
     const body = nativeSmokeBody(request),
       name = nativeSpriteIds.sprites[body.sprite].name;
