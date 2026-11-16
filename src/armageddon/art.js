@@ -4,6 +4,7 @@ import {
   nativeSpriteFrame,
 } from "./animation.js";
 import { nativeWeaponAnimation } from "./weapon-animation.js";
+import { nativeWeaponEquip } from "./equip.js";
 import weaponFields from "./weapon-art-fields.json";
 import { WEAPON_SLOTS } from "./delays.js";
 import { nativeFreezeAnimation } from "./freeze.js";
@@ -27,6 +28,11 @@ const names = [
     ...Object.values(weaponSprites)
       .filter(Boolean)
       .map((id) => spriteIds.sprites[id].name),
+    ...Object.values(WEAPON_SLOTS).flatMap((id) =>
+      nativeWeaponEquip(weaponFields[id], 0x65, 0x8000, id)
+        .calls.filter((call) => call.operation === "queue" && call.sprite_id)
+        .map((call) => spriteIds.sprites[call.sprite_id].name),
+    ),
     freezeEntry,
     spriteIds.sprites[0x242].name,
     freezeIdle,
@@ -110,22 +116,45 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     name = spriteIds.sprites[weaponSprites[weapon]].name;
     equipped = true;
   }
-  if (worm.hp <= 0) name = "wdie";
+  if (worm.hp <= 0) {
+    name = "wdie";
+    equipped = false;
+  }
   const frozen = worm.frozen > 0 && worm.hp > 0;
   const key = frozen ? "frozen" : name;
   let player = worm.originalPlayer;
   if (!player) player = worm.originalPlayer = new NativeAnimationPlayer();
   if (worm.originalAnimationKey !== key) {
     const previousId = player.current.id;
+    const wasEquipped = worm.originalEquipped;
     player.clear();
-    const ids = frozen
-      ? nativeFreezeAnimation(previousId).sprites
-      : [spriteIdByName.get(name)];
-    if (ids.some((id) => !animations.has(spriteIds.sprites[id]?.name)))
+    const queue = frozen
+      ? nativeFreezeAnimation(previousId).sprites.map((sprite_id) => ({
+          sprite_id,
+          progress: 0,
+        }))
+      : equipped
+        ? nativeWeaponEquip(
+            weaponFields[WEAPON_SLOTS[weapon]],
+            wasEquipped ? 0x66 : 0x65,
+            0x8000,
+            WEAPON_SLOTS[weapon],
+          ).calls.filter((call) => call.operation === "queue")
+        : [{ sprite_id: spriteIdByName.get(name), progress: 0 }];
+    if (
+      queue.some(
+        ({ sprite_id }) => !animations.has(spriteIds.sprites[sprite_id]?.name),
+      )
+    )
       return null;
-    for (const id of ids)
-      player.enqueue(id, animations.get(spriteIds.sprites[id].name).metadata);
+    for (const { sprite_id: id, progress } of queue)
+      player.enqueue(
+        id,
+        animations.get(spriteIds.sprites[id].name).metadata,
+        progress,
+      );
     worm.originalAnimationKey = key;
+    worm.originalEquipped = equipped && !frozen;
     worm.originalAnimationStart = frame;
     worm.originalPlayerFrame = frame;
   }
