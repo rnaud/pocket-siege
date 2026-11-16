@@ -1,3 +1,4 @@
+import { NativeCameraPriority } from "./armageddon/camera-priority.js";
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
@@ -216,6 +217,8 @@ import { SCHEMES } from "./schemes.js";
 import { modifierSettings } from "./modifiers.js";
 import { readSettings, writeSettings } from "./settings.js";
 const matchRandom = new MatchRandom(0);
+const nativeCamera = new NativeCameraPriority();
+let nativeCameraFocus = null;
 const logicRandom = () => matchRandom.logic();
 const visualRandom = () => matchRandom.visual();
 const $ = (s) => document.querySelector(s);
@@ -864,6 +867,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   bombs = [];
   for (const strike of airstrikes) if(strike.mesh) dispose(strike.mesh);
   airstrikes = [];
+  nativeCamera.reset();
+  nativeCameraFocus = null;
   for (const f of fires) dispose(f.mesh);
   fires = [];
   for (const h of hazards) dispose(h.mesh);
@@ -2397,11 +2402,16 @@ function spawnAirstrike(x, y) {
     group.add(strike.mesh);
   }
   airstrikes.push(strike);
+  nativeCamera.reset();
+  nativeCameraFocus = null;
   sfx("airstrike");
 }
 function stepAirstrikes() {
   for (let i=airstrikes.length-1; i>=0; i--) {
     const strike=airstrikes[i], result=stepNativeAirstrike(strike,H);
+    for (const call of result.calls) {
+      if (call.operation === "camera") nativeCamera.offer(...call.request);
+    }
     for (const missile of result.missiles) {
       if (nativeProjectilePlacementHit(missile,terrain,worms,H)) {
         const packet=nativeProjectileDetonationEvents(missile,()=>matchRandom.logicUint())
@@ -3574,6 +3584,7 @@ function step(dt) {
     }
     return;
   }
+  nativeCamera.beginFrame();
   selectionTick = (selectionTick + 1) | 0;
   for (const w of worms) w.moving = false;
   jumpClock += dt;
@@ -4138,6 +4149,20 @@ function step(dt) {
   updateOriginalDebris();
   updateOriginalSmoke();
   stepWaterBubbles();
+  const strikeMissiles = bombs.filter((b) => b.nativeWeaponKind === "airstrike");
+  for (const missile of strikeMissiles) {
+    const body = missile.nativeBody;
+    const priority = body.submerged
+      ? 10
+      : body.x < 0 || body.x > W * 65536 || body.y < 0 ? 8 : 5;
+    nativeCamera.offer(priority, body.x, body.y);
+  }
+  const bounds = nativeCamera.select(matchRandom.frame);
+  if (bounds) nativeCameraFocus = {
+    x: (bounds[0] + bounds[2]) / 131072,
+    y: H - (bounds[1] + bounds[3]) / 131072,
+  };
+  if (!airstrikes.length && !strikeMissiles.length) nativeCameraFocus = null;
   matchRandom.finishFrame();
 }
 function screen(x, y) {
@@ -4207,6 +4232,7 @@ function frame(now) {
       worms[current];
     if (focus) camTarget = { zoom: 1, cx: focus.x, cy: focus.y + 110 };
   }
+  if (nativeCameraFocus) camTarget = { zoom: 1, cx: nativeCameraFocus.x, cy: nativeCameraFocus.y };
   if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
   if (cameraSnap) {
     cameraZoom = camTarget.zoom;
@@ -4224,6 +4250,7 @@ function frame(now) {
     cameraY,
     cameraZoom,
     portrait ? arena.clientWidth / arena.clientHeight : W / H,
+    nativeCameraFocus && !overview ? H + 256 : H,
   );
   view.x = nextView.x;
   view.y = nextView.y;
@@ -5043,6 +5070,7 @@ window.siege = {
     seriesRound,
     breakTimer: Math.round(breakTimer * 10) / 10,
     slowMo: Math.round(slowMo * 10) / 10,
+    nativeCameraFocus,
     camera: {
       w: Math.round(view.w),
       h: Math.round(view.h),

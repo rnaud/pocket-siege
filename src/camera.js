@@ -31,13 +31,13 @@ export function chooseCameraTarget({ phase, projectile, worms, active }) {
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-export function cameraView(cx, cy, zoom, aspect = W / H) {
+export function cameraView(cx, cy, zoom, aspect = W / H, top = H) {
   const z = clamp(zoom, 1, 1.5),
     w = Math.min(W, H * aspect) / z,
     h = Math.min(H, W / aspect) / z;
   return {
     x: clamp(cx - w / 2, 0, W - w),
-    y: clamp(cy - h / 2, 0, H - h),
+    y: clamp(cy - h / 2, 0, Math.max(0, top - h)),
     w,
     h,
     zoom: z,
