@@ -33,6 +33,11 @@ test("browser routes native water requests to decoded original samples and gain"
       requested.push(request.url().split("/").pop());
   });
   await page.goto("/");
+  // Exercise audio after startup decoding, within the adapter's 500 ms
+  // freshness window; testing renderer preload contention is a separate case.
+  await expect
+    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
+    .toBe(true);
   await page.evaluate(async () => {
     const { playNativeWaterSound } = await import("/src/armageddon/audio.js");
     const context = new AudioContext();
