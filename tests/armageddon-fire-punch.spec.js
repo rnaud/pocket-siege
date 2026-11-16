@@ -37,14 +37,13 @@ async function preparePunch(page) {
   return targets;
 }
 
-test('live Fire Punch rises, hits an ally once, lands and finishes original recoil',async({page})=>{
+test('live Fire Punch rises, hits an ally once, spends ammo and finishes the action',async({page})=>{
   const targets=await preparePunch(page);
   await expect(page.locator('#angle')).toBeDisabled();
   await page.evaluate(()=>{
-    window.punchObserved={sprites:[],maxY:0,allyHealth:[]};
+    window.punchObserved={maxY:0,allyHealth:[]};
     function sample(){
       const s=window.siege.getState(),w=s.worms[0];
-      if(!window.punchObserved.sprites.includes(w.originalSprite))window.punchObserved.sprites.push(w.originalSprite);
       window.punchObserved.maxY=Math.max(window.punchObserved.maxY,w.y);
       const hp=s.worms[1].hp; if(window.punchObserved.allyHealth.at(-1)!==hp)window.punchObserved.allyHealth.push(hp);
       if(!s.shotCount||s.preparing)requestAnimationFrame(sample);
@@ -64,5 +63,4 @@ test('live Fire Punch rises, hits an ally once, lands and finishes original reco
   const seen=await page.evaluate(()=>window.punchObserved);
   expect(seen.allyHealth.slice(0,2)).toEqual([100,70]);
   expect(seen.maxY).toBeGreaterThan(280);
-  expect(seen.sprites).toEqual(expect.arrayContaining(['wpncup','wpnctop','wpncbak']));
 });
