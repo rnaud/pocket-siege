@@ -1,3 +1,4 @@
+import { nativeDamageAccounting } from "./armageddon/damage-accounting.js";
 import { nativeBlastDamage } from "./armageddon/blast-damage.js";
 import {
   nativeDebrisBurst,
@@ -2180,7 +2181,23 @@ function injure(w, damage, direction = 0) {
     sfx("frozenhit");
     return;
   }
-  w.hp = Math.max(0, w.hp - damage);
+  const previousHp = w.hp;
+  const accounting = nativeDamageAccounting(
+    {
+      hp: w.hp,
+      total: w.damageTaken ?? 0,
+      displayed: 0,
+      reset: 0,
+      resetActive: false,
+      team: w.team,
+      worm: worms.indexOf(w),
+      state: 0x65,
+    },
+    damage,
+  );
+  w.hp = accounting.hp;
+  w.damageTaken = accounting.total;
+  const actualDamage = previousHp - w.hp;
   w.hurt = 1.4;
   sfx("hit");
   w.hits++;
@@ -2189,7 +2206,7 @@ function injure(w, damage, direction = 0) {
     w.deathPending = true;
     slowMo = Math.max(slowMo, 0.7);
   }
-  damageLabel(w, damage, direction);
+  damageLabel(w, actualDamage, direction);
   if (w === worms[current]) {
     shotgunRemaining = 0;
     cancelCharge();
@@ -2746,10 +2763,12 @@ function explode(x, y, kind, ownerIndex = -1) {
         reports.push(`${w.name} · FROZEN`);
         continue;
       }
+      const hpBefore = w.hp;
       injure(w, damage, direction);
+      const actualDamage = hpBefore - w.hp;
       if (ownerIndex >= 0 && worms[ownerIndex]?.team !== w.team)
-        dealt += damage;
-      reports.push(`${w.name} −${damage}${w.hp === 0 ? " · KO" : ""}`);
+        dealt += actualDamage;
+      reports.push(`${w.name} −${actualDamage}${w.hp === 0 ? " · KO" : ""}`);
     }
   }
   if (dealt > 0) {
