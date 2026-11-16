@@ -1,8 +1,10 @@
 """Execute airborne worm contact decisions in 004D6E30.
 
 Real body getters/setters and position attempt 004D1260 run. Collision manager,
-RNG/voice/audio, and state entry are explicit interfaces. Stop at fallback
-004D7357 or the routine's early return. Crate/frozen/hurt branches are excluded.
+RNG/voice/audio, and state entry are explicit interfaces. Decision cases stop
+at fallback 004D7357 or early return. Complete cases execute original fallback
+dispatch and bounce, with an explicit receiver handled/declined interface.
+Crate/frozen/hurt branches are excluded.
 """
 import argparse
 import hashlib
@@ -46,16 +48,21 @@ cpu.mem_write(probe,b'\xc2\x0c\x00')
 cpu.mem_write(transition,b'\x8b\x44\x24\x04\x89\x41\x50\xc2\x04\x00')
 for address,code in [(0x4ee960,b'\xc3'),(0x4edaf0,b'\xc2\x08\x00'),(0x4edc30,b'\xc2\x04\x00'),(0x4edb90,b'\xc2\x14\x00')]:cpu.mem_write(address,code)
 fields={'state':0x50,'x':0x90,'y':0x94,'vx':0x9c,'vy':0xa0,'angularVelocity':0xa4,'sleeping':0xb8,'team':0xfc,'soundHandle':0x38c,'field264':0x264,'field268':0x268,'field26c':0x26c}
-calls=[];queries=[];pattern=[];environment={};fallback=False
+receiver=owner+0x3700
+write(other_vtable+0x28,receiver);cpu.mem_write(receiver,b'\xc2\x08\x00')
+fields.update(complex=0x4c,tangent=0x80,restitutionX=0x78,restitutionY=0x7c,lastFacingFrame=0x1ac,facing=0x1b0)
+calls=[];queries=[];pattern=[];environment={};fallback=False;full=False
 def observe(cpu,address,size,user):
     global fallback
     sp=cpu.reg_read(UC_X86_REG_ESP)
     if address==0x4d7357:
-        fallback=True;cpu.emu_stop()
+        fallback=True
+        if not full:cpu.emu_stop()
     elif address==probe:
         if read(sp+4)!=owner:raise RuntimeError('Unexpected body')
         queries.append(list(struct.unpack('<2i',cpu.mem_read(sp+8,8))))
-        cpu.reg_write(UC_X86_REG_EAX,pattern[len(queries)-1])
+        cpu.reg_write(UC_X86_REG_EAX,pattern[(len(queries)-1)%len(pattern)])
+    elif address==receiver:cpu.reg_write(UC_X86_REG_EAX,environment['otherResponse'])
     elif address==transition:
         calls.append({'operation':'state','target':read(sp+4),'velocity':list(struct.unpack('<2i',cpu.mem_read(owner+0x9c,8)))})
     elif address==0x4ee960:
@@ -68,15 +75,15 @@ def observe(cpu,address,size,user):
         calls.append({'operation':'sound','request':list(struct.unpack('<5i',cpu.mem_read(sp+4,20)))})
         cpu.reg_write(UC_X86_REG_EAX,environment['soundHandle'])
 cpu.hook_add(UC_HOOK_CODE,observe)
-cases=[]
+cases=[];complete=[]
 for state in [0x6c,0x79,0x7d,0x7e]:
     for side in [0,1,2,3,4,99]:
         for other_type in [1,2,15]:
             for vy in [-65537,-65536,-65535,0,200000]:
                 for pattern in [[0,0],[0,7],[7,0],[7,7]]:
                     for profile in range(2):
-                        body={'state':state,'x':0x7fff8000,'y':0x7fff8000,'vx':-123456,'vy':vy,'angularVelocity':1234,'sleeping':9,'team':profile+1,'soundHandle':19 if profile else 0,'field264':3,'field268':4,'field26c':5}
-                        environment={'random':-1 if profile else 257,'voiceId':1111,'soundHandle':99}
+                        body={'state':state,'x':0x7fff8000,'y':0x7fff8000,'vx':-123456,'vy':vy,'angularVelocity':1234,'sleeping':9,'team':profile+1,'soundHandle':19 if profile else 0,'field264':3,'field268':4,'field26c':5,'complex':profile,'tangent':0xf5c2,'restitutionX':0x9999,'restitutionY':0,'lastFacingFrame':90 if profile else 89,'facing':-1}
+                        environment={'random':-1 if profile else 257,'voiceId':1111,'soundHandle':99,'frame':100}
                         for name,offset in fields.items():write(owner+offset,body[name]&0xffffffff)
                         write(incoming+0x3c,other_type)
                         cpu.mem_write(stack+0xff00,struct.pack('<3I',stop,incoming,side))
@@ -86,5 +93,22 @@ for state in [0x6c,0x79,0x7d,0x7e]:
                         if cpu.reg_read(UC_X86_REG_EIP) not in [stop,0x4d7357]:raise RuntimeError('Unexpected contact boundary')
                         result={name:struct.unpack('<i',cpu.mem_read(owner+offset,4))[0] for name,offset in fields.items()}
                         cases.append({'input':body,'otherType':other_type,'side':side,'environment':environment,'pattern':pattern,'queries':queries,'result':{'body':result,'calls':calls,'fallback':fallback}})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004D6E30..004D7357','method':__doc__,'cases':cases},separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} airborne contact cases')
+                        for response in [0,1]:
+                            full=True
+                            full_environment={**environment,'otherResponse':response}
+                            environment=full_environment
+                            for name,offset in fields.items():write(owner+offset,body[name]&0xffffffff)
+                            write(context+0x7f0,environment['frame'])
+                            other={'type':other_type,'vx':0x3333,'vy':0}
+                            write(incoming+0x9c,other['vx']);write(incoming+0xa0,other['vy'])
+                            cpu.mem_write(stack+0xff00,struct.pack('<3I',stop,incoming,side))
+                            cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+                            calls=[];queries=[];fallback=False
+                            cpu.emu_start(0x4d6e30,stop,count=10000)
+                            if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Full airborne callback did not return')
+                            result={name:struct.unpack('<i',cpu.mem_read(owner+offset,4))[0] for name,offset in fields.items()}
+                            other_out={'type':other_type,'vx':struct.unpack('<i',cpu.mem_read(incoming+0x9c,4))[0],'vy':struct.unpack('<i',cpu.mem_read(incoming+0xa0,4))[0]}
+                            complete.append({'input':body,'other':other,'side':side,'environment':full_environment,'pattern':pattern,'queries':queries,'result':{'body':result,'calls':calls,'fallback':fallback,'other':other_out}})
+                        full=False
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004D6E30..004D7357','method':__doc__,'cases':cases,'complete_callbacks':complete},separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} contact decisions and {len(complete)} complete airborne callbacks')

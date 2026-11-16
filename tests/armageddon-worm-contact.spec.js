@@ -26,3 +26,26 @@ test("airborne contact matches native landing, ceiling and position-attempt deci
     });
   }
 });
+
+import { nativeWormAirborneCollision } from "../src/armageddon/worm-contact.js";
+test("complete airborne callback matches receiver dispatch, bounce and facing update", () => {
+  expect(fixture.complete_callbacks).toHaveLength(5760);
+  for (const v of fixture.complete_callbacks) {
+    const queries = [];
+    const result = nativeWormAirborneCollision(
+      v.input,
+      v.other,
+      v.side,
+      v.environment,
+      (x, y) => {
+        queries.push([x, y]);
+        return v.pattern[(queries.length - 1) % v.pattern.length];
+      },
+      () => v.environment.otherResponse,
+    );
+    expect({ result, queries }, JSON.stringify(v)).toEqual({
+      result: v.result,
+      queries: v.queries,
+    });
+  }
+});

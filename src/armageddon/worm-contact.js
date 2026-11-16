@@ -1,4 +1,4 @@
-import { nativeTryBodyPosition } from "./motion.js";
+import { nativeTryBodyPosition, nativeSimpleBounce } from "./motion.js";
 
 // Ordinary-contact branch of 004D6E30 for airborne states 6c/79/7d/7e.
 // Stops at the fallback dispatch boundary (004D7357). The caller must apply
@@ -75,4 +75,44 @@ export function nativeWormAirborneContact(
     });
   }
   return { body, calls, fallback: true };
+}
+
+// Completes the ordinary airborne path after the contact decision. External
+// receiver and state-entry effects remain interfaces. `respond` follows the
+// native receiver +0x28 contract: nonzero handles contact and skips bounce.
+export function nativeWormAirborneCollision(
+  input,
+  otherInput,
+  side,
+  environment,
+  collide,
+  respond = () => false,
+) {
+  const decision = nativeWormAirborneContact(
+    input,
+    otherInput.type,
+    side,
+    environment,
+    collide,
+  );
+  const body = decision.body;
+  const other = { ...otherInput };
+  if (decision.fallback) {
+    if (!respond(body, other, side)) {
+      const bounced = nativeSimpleBounce(body, other, side, collide);
+      Object.assign(body, bounced.body);
+      Object.assign(other, bounced.other);
+    }
+    if (
+      ((environment.frame - body.lastFacingFrame) | 0) > 10 &&
+      body.state !== 0x79 &&
+      body.state !== 0x7d
+    ) {
+      if (body.vx < -0x6666 || body.vx > 0x6666) {
+        body.facing = body.vx < 0 ? -1 : 1;
+        body.lastFacingFrame = environment.frame;
+      }
+    }
+  }
+  return { ...decision, body, other };
 }
