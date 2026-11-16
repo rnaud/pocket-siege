@@ -10,6 +10,8 @@ export const HUD_ICONS = Object.freeze({
   mine: "mine",
   shotgun: "shotgun",
   handgun: "handgun",
+  uzi: "uzi",
+  minigun: "minigun",
   dynamite: "dynamite",
   cluster: "cluster",
   banana: "banana",

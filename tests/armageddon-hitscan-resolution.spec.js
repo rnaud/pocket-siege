@@ -4,7 +4,7 @@ import { nativeHitscanResolution } from "../src/armageddon/hitscan-resolution.js
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 
 test("hit and miss packets, damage variation and RNG match original executable", () => {
-  expect(fixture.cases).toHaveLength(216);
+  expect(fixture.cases).toHaveLength(1080);
   for (const row of fixture.cases) {
     let state = row.seed;
     expect(

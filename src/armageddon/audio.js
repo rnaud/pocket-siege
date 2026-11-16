@@ -165,9 +165,16 @@ export function playNativeProjectileContactSound(context, request, previous) {
 
 // Original descriptors 0055F2B0/0055F2C0 map release IDs 73/75.
 // Native projectile releases and type2 English laugh speech are routed here;
-// weapon loops, team voice selection and casing emission remain separate ports.
+// Uzi/Minigun loop descriptors are0055F2D8/0055F2E0 (IDs78/79).
+// The caller owns the returned loop and stops it on completion/interruption.
 export function playNativeProjectileReleaseSound(context, release) {
+  let loop = null;
   for (const event of release.calls) {
+    if (event.operation === "loopSound") {
+      const name = { 78: "uzifire", 79: "minigunfire" }[event.request[0] & 65535];
+      if (name) loop = playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[2] / 65536, true);
+      continue;
+    }
     // Speech descriptor0055F540 maps native slot29 to Laugh.wav.
     if (event.operation === "voice" && event.request[1] === 29) {
       playOriginalClip(context, "voices/english/laugh.wav", () => {}, 1);
@@ -178,6 +185,7 @@ export function playNativeProjectileReleaseSound(context, release) {
     if (name)
       playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536);
   }
+  return loop;
 }
 
 // 004E2050 starts record+31C; descriptor0055F278 is ID66 Fuse.wav.

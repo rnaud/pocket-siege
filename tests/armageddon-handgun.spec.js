@@ -26,10 +26,11 @@ async function start(page) {
 test("handgun fires six timed bullets for one ammo and then retreats", async ({ page }) => {
   await start(page);
   await page.evaluate(() => {
+    // Sample the recorded simulation release tick, not the later render tick.
     window.bulletFrames = [];
     const sample = () => {
       const s = window.siege.getState();
-      if (s.shotCount > window.bulletFrames.length) window.bulletFrames.push(s.random.frame);
+      if (s.shotCount > window.bulletFrames.length) window.bulletFrames.push(s.lastShot.frame);
       if (window.bulletFrames.length < 6) window.bulletSample = requestAnimationFrame(sample);
     };
     sample();

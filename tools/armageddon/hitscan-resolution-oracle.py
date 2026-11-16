@@ -56,17 +56,18 @@ for body,ground in [(-1,-1),(20,-1),(-1,30),(20,30),(30,20),(20,20)]:
   for damage,variance in [(25,0),(50,30),(31,-20)]:
    for mask in [4332670,4]:
     for seed,frame in [(0,0),(0xffffffff,91)]:
-     config=dict(mode=2,push=100,damage=damage,variance=variance,range=1920,collisionMask=mask,extentFactor=1,impulseNumerator=3,impulseDenominator=2)
-     for offset,value in [(0x14,mask),(0x1c,100),(0x20,damage),(0x24,variance),(0x28,2),(0x2c,1920)]:write(record+offset,value&0xffffffff)
-     write(context+0x814,1);write(owner+0x2a4,3);write(owner+0x2a8,2)
-     write(context+0x1acc,seed);write(context+0x7f0,frame)
-     packet=[0,1,1234567,-654321,dx,dy,0,0,0,0,0]
-     for i,value in enumerate(packet):write(shot+i*4,value&0xffffffff)
-     output={};sp=stack+0xf000
-     for i,value in enumerate([stop,record,shot]):write(sp+i*4,value)
-     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
-     cpu.emu_start(0x4fc020,stop,count=10000)
-     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Resolution failed to return')
-     cases.append(dict(shot=packet,config=config,body=body,terrain=ground,seed=seed,frame=frame,output=output,random=read(context+0x1acc)))
+     for numerator,denominator in [(3,2),(1,1),(1,6),(1,10),(1,20)]:
+      config=dict(mode=2,push=100,damage=damage,variance=variance,range=1920,collisionMask=mask,extentFactor=1,impulseNumerator=numerator,impulseDenominator=denominator)
+      for offset,value in [(0x14,mask),(0x1c,100),(0x20,damage),(0x24,variance),(0x28,2),(0x2c,1920)]:write(record+offset,value&0xffffffff)
+      write(context+0x814,1);write(owner+0x2a4,numerator);write(owner+0x2a8,denominator)
+      write(context+0x1acc,seed);write(context+0x7f0,frame)
+      packet=[0,1,1234567,-654321,dx,dy,0,0,0,0,0]
+      for i,value in enumerate(packet):write(shot+i*4,value&0xffffffff)
+      output={};sp=stack+0xf000
+      for i,value in enumerate([stop,record,shot]):write(sp+i*4,value)
+      cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+      cpu.emu_start(0x4fc020,stop,count=10000)
+      if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Resolution failed to return')
+      cases.append(dict(shot=packet,config=config,body=body,terrain=ground,seed=seed,frame=frame,output=output,random=read(context+0x1acc)))
 args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004FC020',method='Original resolution, variation and RNG; supplied collision distances, captured effect/event/area dispatch.',cases=cases),indent=2)+'\n')
 print(f'Captured {len(cases)} hitscan resolutions')

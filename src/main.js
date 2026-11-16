@@ -771,6 +771,10 @@ function tone(freq, duration = 0.1, type = "sine") {
   o.start();
   o.stop(audio.currentTime + duration);
 }
+function stopBurstSound(burst = pendingFire?.burst) {
+  burst?.playback?.stop();
+  if (burst) burst.playback = null;
+}
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   cancelCharge();
   uiKey = "";
@@ -854,6 +858,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   retreat = 0;
   shotCount = 0;
   shotgunRemaining = 0;
+  stopBurstSound();
   pendingFire = null;
   homingTarget = null;
   fuse = 3;
@@ -2179,6 +2184,8 @@ function updateSliders() {
     dynamite: "DROP DYNAMITE",
     shotgun: shotgunRemaining ? "SECOND SHOT" : "FIRE SHOTGUN",
     handgun: "FIRE HANDGUN",
+    uzi: "FIRE UZI",
+    minigun: "FIRE MINIGUN",
     homing: homingTarget ? null : "SET TARGET",
     bat: "SWING BAT",
     airstrike: "CALL AIRSTRIKE",
@@ -2549,7 +2556,7 @@ function placeDynamite() {
   finishAction("Dynamite dropped. Five-second fuse — retreat!");
 }
 function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
-  const config = nativeHitscanWeapon(kind);
+  const config = nativeHitscanWeapon(kind, burst);
   const rayConfig = config.ray, resolutionConfig = config.resolution;
   if (
     (!prepared && !canAct()) ||
@@ -2570,7 +2577,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint()),
     start = { x: launch.x / 65536, y: H - launch.y / 65536 };
   startOriginalRecoil(w, kind, angle, matchRandom.frame);
-  const release = nativeLaunchAudio(config.record, { loop: 0, burst: 0, ordinal: burst?.ordinal ?? 1, flag: 0, team: w.team });
+  const release = nativeLaunchAudio(config.record, { loop: burst?.playback ? 1 : 0, burst: 0, ordinal: burst?.ordinal ?? 1, flag: 0, team: w.team });
   spawnNativeParticleRequest(
     nativeCasing(
       release.casing,
@@ -2738,6 +2745,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
   }
   lastShot = {
     kind,
+    frame: matchRandom.frame,
     shooter: w.name,
     points: [start, hit],
     impact: { ...hit, kind },
@@ -2746,7 +2754,8 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
   else if (sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    playNativeProjectileReleaseSound(audio, release);
+    const playback = playNativeProjectileReleaseSound(audio, release);
+    if (burst && playback) burst.playback = playback;
   }
 }
 function fireBat() {
@@ -3682,7 +3691,7 @@ function aiAim() {
     `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
 }
 function step(dt) {
-  if (menu.open || document.hidden) return;
+  if (menu.open || document.hidden) { stopBurstSound(); return; }
   if (replaying) return;
   if (hitStop > 0) {
     hitStop = Math.max(0, hitStop - dt);
@@ -4146,6 +4155,7 @@ function step(dt) {
     const pending = pendingFire, w = pending.worm;
     if (phase !== "aim" || w !== worms[current] || w.hp <= 0 || w.knocked || w.frozen || w.hurt > 0.35) {
       w.originalPreparation = null;
+      stopBurstSound(pending.burst);
       pendingFire = null;
       if (pending.burst?.spent && phase === "aim") finishAction("Firing interrupted. Retreat!");
     } else if (pending.stage === "recoil") {
@@ -4161,6 +4171,7 @@ function step(dt) {
         startOriginalPreparation(w, pending.kind, pending.angle);
         pending.stage = "prepare";
       } else if (result.target !== null) {
+        stopBurstSound(pending.burst);
         pendingFire = null;
         finishAction(`${WEAPONS[pending.kind].label} burst complete. Retreat!`);
       }
@@ -5042,6 +5053,7 @@ window.addEventListener("keyup", (e) => {
     aimInput = 0;
 });
 function releaseInputs() {
+  stopBurstSound();
   move = 0;
   aimInput = 0;
   cancelCharge();
@@ -5085,6 +5097,7 @@ $("#daily").addEventListener("click", () => {
 });
 $("#sound").onclick = () => {
   sound = !sound;
+  if (!sound) stopBurstSound();
   if (!sound) for (const b of bombs) {
     b.nativeFusePlayback?.stop();
     b.nativeFusePlayback = null;
@@ -5426,7 +5439,7 @@ window.siege = {
     activeWorm: worms[current]?.name ?? null,
     replaying,
     lastShot: lastShot
-      ? { points: lastShot.points.length, impact: lastShot.impact }
+      ? { points: lastShot.points.length, impact: lastShot.impact, frame: lastShot.frame }
       : null,
     lastResult,
     aiPlan: aiPlan

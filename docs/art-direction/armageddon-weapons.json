@@ -112,16 +112,16 @@
     {
       "slot": 13,
       "native_name": "Uzi",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "uzi",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 1
     },
     {
       "slot": 14,
       "native_name": "Minigun",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "minigun",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 4
     },

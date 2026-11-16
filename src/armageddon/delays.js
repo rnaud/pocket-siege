@@ -9,6 +9,8 @@ export const WEAPON_SLOTS = Object.freeze({
   banana: 8,
   shotgun: 11,
   handgun: 12,
+  uzi: 13,
+  minigun: 14,
   dynamite: 21,
   mine: 22,
   airstrike: 27,

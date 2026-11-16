@@ -84,6 +84,16 @@ export const WEAPONS = {
     wind: false, speed: 0, timed: false, bounces: false,
     ammo: 2, special: "hitscan",
   },
+  uzi: {
+    label: "Uzi", icon: "▰", radius: 5, damage: 5,
+    wind: false, speed: 0, timed: false, bounces: false,
+    ammo: 2, special: "hitscan",
+  },
+  minigun: {
+    label: "Minigun", icon: "▰", radius: 5, damage: 5,
+    wind: false, speed: 0, timed: false, bounces: false,
+    ammo: 1, special: "hitscan",
+  },
   dynamite: {
     label: "Dynamite",
     icon: "▮",
@@ -232,6 +242,7 @@ export const WEAPONS = {
 };
 
 export const SPECIAL_WEAPONS = [
+  "uzi", "minigun",
   "handgun",
   "postal",
   "banana",
@@ -254,6 +265,8 @@ export const PROJECTILE_ORDER = [
   "holy",
 ];
 export const freshAmmo = () => ({
+  uzi: WEAPONS.uzi.ammo,
+  minigun: WEAPONS.minigun.ammo,
   handgun: WEAPONS.handgun.ammo,
   postal: WEAPONS.postal.ammo,
   banana: WEAPONS.banana.ammo,
