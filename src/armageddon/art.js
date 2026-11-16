@@ -768,6 +768,34 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     };
   }
 
+  // An explicit native jump queue takes precedence over the host panic pose.
+  const jumping = worm.originalJump;
+  if (
+    jumping &&
+    worm.hp > 0 &&
+    !worm.frozen &&
+    !worm.knocked &&
+    !(worm.hurt > 0.35) &&
+    !worm.ground &&
+    !worm.originalPreparation &&
+    !worm.originalRecoil
+  ) {
+    const name = spriteIds.sprites[jumping.current.id].name;
+    const sprite = animations.get(name).sprite;
+    const index = nativeSpriteFrame(
+      sprite.frames.length,
+      sprite.metadata[2],
+      jumping.current.progress,
+    );
+    return {
+      map: texture(name, index),
+      name,
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
+
   if (
     worm.hp > 0 &&
     !worm.frozen &&
@@ -825,33 +853,6 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
         equipped: false,
       };
     }
-  }
-
-  const jumping = worm.originalJump;
-  if (
-    jumping &&
-    worm.hp > 0 &&
-    !worm.frozen &&
-    !worm.knocked &&
-    !(worm.hurt > 0.35) &&
-    !worm.ground &&
-    !worm.originalPreparation &&
-    !worm.originalRecoil
-  ) {
-    const name = spriteIds.sprites[jumping.current.id].name;
-    const sprite = animations.get(name).sprite;
-    const index = nativeSpriteFrame(
-      sprite.frames.length,
-      sprite.metadata[2],
-      jumping.current.progress,
-    );
-    return {
-      map: texture(name, index),
-      name,
-      index,
-      aimed: false,
-      equipped: false,
-    };
   }
 
   const landing = worm.originalLanding;
