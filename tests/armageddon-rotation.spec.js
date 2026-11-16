@@ -1,0 +1,66 @@
+import { test, expect } from "@playwright/test";
+import fixture from "./fixtures/armageddon/rotation.json" with { type: "json" };
+import { nativeBodyRotation } from "../src/armageddon/motion.js";
+test("body rotation matches original velocity branches, radius and angle wrap", () => {
+  for (const row of fixture.cases)
+    expect(nativeBodyRotation(row.body)).toEqual(row.result);
+});
+test("rolling hurt frames advance from native velocity rather than render time", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  const result = await page.evaluate(async () => {
+    const { startOriginalHurt, stepOriginalHurt, originalWormFrame } =
+      await import("/src/armageddon/art.js");
+    const w = {
+      hp: 100,
+      knocked: true,
+      facing: 1,
+      vx: 200,
+      vy: -100,
+      x: 100,
+      y: 300,
+    };
+    startOriginalHurt(w, 0x80);
+    const a = originalWormFrame(w, "hurt", 0, 45, "rocket", false);
+    const b = originalWormFrame(w, "hurt", 100, 45, "rocket", false);
+    for (let i = 0; i < 8; i++) stepOriginalHurt(w);
+    const c = originalWormFrame(w, "hurt", 100, 45, "rocket", false);
+    return {
+      name: c.name,
+      before: a.index,
+      renderOnly: b.index,
+      after: c.index,
+      angle: w.originalHurt.angle,
+    };
+  });
+  expect(result.name).toBe("wroll");
+  expect(result.renderOnly).toBe(result.before);
+  expect(result.after).not.toBe(result.before);
+  expect(result.angle).toBeGreaterThan(0);
+});
+
+test("live blast advances the original rolling frames", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  const frames = await page.evaluate(async () => {
+    const w = window.siege.getState().worms[0];
+    window.siege.debug.explodeAt(w.x - 20, w.y, "death");
+    const seen = new Set(),
+      start = performance.now();
+    await new Promise((resolve) => {
+      function sample() {
+        const worm = window.siege.getState().worms[0];
+        if (worm.originalSprite === "wroll") seen.add(worm.originalFrame);
+        if (seen.size >= 2 || performance.now() - start > 1500) resolve();
+        else requestAnimationFrame(sample);
+      }
+      requestAnimationFrame(sample);
+    });
+    return [...seen];
+  });
+  expect(frames.length).toBeGreaterThan(1);
+});

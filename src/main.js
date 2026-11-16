@@ -109,6 +109,7 @@ import {
   stepOriginalWalking,
   startOriginalDeath,
   startOriginalHurt,
+  stepOriginalHurt,
   stepOriginalDeath,
   stopOriginalJetpack,
   stepOriginalTeleport,
@@ -3582,6 +3583,7 @@ function step(dt) {
       result = stepWorm(w, terrain, dt, gravityScale);
       if (w.originalParachute) w.vy = Math.max(w.vy, -70);
     }
+    stepOriginalHurt(w);
     if (result.landed && w.ground && !w.landing) {
       w.landing = 0.16;
       const landingSound = startOriginalLanding(

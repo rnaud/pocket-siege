@@ -1,3 +1,4 @@
+import { nativeBodyRotation } from "./motion.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
 import { nativeDeathCue } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
@@ -749,6 +750,22 @@ export function startOriginalHurt(worm, state) {
   if (worm.nativeFlight) worm.nativeFlight.angle = entry.angle;
 }
 
+// One original 50 Hz rotation step. Translation/collision still come from
+// the host body until its native hurt-contact path is connected.
+export function stepOriginalHurt(worm) {
+  const hurt = worm.originalHurt;
+  if (!hurt || worm.frozen || (!worm.knocked && !(worm.hurt > 0.35))) return;
+  const rotation = nativeBodyRotation({
+    radius: worm.nativeFlight?.radius ?? 0x100000,
+    angle: worm.nativeFlight?.angle ?? hurt.angle,
+    angularVelocity: hurt.angularVelocity ?? 0,
+    vx: Math.round((worm.vx * 65536) / 50) | 0,
+    vy: Math.round((-worm.vy * 65536) / 50) | 0,
+  });
+  Object.assign(hurt, rotation);
+  if (worm.nativeFlight) Object.assign(worm.nativeFlight, rotation);
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
     const state = worm.originalJetpack;
@@ -895,7 +912,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       const name = spriteIds.sprites[hurt.sprite].name;
       const animation = animations.get(name);
       // 004DDBD0 state 0x80: rolling pose follows the low word of body angle, mirrored
-      // by facing. Host knockback still lacks the native angular integrator.
+      // by facing.
       const progress =
         hurt.state === 0x80
           ? Math.imul(

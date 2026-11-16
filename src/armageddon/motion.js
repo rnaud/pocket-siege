@@ -225,17 +225,7 @@ export function nativeSimpleBodyTick(input, environment, callbacks) {
     remaining = sweep.remaining;
     if (sweep.hit) callbacks.bounce(body, sweep.hit, sweep.side);
   }
-  if (body.radius) {
-    const vertical = Math.trunc(abs(body.vy) / 3);
-    const denominator = fixedMultiply(body.radius, 0x6487e);
-    body.angularVelocity =
-      abs(body.vx) < vertical
-        ? (body.vx < 0
-            ? -fixedDivide(vertical, denominator)
-            : fixedDivide(vertical, denominator)) | 0
-        : fixedDivide(body.vx, denominator);
-    body.angle = add(body.angle, body.angularVelocity);
-  }
+  Object.assign(body, nativeBodyRotation(body));
   body.vx = Math.max(-0x200000, Math.min(0x200000, body.vx));
   body.vy = Math.max(-0x200000, Math.min(0x200000, body.vy));
   if (!body.vx && !body.vy && callbacks.collide(body.x, add(body.y, 65536)))
@@ -251,4 +241,21 @@ export function nativeBodyAwake(body) {
       body.vx || body.vy || body.submerged || body.contact || body.moving,
     ),
   );
+}
+
+// 004CA5F5..004CA682: unconstrained body rotation, after collision sweeps.
+export function nativeBodyRotation(input) {
+  const body = { ...input };
+  if (body.radius) {
+    const vertical = Math.trunc(abs(body.vy) / 3);
+    const denominator = fixedMultiply(body.radius, 0x6487e);
+    body.angularVelocity =
+      abs(body.vx) < vertical
+        ? (body.vx < 0
+            ? -fixedDivide(vertical, denominator)
+            : fixedDivide(vertical, denominator)) | 0
+        : fixedDivide(body.vx, denominator);
+    body.angle = add(body.angle, body.angularVelocity);
+  }
+  return { angle: body.angle, angularVelocity: body.angularVelocity };
 }
