@@ -1,4 +1,4 @@
-import { playNativeProjectileContactSound } from "./armageddon/audio.js";
+import { playNativeProjectileContactSound, playNativeProjectileReleaseSound } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
   nativeWormContactBody,
@@ -2706,7 +2706,13 @@ function fire() {
           : `${kind === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`;
   move = 0;
   shotWait = 0;
-  sfx(kind);
+  if (projectile.nativeRelease) {
+    if (sound) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      playNativeProjectileReleaseSound(audio, projectile.nativeRelease);
+    }
+  } else sfx(kind);
   updateUI();
 }
 function explode(x, y, kind, ownerIndex = -1) {

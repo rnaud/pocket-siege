@@ -160,13 +160,13 @@ test("live fuse uses milliseconds and native next-tick expiration instead of hos
 test("resting holy grenade completes its native delay and queues one holy cue", () => {
   const p = projectile("holy", { vx: 0, vy: 0 });
   p.nativeBody.gravityScale = 0;
-  const sounds = [];
+  const sounds = p.nativeRelease.calls.filter(e => e.operation === "sound");
   for (let frame = 1; frame <= 240; frame++) {
     const result = stepNativeProjectile(p, { ...environment, frame }, () => 0);
     sounds.push(...result.events.filter(e => e.timer && e.operation === "sound"));
     expect(result.detonate).toBe(false);
   }
-  expect(sounds.map(s => s.request)).toEqual([[104,4,65536,65536,0]]);
+  expect(sounds.map(s => s.request)).toEqual([[73,3,65536,65536,0], [104,4,65536,65536,0]]);
   expect(stepNativeProjectile(p, { ...environment, frame: 241 }, () => 0).detonate).toBe(true);
 });
 

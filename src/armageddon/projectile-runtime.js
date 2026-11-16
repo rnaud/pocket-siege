@@ -1,3 +1,4 @@
+import { nativeLaunchAudio } from "./launch-audio.js";
 import { nativeProjectileArt } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
 import { nativeProjectileTimer } from "./projectile-timer.js";
@@ -61,6 +62,11 @@ export function nativeProjectileLaunch(kind, angle, power) {
 export function attachNativeProjectile(p, height) {
   const record = weaponRecord(p.kind);
   if (!record) return false;
+  // These six projectile families release once and have no looping weapon
+  // audio or casing emission. Preserve the original dispatch for playback.
+  p.nativeRelease = nativeLaunchAudio(record, {
+    loop: 0, burst: 0, ordinal: 0, flag: 0, team: p.owner ?? 0,
+  });
   const block = Array.from(
     { length: 94 },
     (_, i) => record["0x" + (0x74 + i * 4).toString(16)],

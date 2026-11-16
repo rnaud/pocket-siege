@@ -160,3 +160,15 @@ export function playNativeProjectileContactSound(context, request, previous) {
   previous?.stop?.();
   return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[2] / 65536);
 }
+
+// Original descriptors 0055F2B0/0055F2C0 map release IDs 73/75.
+// Only the six live native projectile families are routed here; weapon loops,
+// speech and casing emission still need their native weapon lifecycle.
+export function playNativeProjectileReleaseSound(context, release) {
+  for (const event of release.calls) {
+    if (event.operation !== "sound") continue;
+    const name = { 73: "throwrelease", 75: "rocketrelease" }[event.request[0]];
+    if (name)
+      playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536);
+  }
+}
