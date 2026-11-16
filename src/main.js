@@ -3074,7 +3074,13 @@ function step(dt) {
       p.trail.push({ x: p.x, y: p.y });
       if (p.trail.length > 28) p.trail.shift();
     }
-    if (boom || p.y < waterLevel || p.x < -50 || p.x > W + 50 || p.age > 12) {
+    if (
+      boom ||
+      p.y < (p.nativeBody ? 0 : waterLevel) ||
+      p.x < -50 ||
+      p.x > W + 50 ||
+      p.age > 12
+    ) {
       if (boom && p.y > waterLevel) {
         if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
         const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);

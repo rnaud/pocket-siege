@@ -206,3 +206,12 @@ export function nativeSimpleBodyTick(input, environment, callbacks) {
   if (!awake()) body.sleeping = 1;
   return body;
 }
+
+// 004D11E0, projectile vtable +0xf4: any motion/contact/water flag wakes it.
+export function nativeBodyAwake(body) {
+  return Number(
+    Boolean(
+      body.vx || body.vy || body.submerged || body.contact || body.moving,
+    ),
+  );
+}

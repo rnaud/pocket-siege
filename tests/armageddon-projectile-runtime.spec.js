@@ -63,3 +63,33 @@ test("native projectile can skim water with the original shallow-angle response"
   expect(p.vy).toBeGreaterThan(0);
   expect(p.nativeBody.submerged).toBe(0);
 });
+
+test("resting native bodies sleep and periodically recheck removed support", () => {
+  const p = projectile("grenade", { x: 200, y: 300, vx: 0, vy: 0 });
+  stepNativeProjectile(p, { ...environment, bounces: true }, (x, y) =>
+    y < 300 ? 1 : 0,
+  );
+  expect(p.nativeBody.sleeping).toBe(1);
+  stepNativeProjectile(p, { ...environment, frame: 2, bounces: true }, () => 0);
+  expect(p.y).toBe(300);
+  stepNativeProjectile(
+    p,
+    { ...environment, frame: 13, bounces: true },
+    () => 0,
+  );
+  expect(p.y).toBeLessThan(300);
+  expect(p.nativeBody.sleeping).toBe(0);
+});
+
+test("crossing the integer water boundary allows native skimming on the following tick", () => {
+  const p = projectile("grenade", { x: 200, y: 80.5, vx: 600, vy: -50 });
+  stepNativeProjectile(p, { ...environment, bounces: true }, () => 0);
+  expect(p.y).toBeLessThan(80);
+  expect(p.nativeBody.submerged).toBe(0);
+  stepNativeProjectile(p, { ...environment, frame: 2, bounces: true }, () => 0);
+  expect(p.y).toBeLessThan(79);
+  expect(p.nativeBody.submerged).toBe(0);
+  stepNativeProjectile(p, { ...environment, frame: 3, bounces: true }, () => 0);
+  expect(p.y).toBeGreaterThan(80);
+  expect(p.vy).toBeGreaterThan(0);
+});

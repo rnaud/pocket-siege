@@ -6,7 +6,11 @@ import {
 } from "./projectile-body.js";
 import { nativeLaunchVelocity } from "./power.js";
 import { nativeSin, nativeCos } from "./trig.js";
-import { nativeSimpleBodyTick, nativeSimpleBounce } from "./motion.js";
+import {
+  nativeSimpleBodyTick,
+  nativeSimpleBounce,
+  nativeBodyAwake,
+} from "./motion.js";
 const fixed = (value) => Math.round(value * 65536) | 0;
 const kinds = new Set([
   "rocket",
@@ -115,7 +119,7 @@ export function stepNativeProjectile(
       wind: fixed(wind / 2500),
     },
     {
-      awake: () => true,
+      awake: nativeBodyAwake,
       collide: (x, y) => collide(x / 65536, height - y / 65536),
       bounce: (body, hit, side) => {
         firstHit ||= hit;

@@ -112,7 +112,11 @@ function blastPoint(
         },
       );
       p.age += STEP;
-      if (p.y < waterLevel || p.x < -60 || p.x > W + 60)
+      if (
+        (p.y < waterLevel && p.nativeBody.submerged) ||
+        p.x < -60 ||
+        p.x > W + 60
+      )
         return {
           x: p.x,
           y: p.y,

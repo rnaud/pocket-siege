@@ -144,8 +144,14 @@ for velocity in [[8<<16,2<<16],[-8<<16,2<<16],[0,0],[40<<16,-35<<16]]:
                         output={name:struct.unpack('<i',cpu.mem_read(body+offset,4))[0] for name,offset in fields.items()}
                         ticks.append({'initial':initial,'frame':frame,'awake':awake_value,'shape':shape,'output':output,
                             'events':list(events),'skims':len(skims),'queries':list(queries)})
+awake=[]
+for mask in range(32):
+    values=[-1 if mask&(1<<bit) else 0 for bit in range(5)]
+    for offset,value in zip([0x9c,0xa0,0xbc,0xc0,0xc4],values):write(body+offset,value&0xffffffff)
+    result=run(0x4d11e0,[],body)
+    awake.append({'values':values,'result':result})
 args.output.parent.mkdir(parents=True,exist_ok=True)
-args.output.write_text(json.dumps({'executable_sha256':digest,'entries':['004CA110','004C9AA0','004F4860','004C9F10','004CA320 simple-body path'],
-    'method':'Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects. Body ticks use the simple-body path with zero earthquake, primed collision-mask cache, native bounce and explicit awake/event callbacks.',
-    'sweeps':sweeps,'forces':forces,'bounces':bounces,'water':water,'ticks':ticks},indent=2)+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entries':['004CA110','004C9AA0','004F4860','004C9F10','004CA320 simple-body path','004D11E0'],
+    'method':'Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects. Body ticks use the simple-body path with zero earthquake, primed collision-mask cache, native bounce and explicit awake/event callbacks. Awake cases execute 004D11E0 directly for all 32 motion-flag combinations.',
+    'sweeps':sweeps,'forces':forces,'bounces':bounces,'water':water,'ticks':ticks,'awake':awake},indent=2)+'\n')
 print(f'Captured {len(sweeps)} sweeps and {len(forces)} force cases and {len(bounces)} simple-body bounces and {len(water)} water cases and {len(ticks)} body ticks')

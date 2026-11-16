@@ -5,9 +5,10 @@
     "004C9AA0",
     "004F4860",
     "004C9F10",
-    "004CA320 simple-body path"
+    "004CA320 simple-body path",
+    "004D11E0"
   ],
-  "method": "Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects. Body ticks use the simple-body path with zero earthquake, primed collision-mask cache, native bounce and explicit awake/event callbacks.",
+  "method": "Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects. Body ticks use the simple-body path with zero earthquake, primed collision-mask cache, native bounce and explicit awake/event callbacks. Awake cases execute 004D11E0 directly for all 32 motion-flag combinations.",
   "sweeps": [
     {
       "start": [
@@ -77381,6 +77382,328 @@
           -1553176
         ]
       ]
+    }
+  ],
+  "awake": [
+    {
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "result": 0
+    },
+    {
+      "values": [
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        0,
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        0,
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        0,
+        -1,
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        0,
+        -1,
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        -1,
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        -1,
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        0,
+        0,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        0,
+        0,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        0,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        0,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        0,
+        -1,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        0,
+        -1,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        -1,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        -1,
+        -1,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        0,
+        0,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        0,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        0,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        0,
+        -1,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        0,
+        -1,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        -1,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        -1,
+        0,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        0,
+        0,
+        -1,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        0,
+        0,
+        -1,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        0,
+        -1,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        0,
+        -1,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        0,
+        -1,
+        -1,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        0,
+        -1,
+        -1,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        0,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "result": 1
+    },
+    {
+      "values": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "result": 1
     }
   ]
 }

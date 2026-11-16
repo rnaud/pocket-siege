@@ -6,6 +6,7 @@ import {
   nativeSimpleBounce,
   nativeWaterMotion,
   nativeSimpleBodyTick,
+  nativeBodyAwake,
 } from "../src/armageddon/motion.js";
 const fixture = JSON.parse(
   fs.readFileSync(
@@ -185,5 +186,15 @@ test("simple-body tick matches native force, water, two-contact, rotation and sl
     expect(queries).toEqual(v.queries);
     expect(events).toEqual(v.events);
     expect(skims).toBe(v.skims);
+  }
+});
+
+test("native wake predicate matches all combinations of motion flags", () => {
+  expect(fixture.awake).toHaveLength(32);
+  for (const v of fixture.awake) {
+    const [vx, vy, submerged, contact, moving] = v.values;
+    expect(nativeBodyAwake({ vx, vy, submerged, contact, moving })).toBe(
+      v.result,
+    );
   }
 });
