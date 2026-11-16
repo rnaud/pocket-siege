@@ -1,3 +1,4 @@
+import { NativeCameraFraming } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority } from "./armageddon/camera-priority.js";
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
@@ -219,6 +220,7 @@ import { readSettings, writeSettings } from "./settings.js";
 const matchRandom = new MatchRandom(0);
 const nativeCamera = new NativeCameraPriority();
 let nativeCameraFocus = null;
+let nativeCameraFraming = null;
 const logicRandom = () => matchRandom.logic();
 const visualRandom = () => matchRandom.visual();
 const $ = (s) => document.querySelector(s);
@@ -869,6 +871,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   airstrikes = [];
   nativeCamera.reset();
   nativeCameraFocus = null;
+  nativeCameraFraming = null;
   for (const f of fires) dispose(f.mesh);
   fires = [];
   for (const h of hazards) dispose(h.mesh);
@@ -2404,6 +2407,10 @@ function spawnAirstrike(x, y) {
   airstrikes.push(strike);
   nativeCamera.reset();
   nativeCameraFocus = null;
+  // The host viewport supplies world units; depth stays zero during tracking.
+  nativeCameraFraming = new NativeCameraFraming(
+    Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
+  );
   sfx("airstrike");
 }
 function stepAirstrikes() {
@@ -4158,11 +4165,16 @@ function step(dt) {
     nativeCamera.offer(priority, body.x, body.y);
   }
   const bounds = nativeCamera.select(matchRandom.frame);
-  if (bounds) nativeCameraFocus = {
-    x: (bounds[0] + bounds[2]) / 131072,
-    y: H - (bounds[1] + bounds[3]) / 131072,
-  };
-  if (!airstrikes.length && !strikeMissiles.length) nativeCameraFocus = null;
+  if (nativeCameraFraming && (airstrikes.length || strikeMissiles.length)) {
+    const aspect = arena.clientHeight > arena.clientWidth
+      ? arena.clientWidth / arena.clientHeight : W / H;
+    const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
+    const position = nativeCameraFraming.tick(bounds, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
+    nativeCameraFocus = { x: position[0] / 65536, y: H - position[1] / 65536 };
+  } else {
+    nativeCameraFocus = null;
+    nativeCameraFraming = null;
+  }
   matchRandom.finishFrame();
 }
 function screen(x, y) {
@@ -4234,7 +4246,7 @@ function frame(now) {
   }
   if (nativeCameraFocus) camTarget = { zoom: 1, cx: nativeCameraFocus.x, cy: nativeCameraFocus.y };
   if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
-  if (cameraSnap) {
+  if (cameraSnap || (nativeCameraFocus && !overview)) {
     cameraZoom = camTarget.zoom;
     cameraX = camTarget.cx;
     cameraY = camTarget.cy;
