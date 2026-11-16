@@ -34,3 +34,30 @@ test("worm projectile contact uses native state-gated momentum response", () => 
     });
   }
 });
+
+import {
+  nativeComplexBounce,
+  nativeSimpleBounce,
+} from "../src/armageddon/motion.js";
+test("complex terrain bounce matches native probes, overflow and stop ordering", () => {
+  expect(fixture.complex_bounces).toHaveLength(900);
+  for (const v of fixture.complex_bounces) {
+    const queries = [];
+    const collide = (x, y) => {
+      queries.push([x, y]);
+      return v.pattern[queries.length - 1];
+    };
+    const result =
+      v.entry === "004F4700"
+        ? {
+            body: nativeComplexBounce(v.body, v.side, collide),
+            other: { vx: 0x3333, vy: 0 },
+          }
+        : nativeSimpleBounce(v.body, { vx: 0x3333, vy: 0 }, v.side, collide);
+    expect({ ...result, queries }, JSON.stringify(v)).toEqual({
+      body: { vx: v.body_out[0], vy: v.body_out[1] },
+      other: { vx: v.other_out[0], vy: v.other_out[1] },
+      queries: v.queries,
+    });
+  }
+});

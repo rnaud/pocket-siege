@@ -97,9 +97,30 @@ export function nativeSweep({ x, y, vx, vy }, fraction, collide, side = 99) {
 // 004F4860, simple-body branch (body+0x4c == 0). Coefficients are
 // signed 16.16: horizontal restitution, vertical restitution, tangential drag.
 // The original also stops the contacted body below the Manhattan-speed cutoff.
-export function nativeSimpleBounce(body, other, side) {
+// 004F4700. Complex bodies probe one pixel above/below the leading edge.
+// A blocked probe damps horizontal speed without reflecting either axis.
+export function nativeComplexBounce(body, side, collide) {
   let { vx, vy } = body;
   if (side === 1 || side === 3) {
+    vx = fixedMultiply(vx, body.tangent);
+    vy = -fixedMultiply(vy, body.restitutionY) | 0;
+  } else if (side === 2 || side === 4) {
+    const x = add(body.x, vx < 0 ? -65536 : 65536);
+    if (collide(x, add(body.y, -65536)) || collide(x, add(body.y, 65536))) {
+      vx = fixedMultiply(vx, Math.trunc(Math.imul(body.tangent, 30) / 32));
+    } else {
+      vx = -fixedMultiply(vx, body.restitutionX) | 0;
+      vy = fixedMultiply(vy, body.tangent);
+    }
+  }
+  return { vx, vy };
+}
+
+export function nativeSimpleBounce(body, other, side, collide) {
+  let { vx, vy } = body;
+  if (body.complex) {
+    ({ vx, vy } = nativeComplexBounce(body, side, collide));
+  } else if (side === 1 || side === 3) {
     vx = fixedMultiply(vx, body.tangent);
     vy = -fixedMultiply(vy, body.restitutionY) | 0;
   } else if (side === 2 || side === 4) {
