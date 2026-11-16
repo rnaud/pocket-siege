@@ -4,6 +4,7 @@ import { nativeMineBlast } from "./armageddon/mine-blast.js";
 import { nativeMineContact } from "./armageddon/mine-contact.js";
 import { nativeMineArt } from "./armageddon/mine-art.js";
 import { nativeMineWater } from "./armageddon/mine-water.js";
+import { nativeMineStateEvents } from "./armageddon/mine-state.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
@@ -4043,6 +4044,13 @@ function step(dt) {
           playNativeWaterSound(audio, call.request);
         }
       }
+      for (const call of nativeMineStateEvents(mine.nativeBody, mine.nativeTimer.damage)) {
+        if (call.operation === "blast") explode(mine.x, mine.y, "mine", mine.owner, call.request);
+        else if (call.operation === "delete") {
+          mines.splice(i, 1);
+          dispose(mine.mesh);
+        }
+      }
       continue;
     }
     const expiry = nativeMineExpiry(mine.nativeTimer, {
@@ -5501,6 +5509,9 @@ if (import.meta.env.DEV) {
         x: 8 * 65536, y: Math.round((H - waterLevel + 5) * 65536),
         vx: 0, vy: 0, angle: 32768, submerged: 1,
       });
+    },
+    setMinePhysicalState(state = 1, index = 0) {
+      if (mines[index]) mines[index].nativeBody.state = state;
     },
     setAmmo(teamIndex = 0, kind = "grenade", value = 5) {
       ammo[teamIndex][kind] = value;

@@ -7,6 +7,7 @@ export const NATIVE_MINE_FRICTION = schemes.schemes.find(
 export function nativeMineBase(friction) {
   return {
     type: 10,
+    state: 0,
     shape: 2,
     complex: 0,
     mass: 65536,
