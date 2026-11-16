@@ -1,3 +1,4 @@
+import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
@@ -92,7 +93,7 @@ import {
   nativeProjectileChildren,
   nativeProjectilePlacementHit,
 } from "./armageddon/projectile-runtime.js";
-import { nativeWormState } from "./armageddon/worm-collision-type.js";
+import { nativeWormState, nativeWormCollisionType } from "./armageddon/worm-collision-type.js";
 import { nativeChargeTick } from "./armageddon/power.js";
 import { freezeTeam } from "./armageddon/freeze.js";
 import {
@@ -3932,10 +3933,15 @@ function step(dt) {
       mine.arm = Math.max(0, mine.arm - dt);
       continue;
     }
-    const victim = worms.find(
-      (w) => w.hp > 0 && Math.hypot(w.x - mine.x, w.y + 20 - mine.y) < 34,
-    );
-    if (!victim) continue;
+    const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
+      x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
+      type: nativeWormCollisionType(nativeWormState(w)),
+    }));
+    // Default scheme195 slot22: proximity radius48, category mask60.
+    const victim = nativeMineProximity({
+      x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), mask: 60,
+    }, 48, candidates);
+    if (victim < 0) continue;
     mines.splice(i, 1);
     dispose(mine.mesh);
     explode(mine.x, mine.y, "mine", mine.owner);
