@@ -1,0 +1,11023 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entry": "004FC020",
+  "method": "Original resolution, variation and RNG; supplied collision distances, captured effect/event/area dispatch.",
+  "cases": [
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": -1,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          128075031,
+          -654321,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          128005719,
+          -654321,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          -88453353,
+          88437775,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          -88404345,
+          88327823,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          25
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          25
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          40
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          49
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "effect": [
+          2,
+          45749495,
+          -192911793,
+          16843043
+        ]
+      },
+      "random": 3519870697
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": -1,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "effect": [
+          2,
+          45725175,
+          -192674513,
+          16843040
+        ]
+      },
+      "random": 3146442237
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 30,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          3200647,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          3200647,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          -155633,
+          735879,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          -155633,
+          735879,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 30,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1924567,
+          -3654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1924567,
+          -3654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          1638400,
+          1638400,
+          25,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          3276800,
+          3276800,
+          50,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        65536,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          2545287,
+          -654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          2545287,
+          -654321,
+          2031616,
+          2031616,
+          31,
+          327679,
+          0,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          1638400,
+          1638400,
+          25,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          3276800,
+          3276800,
+          50,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        -46340,
+        46340,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          307767,
+          272479,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          307767,
+          272479,
+          2031616,
+          2031616,
+          31,
+          -231699,
+          231699,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 25,
+        "variance": 0,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          25,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          1638400,
+          1638400,
+          25,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          40,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 50,
+        "variance": 30,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          49,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          3276800,
+          3276800,
+          50,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4332670,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 0,
+      "frame": 0,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843043,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1013904223
+    },
+    {
+      "shot": [
+        0,
+        1,
+        1234567,
+        -654321,
+        23000,
+        -100000,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": {
+        "mode": 2,
+        "push": 100,
+        "damage": 31,
+        "variance": -20,
+        "range": 1920,
+        "collisionMask": 4,
+        "extentFactor": 1,
+        "impulseNumerator": 3,
+        "impulseDenominator": 2
+      },
+      "body": 20,
+      "terrain": 20,
+      "seed": 4294967295,
+      "frame": 91,
+      "output": {
+        "event": [
+          2,
+          1694567,
+          -2654321,
+          100,
+          16843040,
+          0
+        ],
+        "area": [
+          1694567,
+          -2654321,
+          2031616,
+          2031616,
+          31,
+          114999,
+          -499999,
+          3,
+          0,
+          0,
+          138316,
+          0
+        ]
+      },
+      "random": 1163711473
+    }
+  ]
+}

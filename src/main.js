@@ -1,10 +1,11 @@
+import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
 import { nativeHitscanBody } from "./armageddon/hitscan-body.js";
 import { nativeHitscanRays } from "./armageddon/hitscan-spread.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { nativeCasing } from "./armageddon/casing.js";
 import {
-  nativeShotgunImpact,
+  nativeShotgunResolution,
   nativeShotgunRay,
 } from "./armageddon/hitscan-art.js";
 import {
@@ -2371,8 +2372,6 @@ function fireShotgun(prepared = false) {
     nativeShotgunRay.spread,
     () => matchRandom.logicUint(),
   )[0];
-  const dx = ray[4] / 65536,
-    dy = -ray[5] / 65536;
   // Native body projection; current host bodies place their collision centre
   // 17 pixels above the foot anchor.
   const bodyHit = nativeHitscanBody(
@@ -2400,28 +2399,20 @@ function fireShotgun(prepared = false) {
     nativeShotgunRay.range,
     (x, y) => terrain.solid(x, H - y),
   );
-  let hit =
-      terrainDistance < 0
-        ? null
-        : {
-            x: start.x + dx * terrainDistance,
-            y: start.y + dy * terrainDistance,
-          },
-    victim = null;
-  if (
+  const resolution = nativeHitscanResolution(
+    ray,
+    nativeShotgunResolution,
+    bodyHit.distance,
+    terrainDistance,
+    () => matchRandom.logicUint(),
+  );
+  const effect = resolution.event ?? resolution.effect;
+  const hit = { x: effect[1] / 65536, y: H - effect[2] / 65536 };
+  const victim =
     bodyHit.distance >= 0 &&
     (terrainDistance < 0 || bodyHit.distance <= terrainDistance)
-  ) {
-    hit = {
-      x: start.x + dx * bodyHit.distance,
-      y: start.y + dy * bodyHit.distance,
-    };
-    victim = bodyHit.body.worm;
-  }
-  hit ??= {
-    x: start.x + dx * nativeShotgunRay.range,
-    y: start.y + dy * nativeShotgunRay.range,
-  };
+      ? bodyHit.body.worm
+      : null;
   if (!shotgunRemaining) {
     ammo[team].shotgun = spendAmmo(ammo[team].shotgun);
     shotgunRemaining = 2;
@@ -2436,15 +2427,15 @@ function fireShotgun(prepared = false) {
     victim.ground = false;
     victim.vx = victim.frozen > 0 ? 0 : dir * 230;
     victim.vy = 130;
-  } else {
+  } else if (resolution.event) {
     terrain.carve(hit.x, hit.y, 14);
     terrainDirty = true;
   }
   spawnExplosionArt(
     hit.x,
     hit.y,
-    nativeShotgunImpact.strength,
-    nativeShotgunImpact.mode,
+    resolution.event ? effect[4] : effect[3],
+    effect[0],
   );
   if (shotgunRemaining && w.hp > 0 && !w.knocked) {
     $("#status").textContent =
