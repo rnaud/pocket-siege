@@ -54,3 +54,21 @@ export function nativeRecoilTick(record, delay, progress, resume) {
     target: delay === 0 ? (resume ? 0x65 : 0x6b) : null,
   };
 }
+
+// 004F7120: state 0x6B waits between bullets, then either prepares the next
+// bullet (0x69), starts another held action (0x67), or returns to aim (0x65).
+// Delay is milliseconds: each native simulation tick subtracts twenty.
+export function nativeBurstTick(input) {
+  const state = { ...input };
+  let target = null;
+  if (state.ordinal < state.total) {
+    state.delay = (state.delay - 20) | 0;
+    if (state.delay < 1) {
+      state.ordinal = (state.ordinal + 1) | 0;
+      target = 0x69;
+    }
+  } else {
+    target = state.trigger && state.actions < state.maxActions ? 0x67 : 0x65;
+  }
+  return { state, target };
+}
