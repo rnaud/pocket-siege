@@ -1,5 +1,6 @@
 import { generateTerrain } from "./map-generator.js";
 import { islandTop, islandVoid } from "./island-profile.js";
+import { nativeSin, nativeCos } from "./armageddon/trig.js";
 export const W = 1200,
   H = 650,
   WATER = 80,
@@ -54,9 +55,14 @@ export class Terrain {
   }
 }
 export function launch(angle, power) {
-  const r = (angle * Math.PI) / 180,
+  // Browser degrees/power remain adapters; direction uses the original integer
+  // lookup/interpolation used by the native launch routine.
+  const turn = Math.round((angle * 65536) / 360),
     speed = 18 + Math.max(0, Math.min(100, power)) * 4.5;
-  return { vx: Math.cos(r) * speed, vy: Math.sin(r) * speed };
+  return {
+    vx: (nativeCos(turn) / 65536) * speed,
+    vy: (nativeSin(turn) / 65536) * speed,
+  };
 }
 export function integrate(p, dt, wind = 0, gravityScale = 1) {
   p.vx += wind * dt;
