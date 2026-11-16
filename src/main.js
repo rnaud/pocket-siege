@@ -1,3 +1,8 @@
+import {
+  nativeProjectileLaunch,
+  attachNativeProjectile,
+  stepNativeProjectile,
+} from "./armageddon/projectile-runtime.js";
 import { nativeChargeTick } from "./armageddon/power.js";
 import { freezeTeam } from "./armageddon/freeze.js";
 import {
@@ -2249,12 +2254,15 @@ function fire() {
   if (kind === "homing" && !homingTarget) return;
   const selectedTarget = homingTarget ? { ...homingTarget } : null;
   const origin = launchGeometry(w, angle, kind, terrain),
-    v = launch(angle, power);
+    nativeVelocity = nativeProjectileLaunch(kind, angle, power),
+    v = nativeVelocity ?? launch(angle, power);
   const launchPoint = terrain.solid(origin.muzzle.x, origin.muzzle.y)
     ? origin.pivot
     : origin.muzzle;
-  v.vx *= meta.speed;
-  v.vy *= meta.speed;
+  if (!nativeVelocity) {
+    v.vx *= meta.speed;
+    v.vy *= meta.speed;
+  }
   const thisFuse = shotFuse ?? fuse,
     thisBounce = shotBounce ?? bounce;
   shotFuse = null;
@@ -2303,6 +2311,7 @@ function fire() {
     trail: [],
     blocked: launchPoint === origin.muzzle ? origin.blocked : false,
   };
+  attachNativeProjectile(projectile, H);
   projectile.mesh.position.set(projectile.x, projectile.y, 40);
   group.add(projectile.mesh);
   lastShot = {
@@ -2939,6 +2948,7 @@ function step(dt) {
   if (phase === "aim") updateUI();
   if (projectile) {
     const p = projectile;
+    let nativeContact = null;
     const ox = p.x,
       oy = p.y;
     if (!p.stuck && p.sleeping && !terrain.solid(p.x, p.y - 4))
@@ -2961,7 +2971,30 @@ function step(dt) {
           p.vy = Math.sin(current + delta) * speed;
         }
       }
-      integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
+      if (p.nativeBody) {
+        nativeContact = stepNativeProjectile(
+          p,
+          {
+            height: H,
+            waterLevel,
+            wind,
+            gravityScale,
+            frame: matchRandom.frame,
+            bounces: WEAPONS[p.kind].bounces,
+          },
+          (x, y) => {
+            if (terrain.solid(x, y)) return 1;
+            const i = worms.findIndex(
+              (w, i) =>
+                w.hp > 0 &&
+                (i !== p.owner || p.age + dt > 0.25) &&
+                hitsWorm(w, x, y, 3),
+            );
+            return i < 0 ? 0 : i + 2;
+          },
+        );
+        if (nativeContact.contacts && WEAPONS[p.kind].bounces) sfx("bounce");
+      } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     }
     p.age += dt;
     if (
@@ -2972,8 +3005,9 @@ function step(dt) {
       sfx("fuse");
     let hit = p.blocked;
     p.blocked = false;
-    let hitWorm = null;
-    if (!hit) {
+    let hitWorm = nativeContact?.hit >= 2 ? worms[nativeContact.hit - 2] : null;
+    hit ||= Boolean(nativeContact?.hit);
+    if (!hit && !p.nativeBody) {
       const contact = sweepProjectile({ x: ox, y: oy }, p, (x, y) => {
         if (terrain.solid(x, y)) return 1;
         const index = worms.findIndex(
@@ -3004,7 +3038,7 @@ function step(dt) {
         );
       if (w) p.attached = { w, dx: p.x - w.x, dy: p.y - w.y };
     }
-    if (hit && WEAPONS[p.kind].bounces) {
+    if (hit && WEAPONS[p.kind].bounces && !p.nativeBody) {
       const victim =
         hitWorm ??
         worms.find(

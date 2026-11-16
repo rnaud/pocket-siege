@@ -1,5 +1,11 @@
 import {
+  nativeProjectileLaunch,
+  attachNativeProjectile,
+  stepNativeProjectile,
+} from "./armageddon/projectile-runtime.js";
+import {
   W,
+  H,
   blastExposure,
   WATER,
   BODY,
@@ -49,7 +55,7 @@ export const DIFFICULTIES = {
   },
 };
 export const DIFFICULTY_ORDER = ["rookie", "regular", "veteran"];
-const STEP = 1 / 60;
+const STEP = 1 / 50;
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 function blastPoint(
@@ -69,20 +75,53 @@ function blastPoint(
   const start = launchGeometry(me, angle, kind, terrain);
   if (start.blocked)
     return { x: start.muzzle.x, y: start.muzzle.y, blocked: true };
-  const velocity = launch(angle, power);
+  const nativeVelocity = nativeProjectileLaunch(kind, angle, power);
+  const velocity = nativeVelocity ?? launch(angle, power);
   const p = {
     x: start.muzzle.x,
     y: start.muzzle.y,
-    vx: velocity.vx * meta.speed,
-    vy: velocity.vy * meta.speed,
+    vx: velocity.vx * (nativeVelocity ? 1 : meta.speed),
+    vy: velocity.vy * (nativeVelocity ? 1 : meta.speed),
     age: 0,
   };
+  Object.assign(p, { kind, fuse, bounce });
+  attachNativeProjectile(p, H);
   const targets = worms.filter((w) => w.hp > 0);
   const maxAge = meta.timed ? fuse : 12;
   for (let tick = 0; tick < maxAge / STEP; tick++) {
     if (meta.timed && p.age >= fuse) break;
     const ox = p.x,
       oy = p.y;
+    if (p.nativeBody) {
+      const contact = stepNativeProjectile(
+        p,
+        {
+          height: H,
+          waterLevel,
+          wind,
+          gravityScale,
+          frame: tick,
+          bounces: meta.bounces,
+        },
+        (x, y) => {
+          if (terrain.solid(x, y)) return 1;
+          const index = targets.findIndex(
+            (w) => (w !== me || p.age + STEP > 0.25) && hitsWorm(w, x, y, 3),
+          );
+          return index < 0 ? 0 : index + 2;
+        },
+      );
+      p.age += STEP;
+      if (p.y < waterLevel || p.x < -60 || p.x > W + 60)
+        return {
+          x: p.x,
+          y: p.y,
+          water: p.y < waterLevel,
+          out: p.x < -60 || p.x > W + 60,
+        };
+      if (contact.hit && !meta.timed) return { x: p.x, y: p.y };
+      continue;
+    }
     integrate(p, STEP, meta.wind ? wind : 0, gravityScale);
     p.age += STEP;
     const distance = Math.hypot(p.x - ox, p.y - oy),

@@ -109,7 +109,7 @@ test("planner prefers the heavy mortar for a cluster", () => {
   expect(plan.score).toBeGreaterThan(80);
 });
 
-test("difficulty changes aim error but keeps the same solution", () => {
+test("difficulty applies bounded aim error to its selected solution", () => {
   const me = worm(0, 200),
     worms = [me, worm(1, 700)];
   // Zero makes the rookie's mistake check fire and applies the full negative jitter.
@@ -119,8 +119,8 @@ test("difficulty changes aim error but keeps the same solution", () => {
   const veteran = planTurn(
     base({ me, worms, difficulty: "veteran", random: () => 0 }),
   );
-  expect(Math.abs(rookie.angle - rookie.baseAngle)).toBeCloseTo(6, 0);
-  expect(Math.abs(veteran.angle - veteran.baseAngle)).toBeCloseTo(0.3, 1);
+  expect(rookie.angle).toBeCloseTo(Math.max(5, rookie.baseAngle - 6), 5);
+  expect(veteran.angle).toBeCloseTo(Math.max(5, veteran.baseAngle - 0.3), 5);
   expect(Math.abs(rookie.angle - rookie.baseAngle)).toBeGreaterThan(
     Math.abs(veteran.angle - veteran.baseAngle),
   );
