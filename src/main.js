@@ -6,6 +6,7 @@ import { nativeMineArt } from "./armageddon/mine-art.js";
 import { nativeMineWater } from "./armageddon/mine-water.js";
 import { nativeMineStateEvents } from "./armageddon/mine-state.js";
 import { nativeMineHit, nativeMineHitBodies } from "./armageddon/mine-hit.js";
+import { nativeMineCameraRequest } from "./armageddon/mine-camera.js";
 import { nativeWaterSound } from "./armageddon/water-audio.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
@@ -4321,8 +4322,9 @@ function step(dt) {
   stepWaterBubbles();
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
+  const mineCameraRequests = mines.map(mine => nativeMineCameraRequest(mine.nativeBody, mine.nativeTimer)).filter(Boolean);
   const teleportTracking = worms.some((w) => w.originalTeleport);
-  if (!nativeCameraFraming && (trackedProjectiles.length || teleportTracking || pendingWormCamera.length)) {
+  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || teleportTracking || pendingWormCamera.length)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
       Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
@@ -4332,8 +4334,9 @@ function step(dt) {
     nativeCamera.offer(...nativeProjectileCameraRequest(tracked.nativeBody, [0, W * 65536, -256 * 65536]));
   }
   for (const request of pendingWormCamera) nativeCamera.offer(...request);
+  for (const request of mineCameraRequests) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || teleportTracking)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || teleportTracking)) {
     const aspect = arena.clientHeight > arena.clientWidth
       ? arena.clientWidth / arena.clientHeight : W / H;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];

@@ -940,6 +940,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   expect(state.mines[0].nativeTimer.damage).toBe(50);
   expect(state.mines[0].nativeTimer.placed).toBe(1);
   expect(state.mines[0].nativeTimer.arm).toBeGreaterThan(3500);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).not.toBeNull();
   await expect.poll(() => page.evaluate(() => window.siege.getState().mines[0]?.nativeTimer.triggered), { timeout: 7000 }).toBe(1);
   const armed = await page.evaluate(() => window.siege.getState().mines[0]);
   expect(armed.nativeBody.type).toBe(10);
@@ -953,6 +954,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
     .toBeGreaterThan(0);
   state = await page.evaluate(() => window.siege.getState());
   expect(state.mines).toHaveLength(0);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
   expect(mineSounds.sort()).toEqual(["minearm.wav", "mineimpact.wav", "minetick.wav"]);
   expect(await page.evaluate(() => [...window.mineSprites].sort())).toEqual(["mineoff", "mineon"]);
 });
