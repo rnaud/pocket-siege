@@ -2869,7 +2869,7 @@ function stepDrill(pending) {
       pending.playback = playNativeDrillLoop(audio);
       return 1;
     },
-    overlap: (x,y) => bodyBlocked(terrain,x/65536,H-y/65536),
+    overlap: (x,y) => nativeSceneCollision(w,w.nativeFlight,x/65536,H-y/65536,terrain,worms,H),
   });
   pending.body = result.body;
   w.originalDrill.player.advance();
@@ -4021,8 +4021,10 @@ function step(dt) {
     if (w.originalDrill && !w.originalHurt && !w.frozen) {
       stepNativeDrillFlight(w, {
         height:H, waterLevel, gravityScale, frame:matchRandom.frame,
-        random:()=>matchRandom.logicUint(),
-      }, (x,y)=>bodyBlocked(terrain,x,y)?1:0);
+        index:worms.indexOf(w),
+        collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit-2],H) : {type:1,vx:0,vy:0},
+        updateCollisionBody: (hit,body) => { if (hit >= 2) applyNativeWormContact(worms[hit-2],body); },
+      }, (x,y,body)=>nativeSceneCollision(w,body,x,y,terrain,worms,H));
       continue;
     }
     if (w.originalFirePunch && !w.originalHurt && !w.frozen) {

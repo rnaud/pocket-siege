@@ -1,3 +1,4 @@
+import { nativeWormReceiver } from "./worm-receiver.js";
 import { nativeFirePunchEntry, nativeFirePunchTick } from "./fire-punch.js";
 import { nativeWormJumpLaunch, nativeBodyImpulse } from "./jump.js";
 import { nativeSimpleBodyTick, nativeBodyAwake } from "./motion.js";
@@ -51,6 +52,7 @@ function nativeAirborneBody(worm, height, friction) {
 // category to3.004F7490 supplies no launch impulse or suspension change.
 export function attachNativeDrillFlight(worm, { height, friction = 96 }) {
   const body = nativeAirborneBody(worm, height, friction);
+  body.shape = 3;
   body.state = 0x6e;
   body.type = 3;
   body.complex = 1;
@@ -58,9 +60,39 @@ export function attachNativeDrillFlight(worm, { height, friction = 96 }) {
 }
 
 export function stepNativeDrillFlight(worm, environment, collide) {
-  const result = stepNativeJumpFlight(worm, environment, collide);
-  worm.ground = !nativeBodyAwake(worm.nativeFlight);
-  return result;
+  const { height, waterLevel, gravityScale = 1, frame = 0 } = environment;
+  const collision = (x, y, body) => collide(x / 65536, height - y / 65536, body);
+  const body = nativeSimpleBodyTick(worm.nativeFlight, {
+    frame, index: environment.index ?? 0,
+    waterY: Math.floor(height - waterLevel),
+    gravity: Math.round(0x3d70 * gravityScale), wind: 0,
+  }, {
+    awake: nativeBodyAwake, collide: collision,
+    bounce: (body, hit, side) => {
+      const other = environment.collisionBody?.(hit) ?? { type:1, vx:0, vy:0 };
+      const result = nativeWormAirborneCollision(body, other, side, { frame },
+        (x,y) => collision(x,y,body),
+        (incoming, receiver, side) => {
+          if (!receiver.worm) return false;
+          // State6E/type3 uses the normal body receiver branch, without
+          // the separate airborne stomp or hurt-state voice/attribution path.
+          const response = nativeWormReceiver(receiver, incoming, side, {});
+          Object.assign(incoming, response.incoming);
+          Object.assign(receiver, response.receiver);
+          return Boolean(response.result);
+        });
+      Object.assign(body, result.body);
+      environment.updateCollisionBody?.(hit, result.other);
+    },
+  });
+  worm.nativeFlight = body;
+  worm.x = body.x / 65536;
+  worm.y = height - body.y / 65536;
+  worm.vx = body.vx / 65536 * 50;
+  worm.vy = -body.vy / 65536 * 50;
+  worm.facing = body.facing;
+  worm.ground = !nativeBodyAwake(body);
+  return body;
 }
 
 // 65 -> 6c common transition clears collision flag4, preserves complex bounce,

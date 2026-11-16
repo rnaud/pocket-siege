@@ -74,7 +74,7 @@ cpu.hook_add(UC_HOOK_CODE,hook)
 cases=[]
 inputs=[]
 for state in [0x65,0x79,0x7e,0x7f,0x80,0x81,0x88]:
- for incoming_state in [0x7e,0x7f,0x80,0x81,0x82]:
+ for incoming_state in [0x7e,0x7f,0x80,0x81,0x82,0x6e]:
   for vx in [-0x800000, -65537,0,0x70000,0x30000000]:
    for marked,matched,record,scale in [(0,0,1,50),(1,0,1,50),(1,1,1,50),(1,1,1,255),(1,1,0,100)]:
     inputs.append(dict(state=state,incoming_state=incoming_state,type=3,vx=vx,dy=0,dx=0,marked=marked,matched=matched,record=record,scale=scale))

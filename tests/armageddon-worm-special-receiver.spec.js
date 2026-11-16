@@ -4,7 +4,7 @@ import ordinary from "./fixtures/armageddon/worm-receiver.json" with { type: "js
 import { nativeWormReceiver } from "../src/armageddon/worm-receiver.js";
 
 test("hurt and airborne receivers match original impulse, state, velocity and sound dispatch", { tag: "@logic" }, () => {
-  expect(fixture.cases).toHaveLength(995);
+  expect(fixture.cases).toHaveLength(1170);
   for (const [i,c] of fixture.cases.entries()) {
     const e = c.environment;
     const actual = nativeWormReceiver(c.receiver, c.incoming, e.side, {
