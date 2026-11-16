@@ -1,5 +1,6 @@
 import { NATIVE_CHARGE_STEP } from "./armageddon/power.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
+import { nativeSweep } from "./armageddon/motion.js";
 import { generateTerrain } from "./map-generator.js";
 import { islandTop, islandVoid } from "./island-profile.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
@@ -71,6 +72,23 @@ export function integrate(p, dt, wind = 0, gravityScale = 1) {
   p.vy -= GRAVITY * gravityScale * dt;
   p.x += p.vx * dt;
   p.y += p.vy * dt;
+}
+
+// Browser world uses upward-positive y and per-second floating velocities.
+// Sweep the already integrated displacement in the native downward pixel grid.
+export function sweepProjectile(from, to, collide) {
+  const fixed = (value) => Math.round(value * 65536) | 0;
+  const result = nativeSweep(
+    {
+      x: fixed(from.x),
+      y: fixed(H - from.y),
+      vx: fixed(to.x - from.x),
+      vy: fixed(from.y - to.y),
+    },
+    65536,
+    (x, y) => collide(x / 65536, H - y / 65536),
+  );
+  return { ...result, x: result.x / 65536, y: H - result.y / 65536 };
 }
 
 // Gameplay launch geometry is independent of viewport size. Only the rendered rig

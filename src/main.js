@@ -36,6 +36,7 @@ import {
   WATER,
   launch,
   integrate,
+  sweepProjectile,
   shotGeometry,
   hitsWorm,
   blastImpulse,
@@ -2971,23 +2972,20 @@ function step(dt) {
       sfx("fuse");
     let hit = p.blocked;
     p.blocked = false;
-    const distance = Math.hypot(p.x - ox, p.y - oy),
-      steps = Math.max(1, Math.ceil(distance / 2));
-    for (let s = 1; s <= steps && !hit; s++) {
-      const x = ox + ((p.x - ox) * s) / steps,
-        y = oy + ((p.y - oy) * s) / steps;
-      if (
-        terrain.solid(x, y) ||
-        worms.some(
+    let hitWorm = null;
+    if (!hit) {
+      const contact = sweepProjectile({ x: ox, y: oy }, p, (x, y) => {
+        if (terrain.solid(x, y)) return 1;
+        const index = worms.findIndex(
           (w, i) =>
             w.hp > 0 && (i !== p.owner || p.age > 0.25) && hitsWorm(w, x, y, 3),
-        )
-      ) {
-        p.x = x;
-        p.y = y;
-        hit = true;
-        break;
-      }
+        );
+        return index < 0 ? 0 : index + 2;
+      });
+      p.x = contact.x;
+      p.y = contact.y;
+      hit = Boolean(contact.hit);
+      if (contact.hit >= 2) hitWorm = worms[contact.hit - 2];
     }
     let boom =
       (!WEAPONS[p.kind].timed && hit) ||
@@ -2996,21 +2994,25 @@ function step(dt) {
       p.stuck = true;
       p.vx = 0;
       p.vy = 0;
-      const w = worms.find(
-        (w, i) =>
-          w.hp > 0 &&
-          (i !== p.owner || p.age > 0.25) &&
-          hitsWorm(w, p.x, p.y, 3),
-      );
+      const w =
+        hitWorm ??
+        worms.find(
+          (w, i) =>
+            w.hp > 0 &&
+            (i !== p.owner || p.age > 0.25) &&
+            hitsWorm(w, p.x, p.y, 3),
+        );
       if (w) p.attached = { w, dx: p.x - w.x, dy: p.y - w.y };
     }
     if (hit && WEAPONS[p.kind].bounces) {
-      const victim = worms.find(
-        (w, i) =>
-          w.hp > 0 &&
-          (i !== p.owner || p.age > 0.25) &&
-          hitsWorm(w, p.x, p.y, 3),
-      );
+      const victim =
+        hitWorm ??
+        worms.find(
+          (w, i) =>
+            w.hp > 0 &&
+            (i !== p.owner || p.age > 0.25) &&
+            hitsWorm(w, p.x, p.y, 3),
+        );
       let n = victim
         ? { x: p.x - victim.x, y: p.y - victim.y - 17 }
         : terrainNormal(terrain, p.x, p.y, p.vx, p.vy);

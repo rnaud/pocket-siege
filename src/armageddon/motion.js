@@ -1,0 +1,95 @@
+import { fixedMultiply, fixedDivide } from "./numeric.js";
+const add = (a, b) => (a + b) | 0;
+const abs = (value) => {
+  const sign = value >> 31;
+  return ((value ^ sign) - sign) | 0;
+};
+
+// 004CA110. Native screen coordinates increase downwards. Collision receives
+// signed 16.16 positions and returns zero or a colliding object's ID.
+export function nativeAirForces(body, gravity, wind, collide) {
+  let { vx, vy, moving = 0 } = body;
+  const g = fixedMultiply(gravity, body.gravityScale);
+  if (!g) return { vx, vy, moving, result: 0 };
+  if (!vx && !vy && collide(body.x, add(body.y, g < 1 ? -65536 : 65536)))
+    return { vx, vy, moving, result: 0 };
+  vy = add(vy, g);
+  const w = fixedMultiply(wind, body.windScale);
+  if (!collide(add(body.x, w < 1 ? -65536 : 65536), body.y)) vx = add(vx, w);
+  return {
+    vx: fixedMultiply(vx, body.drag),
+    vy: fixedMultiply(vy, body.drag),
+    moving: 1,
+    result: 1,
+  };
+}
+
+// 004C9AA0: sweep the dominant axis through each crossed pixel boundary,
+// querying the secondary axis only when its integer coordinate changes.
+export function nativeSweep({ x, y, vx, vy }, fraction, collide, side = 99) {
+  const endX = add(x, fixedMultiply(vx, fraction));
+  const endY = add(y, fixedMultiply(vy, fraction));
+  if (!((x ^ endX) & 0xffff0000) && !((y ^ endY) & 0xffff0000))
+    return { x: endX, y: endY, remaining: 0, side, hit: 0 };
+  const dx = (endX - x) | 0,
+    dy = (endY - y) | 0;
+  const vertical = abs(dx) < abs(dy);
+  const startMinor = vertical ? x : y;
+  const endMajor = vertical ? endY : endX,
+    endMinor = vertical ? endX : endY;
+  const majorDistance = abs(vertical ? dy : dx),
+    minorDelta = vertical ? dx : dy;
+  let major = vertical ? y : x,
+    minor = startMinor,
+    progress = 0;
+  const step = major < endMajor ? 65536 : -65536;
+  const position = (a, b) => (vertical ? { x: b, y: a } : { x: a, y: b });
+  const contact = (a, b, surface, hit) => ({
+    ...position(a, b),
+    remaining: (fraction - fixedMultiply(fraction, progress)) | 0,
+    side: surface,
+    hit,
+  });
+  while (major !== endMajor) {
+    const next =
+      abs((endMajor - major) | 0) > 65535
+        ? add(major, step) & 0xffff0000
+        : endMajor;
+    let p = position(next, minor);
+    let hit = collide(p.x, p.y);
+    if (hit) {
+      const snapped =
+        step < 0 ? major & 0xffff0000 : (major & 0xffff0000) + 65535;
+      return contact(
+        snapped | 0,
+        minor,
+        vertical ? (step < 0 ? 1 : 3) : step < 0 ? 4 : 2,
+        hit,
+      );
+    }
+    progress = fixedDivide(
+      (majorDistance - abs((endMajor - next) | 0)) | 0,
+      majorDistance,
+    );
+    const nextMinor = add(startMinor, fixedMultiply(minorDelta, progress));
+    if ((nextMinor ^ minor) & 0xffff0000) {
+      p = position(next, nextMinor);
+      hit = collide(p.x, p.y);
+      if (hit) {
+        const negative = endMinor < startMinor;
+        const snapped = negative
+          ? minor & 0xffff0000
+          : (minor & 0xffff0000) + 65535;
+        return contact(
+          next,
+          snapped | 0,
+          vertical ? (negative ? 4 : 2) : negative ? 1 : 3,
+          hit,
+        );
+      }
+    }
+    major = next;
+    minor = nextMinor;
+  }
+  return { x: endX, y: endY, remaining: 0, side, hit: 0 };
+}
