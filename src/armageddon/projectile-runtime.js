@@ -1,4 +1,5 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
+import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
@@ -105,6 +106,10 @@ export function attachNativeProjectile(p, height) {
     96,
   );
   const words = selected.words;
+  p.nativeDetonation = {
+    offset: words[1], push: words[2], damage: words[3], variance: words[4],
+    sprite: words[6], secondary: block[45], repeat: payload.repeat,
+  };
   Object.assign(p.nativeBody, {
     type: 15, mode: words[23], hitMask: words[0], sideMask: words[28],
     chance: words[29], sound: words[27], effectKind: words[31],
@@ -145,6 +150,10 @@ function updateNativeProjectileArt(p) {
     override: 0,
   });
   p.nativeArt.progress = p.nativeRender.progress;
+}
+
+export function nativeProjectileDetonationEvents(p, random) {
+  return nativeProjectileDetonation(p.nativeDetonation, p.nativeBody.x, p.nativeBody.y, random);
 }
 
 // Owner age is irrelevant to the original manager: every body overlapping the

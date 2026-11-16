@@ -3,6 +3,7 @@ import {
   nativeProjectileLaunch,
   attachNativeProjectile,
   stepNativeProjectile,
+  nativeProjectileDetonationEvents,
 } from "../src/armageddon/projectile-runtime.js";
 const environment = {
   height: 650,
@@ -240,4 +241,22 @@ test("projectile timed animation advances once per simulation tick using launch-
   stepNativeProjectile(p, environment, () => 0);
   expect(p.nativeRender.progress).toBe(65535 + 2 * Math.trunc(rate / 100));
   expect(p.nativeArt.rate).toBe(rate);
+});
+
+
+test("live native projectile blast packets use scheme strength, push and vertical offsets", () => {
+  const expected = {
+    rocket: [0, 100, 50], homing: [1, 100, 50], mortar: [0, 0, 15],
+    grenade: [2, 100, 50], cluster: [0, 0, 20], holy: [37, 125, 100],
+  };
+  for (const [kind, [offset, push, strength]] of Object.entries(expected)) {
+    const p = projectile(kind);
+    let draws = 0;
+    const events = nativeProjectileDetonationEvents(p, () => { draws++; return 42; });
+    expect(events.find(e => e.operation === "blast").request).toEqual([
+      1, p.nativeBody.x, p.nativeBody.y + offset * 65536, push, strength, 1,
+    ]);
+    expect(draws).toBe(1);
+    expect(events.some(e => e.operation === "fragments")).toBe(["cluster", "mortar"].includes(kind));
+  }
 });

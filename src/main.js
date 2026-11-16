@@ -84,7 +84,9 @@ import {
   nativeProjectileCollision,
   attachNativeProjectile,
   stepNativeProjectile,
+  nativeProjectileDetonationEvents,
 } from "./armageddon/projectile-runtime.js";
+import { nativeWormState } from "./armageddon/worm-collision-type.js";
 import { nativeChargeTick } from "./armageddon/power.js";
 import { freezeTeam } from "./armageddon/freeze.js";
 import {
@@ -2715,7 +2717,14 @@ function fire() {
   } else sfx(kind);
   updateUI();
 }
-function explode(x, y, kind, ownerIndex = -1) {
+function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
+  const sourceX = x, sourceY = y;
+  if (nativePacket) {
+    x = nativePacket[1] / 65536;
+    y = H - nativePacket[2] / 65536;
+  }
+  const nativeStrength = nativePacket ? nativePacket[4] : kind === "death" ? 30 : null;
+  const nativePush = nativePacket ? nativePacket[3] : 100;
   const scale = blastScale;
   const profile =
     kind === "death"
@@ -2733,9 +2742,9 @@ function explode(x, y, kind, ownerIndex = -1) {
   const exposure = new Map(
     worms.map((w) => [w, blastExposure(terrain, x, y, w.x, w.y + 17)]),
   );
-  if (kind === "death") {
-    // 004DE70C calls 004DC050 with strength30 to the shared terrain event; browser blast
-    // scaling still applies to host damage, but not this original terrain call.
+  if (nativeStrength !== null) {
+    // Native projectile packets and death strength30 feed the shared crater
+    // and debris primitives without browser weapon radius/scale multipliers.
     const nativeX = Math.round(x * 65536),
       nativeY = Math.round((H - y) * 65536);
     terrain.craterRim ??= new Uint8Array(W * H);
@@ -2745,19 +2754,19 @@ function explode(x, y, kind, ownerIndex = -1) {
       H,
       nativeX >> 16,
       nativeY >> 16,
-      30,
+      nativeStrength,
       terrain.craterRim,
     );
-    spawnOriginalDebris(nativeX, nativeY, 30);
+    spawnOriginalDebris(nativeX, nativeY, nativeStrength);
   } else terrain.carve(x, y, radius);
   terrainDirty = true;
   explosions++;
   shakeUntil = performance.now() + 350;
   hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
-  spawnExplosionArt(x, y, kind === "death" ? 30 : Math.round(maxDamage));
+  spawnExplosionArt(x, y, nativeStrength ?? Math.round(maxDamage));
   sfx("explosion");
   for (const fragment of fragments(kind)) {
-    spawnBomb({ x, y: y + 8, ...fragment, owner: ownerIndex });
+    spawnBomb({ x: sourceX, y: sourceY + 8, ...fragment, owner: ownerIndex });
   }
   if (kind === "napalm") {
     for (let i = 0; i < 3; i++)
@@ -2801,8 +2810,10 @@ function explode(x, y, kind, ownerIndex = -1) {
   let dealt = 0;
   for (const w of worms) {
     if (w.hp <= 0) continue;
+    const nativeState = nativeWormState(w);
+    if (nativeStrength !== null && [0x84, 0x85, 0x87, 0x6d, 0x75].includes(nativeState)) continue;
     const native =
-      kind === "death"
+      nativeStrength !== null
         ? nativeBlastDamage(
             {
               x: Math.round(w.x * 65536),
@@ -2811,8 +2822,8 @@ function explode(x, y, kind, ownerIndex = -1) {
             },
             Math.round(x * 65536),
             Math.round((H - y) * 65536),
-            100,
-            30,
+            nativePush,
+            nativeStrength,
           )
         : null;
     if (native)
@@ -2825,7 +2836,7 @@ function explode(x, y, kind, ownerIndex = -1) {
     if (native) {
       const response = nativeBlastResponse(
         {
-          state: w.frozen > 0 ? 0x88 : 0x65,
+          state: nativeState,
           vx: Math.round((w.vx * 65536) / 50),
           vy: Math.round((-w.vy * 65536) / 50),
           fieldB0: 0,
@@ -2854,6 +2865,8 @@ function explode(x, y, kind, ownerIndex = -1) {
       w.nativeBlastAccumulated = response.result.accumulated;
       w.nativeBlastResponseState = response.result.state;
       w.facing = response.result.facing;
+      w.vx = response.result.vx / 65536 * 50;
+      w.vy = -response.result.vy / 65536 * 50;
       receivedDamage =
         response.output.find((call) => call.health)?.health[0] ?? 0;
     }
@@ -3957,7 +3970,11 @@ function step(dt) {
           writeRecord(record);
           updateRecordUI();
         }
-        explode(p.x, p.y, p.kind, p.owner);
+        const nativePacket = p.nativeDetonation
+          ? nativeProjectileDetonationEvents(p, () => matchRandom.logicUint())
+              .find(event => event.operation === "blast")?.request
+          : null;
+        explode(p.x, p.y, p.kind, p.owner, nativePacket);
       }
       releaseProjectileMesh(p.mesh);
       projectile = null;
