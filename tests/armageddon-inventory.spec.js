@@ -40,6 +40,7 @@ test("unlimited shotgun survives both shots and remains selectable", async ({
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.evaluate(() => window.siege.debug.setAmmo(0, "shotgun", -1));
   await page.locator("#inventory-toggle").click();
   // Special weapons share the expanded arsenal panel.
@@ -49,6 +50,9 @@ test("unlimited shotgun survives both shots and remains selectable", async ({
   await expect(shotgun).toBeEnabled();
   await expect(shotgun.locator("small")).toHaveText("∞");
   await shotgun.click();
+  // Fire into clear sky: a nearby terrain hit can injure the shooter and
+  // correctly cancel the second shot, independently of unlimited ammunition.
+  await page.locator("#angle").fill("90");
   await page.locator("#fire").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().shotgunRemaining))
