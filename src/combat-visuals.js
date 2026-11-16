@@ -167,6 +167,14 @@ export function createAimOverlay(arena) {
   crosshair.width = crosshair.height = 60;
   sprite.append(crosshair);
   reticle.prepend(sprite);
+  const chargeHolder = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "foreignObject",
+  );
+  const chargeSprites = document.createElement("canvas");
+  chargeSprites.className = "original-charge-blobs";
+  chargeHolder.append(chargeSprites);
+  svg.querySelector("#aim-guide").prepend(chargeHolder);
   arena.appendChild(svg);
   const tag = document.createElement("div");
   tag.id = "projectile-tag";
@@ -176,6 +184,7 @@ export function createAimOverlay(arena) {
     guide: svg.querySelector("#aim-guide"),
     reticle,
     crosshair,
+    chargeSprites,
     charge: svg.querySelector(".reticle-charge"),
     text: svg.querySelector("#aim-reticle text"),
     trail: svg.querySelector(".projectile-trail"),

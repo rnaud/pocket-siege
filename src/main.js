@@ -1,3 +1,4 @@
+import { updateOriginalCharge } from "./armageddon/charge-hud.js";
 import { updateOriginalCrosshair } from "./armageddon/crosshair-hud.js";
 import { updateOriginalSelection } from "./armageddon/selection-hud.js";
 import {
@@ -619,6 +620,14 @@ function updateAimHUD() {
       ),
     );
     const target = { x: origin.x + ux * distance, y: origin.y + uy * distance };
+    updateOriginalCharge(
+      aimHUD.chargeSprites,
+      charging ? chargeFixed : 0,
+      origin,
+      target,
+      arena.clientWidth,
+      arena.clientHeight,
+    );
     aimHUD.reticle.setAttribute(
       "transform",
       `translate(${Math.round(target.x / 2) * 2},${Math.round(target.y / 2) * 2})`,

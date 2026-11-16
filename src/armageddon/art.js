@@ -47,6 +47,7 @@ const names = [
       `arrowdn${color}`,
       `arrowsd${color}`,
     ]),
+    "blob",
     "missile",
     "mortar",
     "hmissil1",

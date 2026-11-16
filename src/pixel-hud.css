@@ -1930,3 +1930,11 @@ body:has(.controls.inventory-open) #announcement {
   height: 60px;
   image-rendering: pixelated;
 }
+
+.original-charge-blobs {
+  display: block;
+  image-rendering: pixelated;
+}
+#aim-guide:has(.original-charge-blobs[data-original-sprite]) .reticle-charge {
+  display: none !important;
+}
