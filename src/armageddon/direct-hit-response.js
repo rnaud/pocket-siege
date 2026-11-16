@@ -1,5 +1,5 @@
 import { nativeHitVoice } from "./hit-voice.js";
-// 004D97F0 event 0x433, kinds 0..9. The caller supplies post-base-impulse
+// 004D97F0 event 0x433, kinds 0..10. The caller supplies post-base-impulse
 // velocity. Audio allocation and state-entry side effects remain adapters.
 export function nativeDirectHitResponse(
   body,
@@ -9,7 +9,7 @@ export function nativeDirectHitResponse(
   voice = null,
 ) {
   const [kind, x, y, , , rawDamage] = packet;
-  if (kind < 0 || kind > 9) throw new RangeError("Unported direct-hit kind");
+  if (kind < 0 || kind > 10) throw new RangeError("Unported direct-hit kind");
   const next = Object.fromEntries(
     [
       "state",
@@ -55,11 +55,13 @@ export function nativeDirectHitResponse(
     next.state = kind === 1 ? 0x7f : kind === 9 ? 0x81 : 0x80;
     output.push({ state: next.state });
   }
-  if (damage) {
+  if (damage || kind === 10) {
     if (body.fieldB0) damage = (Math.trunc(damage / 2) + 1) | 0;
     output.push(
       { blood: [body.x, body.y, x, y, damage] },
-      { health: [damage, 0, factor] },
+      { health: kind === 10
+        ? [rawDamage && body.health === 1 ? 1 : Math.trunc(Math.imul(body.health, rawDamage) / 100), 0, 1]
+        : [damage, 0, factor] },
     );
   }
   return { result: next, output };

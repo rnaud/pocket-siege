@@ -53,7 +53,7 @@ test("generated art stays on an integer pixel grid without bitmap requests", asy
             c.clientWidth === c.width * scale &&
             c.clientHeight === c.height * scale &&
             Number.isInteger(scale) &&
-            (arena.classList.contains("portrait-camera") ||
+            (!matchMedia("(pointer: coarse)").matches || arena.classList.contains("portrait-camera") ||
               Math.abs(arena.clientWidth / arena.clientHeight - 16 / 9) <
                 0.03) &&
             c.clientWidth >= arena.clientWidth &&

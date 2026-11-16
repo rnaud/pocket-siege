@@ -80,8 +80,8 @@
     {
       "slot": 9,
       "native_name": "Axe",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "axe",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 18
     },

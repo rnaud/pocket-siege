@@ -1,3 +1,4 @@
+import { nativeAxeTick } from "./axe.js";
 import { nativeRecoveryEntry, nativeRecoveryTick } from "./recovery.js";
 import { nativeBodyRotation } from "./motion.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
@@ -154,6 +155,7 @@ const names = [
     "wbaz",
     "wshotg",
     "wprod",
+    "waxelk2", "waxeswn", "waxebak",
     "wshotf",
     "wshotp",
     "wparacht",
@@ -534,8 +536,29 @@ export function stepOriginalLanding(worm) {
     worm.originalLanding = null;
 }
 
+export function startOriginalAxe(worm) {
+  const player = new NativeAnimationPlayer();
+  player.enqueue(0x197, animations.get("waxelk2").metadata);
+  worm.originalAxe = { player };
+  worm.originalRecoil = null;
+  worm.originalPreparation = null;
+  worm.originalAnimationKey = null;
+}
+export function stepOriginalAxe(worm, percent, height) {
+  const player = worm.originalAxe.player;
+  player.advance();
+  const calls = nativeAxeTick({ sprite:player.current.id, progress:player.current.progress,
+    x:Math.round(worm.x*65536), y:Math.round((height-worm.y)*65536), facing:worm.facing, percent });
+  for (const call of calls) {
+    if (call.operation === "clear") player.clear();
+    if (call.operation === "queue") player.enqueue(call.sprite, animations.get(spriteIds.sprites[call.sprite].name).metadata);
+    if (call.operation === "state") worm.originalAxe = null;
+  }
+  return calls;
+}
+
 export function startOriginalPreparation(worm, weapon, angle) {
-  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat"].includes(weapon)) return false;
+  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe"].includes(weapon)) return false;
   const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
   const record = weaponFields[WEAPON_SLOTS[weapon]];
   const state = nativePreparation(
@@ -750,7 +773,7 @@ export function startOriginalDeath(worm) {
   worm.originalDeath = player;
   worm.originalDeathSpoken = 0;
   worm.originalDeathVoice = null;
-  worm.originalJump = worm.originalLanding = worm.originalRecoil = null;
+  worm.originalJump = worm.originalLanding = worm.originalRecoil = worm.originalAxe = null;
   worm.originalPreparation = null;
   return true;
 }
@@ -775,6 +798,7 @@ export function startOriginalHurt(worm, state) {
     worm.nativeHurtBody?.angle ?? worm.nativeFlight?.angle ?? 0,
   );
   if (!entry) return;
+  worm.originalAxe = null;
   worm.originalHurt = {
     state,
     angle: entry.angle,
@@ -973,7 +997,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     !(worm.hurt > 0.35) &&
     !worm.ground &&
     !worm.originalPreparation &&
-    !worm.originalRecoil
+    !worm.originalRecoil && !worm.originalAxe
   ) {
     const name = spriteIds.sprites[jumping.current.id].name;
     const sprite = animations.get(name).sprite;
@@ -1092,7 +1116,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     worm.ground &&
     !worm.moving &&
     !worm.originalPreparation &&
-    !worm.originalRecoil
+    !worm.originalRecoil && !worm.originalAxe
   ) {
     const name = spriteIds.sprites[landing.current.id].name;
     const sprite = animations.get(name).sprite;
@@ -1110,8 +1134,8 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     };
   }
 
-  if (worm.originalPreparation) {
-    const player = worm.originalPlayer;
+  if (worm.originalPreparation || worm.originalAxe) {
+    const player = worm.originalAxe?.player ?? worm.originalPlayer;
     const name = spriteIds.sprites[player.current.id].name;
     const sprite = animations.get(name).sprite;
     const index = nativeSpriteFrame(

@@ -1231,7 +1231,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator("#special-toggle").click();
-  await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(16);
+  await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(17);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1392,19 +1392,10 @@ test("special and utility crates stock the field kit", async ({ page }) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  await page.evaluate(() => {
-    for (const kind of [
-      "shotgun",
-      "dynamite",
-      "cluster",
-      "airstrike",
-      "napalm",
-      "bat",
-      "homing",
-      "holy",
-    ])
-      window.siege.debug.setAmmo(0, kind, 0);
-  });
+  const specialKinds = await page.locator('#special-weapons [data-weapon]').evaluateAll(buttons => buttons.map(button => button.dataset.weapon));
+  await page.evaluate(kinds => {
+    for (const kind of kinds) window.siege.debug.setAmmo(0, kind, 0);
+  }, specialKinds);
   const beforeSpecial = await page.evaluate(
     () => window.siege.getState().ammo[0],
   );
@@ -1412,15 +1403,7 @@ test("special and utility crates stock the field kit", async ({ page }) => {
   await page.evaluate(() => window.siege.debug.collectCrate());
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.crate).toBeNull();
-  const specialTotal = (loadout) =>
-    loadout.shotgun +
-    loadout.dynamite +
-    loadout.cluster +
-    loadout.airstrike +
-    loadout.napalm +
-    loadout.bat +
-    loadout.homing +
-    loadout.holy;
+  const specialTotal = (loadout) => specialKinds.reduce((sum, kind) => sum + loadout[kind], 0);
   expect(specialTotal(state.ammo[0])).toBe(1);
   expect(specialTotal(beforeSpecial)).toBe(0);
 

@@ -1,3 +1,4 @@
+import { startOriginalAxe, stepOriginalAxe } from "./armageddon/art.js";
 import { nativeBatRequest } from "./armageddon/bat.js";
 import { nativeProdRequest } from "./armageddon/prod.js";
 import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
@@ -1372,7 +1373,7 @@ function updateUI() {
     weapon === "mine" ||
     weapon === "dynamite" ||
     WEAPONS[weapon]?.special === "airstrike" ||
-    weapon === "prod";
+    ["prod", "axe"].includes(weapon);
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = availableAmmo(loadout, button.dataset.weapon);
     const delay = weaponDelay(weaponDelays[team], button.dataset.weapon);
@@ -2195,6 +2196,7 @@ function updateSliders() {
     uzi: "FIRE UZI",
     minigun: "FIRE MINIGUN",
     prod: "PROD",
+    axe: "SWING AXE",
     homing: homingTarget ? null : "SET TARGET",
     pigeon: homingTarget ? null : "SET TARGET",
     magic: homingTarget ? null : "SET TARGET",
@@ -2248,6 +2250,7 @@ function startCharge(source) {
     fireBulletWeapon(false, weapon);
     return;
   }
+  if (weapon === "axe") { fireAxe(); return; }
   if (weapon === "prod") { fireProd(); return; }
   if (weapon === "bat") {
     fireBat();
@@ -2570,6 +2573,7 @@ function placeDynamite() {
 function applyNativeAreaRequest(targets, request) {
     for (const dispatch of nativeAreaDamage(targets, request)) {
       if (dispatch.sound?.[0] === 0x61) sfx("batimpact");
+      if (dispatch.sound?.[0] === 0x21) sfx("axeimpact");
       if (dispatch.effect) spawnNativeParticleRequest(dispatch.effect);
       if (!dispatch.packet) continue;
       const mine = targets[dispatch.body].mine;
@@ -2581,7 +2585,8 @@ function applyNativeAreaRequest(targets, request) {
       const [, , , vx, vy] = dispatch.packet;
       const response = nativeDirectHitResponse(
         {
-          state: victim.frozen > 0 ? 0x88 : 0x65,
+          state: nativeWormState(victim),
+          health: victim.hp,
           vx: Math.round((victim.vx * 65536) / 50),
           vy: Math.round((-victim.vy * 65536) / 50),
           x: Math.round(victim.x * 65536),
@@ -2775,6 +2780,24 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     if (burst && playback) burst.playback = playback;
   }
 }
+function fireAxe(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "axe") <= 0) return;
+  const w = worms[current];
+  if (!prepared && startOriginalPreparation(w, "axe", angle)) {
+    pendingFire = { worm:w, angle, kind:"axe", stage:"prepare" };
+    wormLocked = true;
+    move = aimInput = 0;
+    charging = false;
+    chargeSource = null;
+    updateUI();
+    return;
+  }
+  spendSpecial("axe");
+  shotCount++;
+  startOriginalAxe(w);
+  pendingFire = { worm:w, angle, kind:"axe", stage:"axe", spent:true };
+  updateUI();
+}
 function fireProd(prepared = false) {
   if ((!prepared && !canAct()) || (availableAmmo(ammo[team], "prod") ?? 0) <= 0) return;
   const w = worms[current];
@@ -2854,6 +2877,7 @@ function fire() {
     fireBulletWeapon(false, kind);
     return;
   }
+  if (kind === "axe") { fireAxe(); return; }
   if (kind === "prod") { fireProd(); return; }
   if (kind === "bat") {
     fireBat();
@@ -4195,9 +4219,22 @@ function step(dt) {
     const pending = pendingFire, w = pending.worm;
     if (phase !== "aim" || w !== worms[current] || w.hp <= 0 || w.knocked || w.frozen || w.hurt > 0.35) {
       w.originalPreparation = null;
+      w.originalAxe = null;
       stopBurstSound(pending.burst);
       pendingFire = null;
-      if (pending.burst?.spent && phase === "aim") finishAction("Firing interrupted. Retreat!");
+      if ((pending.burst?.spent || pending.spent) && phase === "aim") finishAction("Firing interrupted. Retreat!");
+    } else if (pending.stage === "axe") {
+      for (const call of stepOriginalAxe(w, nativeHitscanWeapon("axe").record["0x70"], H)) {
+        if (call.operation === "sound") sfx("axerelease");
+        if (call.operation === "area") {
+          const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a,b) => a.type-b.type);
+          applyNativeAreaRequest(targets, call.request);
+        }
+        if (call.operation === "state") {
+          pendingFire = null;
+          finishAction("Axe swing complete. Retreat!");
+        }
+      }
     } else if (pending.stage === "recoil") {
       const config = nativeHitscanWeapon(pending.kind);
       const result = nativeRecoilTick(config.record, pending.recoilDelay, 65536, 0);
@@ -4221,7 +4258,8 @@ function step(dt) {
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;
-        if (pending.kind === "prod") fireProd(true);
+        if (pending.kind === "axe") fireAxe(true);
+        else if (pending.kind === "prod") fireProd(true);
         else if (pending.kind === "bat") fireBat(true);
         else fireBulletWeapon(true, pending.kind ?? "shotgun", pending.burst);
       }
@@ -4459,8 +4497,7 @@ function step(dt) {
   for (const request of mineCameraRequests) nativeCamera.offer(...request);
   pendingWormCamera = [];
   if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || teleportTracking)) {
-    const aspect = arena.clientHeight > arena.clientWidth
-      ? arena.clientWidth / arena.clientHeight : W / H;
+    const aspect = arena.clientWidth / arena.clientHeight;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
     nativeCameraFocus = { x: position[0] / 65536, y: H - position[1] / 65536 };
@@ -4489,17 +4526,16 @@ function resize() {
   );
   const portrait =
     !overview && battlefieldFrame.clientHeight > battlefieldFrame.clientWidth;
-  arena.style.width = `${portrait ? battlefieldFrame.clientWidth : stageWidth}px`;
-  arena.style.height = `${portrait ? battlefieldFrame.clientHeight : Math.floor(stageWidth / stageAspect)}px`;
+  const fill = portrait || (!coarsePointer && !overview);
+  arena.style.width = `${fill ? battlefieldFrame.clientWidth : stageWidth}px`;
+  arena.style.height = `${fill ? battlefieldFrame.clientHeight : Math.floor(stageWidth / stageAspect)}px`;
   arena.classList.toggle("portrait-camera", portrait);
-  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight);
+  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight, coarsePointer ? 480 : 960);
   renderer.setSize(pixels.width, pixels.height, false);
   renderer.domElement.style.width = `${pixels.width * pixels.scale}px`;
   renderer.domElement.style.height = `${pixels.height * pixels.scale}px`;
   renderer.domElement.dataset.pixelScale = pixels.scale;
-  const correction = portrait
-    ? 1
-    : renderer.domElement.height / H / (renderer.domElement.width / W);
+  const correction = 1;
 
   for (const w of worms) {
     w.g.scale.x = correction;
@@ -4528,7 +4564,7 @@ function frame(now) {
     active: worms[current],
   });
   const portrait = !overview && arena.clientHeight > arena.clientWidth;
-  if (portrait) {
+  if (portrait || (!coarsePointer && !overview && phase === "aim")) {
     const focus =
       projectile ||
       worms
@@ -4554,7 +4590,7 @@ function frame(now) {
     cameraX,
     cameraY,
     cameraZoom,
-    portrait ? arena.clientWidth / arena.clientHeight : W / H,
+    arena.clientWidth / arena.clientHeight,
     nativeCameraFocus && !overview ? H + 256 : H,
   );
   view.x = nextView.x;

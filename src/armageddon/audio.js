@@ -10,6 +10,8 @@ const sounds = {
   mortar: "rocketrelease",
   shotgun: "shotgunfire",
   batimpact: "baseballbatimpact",
+  axeimpact: "vikingaxeimpact",
+  axerelease: "vikingaxerelease",
   shotgunreload: "shotgunreload",
   grenade: "throwrelease",
   sticky: "throwrelease",

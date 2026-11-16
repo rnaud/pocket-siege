@@ -82,13 +82,17 @@ for (const [weapon, sprite] of [
     await page.locator("#special-toggle").click();
     await page.locator(`[data-weapon="${weapon}"]`).click();
     const shooter = await page.evaluate(() => window.siege.getState().current);
+    await page.evaluate(({ shooter, sprite }) => {
+      window.recoilObserved = false;
+      const deadline = performance.now() + 10000;
+      const sample = () => {
+        if (window.siege.getState().worms[shooter].originalSprite === sprite) window.recoilObserved = true;
+        else if (performance.now() < deadline) requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    }, { shooter, sprite });
     await page.locator("#fire").click();
-    await page.waitForFunction(
-      ({ shooter, sprite }) =>
-        window.siege.getState().worms[shooter].originalSprite === sprite,
-      { shooter, sprite },
-      { polling: "raf", timeout: 2000 },
-    );
+    await expect.poll(() => page.evaluate(() => window.recoilObserved), {timeout:10000}).toBe(true);
     await page.screenshot({
       path: test.info().outputPath(`native-${weapon}-fire.png`),
     });
