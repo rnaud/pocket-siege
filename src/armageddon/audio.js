@@ -129,3 +129,18 @@ export function playNativeHitVoice(context, request, previousPlayback) {
   if (!name) return null;
   return playOriginalClip(context, `voices/english/${name}.wav`, () => {}, 1);
 }
+
+// Descriptors 0055F1C8..0055F1F0 (Twang1..6), 0055F220 (WormPop).
+export function playNativeRecoverySound(context, request, previousPlayback) {
+  const id = request[0];
+  const name =
+    id >= 8 && id <= 13 ? `twang${id - 7}` : id === 0x36 ? "wormpop" : null;
+  if (!name) return null;
+  previousPlayback?.stop();
+  return playOriginalClip(
+    context,
+    `sounds/${name}.wav`,
+    () => {},
+    request[3] / 65536,
+  );
+}

@@ -1,3 +1,4 @@
+import { nativeRecoveryEntry, nativeRecoveryTick } from "./recovery.js";
 import { nativeBodyRotation } from "./motion.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
 import { nativeDeathCue } from "./death-cue.js";
@@ -131,6 +132,9 @@ const names = [
     "wland2",
     spriteIds.sprites[0x82].name,
     spriteIds.sprites[0x1aa].name,
+    "wsldlk1",
+    "wsldlk2",
+    "wtwang",
     "wroll",
     "wslide",
     "wfly1",
@@ -766,6 +770,45 @@ export function stepOriginalHurt(worm) {
   if (worm.nativeFlight) Object.assign(worm.nativeFlight, rotation);
 }
 
+export function startOriginalRecovery(
+  worm,
+  previous,
+  maxVy,
+  flag,
+  random = () => 0,
+) {
+  const entry = nativeRecoveryEntry(
+    previous,
+    maxVy,
+    flag,
+    0,
+    flag ? random() : 0,
+  );
+  const player = new NativeAnimationPlayer();
+  applyAnimationCalls(
+    player,
+    entry.calls.filter((call) => ["clear", "queue"].includes(call.operation)),
+  );
+  worm.originalRecovery = { player, flag };
+  worm.originalHurt = null;
+  return entry.calls;
+}
+
+export function stepOriginalRecovery(worm) {
+  const recovery = worm.originalRecovery;
+  if (!recovery) return [];
+  recovery.player.advance();
+  const result = nativeRecoveryTick(
+    recovery.player.current.progress,
+    recovery.flag,
+    0,
+  );
+  recovery.flag = result.flag;
+  if (result.calls.some((call) => call.operation === "state"))
+    worm.originalRecovery = null;
+  return result.calls;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
     const state = worm.originalJetpack;
@@ -863,6 +906,24 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     return {
       map: texture("wdie", index),
       name: "wdie",
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
+
+  if (worm.originalRecovery?.player.current.id && !worm.frozen && worm.hp > 0) {
+    const current = worm.originalRecovery.player.current;
+    const name = spriteIds.sprites[current.id].name;
+    const sprite = animations.get(name).sprite;
+    const index = nativeSpriteFrame(
+      sprite.frames.length,
+      sprite.metadata[2],
+      current.progress,
+    );
+    return {
+      map: texture(name, index),
+      name,
       index,
       aimed: false,
       equipped: false,
