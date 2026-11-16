@@ -51,7 +51,7 @@ test("live dynamite moves, advances its native fuse strip and stops the original
   await page.evaluate(()=>window.siege.debug.resetSeed(42));
   await page.locator("#sound").click();
   await page.locator("#inventory-toggle").click();
-  await page.locator("#special-toggle").click();
+
   await page.locator('[data-weapon="dynamite"]').click();
   const x=await page.evaluate(()=>window.siege.getState().worms[0].x);
   await page.locator("#fire").click();

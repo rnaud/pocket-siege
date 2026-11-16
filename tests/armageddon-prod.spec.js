@@ -34,7 +34,7 @@ test(`live Prod ${interrupt ? 'cancels on damage without spending' : 'waits for 
   await page.locator('#start').click();
   await page.evaluate(() => { window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, 'prod', 2); });
   await page.locator('#inventory-toggle').click();
-  await page.locator('#special-toggle').click();
+
   await page.locator('[data-weapon="prod"]').click();
   await page.evaluate(interrupt => {
     document.querySelector('#fire').addEventListener('pointerup', () => {

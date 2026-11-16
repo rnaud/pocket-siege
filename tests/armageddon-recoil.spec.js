@@ -79,7 +79,7 @@ for (const [weapon, sprite] of [
     await page.locator("#mode").selectOption("local");
     await page.locator("#start").click();
     await page.locator("#inventory-toggle").click();
-    await page.locator("#special-toggle").click();
+
     await page.locator(`[data-weapon="${weapon}"]`).click();
     const shooter = await page.evaluate(() => window.siege.getState().current);
     await page.evaluate(({ shooter, sprite }) => {

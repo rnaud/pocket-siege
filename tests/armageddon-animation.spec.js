@@ -48,7 +48,7 @@ for (const group of [0, 1, 2])
       await page.locator("#inventory-toggle").click();
       const button = page.locator(`[data-weapon="${weapon}"]`);
       if (!(await button.isVisible()))
-        await page.locator("#special-toggle").click();
+
       await button.click();
       await expect
         .poll(

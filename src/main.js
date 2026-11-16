@@ -1,3 +1,4 @@
+import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
@@ -5025,13 +5026,7 @@ $("#share").onclick = shareResultCard;
 $("#select-worm").onclick = () => cycleWorm(1);
 $("#skip").onclick = skipTurn;
 $("#surrender").onclick = surrenderMatch;
-$("#utilities-toggle").onclick = toggleUtilities;
-$("#special-toggle").onclick = () => {
-  if (!canAct()) return;
-  specialOpen = !specialOpen;
-  if (specialOpen) utilitiesOpen = false;
-  updateUI();
-};
+$("#utilities-toggle").onclick = () => $("#inventory-toggle").click();
 for (const button of document.querySelectorAll("[data-utility]"))
   button.onclick = () => useUtility(button.dataset.utility);
 $("#jump").onclick = () => jump("forward");
@@ -5362,6 +5357,7 @@ async function bootCurrentArt() {
     $("#asset-loading").setAttribute("role", "alert");
   }
 }
+mountArmageddonFrontend();
 bootCurrentArt();
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   const registerServiceWorker = () =>

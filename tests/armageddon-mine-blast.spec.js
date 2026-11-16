@@ -24,7 +24,7 @@ test("live explosions deliver the original blast event to placed mines", async (
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
   const mine = page.locator('[data-weapon="mine"]');
-  if (!(await mine.isVisible())) await page.locator("#special-toggle").click();
+  if (!(await mine.isVisible())) await page.locator("#inventory-toggle").click();
   await mine.click();
   await page.locator("#fire").click();
   const result = await page.evaluate(() => {

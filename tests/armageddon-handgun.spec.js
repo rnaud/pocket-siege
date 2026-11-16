@@ -17,7 +17,7 @@ async function start(page) {
   await page.locator("#start").click();
   await page.evaluate(() => { window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, "handgun", 1); });
   await page.locator("#inventory-toggle").click();
-  await page.locator("#special-toggle").click();
+
   await page.locator('[data-weapon="handgun"]').click();
   await page.locator("#angle").fill("90");
   await page.locator("#angle").dispatchEvent("input");

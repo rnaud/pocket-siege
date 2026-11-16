@@ -157,7 +157,7 @@ for (const layout of ["caverns", "bridges"])
       ),
     ).toBe(true);
     await page.locator("#inventory-toggle").click();
-    await page.locator("#special-toggle").click();
+
     await page.locator('[data-weapon="airstrike"]').click();
     await expect(page.locator("#strike-direction")).toBeVisible();
     await page.locator("#strike-direction").selectOption("-1");

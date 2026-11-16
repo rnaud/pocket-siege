@@ -79,7 +79,7 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
-  await page.locator("#special-toggle").click();
+
   await page.locator(`[data-weapon="${kind}"]`).click();
   await page.locator("#fire").click();
   const box = await page.locator("#arena").boundingBox();

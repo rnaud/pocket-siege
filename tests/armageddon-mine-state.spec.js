@@ -23,7 +23,7 @@ test("live mine physical state detonates before its arming timer expires", async
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
   const mine = page.locator('[data-weapon="mine"]');
-  if (!(await mine.isVisible())) await page.locator("#special-toggle").click();
+  if (!(await mine.isVisible())) await page.locator("#inventory-toggle").click();
   await mine.click();
   await page.locator("#fire").click();
   const arm = await page.evaluate(() => {

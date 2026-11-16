@@ -1135,8 +1135,8 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await openArsenal(page);
-  await page.locator("#special-toggle").click();
-  await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(19);
+
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(24);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1189,7 +1189,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await openArsenal(page);
-  await page.locator("#special-toggle").click();
+
   await page.locator('[data-weapon="dynamite"]').click();
   await page.locator("#fire").click();
   await page.waitForTimeout(150);
@@ -1204,7 +1204,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await openArsenal(page);
-  await page.locator("#special-toggle").click();
+
   await page.locator('[data-weapon="airstrike"]').click();
   await page.locator("#fire").click();
   expect(await page.evaluate(() => window.siege.getState().targetUtility)).toBe(
@@ -1297,7 +1297,7 @@ test("special and utility crates stock the field kit", async ({ page }) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  const specialKinds = await page.locator('#special-weapons [data-weapon]').evaluateAll(buttons => buttons.map(button => button.dataset.weapon));
+  const specialKinds = await page.locator('.weapons [data-weapon]').evaluateAll(buttons => buttons.slice(5).map(button => button.dataset.weapon));
   await page.evaluate(kinds => {
     for (const kind of kinds) window.siege.debug.setAmmo(0, kind, 0);
   }, specialKinds);

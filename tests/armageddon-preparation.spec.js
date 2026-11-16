@@ -79,7 +79,7 @@ async function prepareShotgun(page) {
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
-  await page.locator("#special-toggle").click();
+
   await page.locator('[data-weapon="shotgun"]').click();
   // Keep the first shot clear of terrain so self-damage cannot end the turn
   // before this test deliberately interrupts the second preparation.

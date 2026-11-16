@@ -32,7 +32,11 @@ let meter,
   lastWeapon = "";
 export function mountPixelHUD(arena) {
   const controls = document.querySelector(".controls");
-  controls.append(document.querySelector("#special-weapons"));
+  const weaponGrid = document.querySelector(".weapons");
+  weaponGrid.append(
+    ...document.querySelectorAll("#special-weapons [data-weapon]"),
+    ...document.querySelectorAll("#utilities [data-utility]"),
+  );
   const inventory = document.createElement("button");
   inventory.id = "inventory-toggle";
   inventory.textContent = "ARSENAL";
@@ -89,7 +93,6 @@ export function mountPixelHUD(arena) {
   document.body.classList.add("native-game-hud");
   arena.append(document.querySelector("#wind"));
   frame(document.querySelector(".controls"), true);
-  frame(document.querySelector("#menu"), true);
   document.querySelector(".team-lime b").textContent = "MOSS";
   document.querySelector(".team-coral b").textContent = "CORAL";
   for (const [selector, fontName] of [
@@ -131,7 +134,8 @@ export function mountPixelHUD(arena) {
     key.className = "slot-key";
     key.textContent = ["F1", "F2", "F3", "F4", "M"][i];
     key.setAttribute("aria-hidden", "true");
-    button.append(key);
+    if (i < 5) button.append(key);
+    button.title = label.textContent.trim();
   });
   const power = document.createElement("div");
   power.className = "power-panel";

@@ -31,7 +31,7 @@ test("live submerged mines use original water artwork at zero rotation", async (
   await page.locator("#sound").click();
   await page.locator("#inventory-toggle").click();
   const mine = page.locator('[data-weapon="mine"]');
-  if (!(await mine.isVisible())) await page.locator("#special-toggle").click();
+  if (!(await mine.isVisible())) await page.locator("#inventory-toggle").click();
   await mine.click();
   await page.locator("#fire").click();
   await page.evaluate(() => window.siege.debug.submergeMine());

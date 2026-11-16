@@ -32,7 +32,7 @@ async function preparePunch(page) {
   await page.locator('#start').click();
   const targets=await page.evaluate(()=>{window.siege.debug.resetSeed(42);return window.siege.debug.stageMeleeTargets();});
   await page.locator('#inventory-toggle').click();
-  await page.locator('#special-toggle').click();
+
   await page.locator('[data-weapon="firepunch"]').click();
   return targets;
 }

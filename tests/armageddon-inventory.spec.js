@@ -46,7 +46,7 @@ test("unlimited shotgun survives both shots and remains selectable", async ({
   // Special weapons share the expanded arsenal panel.
   const shotgun = page.locator('[data-weapon="shotgun"]');
   if (!(await shotgun.isVisible()))
-    await page.locator("#special-toggle").click();
+
   await expect(shotgun).toBeEnabled();
   await expect(shotgun.locator("small")).toHaveText("∞");
   await shotgun.click();

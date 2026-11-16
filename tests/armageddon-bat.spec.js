@@ -34,7 +34,7 @@ test('live bat uses aimed native impulse, hits allies and enemies, and plays ori
   const targets = await page.evaluate(() => { window.siege.debug.resetSeed(42); return window.siege.debug.stageMeleeTargets(); });
   await page.locator('#sound').click();
   await page.locator('#inventory-toggle').click();
-  await page.locator('#special-toggle').click();
+
   await page.locator('[data-weapon="bat"]').click();
   await page.locator('#angle').fill('45');
   await page.locator('#angle').dispatchEvent('input');

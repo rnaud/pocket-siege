@@ -48,7 +48,7 @@ test("homing selects a fixed world target through the current camera", async ({
     .poll(() => page.evaluate(() => window.siege.getState().mapLayout))
     .toBe("highlands");
   await page.locator("#inventory-toggle").click();
-  await page.locator("#special-toggle").click();
+
   await page.locator('[data-weapon="homing"]').click();
   await page.locator("#fire").click();
   expect(await page.evaluate(() => window.siege.getState().targetUtility)).toBe(
@@ -95,7 +95,7 @@ for (const kind of ["cluster", "napalm", "holy"]) {
     // Keep the landing surface fixed: holy's native delay waits for rest.
     await page.evaluate(() => window.siege.debug.resetSeed(42));
     await page.locator("#inventory-toggle").click();
-    await page.locator("#special-toggle").click();
+
     await page.locator(`[data-weapon="${kind}"]`).click();
     await page.locator("#fuse").selectOption("1");
     await page.locator("#angle").fill("90");
