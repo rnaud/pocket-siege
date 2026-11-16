@@ -38,3 +38,27 @@ test("camera task ordering matches complete original 004ED710 ticks", () => {
     expect([framing.target, framing.display], `tick ${i}`).toEqual(c.after);
   }
 });
+
+import { NativeCameraPriority } from "../src/armageddon/camera-priority.js";
+test("special requests and signed suppression counters match original camera task", () => {
+  expect(fixture.special_cases).toHaveLength(45);
+  for (const [i, c] of fixture.special_cases.entries()) {
+    const priority = new NativeCameraPriority();
+    priority.offer(7, c.bounds[0], c.bounds[1]);
+    priority.offer(7, c.bounds[2], c.bounds[3]);
+    for (const request of c.requests) priority.offerSpecial(...request);
+    // Inactive native groups retain stale bounds; the active flag is authoritative.
+    expect(priority.special).toEqual(c.special[0] ? c.special.slice(1) : null);
+    const framing = new NativeCameraFraming(
+      c.initial[0],
+      c.initial[1],
+      c.initial[3],
+    );
+    framing.suppression = c.suppression;
+    framing.track(priority, 100, c.viewport, c.limits);
+    expect([framing.target, framing.display], `case ${i}`).toEqual(c.after);
+    expect(framing.suppression).toBe(c.outputSuppression);
+    expect(priority.cap).toBe(c.outputCap);
+    expect(priority.lastFrame).toBe(c.outputFrame);
+  }
+});

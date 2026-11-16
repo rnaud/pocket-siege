@@ -11,6 +11,16 @@ export class NativeCameraPriority {
   }
   beginFrame() {
     this.groups = Array.from({ length: 14 }, () => [0, 0, 0, 0, 0]);
+    this.special = null;
+  }
+  // 004EEB70 replaces the special rectangle on every request.
+  offerSpecial(x, y) {
+    this.special = [x, y, x, y];
+  }
+  selectRequest(frame) {
+    // 004EEA50 takes precedence without advancing the ordinary hold timer.
+    if (this.special) return { bounds: [...this.special], special: true };
+    return { bounds: this.select(frame), special: false };
   }
   offer(priority, x, y, disabled = false) {
     if (disabled) return;

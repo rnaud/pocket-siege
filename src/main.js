@@ -4185,12 +4185,11 @@ function step(dt) {
   }
   for (const request of pendingWormCamera) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  const bounds = nativeCamera.select(matchRandom.frame);
   if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || teleportTracking)) {
     const aspect = arena.clientHeight > arena.clientWidth
       ? arena.clientWidth / arena.clientHeight : W / H;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
-    const position = nativeCameraFraming.tick(bounds, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
+    const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
     nativeCameraFocus = { x: position[0] / 65536, y: H - position[1] / 65536 };
   } else {
     nativeCameraFocus = null;

@@ -89,14 +89,30 @@ export class NativeCameraFraming {
   constructor(x, y, focalDistance) {
     this.target = [x, y, 0, focalDistance];
     this.display = [...this.target];
+    this.suppression = 0;
   }
-  tick(bounds, viewport, limits) {
+  track(priority, frame, viewport, limits) {
+    const request =
+      this.suppression > 0
+        ? { bounds: null, special: false }
+        : priority.selectRequest(frame);
+    return this.tick(request.bounds, viewport, limits, request.special);
+  }
+  tick(bounds, viewport, limits, special = false) {
+    if (this.suppression > 0) bounds = null;
+    if (special && bounds) {
+      this.target[0] = Math.trunc(((bounds[0] + bounds[2]) | 0) / 2);
+      this.target[1] = Math.trunc(((bounds[1] + bounds[3]) | 0) / 2);
+      this.target[2] = 0;
+    }
     if (bounds)
       this.target = nativeCameraFrame(
         this.target,
         viewport.map((v) => Math.trunc(v / 2)),
         bounds,
       );
+    if (this.suppression < 0) this.suppression++;
+    else if (this.suppression > 0) this.suppression--;
     this.target[2] = 0;
     this.display = nativeCameraEase(this.display, this.target).camera;
     this.target = nativeCameraFrame(this.target, viewport, limits, 0, true);

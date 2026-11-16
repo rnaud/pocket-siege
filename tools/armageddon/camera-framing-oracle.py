@@ -72,5 +72,24 @@ for viewport in [[640,480],[320,650],[1200,650]]:
    run(0x4ed710,[])
    after=[[signed(read(context+offset+4+i*4)) for i in range(4)] for offset in [0x1c96c,0x1c980]]
    orchestration.append(dict(viewport=viewport,bounds=bounds,limits=limits,before=before,after=after))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004C58F0,004C5450,004C5310 and complete004ED710 task executed unchanged with original fixed arithmetic, projection helpers and priority selector.',cases=cases,easing=easing,orchestration=orchestration),separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} framing cases, {len(easing)} easing ticks, {len(orchestration)} camera task ticks')
+special_cases=[]
+for suppression in [-2,-1,0,1,2]:
+ for viewport in [[640,480],[320,650],[1200,650]]:
+  for requests in [[],[[600*65536,-208*65536]],[[100*65536,200*65536],[900*65536,100*65536]]]:
+   initial=[600*65536,325*65536,0,1000*65536]
+   for offset in [0x1c96c,0x1c980]:
+    for i,v in enumerate(initial):write(context+offset+4+i*4,v&0xffffffff)
+   write(owner+0x98,suppression&0xffffffff);write(context+0x12490,0);write(context+0x12414,14);write(context+0x12410,0)
+   limits=[0,-256*65536,1200*65536,650*65536]
+   for offset,v in zip([0x1b8cc,0x1b8d4,0x1b8d0,0x1b8d8],limits):write(context+offset,v&0xffffffff)
+   write(context+0x1b8dc,viewport[0]);write(context+0x1b8e0,viewport[1]);write(context+0x7f0,100)
+   cpu.mem_write(context+0x124a4,b'\0'*280)
+   bounds=[300*65536,100*65536,400*65536,200*65536]
+   for i,v in enumerate([1]+bounds):write(context+0x124a4+7*20+i*4,v&0xffffffff)
+   for request in requests:run(0x4eeb70,request)
+   special=[signed(read(context+0x12490+i*4)) for i in range(5)]
+   run(0x4ed710,[])
+   after=[[signed(read(context+offset+4+i*4)) for i in range(4)] for offset in [0x1c96c,0x1c980]]
+   special_cases.append(dict(suppression=suppression,viewport=viewport,requests=requests,special=special,bounds=bounds,limits=limits,initial=initial,after=after,outputSuppression=signed(read(owner+0x98)),outputCap=signed(read(context+0x12414)),outputFrame=read(context+0x12410)))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004C58F0,004C5450,004C5310 and complete004ED710 task executed unchanged with original fixed arithmetic, projection helpers and priority selector.',cases=cases,easing=easing,orchestration=orchestration,special_cases=special_cases),separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} framing cases, {len(easing)} easing ticks, {len(orchestration)} camera task ticks, {len(special_cases)} override/suppression cases')
