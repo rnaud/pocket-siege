@@ -76,3 +76,27 @@ export function nativeBlowtorchTick(input, record, slope, tryPosition) {
   calls.push({ operation:'camera' });
   return { body,calls };
 }
+
+import { nativeWeaponAnimation } from './weapon-animation.js';
+
+// Original004F9160. Resume physics, then settle downward one pixel at a
+// time when the six-pixel support probe hits. Position attempts own collision.
+export function nativeBlowtorchExit(input, record, probe, tryPosition) {
+  const body = { ...input, suspended: 0 };
+  const calls = [{ operation:'suspend', value:0 }];
+  const x = body.x, y = body.y;
+  calls.push({ operation:'probe', request:[x,(y+0x60000)|0] });
+  if (!probe(x,(y+0x60000)|0)) return { body,calls };
+  let nextY = (y+65536)|0;
+  for (;;) {
+    calls.push({ operation:'tryPosition', request:[x,nextY] });
+    if (!tryPosition(x,nextY)) break;
+    body.x = x; body.y = nextY;
+    nextY = (nextY+65536)|0;
+  }
+  calls.push({ operation:'clear' }, {
+    operation:'queueControlled', sprite:nativeWeaponAnimation(record), progress:body.aim,
+  });
+  body.field19c = 1;
+  return { body,calls };
+}

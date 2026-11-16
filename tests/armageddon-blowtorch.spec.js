@@ -18,3 +18,14 @@ test('blowtorch ticks match native movement, masks, damage and collision exits',
     expect(cursor).toBe(row.attemptCount);
   }
 });
+
+import exits from './fixtures/armageddon/blowtorch-exit.json' with { type: 'json' };
+import { nativeBlowtorchExit } from '../src/armageddon/blowtorch.js';
+test('blowtorch exit matches native support probes, placement and animation restoration', { tag: '@logic' }, () => {
+  for (const row of exits.cases) {
+    let cursor = 0;
+    expect(nativeBlowtorchExit(row.body, row.record, () => row.occupied,
+      () => row.pattern[cursor++])).toEqual(row.output);
+    expect(cursor).toBe(row.attemptCount);
+  }
+});
