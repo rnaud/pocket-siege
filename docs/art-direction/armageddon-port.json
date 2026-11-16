@@ -3,17 +3,20 @@
   "reference_version": "3.0.0.0",
   "status": "incomplete",
   "verified": {
-    "numeric_primitives": "Signed 16.16 multiply/divide and two uint32 RNG recurrences match 317 native executable cases. Fixed arithmetic is not yet connected to movement."
+    "numeric_primitives": "Signed 16.16 multiply/divide and two uint32 RNG recurrences match 317 native executable cases. Fixed arithmetic is not yet connected to movement.",
+    "runtime_ammo_primitives": "Addition (004C2FB0), spending (004C3010) and the ordinary-weapon availability path (004C2EE0) match 120 original-x86 cases executed in Unicorn 2.1.4. Addition and spending are integrated across weapon and utility actions and crate pickups. Negative/unlimited stock survives use; arbitrary 3/9-item caps are removed. Delay lifecycle and special availability rules remain unported."
   },
   "partial": {
     "simulation_clock": "50 Hz integrated. Original input queues, frame dispatch, pause handling and fast-forward remain unported.",
     "random_streams": "Gameplay and cosmetic streams integrated. Original caller masks, draw order and map RNG remain unported.",
+    "weapon_configuration": "tools/armageddon/weapon-oracle.py executes the original 004B90A0 initializer with explicit controlled inputs and captures all 71 final records. Local output: .local-research/armageddon/oracle/weapons-zero.json. Context is zeroed except special-weapon enable and two nonzero percentage divisors; localized name getters return empty strings. This is not a standard-match profile. Field semantics, native scheme defaults and per-weapon state machines still need tracing.",
+    "decompile_coverage": "Initial automatic analysis missed the 6,460-byte team-event handler at 004E6810. Recovered separately in Ghidra. Its 0x41C branch calls delay countdown 004E6630 only when the counter at task+0x60 exceeds one; global inventory+0x2C10 controls counter increments and availability bypass. Event routing and counter lifecycle still need full tracing. Original 8,025 exported functions must not be treated as complete executable coverage.",
     "original_media": "User explicitly requested original sprites, animations and sounds, superseding the procedural-only art preference. Imported 770 SPR animations (14,273 frames), 123 effects and 49 voice banks (2,692 samples). All are browsable in armageddon.html. Core worm states, bazooka/shotgun aim strips and gameplay effect mappings are integrated. Remaining animation transitions, weapon art, utility art, HUD, sound priorities and voice triggers still require wiring. Preview animation rate is 25 fps, not verified task-specific original timing."
   },
   "remaining": [
     "Worm collision geometry, integration, friction, gravity, walking, jumping, falling, knockback and drowning",
     "Decode 71 weapon records, scheme overrides and all weapon state machines",
-    "Signed 16-bit ammo, per-weapon delay and availability consumers",
+    "Mission signed-16-bit ammo loading, per-weapon delay lifecycle and special availability consumers",
     "Blast geometry, damage, occlusion, impulse, terrain carving, fire and chain reactions",
     "Rope, jetpack, parachute, teleport, girders, freeze and other utilities",
     "Team rotation, selection, timers, multiple shots, retreat, loss of control and sudden death",

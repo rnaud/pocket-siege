@@ -97,5 +97,6 @@ test("pickups heal with a cap and add limited ammo without mutating the loadout"
   const ammo = applyPickup("grenade", 50, loadout);
   expect(ammo.loadout.grenade).toBe(3);
   expect(loadout.grenade).toBe(2);
-  expect(applyPickup("mortar", 50, { mortar: 9 }).loadout.mortar).toBe(9);
+  expect(applyPickup("mortar", 50, { mortar: 9 }).loadout.mortar).toBe(10);
+  expect(applyPickup("mortar", 50, { mortar: -1 }).loadout.mortar).toBe(-1);
 });

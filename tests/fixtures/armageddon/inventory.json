@@ -1,0 +1,787 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "method": "Original x86 instructions executed with Unicorn",
+  "addresses": {
+    "add": "004C2FB0",
+    "spend": "004C3010",
+    "available": "004C2EE0"
+  },
+  "vectors": [
+    {
+      "operation": "add",
+      "count": -2147483648,
+      "amount": -2,
+      "result": -2147483648
+    },
+    {
+      "operation": "add",
+      "count": -2147483648,
+      "amount": -1,
+      "result": -2147483648
+    },
+    {
+      "operation": "add",
+      "count": -2147483648,
+      "amount": 0,
+      "result": -2147483648
+    },
+    {
+      "operation": "add",
+      "count": -2147483648,
+      "amount": 1,
+      "result": -2147483648
+    },
+    {
+      "operation": "add",
+      "count": -2147483648,
+      "amount": 5,
+      "result": -2147483648
+    },
+    {
+      "operation": "add",
+      "count": -2147483648,
+      "amount": 2147483647,
+      "result": -2147483648
+    },
+    {
+      "operation": "spend",
+      "count": -2147483648,
+      "result": -2147483648
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": -1,
+      "bypass": true,
+      "result": -2147483648
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": 0,
+      "bypass": false,
+      "result": -2147483648
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": 0,
+      "bypass": true,
+      "result": -2147483648
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": 1,
+      "bypass": true,
+      "result": -2147483648
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -2147483648,
+      "delay": 5,
+      "bypass": true,
+      "result": -2147483648
+    },
+    {
+      "operation": "add",
+      "count": -2,
+      "amount": -2,
+      "result": -2
+    },
+    {
+      "operation": "add",
+      "count": -2,
+      "amount": -1,
+      "result": -2
+    },
+    {
+      "operation": "add",
+      "count": -2,
+      "amount": 0,
+      "result": -2
+    },
+    {
+      "operation": "add",
+      "count": -2,
+      "amount": 1,
+      "result": -2
+    },
+    {
+      "operation": "add",
+      "count": -2,
+      "amount": 5,
+      "result": -2
+    },
+    {
+      "operation": "add",
+      "count": -2,
+      "amount": 2147483647,
+      "result": -2
+    },
+    {
+      "operation": "spend",
+      "count": -2,
+      "result": -2
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": -1,
+      "bypass": true,
+      "result": -2
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": 0,
+      "bypass": false,
+      "result": -2
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": 0,
+      "bypass": true,
+      "result": -2
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": 1,
+      "bypass": true,
+      "result": -2
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -2,
+      "delay": 5,
+      "bypass": true,
+      "result": -2
+    },
+    {
+      "operation": "add",
+      "count": -1,
+      "amount": -2,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": -1,
+      "amount": -1,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": -1,
+      "amount": 0,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": -1,
+      "amount": 1,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": -1,
+      "amount": 5,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": -1,
+      "amount": 2147483647,
+      "result": -1
+    },
+    {
+      "operation": "spend",
+      "count": -1,
+      "result": -1
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": -1,
+      "bypass": true,
+      "result": -1
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": 0,
+      "bypass": false,
+      "result": -1
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": 0,
+      "bypass": true,
+      "result": -1
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": 1,
+      "bypass": true,
+      "result": -1
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": -1,
+      "delay": 5,
+      "bypass": true,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 0,
+      "amount": -2,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 0,
+      "amount": -1,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 0,
+      "amount": 0,
+      "result": 0
+    },
+    {
+      "operation": "add",
+      "count": 0,
+      "amount": 1,
+      "result": 1
+    },
+    {
+      "operation": "add",
+      "count": 0,
+      "amount": 5,
+      "result": 5
+    },
+    {
+      "operation": "add",
+      "count": 0,
+      "amount": 2147483647,
+      "result": 2147483647
+    },
+    {
+      "operation": "spend",
+      "count": 0,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": -1,
+      "bypass": true,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": 0,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": 0,
+      "bypass": true,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": 1,
+      "bypass": true,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 0,
+      "delay": 5,
+      "bypass": true,
+      "result": 0
+    },
+    {
+      "operation": "add",
+      "count": 1,
+      "amount": -2,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 1,
+      "amount": -1,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 1,
+      "amount": 0,
+      "result": 1
+    },
+    {
+      "operation": "add",
+      "count": 1,
+      "amount": 1,
+      "result": 2
+    },
+    {
+      "operation": "add",
+      "count": 1,
+      "amount": 5,
+      "result": 6
+    },
+    {
+      "operation": "add",
+      "count": 1,
+      "amount": 2147483647,
+      "result": -2147483648
+    },
+    {
+      "operation": "spend",
+      "count": 1,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": -1,
+      "bypass": true,
+      "result": 1
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": 0,
+      "bypass": false,
+      "result": 1
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": 0,
+      "bypass": true,
+      "result": 1
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": 1,
+      "bypass": true,
+      "result": 1
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 1,
+      "delay": 5,
+      "bypass": true,
+      "result": 1
+    },
+    {
+      "operation": "add",
+      "count": 9,
+      "amount": -2,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 9,
+      "amount": -1,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 9,
+      "amount": 0,
+      "result": 9
+    },
+    {
+      "operation": "add",
+      "count": 9,
+      "amount": 1,
+      "result": 10
+    },
+    {
+      "operation": "add",
+      "count": 9,
+      "amount": 5,
+      "result": 14
+    },
+    {
+      "operation": "add",
+      "count": 9,
+      "amount": 2147483647,
+      "result": -2147483640
+    },
+    {
+      "operation": "spend",
+      "count": 9,
+      "result": 8
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": -1,
+      "bypass": true,
+      "result": 9
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": 0,
+      "bypass": false,
+      "result": 9
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": 0,
+      "bypass": true,
+      "result": 9
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": 1,
+      "bypass": true,
+      "result": 9
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 9,
+      "delay": 5,
+      "bypass": true,
+      "result": 9
+    },
+    {
+      "operation": "add",
+      "count": 32767,
+      "amount": -2,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 32767,
+      "amount": -1,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 32767,
+      "amount": 0,
+      "result": 32767
+    },
+    {
+      "operation": "add",
+      "count": 32767,
+      "amount": 1,
+      "result": 32768
+    },
+    {
+      "operation": "add",
+      "count": 32767,
+      "amount": 5,
+      "result": 32772
+    },
+    {
+      "operation": "add",
+      "count": 32767,
+      "amount": 2147483647,
+      "result": -2147450882
+    },
+    {
+      "operation": "spend",
+      "count": 32767,
+      "result": 32766
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": -1,
+      "bypass": true,
+      "result": 32767
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": 0,
+      "bypass": false,
+      "result": 32767
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": 0,
+      "bypass": true,
+      "result": 32767
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": 1,
+      "bypass": true,
+      "result": 32767
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 32767,
+      "delay": 5,
+      "bypass": true,
+      "result": 32767
+    },
+    {
+      "operation": "add",
+      "count": 2147483647,
+      "amount": -2,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 2147483647,
+      "amount": -1,
+      "result": -1
+    },
+    {
+      "operation": "add",
+      "count": 2147483647,
+      "amount": 0,
+      "result": 2147483647
+    },
+    {
+      "operation": "add",
+      "count": 2147483647,
+      "amount": 1,
+      "result": -2147483648
+    },
+    {
+      "operation": "add",
+      "count": 2147483647,
+      "amount": 5,
+      "result": -2147483644
+    },
+    {
+      "operation": "add",
+      "count": 2147483647,
+      "amount": 2147483647,
+      "result": -2
+    },
+    {
+      "operation": "spend",
+      "count": 2147483647,
+      "result": 2147483646
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": -1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": -1,
+      "bypass": true,
+      "result": 2147483647
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": 0,
+      "bypass": false,
+      "result": 2147483647
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": 0,
+      "bypass": true,
+      "result": 2147483647
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": 1,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": 1,
+      "bypass": true,
+      "result": 2147483647
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": 5,
+      "bypass": false,
+      "result": 0
+    },
+    {
+      "operation": "available",
+      "count": 2147483647,
+      "delay": 5,
+      "bypass": true,
+      "result": 2147483647
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { addAmmo } from "./armageddon/inventory.js";
 export const PICKUP_KINDS = [
   "health",
   "grenade",
@@ -12,7 +13,7 @@ export function applyPickup(kind, hp, loadout) {
     hp,
     loadout: {
       ...loadout,
-      [kind]: Math.min(9, (loadout[kind] ?? 0) + 1),
+      [kind]: addAmmo(loadout[kind], 1),
     },
   };
 }

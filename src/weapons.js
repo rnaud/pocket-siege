@@ -1,4 +1,5 @@
 import { WATER } from "./physics.js";
+import { displayAmmo } from "./armageddon/inventory.js";
 
 // One source of truth for damage, blast size, flight behavior and inventory.
 export const WEAPONS = {
@@ -233,7 +234,9 @@ export const freshAmmo = () => ({
   holy: WEAPONS.holy.ammo,
 });
 export const ammoFor = (loadout, kind) =>
-  kind === "rocket" ? Infinity : (loadout?.[kind] ?? 0);
+  displayAmmo(
+    kind === "rocket" ? (loadout?.rocket ?? Infinity) : (loadout?.[kind] ?? 0),
+  );
 
 export const SUDDEN_DEATH_ROUND = 6;
 export const WATER_RISE = 18;

@@ -1,4 +1,5 @@
 import { MatchRandom } from "./armageddon/random.js";
+import { addAmmo, spendAmmo, displayAmmo } from "./armageddon/inventory.js";
 import { loadOriginalArt, originalWormFrame } from "./armageddon/art.js";
 import { playOriginalSound } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
@@ -836,15 +837,12 @@ function collectCrate(w) {
   if (kind === "utility") {
     const pool = ["jetpack", "parachute", "teleport", "girder", "freeze"];
     const utility = pool[Math.floor(logicRandom() * pool.length)];
-    utilityAmmo[w.team][utility] = Math.min(
-      3,
-      (utilityAmmo[w.team][utility] ?? 0) + 1,
-    );
+    utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], 1);
     label = `+1 ${UTILITIES[utility].label}`;
   } else if (kind === "special") {
     const special =
       SPECIAL_WEAPONS[Math.floor(logicRandom() * SPECIAL_WEAPONS.length)];
-    ammo[w.team][special] = Math.min(3, (ammo[w.team][special] ?? 0) + 1);
+    ammo[w.team][special] = addAmmo(ammo[w.team][special], 1);
     label = `+1 ${WEAPONS[special].label}`;
   } else {
     const result = applyPickup(kind, w.hp, ammo[w.team]);
@@ -922,7 +920,11 @@ function beginTurn() {
   slowMo = 0;
   angle = team ? 135 : 45;
   active.facing = team ? -1 : 1;
-  if (team === 1 && mode === "ai" && (utilityAmmo[1]?.parachute ?? 0) > 0)
+  if (
+    team === 1 &&
+    mode === "ai" &&
+    displayAmmo(utilityAmmo[1]?.parachute ?? 0) > 0
+  )
     parachuteArmed = true;
   cancelCharge();
   power = 0;
@@ -987,7 +989,7 @@ function beginTurn() {
   updateUI();
 }
 function updateUI() {
-  // Called from the 120 Hz simulation; only touch the DOM when the state behind it changed.
+  // Only touch the DOM when its underlying simulation state changed.
   const loadout = ammo[team] ?? {};
   const key = `${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
@@ -1060,7 +1062,7 @@ function updateUI() {
   if (utilityPanel) utilityPanel.hidden = !utilitiesOpen;
   document.querySelectorAll("[data-utility]").forEach((button) => {
     const kind = button.dataset.utility;
-    const count = utilityLoadout[kind] ?? 0;
+    const count = displayAmmo(utilityLoadout[kind] ?? 0);
     button.querySelector("small").textContent =
       count === Infinity ? "∞" : count;
     button.disabled =
@@ -1292,7 +1294,7 @@ function handleUtilityTarget(e) {
       updateUI();
       return;
     }
-    ammo[team].airstrike--;
+    ammo[team].airstrike = spendAmmo(ammo[team].airstrike);
     spawnAirstrike(x);
     finishUtilityTurn("Air strike called. Bombs away!");
     return;
@@ -1308,7 +1310,7 @@ function handleUtilityTarget(e) {
       $("#status").textContent = "Teleport blocked. Choose an empty spot.";
       return;
     }
-    utilityAmmo[team].teleport--;
+    utilityAmmo[team].teleport = spendAmmo(utilityAmmo[team].teleport);
     const oldX = w.x;
     w.x = x;
     w.y = y;
@@ -1326,7 +1328,7 @@ function handleUtilityTarget(e) {
       $("#status").textContent = "Girder out of range. Move closer.";
       return;
     }
-    utilityAmmo[team].girder--;
+    utilityAmmo[team].girder = spendAmmo(utilityAmmo[team].girder);
     addGirder(x, y, 0, 64);
     finishUtilityTurn("Girder placed. Turn over.");
   }
@@ -1338,7 +1340,7 @@ function useUtility(kind) {
     closeUtilities();
     return;
   }
-  const count = utilityAmmo[team]?.[kind] ?? 0;
+  const count = displayAmmo(utilityAmmo[team]?.[kind] ?? 0);
   if (count <= 0) {
     $("#utility-status").textContent = "None left. Find a field-kit crate.";
     return;
@@ -1382,15 +1384,15 @@ function useUtility(kind) {
   }
   if (kind === "freeze") {
     for (const w of worms) if (w.team !== team && w.hp > 0) w.frozen = 1;
-    utilityAmmo[team].freeze--;
+    utilityAmmo[team].freeze = spendAmmo(utilityAmmo[team].freeze);
     activeUtility = null;
     finishUtilityTurn("Freeze deployed. The other squad loses a turn.");
   }
 }
 function startJetpack() {
-  if (!canAct() || (utilityAmmo[team]?.jetpack ?? 0) <= 0) return;
+  if (!canAct() || displayAmmo(utilityAmmo[team]?.jetpack ?? 0) <= 0) return;
   if (rope.attached) stopRope();
-  utilityAmmo[team].jetpack--;
+  utilityAmmo[team].jetpack = spendAmmo(utilityAmmo[team].jetpack);
   jetpack = {
     active: true,
     fuel: 30,
@@ -1954,7 +1956,7 @@ function placeMine() {
     mesh,
     bob: visualRandom() * Math.PI * 2,
   });
-  ammo[team].mine = Math.max(0, ammo[team].mine - 1);
+  ammo[team].mine = spendAmmo(ammo[team].mine);
   if (ammo[team].mine === 0) setWeapon("rocket");
   charging = false;
   chargeSource = null;
@@ -1979,7 +1981,7 @@ function finishAction(message) {
   updateUI();
 }
 function spendSpecial(kind) {
-  ammo[team][kind] = Math.max(0, (ammo[team][kind] ?? 0) - 1);
+  ammo[team][kind] = spendAmmo(ammo[team][kind]);
   if (ammo[team][kind] === 0) setWeapon("rocket");
 }
 function spawnBomb({
@@ -2084,7 +2086,7 @@ function fireShotgun() {
     y: start.y + Math.sin(r) * 300,
   };
   if (!shotgunRemaining) {
-    ammo[team].shotgun--;
+    ammo[team].shotgun = spendAmmo(ammo[team].shotgun);
     shotgunRemaining = 2;
   }
   shotgunRemaining--;
@@ -2222,8 +2224,8 @@ function fire() {
   firedPower = power;
   shotCount++;
   retreat = retreatSeconds;
-  if (kind !== "rocket") {
-    ammo[team][kind] = Math.max(0, (ammo[team][kind] ?? 0) - 1);
+  if (kind !== "rocket" || ammo[team].rocket !== undefined) {
+    ammo[team][kind] = spendAmmo(ammo[team][kind]);
     if (ammo[team][kind] === 0) setWeapon("rocket");
   }
   projectile = {
@@ -2606,8 +2608,8 @@ function startAiTurn() {
   const w = worms[current];
   const aiAlive = worms.filter((t) => t.team === 1 && t.hp > 0).length;
   const playerAlive = worms.filter((t) => t.team === 0 && t.hp > 0).length;
-  if ((utilityAmmo[1]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
-    utilityAmmo[1].freeze--;
+  if (displayAmmo(utilityAmmo[1]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
+    utilityAmmo[1].freeze = spendAmmo(utilityAmmo[1].freeze);
     for (const target of worms)
       if (target.team === 0 && target.hp > 0) target.frozen = 1;
     phase = "settle";
@@ -2783,10 +2785,7 @@ function step(dt) {
     } else {
       if (w === worms[current] && parachuteArmed && !w.ground && w.vy < -240) {
         parachuteArmed = false;
-        utilityAmmo[team].parachute = Math.max(
-          0,
-          utilityAmmo[team].parachute - 1,
-        );
+        utilityAmmo[team].parachute = spendAmmo(utilityAmmo[team].parachute);
         w.vy = Math.max(w.vy, -70);
         $("#status").textContent = `${w.name}'s parachute deploys.`;
         updateUI();
