@@ -1,3 +1,9 @@
+import {
+  nativeDeathSmoke,
+  nativeSmokeBody,
+  nativeSmokeTick,
+} from "./armageddon/smoke.js";
+import { nextVisualRandom } from "./armageddon/numeric.js";
 import { createOriginalGrave, stepOriginalGrave } from "./armageddon/graves.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
@@ -791,6 +797,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   originalEffects.length = 0;
   for (const p of nativeParticles) dispose(p.mesh);
   nativeParticles.length = 0;
+  for (const p of originalSmoke) dispose(p.mesh);
+  originalSmoke.length = 0;
   for (const bubble of waterBubbles) dispose(bubble.mesh);
   waterBubbles.length = 0;
   for (const p of particles) releaseParticle(p.mesh);
@@ -809,6 +817,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   hazards = [];
   const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
+  smokeRandom = matchSeed >>> 0;
   bubbleSeed = matchSeed >>> 0;
   const layout = isDaily ? "fern" : $("#map-layout").value;
   const authored = createOriginalMap(layout);
@@ -2654,6 +2663,53 @@ function spawnDust(x, y) {
       Math.trunc((0x51e * art.rate) / art.count),
     );
 }
+const originalSmoke = [];
+let smokeRandom = 0;
+function spawnDeathSmoke(worm) {
+  const requests = nativeDeathSmoke(
+    Math.round(worm.x * 65536),
+    Math.round((H - worm.y) * 65536),
+    new TextEncoder().encode(worm.name).length,
+    () => matchRandom.visualUint(),
+  );
+  for (const request of requests) {
+    const body = nativeSmokeBody(request),
+      name = nativeSpriteIds.sprites[body.sprite].name;
+    const mesh = createOriginalVisual(name);
+    if (!mesh) continue;
+    mesh.position.set(
+      Math.round(body.x / 65536),
+      Math.round(H - body.y / 65536),
+      36,
+    );
+    group.add(mesh);
+    originalSmoke.push({ ...body, mesh, name });
+  }
+}
+function updateOriginalSmoke() {
+  for (let i = originalSmoke.length - 1; i >= 0; i--) {
+    const p = originalSmoke[i];
+    const tick = nativeSmokeTick(
+      p,
+      () => (smokeRandom = nextVisualRandom(smokeRandom)),
+    );
+    if (!tick.alive) {
+      dispose(p.mesh);
+      originalSmoke.splice(i, 1);
+      continue;
+    }
+    Object.assign(p, tick.body);
+    const art = originalVisual(p.name),
+      frame = nativeSpriteFrame(art.count, art.flags, p.progress);
+    p.mesh.material.map = originalVisual(p.name, frame).map;
+    p.mesh.userData.originalFrame = frame;
+    p.mesh.position.set(
+      Math.round(p.x / 65536),
+      Math.round(H - p.y / 65536),
+      36,
+    );
+  }
+}
 const nativeParticles = [];
 function spawnNativeParticle(name, x, y, vx, vy, step) {
   if (nativeParticles.length >= 64) return;
@@ -3180,6 +3236,7 @@ function step(dt) {
       if (w.dying === 0 && w.deathPending) {
         w.deathPending = false;
         explode(w.x, w.y + 6, "death");
+        spawnDeathSmoke(w);
         const grave = createOriginalGrave(w);
         if (grave) {
           graves.push(grave);
@@ -3547,6 +3604,7 @@ function step(dt) {
   }
   stepOriginalEffects(dt);
   updateNativeParticles();
+  updateOriginalSmoke();
   stepWaterBubbles();
   matchRandom.finishFrame();
 }
@@ -4401,6 +4459,12 @@ window.siege = {
       frame: b.mesh.userData.originalFrame,
       x: b.mesh.position.x,
       y: b.mesh.position.y,
+    })),
+    originalSmoke: originalSmoke.map((p) => ({
+      sprite: p.name,
+      frame: p.mesh.userData.originalFrame,
+      x: p.mesh.position.x,
+      y: p.mesh.position.y,
     })),
     nativeParticles: nativeParticles.map((p) => ({
       sprite: p.name,
