@@ -1,3 +1,4 @@
+import { nativeShotgunImpact } from "./armageddon/hitscan-art.js";
 import {
   createImpactBag,
   nativeExplosionArt,
@@ -2369,12 +2370,16 @@ function fireShotgun(prepared = false) {
     victim.ground = false;
     victim.vx = victim.frozen > 0 ? 0 : dir * 230;
     victim.vy = 130;
-    impactFlash(hit.x, hit.y);
   } else {
     terrain.carve(hit.x, hit.y, 14);
     terrainDirty = true;
-    impactFlash(hit.x, hit.y);
   }
+  spawnExplosionArt(
+    hit.x,
+    hit.y,
+    nativeShotgunImpact.strength,
+    nativeShotgunImpact.mode,
+  );
   if (shotgunRemaining && w.hp > 0 && !w.knocked) {
     $("#status").textContent =
       "One shot left. Move or adjust your aim, then fire again.";
@@ -2671,9 +2676,9 @@ function spawnDust(x, y) {
 const originalSmoke = [];
 let smokeRandom = 0;
 let impactBag = createImpactBag();
-function spawnExplosionArt(x, y, strength) {
+function spawnExplosionArt(x, y, strength, mode = 1) {
   const requests = nativeExplosionArt(
-    1,
+    mode,
     Math.round(x * 65536),
     Math.round((H - y) * 65536),
     strength,

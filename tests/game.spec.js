@@ -1204,6 +1204,15 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   expect(state.ammo[0].shotgun).toBe(2);
   expect(state.phase).toBe("aim");
   expect(state.shotgunRemaining).toBe(1);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        window.siege
+          .getState()
+          .nativeParticles.some((p) => p.sprite === "shothit"),
+      ),
+    )
+    .toBe(true);
   await page.locator("#fire").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().shotCount))
