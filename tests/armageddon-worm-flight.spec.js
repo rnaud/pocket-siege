@@ -14,7 +14,7 @@ const worm = () => ({
   ground: true,
 });
 
-test("composed jump flight preserves native impulse and exact force integration", () => {
+test("composed jump flight preserves native impulse and exact force integration", { tag: "@logic" }, () => {
   const w = worm();
   const impulse = attachNativeJumpFlight(w, environment, 1);
   expect(impulse).toEqual([147465, -255384, 0]);
@@ -29,7 +29,7 @@ test("composed jump flight preserves native impulse and exact force integration"
   }
 });
 
-test("native flight lands with impact velocity retained before stopping", () => {
+test("native flight lands with impact velocity retained before stopping", { tag: "@logic" }, () => {
   for (const [direction, backflip] of [
     [1, 0],
     [-1, 0],
@@ -56,7 +56,7 @@ test("native flight lands with impact velocity retained before stopping", () => 
   }
 });
 
-test("native flight hits ceilings and walls without tunneling", () => {
+test("native flight hits ceilings and walls without tunneling", { tag: "@logic" }, () => {
   const up = worm();
   attachNativeJumpFlight(up, environment, 0, 1);
   let ceiling = false,
@@ -94,7 +94,7 @@ test("native flight hits ceilings and walls without tunneling", () => {
   expect(right.ground).toBe(true);
 });
 
-test("Fire Punch rises with native forces and exits directly to recoil on ground contact", async () => {
+test("Fire Punch rises with native forces and exits directly to recoil on ground contact", { tag: "@logic" }, async () => {
   const { attachNativeFirePunchFlight, stepNativeFirePunchFlight } = await import('../src/armageddon/worm-flight.js');
   const w = worm();
   const record = { '0x70':30, '0x74':45, '0x78':100 };

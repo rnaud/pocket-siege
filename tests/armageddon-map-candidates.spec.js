@@ -24,7 +24,7 @@ function makeImage(shape) {
   return image;
 }
 
-test("map candidate grid, search and reservations match original Landgen", () => {
+test("map candidate grid, search and reservations match original Landgen", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(135);
   for (const c of fixture.cases) {
     const image = makeImage(c.shape);
@@ -52,12 +52,12 @@ test("map candidate grid, search and reservations match original Landgen", () =>
   }
 });
 
-test("map candidate order preserves original equal-x swaps", () => {
+test("map candidate order preserves original equal-x swaps", { tag: "@logic" }, () => {
   for (const c of fixture.sorts)
     expect(nativeSortMapCandidates(c.input)).toEqual(c.output);
 });
 
-test("non-carving candidate stage matches original discovery order and RNG", () => {
+test("non-carving candidate stage matches original discovery order and RNG", { tag: "@logic" }, () => {
   expect(fixture.stages).toHaveLength(30);
   for (const c of fixture.stages) {
     const image = makeImage(c.shape),

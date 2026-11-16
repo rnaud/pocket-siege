@@ -6,7 +6,7 @@ import {
   nativeDeathSmoke,
 } from "../src/armageddon/smoke.js";
 import { nextVisualRandom } from "../src/armageddon/numeric.js";
-test("smoke burst requests and random state match original executable", () => {
+test("smoke burst requests and random state match original executable", { tag: "@logic" }, () => {
   for (const row of fixture.emissions) {
     let state = row.seed;
     expect(
@@ -20,7 +20,7 @@ test("smoke burst requests and random state match original executable", () => {
     expect(state).toBe(row.random);
   }
 });
-test("smoke drift, damping and retirement match original executable", () => {
+test("smoke drift, damping and retirement match original executable", { tag: "@logic" }, () => {
   for (const row of fixture.ticks) {
     let state = row.seed;
     expect(
@@ -29,7 +29,7 @@ test("smoke drift, damping and retirement match original executable", () => {
     expect(state).toBe(row.random);
   }
 });
-test("death smoke spans the name label in native 24-pixel intervals", () => {
+test("death smoke spans the name label in native 24-pixel intervals", { tag: "@logic" }, () => {
   for (const [length, groups] of [
     [0, 3],
     [11, 3],

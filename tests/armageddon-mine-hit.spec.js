@@ -7,14 +7,14 @@ import {
 import { nativeHitscanBody } from "../src/armageddon/hitscan-body.js";
 import { nativeAreaDamage } from "../src/armageddon/area-damage.js";
 
-test("mine direct hit impulse matches original executable", () => {
+test("mine direct hit impulse matches original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(72);
   for (const [i, c] of fixture.cases.entries()) {
     expect(nativeMineHit(c.before, c.packet), `case ${i}`).toEqual(c.after);
   }
 });
 
-test("mine bodies participate in native hitscan and area event dispatch", () => {
+test("mine bodies participate in native hitscan and area event dispatch", { tag: "@logic" }, () => {
   const mine = {
     nativeBody: { ...fixture.cases[0].before, type: 10, x: 40 * 65536, y: 0 },
   };

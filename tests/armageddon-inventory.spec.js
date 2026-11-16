@@ -14,7 +14,7 @@ const fixture = JSON.parse(
   ),
 );
 
-test("inventory matches 120 cases executed by the original x86 routines", () => {
+test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
   for (const v of fixture.vectors) {
     const result =
       v.operation === "add"

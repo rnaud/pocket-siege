@@ -5,7 +5,7 @@ import {
   enqueueNativeSound,
 } from "../src/armageddon/water-audio.js";
 
-test("mine splash and skim requests match original callbacks and sound queue", () => {
+test("mine splash and skim requests match original callbacks and sound queue", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(36);
   for (const [i, c] of fixture.cases.entries()) {
     const event = nativeWaterSound(

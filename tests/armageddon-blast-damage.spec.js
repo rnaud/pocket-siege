@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/blast-damage.json" with { type: "json" };
 import { nativeBlastDamage } from "../src/armageddon/blast-damage.js";
-test("radial blast falloff and impulses match original executable", () => {
+test("radial blast falloff and impulses match original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(648);
   for (const row of fixture.cases) {
     expect(

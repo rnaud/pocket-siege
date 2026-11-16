@@ -21,7 +21,7 @@ function projectile(x = 0, y = 20) {
   return p;
 }
 
-test("native overlap exclusion ends on actor movement, not owner age", () => {
+test("native overlap exclusion ends on actor movement, not owner age", { tag: "@logic" }, () => {
   const p = projectile(),
     terrain = { solid: () => false };
   const worms = [{ x: 0, y: 20, hp: 100 }];
@@ -31,7 +31,7 @@ test("native overlap exclusion ends on actor movement, not owner age", () => {
   expect(nativeProjectileCollision(p, 0, 20, terrain, worms, height)).toBe(2);
 });
 
-test("native flags select terrain or worm types in native order", () => {
+test("native flags select terrain or worm types in native order", { tag: "@logic" }, () => {
   const p = projectile(),
     terrain = { solid: (x) => x >= 10 };
   const worms = [{ x: 12, y: 20, hp: 100 }];
@@ -48,7 +48,7 @@ test("native flags select terrain or worm types in native order", () => {
   }
 });
 
-test("native terrain overlap marker excludes the bitmap until the actor moves clear", () => {
+test("native terrain overlap marker excludes the bitmap until the actor moves clear", { tag: "@logic" }, () => {
   const p = projectile(),
     terrain = { solid: (x) => x === 0 || x === 20 };
   p.nativeBody.flags = 2;
@@ -57,7 +57,7 @@ test("native terrain overlap marker excludes the bitmap until the actor moves cl
   expect(nativeProjectileCollision(p, 20, 20, terrain, [], height)).toBe(1);
 });
 
-test("registry membership refresh and disabled worms preserve contact identities", () => {
+test("registry membership refresh and disabled worms preserve contact identities", { tag: "@logic" }, () => {
   const p = projectile(),
     terrain = { solid: () => false };
   const first = { x: 20, y: 20, hp: 0 },
@@ -74,7 +74,7 @@ test("registry membership refresh and disabled worms preserve contact identities
   );
 });
 
-test("projectile collision callbacks see the current body after the first sweep", () => {
+test("projectile collision callbacks see the current body after the first sweep", { tag: "@logic" }, () => {
   const p = projectile(2, 40);
   p.vx = 1200;
   const origins = [];
@@ -91,7 +91,7 @@ test("projectile collision callbacks see the current body after the first sweep"
   expect(p.vx).toBeLessThan(0);
 });
 
-test("worm state changes move registry categories and invalidate overlap caching", () => {
+test("worm state changes move registry categories and invalidate overlap caching", { tag: "@logic" }, () => {
   const p = projectile(), terrain = { solid: () => false };
   const target = { x: 20, y: 20, hp: 100 };
   for (const [state, type] of [[0x65,2],[0x80,3],[0x79,4],[0x73,5],[0x88,6],[0x65,2]]) {

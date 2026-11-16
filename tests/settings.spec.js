@@ -13,7 +13,7 @@ function fakeStorage(initial = {}) {
   };
 }
 
-test("settings round-trip and reject unknown values", () => {
+test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
   const storage = fakeStorage();
   expect(readSettings(storage)).toEqual(defaultSettings());
   const settings = {

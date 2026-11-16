@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-body.json" with { type: "json" };
 import { nativeMineBase, nativeMineBody } from "../src/armageddon/mine-body.js";
-test("mine base fields and physical setup match original constructors", () => {
+test("mine base fields and physical setup match original constructors", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(72);
   for (const [i, c] of fixture.cases.entries()) {
     expect(nativeMineBase(c.friction), `base ${i}`).toEqual(c.before);

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hitscan-body.json" with { type: "json" };
 import { nativeHitscanBody, nativeWormHitscanBodies } from "../src/armageddon/hitscan-body.js";
-test("nearest eligible body distance matches original x86 filtering and projections", () => {
+test("nearest eligible body distance matches original x86 filtering and projections", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(432);
   for (const row of fixture.cases) {
     expect(
@@ -18,7 +18,7 @@ test("nearest eligible body distance matches original x86 filtering and projecti
     ).toBe(row.distance);
   }
 });
-test("native selection keeps the nearest target and excludes the shooter", () => {
+test("native selection keeps the nearest target and excludes the shooter", { tag: "@logic" }, () => {
   const far = { x: 80 << 16, y: 0, type: 2 },
     near = { x: 30 << 16, y: 0, type: 2 },
     self = { x: 20 << 16, y: 0, type: 2, self: true };
@@ -31,7 +31,7 @@ test("native selection keeps the nearest target and excludes the shooter", () =>
   });
 });
 
-test("live hitscan adapter uses native centers and current registry categories", () => {
+test("live hitscan adapter uses native centers and current registry categories", { tag: "@logic" }, () => {
   const shooter = { x: 0, y: 80, hp: 100 };
   const standing = { x: 30, y: 80, hp: 100 };
   const hurt = { x: 40, y: 80, hp: 100, originalHurt: { state: 0x80 } };

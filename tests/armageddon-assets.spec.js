@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import { decodeSprite, spriteFrameRGBA } from '../src/armageddon/sprite.js';
 
-test('every original animation decodes with valid palette indices and opaque pixels', () => {
+test('every original animation decodes with valid palette indices and opaque pixels', { tag: "@logic" }, () => {
   const root = new URL('../public/armageddon/', import.meta.url);
   const names = JSON.parse(fs.readFileSync(new URL('sprites.json',root)));
   expect(names).toHaveLength(770);

@@ -6,7 +6,7 @@ const fixture = JSON.parse(
     new URL("./fixtures/armageddon/recoil.json", import.meta.url),
   ),
 );
-test("post-fire queues and recoil countdown match original x86", () => {
+test("post-fire queues and recoil countdown match original x86", { tag: "@logic" }, () => {
   expect(fixture.vectors).toHaveLength(355);
   expect(fixture.ticks).toHaveLength(1704);
   for (const v of fixture.vectors)

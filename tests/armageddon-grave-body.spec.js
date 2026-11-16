@@ -11,12 +11,12 @@ const environment = {
   gravity: 0x3d70,
   wind: 0,
 };
-test("grave body fields match original base and grave constructor instructions", () => {
+test("grave body fields match original base and grave constructor instructions", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(5);
   for (const row of fixture.cases)
     expect(nativeGraveBody(row.x, row.y, row.friction)).toEqual(row.body);
 });
-test("graves rise, fall and bounce on land without wind drift", () => {
+test("graves rise, fall and bounce on land without wind drift", { tag: "@logic" }, () => {
   let body = nativeGraveBody(100 << 16, 200 << 16);
   let rose = false,
     fell = false,
@@ -40,7 +40,7 @@ test("graves rise, fall and bounce on land without wind drift", () => {
     bounced: true,
   });
 });
-test("submerged graves use water acceleration and retire terrain collision", () => {
+test("submerged graves use water acceleration and retire terrain collision", { tag: "@logic" }, () => {
   let body = nativeGraveBody(100 << 16, 200 << 16);
   body.vy = 0;
   body = stepNativeGraveBody(body, { ...environment, waterY: 100 }, () => 0);

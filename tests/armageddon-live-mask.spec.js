@@ -4,7 +4,7 @@ import masks from "./fixtures/armageddon/collision-mask.json" with { type: "json
 import shapes from "../src/armageddon/collision-shapes.json" with { type: "json" };
 import { bodyBlocked, hitsWorm } from "../src/physics.js";
 
-test("runtime shapes retain original constructor pixels and anchors", () => {
+test("runtime shapes retain original constructor pixels and anchors", { tag: "@logic" }, () => {
   for (const { shape, params, planes, ...bounds } of masks.cases)
     expect(shapes.shapes[shape]).toEqual({
       ...bounds,
@@ -12,7 +12,7 @@ test("runtime shapes retain original constructor pixels and anchors", () => {
     });
 });
 
-test("live upward-coordinate terrain collision matches original native overlap", () => {
+test("live upward-coordinate terrain collision matches original native overlap", { tag: "@logic" }, () => {
   const terrains = fixture.terrains.map((t) => {
     const pixels = new Set(t.planes[0].points.map(([x, y]) => y * t.width + x));
     return {

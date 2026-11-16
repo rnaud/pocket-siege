@@ -6,7 +6,7 @@ const fixture = JSON.parse(
     new URL("./fixtures/armageddon/projectile-body.json", import.meta.url),
   ),
 );
-test("projectile physics configuration matches original constructor arithmetic", () => {
+test("projectile physics configuration matches original constructor arithmetic", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(432);
   for (const v of fixture.cases)
     expect(
@@ -20,7 +20,7 @@ const selections = JSON.parse(
     new URL("./fixtures/armageddon/projectile-selection.json", import.meta.url),
   ),
 );
-test("primary and secondary projectile selection matches native words and events", async () => {
+test("primary and secondary projectile selection matches native words and events", { tag: "@logic" }, async () => {
   const { nativeProjectileSelection } =
     await import("../src/armageddon/projectile-body.js");
   expect(selections.cases).toHaveLength(355);

@@ -4,7 +4,7 @@ import {
   nativeMineTimer,
   nativeMineInitialTimer,
 } from "../src/armageddon/mine-timer.js";
-test("mine arming, scan cadence, fuse and warnings match original timer block", () => {
+test("mine arming, scan cadence, fuse and warnings match original timer block", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(1728);
   for (const [i, c] of fixture.cases.entries()) {
     expect(
@@ -13,7 +13,7 @@ test("mine arming, scan cadence, fuse and warnings match original timer block", 
     ).toEqual({ body: c.after, calls: c.calls, expired: c.expired });
   }
 });
-test("default mine arms for four seconds then runs its three-second triggered fuse", () => {
+test("default mine arms for four seconds then runs its three-second triggered fuse", { tag: "@logic" }, () => {
   let body = nativeMineInitialTimer(),
     triggeredAt = 0,
     expiredAt = 0,

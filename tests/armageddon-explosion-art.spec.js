@@ -5,7 +5,7 @@ import {
   nativeExplosionArt,
 } from "../src/armageddon/explosion-art.js";
 import { nextVisualRandom } from "../src/armageddon/numeric.js";
-test("explosion artwork requests and no-repeat bag match original x86 sequences", () => {
+test("explosion artwork requests and no-repeat bag match original x86 sequences", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(112);
   for (const row of fixture.cases) {
     let state = row.seed;

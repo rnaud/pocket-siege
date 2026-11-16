@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/direct-hit-response.json" with { type: "json" };
 import { nativeDirectHitResponse } from "../src/armageddon/direct-hit-response.js";
 
-test("direct-hit receiver matches original exclusions, repetition, blood and health requests", () => {
+test("direct-hit receiver matches original exclusions, repetition, blood and health requests", { tag: "@logic" }, () => {
   for (const row of fixture.cases) {
     expect(
       nativeDirectHitResponse(

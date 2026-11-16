@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { nativeHitscanWeapon } from "../src/armageddon/hitscan-art.js";
 
-test("handgun reads original resource195 bullet and burst fields", () => {
+test("handgun reads original resource195 bullet and burst fields", { tag: "@logic" }, () => {
   const config = nativeHitscanWeapon("handgun");
   expect(config).toMatchObject({
     total: 6, interval: 500,

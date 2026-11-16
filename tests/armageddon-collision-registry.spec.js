@@ -3,7 +3,7 @@ import masks from "./fixtures/armageddon/collision-mask.json" with { type: "json
 import fixture from "./fixtures/armageddon/collision-registry.json" with { type: "json" };
 import { NativeCollisionRegistry } from "../src/armageddon/collision-registry.js";
 
-test("collision registry preserves native candidate order and overlap cache transitions", () => {
+test("collision registry preserves native candidate order and overlap cache transitions", { tag: "@logic" }, () => {
   const mask = masks.cases.find((m) => m.shape === 3);
   for (const [index, scenario] of fixture.cases.entries()) {
     const bodies = new Map(scenario.initial.map((b) => [b.id, { ...b, mask }]));

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json" };
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
-test("weapon release audio and casing choices match all original records", () => {
+test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(1278);
   for (const [i,c] of fixture.cases.entries())
     expect(nativeLaunchAudio(c.fields,c.body,(_,slot) => 1000+slot), `case ${i}`).toEqual({ calls:c.calls,casing:c.casing });

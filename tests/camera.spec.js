@@ -11,7 +11,7 @@ const worm = (overrides = {}) => ({
   ...overrides,
 });
 
-test("camera stays full while aiming and frames the action in flight", () => {
+test("camera stays full while aiming and frames the action in flight", { tag: "@logic" }, () => {
   expect(
     chooseCameraTarget({
       phase: "aim",
@@ -31,7 +31,7 @@ test("camera stays full while aiming and frames the action in flight", () => {
   expect(target.zoom).toBeLessThanOrEqual(1.35);
 });
 
-test("camera zooms out when the projectile is far from the shooter", () => {
+test("camera zooms out when the projectile is far from the shooter", { tag: "@logic" }, () => {
   const active = worm({ x: 100, y: 350 });
   const near = chooseCameraTarget({
     phase: "flight",
@@ -49,7 +49,7 @@ test("camera zooms out when the projectile is far from the shooter", () => {
   expect(far.zoom).toBeGreaterThanOrEqual(1);
 });
 
-test("camera follows the fastest knocked worm during settle", () => {
+test("camera follows the fastest knocked worm during settle", { tag: "@logic" }, () => {
   const active = worm({ x: 400, y: 300 });
   const target = chooseCameraTarget({
     phase: "settle",
@@ -64,7 +64,7 @@ test("camera follows the fastest knocked worm during settle", () => {
   expect(target.zoom).toBeGreaterThan(1);
 });
 
-test("camera view clamps to the world and preserves the world aspect", () => {
+test("camera view clamps to the world and preserves the world aspect", { tag: "@logic" }, () => {
   expect(cameraView(W / 2, H / 2, 1)).toEqual(FULL_VIEW);
   const corner = cameraView(0, 0, 1.32);
   expect(corner.x).toBe(0);

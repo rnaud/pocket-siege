@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hitscan-terrain.json" with { type: "json" };
 import { nativeHitscanTerrain } from "../src/armageddon/hitscan-terrain.js";
-test("terrain ray visits the exact original pixels and returns the original distance", () => {
+test("terrain ray visits the exact original pixels and returns the original distance", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(400);
   for (const row of fixture.cases) {
     const queries = [];
@@ -28,7 +28,7 @@ test("terrain ray visits the exact original pixels and returns the original dist
     });
   }
 });
-test("terrain ray catches thin distant walls and includes the muzzle and range boundary", () => {
+test("terrain ray catches thin distant walls and includes the muzzle and range boundary", { tag: "@logic" }, () => {
   expect(nativeHitscanTerrain(0, 0, 65536, 0, 1920, (x) => x === 1001)).toBe(
     1001,
   );

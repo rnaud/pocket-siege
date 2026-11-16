@@ -3,7 +3,7 @@ import fixture from "./fixtures/armageddon/projectile-detonation.json" with { ty
 import { nativeProjectileDetonation } from "../src/armageddon/projectile-detonation.js";
 import { MatchRandom } from "../src/armageddon/random.js";
 
-test("projectile blast packets, secondary dispatch and RNG match the executable", () => {
+test("projectile blast packets, secondary dispatch and RNG match the executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(288);
   for (const [i,c] of fixture.cases.entries()) {
     const rng = new MatchRandom(c.seed);

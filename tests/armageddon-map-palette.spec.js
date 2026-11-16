@@ -13,14 +13,14 @@ const snapshot = (p) => ({
   changed: [...p.changed],
   dirty: p.dirty,
 });
-test("native palette allocation reuses exact colors and preserves exhaustion", () => {
+test("native palette allocation reuses exact colors and preserves exhaustion", { tag: "@logic" }, () => {
   for (const c of fixture.allocations) {
     const palette = new NativeMapPalette(c.first, c.last);
     expect(c.values.map((rgb) => palette.add(rgb))).toEqual(c.results);
     expect(snapshot(palette)).toEqual(c.palette);
   }
 });
-test("all terrain theme palettes, platforms and rim colors match original Landgen", () => {
+test("all terrain theme palettes, platforms and rim colors match original Landgen", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(87);
   for (const c of fixture.cases) {
     const source = {};

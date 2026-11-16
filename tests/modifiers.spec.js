@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { MODIFIERS, modifierSettings } from "../src/modifiers.js";
 
-test("modifier presets expose gravity, blast and turn settings", () => {
+test("modifier presets expose gravity, blast and turn settings", { tag: "@logic" }, () => {
   expect(modifierSettings("standard")).toMatchObject({
     gravityScale: 1,
     blastScale: 1,

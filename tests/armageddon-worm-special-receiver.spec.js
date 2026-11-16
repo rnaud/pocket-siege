@@ -3,7 +3,7 @@ import fixture from "./fixtures/armageddon/worm-special-receiver.json" with { ty
 import ordinary from "./fixtures/armageddon/worm-receiver.json" with { type: "json" };
 import { nativeWormReceiver } from "../src/armageddon/worm-receiver.js";
 
-test("hurt and airborne receivers match original impulse, state, velocity and sound dispatch", () => {
+test("hurt and airborne receivers match original impulse, state, velocity and sound dispatch", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(995);
   for (const [i,c] of fixture.cases.entries()) {
     const e = c.environment;
@@ -21,7 +21,7 @@ test("hurt and airborne receivers match original impulse, state, velocity and so
   }
 });
 
-test("full receiver preserves the verified ordinary type2 branch", () => {
+test("full receiver preserves the verified ordinary type2 branch", { tag: "@logic" }, () => {
   for (const c of ordinary.cases) {
     const actual = nativeWormReceiver({ ...c.receiver, state: c.state }, { ...c.incoming, type: 2 }, c.side, {});
     expect([actual.receiver.vx, actual.receiver.vy]).toEqual(c.receiver_out);

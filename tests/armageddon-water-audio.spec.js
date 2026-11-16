@@ -9,7 +9,7 @@ const fixture = JSON.parse(
     new URL("./fixtures/armageddon/water-audio.json", import.meta.url),
   ),
 );
-test("water audio callbacks match original requests, suppression and queue capacity", () => {
+test("water audio callbacks match original requests, suppression and queue capacity", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(108);
   for (const v of fixture.cases) {
     const result = nativeWaterSound(

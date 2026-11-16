@@ -30,7 +30,7 @@ function collision(shape, queries) {
       : 0;
   };
 }
-test("pixel sweeps match original positions, contacts, time fractions and query order", () => {
+test("pixel sweeps match original positions, contacts, time fractions and query order", { tag: "@logic" }, () => {
   expect(fixture.sweeps).toHaveLength(432);
   for (const v of fixture.sweeps) {
     const queries = [];
@@ -49,7 +49,7 @@ test("pixel sweeps match original positions, contacts, time fractions and query 
     expect(queries).toEqual(v.queries);
   }
 });
-test("airborne force application matches original gravity, wind, drag and support queries", () => {
+test("airborne force application matches original gravity, wind, drag and support queries", { tag: "@logic" }, () => {
   expect(fixture.forces).toHaveLength(432);
   for (const v of fixture.forces) {
     const queries = [];
@@ -77,7 +77,7 @@ test("airborne force application matches original gravity, wind, drag and suppor
   }
 });
 
-test("browser sweep catches a one-pixel wall and retains its collision identity", async () => {
+test("browser sweep catches a one-pixel wall and retains its collision identity", { tag: "@logic" }, async () => {
   const { sweepProjectile } = await import("../src/physics.js");
   const queries = [];
   const result = sweepProjectile(
@@ -96,7 +96,7 @@ test("browser sweep catches a one-pixel wall and retains its collision identity"
   expect(queries.some(([x]) => Math.floor(x) === 5)).toBe(true);
 });
 
-test("simple-body bounce matches original axis response and both velocity cutoffs", () => {
+test("simple-body bounce matches original axis response and both velocity cutoffs", { tag: "@logic" }, () => {
   expect(fixture.bounces).toHaveLength(960);
   for (const v of fixture.bounces) {
     const result = nativeSimpleBounce(
@@ -117,7 +117,7 @@ test("simple-body bounce matches original axis response and both velocity cutoff
   }
 });
 
-test("water entry and skimming match original thresholds, event and collision queries", () => {
+test("water entry and skimming match original thresholds, event and collision queries", { tag: "@logic" }, () => {
   expect(fixture.water).toHaveLength(224);
   for (const v of fixture.water) {
     const queries = [];
@@ -147,7 +147,7 @@ test("water entry and skimming match original thresholds, event and collision qu
   }
 });
 
-test("simple-body tick matches native force, water, two-contact, rotation and sleep ordering", () => {
+test("simple-body tick matches native force, water, two-contact, rotation and sleep ordering", { tag: "@logic" }, () => {
   expect(fixture.ticks).toHaveLength(192);
   for (const v of fixture.ticks) {
     const queries = [],
@@ -189,7 +189,7 @@ test("simple-body tick matches native force, water, two-contact, rotation and sl
   }
 });
 
-test("native wake predicate matches all combinations of motion flags", () => {
+test("native wake predicate matches all combinations of motion flags", { tag: "@logic" }, () => {
   expect(fixture.awake).toHaveLength(32);
   for (const v of fixture.awake) {
     const [vx, vy, submerged, contact, moving] = v.values;

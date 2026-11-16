@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-state.json" with { type: "json" };
 import { nativeMineStateEvents } from "../src/armageddon/mine-state.js";
 
-test("mine physical-state detonation matches original executable", () => {
+test("mine physical-state detonation matches original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(48);
   for (const [i, c] of fixture.cases.entries()) {
     expect(nativeMineStateEvents(c.body, c.damage), `case ${i}`).toEqual(

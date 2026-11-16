@@ -9,7 +9,7 @@ import {
 } from "../src/armageddon/hurt-flight.js";
 import { nativeSceneCollision } from "../src/armageddon/collision-scene.js";
 
-test("worm-to-worm receiver gate and momentum match the original executable", () => {
+test("worm-to-worm receiver gate and momentum match the original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(200);
   for (const c of fixture.cases) {
     expect(
@@ -60,7 +60,7 @@ function environment(terrain, worms) {
   };
 }
 
-test("registered hurt worm excludes itself and other hurt types", () => {
+test("registered hurt worm excludes itself and other hurt types", { tag: "@logic" }, () => {
   const a = worm(100, 200, 600),
     b = worm(118, 200);
   attachNativeHurtFlight(a, height);
@@ -77,7 +77,7 @@ test("registered hurt worm excludes itself and other hurt types", () => {
   expect(b.vx).toBe(0);
 });
 
-test("hurt contact imparts horizontal velocity and state to a standing receiver", () => {
+test("hurt contact imparts horizontal velocity and state to a standing receiver", { tag: "@logic" }, () => {
   const a = worm(100, 200, 600), b = worm(118, 200, 0, 0, null);
   const result = environment({ solid: () => false }, [a, b]).step(a);
   expect(a.vx).toBe(600);
@@ -86,14 +86,14 @@ test("hurt contact imparts horizontal velocity and state to a standing receiver"
   expect(result.events.some(c => c.operation === "voice" && c.receiverHit === 3)).toBe(true);
 });
 
-test("frozen receiver declines the hurt impulse and causes native incoming bounce", () => {
+test("frozen receiver declines the hurt impulse and causes native incoming bounce", { tag: "@logic" }, () => {
   const a = worm(100, 200, 600), b = { ...worm(118, 200, 0, 0, null), frozen: true };
   environment({ solid: () => false }, [a, b]).step(a);
   expect(a.vx).toBeLessThan(0);
   expect(b.vx).toBe(0);
 });
 
-test("falling onto a worm uses type2 contact without terrain fall damage or twang", () => {
+test("falling onto a worm uses type2 contact without terrain fall damage or twang", { tag: "@logic" }, () => {
   const a = worm(100, 230, 0, -600, 0x7f),
     b = worm(100, 200, 0, 0, null);
   const env = environment({ solid: () => false }, [a, b]);

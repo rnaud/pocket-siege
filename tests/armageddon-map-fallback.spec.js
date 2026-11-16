@@ -29,7 +29,7 @@ const hashes = (layers) =>
       createHash("sha256").update(image.pixels).digest("hex"),
     ]),
   );
-test("fallback masks and all three carved layers match native Landgen pixels", () => {
+test("fallback masks and all three carved layers match native Landgen pixels", { tag: "@logic" }, () => {
   const masks = nativeMapFallbackMasks();
   expect([...masks.hole.pixels]).toEqual(fixture.masks.hole);
   expect([...masks.rim.pixels]).toEqual(fixture.masks.rim);
@@ -46,7 +46,7 @@ test("fallback masks and all three carved layers match native Landgen pixels", (
     expect(hashes(l), JSON.stringify(c)).toEqual(c.hashes);
   }
 });
-test("fallback search, RNG, carving and platform blits match original executable", () => {
+test("fallback search, RNG, carving and platform blits match original executable", { tag: "@logic" }, () => {
   const masks = nativeMapFallbackMasks();
   const platform = {
     width: 13,

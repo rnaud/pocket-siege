@@ -19,7 +19,7 @@ const worm = (x, team = 0) => ({
   knocked: false,
 });
 
-test("walking sweeps walls and releases support at a ledge", () => {
+test("walking sweeps walls and releases support at a ledge", { tag: "@logic" }, () => {
   expect(
     clearBodyPath({ solid: (x, y) => x >= 140 && x < 142 }, 100, 310, 200, 310),
   ).toBe(false);
@@ -39,7 +39,7 @@ test("walking sweeps walls and releases support at a ledge", () => {
   expect(edge.x).toBeLessThan(145);
 });
 
-test("AI retreats toward cover without walking off a cliff", () => {
+test("AI retreats toward cover without walking off a cliff", { tag: "@logic" }, () => {
   const terrain = { solid: (x, y) => x < 240 && y < 300 };
   const me = worm(210),
     enemy = worm(300, 1);
@@ -49,7 +49,7 @@ test("AI retreats toward cover without walking off a cliff", () => {
   expect((alone?.time ?? 0) * 42).toBeLessThan(40);
 });
 
-test("rock cover attenuates blasts and AI penalizes friendly damage", () => {
+test("rock cover attenuates blasts and AI penalizes friendly damage", { tag: "@logic" }, () => {
   const open = { solid: () => false },
     rock = { solid: (x) => x > 420 && x < 455 };
   expect(blastExposure(open, 400, 327, 480, 327)).toBe(1);
@@ -62,7 +62,7 @@ test("rock cover attenuates blasts and AI penalizes friendly damage", () => {
   expect(scoreBlast(point, "rocket", [me, friend], me)).toBeLessThan(0);
 });
 
-test("maps preserve paired elevations and offer galleries and breakable bridges", () => {
+test("maps preserve paired elevations and offer galleries and breakable bridges", { tag: "@logic" }, () => {
   for (const layout of [
     "highlands",
     "archipelago",
@@ -89,7 +89,7 @@ test("maps preserve paired elevations and offer galleries and breakable bridges"
   expect(bridge.solid(600, top - 5)).toBe(false);
 });
 
-test("fragment fans spread and opposite airstrike paths hit the same footprint", () => {
+test("fragment fans spread and opposite airstrike paths hit the same footprint", { tag: "@logic" }, () => {
   for (const kind of ["mortar", "cluster"]) {
     const fan = fragments(kind);
     expect(fan.length).toBeGreaterThanOrEqual(3);

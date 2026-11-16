@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/death-cue.json" with { type: "json" };
 import { nativeDeathCue } from "../src/armageddon/death-cue.js";
-test("death voice threshold, random consumption and completion match original x86", () => {
+test("death voice threshold, random consumption and completion match original x86", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(216);
   for (const row of fixture.cases) {
     let calls = 0;

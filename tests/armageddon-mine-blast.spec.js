@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-blast.json" with { type: "json" };
 import { nativeMineBlast } from "../src/armageddon/mine-blast.js";
 
-test("mine blast event matches original executable damage and body impulses", () => {
+test("mine blast event matches original executable damage and body impulses", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(432);
   for (const [i, c] of fixture.cases.entries()) {
     expect(nativeMineBlast(c.before, c.packet, c.extent), `case ${i}`).toEqual({

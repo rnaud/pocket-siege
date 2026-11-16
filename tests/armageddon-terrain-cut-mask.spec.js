@@ -4,14 +4,14 @@ import { decodeImage } from '../src/armageddon/image.js';
 import { nativeTerrainCutMask, carveNativeToolMask } from '../src/armageddon/terrain-cut-mask.js';
 import fixture from './fixtures/armageddon/terrain-cut-mask.json' with {type:'json'};
 
-test('tool cutout and shaded rim match original mask constructor', () => {
+test('tool cutout and shaded rim match original mask constructor', { tag: "@logic" }, () => {
   const image = decodeImage(readFileSync('public/armageddon/media/gfx/gfx/masks.img'));
   expect(fixture.cases).toHaveLength(4);
   for (const {region,...expected} of fixture.cases)
     expect(nativeTerrainCutMask(image,region)).toEqual(expected);
 });
 
-test('tool mask preserves its native anchor, clips at edges and respects locked terrain', () => {
+test('tool mask preserves its native anchor, clips at edges and respects locked terrain', { tag: "@logic" }, () => {
   const mask = fixture.cases[0], width=64, height=64;
   for (const [x,y] of [[32,32],[0,0],[63,63],[-100,32]]) {
     const terrain = new Uint8Array(width*height).fill(1), rim = new Uint8Array(width*height);

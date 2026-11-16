@@ -4,7 +4,7 @@ import { nativeWormJumpLaunch } from "../src/armageddon/jump.js";
 const fixture = JSON.parse(
   fs.readFileSync(new URL("./fixtures/armageddon/jump.json", import.meta.url)),
 );
-test("jump launch matches native preparation gate, trig, impulse and inherited motion", () => {
+test("jump launch matches native preparation gate, trig, impulse and inherited motion", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(1680);
   for (const v of fixture.cases) {
     if (v.error) {

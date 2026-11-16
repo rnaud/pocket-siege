@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/worm-label.json" with { type: "json" };
 import { nativeWormLabelFont } from "../src/armageddon/worm-label.js";
 
-test("worm label font and blink match original executable", () => {
+test("worm label font and blink match original executable", { tag: "@logic" }, () => {
   for (const c of fixture.cases)
     expect(nativeWormLabelFont(c.color, c.selected, c.suppressed, c.tick)).toBe(
       c.font,

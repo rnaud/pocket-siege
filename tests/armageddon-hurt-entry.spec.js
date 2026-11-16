@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hurt-entry.json" with { type: "json" };
 import { nativeHurtEntry } from "../src/armageddon/hurt-entry.js";
-test("hurt entries match original animation queue and angle reset", () => {
+test("hurt entries match original animation queue and angle reset", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeHurtEntry(row.state, row.angle)).toEqual(row.result);
 });

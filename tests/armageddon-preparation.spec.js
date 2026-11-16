@@ -9,7 +9,7 @@ const fixture = JSON.parse(
     new URL("./fixtures/armageddon/preparation.json", import.meta.url),
   ),
 );
-test("preparation queues and release timing match original x86", () => {
+test("preparation queues and release timing match original x86", { tag: "@logic" }, () => {
   expect(fixture.vectors).toHaveLength(480);
   expect(fixture.ticks).toHaveLength(3195);
   expect(fixture.reload_sound).toEqual({

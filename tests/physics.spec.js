@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  Terrain,
   shotGeometry,
   stepWorm,
   blastImpulse,
@@ -21,7 +22,7 @@ const worm = (x = 0, y = 10) => ({
   ground: false,
   knocked: false,
 });
-test("blast direction is radial, preserves momentum, and weaker with distance", () => {
+test("blast direction is radial, preserves momentum, and weaker with distance", { tag: "@logic" }, () => {
   const a = worm(30, 100),
     b = worm(80, 100),
     below = worm(0, 40);
@@ -37,7 +38,7 @@ test("blast direction is radial, preserves momentum, and weaker with distance", 
   blastImpulse(left, 0, 117, 130);
   expect(left.vx).toBeLessThan(0);
 });
-test("side hits carry a worm well away from the blast", () => {
+test("side hits carry a worm well away from the blast", { tag: "@logic" }, () => {
   const w = worm(100, 300);
   w.ground = true;
   const startX = w.x;
@@ -46,7 +47,7 @@ test("side hits carry a worm well away from the blast", () => {
   for (let i = 0; i < 180; i++) stepWorm(w, empty, 1 / 120);
   expect(w.x - startX).toBeGreaterThan(120);
 });
-test("airborne knockback follows gravity without horizontal drag or steering", () => {
+test("airborne knockback follows gravity without horizontal drag or steering", { tag: "@logic" }, () => {
   const w = worm(100, 300);
   w.vx = 100;
   w.vy = 80;
@@ -59,7 +60,7 @@ test("airborne knockback follows gravity without horizontal drag or steering", (
   expect(walkWorm(w, empty, 1, 0.1)).toBe(false);
   expect(w.x).toBe(x);
 });
-test("swept body rebounds from walls and ceilings without tunneling", () => {
+test("swept body rebounds from walls and ceilings without tunneling", { tag: "@logic" }, () => {
   const terrain = { solid: (x, y) => x >= 100 || y >= 200 };
   const w = worm(30, 100);
   w.vx = 1000;
@@ -76,7 +77,7 @@ test("swept body rebounds from walls and ceilings without tunneling", () => {
   expect(bodyBlocked(terrain, up.x, up.y)).toBe(false);
   expect(up.vy).toBeLessThan(0);
 });
-test("hard falls cause damage and settle; gentle landings do not", () => {
+test("hard falls cause damage and settle; gentle landings do not", { tag: "@logic" }, () => {
   const high = worm(0, 260),
     low = worm(50, 30);
   let highDamage = 0,
@@ -94,7 +95,7 @@ test("hard falls cause damage and settle; gentle landings do not", () => {
   expect(bodyBlocked(floor, high.x, high.y)).toBe(false);
   expect(bodyBlocked(floor, high.x, high.y - 1)).toBe(true);
 });
-test("contact friction stops sliding and projectile hits include the head", () => {
+test("contact friction stops sliding and projectile hits include the head", { tag: "@logic" }, () => {
   const w = worm(0, 10);
   w.vx = 60;
   w.ground = true;
@@ -105,7 +106,7 @@ test("contact friction stops sliding and projectile hits include the head", () =
   expect(hitsWorm(w, w.x, w.y + 8)).toBe(true);
   expect(hitsWorm(w, w.x, w.y + 10)).toBe(false);
 });
-test("charge power grows with hold duration, caps, and bounce reflects normal", () => {
+test("charge power grows with hold duration, caps, and bounce reflects normal", { tag: "@logic" }, () => {
   expect(chargePower(0.2)).toBe((8730 / 65536) * 100);
   expect(chargePower(1)).toBe((43650 / 65536) * 100);
   expect(chargePower(1.5)).toBe((65475 / 65536) * 100);
@@ -117,7 +118,7 @@ test("charge power grows with hold duration, caps, and bounce reflects normal", 
   expect(p.vx).toBeLessThan(80);
 });
 
-test("shot origin is independent of viewport and sprite scale", () => {
+test("shot origin is independent of viewport and sprite scale", { tag: "@logic" }, () => {
   for (const angle of [-80, 0, 45, 90, 135, 230]) {
     const a = shotGeometry(worm(100, 100), angle, 1, 64);
     const b = shotGeometry(worm(100, 100), angle, 0.4, 96);
@@ -126,13 +127,13 @@ test("shot origin is independent of viewport and sprite scale", () => {
   }
 });
 
-test("low gravity scales projectile and body gravity", () => {
+test("low gravity scales projectile and body gravity", { tag: "@logic" }, () => {
   const p = { x: 0, y: 0, vx: 0, vy: 0 };
   integrate(p, 1, 0, 0.5);
   expect(p.vy).toBeCloseTo(-GRAVITY * 0.5, 5);
 });
 
-test("landing reports impact speed before grounded velocity is cleared", () => {
+test("landing reports impact speed before grounded velocity is cleared", { tag: "@logic" }, () => {
   const w = worm(0, 11);
   w.vy = -300;
   const result = stepWorm(w, floor, 1 / 50);
@@ -140,4 +141,16 @@ test("landing reports impact speed before grounded velocity is cleared", () => {
   expect(result.landingSpeed).toBeGreaterThan(300);
   expect(w.vy).toBe(0);
   expect(stepWorm(w, floor, 1 / 50).landingSpeed).toBe(0);
+});
+
+test("terrain craters remove solid ground and preserve distant terrain", { tag: "@logic" }, () => {
+  const t = new Terrain(42),
+    x = 400,
+    y = t.surface(x) - 15;
+  expect(t.solid(x, y)).toBe(true);
+  const other = t.surface(800);
+  expect(t.carve(x, y, 50)).toBeGreaterThan(1000);
+  expect(t.solid(x, y)).toBe(false);
+  expect(t.surface(800)).toBe(other);
+  expect(t.carve(x, y, 50)).toBe(0);
 });

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/crater-rim.json" with { type: "json" };
 import { nativeRimPixel } from "../src/armageddon/crater-mask.js";
-test("rim pixels preserve air and unmasked colours exactly like the native bitmap blit", () => {
+test("rim pixels preserve air and unmasked colours exactly like the native bitmap blit", { tag: "@logic" }, () => {
   for (const row of fixture.cases) {
     expect(
       row.before.map((v, i) =>

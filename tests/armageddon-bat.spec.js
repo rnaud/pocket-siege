@@ -3,13 +3,13 @@ import fixture from './fixtures/armageddon/bat.json' with {type:'json'};
 import {nativeBatRequest} from '../src/armageddon/bat.js';
 import {nativeAreaDamage} from '../src/armageddon/area-damage.js';
 
-test('bat area request matches original executable for aim, facing and overflow', () => {
+test('bat area request matches original executable for aim, facing and overflow', { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(120);
   for (const r of fixture.cases)
     expect(nativeBatRequest(r.record,r.x,r.y,r.vx,r.vy,r.facing)).toEqual(r.request);
 });
 
-test('bat hits all eligible bodies ahead, excludes self and rear, emits impact per recipient', () => {
+test('bat hits all eligible bodies ahead, excludes self and rear, emits impact per recipient', { tag: "@logic" }, () => {
   const request = nativeBatRequest({'0x70':30,'0x74':125},100<<16,100<<16,46340,-46340,1);
   const bodies = [100,112,140,152,90].map((x,i) => ({x:x<<16,y:100<<16,type:2,self:i===0}));
   const calls = nativeAreaDamage(bodies,request);

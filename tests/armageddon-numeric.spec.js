@@ -13,7 +13,7 @@ const fixture = JSON.parse(
   ),
 );
 
-test("numeric port matches 317 cases executed by original x86 routines", () => {
+test("numeric port matches 317 cases executed by original x86 routines", { tag: "@logic" }, () => {
   let logic, visual;
   for (const v of fixture.vectors) {
     if (v.kind === "rng") {
@@ -32,7 +32,7 @@ test("numeric port matches 317 cases executed by original x86 routines", () => {
   expect(() => fixedDivide(0x7fffffff, 1)).toThrow(RangeError);
 });
 
-test("cosmetic draws cannot change gameplay randomness; snapshots resume exactly", () => {
+test("cosmetic draws cannot change gameplay randomness; snapshots resume exactly", { tag: "@logic" }, () => {
   const a = new MatchRandom(78961),
     b = new MatchRandom(78961);
   for (let frame = 0; frame < 100; frame++) {

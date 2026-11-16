@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import bank from "../src/armageddon/water-sprite-ids.json" with { type: "json" };
 
-test("water descriptor table resolves every native sprite to its original file", () => {
+test("water descriptor table resolves every native sprite to its original file", { tag: "@logic" }, () => {
   expect(bank.table).toBe("00566E78");
   expect(Object.keys(bank.sprites)).toHaveLength(74);
   for (const { name } of Object.values(bank.sprites))

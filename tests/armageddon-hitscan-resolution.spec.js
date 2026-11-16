@@ -3,7 +3,7 @@ import fixture from "./fixtures/armageddon/hitscan-resolution.json" with { type:
 import { nativeHitscanResolution } from "../src/armageddon/hitscan-resolution.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 
-test("hit and miss packets, damage variation and RNG match original executable", () => {
+test("hit and miss packets, damage variation and RNG match original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(1080);
   for (const row of fixture.cases) {
     let state = row.seed;

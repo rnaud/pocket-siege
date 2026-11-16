@@ -20,7 +20,7 @@ function fakeStorage(initial = {}) {
   };
 }
 
-test("record defaults, round trips and survives malformed storage", () => {
+test("record defaults, round trips and survives malformed storage", { tag: "@logic" }, () => {
   const storage = fakeStorage();
   expect(readRecord(storage)).toEqual(defaultRecord());
   const won = applyMatchResult(defaultRecord(), { won: true, ai: true });
@@ -31,7 +31,7 @@ test("record defaults, round trips and survives malformed storage", () => {
   expect(readRecord(storage)).toEqual(defaultRecord());
 });
 
-test("daily seed is stable per day and changes the next day", () => {
+test("daily seed is stable per day and changes the next day", { tag: "@logic" }, () => {
   const a = dailySeed(new Date(2026, 0, 2)),
     b = dailySeed(new Date(2026, 0, 2)),
     c = dailySeed(new Date(2026, 0, 3));
@@ -43,7 +43,7 @@ test("daily seed is stable per day and changes the next day", () => {
   expect(c.seed).not.toBe(a.seed);
 });
 
-test("match results update streaks, daily status and local play counts", () => {
+test("match results update streaks, daily status and local play counts", { tag: "@logic" }, () => {
   const base = defaultRecord();
   const win = applyMatchResult(base, { won: true, ai: true });
   expect(win).toMatchObject({ played: 1, wins: 1, losses: 0, streak: 1 });
@@ -66,7 +66,7 @@ test("match results update streaks, daily status and local play counts", () => {
   expect(dailyStatus(daily, "2026-01-03")).toBe("ONE SEEDED ISLAND A DAY");
 });
 
-test("personal bests only move upward", () => {
+test("personal bests only move upward", { tag: "@logic" }, () => {
   const first = recordBest(defaultRecord(), { bestHit: 64.4, longest: 512.8 });
   expect(first.bestHit).toBe(64);
   expect(first.longest).toBe(513);
@@ -75,7 +75,7 @@ test("personal bests only move upward", () => {
   expect(lower.longest).toBe(513);
 });
 
-test("series wins reach a two-win target and ignore invalid winners", () => {
+test("series wins reach a two-win target and ignore invalid winners", { tag: "@logic" }, () => {
   let wins = [0, 0];
   wins = nextSeriesWins(wins, 0);
   expect(wins).toEqual([1, 0]);
@@ -87,7 +87,7 @@ test("series wins reach a two-win target and ignore invalid winners", () => {
   expect(nextSeriesWins([0, 0], null)).toEqual([0, 0]);
 });
 
-test("pickups heal with a cap and add limited ammo without mutating the loadout", () => {
+test("pickups heal with a cap and add limited ammo without mutating the loadout", { tag: "@logic" }, () => {
   const loadout = { grenade: 2, mortar: 2, sticky: 2 };
   expect(applyPickup("health", 50, loadout)).toEqual({
     hp: 75,

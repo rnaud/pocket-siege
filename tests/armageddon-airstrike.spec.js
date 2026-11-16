@@ -5,7 +5,7 @@ import {
   nativeAirstrikeTick,
 } from "../src/armageddon/airstrike.js";
 
-test("airstrike approach and missile payloads match the original aircraft task", () => {
+test("airstrike approach and missile payloads match the original aircraft task", { tag: "@logic" }, () => {
   expect(fixture.initial).toHaveLength(16);
   expect(fixture.cases).toHaveLength(1920);
   for (const c of fixture.initial)
@@ -40,7 +40,7 @@ import {
   stepNativeAirstrike,
 } from "../src/armageddon/projectile-runtime.js";
 for (const [kind, carrierId, spriteId, damage, push, offset, timer] of [["airstrike", 673, 649, 30, 115, 50, 9000], ["postal", 675, 651, 50, 100, 0, 20000]])
-test(`live ${kind} adapter releases five original missile bodies on consecutive ticks`, () => {
+test(`live ${kind} adapter releases five original missile bodies on consecutive ticks`, { tag: "@logic" }, () => {
   for (const direction of [-1, 1]) {
     const strike = createNativeAirstrike(600, 300, direction, 0, 650, 1, kind);
     expect(strike.sprite).toBe(carrierId);

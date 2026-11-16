@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/worm-camera.json" with { type: "json" };
 import { nativeWormCameraRequest } from "../src/armageddon/camera-priority.js";
-test("worm camera requests match active, motion, drowning and visibility branches", () => {
+test("worm camera requests match active, motion, drowning and visibility branches", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(768);
   for (const [i, c] of fixture.cases.entries())
     expect(

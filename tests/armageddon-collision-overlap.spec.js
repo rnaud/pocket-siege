@@ -5,7 +5,7 @@ import {
   nativeCollisionOverlap,
   nativeCollisionBitmapOverlap,
 } from "../src/armageddon/collision-mask.js";
-test("mask overlap matches native aligned words, clipping and reversed operands", () => {
+test("mask overlap matches native aligned words, clipping and reversed operands", { tag: "@logic" }, () => {
   const worm = masks.cases.find((m) => m.shape === 3);
   for (const r of fixture.cases) {
     const terrain = fixture.terrains[r.pattern];
@@ -18,7 +18,7 @@ test("mask overlap matches native aligned words, clipping and reversed operands"
   }
 });
 
-test("terrain bitmap adapter matches original overlap without reading clipped pixels", () => {
+test("terrain bitmap adapter matches original overlap without reading clipped pixels", { tag: "@logic" }, () => {
   const worm = masks.cases.find((m) => m.shape === 3);
   const terrains = fixture.terrains.map((terrain) => {
     const pixels = new Set(

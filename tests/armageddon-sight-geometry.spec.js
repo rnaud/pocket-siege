@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/sight-geometry.json" with { type: "json" };
 import { nativeSightGeometry } from "../src/armageddon/sight-geometry.js";
-test("native sight coordinates match original trig and offset instructions", () => {
+test("native sight coordinates match original trig and offset instructions", { tag: "@logic" }, () => {
   for (const r of fixture.cases)
     expect(nativeSightGeometry(r.x, r.y, r.aim, r.facing, r.opening)).toEqual(
       r.result,

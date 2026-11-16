@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/blood.json" with { type: "json" };
 import { nativeBloodBurst } from "../src/armageddon/blood.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
-test("blood particle packets and logic RNG match original emitter", () => {
+test("blood particle packets and logic RNG match original emitter", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(96);
   for (const row of fixture.cases) {
     let state = row.seed;

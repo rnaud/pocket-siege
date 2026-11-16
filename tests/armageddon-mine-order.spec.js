@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-order.json" with { type: "json" };
 import { NativeRenderOrder } from "../src/armageddon/render-order.js";
 
-test("shared render order initialization and mine allocation/release match original executable", () => {
+test("shared render order initialization and mine allocation/release match original executable", { tag: "@logic" }, () => {
   const pool = new NativeRenderOrder();
   const snapshot = () => ({
     free: pool.free,

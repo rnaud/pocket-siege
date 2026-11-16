@@ -4,11 +4,11 @@ import receivers from './fixtures/armageddon/axe-receiver.json' with {type:'json
 import {nativeAxeTick} from '../src/armageddon/axe.js';
 import {nativeDirectHitResponse} from '../src/armageddon/direct-hit-response.js';
 
-test('Axe animation thresholds, queues and hit windows match original executable', () => {
+test('Axe animation thresholds, queues and hit windows match original executable', { tag: "@logic" }, () => {
   expect(ticks.cases).toHaveLength(288);
   for (const r of ticks.cases) expect(nativeAxeTick(r.body)).toEqual(r.calls);
 });
-test('Axe percentage damage matches original receiver including 1HP and immunity', () => {
+test('Axe percentage damage matches original receiver including 1HP and immunity', { tag: "@logic" }, () => {
   expect(receivers.cases).toHaveLength(1120);
   for (const r of receivers.cases) expect(nativeDirectHitResponse({
     state:r.state,fieldB0:r.flag,seen:r.seen,vx:-30000,vy:500000,x:100000,y:200000,

@@ -16,7 +16,7 @@ const fixture = JSON.parse(
     new URL("tests/fixtures/armageddon/terrain-masks.json", root),
   ),
 );
-test("terrain masks match original Landgen for every listed object and boundary case", () => {
+test("terrain masks match original Landgen for every listed object and boundary case", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(553);
   for (const entry of fixture.cases) {
     const image = entry.asset
@@ -74,7 +74,7 @@ test("terrain masks match original Landgen for every listed object and boundary 
     expect(scans, entry.asset || "synthetic").toEqual(entry.scans);
   }
 });
-test("ordered terrain definitions preserve their six original fields and source bytes", () => {
+test("ordered terrain definitions preserve their six original fields and source bytes", { tag: "@logic" }, () => {
   expect(Object.keys(definitions)).toHaveLength(29);
   let count = 0;
   for (const [theme, data] of Object.entries(definitions))

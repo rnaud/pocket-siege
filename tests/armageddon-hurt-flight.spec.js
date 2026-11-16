@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { stepNativeHurtFlight } from "../src/armageddon/hurt-flight.js";
 
-test("native hurt flight reaches steep-fall recovery on a flat floor", () => {
+test("native hurt flight reaches steep-fall recovery on a flat floor", { tag: "@logic" }, () => {
   const worm = {
     x: 100,
     y: 300,

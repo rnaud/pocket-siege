@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeHUDFrame } from "../src/armageddon/hud-frame.js";
-test("HUD frame drawing matches original executable requests", () => {
+test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
   for (const c of fixture.cases)
     expect(nativeHUDFrame(c.width, c.height, 11, 22, 33)).toEqual(c.calls);
 });

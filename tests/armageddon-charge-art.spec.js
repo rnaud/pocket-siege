@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/charge-art.json" with { type: "json" };
 import { nativeChargeBlobs } from "../src/armageddon/charge-art.js";
-test("charge blob requests match original x86 renderer", () => {
+test("charge blob requests match original x86 renderer", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeChargeBlobs(row.power, row.x, row.y, row.dx, row.dy)).toEqual(
       row.requests,

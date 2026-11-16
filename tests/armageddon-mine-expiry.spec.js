@@ -5,7 +5,7 @@ import {
   nativeMineExpiry,
 } from "../src/armageddon/mine-expiry.js";
 import { MatchRandom } from "../src/armageddon/random.js";
-test("mine dud selection, blast packets and smoke match original expiry dispatch", () => {
+test("mine dud selection, blast packets and smoke match original expiry dispatch", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(576);
   for (const [i, c] of fixture.cases.entries()) {
     const random = new MatchRandom(c.seed);

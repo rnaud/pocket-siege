@@ -28,7 +28,7 @@ async function start(page, kind) {
 }
 
 for (const [kind, total, spread, mode] of [["uzi", 10, 15, 5], ["minigun", 20, 25, 3]]) {
-  test(`${kind} uses original burst and bullet fields`, () => {
+  test(`${kind} uses original burst and bullet fields`, { tag: "@logic" }, () => {
     expect(nativeHitscanWeapon(kind)).toMatchObject({
       total, interval: 0, record: { "0x7c": spread },
       resolution: { mode, damage: 5, push: 100, variance: 0 },
@@ -85,7 +85,7 @@ test("pausing an automatic burst stops audio and resumes remaining bullets", asy
   expect(await page.evaluate(() => window.weaponLoops)).toEqual([{ stopped: true }, { stopped: true }]);
 });
 
-test("bullet knockback follows original burst ordinal rather than full strength", () => {
+test("bullet knockback follows original burst ordinal rather than full strength", { tag: "@logic" }, () => {
   for (const [kind, total] of [["handgun", 6], ["uzi", 10], ["minigun", 20], ["shotgun", 1]]) {
     expect(nativeHitscanWeapon(kind).resolution).toMatchObject({ impulseNumerator: 1, impulseDenominator: total });
     for (let ordinal = 1; ordinal <= total; ordinal++) {

@@ -13,7 +13,7 @@ const ids = JSON.parse(
   ),
 ).sprites;
 
-test("Freeze targets match original dispatch and animation queue execution", () => {
+test("Freeze targets match original dispatch and animation queue execution", { tag: "@logic" }, () => {
   for (const v of fixture.dispatch) {
     const worms = Array.from({ length: 6 }, (_, team) => ({
       team,
@@ -48,7 +48,7 @@ test("Freeze targets match original dispatch and animation queue execution", () 
   expect(ids[0x248].name).toBe("wicestnd");
 });
 
-test("frozen blast response suppresses horizontal push but retains falling motion", () => {
+test("frozen blast response suppresses horizontal push but retains falling motion", { tag: "@logic" }, () => {
   const worm = { x: 20, y: 100, vx: 80, vy: -5, frozen: 1 };
   const factor = blastImpulse(worm, 0, 100, 100);
   expect(factor).toBeGreaterThan(0);

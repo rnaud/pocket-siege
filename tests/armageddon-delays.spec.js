@@ -13,7 +13,7 @@ const fixture = JSON.parse(
   ),
 );
 
-test("countdown matches original x86 across banks, bypass and overflow", () => {
+test("countdown matches original x86 across banks, bypass and overflow", { tag: "@logic" }, () => {
   expect(fixture.vectors).toHaveLength(16);
   for (const v of fixture.vectors) {
     expect(
@@ -30,7 +30,7 @@ test("countdown matches original x86 across banks, bypass and overflow", () => {
   expect(ammoFor({ shotgun: -1 }, "shotgun", delayed)).toBe(0);
 });
 
-test("saved delays validate values and weapon identities", () => {
+test("saved delays validate values and weapon identities", { tag: "@logic" }, () => {
   const saved = readSettings({
     getItem: () =>
       JSON.stringify({
@@ -47,7 +47,7 @@ test("saved delays validate values and weapon identities", () => {
   expect(saved.weaponDelays).toEqual({ rocket: 1, shotgun: -1 });
 });
 
-test("AI cannot select delayed weapons even with unlimited stock", () => {
+test("AI cannot select delayed weapons even with unlimited stock", { tag: "@logic" }, () => {
   const me = { team: 1, hp: 100 };
   expect(
     planTurn({

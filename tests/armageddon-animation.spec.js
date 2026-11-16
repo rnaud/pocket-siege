@@ -66,7 +66,7 @@ for (const group of [0, 1, 2])
     });
   });
 
-test("native sampler, metadata and animation queue match original x86", () => {
+test("native sampler, metadata and animation queue match original x86", { tag: "@logic" }, () => {
   for (const v of fixture.samples)
     expect(
       nativeSpriteFrame(v.count, v.flags, v.progress),
@@ -106,7 +106,7 @@ test("native sampler, metadata and animation queue match original x86", () => {
   }
 });
 
-test("weapon animation selection matches all 71 initialized native records", () => {
+test("weapon animation selection matches all 71 initialized native records", { tag: "@logic" }, () => {
   expect(weapons.vectors).toHaveLength(71);
   for (const v of weapons.vectors)
     expect(nativeWeaponAnimation(v.fields), `weapon ${v.weapon_id}`).toBe(
@@ -114,7 +114,7 @@ test("weapon animation selection matches all 71 initialized native records", () 
     );
 });
 
-test("native queue capacity, clearing and controlled progress match original x86", () => {
+test("native queue capacity, clearing and controlled progress match original x86", { tag: "@logic" }, () => {
   const player = new NativeAnimationPlayer();
   expect(fixture.operations).toHaveLength(42);
   for (const [index, operation] of fixture.operations.entries()) {

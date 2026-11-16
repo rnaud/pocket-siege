@@ -3,7 +3,7 @@ import fixture from "./fixtures/armageddon/projectile-fragments.json" with { typ
 import { nativeProjectileFragments } from "../src/armageddon/projectile-fragments.js";
 import { MatchRandom } from "../src/armageddon/random.js";
 
-test("fragment payloads and random consumption match original projectile emission", () => {
+test("fragment payloads and random consumption match original projectile emission", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(288);
   for (const [i,c] of fixture.cases.entries()) {
     const rng = new MatchRandom(c.seed); rng.frame = c.frame;

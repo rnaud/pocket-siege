@@ -4,7 +4,7 @@ import { nativeWeaponEquip } from "../src/armageddon/equip.js";
 const fixture = JSON.parse(
   fs.readFileSync(new URL("./fixtures/armageddon/equip.json", import.meta.url)),
 );
-test("weapon equip queues and angle rules match 1533 original x86 cases", () => {
+test("weapon equip queues and angle rules match 1533 original x86 cases", { tag: "@logic" }, () => {
   expect(fixture.vectors).toHaveLength(1533);
   for (const v of fixture.vectors) {
     expect(

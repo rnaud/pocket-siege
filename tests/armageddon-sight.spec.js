@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/sight.json" with { type: "json" };
 import { nativeSightTick, stepOriginalSight } from "../src/armageddon/sight.js";
-test("sight easing matches original fixed point instructions", () => {
+test("sight easing matches original fixed point instructions", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeSightTick(row.opening, row.aim, row.target)).toEqual(row.next);
 });
-test("sight opens on simulation ticks and resets on equip and visibility changes", () => {
+test("sight opens on simulation ticks and resets on equip and visibility changes", { tag: "@logic" }, () => {
   const worm = {};
   stepOriginalSight(worm, "rocket", 45, true);
   expect(worm.originalSight.opening).toBe(13107);

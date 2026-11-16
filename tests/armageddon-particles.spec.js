@@ -5,7 +5,7 @@ import {
   stepNativeParticles,
 } from "../src/armageddon/particles.js";
 
-test("particle integration and swap-last expiry match original executable pools", () => {
+test("particle integration and swap-last expiry match original executable pools", { tag: "@logic" }, () => {
   for (const row of fixture.cases) {
     const pool = row.input.map((p) => ({ ...p }));
     for (let i = 0; i < row.ticks; i++) stepNativeParticles(pool);

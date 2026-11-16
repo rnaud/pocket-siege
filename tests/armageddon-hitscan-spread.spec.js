@@ -3,7 +3,7 @@ import fixture from "./fixtures/armageddon/hitscan-spread.json" with { type: "js
 import { nativeHitscanRays } from "../src/armageddon/hitscan-spread.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { nativeShotgunRay } from "../src/armageddon/hitscan-art.js";
-test("hitscan directions, complete packets and RNG match original spread loop", () => {
+test("hitscan directions, complete packets and RNG match original spread loop", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(108);
   for (const row of fixture.cases) {
     let state = row.seed;

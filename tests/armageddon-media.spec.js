@@ -6,7 +6,7 @@ import { decodeSprite } from "../src/armageddon/sprite.js";
 const root = new URL("../public/armageddon/", import.meta.url);
 const catalog = JSON.parse(fs.readFileSync(new URL("media.json", root)));
 
-test("every imported visual preserves its original bytes and native containers decode", () => {
+test("every imported visual preserves its original bytes and native containers decode", { tag: "@logic" }, () => {
   expect(catalog.assets).toHaveLength(3094);
   const counts = { img: 0, spr: 0, bmp: 0 };
   let frames = 0;

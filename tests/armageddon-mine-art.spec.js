@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-art.json" with { type: "json" };
 import { nativeMineRender, nativeMineArt } from "../src/armageddon/mine-art.js";
 
-test("mine water sprites, rotation and render order match the original executable", () => {
+test("mine water sprites, rotation and render order match the original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(288);
   for (const [i, c] of fixture.cases.entries()) {
     expect(nativeMineRender(c.body, c.timer, c.order), `case ${i}`).toEqual(

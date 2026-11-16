@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/bubbles.json" with { type: "json" };
 import { nativeBubble, nativeBubbleTick } from "../src/armageddon/bubble.js";
 
-test("bubble physics and surface retirement match 192 original executable cases", () => {
+test("bubble physics and surface retirement match 192 original executable cases", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeBubbleTick(row.input, row.seed, row.waterY)).toEqual(
       row.output,

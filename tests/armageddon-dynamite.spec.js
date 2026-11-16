@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { attachNativeProjectile, nativeProjectileLaunchGeometry, stepNativeProjectile } from "../src/armageddon/projectile-runtime.js";
 
-test("dynamite uses original fixed release power, five-second fuse and blast record", () => {
+test("dynamite uses original fixed release power, five-second fuse and blast record", { tag: "@logic" }, () => {
   const w = { x: 200, y: 400, facing: 1, vy: 0 };
   const a = nativeProjectileLaunchGeometry("dynamite",w,90,100,650);
   const b = nativeProjectileLaunchGeometry("dynamite",w,-90,0,650);

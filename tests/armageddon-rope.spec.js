@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/rope-animation.json" with { type: "json" };
 import { nativeRopeAnimation } from "../src/armageddon/rope-animation.js";
 
-test("rope animation matches original entry and 552 native directional cases", () => {
+test("rope animation matches original entry and 552 native directional cases", { tag: "@logic" }, () => {
   expect(fixture.entry).toEqual([
     { operation: "clear" },
     { operation: "queue", sprite_id: 17 },

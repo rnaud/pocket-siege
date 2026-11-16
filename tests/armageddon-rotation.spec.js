@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/rotation.json" with { type: "json" };
 import { nativeBodyRotation } from "../src/armageddon/motion.js";
-test("body rotation matches original velocity branches, radius and angle wrap", () => {
+test("body rotation matches original velocity branches, radius and angle wrap", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeBodyRotation(row.body)).toEqual(row.result);
 });

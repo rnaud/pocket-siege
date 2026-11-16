@@ -4,7 +4,7 @@ import {
   nativeCameraFrame,
   nativeCameraEase,
 } from "../src/armageddon/camera-framing.js";
-test("camera fitting and world limits match original projection routines", () => {
+test("camera fitting and world limits match original projection routines", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(168);
   for (const [i, c] of fixture.cases.entries())
     expect(
@@ -18,7 +18,7 @@ test("camera fitting and world limits match original projection routines", () =>
       `case ${i}`,
     ).toEqual(c.after);
 });
-test("camera easing and pixel snapping match original simulation ticks", () => {
+test("camera easing and pixel snapping match original simulation ticks", { tag: "@logic" }, () => {
   expect(fixture.easing).toHaveLength(900);
   for (const [i, c] of fixture.easing.entries())
     expect(nativeCameraEase(c.before, c.target), `tick ${i}`).toEqual({
@@ -28,7 +28,7 @@ test("camera easing and pixel snapping match original simulation ticks", () => {
 });
 
 import { NativeCameraFraming } from "../src/armageddon/camera-framing.js";
-test("camera task ordering matches complete original 004ED710 ticks", () => {
+test("camera task ordering matches complete original 004ED710 ticks", { tag: "@logic" }, () => {
   expect(fixture.orchestration).toHaveLength(360);
   for (const [i, c] of fixture.orchestration.entries()) {
     const framing = new NativeCameraFraming(0, 0, c.before[0][3]);
@@ -40,7 +40,7 @@ test("camera task ordering matches complete original 004ED710 ticks", () => {
 });
 
 import { NativeCameraPriority } from "../src/armageddon/camera-priority.js";
-test("special requests and signed suppression counters match original camera task", () => {
+test("special requests and signed suppression counters match original camera task", { tag: "@logic" }, () => {
   expect(fixture.special_cases).toHaveLength(45);
   for (const [i, c] of fixture.special_cases.entries()) {
     const priority = new NativeCameraPriority();

@@ -4,7 +4,7 @@ import {
   nativeRecoveryEntry,
   nativeRecoveryTick,
 } from "../src/armageddon/recovery.js";
-test("recovery entry and sound/completion thresholds match original executable", () => {
+test("recovery entry and sound/completion thresholds match original executable", { tag: "@logic" }, () => {
   for (const r of fixture.entries)
     expect(
       nativeRecoveryEntry(r.previous, r.maxVy, r.flag, r.handle, r.random, 99),

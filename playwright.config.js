@@ -14,9 +14,13 @@ export default defineConfig({
     reuseExistingServer: false,
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    // Native kernels and fixture comparisons run once; only browser behavior
+    // needs coverage in both Chromium and iPhone WebKit.
+    { name: "logic", grep: /@logic/ },
+    { name: "desktop", grepInvert: /@logic/, use: { ...devices["Desktop Chrome"] } },
     {
       name: "iphone",
+      grepInvert: /@logic/,
       use: { ...devices["iPhone 13"], defaultBrowserType: "webkit" },
     },
   ],

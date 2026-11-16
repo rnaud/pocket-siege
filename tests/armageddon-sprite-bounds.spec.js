@@ -5,7 +5,7 @@ import fixture from "./fixtures/armageddon/sprite-bounds.json" with { type: "jso
 import { decodeSprite } from "../src/armageddon/sprite.js";
 import { nativeSpriteBounds } from "../src/armageddon/animation.js";
 
-test("worm frame bounds retain the native canvas-center anchor across animation", () => {
+test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for (const c of fixture.cases) {
     const bytes = readFileSync(
       new URL(`../public/armageddon/sprites/${c.name}.spr`, import.meta.url),

@@ -6,7 +6,7 @@ import {
   nativeDebrisTick,
 } from "../src/armageddon/debris.js";
 import { nextVisualRandom } from "../src/armageddon/numeric.js";
-test("debris requests and capped-pool RNG match the original emitter", () => {
+test("debris requests and capped-pool RNG match the original emitter", { tag: "@logic" }, () => {
   for (const row of fixture.emissions) {
     let state = row.seed;
     expect(
@@ -22,7 +22,7 @@ test("debris requests and capped-pool RNG match the original emitter", () => {
     expect(state).toBe(row.random);
   }
 });
-test("debris flight, smoke trails and retirement match native execution", () => {
+test("debris flight, smoke trails and retirement match native execution", { tag: "@logic" }, () => {
   for (const row of fixture.ticks) {
     let state = row.seed,
       body = { ...row.initial };

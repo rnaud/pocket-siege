@@ -29,7 +29,7 @@ const projectile = (kind, overrides = {}) => {
   attachNativeProjectile(p, 650);
   return p;
 };
-test("live adapter uses native launch units, force defaults, and weapon wind coefficients", () => {
+test("live adapter uses native launch units, force defaults, and weapon wind coefficients", { tag: "@logic" }, () => {
   const rocket = projectile("rocket"),
     grenade = projectile("grenade");
   expect(rocket.vx).toBe(1200);
@@ -48,7 +48,7 @@ test("live adapter uses native launch units, force defaults, and weapon wind coe
   expect(grenade.nativeBody.restitutionY).toBe(Math.trunc((55 * 65536) / 100));
   expect(grenade.nativeBody.tangent).toBe(Math.trunc((96 * 65536) / 100));
 });
-test("live grenade consumes remaining movement after hitting a thin wall", () => {
+test("live grenade consumes remaining movement after hitting a thin wall", { tag: "@logic" }, () => {
   const p = projectile("grenade", { x: 2, y: 400 });
   const result = stepNativeProjectile(
     p,
@@ -60,7 +60,7 @@ test("live grenade consumes remaining movement after hitting a thin wall", () =>
   expect(p.vx).toBeLessThan(0);
   expect(p.x).toBeLessThan(2);
 });
-test("native projectile can skim water with the original shallow-angle response", () => {
+test("native projectile can skim water with the original shallow-angle response", { tag: "@logic" }, () => {
   const p = projectile("grenade", { x: 200, y: 79, vx: 600, vy: -50 });
   stepNativeProjectile(p, { ...environment, bounces: true }, () => 0);
   expect(p.y).toBeGreaterThan(80);
@@ -68,7 +68,7 @@ test("native projectile can skim water with the original shallow-angle response"
   expect(p.nativeBody.submerged).toBe(0);
 });
 
-test("resting native bodies sleep and periodically recheck removed support", () => {
+test("resting native bodies sleep and periodically recheck removed support", { tag: "@logic" }, () => {
   const p = projectile("grenade", { x: 200, y: 300, vx: 0, vy: 0 });
   stepNativeProjectile(p, { ...environment, bounces: true }, (x, y) =>
     y < 300 ? 1 : 0,
@@ -85,7 +85,7 @@ test("resting native bodies sleep and periodically recheck removed support", () 
   expect(p.nativeBody.sleeping).toBe(0);
 });
 
-test("crossing the integer water boundary allows native skimming on the following tick", () => {
+test("crossing the integer water boundary allows native skimming on the following tick", { tag: "@logic" }, () => {
   const p = projectile("grenade", { x: 200, y: 80.5, vx: 600, vy: -50 });
   stepNativeProjectile(p, { ...environment, bounces: true }, () => 0);
   expect(p.y).toBeLessThan(80);
@@ -98,7 +98,7 @@ test("crossing the integer water boundary allows native skimming on the followin
   expect(p.vy).toBeGreaterThan(0);
 });
 
-test("live water transitions emit one splash and skimming emits its separate cue", () => {
+test("live water transitions emit one splash and skimming emits its separate cue", { tag: "@logic" }, () => {
   const sinking = projectile("grenade", { y: 78, vx: 0, vy: -100 });
   const first = stepNativeProjectile(
     sinking,
@@ -122,7 +122,7 @@ test("live water transitions emit one splash and skimming emits its separate cue
   expect(skim.sounds).toEqual([[0x3a, 0, 65536, 65536, 0]]);
 });
 
-test("native contact masks detonate rockets and keep grenade contacts alive", () => {
+test("native contact masks detonate rockets and keep grenade contacts alive", { tag: "@logic" }, () => {
   for (const [kind, detonate] of [["rocket", true], ["grenade", false]]) {
     const p = projectile(kind, { x: 200, vx: 1200, vy: 0 });
     const result = stepNativeProjectile(p, environment, (x) => x >= 210 ? 1 : 0);
@@ -133,7 +133,7 @@ test("native contact masks detonate rockets and keep grenade contacts alive", ()
   }
 });
 
-test("grenade receiver dispatch updates a hurt worm instead of bouncing against zero velocity", () => {
+test("grenade receiver dispatch updates a hurt worm instead of bouncing against zero velocity", { tag: "@logic" }, () => {
   const p = projectile("grenade", { x: 200, vx: 600, vy: 0 });
   let other = { worm: true, type: 3, state: 0x80, mass: 65536, tangent: 65536, vx: 0, vy: 0 };
   let updates = 0;
@@ -149,7 +149,7 @@ test("grenade receiver dispatch updates a hurt worm instead of bouncing against 
   expect(result.detonate).toBe(false);
 });
 
-test("live fuse uses milliseconds and native next-tick expiration instead of host age", () => {
+test("live fuse uses milliseconds and native next-tick expiration instead of host age", { tag: "@logic" }, () => {
   const p = projectile("grenade", { fuse: 3, vx: 0, vy: 0, age: 999 });
   p.nativeBody.gravityScale = 0;
   expect(p.nativeTimer.remaining).toBe(3000);
@@ -161,7 +161,7 @@ test("live fuse uses milliseconds and native next-tick expiration instead of hos
   expect(stepNativeProjectile(p, { ...environment, frame: 151 }, () => 0).detonate).toBe(true);
 });
 
-test("resting holy grenade completes its native delay and queues one holy cue", () => {
+test("resting holy grenade completes its native delay and queues one holy cue", { tag: "@logic" }, () => {
   const p = projectile("holy", { vx: 0, vy: 0 });
   p.nativeBody.gravityScale = 0;
   const sounds = p.nativeRelease.calls.filter(e => e.operation === "sound");
@@ -174,7 +174,7 @@ test("resting holy grenade completes its native delay and queues one holy cue", 
   expect(stepNativeProjectile(p, { ...environment, frame: 241 }, () => 0).detonate).toBe(true);
 });
 
-test("homing activates after 500ms and integrates native guidance for 3500ms", () => {
+test("homing activates after 500ms and integrates native guidance for 3500ms", { tag: "@logic" }, () => {
   const p = projectile("homing", { vx: 200, vy: 0, target: { x: 400, y: 500 } });
   p.nativeBody.gravityScale = 0;
   for (let frame = 1; frame <= 25; frame++) {
@@ -198,7 +198,7 @@ test("homing activates after 500ms and integrates native guidance for 3500ms", (
   expect(last.events.some(e => e.guidance && e.operation === "steer")).toBe(false);
 });
 
-test("native grenade visual progress follows body rotation instead of host age", () => {
+test("native grenade visual progress follows body rotation instead of host age", { tag: "@logic" }, () => {
   const p = projectile("grenade", { age: 50, vx: 200, vy: 0 });
   stepNativeProjectile(p, environment, () => 0);
   expect(p.nativeRender.sprite).toBe(653);
@@ -206,7 +206,7 @@ test("native grenade visual progress follows body rotation instead of host age",
   expect(p.nativeRender.progress).not.toBe(0);
 });
 
-test("native lifetime preserves long flights outside the browser map and removes bodies at native depth", () => {
+test("native lifetime preserves long flights outside the browser map and removes bodies at native depth", { tag: "@logic" }, () => {
   const p = projectile("holy", { x: -60, y: 300, vx: 0, vy: 0, age: 13 });
   p.nativeBody.gravityScale = 0;
   p.nativeTimer.remaining = 1000;
@@ -221,7 +221,7 @@ test("native lifetime preserves long flights outside the browser map and removes
   expect(result.events).toContainEqual({ operation: "delete", request: [1], lifetime: true });
 });
 
-test("native far-distance limit detonates while active homing receives its extra depth", () => {
+test("native far-distance limit detonates while active homing receives its extra depth", { tag: "@logic" }, () => {
   const p = projectile("rocket", { x: 13460, y: 400, vx: 0, vy: 0 });
   p.nativeBody.gravityScale = 0;
   expect(stepNativeProjectile(p, environment, () => 0).detonate).toBe(true);
@@ -233,7 +233,7 @@ test("native far-distance limit detonates while active homing receives its extra
   expect(stepNativeProjectile(homing, environment, () => 0).removed).toBe(true);
 });
 
-test("projectile timed animation advances once per simulation tick using launch-derived rate", () => {
+test("projectile timed animation advances once per simulation tick using launch-derived rate", { tag: "@logic" }, () => {
   const p = projectile("grenade", { vx: 0, vy: 0 });
   p.nativeBody.gravityScale = 0;
   p.nativeArt.primary.mode = 4;
@@ -247,7 +247,7 @@ test("projectile timed animation advances once per simulation tick using launch-
 });
 
 
-test("live native projectile blast packets use scheme strength, push and vertical offsets", () => {
+test("live native projectile blast packets use scheme strength, push and vertical offsets", { tag: "@logic" }, () => {
   const expected = {
     rocket: [0, 100, 50], homing: [1, 100, 50], mortar: [0, 0, 15],
     grenade: [2, 100, 50], cluster: [0, 0, 20], holy: [37, 125, 100],
@@ -265,7 +265,7 @@ test("live native projectile blast packets use scheme strength, push and vertica
 });
 
 
-test("cluster and mortar emit five native secondary bodies with separate blast records", () => {
+test("cluster and mortar emit five native secondary bodies with separate blast records", { tag: "@logic" }, () => {
   for (const kind of ["cluster", "mortar"]) {
     const p = projectile(kind);
     let draws = 0;
@@ -287,7 +287,7 @@ test("cluster and mortar emit five native secondary bodies with separate blast r
 });
 
 
-test("native placement rejects terrain at spawn instead of excluding its initial overlap", () => {
+test("native placement rejects terrain at spawn instead of excluding its initial overlap", { tag: "@logic" }, () => {
   const p = projectile("cluster", { x: 200, y: 400 });
   const terrain = { solid: (x,y) => x >= 195 && x <= 205 && y >= 395 && y <= 405 };
   expect(nativeProjectilePlacementHit(p, terrain, [], 650)).toBe(1);
@@ -295,7 +295,7 @@ test("native placement rejects terrain at spawn instead of excluding its initial
   expect(nativeProjectilePlacementHit(clear, terrain, [], 650)).toBe(0);
 });
 
-test("secondary construction runs between random draws for successive fragments", () => {
+test("secondary construction runs between random draws for successive fragments", { tag: "@logic" }, () => {
   const p = projectile("cluster");
   const order = [];
   nativeProjectileChildren(p, 650, () => { order.push("random"); return 42; },
@@ -304,7 +304,7 @@ test("secondary construction runs between random draws for successive fragments"
 });
 
 
-test("native live launch geometry uses body-origin throws and fourteen-pixel rocket offsets", () => {
+test("native live launch geometry uses body-origin throws and fourteen-pixel rocket offsets", { tag: "@logic" }, () => {
   const worm = { x: 200, y: 400 };
   for (const kind of ["rocket", "homing", "mortar", "grenade", "cluster", "holy"]) {
     for (const angle of [-180,-90,0,90,180]) {

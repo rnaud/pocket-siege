@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { Terrain } from "../src/physics.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(async ({ page }) => {
@@ -25,17 +24,6 @@ async function chargeShot(page, milliseconds = 600) {
   await page.waitForTimeout(milliseconds);
   await page.keyboard.up("Space");
 }
-test("terrain craters remove solid ground and preserve distant terrain", () => {
-  const t = new Terrain(42),
-    x = 400,
-    y = t.surface(x) - 15;
-  expect(t.solid(x, y)).toBe(true);
-  const other = t.surface(800);
-  expect(t.carve(x, y, 50)).toBeGreaterThan(1000);
-  expect(t.solid(x, y)).toBe(false);
-  expect(t.surface(800)).toBe(other);
-  expect(t.carve(x, y, 50)).toBe(0);
-});
 test("play a full destructive turn with responsive controls", async ({
   page,
 }, info) => {

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/homing-avoidance.json" with { type: "json" };
 import { nativeHomingAvoid } from "../src/armageddon/homing.js";
 
-test("pigeon terrain queries and obstacle steering match the original executable", () => {
+test("pigeon terrain queries and obstacle steering match the original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(480);
   for (const [index, row] of fixture.cases.entries()) {
     const queries = [];
@@ -18,7 +18,7 @@ test("pigeon terrain queries and obstacle steering match the original executable
 
 import { attachNativeProjectile, stepNativeProjectile } from "../src/armageddon/projectile-runtime.js";
 
-test("pigeon uses original delay, avoidance, trail and damage in the live adapter", () => {
+test("pigeon uses original delay, avoidance, trail and damage in the live adapter", { tag: "@logic" }, () => {
   const p = { kind: "pigeon", x: 200, y: 400, vx: 200, vy: 0, fuse: 3, bounce: 0.55, target: { x: 800, y: 400 } };
   attachNativeProjectile(p, 650);
   expect(p.nativeGuidance).toMatchObject({ kind: 2, delay: 505, duration: 4540 });
@@ -74,6 +74,14 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
   await page.locator("#angle").dispatchEvent("input");
   await page.locator("#fire").dispatchEvent("pointerdown", { pointerId: 2 });
   await page.waitForTimeout(500);
+  if (kind === "magic") await page.evaluate(() => {
+    const pauseDuringFlight = () => {
+      if (window.siege.getState().projectile?.kind === "magic" && window.projectileLoops.length)
+        document.querySelector("#help").click();
+      else requestAnimationFrame(pauseDuringFlight);
+    };
+    requestAnimationFrame(pauseDuringFlight);
+  });
   await page.locator("#fire").dispatchEvent("pointerup", { pointerId: 2 });
   await expect.poll(() => page.evaluate(() => window.siege.getState().projectile?.kind)).toBe(kind);
   const state = await page.evaluate(() => window.siege.getState());
@@ -82,7 +90,7 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
   expect(state.ammo[0][kind]).toBe(0);
   if (kind === "magic") {
     await expect.poll(() => page.evaluate(() => window.projectileLoops.length)).toBe(1);
-    await page.locator("#help").click();
+    await expect(page.locator("#menu")).toBeVisible();
     const paused = await page.evaluate(() => window.siege.getState().projectile.age);
     await page.waitForTimeout(200);
     expect(await page.evaluate(() => window.siege.getState().projectile.age)).toBe(paused);
@@ -111,7 +119,7 @@ test("pigeon flight artwork switches through all four speed strips and faces lef
   expect(frames).toEqual([0, 3, 1, 2, 0].map(i => ({ updated: true, sprite: `pigeonr${i}`, facing: -1 })));
 });
 
-test("magic bullet uses original guidance duration, damage, trail and looping sound", () => {
+test("magic bullet uses original guidance duration, damage, trail and looping sound", { tag: "@logic" }, () => {
   const p = { kind: "magic", x: 200, y: 400, vx: 200, vy: 0, fuse: 3, bounce: 0.55, target: { x: 800, y: 400 } };
   attachNativeProjectile(p, 650);
   expect(p.nativeGuidance).toMatchObject({ kind: 2, delay: 100, duration: 9900 });

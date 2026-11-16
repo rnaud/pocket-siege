@@ -6,7 +6,7 @@ import {
   nativeParticleRequest,
   stepNativeParticles,
 } from "../src/armageddon/particles.js";
-test("casing emission matches original x86 packet and random state", () => {
+test("casing emission matches original x86 packet and random state", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(81);
   for (const row of fixture.cases) {
     let state = row.seed;
@@ -22,7 +22,7 @@ test("casing emission matches original x86 packet and random state", () => {
     expect(state).toBe(row.random);
   }
 });
-test("casing packet preserves mirror, gravity, trajectory and native lifetime", () => {
+test("casing packet preserves mirror, gravity, trajectory and native lifetime", { tag: "@logic" }, () => {
   for (const facing of [-1, 1]) {
     const request = nativeCasing(
       0x33c,

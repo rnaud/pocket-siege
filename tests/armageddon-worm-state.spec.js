@@ -7,7 +7,7 @@ const fixture = JSON.parse(
   ),
 );
 
-test("worm transition body preparation matches original setters and effect order", () => {
+test("worm transition body preparation matches original setters and effect order", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(4332);
   for (const v of fixture.cases) {
     expect(
@@ -18,7 +18,7 @@ test("worm transition body preparation matches original setters and effect order
 });
 
 import { nativeWormJumpLandingEntry } from "../src/armageddon/worm-state.js";
-test("jump/landing entries match native sprite selection, voices and velocity-based sound", () => {
+test("jump/landing entries match native sprite selection, voices and velocity-based sound", { tag: "@logic" }, () => {
   expect(fixture.jump_landing_entries).toHaveLength(480);
   for (const v of fixture.jump_landing_entries) {
     expect(
@@ -34,7 +34,7 @@ const finalization = JSON.parse(
     new URL("./fixtures/armageddon/worm-finalize.json", import.meta.url),
   ),
 );
-test("worm transition finalization preserves native event and scheduler decisions", () => {
+test("worm transition finalization preserves native event and scheduler decisions", { tag: "@logic" }, () => {
   expect(finalization.cases).toHaveLength(7220);
   for (const v of finalization.cases) {
     expect(
@@ -45,7 +45,7 @@ test("worm transition finalization preserves native event and scheduler decision
 });
 
 import { nativeWormJumpLandingTick } from "../src/armageddon/worm-state.js";
-test("jump and landing ticks match native apex and animation completion boundaries", () => {
+test("jump and landing ticks match native apex and animation completion boundaries", { tag: "@logic" }, () => {
   expect(finalization.jump_landing_ticks).toHaveLength(420);
   for (const v of finalization.jump_landing_ticks) {
     expect(

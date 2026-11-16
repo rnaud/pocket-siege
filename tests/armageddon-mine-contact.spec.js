@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-contact.json" with { type: "json" };
 import { nativeMineContact } from "../src/armageddon/mine-contact.js";
 
-test("mine contact ordering, impact level and forced dud state match original executable", () => {
+test("mine contact ordering, impact level and forced dud state match original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(288);
   for (const [i, c] of fixture.cases.entries()) {
     const body = { vx: c.vx, vy: c.vy, state: 0 };

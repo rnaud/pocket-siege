@@ -38,7 +38,7 @@ npm run dev
 npm run build
 ```
 
-`npm run preview` serves the production build. Characters, hurt frames, portraits, weapon icons, terrain, water, and scenery are drawn locally by the pixel engine. No bitmap artwork is loaded at runtime. The original Siege Pixel font is bundled locally; no external font service is used. Three.js is bundled locally.
+`npm run preview` serves the production build. The pixel engine decodes imported Armageddon sprites, terrain, water, and HUD assets in their native formats. Startup waits for current art before revealing the game; retired artwork and procedural fallback renderers have been removed. The Siege Pixel font and Three.js are bundled locally.
 
 ## Tests
 
@@ -46,6 +46,8 @@ npm run build
 npx playwright install chromium webkit
 npm test
 ```
+
+The `logic` project runs browser-independent rules and executable-fixture comparisons once (`npm test -- --project=logic`, no browser installation needed). Tag these tests `@logic`. The `desktop` and `iphone` projects exclude that tag and exercise browser rendering, controls, audio, and loading in Chromium and WebKit. New untagged tests default to both browser projects. CI runs one logic job and shards each browser project across two jobs; deployment requires all five jobs to pass.
 
 Tests cover terrain removal, projectile impacts and turn progression, computer turns, AI weapon/blast planning, crate seeking, ammo spending, proximity mines, match modifiers, worm selection and skip, sudden-death variants, rope/jetpack/teleport/girder/parachute/freeze, the special weapon tray, cluster and napalm effects, airdropped crate types, stockpiling, scheme presets, saved settings, generated-art loading, label readability, supply crates, weather, best-of-three flow, daily seeds, the local record book, desktop full-window and iPhone layouts in Chromium and WebKit.
 

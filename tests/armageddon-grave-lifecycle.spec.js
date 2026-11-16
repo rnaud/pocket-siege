@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/grave-lifecycle.json" with { type: "json" };
 import { nativeGraveLifecycle } from "../src/armageddon/grave-lifecycle.js";
-test("grave depth, animation and bubble arithmetic match original x86", () => {
+test("grave depth, animation and bubble arithmetic match original x86", { tag: "@logic" }, () => {
   for (const r of fixture.cases)
     expect(
       nativeGraveLifecycle(r.progress, r.phase, r.wet, r.y, r.depth),

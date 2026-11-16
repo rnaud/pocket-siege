@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { Terrain, W, H } from "../src/physics.js";
 import { cameraView } from "../src/camera.js";
-test("portrait camera preserves world proportions and clamps to map", () => {
+test("portrait camera preserves world proportions and clamps to map", { tag: "@logic" }, () => {
   const v = cameraView(100, 350, 1, 0.6);
   expect(v.w / v.h).toBeCloseTo(0.6);
   expect(v.x).toBe(0);
   expect(cameraView(1200, 350, 1, 0.6).x + v.w).toBe(W);
 });
-test("shelters have physical roofs and open entrances, offshore cleft separates land", () => {
+test("shelters have physical roofs and open entrances, offshore cleft separates land", { tag: "@logic" }, () => {
   const t = new Terrain(42),
     solid = (x, y) => t.solid((x / 480) * W, ((270 - y) / 270) * H);
   expect(solid(90, 179)).toBe(false);

@@ -5,7 +5,7 @@ import {
   nativeFlightSprite,
   nativeFlightProgress,
 } from "../src/armageddon/flight-art.js";
-test("native flying sprite selectors match original angle and displacement instructions", () => {
+test("native flying sprite selectors match original angle and displacement instructions", { tag: "@logic" }, () => {
   for (const row of fixture.angles)
     expect(nativeVectorAngle(row.x, row.y)).toBe(row.angle);
   for (const row of fixture.poses)

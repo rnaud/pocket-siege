@@ -13,7 +13,7 @@ function read(asset) {
   );
 }
 
-test("all 100 authored maps retain full source pixels and collision orientation", () => {
+test("all 100 authored maps retain full source pixels and collision orientation", { tag: "@logic" }, () => {
   expect(maps).toHaveLength(100);
   for (const asset of maps) {
     const buffer = read(asset),
@@ -41,7 +41,7 @@ test("all 100 authored maps retain full source pixels and collision orientation"
   }
 });
 
-test("map destruction clears artwork and collision together without changing source or other pixels", () => {
+test("map destruction clears artwork and collision together without changing source or other pixels", { tag: "@logic" }, () => {
   const buffer = read(maps[0]);
   const originalBytes = new Uint8Array(buffer).slice();
   const terrain = new OriginalMapTerrain(buffer);
@@ -92,7 +92,7 @@ test("authored map is playable at full size and switching back restores the host
   });
 });
 
-test("all authored maps support six separated, grounded worm spawns including caves", async () => {
+test("all authored maps support six separated, grounded worm spawns including caves", { tag: "@logic" }, async () => {
   const { originalMapSpawns } =
     await import("../src/armageddon/map-placement.js");
   const { stepWorm, bodyBlocked } = await import("../src/physics.js");

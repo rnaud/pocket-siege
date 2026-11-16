@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/area-damage.json" with { type: "json" };
 import { nativeAreaDamage } from "../src/armageddon/area-damage.js";
-test("area recipients, damage falloff, self impulse and effects match original executable", () => {
+test("area recipients, damage falloff, self impulse and effects match original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(252);
   for (const row of fixture.cases)
     expect(
@@ -10,7 +10,7 @@ test("area recipients, damage falloff, self impulse and effects match original e
     ).toEqual(row.output);
 });
 
-test("weapon impulse preserves existing motion and attached native flight", async () => {
+test("weapon impulse preserves existing motion and attached native flight", { tag: "@logic" }, async () => {
   const { applyNativeWeaponImpulse } =
     await import("../src/armageddon/worm-flight.js");
   const worm = {

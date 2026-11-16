@@ -34,7 +34,7 @@ const base = (overrides = {}) => ({
   ...overrides,
 });
 
-test("sudden death raises the water each round and caps it", () => {
+test("sudden death raises the water each round and caps it", { tag: "@logic" }, () => {
   expect(waterLevelForRound(1)).toBe(WATER);
   expect(waterLevelForRound(5)).toBe(WATER);
   expect(waterLevelForRound(6)).toBe(WATER + WATER_RISE);
@@ -43,7 +43,7 @@ test("sudden death raises the water each round and caps it", () => {
   expect(WATER_RISE).toBeGreaterThan(0);
 });
 
-test("weapon metadata and starting ammo match the loadout", () => {
+test("weapon metadata and starting ammo match the loadout", { tag: "@logic" }, () => {
   expect(WEAPONS.rocket.ammo).toBe(Infinity);
   expect(WEAPONS.mortar.radius).toBeGreaterThan(WEAPONS.rocket.radius);
   expect(WEAPONS.mortar.damage).toBeGreaterThan(WEAPONS.rocket.damage);
@@ -65,7 +65,7 @@ test("weapon metadata and starting ammo match the loadout", () => {
   expect(WEAPON_ORDER).not.toContain("mine");
 });
 
-test("planner finds a damaging shot on flat ground", () => {
+test("planner finds a damaging shot on flat ground", { tag: "@logic" }, () => {
   const me = worm(0, 200),
     target = worm(1, 700);
   const plan = planTurn(
@@ -85,7 +85,7 @@ test("planner finds a damaging shot on flat ground", () => {
   expect(WEAPONS[plan.weapon]).toBeTruthy();
 });
 
-test("planner never spends a weapon with no ammo left", () => {
+test("planner never spends a weapon with no ammo left", { tag: "@logic" }, () => {
   const me = worm(0, 200),
     target = worm(1, 700);
   const plan = planTurn(
@@ -99,7 +99,7 @@ test("planner never spends a weapon with no ammo left", () => {
   expect(plan.weapon).toBe("rocket");
 });
 
-test("planner prefers the heavy mortar for a cluster", () => {
+test("planner prefers the heavy mortar for a cluster", { tag: "@logic" }, () => {
   const me = worm(0, 200),
     worms = [me, worm(1, 700), worm(1, 742), worm(1, 764)];
   const plan = planTurn(
@@ -109,7 +109,7 @@ test("planner prefers the heavy mortar for a cluster", () => {
   expect(plan.score).toBeGreaterThan(80);
 });
 
-test("difficulty applies bounded aim error to its selected solution", () => {
+test("difficulty applies bounded aim error to its selected solution", { tag: "@logic" }, () => {
   const me = worm(0, 200),
     worms = [me, worm(1, 700)];
   // Zero makes the rookie's mistake check fire and applies the full negative jitter.
@@ -126,7 +126,7 @@ test("difficulty applies bounded aim error to its selected solution", () => {
   );
 });
 
-test("repositioning walks away from the waterline on a slope", () => {
+test("repositioning walks away from the waterline on a slope", { tag: "@logic" }, () => {
   const surface = (x) => 120 + x * 0.45;
   const slope = {
     solid: (x, y) => x >= 0 && x <= W && y < surface(x),
@@ -143,7 +143,7 @@ test("repositioning walks away from the waterline on a slope", () => {
   expect(move).toEqual({ direction: 1, time: 0.5 });
 });
 
-test("repositioning refuses a downhill walk that moves closer to the water", () => {
+test("repositioning refuses a downhill walk that moves closer to the water", { tag: "@logic" }, () => {
   const surface = (x) => 200 - x * 0.3;
   const downhill = {
     solid: (x, y) => x >= 0 && x <= W && y < surface(x),
@@ -160,7 +160,7 @@ test("repositioning refuses a downhill walk that moves closer to the water", () 
   expect(move).toBeNull();
 });
 
-test("repositioning walks toward a nearby supply crate", () => {
+test("repositioning walks toward a nearby supply crate", { tag: "@logic" }, () => {
   const me = worm(0, 200);
   const move = planMove({
     terrain: flat,

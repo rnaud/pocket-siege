@@ -7,7 +7,7 @@ import {
 const fixture = JSON.parse(
   fs.readFileSync(new URL("./fixtures/armageddon/power.json", import.meta.url)),
 );
-test("native velocity scaling and charge accumulation match original x86", () => {
+test("native velocity scaling and charge accumulation match original x86", { tag: "@logic" }, () => {
   expect(fixture.vectors).toHaveLength(2840);
   expect(fixture.charge).toHaveLength(45);
   for (const v of fixture.vectors)
@@ -27,7 +27,7 @@ test("native velocity scaling and charge accumulation match original x86", () =>
       target: v.targets[0] ?? null,
     });
 });
-test("native full charge transitions on the 76th simulation tick", () => {
+test("native full charge transitions on the 76th simulation tick", { tag: "@logic" }, () => {
   let power = 0;
   for (let tick = 1; tick <= 75; tick++) {
     const result = nativeChargeTick(1, power);

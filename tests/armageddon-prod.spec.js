@@ -3,13 +3,13 @@ import fixture from "./fixtures/armageddon/prod.json" with { type: "json" };
 import { nativeProdRequest } from "../src/armageddon/prod.js";
 import { nativeAreaDamage } from "../src/armageddon/area-damage.js";
 
-test("Prod impulse and direct hit rectangle match original executable", () => {
+test("Prod impulse and direct hit rectangle match original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(140);
   for (const row of fixture.cases)
     expect(nativeProdRequest(row.record, row.x, row.y, row.facing)).toEqual(row.request);
 });
 
-test("Prod excludes self and blocked bodies, includes allies and obeys strict range", () => {
+test("Prod excludes self and blocked bodies, includes allies and obeys strict range", { tag: "@logic" }, () => {
   const request = nativeProdRequest({ '0x70': 0, '0x74': 30, '0x78': 45 }, 100<<16, 100<<16, 1);
   const bodies = [
     { x:100<<16,y:100<<16,type:2,self:true },

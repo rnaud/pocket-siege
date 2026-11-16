@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hurt-contact.json" with { type: "json" };
 import { nativeWormHurtCollision } from "../src/armageddon/hurt-contact.js";
-test("hurt collision damage, recovery, bounce and state transitions match original callback", () => {
+test("hurt collision damage, recovery, bounce and state transitions match original callback", { tag: "@logic" }, () => {
   for (const row of fixture.cases) {
     const queries = [];
     expect(

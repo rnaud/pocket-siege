@@ -9,7 +9,7 @@ const fixture = JSON.parse(
     new URL("./fixtures/armageddon/body-collision.json", import.meta.url),
   ),
 );
-test("two-body collision reproduces native momentum, damping and early-return ordering", () => {
+test("two-body collision reproduces native momentum, damping and early-return ordering", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(432);
   for (const v of fixture.cases) {
     const result = nativeBodyCollision(v.receiver, v.incoming, v.side);
@@ -21,7 +21,7 @@ test("two-body collision reproduces native momentum, damping and early-return or
   }
 });
 
-test("worm projectile contact uses native state-gated momentum response", () => {
+test("worm projectile contact uses native state-gated momentum response", { tag: "@logic" }, () => {
   expect(fixture.worm_projectile_gates).toHaveLength(200);
   for (const v of fixture.worm_projectile_gates) {
     expect(
@@ -39,7 +39,7 @@ import {
   nativeComplexBounce,
   nativeSimpleBounce,
 } from "../src/armageddon/motion.js";
-test("complex terrain bounce matches native probes, overflow and stop ordering", () => {
+test("complex terrain bounce matches native probes, overflow and stop ordering", { tag: "@logic" }, () => {
   expect(fixture.complex_bounces).toHaveLength(1200);
   for (const v of fixture.complex_bounces) {
     const queries = [];

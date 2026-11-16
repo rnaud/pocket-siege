@@ -8,7 +8,7 @@ const fixture = JSON.parse(
     new URL("./fixtures/armageddon/launch.json", import.meta.url),
   ),
 );
-test("native trig matches original x86 for all 65536 input words", () => {
+test("native trig matches original x86 for all 65536 input words", { tag: "@logic" }, () => {
   const bytes = Buffer.alloc(65536 * 8);
   for (let angle = 0; angle < 65536; angle++) {
     bytes.writeInt32LE(nativeSin(angle), angle * 8);
@@ -22,7 +22,7 @@ test("native trig matches original x86 for all 65536 input words", () => {
     expect(nativeCos(angle)).toBe(nativeCos(angle & 65535));
   }
 });
-test("native launch offsets, directions and RNG consumption match original x86", () => {
+test("native launch offsets, directions and RNG consumption match original x86", { tag: "@logic" }, () => {
   expect(fixture.vectors).toHaveLength(1056);
   for (const v of fixture.vectors) {
     const queries = [];

@@ -5,7 +5,7 @@ import {
   nativeProjectileCollision,
 } from "../src/armageddon/projectile-runtime.js";
 
-test("native projectile types retain their original constructor mask", () => {
+test("native projectile types retain their original constructor mask", { tag: "@logic" }, () => {
   for (const kind of [
     "rocket",
     "homing",
@@ -29,7 +29,7 @@ test("native projectile types retain their original constructor mask", () => {
   }
 });
 
-test("live projectile terrain and worm masks match original overlap", () => {
+test("live projectile terrain and worm masks match original overlap", { tag: "@logic" }, () => {
   const terrains = fixture.terrains.slice(0, 6).map((t) => {
     const pixels = new Set(t.planes[0].points.map(([x, y]) => y * t.width + x));
     return {

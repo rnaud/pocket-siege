@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/map-objects.json" with { type: "json" };
 import { nativeMapObjects } from "../src/armageddon/map-objects.js";
 
-test("natural mine/barrel placement matches original selection, packets and RNG", () => {
+test("natural mine/barrel placement matches original selection, packets and RNG", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(144);
   for (const [i, c] of fixture.cases.entries()) {
     let seed = c.seed;

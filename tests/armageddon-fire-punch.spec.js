@@ -4,7 +4,7 @@ import entryFixture from "./fixtures/armageddon/fire-punch-entry.json" with { ty
 import tickFixture from "./fixtures/armageddon/fire-punch-tick.json" with { type: "json" };
 import { nativeFirePunchRequest, nativeFirePunchEntry, nativeFirePunchTick } from "../src/armageddon/fire-punch.js";
 
-test("Fire Punch tick matches original transitions, particles, hits and random consumption", () => {
+test("Fire Punch tick matches original transitions, particles, hits and random consumption", { tag: "@logic" }, () => {
   expect(tickFixture.cases).toHaveLength(240);
   for (const row of tickFixture.cases) {
     let draw = 0;
@@ -13,13 +13,13 @@ test("Fire Punch tick matches original transitions, particles, hits and random c
   }
 });
 
-test("Fire Punch launch and terrain clearance match the original executable", () => {
+test("Fire Punch launch and terrain clearance match the original executable", { tag: "@logic" }, () => {
   expect(entryFixture.cases).toHaveLength(24);
   for (const row of entryFixture.cases)
     expect(nativeFirePunchEntry(row.power, row.x, row.y)).toEqual(row.calls);
 });
 
-test("Fire Punch attack rectangle and impulse match the original executable", () => {
+test("Fire Punch attack rectangle and impulse match the original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(140);
   for (const row of fixture.cases)
     expect(nativeFirePunchRequest(row.record, row.x, row.y, row.facing)).toEqual(row.request);

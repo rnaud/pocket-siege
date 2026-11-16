@@ -3,7 +3,7 @@ import fixture from "./fixtures/armageddon/hit-voice.json" with { type: "json" }
 import { nativeHitVoice } from "../src/armageddon/hit-voice.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 
-test("hit voice cooldown, selection and RNG match original receiver", () => {
+test("hit voice cooldown, selection and RNG match original receiver", { tag: "@logic" }, () => {
   for (const row of fixture.cases) {
     let random = row.seed;
     const request = nativeHitVoice(

@@ -4,7 +4,7 @@ import {
   nativeWalkingTick,
   nativeWalkingSprite,
 } from "../src/armageddon/walking-art.js";
-test("walking cadence and slope selection match original executable blocks", () => {
+test("walking cadence and slope selection match original executable blocks", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeWalkingTick(row.previous)).toEqual({
       progress: row.progress,

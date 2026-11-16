@@ -4,7 +4,7 @@ import {
   nativeTeleportTick,
   nativeTeleportRenderProgress,
 } from "../src/armageddon/teleport.js";
-test("teleport progress, relocation and completion match original executable", () => {
+test("teleport progress, relocation and completion match original executable", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeTeleportTick(row.input)).toEqual(row.output);
   for (const row of fixture.render_cases)

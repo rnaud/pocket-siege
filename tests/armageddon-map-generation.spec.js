@@ -9,7 +9,7 @@ for (const [name, fixture] of [
   ["indexed", indexedFixture],
   ["packed", packedFixture],
 ])
-  test(`complete ${name} map candidate sequence matches original layers, points, exclusions and RNG`, () => {
+  test(`complete ${name} map candidate sequence matches original layers, points, exclusions and RNG`, { tag: "@logic" }, () => {
     expect(fixture.cases).toHaveLength(60);
     const { width, height } = fixture;
     if (fixture.packed) {

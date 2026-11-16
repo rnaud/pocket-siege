@@ -5,7 +5,7 @@ import fixture from "./fixtures/armageddon/fonts.json" with { type: "json" };
 import { decodeNativeFont, measureNativeText } from "../src/armageddon/font.js";
 
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
-test("all original FNT glyphs and advances match the executable", () => {
+test("all original FNT glyphs and advances match the executable", { tag: "@logic" }, () => {
   for (const entry of fixture.cases) {
     const data = readFileSync(`public/armageddon/fonts/${entry.name}.fnt`);
     expect(hash(data)).toBe(entry.sha256);

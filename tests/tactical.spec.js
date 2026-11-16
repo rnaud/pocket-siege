@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { Terrain, stepWorm, bodyBlocked } from "../src/physics.js";
 
-test("seeded maps provide six stable, clear starting positions", () => {
+test("seeded maps provide six stable, clear starting positions", { tag: "@logic" }, () => {
   for (const layout of [
     "highlands",
     "archipelago",
