@@ -1,7 +1,17 @@
+import { nativeFreezeAnimation } from "./freeze.js";
+import spriteIds from "./sprite-ids.json";
 import * as THREE from "three";
 import { decodeSprite, spriteFrameRGBA } from "./sprite.js";
 
+const spriteIdByName = new Map(
+  Object.entries(spriteIds.sprites).map(([id, sprite]) => [sprite.name, +id]),
+);
+const freezeEntry = spriteIds.sprites[0x23c].name;
+const freezeIdle = spriteIds.sprites[0x248].name;
 const names = [
+  freezeEntry,
+  spriteIds.sprites[0x242].name,
+  freezeIdle,
   "wbrth1",
   "wblink1",
   "wwalk",
@@ -83,6 +93,22 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     name = weapon === "shotgun" ? "wshotg" : "wbaz";
     aimed = true;
   }
+  if (worm.frozen > 0 && worm.hp > 0) {
+    aimed = false;
+    // 004F5C80 queues 0x23C then 0x248 for entry from an ordinary state.
+    // Exact task rates remain unported; keep the existing 25 fps adapter.
+    if (worm.originalFreezeStart == null) {
+      worm.originalFreezeStart = frame;
+      const queue = nativeFreezeAnimation(
+        spriteIdByName.get(worm.originalAnimation),
+      );
+      worm.originalFreezeEntry = spriteIds.sprites[queue.sprites[0]].name;
+    }
+    const entry = worm.originalFreezeEntry;
+    const entryFrames = animations.get(entry)?.sprite.frames.length ?? 0;
+    name =
+      frame - worm.originalFreezeStart < entryFrames * 2 ? entry : freezeIdle;
+  } else worm.originalFreezeStart = null;
   if (worm.hp <= 0) name = "wdie";
   if (worm.originalAnimation !== name) {
     worm.originalAnimation = name;

@@ -1134,13 +1134,20 @@ test("parachute and freeze utilities resolve their effects", async ({
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="freeze"]').click();
   let state = await page.evaluate(() => window.siege.getState());
-  expect(state.frozen).toEqual([0, 0, 0, 1, 1, 1]);
+  expect(state.frozen).toEqual([1, 1, 1, 0, 0, 0]);
   expect(state.utilities.freeze).toBe(0);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
       timeout: 5000,
     })
     .toBe(1);
+  expect(await page.evaluate(() => window.siege.getState().frozen)).toEqual([
+    1, 1, 1, 0, 0, 0,
+  ]);
+  await page.locator("#skip").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().team))
+    .toBe(0);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().frozen), {
       timeout: 5000,

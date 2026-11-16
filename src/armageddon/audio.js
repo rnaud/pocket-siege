@@ -1,4 +1,7 @@
 const sounds = {
+  freeze: "freeze",
+  unfreeze: "unfreeze",
+  frozenhit: "frozenwormimpact",
   rocket: "rocketrelease",
   homing: "rocketrelease",
   mortar: "rocketrelease",

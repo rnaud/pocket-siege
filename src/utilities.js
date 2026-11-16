@@ -33,7 +33,7 @@ export const UTILITIES = {
     label: "Freeze",
     icon: "❄",
     fresh: 1,
-    help: "Freeze the other squad for one turn",
+    help: "Protect your squad until your next turn",
   },
 };
 

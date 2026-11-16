@@ -1,0 +1,149 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "method": "Original x86 instructions executed with Unicorn; scheduler observed, animation queue interface recorded.",
+  "dispatch_entry": "004FCF8B",
+  "animation_entry": "004F5C80",
+  "dispatch": [
+    {
+      "team": 0,
+      "category": 20,
+      "target": 0,
+      "event": 1041,
+      "length": 4,
+      "payload_team": 0
+    },
+    {
+      "team": 1,
+      "category": 20,
+      "target": 0,
+      "event": 1041,
+      "length": 4,
+      "payload_team": 1
+    },
+    {
+      "team": 2,
+      "category": 20,
+      "target": 0,
+      "event": 1041,
+      "length": 4,
+      "payload_team": 2
+    },
+    {
+      "team": 3,
+      "category": 20,
+      "target": 0,
+      "event": 1041,
+      "length": 4,
+      "payload_team": 3
+    },
+    {
+      "team": 4,
+      "category": 20,
+      "target": 0,
+      "event": 1041,
+      "length": 4,
+      "payload_team": 4
+    },
+    {
+      "team": 5,
+      "category": 20,
+      "target": 0,
+      "event": 1041,
+      "length": 4,
+      "payload_team": 5
+    }
+  ],
+  "animation": [
+    {
+      "previous_sprite_id": 0,
+      "calls": [
+        {
+          "operation": "clear"
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 572
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 584
+        }
+      ]
+    },
+    {
+      "previous_sprite_id": 35,
+      "calls": [
+        {
+          "operation": "clear"
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 572
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 584
+        }
+      ]
+    },
+    {
+      "previous_sprite_id": 443,
+      "calls": [
+        {
+          "operation": "clear"
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 572
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 584
+        }
+      ]
+    },
+    {
+      "previous_sprite_id": 575,
+      "calls": [
+        {
+          "operation": "queue",
+          "sprite_id": 578
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 584
+        }
+      ]
+    },
+    {
+      "previous_sprite_id": 584,
+      "calls": [
+        {
+          "operation": "clear"
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 572
+        },
+        {
+          "operation": "queue",
+          "sprite_id": 584
+        }
+      ]
+    }
+  ],
+  "sound_descriptors": [
+    {
+      "id": 24,
+      "filename": "freeze.wav"
+    },
+    {
+      "id": 25,
+      "filename": "unfreeze.wav"
+    },
+    {
+      "id": 106,
+      "filename": "frozenwormimpact.wav"
+    }
+  ]
+}

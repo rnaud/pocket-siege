@@ -131,7 +131,8 @@ export function blastImpulse(w, x, y, radius, strength = 270) {
     nx = d > 0.001 ? dx / d : 0,
     ny = d > 0.001 ? dy / d : 1,
     push = strength * factor;
-  w.vx += nx * push;
+  // Native frozen blast response clears horizontal impulse, retaining vertical.
+  w.vx = w.frozen > 0 ? 0 : w.vx + nx * push;
   // A little lift makes side hits arc away instead of sliding along the floor,
   // but cap it so a blast from below cannot launch a worm off the top of the map.
   w.vy += Math.min(ny + 0.4, 0.65) * push;

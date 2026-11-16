@@ -1,3 +1,4 @@
+import { freezeTeam } from "./armageddon/freeze.js";
 import {
   WEAPON_SLOTS,
   advanceNativeDelays,
@@ -903,22 +904,13 @@ function beginTurn() {
   parachuteArmed = false;
   utilitiesOpen = false;
   specialOpen = false;
+  // Native team event 0x41C broadcasts thaw (0x412) before turn setup.
+  const thawing = worms.some(
+    (w) => w.team === team && w.hp > 0 && w.frozen > 0,
+  );
+  for (const w of worms) if (w.team === team) w.frozen = 0;
+  if (thawing) sfx("unfreeze");
   applyPoisonTick();
-  const aliveTeam = worms.filter((w) => w.team === team && w.hp > 0);
-  if (aliveTeam.length && aliveTeam.every((w) => w.frozen > 0)) {
-    for (const w of aliveTeam) w.frozen = 0;
-    current = worms.indexOf(aliveTeam[0]);
-    phase = "settle";
-    wormLocked = true;
-    retreat = 0;
-    shotWait = 0;
-    move = 0;
-    $("#turn-label").textContent = "FROZEN TURN";
-    $("#status").textContent =
-      `${team === 0 ? "MOSS COMPANY" : "CORAL CREW"} is frozen and loses this turn.`;
-    updateUI();
-    return;
-  }
   const roster = worms.filter((w) => w.team === team);
   if (!roster.some((w) => w.hp > 0)) return endGame();
   let next = turnCount[team] % roster.length;
@@ -1412,10 +1404,13 @@ function useUtility(kind) {
     return;
   }
   if (kind === "freeze") {
-    for (const w of worms) if (w.team !== team && w.hp > 0) w.frozen = 1;
+    freezeTeam(worms, team);
+    sfx("freeze");
     utilityAmmo[team].freeze = spendAmmo(utilityAmmo[team].freeze);
     activeUtility = null;
-    finishUtilityTurn("Freeze deployed. The other squad loses a turn.");
+    finishUtilityTurn(
+      "Your squad is frozen and protected until your next turn.",
+    );
   }
 }
 function startJetpack() {
@@ -1605,7 +1600,7 @@ function applyPoisonTick() {
   if (!poisoned) return;
   let hits = 0;
   for (const w of worms) {
-    if (w.hp <= 0) continue;
+    if (w.hp <= 0 || w.frozen > 0) continue;
     w.hp = Math.max(0, w.hp - 5);
     w.hurt = Math.max(w.hurt, 0.65);
     damageLabel(w, 5);
@@ -1945,7 +1940,12 @@ function adjustAim(direction, dt) {
   updateSliders();
 }
 function injure(w, damage, direction = 0) {
+  // Frozen state 0x88 bypasses weapon damage in events 0x404/0x433.
   if (w.hp <= 0 || damage <= 0) return;
+  if (w.frozen > 0) {
+    sfx("frozenhit");
+    return;
+  }
   w.hp = Math.max(0, w.hp - damage);
   w.hurt = 1.4;
   sfx("hit");
@@ -2130,7 +2130,7 @@ function fireShotgun() {
     injure(victim, Math.round(WEAPONS.shotgun.damage * blastScale), dir);
     victim.knocked = true;
     victim.ground = false;
-    victim.vx = dir * 230;
+    victim.vx = victim.frozen > 0 ? 0 : dir * 230;
     victim.vy = 130;
     impactFlash(hit.x, hit.y);
   } else {
@@ -2173,7 +2173,7 @@ function fireBat() {
     injure(victim, WEAPONS.bat.damage, dir);
     victim.knocked = true;
     victim.ground = false;
-    victim.vx = dir * 360;
+    victim.vx = victim.frozen > 0 ? 0 : dir * 360;
     victim.vy = 165;
     impactFlash(victim.x, victim.y + 20);
     finishAction(`${w.name} sends ${victim.name} flying with the bat.`);
@@ -2382,6 +2382,11 @@ function explode(x, y, kind, ownerIndex = -1) {
         Math.round(factor * maxDamage * exposure.get(w)),
       );
       const direction = Math.sign(w.x - x) || 1;
+      if (w.frozen > 0) {
+        sfx("frozenhit");
+        reports.push(`${w.name} · FROZEN`);
+        continue;
+      }
       injure(w, damage, direction);
       if (ownerIndex >= 0 && worms[ownerIndex]?.team !== w.team)
         dealt += damage;
@@ -2643,14 +2648,14 @@ function startAiTurn() {
   const playerAlive = worms.filter((t) => t.team === 0 && t.hp > 0).length;
   if (displayAmmo(utilityAmmo[1]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
     utilityAmmo[1].freeze = spendAmmo(utilityAmmo[1].freeze);
-    for (const target of worms)
-      if (target.team === 0 && target.hp > 0) target.frozen = 1;
+    freezeTeam(worms, 1);
+    sfx("freeze");
     phase = "settle";
     retreat = 0;
     shotWait = 0;
     move = 0;
     $("#status").textContent =
-      "The computer freezes your squad. Your next turn is lost.";
+      "The computer freezes its squad for protection. Your turn is next.";
     updateUI();
     return;
   }
@@ -3949,6 +3954,8 @@ window.siege = {
         moving,
         weaponRotation: rig.pivot.rotation.z,
         pose: g.userData.pose || "idle",
+        originalSprite: g.userData.originalSprite,
+        originalFrame: g.userData.originalFrame,
       }),
     ),
     projectile: projectile
