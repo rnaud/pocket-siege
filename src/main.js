@@ -51,6 +51,8 @@ import {
   startOriginalJump,
   stepOriginalJump,
   startOriginalParachute,
+  startOriginalTeleport,
+  stepOriginalTeleport,
   setOriginalRope,
   stepOriginalParachute,
   startOriginalDrowning,
@@ -1499,15 +1501,8 @@ function handleUtilityTarget(e) {
       return;
     }
     utilityAmmo[team].teleport = spendAmmo(utilityAmmo[team].teleport);
-    const oldX = w.x;
-    w.x = x;
-    w.y = y;
-    w.vx = 0;
-    w.vy = 0;
-    w.ground = false;
-    w.renderY = y;
-    w.facing = x > oldX ? 1 : -1;
-    cameraSnap = true;
+    w.vx = w.vy = 0;
+    startOriginalTeleport(w, x, y);
     finishUtilityTurn("Teleported. Turn over.");
     return;
   }
@@ -3150,6 +3145,11 @@ function step(dt) {
     }
     w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
+    if (w.originalTeleport) {
+      const teleport = stepOriginalTeleport(w);
+      if (teleport?.relocate) cameraSnap = true;
+      continue;
+    }
     let result = { fallDamage: 0 };
     if (w === worms[current] && jetpack.active) {
       stepJetpack(w, dt);
@@ -3460,6 +3460,7 @@ function step(dt) {
       worms.every(
         (w) =>
           !w.deathPending &&
+          !w.originalTeleport &&
           w.dying <= 0 &&
           (w.hp <= 0 || (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)),
       );
@@ -3760,6 +3761,7 @@ function frame(now) {
       !original?.equipped &&
       !w.originalRope &&
       !w.originalParachute &&
+      !w.originalTeleport &&
       active &&
       w.hp > 0 &&
       w.hurt < 0.75 &&

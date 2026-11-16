@@ -1,3 +1,4 @@
+import { nativeTeleportTick } from "./teleport.js";
 import {
   nativeWormJumpLandingEntry,
   nativeWormJumpLandingTick,
@@ -97,6 +98,7 @@ const names = [
     "wshotp",
     "wparacht",
     "wparalnk",
+    "wteldsv",
     "wbatrope",
     "ropecuff",
     "ropetip",
@@ -543,7 +545,53 @@ export function setOriginalRope(worm, angle) {
   worm.originalParachute = null;
 }
 
+// 004F7FD0 clears and queues 0x18e; host target selection supplies coordinates.
+export function startOriginalTeleport(worm, x, y) {
+  const animation = animations.get("wteldsv");
+  if (!animation) return false;
+  const player = new NativeAnimationPlayer();
+  player.enqueue(0x18e, animation.metadata);
+  worm.originalTeleport = { player, progress: 0, x, y };
+  worm.originalJump = worm.originalLanding = worm.originalParachute = null;
+  return true;
+}
+export function stepOriginalTeleport(worm) {
+  const state = worm.originalTeleport;
+  if (!state) return null;
+  if (worm.hp <= 0 || worm.frozen || worm.knocked) {
+    worm.originalTeleport = null;
+    return null;
+  }
+  state.player.advance();
+  const next = nativeTeleportTick(state.progress);
+  state.progress = next.progress;
+  if (next.relocate) {
+    worm.x = state.x;
+    worm.y = state.y;
+    worm.renderY = state.y;
+    worm.vx = worm.vy = 0;
+    worm.ground = false;
+  }
+  if (next.target !== null) worm.originalTeleport = null;
+  return next;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  if (worm.originalTeleport && worm.hp > 0) {
+    const animation = animations.get("wteldsv");
+    const index = nativeSpriteFrame(
+      animation.sprite.frames.length,
+      animation.sprite.metadata[2],
+      worm.originalTeleport.player.current.progress,
+    );
+    return {
+      map: texture("wteldsv", index),
+      name: "wteldsv",
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
   if (worm.originalRope && worm.hp > 0 && !worm.frozen && !worm.knocked) {
     const animation = animations.get("wbatrope");
     if (animation) {

@@ -1,0 +1,879 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entry": "004F8030",
+  "method": "Original progress and boundary instructions execute unchanged; relocation/state calls observed; body mode and refresh stubbed.",
+  "cases": [
+    {
+      "input": 0,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 655
+      }
+    },
+    {
+      "input": 655,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 1310
+      }
+    },
+    {
+      "input": 1310,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 1965
+      }
+    },
+    {
+      "input": 1965,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 2620
+      }
+    },
+    {
+      "input": 2620,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 3275
+      }
+    },
+    {
+      "input": 3275,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 3930
+      }
+    },
+    {
+      "input": 3930,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 4585
+      }
+    },
+    {
+      "input": 4585,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 5240
+      }
+    },
+    {
+      "input": 5240,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 5895
+      }
+    },
+    {
+      "input": 5895,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 6550
+      }
+    },
+    {
+      "input": 6550,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 7205
+      }
+    },
+    {
+      "input": 7205,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 7860
+      }
+    },
+    {
+      "input": 7860,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 8515
+      }
+    },
+    {
+      "input": 8515,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 9170
+      }
+    },
+    {
+      "input": 9170,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 9825
+      }
+    },
+    {
+      "input": 9825,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 10480
+      }
+    },
+    {
+      "input": 10480,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 11135
+      }
+    },
+    {
+      "input": 11135,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 11790
+      }
+    },
+    {
+      "input": 11790,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 12445
+      }
+    },
+    {
+      "input": 12445,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 13100
+      }
+    },
+    {
+      "input": 13100,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 13755
+      }
+    },
+    {
+      "input": 13755,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 14410
+      }
+    },
+    {
+      "input": 14410,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 15065
+      }
+    },
+    {
+      "input": 15065,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 15720
+      }
+    },
+    {
+      "input": 15720,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 16375
+      }
+    },
+    {
+      "input": 16375,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 17030
+      }
+    },
+    {
+      "input": 17030,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 17685
+      }
+    },
+    {
+      "input": 17685,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 18340
+      }
+    },
+    {
+      "input": 18340,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 18995
+      }
+    },
+    {
+      "input": 18995,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 19650
+      }
+    },
+    {
+      "input": 19650,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 20305
+      }
+    },
+    {
+      "input": 20305,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 20960
+      }
+    },
+    {
+      "input": 20960,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 21615
+      }
+    },
+    {
+      "input": 21615,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 22270
+      }
+    },
+    {
+      "input": 22270,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 22925
+      }
+    },
+    {
+      "input": 22925,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 23580
+      }
+    },
+    {
+      "input": 23580,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 24235
+      }
+    },
+    {
+      "input": 24235,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 24890
+      }
+    },
+    {
+      "input": 24890,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 25545
+      }
+    },
+    {
+      "input": 25545,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 26200
+      }
+    },
+    {
+      "input": 26200,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 26855
+      }
+    },
+    {
+      "input": 26855,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 27510
+      }
+    },
+    {
+      "input": 27510,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 28165
+      }
+    },
+    {
+      "input": 28165,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 28820
+      }
+    },
+    {
+      "input": 28820,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 29475
+      }
+    },
+    {
+      "input": 29475,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 30130
+      }
+    },
+    {
+      "input": 30130,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 30785
+      }
+    },
+    {
+      "input": 30785,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 31440
+      }
+    },
+    {
+      "input": 31440,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 32095
+      }
+    },
+    {
+      "input": 32095,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 32750
+      }
+    },
+    {
+      "input": 32750,
+      "output": {
+        "relocate": true,
+        "target": null,
+        "progress": 33405
+      }
+    },
+    {
+      "input": 33405,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 34060
+      }
+    },
+    {
+      "input": 34060,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 34715
+      }
+    },
+    {
+      "input": 34715,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 35370
+      }
+    },
+    {
+      "input": 35370,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 36025
+      }
+    },
+    {
+      "input": 36025,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 36680
+      }
+    },
+    {
+      "input": 36680,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 37335
+      }
+    },
+    {
+      "input": 37335,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 37990
+      }
+    },
+    {
+      "input": 37990,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 38645
+      }
+    },
+    {
+      "input": 38645,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 39300
+      }
+    },
+    {
+      "input": 39300,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 39955
+      }
+    },
+    {
+      "input": 39955,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 40610
+      }
+    },
+    {
+      "input": 40610,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 41265
+      }
+    },
+    {
+      "input": 41265,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 41920
+      }
+    },
+    {
+      "input": 41920,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 42575
+      }
+    },
+    {
+      "input": 42575,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 43230
+      }
+    },
+    {
+      "input": 43230,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 43885
+      }
+    },
+    {
+      "input": 43885,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 44540
+      }
+    },
+    {
+      "input": 44540,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 45195
+      }
+    },
+    {
+      "input": 45195,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 45850
+      }
+    },
+    {
+      "input": 45850,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 46505
+      }
+    },
+    {
+      "input": 46505,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 47160
+      }
+    },
+    {
+      "input": 47160,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 47815
+      }
+    },
+    {
+      "input": 47815,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 48470
+      }
+    },
+    {
+      "input": 48470,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 49125
+      }
+    },
+    {
+      "input": 49125,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 49780
+      }
+    },
+    {
+      "input": 49780,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 50435
+      }
+    },
+    {
+      "input": 50435,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 51090
+      }
+    },
+    {
+      "input": 51090,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 51745
+      }
+    },
+    {
+      "input": 51745,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 52400
+      }
+    },
+    {
+      "input": 52400,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 53055
+      }
+    },
+    {
+      "input": 53055,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 53710
+      }
+    },
+    {
+      "input": 53710,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 54365
+      }
+    },
+    {
+      "input": 54365,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 55020
+      }
+    },
+    {
+      "input": 55020,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 55675
+      }
+    },
+    {
+      "input": 55675,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 56330
+      }
+    },
+    {
+      "input": 56330,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 56985
+      }
+    },
+    {
+      "input": 56985,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 57640
+      }
+    },
+    {
+      "input": 57640,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 58295
+      }
+    },
+    {
+      "input": 58295,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 58950
+      }
+    },
+    {
+      "input": 58950,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 59605
+      }
+    },
+    {
+      "input": 59605,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 60260
+      }
+    },
+    {
+      "input": 60260,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 60915
+      }
+    },
+    {
+      "input": 60915,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 61570
+      }
+    },
+    {
+      "input": 61570,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 62225
+      }
+    },
+    {
+      "input": 62225,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 62880
+      }
+    },
+    {
+      "input": 62880,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 63535
+      }
+    },
+    {
+      "input": 63535,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 64190
+      }
+    },
+    {
+      "input": 64190,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 64845
+      }
+    },
+    {
+      "input": 64845,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 65500
+      }
+    },
+    {
+      "input": 65500,
+      "output": {
+        "relocate": false,
+        "target": 101,
+        "progress": 66155
+      }
+    },
+    {
+      "input": -2147483648,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": -2147482993
+      }
+    },
+    {
+      "input": -1,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 654
+      }
+    },
+    {
+      "input": 32113,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 32768
+      }
+    },
+    {
+      "input": 32114,
+      "output": {
+        "relocate": true,
+        "target": null,
+        "progress": 32769
+      }
+    },
+    {
+      "input": 32768,
+      "output": {
+        "relocate": true,
+        "target": null,
+        "progress": 33423
+      }
+    },
+    {
+      "input": 32769,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": 33424
+      }
+    },
+    {
+      "input": 64881,
+      "output": {
+        "relocate": false,
+        "target": 101,
+        "progress": 65536
+      }
+    },
+    {
+      "input": 2147483647,
+      "output": {
+        "relocate": false,
+        "target": null,
+        "progress": -2147482994
+      }
+    }
+  ]
+}
