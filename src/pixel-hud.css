@@ -36,6 +36,20 @@ input {
 button {
   touch-action: manipulation;
 }
+/* iOS otherwise allows long-press selection on nested button labels. */
+button,
+button *,
+[role="button"],
+[role="button"] * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Held controls must keep receiving pointer events as the thumb slides. */
+[data-move],
+#fire {
+  touch-action: none;
+}
 button:focus-visible,
 select:focus-visible,
 input:focus-visible {
