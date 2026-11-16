@@ -1,4 +1,4 @@
-"""Execute original forces, pixel sweep, simple bounce and water motion in Unicorn.
+"""Execute original motion primitives and simple-body ticks in Unicorn.
 
 Collision predicates receive fixed-point coordinates and return explicit hit IDs.
 No game entry point runs.
@@ -36,14 +36,14 @@ def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 
 body,vtable,collision=owner+0x2000,owner+0x800,owner+0xa00
 write(owner,vtable);write(vtable+0xc,collision);cpu.mem_write(collision,b'\xc2\x0c\x00')
-queries=[];shape='empty'
+queries=[];shape='empty';hit_id=7
 def solid(x,y):
     x >>= 16;y >>= 16
     return {'empty':False,'right':x>=5,'left':x<0,'floor':y>=5,'ceiling':y<0,'pixel':x==3 and y==3}[shape]
 def observe(cpu,address,size,unused):
     sp=cpu.reg_read(UC_X86_REG_ESP)
     x,y=struct.unpack('<2i',cpu.mem_read(sp+8,8))
-    queries.append([x,y]);cpu.reg_write(UC_X86_REG_EAX,7 if solid(x,y) else 0)
+    queries.append([x,y]);cpu.reg_write(UC_X86_REG_EAX,hit_id if solid(x,y) else 0)
 cpu.hook_add(UC_HOOK_CODE,observe,begin=collision,end=collision)
 def run(address,arguments,this=owner):
     queries.clear()
@@ -106,8 +106,46 @@ for flags in [0,0x400000]:
                         'y_out':struct.unpack('<i',cpu.mem_read(body+0x94,4))[0],
                         'velocity_out':list(struct.unpack('<2i',cpu.mem_read(body+0x9c,8))),
                         'submerged':read(body+0xbc),'skim':bool(skims),'result':result,'queries':list(queries)})
+ticks=[]
+context=owner+0x6000
+awake_stub,water_event=owner+0xd00,owner+0xe00
+write(body_vtable+0x2c,0x4f4860);write(body_vtable+0xf4,awake_stub);write(body_vtable+0x3c,water_event)
+cpu.mem_write(awake_stub,b'\xc3');cpu.mem_write(water_event,b'\xc3')
+awake_value=1;events=[]
+def on_awake(cpu,address,size,unused):
+    events.append('awake');cpu.reg_write(UC_X86_REG_EAX,awake_value)
+def on_water(cpu,address,size,unused): events.append('water')
+cpu.hook_add(UC_HOOK_CODE,on_awake,begin=awake_stub,end=awake_stub)
+cpu.hook_add(UC_HOOK_CODE,on_water,begin=water_event,end=water_event)
+hit_id=other
+fields={'enabled':0x48,'suspended':0x54,'sleeping':0xb8,'submerged':0xbc,'contact':0xc0,'moving':0xc4,
+'x':0x90,'y':0x94,'vx':0x9c,'vy':0xa0,'angle':0x98,'angularVelocity':0xa4,'radius':0x5c,
+'flags':0x40,'gravityScale':0x6c,'windScale':0x68,'drag':0x64,'skimScale':0xb4,'waterDrag':0x60,
+'restitutionX':0x78,'restitutionY':0x7c,'tangent':0x80}
+for velocity in [[8<<16,2<<16],[-8<<16,2<<16],[0,0],[40<<16,-35<<16]]:
+    for shape in ['empty','right','floor']:
+        for awake_value in [0,1]:
+            for sleeping in [0,1]:
+                for frame in [0,1]:
+                    for flags in [0,0x400000]:
+                        initial={'enabled':1,'suspended':0,'sleeping':sleeping,'submerged':0,'contact':1,'moving':1,
+                            'x':2<<16,'y':4<<16,'vx':velocity[0],'vy':velocity[1],'angle':123,'angularVelocity':456,'radius':2<<16,
+                            'flags':flags,'gravityScale':65536,'windScale':65536,'drag':65536,'skimScale':65536,'waterDrag':0xcccc,
+                            'restitutionX':0x9999,'restitutionY':0x8000,'tangent':0xcccc}
+                        for name,offset in fields.items():write(body+offset,initial[name]&0xffffffff)
+                        write(body+0xc8,0);write(body+0x4c,0)
+                        write(other+0x9c,0);write(other+0xa0,0)
+                        write(owner+0x3c0,context);write(context+0x7f0,frame);write(context+0x1ac4,0)
+                        write(owner+0x3b4,3);write(owner+0x3b8,0x3d70);write(owner+0x3bc,1024)
+                        # Prime native collision-mask cache; callback supplies the predicate.
+                        for offset,value in {4:body,8:read(body+0x44),12:flags,16:initial['x'],20:initial['y']}.items():write(owner+offset,value)
+                        events.clear();skims.clear()
+                        run(0x4ca320,[body,0])
+                        output={name:struct.unpack('<i',cpu.mem_read(body+offset,4))[0] for name,offset in fields.items()}
+                        ticks.append({'initial':initial,'frame':frame,'awake':awake_value,'shape':shape,'output':output,
+                            'events':list(events),'skims':len(skims),'queries':list(queries)})
 args.output.parent.mkdir(parents=True,exist_ok=True)
-args.output.write_text(json.dumps({'executable_sha256':digest,'entries':['004CA110','004C9AA0','004F4860','004C9F10'],
-    'method':'Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects.',
-    'sweeps':sweeps,'forces':forces,'bounces':bounces,'water':water},indent=2)+'\n')
-print(f'Captured {len(sweeps)} sweeps and {len(forces)} force cases and {len(bounces)} simple-body bounces and {len(water)} water cases')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entries':['004CA110','004C9AA0','004F4860','004C9F10','004CA320 simple-body path'],
+    'method':'Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects. Body ticks use the simple-body path with zero earthquake, primed collision-mask cache, native bounce and explicit awake/event callbacks.',
+    'sweeps':sweeps,'forces':forces,'bounces':bounces,'water':water,'ticks':ticks},indent=2)+'\n')
+print(f'Captured {len(sweeps)} sweeps and {len(forces)} force cases and {len(bounces)} simple-body bounces and {len(water)} water cases and {len(ticks)} body ticks')

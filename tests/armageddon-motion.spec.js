@@ -5,6 +5,7 @@ import {
   nativeSweep,
   nativeSimpleBounce,
   nativeWaterMotion,
+  nativeSimpleBodyTick,
 } from "../src/armageddon/motion.js";
 const fixture = JSON.parse(
   fs.readFileSync(
@@ -142,5 +143,47 @@ test("water entry and skimming match original thresholds, event and collision qu
       result: v.result,
     });
     expect(queries).toEqual(v.queries);
+  }
+});
+
+test("simple-body tick matches native force, water, two-contact, rotation and sleep ordering", () => {
+  expect(fixture.ticks).toHaveLength(192);
+  for (const v of fixture.ticks) {
+    const queries = [],
+      events = [];
+    let skims = 0;
+    const predicate = collision(v.shape, queries);
+    const result = nativeSimpleBodyTick(
+      v.initial,
+      {
+        frame: v.frame,
+        index: 0,
+        waterY: 3,
+        gravity: 0x3d70,
+        wind: 1024,
+      },
+      {
+        collide: (x, y) => (predicate(x, y) ? 0x2004000 : 0),
+        awake: () => {
+          events.push("awake");
+          return v.awake;
+        },
+        skim: () => {
+          skims++;
+        },
+        waterChanged: () => {
+          events.push("water");
+        },
+        bounce: (body, hit, side) =>
+          Object.assign(
+            body,
+            nativeSimpleBounce(body, { vx: 0, vy: 0 }, side).body,
+          ),
+      },
+    );
+    expect(result, JSON.stringify(v)).toEqual(v.output);
+    expect(queries).toEqual(v.queries);
+    expect(events).toEqual(v.events);
+    expect(skims).toBe(v.skims);
   }
 });

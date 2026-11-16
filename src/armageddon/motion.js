@@ -143,3 +143,66 @@ export function nativeWaterMotion(body, waterY, suppressSkim, collide) {
     result: 1,
   };
 }
+
+// 004CA320 simple-body path, without earthquake impulses. Collision masks are
+// supplied by the caller; response callbacks may update the body in place.
+export function nativeSimpleBodyTick(input, environment, callbacks) {
+  const body = { ...input };
+  if (!body.enabled || body.suspended) return body;
+  const awake = () => callbacks.awake(body);
+  if (((environment.frame + environment.index) | 0) % 13 === 0 || awake())
+    body.sleeping = 0;
+  if (body.sleeping) return body;
+  const wasSubmerged = body.submerged;
+  body.submerged = 0;
+  body.contact = 0;
+  body.moving = 0;
+  const water = nativeWaterMotion(
+    body,
+    environment.waterY,
+    wasSubmerged,
+    callbacks.collide,
+  );
+  Object.assign(body, {
+    y: water.y,
+    vx: water.vx,
+    vy: water.vy,
+    submerged: water.submerged,
+  });
+  if (water.skim) callbacks.skim?.(body);
+  if (!water.result) {
+    const force = nativeAirForces(
+      body,
+      environment.gravity,
+      environment.wind,
+      callbacks.collide,
+    );
+    Object.assign(body, { vx: force.vx, vy: force.vy, moving: force.moving });
+  }
+  if (body.submerged !== wasSubmerged) callbacks.waterChanged?.(body);
+  let remaining = 65536;
+  for (let i = 0; i < 2 && remaining; i++) {
+    const sweep = nativeSweep(body, remaining, callbacks.collide);
+    body.x = sweep.x;
+    body.y = sweep.y;
+    remaining = sweep.remaining;
+    if (sweep.hit) callbacks.bounce(body, sweep.hit, sweep.side);
+  }
+  if (body.radius) {
+    const vertical = Math.trunc(abs(body.vy) / 3);
+    const denominator = fixedMultiply(body.radius, 0x6487e);
+    body.angularVelocity =
+      abs(body.vx) < vertical
+        ? (body.vx < 0
+            ? -fixedDivide(vertical, denominator)
+            : fixedDivide(vertical, denominator)) | 0
+        : fixedDivide(body.vx, denominator);
+    body.angle = add(body.angle, body.angularVelocity);
+  }
+  body.vx = Math.max(-0x200000, Math.min(0x200000, body.vx));
+  body.vy = Math.max(-0x200000, Math.min(0x200000, body.vy));
+  if (!body.vx && !body.vy && callbacks.collide(body.x, add(body.y, 65536)))
+    body.moving = 0;
+  if (!awake()) body.sleeping = 1;
+  return body;
+}
