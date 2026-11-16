@@ -1,0 +1,6091 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entries": [
+    "004F8680",
+    "004F8720"
+  ],
+  "method": "Original entry and animation tick execute; resource text disabled, animation/friction/state calls observed. Original angle getter executes unchanged.",
+  "entry": [
+    {
+      "operation": "clear"
+    },
+    {
+      "operation": "queue",
+      "sprite_id": 17
+    }
+  ],
+  "cases": [
+    {
+      "facing": -1,
+      "angle": 0,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 0,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 0,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 0,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 1024,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 1024,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 1024,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 1024,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2048,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2048,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2048,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2048,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 3072,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 3072,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 3072,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 3072,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 4096,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 4096,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 4096,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 4096,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 5120,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 5120,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 5120,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 5120,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 6144,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 6144,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 6144,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 6144,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 7168,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 7168,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 7168,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 7168,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 8192,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 8192,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 8192,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 8192,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 9216,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 9216,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 9216,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 9216,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 10240,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 10240,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 10240,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 10240,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 11264,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 11264,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 11264,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 11264,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 12288,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 12288,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 12288,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 12288,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 13312,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 13312,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 13312,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 13312,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 14336,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 14336,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 14336,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 14336,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 15360,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 15360,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 15360,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 15360,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 16384,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 16384,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 16384,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 16384,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 17408,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 17408,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 17408,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 17408,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 18432,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 18432,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 18432,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 18432,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 19456,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 19456,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 19456,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 19456,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 20480,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 20480,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 20480,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 20480,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 21504,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 21504,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 21504,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 21504,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 22528,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 22528,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 22528,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 22528,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 23552,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 23552,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 23552,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 23552,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 24576,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 24576,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 24576,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 24576,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 25600,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 25600,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 25600,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 25600,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 26624,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 26624,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 26624,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 26624,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 27648,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 27648,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 27648,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 27648,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 28672,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 28672,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 28672,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 28672,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 29696,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 29696,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 29696,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 29696,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 30720,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 30720,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 30720,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 30720,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 31744,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 31744,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 31744,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 31744,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 32768,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 32768,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 32768,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 32768,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 33792,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 33792,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 33792,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 33792,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 34816,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 34816,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 34816,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 34816,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 35840,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 35840,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 35840,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 35840,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 36864,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 36864,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 36864,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 36864,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 37888,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 37888,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 37888,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 37888,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 38912,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 38912,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 38912,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 38912,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 39936,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 39936,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 39936,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 39936,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 40960,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 40960,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 40960,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 40960,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 41984,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 41984,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 41984,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 41984,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 43008,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 43008,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 43008,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 43008,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 44032,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 44032,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 44032,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 44032,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 45056,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 45056,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 45056,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 45056,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 46080,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 46080,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 46080,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 46080,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 47104,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 47104,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 47104,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 47104,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 48128,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 48128,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 48128,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 48128,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 49152,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 49152,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 49152,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 49152,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 50176,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 50176,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 50176,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 50176,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 51200,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 51200,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 51200,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 51200,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 52224,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 52224,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 52224,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 52224,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 53248,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 53248,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 53248,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 53248,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 54272,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 54272,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 54272,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 54272,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 55296,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 55296,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 55296,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 55296,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 56320,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 56320,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 56320,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 56320,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 57344,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 57344,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 57344,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 57344,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 58368,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 58368,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 58368,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 58368,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 59392,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 59392,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 59392,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 59392,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 60416,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 60416,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 60416,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 60416,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 61440,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 61440,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 61440,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 61440,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 62464,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 62464,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 62464,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 62464,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 63488,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 63488,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 63488,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 63488,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 64512,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 64512,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 64512,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 64512,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -1,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -1,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -1,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -1,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -65536,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -65536,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -65536,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -65536,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 65536,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 65536,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 65536,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 65536,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2147483647,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2147483647,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2147483647,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": 2147483647,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 16895,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -2147483648,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -2147483648,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -2147483648,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": -1,
+      "angle": -2147483648,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 0,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 0,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 0,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 0,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 1024,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 1024,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 1024,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 1024,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2048,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2048,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2048,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2048,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 3072,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 3072,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 3072,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 3072,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 4096,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 4096,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 4096,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 4096,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 5120,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 5120,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 5120,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 5120,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 6144,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 6144,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 6144,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 6144,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 7168,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 7168,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 7168,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 7168,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 8192,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 8192,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 8192,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 8192,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 9216,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 9216,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 9216,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 9216,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 10240,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 10240,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 10240,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 10240,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 11264,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 11264,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 11264,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 11264,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 12288,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 12288,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 12288,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 12288,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 13312,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 13312,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 13312,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 13312,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 14336,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 14336,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 14336,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 14336,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 15360,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 15360,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 15360,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 15360,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 16384,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 16384,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 16384,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 16384,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": 512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 17408,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 17408,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 17408,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 17408,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -512,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 18432,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 18432,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 18432,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 18432,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -1536,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 19456,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 19456,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 19456,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 19456,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -2560,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 20480,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 20480,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 20480,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 20480,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -3584,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 21504,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 21504,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 21504,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 21504,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -4608,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 22528,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 22528,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 22528,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 22528,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -5632,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 23552,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 23552,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 23552,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 23552,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -6656,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 24576,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 24576,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 24576,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 24576,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -7680,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 25600,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 25600,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 25600,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 25600,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -8704,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 26624,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 26624,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 26624,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 26624,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -9728,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 27648,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 27648,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 27648,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 27648,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -10752,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 28672,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 28672,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 28672,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 28672,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -11776,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 29696,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 29696,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 29696,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 29696,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -12800,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 30720,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 30720,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 30720,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 30720,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -13824,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 31744,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 31744,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 31744,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 31744,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -14848,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 32768,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 32768,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 32768,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 32768,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -15872,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 33792,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 33792,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 33792,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 33792,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -16896,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 34816,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 34816,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 34816,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 34816,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -17920,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 35840,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 35840,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 35840,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 35840,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -18944,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 36864,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 36864,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 36864,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 36864,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -19968,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 37888,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 37888,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 37888,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 37888,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -20992,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 38912,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 38912,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 38912,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 38912,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -22016,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 39936,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 39936,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 39936,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 39936,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -23040,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 40960,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 40960,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 40960,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 40960,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -24064,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 41984,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 41984,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 41984,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 41984,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -25088,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 43008,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 43008,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 43008,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 43008,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -26112,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 44032,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 44032,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 44032,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 44032,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -27136,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 45056,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 45056,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 45056,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 45056,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -28160,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 46080,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 46080,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 46080,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 46080,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -29184,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 47104,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 47104,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 47104,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 47104,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -30208,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 48128,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 48128,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 48128,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 48128,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -31232,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 49152,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 49152,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 49152,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 49152,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -32256,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 50176,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 50176,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 50176,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 50176,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -33280,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 51200,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 51200,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 51200,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 51200,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -34304,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 52224,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 52224,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 52224,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 52224,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -35328,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 53248,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 53248,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 53248,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 53248,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -36352,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 54272,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 54272,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 54272,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 54272,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -37376,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 55296,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 55296,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 55296,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 55296,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -38400,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 56320,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 56320,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 56320,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 56320,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -39424,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 57344,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 57344,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 57344,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 57344,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -40448,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 58368,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 58368,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 58368,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 58368,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -41472,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 59392,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 59392,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 59392,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 59392,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -42496,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 60416,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 60416,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 60416,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 60416,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -43520,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 61440,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 61440,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 61440,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 61440,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -44544,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 62464,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 62464,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 62464,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 62464,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -45568,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 63488,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 63488,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 63488,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 63488,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -46592,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 64512,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 64512,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 64512,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 64512,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -47616,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -1,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -1,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -1,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -1,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -65536,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -65536,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -65536,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -65536,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 65536,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 65536,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 65536,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 65536,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2147483647,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2147483647,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2147483647,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": 2147483647,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48639,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -2147483648,
+      "field104": 0,
+      "field108": 0,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -2147483648,
+      "field104": 1,
+      "field108": 0,
+      "output": {
+        "target": null,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -2147483648,
+      "field104": 1,
+      "field108": 1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    },
+    {
+      "facing": 1,
+      "angle": -2147483648,
+      "field104": 1,
+      "field108": -1,
+      "output": {
+        "target": 101,
+        "progress": -48640,
+        "friction": 15073
+      }
+    }
+  ]
+}

@@ -45,6 +45,7 @@ import {
   startOriginalJump,
   stepOriginalJump,
   startOriginalParachute,
+  setOriginalRope,
   stepOriginalParachute,
   startOriginalDrowning,
   stepOriginalDrowning,
@@ -1323,6 +1324,12 @@ function skipTurn() {
   updateUI();
 }
 function stopRope() {
+  for (const w of worms) w.originalRope = null;
+  if (rope.cuff) {
+    group.remove(rope.cuff);
+    rope.cuff.geometry.dispose();
+    rope.cuff.material.dispose();
+  }
   if (rope.mesh) {
     group.remove(rope.mesh);
     rope.mesh.geometry.dispose();
@@ -1619,6 +1626,9 @@ function fireRope() {
     mesh: null,
   };
   rope.mesh = makeRopeLine(hit, w);
+  rope.cuff = createOriginalVisual("ropecuff");
+  if (rope.cuff) group.add(rope.cuff);
+  updateRopeVisual(w);
   w.ground = false;
   w.originalParachute = null;
   activeUtility = "rope";
@@ -1682,6 +1692,18 @@ function stepRope(w, dt) {
 }
 function updateRopeVisual(w) {
   if (!rope.mesh || !rope.attached) return;
+  const bodyAngle = Math.round(
+    (Math.atan2(rope.anchor.y - (w.y + 18), w.x - rope.anchor.x) * 0x10000) /
+      (Math.PI * 2),
+  );
+  setOriginalRope(w, bodyAngle);
+  if (rope.cuff) {
+    const art = originalVisual("ropecuff");
+    const index = nativeSpriteFrame(art.count, art.flags, bodyAngle + 0x8100);
+    rope.cuff.material.map = originalVisual("ropecuff", index).map;
+    rope.cuff.userData.originalFrame = index;
+    rope.cuff.position.set(rope.anchor.x, rope.anchor.y, 31);
+  }
   const pos = rope.mesh.geometry.attributes.position;
   pos.setXYZ(0, rope.anchor.x, rope.anchor.y, 30);
   pos.setXYZ(1, w.x, w.y + 18, 30);
@@ -3682,6 +3704,8 @@ function frame(now) {
     );
     w.rig.pivot.visible =
       !original?.equipped &&
+      !w.originalRope &&
+      !w.originalParachute &&
       active &&
       w.hp > 0 &&
       w.hurt < 0.75 &&
@@ -4327,6 +4351,8 @@ window.siege = {
       attached: rope.attached,
       length: Math.round(rope.length),
       anchor: rope.anchor,
+      sprite: rope.cuff?.userData.originalSprite ?? null,
+      frame: rope.cuff?.userData.originalFrame ?? null,
     },
     jetpack: {
       active: jetpack.active,

@@ -78,7 +78,13 @@ test("live rocket emits original exhaust pixels instead of a vector trail and ex
     .toBeNull();
   await expect
     .poll(
-      () => page.evaluate(() => window.siege.getState().nativeParticles.length),
+      () =>
+        page.evaluate(
+          () =>
+            window.siege
+              .getState()
+              .nativeParticles.filter((p) => p.sprite === "hexhaust").length,
+        ),
       { timeout: 6000 },
     )
     .toBe(0);

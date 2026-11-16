@@ -13,6 +13,7 @@ import { nativePostFire, nativeRecoilTick } from "./recoil.js";
 import { nativePreparation, nativePreparationTick } from "./preparation.js";
 import weaponFields from "./weapon-art-fields.json";
 import { WEAPON_SLOTS } from "./delays.js";
+import { nativeRopeAnimation } from "./rope-animation.js";
 import { nativeFreezeAnimation } from "./freeze.js";
 import spriteIds from "./sprite-ids.json";
 import waterSpriteIds from "./water-sprite-ids.json";
@@ -96,6 +97,9 @@ const names = [
     "wshotp",
     "wparacht",
     "wparalnk",
+    "wbatrope",
+    "ropecuff",
+    "ropetip",
     "wjetfly1",
   ]),
 ];
@@ -531,7 +535,33 @@ export function stepOriginalDrowning(worm) {
   return false;
 }
 
+// Browser constraint angle is adapted to the original downward-positive body angle.
+export function setOriginalRope(worm, angle) {
+  worm.originalRope = nativeRopeAnimation(worm.facing, angle);
+  worm.originalJump = null;
+  worm.originalLanding = null;
+  worm.originalParachute = null;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  if (worm.originalRope && worm.hp > 0 && !worm.frozen && !worm.knocked) {
+    const animation = animations.get("wbatrope");
+    if (animation) {
+      const index = nativeSpriteFrame(
+        animation.sprite.frames.length,
+        animation.sprite.metadata[2],
+        worm.originalRope.progress,
+      );
+      return {
+        map: texture("wbatrope", index),
+        name: "wbatrope",
+        index,
+        aimed: false,
+        equipped: false,
+      };
+    }
+  }
+
   if (
     worm.originalParachute &&
     worm.hp > 0 &&
