@@ -496,8 +496,8 @@
     {
       "slot": 61,
       "native_name": "MagicBullet",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "magic",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 7
     },

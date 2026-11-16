@@ -775,6 +775,10 @@ function stopBurstSound(burst = pendingFire?.burst) {
   burst?.playback?.stop();
   if (burst) burst.playback = null;
 }
+function stopProjectileSound(p = projectile) {
+  p?.nativeFusePlayback?.stop();
+  if (p) p.nativeFusePlayback = null;
+}
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   cancelCharge();
   uiKey = "";
@@ -871,6 +875,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     dispose(w.g);
     w.label.remove();
   }
+  stopProjectileSound();
   if (projectile) releaseProjectileMesh(projectile.mesh);
   projectile = null;
   if (crate) {
@@ -2189,6 +2194,7 @@ function updateSliders() {
     minigun: "FIRE MINIGUN",
     homing: homingTarget ? null : "SET TARGET",
     pigeon: homingTarget ? null : "SET TARGET",
+    magic: homingTarget ? null : "SET TARGET",
     bat: "SWING BAT",
     airstrike: "CALL AIRSTRIKE",
     postal: "CALL POSTAL STRIKE",
@@ -3693,7 +3699,7 @@ function aiAim() {
     `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
 }
 function step(dt) {
-  if (menu.open || document.hidden) { stopBurstSound(); return; }
+  if (menu.open || document.hidden) { stopBurstSound(); stopProjectileSound(); return; }
   if (replaying) return;
   if (hitStop > 0) {
     hitStop = Math.max(0, hitStop - dt);
@@ -4190,6 +4196,11 @@ function step(dt) {
   if (phase === "aim") updateUI();
   if (projectile) {
     const p = projectile;
+    if (sound && p.nativeTimer?.loopSound && !p.nativeFusePlayback) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      p.nativeFusePlayback = playNativeProjectileFuse(audio, p.nativeFuseSound);
+    }
     let nativeContact = null;
     const ox = p.x,
       oy = p.y;
@@ -4323,6 +4334,7 @@ function step(dt) {
       p.mesh.rotation.z =
         p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
 
+    if (!p.nativeTimer?.loopSound) stopProjectileSound(p);
     if (
       boom ||
       (p.nativeBody ? p.nativeRemoved : (
@@ -4332,6 +4344,7 @@ function step(dt) {
       if (boom && p.y > waterLevel) {
         explodeProjectile(p);
       }
+      stopProjectileSound(p);
       releaseProjectileMesh(p.mesh);
       projectile = null;
       phase = "settle";
@@ -4711,7 +4724,7 @@ function frame(now) {
       (phase === "aim" || charging || w.recoil > 0);
     w.rig.mine.visible = active && weapon === "mine";
     w.rig.barrel.visible =
-      !active || ["rocket", "mortar", "homing", "pigeon", "shotgun"].includes(weapon);
+      !active || ["rocket", "mortar", "homing", "pigeon", "magic", "shotgun"].includes(weapon);
     w.rig.grenade.visible = active && WEAPONS[weapon].timed;
     w.rig.grenade.children[0].material.color.setHex(
       weapon === "sticky" ? 0xe96e57 : 0x9caf59,
@@ -5057,6 +5070,7 @@ window.addEventListener("keyup", (e) => {
 });
 function releaseInputs() {
   stopBurstSound();
+  stopProjectileSound();
   move = 0;
   aimInput = 0;
   cancelCharge();
@@ -5100,7 +5114,7 @@ $("#daily").addEventListener("click", () => {
 });
 $("#sound").onclick = () => {
   sound = !sound;
-  if (!sound) stopBurstSound();
+  if (!sound) { stopBurstSound(); stopProjectileSound(); }
   if (!sound) for (const b of bombs) {
     b.nativeFusePlayback?.stop();
     b.nativeFusePlayback = null;

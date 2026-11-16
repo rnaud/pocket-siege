@@ -180,6 +180,10 @@ export const WEAPONS = {
     ammo: 3,
     special: "melee",
   },
+  magic: {
+    label: "Magic bullet", icon: "➹", radius: 100, damage: 100,
+    wind: false, speed: 1, timed: false, bounces: false, ammo: 1, special: "homing",
+  },
   pigeon: {
     label: "Homing pigeon", icon: "➹", radius: 75, damage: 75,
     wind: false, speed: 1, timed: false, bounces: false, ammo: 1, special: "homing",
@@ -258,6 +262,7 @@ export const SPECIAL_WEAPONS = [
   "bat",
   "homing",
   "pigeon",
+  "magic",
   "holy",
 ];
 export const WEAPON_ORDER = ["rocket", "grenade", "mortar", "sticky"];
@@ -267,6 +272,7 @@ export const PROJECTILE_ORDER = [
   "cluster",
   "homing",
   "pigeon",
+  "magic",
   "napalm",
   "holy",
 ];
@@ -288,6 +294,7 @@ export const freshAmmo = () => ({
   bat: WEAPONS.bat.ammo,
   homing: WEAPONS.homing.ammo,
   pigeon: WEAPONS.pigeon.ammo,
+  magic: WEAPONS.magic.ammo,
   holy: WEAPONS.holy.ammo,
 });
 export const ammoFor = (loadout, kind, delays) =>

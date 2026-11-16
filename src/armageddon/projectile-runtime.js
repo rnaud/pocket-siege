@@ -32,6 +32,7 @@ const kinds = new Set([
   "rocket",
   "homing",
   "pigeon",
+  "magic",
   "mortar",
   "grenade",
   "cluster",
