@@ -166,6 +166,7 @@ import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
+import { loadOriginalWormLabels, updateOriginalWormLabel } from "./armageddon/worm-label.js";
 import { landscape } from "./island-art.js";
 import { pixelTexture, mountPixelArt, pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater } from "./water.js";
@@ -438,6 +439,7 @@ const originalAssets = Promise.all([
   loadOriginalHUDIcons(),
   loadOriginalWindHUD(),
   loadOriginalNumbers(),
+  loadOriginalWormLabels(),
   loadOriginalGirders(),
 ]);
 originalAssets
@@ -607,7 +609,7 @@ function createWorm(t, i, x, spawnY = null) {
   label.className = "worm-label";
   label.style.setProperty("--worm-color", t ? "#ef9d89" : "#b7c86a");
   label.style.color = t ? "#a94a3d" : "#4d6b3a";
-  label.innerHTML = `${names[t][i]}<strong>100</strong>`;
+  label.innerHTML = `<span class="worm-label-name">${names[t][i]}</span><strong>100</strong>`;
   $("#labels").appendChild(label);
   group.add(g);
   const y =
@@ -4682,6 +4684,7 @@ function frame(now) {
       star.position.set(Math.cos(a) * 17, Math.sin(a) * 5, 0);
       star.rotation.z = a;
     });
+    updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick);
     updateOriginalSelection(
       w.label,
       w.team,

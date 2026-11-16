@@ -2028,6 +2028,27 @@ body.native-game-hud {
   margin-left: auto;
   image-rendering: pixelated;
 }
+.worm-label.has-native-text {
+  padding: 0;
+  opacity: 1;
+  text-shadow: none;
+}
+.worm-label.has-native-text > .worm-label-name,
+.worm-label.has-native-text > strong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.worm-label.has-native-text::after {
+  display: none;
+}
+.native-worm-text {
+  display: block;
+  image-rendering: pixelated;
+}
 .native-game-hud .turn {
   top: auto;
   bottom: 12px;
