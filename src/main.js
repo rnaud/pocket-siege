@@ -1,3 +1,4 @@
+import { nativeBlastDamage } from "./armageddon/blast-damage.js";
 import {
   nativeDebrisBurst,
   nativeDebrisBody,
@@ -2712,18 +2713,33 @@ function explode(x, y, kind, ownerIndex = -1) {
   let dealt = 0;
   for (const w of worms) {
     if (w.hp <= 0) continue;
-    const factor = blastImpulse(
-      w,
-      x,
-      y,
-      radius + 34,
-      impulse * exposure.get(w),
-    );
+    const native =
+      kind === "death"
+        ? nativeBlastDamage(
+            {
+              x: Math.round(w.x * 65536),
+              y: Math.round((H - w.y) * 65536),
+              impulseScale: 65536,
+            },
+            Math.round(x * 65536),
+            Math.round((H - y) * 65536),
+            100,
+            30,
+          )
+        : null;
+    if (native)
+      for (const [vx, vy] of native.impulses) {
+        applyNativeWeaponImpulse(w, vx, vy);
+        w.knocked = true;
+        w.ground = false;
+      }
+    const factor = native
+      ? native.damage
+      : blastImpulse(w, x, y, radius + 34, impulse * exposure.get(w));
     if (factor > 0) {
-      const damage = Math.max(
-        1,
-        Math.round(factor * maxDamage * exposure.get(w)),
-      );
+      const damage = native
+        ? native.damage
+        : Math.max(1, Math.round(factor * maxDamage * exposure.get(w)));
       const direction = Math.sign(w.x - x) || 1;
       if (w.frozen > 0) {
         sfx("frozenhit");
@@ -3419,7 +3435,7 @@ function step(dt) {
       } else w.dying = Math.max(0, w.dying - dt);
       if (w.dying === 0 && w.deathPending) {
         w.deathPending = false;
-        explode(w.x, w.y + 6, "death");
+        explode(w.x, w.y - 10, "death");
         spawnDeathSmoke(w);
         const grave = createOriginalGrave(w);
         if (grave) {
