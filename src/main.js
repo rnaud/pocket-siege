@@ -5097,6 +5097,7 @@ window.siege = {
           vy: projectile.vy,
           age: projectile.age,
           fuse: projectile.fuse,
+          nativeTimer: projectile.nativeTimer ? { ...projectile.nativeTimer } : null,
           target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,

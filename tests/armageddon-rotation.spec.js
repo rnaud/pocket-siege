@@ -46,6 +46,8 @@ test("live blast advances the original rolling frames", async ({ page }) => {
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  // Random terrain can immediately select sliding instead of rolling.
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   const result = await page.evaluate(async () => {
     const initial = window.siege.getState();
     const w = initial.worms[0];

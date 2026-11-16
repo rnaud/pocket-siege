@@ -83,7 +83,7 @@ test("homing selects a fixed world target through the current camera", async ({
 });
 
 for (const kind of ["cluster", "napalm", "holy"]) {
-  test(`${kind} launches and detonates at its selected fuse`, async ({
+  test(`${kind} launches and detonates ${kind === "holy" ? "after its native fuse and resting delay" : "at its selected fuse"}`, async ({
     page,
   }) => {
     await page.goto("/");
@@ -92,6 +92,8 @@ for (const kind of ["cluster", "napalm", "holy"]) {
       .toBe(true);
     await page.locator("#mode").selectOption("local");
     await page.locator("#start").click();
+    // Keep the landing surface fixed: holy's native delay waits for rest.
+    await page.evaluate(() => window.siege.debug.resetSeed(42));
     await page.locator("#inventory-toggle").click();
     await page.locator("#special-toggle").click();
     await page.locator(`[data-weapon="${kind}"]`).click();
@@ -101,9 +103,19 @@ for (const kind of ["cluster", "napalm", "holy"]) {
     await page.locator("#fire").dispatchEvent("pointerdown", { pointerId: 1 });
     await page.waitForTimeout(500);
     await page.locator("#fire").dispatchEvent("pointerup", { pointerId: 1 });
+    if (kind === "holy") {
+      const timer = await page.evaluate(() => window.siege.getState().projectile?.nativeTimer);
+      expect(timer.remaining).toBeGreaterThan(2500);
+      expect(timer.remaining).toBeLessThanOrEqual(3000);
+      expect(timer.delay).toBe(1800);
+      expect(timer.waitForRest).toBe(1);
+    }
     await expect
       .poll(() =>
         page.evaluate(() => window.siege.getState().lastShot?.impact?.kind),
+        // Holy uses a fixed native3s fuse plus1.8s after rest. Wall time also
+        // includes landing and slower simulation delivery on CI browsers.
+        { timeout: kind === "holy" ? 15000 : 5000 },
       )
       .toBe(kind);
     expect(
