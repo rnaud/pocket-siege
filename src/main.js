@@ -7,6 +7,7 @@ import { nativeMineWater } from "./armageddon/mine-water.js";
 import { nativeMineStateEvents } from "./armageddon/mine-state.js";
 import { nativeMineHit, nativeMineHitBodies } from "./armageddon/mine-hit.js";
 import { nativeMineCameraRequest } from "./armageddon/mine-camera.js";
+import { nativeMineRegistration } from "./armageddon/mine-registration.js";
 import { nativeWaterSound } from "./armageddon/water-audio.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
@@ -2352,6 +2353,20 @@ function placeMine() {
   mine.y = H - mine.nativeBody.y / 65536;
   mesh.position.set(mine.x, mine.y, 18);
   group.add(mesh);
+  const mineSlots = Array(24).fill(null);
+  for (const old of mines) mineSlots[old.nativeSlot] = {
+    frame: old.nativeCreatedFrame, x: old.nativeBody.x, y: old.nativeBody.y,
+  };
+  const registration = nativeMineRegistration(mineSlots, matchRandom.frame, team === 0 ? 2 : 0);
+  for (const call of registration.calls) {
+    if (call.operation === "effect") spawnNativeParticleRequest(call.request);
+    else if (call.operation === "delete") {
+      const oldIndex = mines.findIndex(old => old.nativeSlot === registration.slot);
+      if (oldIndex >= 0) { dispose(mines[oldIndex].mesh); mines.splice(oldIndex, 1); }
+    }
+  }
+  mine.nativeSlot = registration.slot;
+  mine.nativeCreatedFrame = registration.registeredFrame;
   mines.push(mine);
   ammo[team].mine = spendAmmo(ammo[team].mine);
   if (ammo[team].mine === 0) setWeapon("rocket");
@@ -5314,6 +5329,8 @@ window.siege = {
       sprite: h.mesh.userData.originalSprite,
     })),
     mines: mines.map((m) => ({
+      nativeSlot: m.nativeSlot,
+      nativeCreatedFrame: m.nativeCreatedFrame,
       x: Math.round(m.x),
       y: Math.round(m.y),
       arm: Math.round(m.arm * 10) / 10,

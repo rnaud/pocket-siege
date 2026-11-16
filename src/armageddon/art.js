@@ -51,6 +51,7 @@ const names = [
       `crshair${color}`,
       `arrowdn${color}`,
       `arrowsd${color}`,
+      `spangle${color}`,
     ]),
     ...[1, 2, 3, 4, 5, 6].map((style) => `grave${style}`),
     "circle25",
