@@ -1,5 +1,15 @@
 import { nativeSin, nativeCos } from "./trig.js";
 
+// 004F7490 and its original004C3560 counter increment. The caller supplies
+// the counter addressed by world+0x1b94+team*0x51c+worm*0x9c-0x590.
+export function nativeDrillEntry(input, record, counter) {
+  return {
+    body: { ...input, remaining: record["0x7c"] | 0 },
+    counter: (counter + 3) | 0,
+    calls: [{ operation: "clear" }, { operation: "queue", sprite: 0x9d }],
+  };
+}
+
 // 004F74F0, state6E. Sound allocation and the registry overlap query remain
 // caller interfaces. Native coordinates are signed16.16, downward-positive Y.
 export function nativeDrillTick(input, record, random, interfaces = {}) {
