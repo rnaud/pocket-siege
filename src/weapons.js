@@ -79,6 +79,11 @@ export const WEAPONS = {
     ammo: 3,
     special: "hitscan",
   },
+  handgun: {
+    label: "Handgun", icon: "▰", radius: 5, damage: 5,
+    wind: false, speed: 0, timed: false, bounces: false,
+    ammo: 2, special: "hitscan",
+  },
   dynamite: {
     label: "Dynamite",
     icon: "▮",
@@ -227,6 +232,7 @@ export const WEAPONS = {
 };
 
 export const SPECIAL_WEAPONS = [
+  "handgun",
   "postal",
   "banana",
   "shotgun",
@@ -248,6 +254,7 @@ export const PROJECTILE_ORDER = [
   "holy",
 ];
 export const freshAmmo = () => ({
+  handgun: WEAPONS.handgun.ammo,
   postal: WEAPONS.postal.ammo,
   banana: WEAPONS.banana.ammo,
   grenade: WEAPONS.grenade.ammo,

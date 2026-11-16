@@ -104,8 +104,8 @@
     {
       "slot": 12,
       "native_name": "Handgun",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "handgun",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 6
     },

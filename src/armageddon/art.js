@@ -526,9 +526,7 @@ export function stepOriginalLanding(worm) {
 }
 
 export function startOriginalPreparation(worm, weapon, angle) {
-  // Currently connected to shotgun actions; other native preparation paths are
-  // verified separately and await their action/event adapters.
-  if (weapon !== "shotgun" || !animations.has("wshotp")) return false;
+  if (!["shotgun", "handgun"].includes(weapon)) return false;
   const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
   const record = weaponFields[WEAPON_SLOTS[weapon]];
   const state = nativePreparation(

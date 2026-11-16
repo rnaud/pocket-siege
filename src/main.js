@@ -42,11 +42,12 @@ import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
 import { nativeHitscanBody, nativeWormHitscanBodies } from "./armageddon/hitscan-body.js";
 import { nativeHitscanRays } from "./armageddon/hitscan-spread.js";
-import { nativeSin, nativeCos } from "./armageddon/trig.js";
+import { nativeBurstTick, nativeRecoilTick, nativePostFire } from "./armageddon/recoil.js";
+import { nativeLaunchAudio } from "./armageddon/launch-audio.js";
 import { nativeCasing } from "./armageddon/casing.js";
 import {
-  nativeShotgunResolution,
-  nativeShotgunRay,
+  nativeHitscanWeapon,
+  nativeBulletLaunch,
 } from "./armageddon/hitscan-art.js";
 import {
   createImpactBag,
@@ -2177,6 +2178,7 @@ function updateSliders() {
     mine: "PLACE MINE",
     dynamite: "DROP DYNAMITE",
     shotgun: shotgunRemaining ? "SECOND SHOT" : "FIRE SHOTGUN",
+    handgun: "FIRE HANDGUN",
     homing: homingTarget ? null : "SET TARGET",
     bat: "SWING BAT",
     airstrike: "CALL AIRSTRIKE",
@@ -2224,8 +2226,8 @@ function startCharge(source) {
     placeDynamite();
     return;
   }
-  if (weapon === "shotgun") {
-    fireShotgun();
+  if (WEAPONS[weapon]?.special === "hitscan") {
+    fireBulletWeapon(false, weapon);
     return;
   }
   if (weapon === "bat") {
@@ -2546,14 +2548,17 @@ function placeDynamite() {
   }
   finishAction("Dynamite dropped. Five-second fuse — retreat!");
 }
-function fireShotgun(prepared = false) {
+function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
+  const config = nativeHitscanWeapon(kind);
+  const rayConfig = config.ray, resolutionConfig = config.resolution;
   if (
     (!prepared && !canAct()) ||
-    (!shotgunRemaining && (availableAmmo(ammo[team], "shotgun") ?? 0) <= 0)
+    (!burst?.spent && !(kind === "shotgun" && shotgunRemaining) && (availableAmmo(ammo[team], kind) ?? 0) <= 0)
   )
     return;
-  if (!prepared && startOriginalPreparation(worms[current], "shotgun", angle)) {
-    pendingFire = { worm: worms[current], angle };
+  if (!prepared && startOriginalPreparation(worms[current], kind, angle)) {
+    pendingFire = { worm: worms[current], angle, kind, stage: "prepare",
+      burst: kind === "shotgun" ? null : { ordinal: 1, total: config.total, delay: config.interval, trigger: 0, actions: 1, maxActions: 1, spent: false } };
     wormLocked = true;
     move = aimInput = 0;
     charging = false;
@@ -2562,15 +2567,13 @@ function fireShotgun(prepared = false) {
     return;
   }
   const w = worms[current],
-    origin = shot(w, angle, "shotgun"),
-    start = terrain.solid(origin.muzzle.x, origin.muzzle.y)
-      ? { x: origin.pivot.x, y: origin.pivot.y }
-      : { x: origin.muzzle.x, y: origin.muzzle.y },
-    turn = Math.round((angle * 65536) / 360);
-  startOriginalRecoil(w, "shotgun", angle, matchRandom.frame);
+    launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint()),
+    start = { x: launch.x / 65536, y: H - launch.y / 65536 };
+  startOriginalRecoil(w, kind, angle, matchRandom.frame);
+  const release = nativeLaunchAudio(config.record, { loop: 0, burst: 0, ordinal: burst?.ordinal ?? 1, flag: 0, team: w.team });
   spawnNativeParticleRequest(
     nativeCasing(
-      0x33c,
+      release.casing,
       w.facing,
       Math.round(w.x * 65536),
       Math.round((H - w.y) * 65536),
@@ -2582,18 +2585,18 @@ function fireShotgun(prepared = false) {
     [
       w.team,
       current,
-      Math.round(start.x * 65536),
-      Math.round((H - start.y) * 65536),
-      nativeCos(turn),
-      -nativeSin(turn),
+      launch.x,
+      launch.y,
+      launch.vx,
+      launch.vy,
       0,
       0,
       0,
       0,
       0,
     ],
-    nativeShotgunRay.count,
-    nativeShotgunRay.spread,
+    rayConfig.count,
+    rayConfig.spread,
     () => matchRandom.logicUint(),
   )[0];
   const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a, b) => a.type - b.type);
@@ -2603,31 +2606,36 @@ function fireShotgun(prepared = false) {
     ray[3] >> 16,
     ray[4],
     ray[5],
-    nativeShotgunRay.range,
-    nativeShotgunRay.collisionMask,
+    rayConfig.range,
+    rayConfig.collisionMask,
   );
   const terrainDistance = nativeHitscanTerrain(
     ray[2] >> 16,
     ray[3] >> 16,
     ray[4],
     ray[5],
-    nativeShotgunRay.range,
+    rayConfig.range,
     (x, y) => terrain.solid(x, H - y),
   );
   const resolution = nativeHitscanResolution(
     ray,
-    nativeShotgunResolution,
+    resolutionConfig,
     bodyHit.distance,
     terrainDistance,
     () => matchRandom.logicUint(),
   );
   const effect = resolution.event ?? resolution.effect;
   const hit = { x: effect[1] / 65536, y: H - effect[2] / 65536 };
-  if (!shotgunRemaining) {
-    ammo[team].shotgun = spendAmmo(ammo[team].shotgun);
-    shotgunRemaining = 2;
+  if (kind === "shotgun") {
+    if (!shotgunRemaining) {
+      ammo[team].shotgun = spendAmmo(ammo[team].shotgun);
+      shotgunRemaining = 2;
+    }
+    shotgunRemaining--;
+  } else if (!burst.spent) {
+    ammo[team][kind] = spendAmmo(ammo[team][kind]);
+    burst.spent = true;
   }
-  shotgunRemaining--;
   shotCount++;
   wormLocked = true;
   if (resolution.area) {
@@ -2653,7 +2661,7 @@ function fireShotgun(prepared = false) {
           seen: victim.nativeDirectHitFrame === matchRandom.frame ? 1 : 0,
         },
         dispatch.packet,
-        0, // Shotgun kind 3 does not read the scheme delay byte.
+        0, // Bullet kind 3 does not read the scheme delay byte.
         1,
         {
           frame: matchRandom.frame,
@@ -2703,7 +2711,7 @@ function fireShotgun(prepared = false) {
       H,
       effect[1] >> 16,
       effect[2] >> 16,
-      Math.imul(nativeShotgunResolution.extentFactor, effect[4]),
+      Math.imul(resolutionConfig.extentFactor, effect[4]),
       terrain.craterRim,
     );
     spawnOriginalDebris(effect[1], effect[2], effect[4]);
@@ -2715,7 +2723,11 @@ function fireShotgun(prepared = false) {
     resolution.event ? effect[4] : effect[3],
     effect[0],
   );
-  if (shotgunRemaining && w.hp > 0 && !w.knocked) {
+  if (kind !== "shotgun") {
+    pendingFire = { worm: w, angle, kind, stage: "recoil", burst,
+      recoilDelay: nativePostFire(config.record, 0).delay };
+    updateUI();
+  } else if (shotgunRemaining && w.hp > 0 && !w.knocked) {
     $("#status").textContent =
       "One shot left. Move or adjust your aim, then fire again.";
     updateSliders();
@@ -2725,12 +2737,17 @@ function fireShotgun(prepared = false) {
     finishAction("Shotgun volley complete. Retreat!");
   }
   lastShot = {
-    kind: "shotgun",
+    kind,
     shooter: w.name,
     points: [start, hit],
-    impact: { ...hit, kind: "shotgun" },
+    impact: { ...hit, kind },
   };
-  sfx("shotgun");
+  if (kind === "shotgun") sfx("shotgun");
+  else if (sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeProjectileReleaseSound(audio, release);
+  }
 }
 function fireBat() {
   if (!canAct() || (availableAmmo(ammo[team], "bat") ?? 0) <= 0) return;
@@ -2785,8 +2802,8 @@ function fire() {
     placeDynamite();
     return;
   }
-  if (kind === "shotgun") {
-    fireShotgun();
+  if (WEAPONS[kind]?.special === "hitscan") {
+    fireBulletWeapon(false, kind);
     return;
   }
   if (kind === "bat") {
@@ -4126,25 +4143,34 @@ function step(dt) {
     }
   }
   if (pendingFire) {
-    const pending = pendingFire;
-    const w = pending.worm;
-    if (
-      phase !== "aim" ||
-      w !== worms[current] ||
-      w.hp <= 0 ||
-      w.knocked ||
-      w.frozen ||
-      w.hurt > 0.35
-    ) {
+    const pending = pendingFire, w = pending.worm;
+    if (phase !== "aim" || w !== worms[current] || w.hp <= 0 || w.knocked || w.frozen || w.hurt > 0.35) {
       w.originalPreparation = null;
       pendingFire = null;
+      if (pending.burst?.spent && phase === "aim") finishAction("Firing interrupted. Retreat!");
+    } else if (pending.stage === "recoil") {
+      const config = nativeHitscanWeapon(pending.kind);
+      const result = nativeRecoilTick(config.record, pending.recoilDelay, 65536, 0);
+      pending.recoilDelay = result.delay;
+      if (result.target !== null) pending.stage = "burst";
+    } else if (pending.stage === "burst") {
+      const result = nativeBurstTick(pending.burst);
+      pending.burst = result.state;
+      if (result.target === 0x69) {
+        pending.burst.delay = nativeHitscanWeapon(pending.kind).interval;
+        startOriginalPreparation(w, pending.kind, pending.angle);
+        pending.stage = "prepare";
+      } else if (result.target !== null) {
+        pendingFire = null;
+        finishAction(`${WEAPONS[pending.kind].label} burst complete. Retreat!`);
+      }
     } else {
       const result = stepOriginalPreparation(w);
       if (result?.sounds.includes(0x51)) sfx("shotgunreload");
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;
-        fireShotgun(true);
+        fireBulletWeapon(true, pending.kind ?? "shotgun", pending.burst);
       }
     }
   }
@@ -5211,7 +5237,10 @@ window.siege = {
     shotgunRemaining,
     preparing: pendingFire
       ? {
-          weapon: "shotgun",
+          weapon: pendingFire.kind ?? "shotgun",
+          stage: pendingFire.stage,
+          ordinal: pendingFire.burst?.ordinal,
+          total: pendingFire.burst?.total,
           delay: pendingFire.worm.originalPreparation?.delay,
         }
       : null,

@@ -174,7 +174,7 @@ export function playNativeProjectileReleaseSound(context, release) {
       continue;
     }
     if (event.operation !== "sound") continue;
-    const name = { 73: "throwrelease", 75: "rocketrelease" }[event.request[0]];
+    const name = { 73: "throwrelease", 75: "rocketrelease", 82: "handgunfire" }[event.request[0]];
     if (name)
       playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536);
   }
