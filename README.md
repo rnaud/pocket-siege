@@ -43,13 +43,13 @@ npm run build
 ## Tests
 
 ```sh
-npx playwright install chromium webkit
+npx playwright install chromium
 npm test
 ```
 
-The `logic` project runs browser-independent rules and executable-fixture comparisons once (`npm test -- --project=logic`, no browser installation needed). Tag these tests `@logic`. The `desktop` and `iphone` projects exclude that tag and exercise browser rendering, controls, audio, and loading in Chromium and WebKit. New untagged tests default to both browser projects. CI runs one logic job and shards each browser project across two jobs; deployment requires all five jobs to pass.
+The `logic` project runs browser-independent rules and executable-fixture comparisons once (`npm test -- --project=logic`, no browser installation needed). Tag these tests `@logic`. The `desktop` project excludes that tag and exercises browser integration in Chromium. CI runs one logic job and two browser shards; deployment requires all three jobs to pass. There is no iPhone/WebKit test project. Verify small mobile UI fixes manually rather than adding a regression test for every reported issue. Add automated coverage when its expected regression value justifies its runtime and maintenance cost.
 
-Tests cover terrain removal, projectile impacts and turn progression, computer turns, AI weapon/blast planning, crate seeking, ammo spending, proximity mines, match modifiers, worm selection and skip, sudden-death variants, rope/jetpack/teleport/girder/parachute/freeze, the special weapon tray, cluster and napalm effects, airdropped crate types, stockpiling, scheme presets, saved settings, generated-art loading, label readability, supply crates, weather, best-of-three flow, daily seeds, the local record book, desktop full-window and iPhone layouts in Chromium and WebKit.
+Tests cover terrain removal, projectile impacts and turn progression, computer turns, AI weapon/blast planning, crate seeking, ammo spending, proximity mines, match modifiers, worm selection and skip, sudden-death variants, rope/jetpack/teleport/girder/parachute/freeze, the special weapon tray, cluster and napalm effects, airdropped crate types, stockpiling, scheme presets, saved settings, imported-art loading, label readability, supply crates, weather, best-of-three flow, daily seeds, the local record book, desktop full-window layout in Chromium.
 
 ## Deployment
 

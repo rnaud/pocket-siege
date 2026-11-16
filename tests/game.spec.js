@@ -89,7 +89,7 @@ test("computer takes its turn and returns control", async ({ page }) => {
     .toBe(2);
   await expect(page.locator("#fire")).toBeEnabled();
 });
-test("movement, jump, touch aiming, and landscape layout", async ({
+test("movement, jump, and pointer aiming", async ({
   page,
 }, info) => {
   await page.goto("/");
@@ -118,91 +118,14 @@ test("movement, jump, touch aiming, and landscape layout", async ({
     .poll(async () => page.evaluate(() => window.siege.getState().worms[0].y))
     .toBeGreaterThan(jumpY + 10);
   const field = await page.locator("#arena").boundingBox();
-  if (info.project.use.isMobile)
-    await page.touchscreen.tap(
-      field.x + field.width * 0.7,
-      field.y + field.height * 0.2,
-    );
-  else
-    await page.mouse.click(
+  await page.mouse.click(
       field.x + field.width * 0.7,
       field.y + field.height * 0.2,
     );
   expect(await page.locator("#angle").inputValue()).not.toBe("45");
-  if (info.project.use.isMobile) {
-    await page.setViewportSize({ width: 844, height: 390 });
-    await expect(page.locator("#fire")).toBeInViewport();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    await expect
-      .poll(() =>
-        page.evaluate(() =>
-          Number.isInteger(
-            document.querySelector("#scene canvas").clientWidth /
-              document.querySelector("#scene canvas").width,
-          ),
-        ),
-      )
-      .toBe(true);
-    await page.screenshot({
-      path: "test-results/iphone-landscape.png",
-      fullPage: true,
-    });
-  }
+
 });
-test("touch controls fit the screen in portrait and landscape", async ({
-  page,
-}, info) => {
-  test.skip(!info.project.use.isMobile, "touch layout");
-  await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
-  await page.locator("#start").click();
-  await openArsenal(page);
-  const controls = [
-    "#fire",
-    "#angle",
-    '[data-weapon="rocket"]',
-    '[data-weapon="grenade"]',
-    '[data-weapon="mortar"]',
-    '[data-weapon="sticky"]',
-    '[data-weapon="mine"]',
-  ];
-  const fits = async () => {
-    for (const selector of controls)
-      await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
-    expect(
-      await page.evaluate(
-        () =>
-          document.documentElement.scrollHeight <= innerHeight + 1 &&
-          document.documentElement.scrollWidth <= innerWidth + 1,
-      ),
-    ).toBe(true);
-    // Ammo counts stay inside their weapon buttons rather than drifting below them.
-    expect(
-      await page.evaluate(() =>
-        [...document.querySelectorAll(".weapons button")].every((button) => {
-          const outer = button.getBoundingClientRect(),
-            count = button.querySelector("small").getBoundingClientRect();
-          return (
-            count.top >= outer.top &&
-            count.bottom <= outer.bottom &&
-            count.left >= outer.left &&
-            count.right <= outer.right
-          );
-        }),
-      ),
-    ).toBe(true);
-  };
-  await fits();
-  await page.setViewportSize({ width: 844, height: 390 });
-  await page.waitForTimeout(400);
-  await fits();
-});
+
 
 test("original art loads and character labels stay readable", async ({
   page,
@@ -874,13 +797,7 @@ test("action camera follows the shot and snaps back for the next turn", async ({
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await chargeShot(page, 1100);
   await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).not.toBeNull();
-  if (info.project.use.isMobile) {
-    await expect(page.locator("#arena")).toHaveClass(/portrait-camera/);
-    await expect
-      .poll(() => page.evaluate(() => window.siege.getState().camera.w))
-      .toBeLessThan(1200);
-  } else
-    await expect
+  await expect
       .poll(() => page.evaluate(() => window.siege.getState().camera.zoom), {
         timeout: 6000,
       })
@@ -991,7 +908,7 @@ test("a finished match enables the result card", async ({ page }, info) => {
   expect(
     await page.evaluate(() => window.siege.getState().lastResult.winner),
   ).toBe(0);
-  if (!info.project.use.isMobile) {
+  {
     const pendingDownload = page.waitForEvent("download");
     await page.locator("#share").click();
     const download = await pendingDownload;

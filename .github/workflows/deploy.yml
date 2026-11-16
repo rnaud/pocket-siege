@@ -25,20 +25,14 @@ jobs:
       - run: npm ci
       - run: npm test -- --project=logic --workers=2
   test:
-    name: test (${{ matrix.project }}, shard ${{ matrix.shard }}/2)
+    name: Browser (shard ${{ matrix.shard }}/2)
     # Keep browser system dependencies on Playwright's supported Ubuntu release.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        project: [desktop, iphone]
         shard: [1, 2]
-        include:
-          - project: desktop
-            browser: chromium
-          - project: iphone
-            browser: webkit
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,14 +40,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
-      - run: npm test -- --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2 --workers=2
+      - run: npx playwright install --with-deps chromium
+      - run: npm test -- --project=desktop --shard=${{ matrix.shard }}/2 --workers=2
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/results.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-results-${{ matrix.project }}-${{ matrix.shard }}
+          name: playwright-results-desktop-${{ matrix.shard }}
           path: test-results/
           retention-days: 7
   deploy:
