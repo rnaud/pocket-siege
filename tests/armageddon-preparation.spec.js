@@ -77,9 +77,13 @@ async function prepareShotgun(page) {
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
   await page.locator("#special-toggle").click();
   await page.locator('[data-weapon="shotgun"]').click();
+  // Keep the first shot clear of terrain so self-damage cannot end the turn
+  // before this test deliberately interrupts the second preparation.
+  await page.locator("#angle").fill("90");
 }
 
 test("live shotgun waits to spend ammo and release damage; interruption cancels it", async ({
@@ -118,8 +122,22 @@ test("live shotgun waits to spend ammo and release damage; interruption cancels 
   ).toBe(2);
   await expect.poll(() => audio.has("shotgunreload.wav")).toBe(true);
   await expect(page.locator("#fire")).toBeEnabled();
+  expect(await page.evaluate(() => window.siege.getState().team)).toBe(0);
+  expect(await page.evaluate(() => window.siege.getState().shotgunRemaining)).toBe(1);
+  // Start and interrupt in one browser task, before a slow CI round trip can
+  // let the 46-tick preparation finish.
+  await page.evaluate(() => {
+    document.querySelector("#fire").addEventListener("pointerup", () => {
+      const state = window.siege.getState();
+      window.interruptedPreparation = {
+        preparing: state.preparing?.weapon, shots: state.shotCount,
+      };
+      window.siege.debug.hit(state.team, 1);
+    }, { once: true });
+  });
   await page.locator("#fire").click();
-  await page.evaluate(() => window.siege.debug.hit(0, 1));
+  const interrupted = await page.evaluate(() => window.interruptedPreparation);
+  expect(interrupted).toEqual({ preparing: "shotgun", shots: 1 });
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().preparing))
     .toBeNull();
