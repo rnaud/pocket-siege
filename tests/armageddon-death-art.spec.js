@@ -65,20 +65,24 @@ test("live death plays past the old cutoff before its explosion", async ({
       ),
     )
     .toBe(true);
-  await page.evaluate(() => window.siege.debug.hit(1, 200));
+  await page.evaluate(() => {
+    // Late frames last less than a second. Keep the maximum on every render
+    // instead of hoping Playwright's backoff poll lands inside that window.
+    window.deathFrameProbe = { max: 0, active: true };
+    const sample = () => {
+      const probe = window.deathFrameProbe;
+      if (!probe.active) return;
+      for (const worm of window.siege.getState().worms.slice(3)) {
+        if (worm.deathPending && worm.originalSprite === "wdie")
+          probe.max = Math.max(probe.max, worm.originalFrame);
+      }
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+    window.siege.debug.hit(1, 200);
+  });
   await expect
-    .poll(() =>
-      page.evaluate(() =>
-        Math.max(
-          ...window.siege
-            .getState()
-            .worms.slice(3)
-            .filter((w) => w.deathPending && w.originalSprite === "wdie")
-            .map((w) => w.originalFrame),
-          0,
-        ),
-      ),
-    )
+    .poll(() => page.evaluate(() => window.deathFrameProbe.max))
     .toBeGreaterThan(40);
   await expect
     .poll(() =>
@@ -96,6 +100,9 @@ test("live death plays past the old cutoff before its explosion", async ({
   expect(await page.evaluate(() => window.siege.getState().graves.length)).toBe(
     3,
   );
+  await page.evaluate(() => {
+    window.deathFrameProbe.active = false;
+  });
   await page.screenshot({
     path: test.info().outputPath("original-graves.png"),
   });
