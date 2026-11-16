@@ -184,3 +184,10 @@ export function playNativeProjectileFuse(context, sound) {
   if ((sound & 65535) !== 66) return null;
   return playOriginalClip(context, "sounds/fuse.wav", () => {}, 1, Boolean(sound & 0x10000));
 }
+
+// Executable descriptors0055F328/330/338: MineArm, MineTick, MineDud.
+export function playNativeMineSound(context, request) {
+  const name = {88:"minearm",89:"minetick",90:"minedud"}[request[0]];
+  if (!name) return null;
+  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[3] / 65536);
+}

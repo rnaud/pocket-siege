@@ -1,3 +1,5 @@
+import { nativeMineTimer, nativeMineInitialTimer, nativeMineSprite, NATIVE_MINE_MASK } from "./armageddon/mine-timer.js";
+import { playNativeMineSound } from "./armageddon/audio.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
@@ -2322,7 +2324,8 @@ function placeMine() {
     y: w.y - 4,
     owner: current,
     team,
-    arm: 1.2,
+    arm: nativeMineInitialTimer().arm / 1000,
+    nativeTimer: nativeMineInitialTimer(),
     mesh,
     bob: visualRandom() * Math.PI * 2,
   });
@@ -3929,19 +3932,27 @@ function step(dt) {
   }
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
     const mine = mines[i];
-    if (mine.arm > 0) {
-      mine.arm = Math.max(0, mine.arm - dt);
-      continue;
+    const result = nativeMineTimer(mine.nativeTimer, {
+      vx: 0, vy: 0, awake: 0, submerged: mine.y <= waterLevel ? 1 : 0,
+      frame: matchRandom.frame, friction: 66,
+    }, (radius) => {
+      const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
+        x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
+        type: nativeWormCollisionType(nativeWormState(w)),
+      }));
+      return nativeMineProximity({
+        x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), mask: NATIVE_MINE_MASK,
+      }, radius, candidates) >= 0;
+    });
+    mine.nativeTimer = result.body;
+    mine.arm = result.body.arm / 1000;
+    if (sound) for (const call of result.calls) {
+      if (call.operation !== "sound") continue;
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      playNativeMineSound(audio, call.request);
     }
-    const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
-      x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
-      type: nativeWormCollisionType(nativeWormState(w)),
-    }));
-    // Default scheme195 slot22: proximity radius48, category mask60.
-    const victim = nativeMineProximity({
-      x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), mask: 60,
-    }, 48, candidates);
-    if (victim < 0) continue;
+    if (!result.expired) continue;
     mines.splice(i, 1);
     dispose(mine.mesh);
     explode(mine.x, mine.y, "mine", mine.owner);
@@ -4598,7 +4609,7 @@ function frame(now) {
       crate.mesh.userData.beacon.rotation.y = now * 0.002;
   }
   for (const mine of mines) {
-    updateOriginalObject(mine.mesh, mine.arm > 0 ? "mineoff" : "mineon", 0);
+    updateOriginalObject(mine.mesh, nativeMineSprite(mine.nativeTimer), 0);
     if (mine.mesh.userData.light)
       mine.mesh.userData.light.visible =
         mine.arm > 0 ? Math.floor(now / 160) % 2 === 0 : true;
@@ -5171,6 +5182,7 @@ window.siege = {
       x: Math.round(m.x),
       y: Math.round(m.y),
       arm: Math.round(m.arm * 10) / 10,
+      nativeTimer: { ...m.nativeTimer },
       sprite: m.mesh.userData.originalSprite,
       team: m.team,
     })),

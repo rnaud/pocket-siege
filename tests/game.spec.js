@@ -911,24 +911,43 @@ test("action camera follows the shot and snaps back for the next turn", async ({
 });
 
 test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
+  const mineSounds = [];
+  page.on("request", r => { if (/\/(minearm|minetick)\.wav$/.test(r.url())) mineSounds.push(r.url().split("/").pop()); });
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await page.locator("#sound").click();
   await openArsenal(page);
   await page.locator('[data-weapon="mine"]').click();
   await expect(page.locator("#fire-label")).toHaveText("PLACE MINE");
   await page.locator("#fire").click();
+  await page.evaluate(() => {
+    window.mineSprites = new Set();
+    function sample() {
+      const mine = window.siege.getState().mines[0];
+      if (!mine) return;
+      window.mineSprites.add(mine.sprite);
+      requestAnimationFrame(sample);
+    }
+    sample();
+  });
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.mines).toHaveLength(1);
   expect(state.ammo[0].mine).toBe(1);
   expect(state.phase).toBe("settle");
+  expect(state.mines[0].nativeTimer.fuse).toBe(3000);
+  expect(state.mines[0].nativeTimer.arm).toBeGreaterThan(3500);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().mines[0]?.nativeTimer.triggered), { timeout: 7000 }).toBe(1);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().explosions), {
-      timeout: 5000,
+      timeout: 12000,
     })
     .toBeGreaterThan(0);
   state = await page.evaluate(() => window.siege.getState());
   expect(state.mines).toHaveLength(0);
+  expect(mineSounds.sort()).toEqual(["minearm.wav", "minetick.wav"]);
+  expect(await page.evaluate(() => [...window.mineSprites].sort())).toEqual(["mineoff", "mineon"]);
 });
 
 test("the last shot can be replayed over the battlefield", async ({ page }) => {
