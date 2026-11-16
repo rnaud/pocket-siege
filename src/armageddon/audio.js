@@ -31,7 +31,13 @@ export function playOriginalSound(context, kind, fallback, level = 1) {
   }
   playOriginalClip(context, `sounds/${name}.wav`, fallback, level);
 }
-function playOriginalClip(context, name, fallback, level) {
+export function preloadOriginalSound(context, kind) {
+  const name = sounds[kind];
+  return name
+    ? loadOriginalClip(context, `sounds/${name}.wav`)
+    : Promise.resolve(null);
+}
+function loadOriginalClip(context, name) {
   let cache = contexts.get(context);
   if (!cache) {
     cache = new Map();
@@ -47,9 +53,11 @@ function playOriginalClip(context, name, fallback, level) {
         })
         .then((bytes) => context.decodeAudioData(bytes)),
     );
+  return cache.get(name);
+}
+function playOriginalClip(context, name, fallback, level) {
   const requested = performance.now();
-  cache
-    .get(name)
+  loadOriginalClip(context, name)
     .then((buffer) => {
       if (performance.now() - requested > 500) return;
       const source = context.createBufferSource(),
@@ -65,7 +73,7 @@ function playOriginalClip(context, name, fallback, level) {
       source.start();
     })
     .catch(() => {
-      cache.delete(name);
+      contexts.get(context).delete(name);
       fallback();
     });
 }

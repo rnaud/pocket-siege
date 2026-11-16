@@ -1196,6 +1196,23 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#special-toggle").click();
   await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(8);
   await page.locator('[data-weapon="shotgun"]').click();
+  await page.evaluate(() => {
+    window.shotgunSpriteProbe = {
+      active: true,
+      shothit: false,
+      shotcase: false,
+    };
+    const sample = () => {
+      const probe = window.shotgunSpriteProbe;
+      if (!probe.active) return;
+      for (const p of window.siege.getState().nativeParticles) {
+        if (p.sprite === "shothit" || p.sprite === "shotcase")
+          probe[p.sprite] = true;
+      }
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
   await page.locator("#fire").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().shotCount))
@@ -1204,16 +1221,15 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   expect(state.ammo[0].shotgun).toBe(2);
   expect(state.phase).toBe("aim");
   expect(state.shotgunRemaining).toBe(1);
-  expect(state.nativeParticles.some((p) => p.sprite === "shotcase")).toBe(true);
   await expect
-    .poll(() =>
-      page.evaluate(() =>
-        window.siege
-          .getState()
-          .nativeParticles.some((p) => p.sprite === "shothit"),
-      ),
-    )
+    .poll(() => page.evaluate(() => window.shotgunSpriteProbe.shothit))
     .toBe(true);
+  expect(await page.evaluate(() => window.shotgunSpriteProbe.shotcase)).toBe(
+    true,
+  );
+  await page.evaluate(() => {
+    window.shotgunSpriteProbe.active = false;
+  });
   await page.locator("#fire").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().shotCount))

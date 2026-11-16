@@ -213,7 +213,8 @@ test("landing sound uses the original sample and recovered impact strength", asy
   await page.evaluate(async () => {
     const { loadOriginalArt, startOriginalLanding } =
       await import("/src/armageddon/art.js");
-    const { playNativeLandingSound } = await import("/src/armageddon/audio.js");
+    const { playNativeLandingSound, preloadOriginalSound } =
+      await import("/src/armageddon/audio.js");
     await loadOriginalArt();
     const context = new AudioContext();
     const source = context.createBufferSource.bind(context),
@@ -237,6 +238,9 @@ test("landing sound uses the original sample and recovered impact strength", asy
       };
       return node;
     };
+    // Cold WebKit decoding can exceed the intentional 500 ms stale-sound cutoff.
+    // Verify actual decoding and caching before checking playback gains.
+    await preloadOriginalSound(context, "land");
     for (const speed of [100, 200, 800])
       playNativeLandingSound(context, startOriginalLanding({ hp: 100 }, speed));
   });
