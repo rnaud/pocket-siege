@@ -912,7 +912,7 @@ test("action camera follows the shot and snaps back for the next turn", async ({
 
 test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   const mineSounds = [];
-  page.on("request", r => { if (/\/(minearm|minetick)\.wav$/.test(r.url())) mineSounds.push(r.url().split("/").pop()); });
+  page.on("request", r => { if (/\/(minearm|minetick|mineimpact)\.wav$/.test(r.url())) mineSounds.push(r.url().split("/").pop()); });
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
@@ -953,7 +953,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
     .toBeGreaterThan(0);
   state = await page.evaluate(() => window.siege.getState());
   expect(state.mines).toHaveLength(0);
-  expect(mineSounds.sort()).toEqual(["minearm.wav", "minetick.wav"]);
+  expect(mineSounds.sort()).toEqual(["minearm.wav", "mineimpact.wav", "minetick.wav"]);
   expect(await page.evaluate(() => [...window.mineSprites].sort())).toEqual(["mineoff", "mineon"]);
 });
 

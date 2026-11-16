@@ -1,6 +1,7 @@
 import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
 import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
 import { nativeMineBlast } from "./armageddon/mine-blast.js";
+import { nativeMineContact } from "./armageddon/mine-contact.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
@@ -3963,15 +3964,27 @@ function step(dt) {
       awake: nativeBodyAwake, collide,
       bounce: (body, hit, side) => {
         const other = hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : {type: 1, vx: 0, vy: 0};
-        if (other.worm) {
-          const response = nativeWormReceiver(other, body, side, {});
-          Object.assign(body, response.incoming);
-          Object.assign(other, response.receiver);
-          if (response.result) { applyNativeWormContact(worms[hit - 2], other); return; }
-        }
-        const response = nativeSimpleBounce(body, other, side, (x, y) => collide(x, y, body));
-        Object.assign(body, response.body);
-        if (hit >= 2) applyNativeWormContact(worms[hit - 2], {...other, ...response.other});
+        nativeMineContact(body, mine.nativeTimer, side, 0, {
+          sound: request => {
+            if (!sound) return;
+            audio ??= new (window.AudioContext || window.webkitAudioContext)();
+            audio.resume();
+            mine.impactPlayback = playNativeProjectileContactSound(audio, request, mine.impactPlayback);
+          },
+          receive: side => {
+            if (!other.worm) return 0;
+            const response = nativeWormReceiver(other, body, side, {});
+            Object.assign(body, response.incoming);
+            Object.assign(other, response.receiver);
+            if (response.result) applyNativeWormContact(worms[hit - 2], other);
+            return response.result;
+          },
+          bounce: side => {
+            const response = nativeSimpleBounce(body, other, side, (x, y) => collide(x, y, body));
+            Object.assign(body, response.body);
+            if (hit >= 2) applyNativeWormContact(worms[hit - 2], {...other, ...response.other});
+          },
+        });
       },
     });
     mine.x = mine.nativeBody.x / 65536;

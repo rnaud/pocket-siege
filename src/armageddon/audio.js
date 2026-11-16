@@ -156,7 +156,8 @@ export function playNativeRecoverySound(context, request, previousPlayback) {
 // Executable descriptors0055F3B8/0055F3F8: IDs105/113. Original004F4260
 // stops the previous per-body clip before playing the next impact request.
 export function playNativeProjectileContactSound(context, request, previous) {
-  const name = request[0] === 105 ? "holygrenadeimpact" : request[0] === 113 ? "grenadeimpact" : null;
+  // MineImpact.wav is ID107 at descriptor0055F3D0.
+  const name = request[0] === 105 ? "holygrenadeimpact" : request[0] === 113 ? "grenadeimpact" : request[0] === 107 ? "mineimpact" : null;
   if (!name) return previous;
   previous?.stop?.();
   return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[2] / 65536);
