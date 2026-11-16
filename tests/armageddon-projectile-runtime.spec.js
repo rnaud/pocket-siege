@@ -4,6 +4,7 @@ import {
   attachNativeProjectile,
   stepNativeProjectile,
   nativeProjectileDetonationEvents,
+  nativeProjectileChildren,
 } from "../src/armageddon/projectile-runtime.js";
 const environment = {
   height: 650,
@@ -258,5 +259,27 @@ test("live native projectile blast packets use scheme strength, push and vertica
     ]);
     expect(draws).toBe(1);
     expect(events.some(e => e.operation === "fragments")).toBe(["cluster", "mortar"].includes(kind));
+  }
+});
+
+
+test("cluster and mortar emit five native secondary bodies with separate blast records", () => {
+  for (const kind of ["cluster", "mortar"]) {
+    const p = projectile(kind);
+    let draws = 0;
+    const children = nativeProjectileChildren(p, 650, () => { draws++; return 32768; });
+    expect(children).toHaveLength(5);
+    expect(draws).toBe(10);
+    for (const [i, child] of children.entries()) {
+      expect(child.nativeRepeat).toBe(i + 1);
+      expect(child.nativeBody.sprite).toBe(659);
+      expect(child.nativeBody.mode).toBe(2);
+      expect(child.nativeDetonation.damage).toBe(kind === "cluster" ? 20 : 15);
+      expect(child.nativeDetonation.push).toBe(100);
+      expect(nativeProjectileChildren(child, 650, () => { throw Error("Recursive fragment emission"); })).toEqual([]);
+      const before = child.y;
+      stepNativeProjectile(child, environment, () => 0);
+      expect(child.y).not.toBe(before);
+    }
   }
 });

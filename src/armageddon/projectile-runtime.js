@@ -1,5 +1,6 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
 import { nativeProjectileDetonation } from "./projectile-detonation.js";
+import { nativeProjectileFragments } from "./projectile-fragments.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
@@ -62,7 +63,7 @@ export function nativeProjectileLaunch(kind, angle, power) {
   return { vx: (vx / 65536) * 50, vy: (-vy / 65536) * 50 };
 }
 export function attachNativeProjectile(p, height) {
-  const record = weaponRecord(p.kind);
+  const record = weaponRecord(p.nativeWeaponKind ?? p.kind);
   if (!record) return false;
   // These six projectile families release once and have no looping weapon
   // audio or casing emission. Preserve the original dispatch for playback.
@@ -79,11 +80,17 @@ export function attachNativeProjectile(p, height) {
     y: fixed(height - p.y),
     vx: fixed(p.vx / 50),
     vy: fixed(-p.vy / 50),
-    repeat: 0,
+    repeat: p.nativeRepeat ?? 0,
     timer: Math.round(p.fuse * 1000),
     bounce: Math.round(p.bounce * 100),
   };
   const selected = nativeProjectileSelection(block, payload);
+  p.nativeFragmentConfig = {
+    count: block[47], speed: block[48], variance: block[49],
+    direction: block[50], spread: block[51], mode: block[75],
+  };
+  p.nativePayload = [payload.owner, 0, payload.x, payload.y, payload.vx, payload.vy,
+    0, 0, payload.repeat, payload.bounce, payload.timer];
   p.nativeTrail = { fields: selected.words.slice(8, 12), progress: 0 };
   p.nativeBody = nativeProjectileBody(
     {
@@ -154,6 +161,26 @@ function updateNativeProjectileArt(p) {
 
 export function nativeProjectileDetonationEvents(p, random) {
   return nativeProjectileDetonation(p.nativeDetonation, p.nativeBody.x, p.nativeBody.y, random);
+}
+
+export function nativeProjectileChildren(p, height, random) {
+  if (p.nativeDetonation.secondary !== 1 || p.nativeDetonation.repeat) return [];
+  const body = p.nativeBody;
+  const payloads = nativeProjectileFragments({ ...p.nativeFragmentConfig,
+    impactVx: body.impactVx, impactVy: body.impactVy,
+    vx: body.vx, vy: body.vy, facing: body.facing,
+  }, p.nativePayload, body.x, body.y, random);
+  return payloads.map(payload => {
+    const child = {
+      kind: p.kind === "mortar" ? "shrapnel" : "bomblet",
+      nativeWeaponKind: p.nativeWeaponKind ?? p.kind, nativeRepeat: payload[8],
+      owner: p.owner, x: payload[2] / 65536, y: height - payload[3] / 65536,
+      vx: payload[4] / 65536 * 50, vy: -payload[5] / 65536 * 50,
+      fuse: payload[10] / 1000, bounce: payload[9] / 100, age: 0,
+    };
+    attachNativeProjectile(child, height);
+    return child;
+  });
 }
 
 // Owner age is irrelevant to the original manager: every body overlapping the

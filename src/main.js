@@ -85,6 +85,7 @@ import {
   attachNativeProjectile,
   stepNativeProjectile,
   nativeProjectileDetonationEvents,
+  nativeProjectileChildren,
 } from "./armageddon/projectile-runtime.js";
 import { nativeWormState } from "./armageddon/worm-collision-type.js";
 import { nativeChargeTick } from "./armageddon/power.js";
@@ -1022,6 +1023,36 @@ function spawnFire(x, y, owner = -1) {
 function stepBombs(dt) {
   for (let i = bombs.length - 1; i >= 0; i--) {
     const b = bombs[i];
+    if (b.nativeBody) {
+      const result = stepNativeProjectile(b, {
+        height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame,
+        random: () => matchRandom.logicUint(),
+        collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+        updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+      }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
+      b.age += dt;
+      b.mesh.position.set(b.x, b.y, 40);
+      updateOriginalProjectile(b.mesh, b.kind, b.vx, b.vy, b.age,
+        Boolean(b.nativeBody.submerged), false, b.nativeRender);
+      if (sound && (result.sounds.length || result.events.some(e => e.operation === "sound"))) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        for (const request of result.sounds) playNativeWaterSound(audio, request);
+        for (const event of result.events)
+          if (event.operation === "sound" && !event.timer)
+            b.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, b.nativeContactPlayback);
+      }
+      if (result.removed || result.detonate) {
+        bombs.splice(i, 1);
+        releaseProjectileMesh(b.mesh);
+        if (result.detonate) {
+          const packet = nativeProjectileDetonationEvents(b, () => matchRandom.logicUint())
+            .find(event => event.operation === "blast")?.request;
+          if (packet) explode(b.x, b.y, b.kind, b.owner, packet);
+        }
+      }
+      continue;
+    }
     b.fuse -= dt;
     b.age += dt;
     if (b.grounded) {
@@ -2765,7 +2796,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
   spawnExplosionArt(x, y, nativeStrength ?? Math.round(maxDamage));
   sfx("explosion");
-  for (const fragment of fragments(kind)) {
+  for (const fragment of nativePacket ? [] : fragments(kind)) {
     spawnBomb({ x: sourceX, y: sourceY + 8, ...fragment, owner: ownerIndex });
   }
   if (kind === "napalm") {
@@ -3975,6 +4006,14 @@ function step(dt) {
               .find(event => event.operation === "blast")?.request
           : null;
         explode(p.x, p.y, p.kind, p.owner, nativePacket);
+        if (p.nativeDetonation) {
+          for (const child of nativeProjectileChildren(p, H, () => matchRandom.logicUint())) {
+            child.mesh = createOriginalVisual("clustlet") || createProjectile("grenade");
+            child.mesh.position.set(child.x, child.y, 40);
+            group.add(child.mesh);
+            bombs.push(child);
+          }
+        }
       }
       releaseProjectileMesh(p.mesh);
       projectile = null;
@@ -4979,7 +5018,9 @@ window.siege = {
       x: Math.round(b.x),
       y: Math.round(b.y),
       kind: b.kind,
-      fuse: Math.round(b.fuse * 10) / 10,
+      fuse: b.nativeTimer ? b.nativeTimer.remaining / 1000 : Math.round(b.fuse * 10) / 10,
+      nativeRepeat: b.nativeRepeat ?? null,
+      nativeDamage: b.nativeDetonation?.damage ?? null,
       sprite: b.mesh.userData.originalSprite,
       frame: b.mesh.userData.originalFrame,
     })),
