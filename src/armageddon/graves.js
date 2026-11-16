@@ -1,11 +1,13 @@
 import { nativeGraveLifecycle } from "./grave-lifecycle.js";
-import { H, stepWorm } from "../physics.js";
+import { H, bodyBlocked } from "../physics.js";
+import { nativeGraveBody, stepNativeGraveBody } from "./grave-body.js";
 import { createOriginalVisual, originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
 
 // 004D55E0: team grave style 1..6 selects style+0x2ED; progress += 0x51E.
 // Constructor 004D5170 gives the body native vy=-2/tick (host +100/sec).
-// Host body collision/gravity and sinking remain adapters, not native grave physics.
+// Native forces/sweep/bounce drive movement; terrain collision still uses the
+// host body mask and the scheme friction byte remains the default 96.
 export function createOriginalGrave(worm, style = worm.team + 1) {
   const name = `grave${style}`;
   const mesh = createOriginalVisual(name);
@@ -22,6 +24,11 @@ export function createOriginalGrave(worm, style = worm.team + 1) {
     bubblePhase: 0,
     bubbleRequests: 0,
     wet: false,
+    ticks: 0,
+    body: nativeGraveBody(
+      Math.round(worm.x * 65536),
+      Math.round((H - worm.y) * 65536),
+    ),
     mesh,
   };
 }
@@ -32,10 +39,24 @@ export function stepOriginalGrave(
   waterLevel,
   gravityScale = 1,
 ) {
-  if (grave.wet || grave.y < waterLevel) {
-    grave.wet = true;
-    grave.y -= 24 * dt;
-  } else stepWorm(grave, terrain, dt, gravityScale);
+  grave.body.x = Math.round(grave.x * 65536);
+  grave.body.y = Math.round((H - grave.y) * 65536);
+  grave.body = stepNativeGraveBody(
+    grave.body,
+    {
+      frame: grave.ticks++,
+      index: 0,
+      waterY: Math.floor(H - waterLevel),
+      gravity: Math.round(0x3d70 * gravityScale),
+      wind: 0,
+    },
+    (x, y) => Number(bodyBlocked(terrain, x / 65536, H - y / 65536)),
+  );
+  grave.x = grave.body.x / 65536;
+  grave.y = H - grave.body.y / 65536;
+  grave.vx = (grave.body.vx / 65536) * 50;
+  grave.vy = (-grave.body.vy / 65536) * 50;
+  grave.wet ||= !!grave.body.submerged;
   const lifecycle = nativeGraveLifecycle(
     grave.progress,
     grave.bubblePhase,

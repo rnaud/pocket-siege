@@ -37,7 +37,8 @@ test("original grave strips preserve dry/wet pixels and switch on submersion", a
     grave.y = 90;
     stepOriginalGrave(grave, terrain, 0.02, 100);
     const wet = grave.mesh.userData.originalSprite;
-    grave.y = 0;
+    // Put the upward-moving body beyond the retirement boundary.
+    grave.y = -10;
     const removed = !stepOriginalGrave(grave, terrain, 0.02, 100);
     return {
       mismatch,
