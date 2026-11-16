@@ -118,6 +118,7 @@ import {
 } from "./armageddon/art.js";
 import {
   playOriginalSound,
+  playNativeHitVoice,
   playNativeWaterSound,
   playNativeLandingSound,
   playNativeDeathVoice,
@@ -812,6 +813,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   $("#bounce").value = "0.55";
   lastJump = { kind: null, time: -1 };
   for (const w of worms) {
+    w.nativeHitVoicePlayback?.stop();
     dispose(w.g);
     w.label.remove();
   }
@@ -2466,6 +2468,12 @@ function fireShotgun(prepared = false) {
         },
         dispatch.packet,
         0, // Shotgun kind 3 does not read the scheme delay byte.
+        1,
+        {
+          frame: matchRandom.frame,
+          previousFrame: victim.nativeHitVoiceFrame ?? 0,
+          nextRandom: () => matchRandom.logicUint(),
+        },
       );
       if (response.result.seen) victim.nativeDirectHitFrame = matchRandom.frame;
       victim.nativeBlastAccumulated = response.result.accumulated;
@@ -2477,6 +2485,18 @@ function fireShotgun(prepared = false) {
           victim.ground = false;
         }
         if (call.sound) sfx("frozenhit");
+        if (call.voice) {
+          victim.nativeHitVoiceFrame = call.voice.frame;
+          if (sound) {
+            audio ??= new (window.AudioContext || window.webkitAudioContext)();
+            audio.resume();
+            victim.nativeHitVoicePlayback = playNativeHitVoice(
+              audio,
+              call.voice,
+              victim.nativeHitVoicePlayback,
+            );
+          }
+        }
         if (call.blood)
           for (const request of nativeBloodBurst(
             ...call.blood,

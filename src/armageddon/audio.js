@@ -58,16 +58,29 @@ function loadOriginalClip(context, name) {
 }
 function playOriginalClip(context, name, fallback, level) {
   const requested = performance.now();
+  let cancelled = false,
+    activeSource = null;
+  const playback = {
+    stop() {
+      cancelled = true;
+      if (activeSource) {
+        activeSource.stop();
+        activeSource = null;
+      }
+    },
+  };
   loadOriginalClip(context, name)
     .then((buffer) => {
-      if (performance.now() - requested > 500) return;
+      if (cancelled || performance.now() - requested > 500) return;
       const source = context.createBufferSource(),
         gain = context.createGain();
+      activeSource = source;
       source.buffer = buffer;
       gain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
       source.connect(gain);
       gain.connect(context.destination);
       source.onended = () => {
+        activeSource = null;
         source.disconnect();
         gain.disconnect();
       };
@@ -75,8 +88,9 @@ function playOriginalClip(context, name, fallback, level) {
     })
     .catch(() => {
       contexts.get(context).delete(name);
-      fallback();
+      if (!cancelled) fallback();
     });
+  return playback;
 }
 
 // Native IDs verified at descriptors 0055F258 / 0055F260. Browser gain is a
@@ -106,4 +120,12 @@ export function playNativeDeathVoice(context, request) {
       () => {},
       request[3] / 65536,
     );
+}
+
+// Speech descriptors 0055F59C/0055F5A4/0055F5AC carry IDs 38/39/40.
+export function playNativeHitVoice(context, request, previousPlayback) {
+  previousPlayback?.stop();
+  const name = { 38: "ouch", 39: "ow1", 40: "ow2" }[request.index];
+  if (!name) return null;
+  return playOriginalClip(context, `voices/english/${name}.wav`, () => {}, 1);
 }
