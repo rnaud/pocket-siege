@@ -47,3 +47,37 @@ export function nativeProjectileBody(base, config, payload, frictionByte) {
   else if (config.mode === 4) body.flags = config.flags | 0x400002;
   return body;
 }
+
+// 004E1908..004E1A18. The 94-word projectile block begins at weapon+0x74.
+// Preserve every selected word so later event/damage/visual ports use the same
+// native configuration. Sound and owner-event requests are returned to callers.
+export function nativeProjectileSelection(block, payload) {
+  const offset = payload.repeat ? 52 : 3;
+  const words = block.slice(offset, offset + 42).map((value) => value | 0);
+  if (words.length !== 42) throw new RangeError("Incomplete projectile record");
+  const sounds = [];
+  if (payload.repeat) {
+    const numerator = (payload.repeat - 1) | 0;
+    if (!words[5] || (numerator === -2147483648 && words[5] === -1))
+      throw new RangeError("Invalid native secondary sprite divisor");
+    words[6] = (words[6] + (numerator % words[5])) | 0;
+  } else if (block[46]) sounds.push([block[46] | 0, 5, 65536, 65536, 0]);
+  const ownerEvent = words[22] && payload.owner ? payload.owner | 0 : null;
+  if (!words[17]) words[17] = payload.timer | 0;
+  if (words[23] === 2 && !words[25]) words[25] = payload.bounce | 0;
+  return {
+    words,
+    sounds,
+    ownerEvent,
+    config: {
+      flags: words[0],
+      drag: words[12],
+      wind: words[13],
+      gravity: words[15],
+      mode: words[23],
+      collisionFlags: words[24],
+      bounce: words[25],
+      friction: words[26],
+    },
+  };
+}
