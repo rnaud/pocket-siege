@@ -1,3 +1,4 @@
+import terrainThemes from "./armageddon/terrain-themes.js";
 import { WEAPON_SLOTS } from "./armageddon/delays.js";
 import { MAP_LAYOUTS } from "./map-generator.js";
 const KEY = "pocket-siege-settings-v1";
@@ -33,6 +34,7 @@ export function defaultSettings() {
     format: "single",
     weather: "clear",
     mapLayout: "fern",
+    terrainTheme: "forest",
     modifier: "standard",
     scheme: "classic",
     turnTime: 45,
@@ -68,6 +70,9 @@ export function readSettings(storage) {
           .map((k) => [k, parsed.weaponDelays[k]]),
       ),
       sound: Boolean(parsed.sound),
+      terrainTheme: terrainThemes.includes(parsed.terrainTheme)
+        ? parsed.terrainTheme
+        : base.terrainTheme,
       mapLayout: MAP_LAYOUTS.includes(parsed.mapLayout)
         ? parsed.mapLayout
         : base.mapLayout,

@@ -31,6 +31,16 @@ const weaponSprites = Object.fromEntries(
 );
 const names = [
   ...new Set([
+    "missile",
+    "mortar",
+    "hmissil1",
+    "grenade",
+    "cluster",
+    "hgrenade",
+    "exfoom",
+    "expow",
+    "expoot",
+    "exbiff",
     ...Object.values(weaponSprites)
       .filter(Boolean)
       .map((id) => spriteIds.sprites[id].name),
@@ -119,6 +129,55 @@ function texture(name, index) {
 function aimProgress(angle) {
   const pitch = Math.asin(Math.sin((angle * Math.PI) / 180));
   return Math.round((pitch / Math.PI + 0.5) * 0xffff);
+}
+
+export const projectileSprites = {
+  rocket: "missile",
+  mortar: "mortar",
+  homing: "hmissil1",
+  grenade: "grenade",
+  cluster: "cluster",
+  holy: "hgrenade",
+};
+
+export function originalVisual(name, index = 0) {
+  const animation = animations.get(name);
+  if (!animation) return null;
+  return {
+    map: texture(name, index),
+    width: animation.sprite.width,
+    height: animation.sprite.height,
+    count: animation.sprite.frames.length,
+    rate: animation.metadata.rate / 65536,
+  };
+}
+
+export function createOriginalVisual(name) {
+  const frame = originalVisual(name);
+  if (!frame) return null;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(frame.width, frame.height),
+    new THREE.MeshBasicMaterial({
+      map: frame.map,
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  mesh.userData.originalSprite = name;
+  return mesh;
+}
+
+export function updateOriginalProjectile(mesh, kind, vx, vy, age) {
+  const name = projectileSprites[kind];
+  if (!name || mesh.userData.originalSprite !== name) return false;
+  const directed = ["rocket", "mortar", "homing"].includes(kind);
+  // The shipped 32-direction strips start pointing up and turn clockwise.
+  const turn = directed ? Math.atan2(vx, vy) / (Math.PI * 2) : age * 0.8;
+  const index = ((Math.round(turn * 32) % 32) + 32) % 32;
+  mesh.material.map = texture(name, index);
+  mesh.userData.originalFrame = index;
+  mesh.rotation.z = 0;
+  return true;
 }
 
 function applyAnimationCalls(player, calls) {

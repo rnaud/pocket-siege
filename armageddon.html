@@ -39,7 +39,8 @@
       }
       label {
         display: inline-block;
-        margin: 8px;
+        max-width: 100%;
+        margin: 8px 0;
       }
       select,
       button,
@@ -71,6 +72,7 @@
       }
       p {
         line-height: 1.5;
+        overflow-wrap: anywhere;
       }
     </style>
   </head>
@@ -82,6 +84,51 @@
         Original pixels and audio from your disc. Pick an animation, step
         through its frames, or audition a sound.
       </p>
+      <section>
+        <h2>COMPLETE VISUAL LIBRARY</h2>
+        <label
+          >GROUP
+          <select id="media-group">
+            <option value="">ALL</option>
+            <option>sprites</option>
+            <option>terrain</option>
+            <option>maps</option>
+            <option>water</option>
+            <option>interface</option>
+          </select></label
+        >
+        <label
+          >SEARCH
+          <input
+            id="media-search"
+            type="search"
+            placeholder="weapon, forest, explosion…"
+        /></label>
+        <p id="media-count"></p>
+        <label
+          >ASSET
+          <select id="media-asset"></select
+        ></label>
+        <label
+          >FRAME <input id="media-frame" type="range" min="0" max="0" value="0"
+        /></label>
+        <label
+          >SCALE
+          <select id="media-scale">
+            <option selected>1</option>
+            <option>2</option>
+            <option>4</option>
+          </select></label
+        >
+        <label
+          ><input id="media-transparent" type="checkbox" checked /> TRANSPARENT
+          ZERO</label
+        >
+        <div style="overflow: auto; max-height: 650px">
+          <canvas id="media-preview" style="max-width: none"></canvas>
+        </div>
+        <p id="media-details">Loading original media catalog…</p>
+      </section>
       <section>
         <label
           >ANIMATION

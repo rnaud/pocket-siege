@@ -9,7 +9,7 @@ export function decodeSprite(buffer) {
     u32(0) !== 0x1a525053 ||
     u32(4) !== bytes.length ||
     bytes[8] !== 8 ||
-    bytes[9] !== 192
+    ![128, 192].includes(bytes[9])
   )
     throw new Error("Unsupported SPR header");
   const colors = u16(10);
@@ -19,8 +19,9 @@ export function decodeSprite(buffer) {
     palette[(i + 1) * 4 + 3] = 255;
   }
   let p = 12 + colors * 3;
-  const blockCount = u16(p);
-  p = (p + 2 + 3) & ~3;
+  const compressed = !!(bytes[9] & 64);
+  const blockCount = compressed ? u16(p) : 0;
+  if (compressed) p = (p + 2 + 3) & ~3;
   const descriptors = [];
   for (let i = 0; i < blockCount; i++, p += 12)
     descriptors.push({ offset: u32(p), size: u32(p + 8) });
@@ -64,6 +65,7 @@ export function decodeSprite(buffer) {
     if (dst !== size) throw new Error("Incomplete SPR block");
     return result;
   });
+  if (!compressed) blocks.push(bytes.subarray(p));
   for (const frame of frames) {
     const block = blocks[frame.address >>> 24];
     const offset = frame.address & 0xffffff;

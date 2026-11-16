@@ -15,6 +15,10 @@ import { MatchRandom } from "./armageddon/random.js";
 import { addAmmo, spendAmmo, displayAmmo } from "./armageddon/inventory.js";
 import {
   loadOriginalArt,
+  originalVisual,
+  createOriginalVisual,
+  updateOriginalProjectile,
+  projectileSprites,
   originalWormFrame,
   startOriginalRecoil,
   startOriginalPreparation,
@@ -69,6 +73,7 @@ import {
   createMine,
   createBarrel,
 } from "./combat-visuals.js";
+import { loadOriginalTerrain } from "./armageddon/terrain.js";
 import { paintTerrain } from "./terrain-paint.js";
 import {
   WEAPONS,
@@ -301,9 +306,10 @@ let lastShot = null,
   lastResult = null;
 let assetsReady = false;
 let originalArtError = null;
-loadOriginalArt()
+Promise.all([loadOriginalArt(), loadOriginalTerrain()])
   .then(() => {
     assetsReady = true;
+    terrainDirty = true;
   })
   .catch((error) => {
     originalArtError = error.message;
@@ -387,9 +393,15 @@ const projectilePrototypes = Object.fromEntries(
   }),
 );
 function projectileMesh(kind) {
+  const original = createOriginalVisual(projectileSprites[kind]);
+  if (original) return original;
   const mesh = projectilePrototypes[kind].clone(true);
   mesh.visible = true;
   return mesh;
+}
+function releaseProjectileMesh(mesh) {
+  if (mesh.userData.originalSprite) dispose(mesh);
+  else group.remove(mesh);
 }
 function prewarmShaders() {
   for (const kind of PROJECTILE_ORDER)
@@ -693,12 +705,14 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     dispose(w.g);
     w.label.remove();
   }
-  if (projectile) group.remove(projectile.mesh);
+  if (projectile) releaseProjectileMesh(projectile.mesh);
   projectile = null;
   if (crate) {
     dispose(crate.mesh);
     crate = null;
   }
+  for (const effect of originalEffects) dispose(effect.mesh);
+  originalEffects.length = 0;
   for (const p of particles) group.remove(p.mesh);
   particles = [];
   for (const m of mines) dispose(m.mesh);
@@ -714,6 +728,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
   terrain = new Terrain(matchSeed, isDaily ? "fern" : $("#map-layout").value);
+  terrain.theme = isDaily ? "forest" : $("#terrain-theme").value;
   $(".location span").textContent = {
     fern: "FERN ISLAND",
     highlands: "HIGHLANDS",
@@ -1819,6 +1834,7 @@ function saveSettings() {
     format: $("#format").value,
     weather: $("#weather").value,
     mapLayout: $("#map-layout").value,
+    terrainTheme: $("#terrain-theme").value,
     modifier: $("#modifier").value,
     scheme: $("#scheme").value,
     turnTime: +$("#turn-time").value,
@@ -1841,6 +1857,7 @@ function applySettings() {
   set("#format", saved.format);
   set("#weather", saved.weather);
   set("#map-layout", saved.mapLayout);
+  set("#terrain-theme", saved.terrainTheme);
   set("#modifier", saved.modifier);
   set("#scheme", saved.scheme);
   set("#turn-time", String(saved.turnTime));
@@ -2366,7 +2383,7 @@ function explode(x, y, kind, ownerIndex = -1) {
   explosions++;
   shakeUntil = performance.now() + 350;
   hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
-  impactFlash(x, y);
+  impactFlash(x, y, "exfoom");
   sfx("explosion");
   for (const fragment of fragments(kind)) {
     spawnBomb({ x, y: y + 8, ...fragment, owner: ownerIndex });
@@ -2465,45 +2482,25 @@ function spawnDust(x, y) {
     max: 0.4,
   });
 }
-function impactFlash(x, y) {
-  const p = screen(x, y),
-    flash = document.createElement("canvas");
-  flash.width = flash.height = 32;
-  const brush = pixelBrush(flash.getContext("2d"));
-  const points = [
-    [16, 0],
-    [19, 9],
-    [27, 4],
-    [24, 12],
-    [31, 16],
-    [23, 20],
-    [28, 28],
-    [19, 24],
-    [16, 31],
-    [12, 23],
-    [4, 28],
-    [8, 19],
-    [0, 15],
-    [9, 12],
-    [5, 3],
-    [13, 8],
-  ];
-  const draw = (scale, color) =>
-    brush.polygon(
-      points.map(([x, y]) => [
-        Math.round(16 + (x - 16) * scale),
-        Math.round(16 + (y - 16) * scale),
-      ]),
-      color,
-    );
-  draw(1, "#b85f65");
-  draw(0.85, "#f2a36f");
-  draw(0.6, "#ffe4af");
-  flash.className = "impact-flash";
-  flash.style.left = p.x + "px";
-  flash.style.top = p.y + "px";
-  $("#damage").appendChild(flash);
-  setTimeout(() => flash.remove(), 600);
+const originalEffects = [];
+function impactFlash(x, y, name = "expow") {
+  const mesh = createOriginalVisual(name);
+  if (!mesh) return;
+  mesh.position.set(Math.round(x), Math.round(y), 45);
+  group.add(mesh);
+  originalEffects.push({ mesh, name, age: 0 });
+}
+function stepOriginalEffects(dt) {
+  for (let i = originalEffects.length - 1; i >= 0; i--) {
+    const effect = originalEffects[i];
+    effect.age += dt;
+    const frame = originalVisual(effect.name);
+    const index = Math.floor(effect.age * frame.rate);
+    if (index >= frame.count) {
+      dispose(effect.mesh);
+      originalEffects.splice(i, 1);
+    } else effect.mesh.material.map = originalVisual(effect.name, index).map;
+  }
 }
 function damageLabel(w, n, direction = 0) {
   const now = performance.now();
@@ -3090,8 +3087,9 @@ function step(dt) {
       if (!lastPoint || Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y) > 6)
         lastShot.points.push({ x: p.x, y: p.y });
     }
-    p.mesh.rotation.z =
-      p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
+    if (!updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age))
+      p.mesh.rotation.z =
+        p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
     if (Math.floor(p.age * 60) !== Math.floor((p.age - dt) * 60)) {
       p.trail.push({ x: p.x, y: p.y });
       if (p.trail.length > 28) p.trail.shift();
@@ -3114,7 +3112,7 @@ function step(dt) {
         }
         explode(p.x, p.y, p.kind, p.owner);
       }
-      group.remove(p.mesh);
+      releaseProjectileMesh(p.mesh);
       projectile = null;
       phase = "settle";
       shotWait = 0;
@@ -3159,6 +3157,7 @@ function step(dt) {
       particles.splice(i, 1);
     }
   }
+  stepOriginalEffects(dt);
   matchRandom.finishFrame();
 }
 function screen(x, y) {
@@ -3835,6 +3834,7 @@ for (const selector of [
   "#format",
   "#weather",
   "#map-layout",
+  "#terrain-theme",
   "#modifier",
   "#turn-time",
   "#retreat-time",
@@ -3903,6 +3903,7 @@ window.siege = {
     assetsReady,
     originalArtError,
     mapLayout: terrain.layout,
+    terrainTheme: terrain.theme,
     mapSeed: terrain.seed,
     random: matchRandom.snapshot(),
     logicStepMs: LOGIC_STEP_SECONDS * 1000,

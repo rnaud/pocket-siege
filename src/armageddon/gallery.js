@@ -103,3 +103,98 @@ $("#status").textContent =
 selectBank();
 await load();
 requestAnimationFrame(animate);
+
+// Complete media catalog, including native terrain and map containers.
+const { decodeImage, imageRGBA } = await import("./image.js");
+const catalog = await fetch(`${base}media.json`).then((response) => {
+  if (!response.ok) throw new Error("Media catalog unavailable");
+  return response.json();
+});
+let media,
+  mediaToken = 0;
+function drawMedia() {
+  if (!media) return;
+  const canvas = $("#media-preview"),
+    context = canvas.getContext("2d");
+  const frame = +$("#media-frame").value;
+  canvas.width = media.width;
+  canvas.height = media.height;
+  const scale = +$("#media-scale").value;
+  canvas.style.width = `${media.width * scale}px`;
+  canvas.style.height = `${media.height * scale}px`;
+  context.imageSmoothingEnabled = false;
+  if (media.bitmap) context.drawImage(media.bitmap, 0, 0);
+  else {
+    const pixels = media.sprite
+      ? spriteFrameRGBA(media.sprite, frame)
+      : imageRGBA(media.image, $("#media-transparent").checked);
+    context.putImageData(
+      new ImageData(pixels, media.width, media.height),
+      0,
+      0,
+    );
+  }
+  $("#media-details").textContent =
+    `${media.asset.id} · ${media.width} × ${media.height} original pixels · ${media.asset.format.toUpperCase()} · frame ${frame + 1}/${media.sprite?.frames.length || 1}`;
+}
+async function loadMedia() {
+  const asset = catalog.assets.find(
+    (item) => item.id === $("#media-asset").value,
+  );
+  if (!asset) return;
+  const token = ++mediaToken;
+  try {
+    const response = await fetch(base + asset.path);
+    if (!response.ok) throw new Error("Media unavailable");
+    let decoded;
+    if (asset.format === "bmp") {
+      const bitmap = await createImageBitmap(await response.blob());
+      decoded = { bitmap, width: bitmap.width, height: bitmap.height };
+    } else {
+      const buffer = await response.arrayBuffer();
+      const image =
+        asset.format === "spr" ? decodeSprite(buffer) : decodeImage(buffer);
+      decoded = {
+        width: image.width,
+        height: image.height,
+        [asset.format === "spr" ? "sprite" : "image"]: image,
+      };
+    }
+    if (token !== mediaToken) {
+      decoded.bitmap?.close();
+      return;
+    }
+    media?.bitmap?.close();
+    media = { ...decoded, asset };
+    $("#media-frame").value = 0;
+    $("#media-frame").max = (media.sprite?.frames.length || 1) - 1;
+    drawMedia();
+  } catch (error) {
+    if (token === mediaToken) $("#media-details").textContent = error.message;
+  }
+}
+function filterMedia() {
+  const group = $("#media-group").value,
+    query = $("#media-search").value.trim().toLowerCase();
+  const filtered = catalog.assets.filter(
+    (asset) => (!group || asset.group === group) && asset.id.includes(query),
+  );
+  options(
+    $("#media-asset"),
+    filtered.map((asset) => asset.id),
+  );
+  $("#media-count").textContent =
+    `${filtered.length} matches / ${catalog.assets.length} original visual assets`;
+  if (filtered.length) loadMedia();
+  else {
+    mediaToken++;
+    $("#media-details").textContent = "No matching assets";
+  }
+}
+$("#media-group").onchange = filterMedia;
+$("#media-search").oninput = filterMedia;
+$("#media-asset").onchange = loadMedia;
+$("#media-frame").oninput = drawMedia;
+$("#media-scale").onchange = drawMedia;
+$("#media-transparent").onchange = drawMedia;
+filterMedia();

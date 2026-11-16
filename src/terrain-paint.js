@@ -1,3 +1,4 @@
+import { paintOriginalTerrain } from "./armageddon/terrain.js";
 import { cavernBounds } from "./map-generator.js";
 import { W, H, WATER } from "./physics.js";
 import { pixelBrush, hash } from "./pixel-draw.js";
@@ -297,6 +298,10 @@ function cliffs() {
 }
 
 export function paintTerrain(ctx, terrain, texture) {
+  if (paintOriginalTerrain(ctx, terrain)) {
+    texture.needsUpdate = true;
+    return;
+  }
   const surface = (terrain.surfaceCache = Array.from({ length: W }, (_, x) =>
     terrain.surface(x),
   ));
