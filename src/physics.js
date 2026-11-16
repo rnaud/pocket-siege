@@ -5,6 +5,7 @@ import { generateTerrain } from "./map-generator.js";
 import { islandTop, islandVoid } from "./island-profile.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import collisionShapes from "./armageddon/collision-shapes.json" with { type: "json" };
+import { nativeShapeTerrainOverlap } from "./armageddon/collision-world.js";
 export let W = 1200,
   H = 650;
 export function setWorldDimensions(width = 1200, height = 650) {
@@ -147,11 +148,7 @@ export const BODY = {
   cy: 0,
 };
 export function bodyBlocked(terrain, x, y) {
-  const left = Math.floor(x) - WORM_MASK.anchorX,
-    top = Math.ceil(y) - 1 + WORM_MASK.anchorY;
-  return WORM_MASK.planes[0].points.some(([px, py]) =>
-    terrain.solid(left + px, top - py),
-  );
+  return nativeShapeTerrainOverlap(3, terrain, x, y);
 }
 export function hitsWorm(w, x, y, radius = 0) {
   const left = Math.floor(w.x) - WORM_MASK.anchorX,

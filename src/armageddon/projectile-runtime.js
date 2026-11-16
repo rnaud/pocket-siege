@@ -8,6 +8,10 @@ import {
 import { nativeLaunchVelocity } from "./power.js";
 import { nativeSin, nativeCos } from "./trig.js";
 import {
+  nativeShapeTerrainOverlap,
+  nativeWorldShapeOverlap,
+} from "./collision-world.js";
+import {
   nativeSimpleBodyTick,
   nativeSimpleBounce,
   nativeBodyAwake,
@@ -72,6 +76,8 @@ export function attachNativeProjectile(p, height) {
   p.nativeTrail = { fields: selected.words.slice(8, 12), progress: 0 };
   p.nativeBody = nativeProjectileBody(
     {
+      // 004E1830 calls 004F4000(context, type15, projectileBlock[0]).
+      shape: block[0],
       restitutionY: 0,
       tangent: Math.trunc((96 * 65536) / 100),
       radius: 0x100000,
@@ -89,6 +95,20 @@ export function attachNativeProjectile(p, height) {
     96,
   );
   return true;
+}
+
+// Host ordering/owner grace remain adapters until native registry dispatch is
+// wired. Geometry uses the constructor-selected mask for terrain and worms.
+export function nativeProjectileCollision(p, x, y, terrain, worms, age) {
+  const shape = p.nativeBody.shape;
+  if (nativeShapeTerrainOverlap(shape, terrain, x, y)) return 1;
+  const index = worms.findIndex(
+    (worm, i) =>
+      worm.hp > 0 &&
+      (i !== p.owner || age > 0.25) &&
+      nativeWorldShapeOverlap(shape, x, y, 3, worm.x, worm.y),
+  );
+  return index < 0 ? 0 : index + 2;
 }
 export function stepNativeProjectile(
   p,

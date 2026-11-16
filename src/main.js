@@ -75,6 +75,7 @@ import {
 } from "./armageddon/terrain-decoration.js";
 import {
   nativeProjectileLaunch,
+  nativeProjectileCollision,
   attachNativeProjectile,
   stepNativeProjectile,
 } from "./armageddon/projectile-runtime.js";
@@ -3820,14 +3821,14 @@ function step(dt) {
             bounces: WEAPONS[p.kind].bounces,
           },
           (x, y) => {
-            if (terrain.solid(x, y)) return 1;
-            const i = worms.findIndex(
-              (w, i) =>
-                w.hp > 0 &&
-                (i !== p.owner || p.age + dt > 0.25) &&
-                hitsWorm(w, x, y, 3),
+            return nativeProjectileCollision(
+              p,
+              x,
+              y,
+              terrain,
+              worms,
+              p.age + dt,
             );
-            return i < 0 ? 0 : i + 2;
           },
         );
         if (sound && nativeContact.sounds.length) {

@@ -13,6 +13,8 @@ from unicorn.x86_const import UC_X86_REG_EBP, UC_X86_REG_EDI, UC_X86_REG_ESI, UC
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
+parser.add_argument('--shape', type=int, default=3)
+parser.add_argument('--include-worm', action='store_true')
 args = parser.parse_args()
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -62,16 +64,17 @@ def observe(cpu,address,size,user):
  values=[w,h] if address==dimensions else [data,1,stride]
  for i,v in enumerate(values):write(read(sp+4+4*i),v)
 for address in [dimensions,storage]:cpu.hook_add(UC_HOOK_CODE,observe,begin=address,end=address)
-worm=next(r for r in fixture['cases'] if r['shape']==3);worm_object=mask(worm)
+worm=next(r for r in fixture['cases'] if r['shape']==args.shape);worm_object=mask(worm)
 terrains=[];cases=[]
-for pattern in range(6):
+for pattern in range(7 if args.include_worm else 6):
  points=[]
  for y in range(48):
   for x in range(64):
-   solid=[False, y>=24, x==31, (x+y)%7==0, (x,y)==(32,24), True][pattern]
+   solid=[False, y>=24, x==31, (x+y)%7==0, (x,y)==(32,24), True, False][pattern]
    if solid:points.append([x,y])
  row=dict(width=64,height=48,anchorX=0,anchorY=0,planes=[dict(width=64,height=48,points=points)])
- terrain=mask(row,False);terrains.append(row)
+ if pattern==6:row=next(r for r in fixture['cases'] if r['shape']==3)
+ terrain=mask(row,pattern==6);terrains.append(row)
  for reverse in [False,True]:
   for x in [-12,-4,0,1,4,15,27,28,29,30,31,32,33,34,35,60,63,64,68,76]:
    for y in [-20,-9,-1,0,8,9,10,17,23,24,25,39,47,48,57,60]:
@@ -81,5 +84,5 @@ for pattern in range(6):
     cpu.reg_write(UC_X86_REG_ECX,a);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4cc310,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Overlap did not return')
     cases.append(dict(pattern=pattern,reverse=reverse,x=x,y=y,result=cpu.reg_read(UC_X86_REG_EAX)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original 004CC310 dispatch and 004CC0C0 bit-plane overlap; bitmap dimension/storage getters supplied; original-mask points from constructor capture, six synthetic terrain planes.',terrains=terrains,cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original 004CC310 dispatch and 004CC0C0 bit-plane overlap; bitmap dimension/storage getters supplied; original-mask points from constructor capture, six synthetic terrain planes.' + (' Includes original shape3 worm target; source shape='+str(args.shape)+'.' if args.include_worm else ''),terrains=terrains,cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} native mask overlaps')
