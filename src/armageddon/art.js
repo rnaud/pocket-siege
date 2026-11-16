@@ -5,6 +5,7 @@ import {
 } from "./animation.js";
 import { nativeWeaponAnimation } from "./weapon-animation.js";
 import { nativeWeaponEquip } from "./equip.js";
+import { nativePostFire, nativeRecoilTick } from "./recoil.js";
 import weaponFields from "./weapon-art-fields.json";
 import { WEAPON_SLOTS } from "./delays.js";
 import { nativeFreezeAnimation } from "./freeze.js";
@@ -31,6 +32,11 @@ const names = [
     ...Object.values(WEAPON_SLOTS).flatMap((id) =>
       nativeWeaponEquip(weaponFields[id], 0x65, 0x8000, id)
         .calls.filter((call) => call.operation === "queue" && call.sprite_id)
+        .map((call) => spriteIds.sprites[call.sprite_id].name),
+    ),
+    ...Object.values(WEAPON_SLOTS).flatMap((id) =>
+      nativePostFire(weaponFields[id], 0x8000)
+        .calls.filter((call) => call.operation === "queue")
         .map((call) => spriteIds.sprites[call.sprite_id].name),
     ),
     freezeEntry,
@@ -97,7 +103,76 @@ function texture(name, index) {
   }
   return textures[index];
 }
+function aimProgress(angle) {
+  const pitch = Math.asin(Math.sin((angle * Math.PI) / 180));
+  return Math.round((pitch / Math.PI + 0.5) * 0xffff);
+}
+
+// Browser action adapter: native preparation/firing event scheduling is still unported.
+export function startOriginalRecoil(worm, weapon, angle, frame) {
+  const id = WEAPON_SLOTS[weapon];
+  if (!id || !animations.has(spriteIds.sprites[weaponSprites[weapon]]?.name))
+    return;
+  const record = weaponFields[id];
+  const progress = aimProgress(angle);
+  const result = nativePostFire(record, progress);
+  const player = (worm.originalPlayer = new NativeAnimationPlayer());
+  const enqueue = (id, value) =>
+    player.enqueue(
+      id,
+      animations.get(spriteIds.sprites[id].name).metadata,
+      value,
+    );
+  // 004F67E0 first ensures the selected weapon strip and aim progress are present.
+  enqueue(weaponSprites[weapon], progress);
+  for (const call of result.calls) {
+    if (call.operation === "clear") player.clear();
+    else enqueue(call.sprite_id, call.progress);
+  }
+  worm.originalRecoil = { record, delay: result.delay, frame };
+  worm.originalAnimationKey = null;
+  worm.originalEquipped = true;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  const recoil = worm.originalRecoil;
+  if (
+    recoil &&
+    worm.hp > 0 &&
+    !worm.frozen &&
+    !worm.knocked &&
+    !(worm.hurt > 0.35)
+  ) {
+    const player = worm.originalPlayer;
+    while (recoil.frame < frame && worm.originalRecoil) {
+      player.advance();
+      const next = nativeRecoilTick(
+        recoil.record,
+        recoil.delay,
+        player.current.progress,
+        0,
+      );
+      recoil.delay = next.delay;
+      recoil.frame++;
+      if (next.target !== null) worm.originalRecoil = null;
+    }
+    if (worm.originalRecoil) {
+      const name = spriteIds.sprites[player.current.id].name;
+      const sprite = animations.get(name).sprite;
+      const index = nativeSpriteFrame(
+        sprite.frames.length,
+        sprite.metadata[2],
+        player.current.progress,
+      );
+      return {
+        map: texture(name, index),
+        name,
+        index,
+        aimed: false,
+        equipped: true,
+      };
+    }
+  } else if (recoil) worm.originalRecoil = null;
   let name =
     {
       idle: "wbrth1",
@@ -169,8 +244,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   const count = sprite.frames.length;
   const aimed = equipped && !player.current.rate && !frozen;
   if (aimed) {
-    const pitch = Math.asin(Math.sin((angle * Math.PI) / 180));
-    player.setProgress(Math.round((pitch / Math.PI + 0.5) * 0xffff));
+    player.setProgress(aimProgress(angle));
   } else if (!player.current.rate) {
     // Motion-driven strips need the original locomotion/velocity driver.
     // Keep the existing browser motion cadence until that physics is ported.

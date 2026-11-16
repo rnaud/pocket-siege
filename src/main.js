@@ -7,7 +7,11 @@ import {
 } from "./armageddon/delays.js";
 import { MatchRandom } from "./armageddon/random.js";
 import { addAmmo, spendAmmo, displayAmmo } from "./armageddon/inventory.js";
-import { loadOriginalArt, originalWormFrame } from "./armageddon/art.js";
+import {
+  loadOriginalArt,
+  originalWormFrame,
+  startOriginalRecoil,
+} from "./armageddon/art.js";
 import { playOriginalSound } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
@@ -1994,6 +1998,7 @@ function placeMine() {
   charging = false;
   chargeSource = null;
   w.recoil = 0.15;
+  startOriginalRecoil(w, "mine", angle, matchRandom.frame);
   phase = "settle";
   retreat = retreatSeconds;
   shotWait = 0;
@@ -2072,6 +2077,7 @@ function placeDynamite() {
   const w = worms[current];
   spendSpecial("dynamite");
   w.recoil = 0.2;
+  startOriginalRecoil(w, "dynamite", angle, matchRandom.frame);
   shotCount++;
   spawnBomb({
     x: w.x,
@@ -2096,6 +2102,7 @@ function fireShotgun() {
       ? { x: origin.pivot.x, y: origin.pivot.y }
       : { x: origin.muzzle.x, y: origin.muzzle.y },
     r = (angle * Math.PI) / 180;
+  startOriginalRecoil(w, "shotgun", angle, matchRandom.frame);
   let hit = null,
     victim = null;
   for (let d = 4; d <= 300; d += 2) {
@@ -2158,6 +2165,7 @@ function fireShotgun() {
 function fireBat() {
   if (!canAct() || (availableAmmo(ammo[team], "bat") ?? 0) <= 0) return;
   const w = worms[current];
+  startOriginalRecoil(w, "bat", angle, matchRandom.frame);
   let victim = null,
     best = 52;
   for (const t of worms) {
@@ -2238,6 +2246,7 @@ function fire() {
   shotBounce = null;
   const fromAi = chargeSource === "ai";
   w.recoil = 0.3;
+  startOriginalRecoil(w, kind, angle, matchRandom.frame);
   charging = false;
   chargeSource = null;
   if (fromAi) {
