@@ -31,3 +31,58 @@ export function nativeCollisionMask(image, region) {
     })),
   };
 }
+
+// 004CC310/004CC0C0 overlap expressed over solid source pixels. Zero padding
+// in the shifted native bit planes makes this equivalent to their word AND.
+// Coordinates are integer native pixels (manager 004C97A0 shifts 16.16 first).
+export function nativeCollisionOverlap(a, ax, ay, b, bx, by) {
+  const leftA = (ax - a.anchorX) | 0,
+    topA = (ay - a.anchorY) | 0;
+  const leftB = (bx - b.anchorX) | 0,
+    topB = (by - b.anchorY) | 0;
+  const dx = (leftA - leftB) | 0,
+    dy = (topA - topB) | 0;
+  if (
+    dx >= b.width ||
+    dy >= b.height ||
+    dx + a.width <= 0 ||
+    dy + a.height <= 0
+  )
+    return 0;
+  const points = new Set(b.planes[0].points.map(([x, y]) => y * b.width + x));
+  return nativeCollisionBitmapOverlap(a, ax, ay, {
+    width: b.width,
+    height: b.height,
+    left: leftB,
+    top: topB,
+    solid: (x, y) => points.has(y * b.width + x),
+  });
+}
+
+// Terrain adapter: query the current bitmap directly so craters cannot leave
+// stale cached occupancy. Visits only solid mask pixels, never the whole map.
+// solid receives local bitmap coordinates; outside pixels are clipped away.
+export function nativeCollisionBitmapOverlap(mask, x, y, bitmap) {
+  const dx = (x - mask.anchorX - bitmap.left) | 0,
+    dy = (y - mask.anchorY - bitmap.top) | 0;
+  if (
+    dx >= bitmap.width ||
+    dy >= bitmap.height ||
+    dx + mask.width <= 0 ||
+    dy + mask.height <= 0
+  )
+    return 0;
+  for (const [x, y] of mask.planes[0].points) {
+    const px = x + dx,
+      py = y + dy;
+    if (
+      px >= 0 &&
+      py >= 0 &&
+      px < bitmap.width &&
+      py < bitmap.height &&
+      bitmap.solid(px, py)
+    )
+      return 1;
+  }
+  return 0;
+}
