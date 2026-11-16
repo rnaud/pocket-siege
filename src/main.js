@@ -2438,6 +2438,7 @@ function fireShotgun(prepared = false) {
       victim.knocked = true;
       victim.ground = false;
     }
+    terrain.craterRim ??= new Uint8Array(W * H);
     carveNativeCrater(
       terrain.data,
       W,
@@ -2445,6 +2446,7 @@ function fireShotgun(prepared = false) {
       effect[1] >> 16,
       effect[2] >> 16,
       Math.imul(nativeShotgunResolution.extentFactor, effect[4]),
+      terrain.craterRim,
     );
     spawnOriginalDebris(effect[1], effect[2], effect[4]);
     terrainDirty = true;

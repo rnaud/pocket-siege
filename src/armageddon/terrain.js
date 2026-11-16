@@ -1,3 +1,4 @@
+import { nativeRimPixel } from "./crater-mask.js";
 import * as THREE from "three";
 import { decodeImage, imageRGBA } from "./image.js";
 import { decodeSprite, spriteFrameRGBA } from "./sprite.js";
@@ -45,6 +46,12 @@ export async function loadOriginalTerrain() {
   );
 }
 
+// 004A78A0 samples grass bitmap pixel (128, 0) for the rim palette index.
+export function originalCraterRimColor(name) {
+  const grass = art.get(name)?.grass;
+  return grass ? grass.rgba.subarray(128 * 4, 129 * 4) : null;
+}
+
 // Sample original indexed art at one source pixel per terrain pixel. The
 // existing collision mask remains authoritative, including newly cut craters.
 export function paintOriginalTerrain(ctx, terrain) {
@@ -63,6 +70,10 @@ export function paintOriginalTerrain(ctx, terrain) {
     for (let x = 0; x < width; x++) {
       if (terrain.data[worldY * width + x] !== 1) continue;
       const offset = (y * width + x) * 4;
+      if (nativeRimPixel(terrain.craterRim?.[worldY * width + x], true, 1, 0)) {
+        output.data.set(originalCraterRimColor(terrain.theme), offset);
+        continue;
+      }
       if (terrain.decorationPixels?.[offset + 3]) {
         output.data.set(
           terrain.decorationPixels.subarray(offset, offset + 4),

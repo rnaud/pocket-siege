@@ -22,7 +22,7 @@ export function nativeCraterMask(strength) {
 }
 
 // Browser terrain uses upward-positive Y; native coordinates use downward Y.
-export function carveNativeCrater(terrain, width, height, x, y, strength) {
+export function carveNativeCrater(terrain, width, height, x, y, strength, rim) {
   const mask = nativeCraterMask(strength);
   let removed = 0;
   nativeCirclePixels(mask.inner, (dx, dy) => {
@@ -33,5 +33,18 @@ export function carveNativeCrater(terrain, width, height, x, y, strength) {
     removed += terrain[index];
     terrain[index] = 0;
   });
+  if (rim)
+    nativeCirclePixels(mask.outer, (dx, dy) => {
+      const px = x + dx,
+        py = height - (y + dy);
+      if (px < 0 || py < 0 || px >= width || py >= height) return;
+      const index = py * width + px;
+      if (terrain[index]) rim[index] = 1;
+    });
   return removed;
+}
+
+// 004AC59E writes the selected palette index only to mask & solid pixels.
+export function nativeRimPixel(mask, solid, color, original) {
+  return mask && solid ? color : original;
 }
