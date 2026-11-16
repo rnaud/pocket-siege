@@ -3,7 +3,7 @@ import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from
 import { attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
-import firePunchCut from "./armageddon/fire-punch-cut.json";
+import toolCuts from "./armageddon/tool-cuts.json";
 import { bodyBlocked } from "./physics.js";
 import { startOriginalAxe, stepOriginalAxe } from "./armageddon/art.js";
 import { nativeBatRequest } from "./armageddon/bat.js";
@@ -2760,7 +2760,7 @@ function dispatchFirePunchCalls(w, calls) {
   for (const call of calls) {
     if (call.operation === "terrain") {
       terrain.craterRim ??= new Uint8Array(W * H);
-      carveNativeToolMask(terrain.data, W, H, firePunchCut, call.request[1], call.request[2], terrain.craterRim);
+      carveNativeToolMask(terrain.data, W, H, toolCuts[call.request[0]], call.request[1], call.request[2], terrain.craterRim);
       terrainDirty = true;
     } else if (call.operation === "particle") spawnNativeParticleRequest(call.request);
     else if (call.operation === "camera") queueWormCamera(w);

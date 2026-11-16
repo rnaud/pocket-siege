@@ -33,7 +33,7 @@ def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 
 source=json.loads(args.image.read_text())
 source_object,source_table=owner+0x1000,owner+0x2000
-write(source_object,source_table);write(source_table+0x54,0x492ac0)
+write(source_object,source_table);write(source_table+0x54,0x492ac0);write(source_table+0x58,0x492b10)
 bitmaps={};heap=owner+0x4000
 def signed(v):return v if v<0x80000000 else v-0x100000000
 def hook(cpu,address,size,user):
@@ -50,7 +50,11 @@ def hook(cpu,address,size,user):
   else:value=int((x,y) in bitmaps[obj]['points'])
   cpu.reg_write(UC_X86_REG_EAX,value)
  elif address==0x492b10:
-  x,y=signed(arg(0)),signed(arg(1));bitmap=bitmaps[obj];cleanup=12
+  x,y=signed(arg(0)),signed(arg(1));cleanup=12
+  if obj==source_object:
+   source['pixels'][y*source['width']+x]=arg(2)
+   cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
+  bitmap=bitmaps[obj]
   if 0<=x<bitmap['width'] and 0<=y<bitmap['height']:
    if arg(2):bitmap['points'].add((x,y))
    else:bitmap['points'].discard((x,y))
@@ -67,5 +71,17 @@ for region in [[200,3,219,26,209,17],[104,8,123,34,113,19],[136,8,155,27,145,19]
  for offset in [4,8]:
   bitmap=bitmaps[read(owner+offset)];planes.append(sorted(bitmap['points'],key=lambda p:(p[1],p[0])))
  cases.append(dict(region=region,width=read(owner+12),height=read(owner+16),anchorX=read(owner+20),anchorY=read(owner+24),hole=planes[0],rim=planes[1]))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004A7660 with original masks.img pixels supplied through virtual getter, allocation/bitmap construction supplied, clipped bitmap setters captured.',cases=cases),separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} shaped terrain masks')
+# Run the complete table constructor, including its original mirror loop.
+heap=owner+0x4000;bitmaps={};sp=stack+0xff00
+write(sp,stop);write(sp+4,source_object)
+cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+cpu.emu_start(0x4a7d50,stop,count=20000000)
+if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Tool table constructor did not return')
+tools={}
+for tool_id in range(1,16):
+ mask=read(owner+0x84+tool_id*4)
+ tools[tool_id]=dict(width=read(mask+12),height=read(mask+16),anchorX=read(mask+20),anchorY=read(mask+24),
+  hole=sorted(bitmaps[read(mask+4)]['points'],key=lambda p:(p[1],p[0])),
+  rim=sorted(bitmaps[read(mask+8)]['points'],key=lambda p:(p[1],p[0])))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004A7D50 table construction and004A7660 with original masks.img pixels supplied through virtual getter, allocation/bitmap construction supplied, clipped bitmap setters captured.',cases=cases,tools=tools),separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} isolated masks and {len(tools)} original table entries')
