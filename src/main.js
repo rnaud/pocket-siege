@@ -3820,15 +3820,8 @@ function step(dt) {
             frame: matchRandom.frame,
             bounces: WEAPONS[p.kind].bounces,
           },
-          (x, y) => {
-            return nativeProjectileCollision(
-              p,
-              x,
-              y,
-              terrain,
-              worms,
-              p.age + dt,
-            );
+          (x, y, body) => {
+            return nativeProjectileCollision(p, x, y, terrain, worms, H, body);
           },
         );
         if (sound && nativeContact.sounds.length) {

@@ -47,7 +47,11 @@ test("live projectile terrain and worm masks match original overlap", () => {
     };
   });
   const empty = { solid: () => false };
-  const p = { nativeBody: { shape: 2 }, owner: 99 };
+  // Start clear of every fixture target so registry priming excludes none.
+  const p = {
+    nativeBody: { shape: 2, flags: 6, x: 1000 << 16, y: 1000 << 16 },
+    owner: 99,
+  };
   for (const r of fixture.cases) {
     const wormTarget = r.pattern === 6;
     const result = nativeProjectileCollision(
@@ -56,7 +60,7 @@ test("live projectile terrain and worm masks match original overlap", () => {
       48 - r.y,
       wormTarget ? empty : terrains[r.pattern],
       wormTarget ? [{ x: 0, y: 48, hp: 100 }] : [],
-      1,
+      48,
     );
     expect(result, JSON.stringify(r)).toBe(r.result ? (wormTarget ? 2 : 1) : 0);
   }

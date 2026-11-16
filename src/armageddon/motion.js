@@ -185,6 +185,9 @@ export function nativeWaterMotion(body, waterY, suppressSkim, collide) {
 // supplied by the caller; response callbacks may update the body in place.
 export function nativeSimpleBodyTick(input, environment, callbacks) {
   const body = { ...input };
+  // Native collision queries read the actor's current body fields, including
+  // positions changed by water correction and an earlier collision sweep.
+  const collide = (x, y) => callbacks.collide(x, y, body);
   if (!body.enabled || body.suspended) return body;
   const awake = () => callbacks.awake(body);
   if (((environment.frame + environment.index) | 0) % 13 === 0 || awake())
@@ -198,7 +201,7 @@ export function nativeSimpleBodyTick(input, environment, callbacks) {
     body,
     environment.waterY,
     wasSubmerged,
-    callbacks.collide,
+    collide,
   );
   Object.assign(body, {
     y: water.y,
@@ -212,14 +215,14 @@ export function nativeSimpleBodyTick(input, environment, callbacks) {
       body,
       environment.gravity,
       environment.wind,
-      callbacks.collide,
+      collide,
     );
     Object.assign(body, { vx: force.vx, vy: force.vy, moving: force.moving });
   }
   if (body.submerged !== wasSubmerged) callbacks.waterChanged?.(body);
   let remaining = 65536;
   for (let i = 0; i < 2 && remaining; i++) {
-    const sweep = nativeSweep(body, remaining, callbacks.collide);
+    const sweep = nativeSweep(body, remaining, collide);
     body.x = sweep.x;
     body.y = sweep.y;
     remaining = sweep.remaining;
@@ -228,7 +231,7 @@ export function nativeSimpleBodyTick(input, environment, callbacks) {
   Object.assign(body, nativeBodyRotation(body));
   body.vx = Math.max(-0x200000, Math.min(0x200000, body.vx));
   body.vy = Math.max(-0x200000, Math.min(0x200000, body.vy));
-  if (!body.vx && !body.vy && callbacks.collide(body.x, add(body.y, 65536)))
+  if (!body.vx && !body.vy && collide(body.x, add(body.y, 65536)))
     body.moving = 0;
   if (!awake()) body.sleeping = 1;
   return body;
