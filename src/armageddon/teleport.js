@@ -7,3 +7,8 @@ export function nativeTeleportTick(previous) {
     target: progress >= 0x10000 ? 0x65 : null,
   };
 }
+
+// 004DB816–004DB83F: dissolve outward, then reverse to rematerialize.
+export function nativeTeleportRenderProgress(progress) {
+  return (progress < 0x8000 ? progress * 2 : (0x10000 - progress) * 2) | 0;
+}

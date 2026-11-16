@@ -1,9 +1,14 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/teleport.json" with { type: "json" };
-import { nativeTeleportTick } from "../src/armageddon/teleport.js";
+import {
+  nativeTeleportTick,
+  nativeTeleportRenderProgress,
+} from "../src/armageddon/teleport.js";
 test("teleport progress, relocation and completion match original executable", () => {
   for (const row of fixture.cases)
     expect(nativeTeleportTick(row.input)).toEqual(row.output);
+  for (const row of fixture.render_cases)
+    expect(nativeTeleportRenderProgress(row.input)).toBe(row.output);
 });
 test("original teleport strip relocates only at tick 51 and completes at tick 101", async ({
   page,
@@ -35,10 +40,20 @@ test("original teleport strip relocates only at tick 51 and completes at tick 10
     const worm = { hp: 100, x: 100, y: 100, facing: 1 };
     startOriginalTeleport(worm, 500, 400);
     const frames = new Set();
+    const samples = [];
     let relocated = 0,
       completed = 0;
     for (let tick = 1; tick <= 101; tick++) {
-      frames.add(originalWormFrame(worm, "idle", 0, 45, "rocket", true).index);
+      const index = originalWormFrame(
+        worm,
+        "idle",
+        0,
+        45,
+        "rocket",
+        true,
+      ).index;
+      frames.add(index);
+      if ([1, 51, 101].includes(tick)) samples.push(index);
       const result = stepOriginalTeleport(worm);
       if (result.relocate) relocated = tick;
       if (result.target !== null) completed = tick;
@@ -50,6 +65,7 @@ test("original teleport strip relocates only at tick 51 and completes at tick 10
       relocated,
       completed,
       frames: frames.size,
+      samples,
       x: worm.x,
       y: worm.y,
       cleared: !worm.originalTeleport,
@@ -60,6 +76,7 @@ test("original teleport strip relocates only at tick 51 and completes at tick 10
     relocated: 51,
     completed: 101,
     frames: 48,
+    samples: [0, 47, 0],
     x: 500,
     y: 400,
     cleared: true,

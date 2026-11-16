@@ -1,4 +1,7 @@
-import { nativeTeleportTick } from "./teleport.js";
+import {
+  nativeTeleportTick,
+  nativeTeleportRenderProgress,
+} from "./teleport.js";
 import {
   nativeWormJumpLandingEntry,
   nativeWormJumpLandingTick,
@@ -582,7 +585,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     const index = nativeSpriteFrame(
       animation.sprite.frames.length,
       animation.sprite.metadata[2],
-      worm.originalTeleport.player.current.progress,
+      nativeTeleportRenderProgress(worm.originalTeleport.progress),
     );
     return {
       map: texture("wteldsv", index),

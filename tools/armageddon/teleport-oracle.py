@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import struct
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
-from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP
+from unicorn.x86_const import UC_X86_REG_EBP, UC_X86_REG_EDI, UC_X86_REG_ESI, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
@@ -56,5 +56,13 @@ for progress in list(range(0,0x10100,0x28f))+[-2147483648,-1,0x8000-0x28f,0x8000
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Tick did not return')
  output['progress']=struct.unpack('<i',cpu.mem_read(owner+0x18c,4))[0]
  cases.append({'input':progress,'output':output})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F8030','method':'Original progress and boundary instructions execute unchanged; relocation/state calls observed; body mode and refresh stubbed.','cases':cases},indent=2)+'\n')
+render_cases=[]
+for progress in list(range(0,0x10001,655))+[-2147483648,-1,32767,32768,32769,65535,65536,2147483647]:
+ write(owner+0x18c,progress&0xffffffff)
+ write(owner+0x4000,0x18e)
+ cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,owner+0x4000);cpu.reg_write(UC_X86_REG_EBP,owner+0x4004)
+ cpu.emu_start(0x4db816,0x4db83f,count=50)
+ if cpu.reg_read(UC_X86_REG_EIP)!=0x4db83f:raise RuntimeError('Render block did not finish')
+ render_cases.append({'input':progress,'output':struct.unpack('<i',cpu.mem_read(owner+0x4004,4))[0]})
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F8030','method':'Original progress and boundary instructions execute unchanged; relocation/state calls observed; body mode and refresh stubbed.','cases':cases,'render_block':'004DB816–004DB83F','render_cases':render_cases},indent=2)+'\n')
 print(f'Captured {len(cases)} teleport tick cases')

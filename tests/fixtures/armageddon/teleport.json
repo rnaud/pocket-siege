@@ -875,5 +875,444 @@
         "progress": -2147482994
       }
     }
+  ],
+  "render_block": "004DB816\u2013004DB83F",
+  "render_cases": [
+    {
+      "input": 0,
+      "output": 0
+    },
+    {
+      "input": 655,
+      "output": 1310
+    },
+    {
+      "input": 1310,
+      "output": 2620
+    },
+    {
+      "input": 1965,
+      "output": 3930
+    },
+    {
+      "input": 2620,
+      "output": 5240
+    },
+    {
+      "input": 3275,
+      "output": 6550
+    },
+    {
+      "input": 3930,
+      "output": 7860
+    },
+    {
+      "input": 4585,
+      "output": 9170
+    },
+    {
+      "input": 5240,
+      "output": 10480
+    },
+    {
+      "input": 5895,
+      "output": 11790
+    },
+    {
+      "input": 6550,
+      "output": 13100
+    },
+    {
+      "input": 7205,
+      "output": 14410
+    },
+    {
+      "input": 7860,
+      "output": 15720
+    },
+    {
+      "input": 8515,
+      "output": 17030
+    },
+    {
+      "input": 9170,
+      "output": 18340
+    },
+    {
+      "input": 9825,
+      "output": 19650
+    },
+    {
+      "input": 10480,
+      "output": 20960
+    },
+    {
+      "input": 11135,
+      "output": 22270
+    },
+    {
+      "input": 11790,
+      "output": 23580
+    },
+    {
+      "input": 12445,
+      "output": 24890
+    },
+    {
+      "input": 13100,
+      "output": 26200
+    },
+    {
+      "input": 13755,
+      "output": 27510
+    },
+    {
+      "input": 14410,
+      "output": 28820
+    },
+    {
+      "input": 15065,
+      "output": 30130
+    },
+    {
+      "input": 15720,
+      "output": 31440
+    },
+    {
+      "input": 16375,
+      "output": 32750
+    },
+    {
+      "input": 17030,
+      "output": 34060
+    },
+    {
+      "input": 17685,
+      "output": 35370
+    },
+    {
+      "input": 18340,
+      "output": 36680
+    },
+    {
+      "input": 18995,
+      "output": 37990
+    },
+    {
+      "input": 19650,
+      "output": 39300
+    },
+    {
+      "input": 20305,
+      "output": 40610
+    },
+    {
+      "input": 20960,
+      "output": 41920
+    },
+    {
+      "input": 21615,
+      "output": 43230
+    },
+    {
+      "input": 22270,
+      "output": 44540
+    },
+    {
+      "input": 22925,
+      "output": 45850
+    },
+    {
+      "input": 23580,
+      "output": 47160
+    },
+    {
+      "input": 24235,
+      "output": 48470
+    },
+    {
+      "input": 24890,
+      "output": 49780
+    },
+    {
+      "input": 25545,
+      "output": 51090
+    },
+    {
+      "input": 26200,
+      "output": 52400
+    },
+    {
+      "input": 26855,
+      "output": 53710
+    },
+    {
+      "input": 27510,
+      "output": 55020
+    },
+    {
+      "input": 28165,
+      "output": 56330
+    },
+    {
+      "input": 28820,
+      "output": 57640
+    },
+    {
+      "input": 29475,
+      "output": 58950
+    },
+    {
+      "input": 30130,
+      "output": 60260
+    },
+    {
+      "input": 30785,
+      "output": 61570
+    },
+    {
+      "input": 31440,
+      "output": 62880
+    },
+    {
+      "input": 32095,
+      "output": 64190
+    },
+    {
+      "input": 32750,
+      "output": 65500
+    },
+    {
+      "input": 33405,
+      "output": 64262
+    },
+    {
+      "input": 34060,
+      "output": 62952
+    },
+    {
+      "input": 34715,
+      "output": 61642
+    },
+    {
+      "input": 35370,
+      "output": 60332
+    },
+    {
+      "input": 36025,
+      "output": 59022
+    },
+    {
+      "input": 36680,
+      "output": 57712
+    },
+    {
+      "input": 37335,
+      "output": 56402
+    },
+    {
+      "input": 37990,
+      "output": 55092
+    },
+    {
+      "input": 38645,
+      "output": 53782
+    },
+    {
+      "input": 39300,
+      "output": 52472
+    },
+    {
+      "input": 39955,
+      "output": 51162
+    },
+    {
+      "input": 40610,
+      "output": 49852
+    },
+    {
+      "input": 41265,
+      "output": 48542
+    },
+    {
+      "input": 41920,
+      "output": 47232
+    },
+    {
+      "input": 42575,
+      "output": 45922
+    },
+    {
+      "input": 43230,
+      "output": 44612
+    },
+    {
+      "input": 43885,
+      "output": 43302
+    },
+    {
+      "input": 44540,
+      "output": 41992
+    },
+    {
+      "input": 45195,
+      "output": 40682
+    },
+    {
+      "input": 45850,
+      "output": 39372
+    },
+    {
+      "input": 46505,
+      "output": 38062
+    },
+    {
+      "input": 47160,
+      "output": 36752
+    },
+    {
+      "input": 47815,
+      "output": 35442
+    },
+    {
+      "input": 48470,
+      "output": 34132
+    },
+    {
+      "input": 49125,
+      "output": 32822
+    },
+    {
+      "input": 49780,
+      "output": 31512
+    },
+    {
+      "input": 50435,
+      "output": 30202
+    },
+    {
+      "input": 51090,
+      "output": 28892
+    },
+    {
+      "input": 51745,
+      "output": 27582
+    },
+    {
+      "input": 52400,
+      "output": 26272
+    },
+    {
+      "input": 53055,
+      "output": 24962
+    },
+    {
+      "input": 53710,
+      "output": 23652
+    },
+    {
+      "input": 54365,
+      "output": 22342
+    },
+    {
+      "input": 55020,
+      "output": 21032
+    },
+    {
+      "input": 55675,
+      "output": 19722
+    },
+    {
+      "input": 56330,
+      "output": 18412
+    },
+    {
+      "input": 56985,
+      "output": 17102
+    },
+    {
+      "input": 57640,
+      "output": 15792
+    },
+    {
+      "input": 58295,
+      "output": 14482
+    },
+    {
+      "input": 58950,
+      "output": 13172
+    },
+    {
+      "input": 59605,
+      "output": 11862
+    },
+    {
+      "input": 60260,
+      "output": 10552
+    },
+    {
+      "input": 60915,
+      "output": 9242
+    },
+    {
+      "input": 61570,
+      "output": 7932
+    },
+    {
+      "input": 62225,
+      "output": 6622
+    },
+    {
+      "input": 62880,
+      "output": 5312
+    },
+    {
+      "input": 63535,
+      "output": 4002
+    },
+    {
+      "input": 64190,
+      "output": 2692
+    },
+    {
+      "input": 64845,
+      "output": 1382
+    },
+    {
+      "input": 65500,
+      "output": 72
+    },
+    {
+      "input": -2147483648,
+      "output": 0
+    },
+    {
+      "input": -1,
+      "output": -2
+    },
+    {
+      "input": 32767,
+      "output": 65534
+    },
+    {
+      "input": 32768,
+      "output": 65536
+    },
+    {
+      "input": 32769,
+      "output": 65534
+    },
+    {
+      "input": 65535,
+      "output": 2
+    },
+    {
+      "input": 65536,
+      "output": 0
+    },
+    {
+      "input": 2147483647,
+      "output": 131074
+    }
   ]
 }
