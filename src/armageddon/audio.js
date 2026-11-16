@@ -1,3 +1,5 @@
+import speech from "./speech-slots.json";
+
 const sounds = {
   splash: "splash",
   sizzle: "sizzle", // Native ID 0x37, descriptor 0055F228.
@@ -113,33 +115,22 @@ export function playNativeLandingSound(context, request) {
     playOriginalSound(context, "land", () => {}, request[3] / 65536);
 }
 
-// Speech table entries 0055F48C / 0055F564 map IDs 6 / 33 to these files.
-// English is the host team's default until native team speech selection lands.
-export function playNativeDeathVoice(context, request) {
-  const name =
-    request[0] === 6 ? "byebye" : request[0] === 33 ? "ohdear" : null;
-  if (name)
-    playOriginalClip(
-      context,
-      `voices/english/${name}.wav`,
-      () => {},
-      request[3] / 65536,
-    );
+// Original table 0055F460 consists of explicit ID/filename pairs, not ordinal
+// slots: Oops/Orders/Ouch precede IDs38..40 in the table. English remains the
+// host default until team speech selection and native priority arbitration land.
+export function playNativeSpeech(context, slot, level = 1) {
+  const entry = speech.slots[slot];
+  return entry ? playOriginalClip(context, `voices/english/${entry.clip}`, () => {}, level) : null;
 }
 
-// Speech descriptors 0055F59C/0055F5A4/0055F5AC carry IDs 38/39/40.
+export function playNativeDeathVoice(context, request) {
+  if (request[0] === 6 || request[0] === 33)
+    return playNativeSpeech(context, request[0], request[3] / 65536);
+}
+
 export function playNativeHitVoice(context, request, previousPlayback) {
   previousPlayback?.stop();
-  const name = {
-    35: "oinutter",
-    36: "ooff1",
-    37: "ooff2",
-    38: "ouch",
-    39: "ow1",
-    40: "ow2",
-  }[request.index];
-  if (!name) return null;
-  return playOriginalClip(context, `voices/english/${name}.wav`, () => {}, 1);
+  return playNativeSpeech(context, request.index);
 }
 
 // Descriptors 0055F1C8..0055F1F0 (Twang1..6), 0055F220 (WormPop).

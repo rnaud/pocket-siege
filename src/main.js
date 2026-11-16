@@ -167,6 +167,7 @@ import {
 } from "./armageddon/art.js";
 import {
   playOriginalSound,
+  playNativeSpeech,
   playNativeHitVoice,
   playNativeRecoverySound,
   playNativeWaterSound,
@@ -2595,6 +2596,19 @@ function applyNativeAreaRequest(targets, request) {
       }
     }
 }
+function beginWeaponPreparation(worm, kind, aim) {
+  if (!startOriginalPreparation(worm, kind, aim)) return false;
+  if (sound && worm.originalPreparation.sounds.length) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    // Current supported preparation entries emit only speech slot10 (Fire
+    // Punch). Tick-time shotgun reload remains a separate sound-effect event.
+    for (const slot of worm.originalPreparation.sounds)
+      playNativeSpeech(audio, slot);
+  }
+  return true;
+}
+
 function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
   const config = nativeHitscanWeapon(kind, burst);
   const rayConfig = config.ray, resolutionConfig = config.resolution;
@@ -2603,7 +2617,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     (!burst?.spent && !(kind === "shotgun" && shotgunRemaining) && (availableAmmo(ammo[team], kind) ?? 0) <= 0)
   )
     return;
-  if (!prepared && startOriginalPreparation(worms[current], kind, angle)) {
+  if (!prepared && beginWeaponPreparation(worms[current], kind, angle)) {
     pendingFire = { worm: worms[current], angle, kind, stage: "prepare",
       burst: kind === "shotgun" ? null : { ordinal: 1, total: config.total, delay: config.interval, trigger: 0, actions: 1, maxActions: 1, spent: false } };
     wormLocked = true;
@@ -2752,7 +2766,7 @@ function dispatchFirePunchCalls(w, calls) {
 function firePunch(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team], "firepunch") <= 0) return;
   const w = worms[current];
-  if (!prepared && startOriginalPreparation(w,"firepunch",angle)) {
+  if (!prepared && beginWeaponPreparation(w,"firepunch",angle)) {
     pendingFire = {worm:w, angle, kind:"firepunch", stage:"prepare"};
     wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
     updateUI(); return;
@@ -2768,7 +2782,7 @@ function firePunch(prepared = false) {
 function fireAxe(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team], "axe") <= 0) return;
   const w = worms[current];
-  if (!prepared && startOriginalPreparation(w, "axe", angle)) {
+  if (!prepared && beginWeaponPreparation(w, "axe", angle)) {
     pendingFire = { worm:w, angle, kind:"axe", stage:"prepare" };
     wormLocked = true;
     move = aimInput = 0;
@@ -2786,7 +2800,7 @@ function fireAxe(prepared = false) {
 function fireProd(prepared = false) {
   if ((!prepared && !canAct()) || (availableAmmo(ammo[team], "prod") ?? 0) <= 0) return;
   const w = worms[current];
-  if (!prepared && startOriginalPreparation(w, "prod", angle)) {
+  if (!prepared && beginWeaponPreparation(w, "prod", angle)) {
     pendingFire = { worm: w, angle, kind: "prod", stage: "prepare" };
     wormLocked = true;
     move = aimInput = 0;
@@ -2808,7 +2822,7 @@ function fireProd(prepared = false) {
 function fireBat(prepared = false) {
   if ((!prepared && !canAct()) || (availableAmmo(ammo[team], "bat") ?? 0) <= 0) return;
   const w = worms[current];
-  if (!prepared && startOriginalPreparation(w, "bat", angle)) {
+  if (!prepared && beginWeaponPreparation(w, "bat", angle)) {
     pendingFire = { worm: w, angle, kind: "bat", stage: "prepare" };
     wormLocked = true;
     move = aimInput = 0;
@@ -4251,7 +4265,7 @@ function step(dt) {
       pending.burst = result.state;
       if (result.target === 0x69) {
         pending.burst.delay = nativeHitscanWeapon(pending.kind).interval;
-        startOriginalPreparation(w, pending.kind, pending.angle);
+        beginWeaponPreparation(w, pending.kind, pending.angle);
         pending.stage = "prepare";
       } else if (result.target !== null) {
         stopBurstSound(pending.burst);

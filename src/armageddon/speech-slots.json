@@ -1,0 +1,341 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "slots": {
+    "1": {
+      "descriptor": "0x55f460",
+      "name": "Amazing.wav",
+      "clip": "amazing.wav",
+      "sha256": "84c472a85cacd13d74338b734936a1a8509774def1b42d01830b05596ae5e117"
+    },
+    "2": {
+      "descriptor": "0x55f468",
+      "name": "Boring.wav",
+      "clip": "boring.wav",
+      "sha256": "bf7f6b1df8bdb2705f9eacb5d69316704ae1721f132f1c9503cdddff1b829537"
+    },
+    "3": {
+      "descriptor": "0x55f470",
+      "name": "Brilliant.wav",
+      "clip": "brilli~1.wav",
+      "sha256": "512c024ca75efc779d242a8d3c838d21d959f5f4c65d135a7d3e9c3b325db4b4"
+    },
+    "4": {
+      "descriptor": "0x55f478",
+      "name": "Bummer.wav",
+      "clip": "bummer.wav",
+      "sha256": "48dcd7e532ace492faa91b589b6aa9d1968f5ef740fd8079efe33c1bbc50933c"
+    },
+    "5": {
+      "descriptor": "0x55f480",
+      "name": "Bungee.wav",
+      "clip": "bungee.wav",
+      "sha256": "a3666aad0925bf4d21c3b6783d80d16eace15fa40d2180166fbea0f35053ae8d"
+    },
+    "6": {
+      "descriptor": "0x55f488",
+      "name": "ByeBye.wav",
+      "clip": "byebye.wav",
+      "sha256": "4a6bdf5f7d8ffbcff52a879208f9b224cddc8d6c04e512a9ad41c3877bc274e0"
+    },
+    "7": {
+      "descriptor": "0x55f490",
+      "name": "Collect.wav",
+      "clip": "collect.wav",
+      "sha256": "723a5ae6597d9a20156dc387794006353e6a4a35d8933ec19eebebc303705fd4"
+    },
+    "8": {
+      "descriptor": "0x55f498",
+      "name": "ComeOnThen.wav",
+      "clip": "comeon~1.wav",
+      "sha256": "458488a9b10cbb4feb23294c79f28f37bcc9608d3261e97bce0a5ef3bb6debe3"
+    },
+    "9": {
+      "descriptor": "0x55f4a0",
+      "name": "Coward.wav",
+      "clip": "coward.wav",
+      "sha256": "9a2e44ca6db9b00fa8459957a0983479ef5e3236b3b95e20b9e1a37458676325"
+    },
+    "10": {
+      "descriptor": "0x55f4a8",
+      "name": "DragonPunch.wav",
+      "clip": "dragon~1.wav",
+      "sha256": "f4f19709dd352530d5aaf13d377edec7aa99c7aa7f29b10d294a48c057a42b95"
+    },
+    "11": {
+      "descriptor": "0x55f4b0",
+      "name": "Drop.wav",
+      "clip": "drop.wav",
+      "sha256": "1502324ca69a444444f8eb4a0b4d5da64b44f915756c56307582bc9ba728b198"
+    },
+    "12": {
+      "descriptor": "0x55f4b8",
+      "name": "Excellent.wav",
+      "clip": "excell~1.wav",
+      "sha256": "a8f1ec411a1edc5cbbf6cb88a9284bd69a6dda2110e194d37e07921035e59b54"
+    },
+    "13": {
+      "descriptor": "0x55f4c0",
+      "name": "Fatality.wav",
+      "clip": "fatality.wav",
+      "sha256": "273ed05b1f2e94fbb31b096f5d07dec67a790052fc57a3b83ea8d23e02752ce3"
+    },
+    "14": {
+      "descriptor": "0x55f4c8",
+      "name": "Fire.wav",
+      "clip": "fire.wav",
+      "sha256": "c7ce3b11e9548d8c710c19d2896a86412a7270d8698e81158370973f8a3c6d6a"
+    },
+    "15": {
+      "descriptor": "0x55f4d0",
+      "name": "FireBall.wav",
+      "clip": "fireball.wav",
+      "sha256": "06e2f71836215cd1581da989fe8f5d0a4f5f94db5ac98aaba0dbb941a5fb38da"
+    },
+    "16": {
+      "descriptor": "0x55f4d8",
+      "name": "FirstBlood.wav",
+      "clip": "firstb~1.wav",
+      "sha256": "bf4122c15c882fcc47db30c5985b87be4ab7478cce4d109fe7a15ba9996c576c"
+    },
+    "17": {
+      "descriptor": "0x55f4e0",
+      "name": "Flawless.wav",
+      "clip": "flawless.wav",
+      "sha256": "7a515156626b8b4ae183a62b13468a41de92fe76c9c82074d68ea8a4ad16ee85"
+    },
+    "18": {
+      "descriptor": "0x55f4e8",
+      "name": "GoAway.wav",
+      "clip": "goaway.wav",
+      "sha256": "6890b153bd11a9c45ab1e8ce9f62edba09e00f363dfb2fb9c424208f28e6eb93"
+    },
+    "19": {
+      "descriptor": "0x55f4f0",
+      "name": "Grenade.wav",
+      "clip": "grenade.wav",
+      "sha256": "d4e639072830f4dfcbabcd01a64a55f638ffe7df1534c48e9b5f0fe0db0b13b9"
+    },
+    "20": {
+      "descriptor": "0x55f4f8",
+      "name": "Hello.wav",
+      "clip": "hello.wav",
+      "sha256": "40463abf4c930615e8bc70f290f9cd2b5be69d1d686df8ef17d38ae86fce84f1"
+    },
+    "21": {
+      "descriptor": "0x55f500",
+      "name": "Hmm.wav",
+      "clip": "hmm.wav",
+      "sha256": "624ecee0534cb573e3177637ef23042fb0b42475c633b444ab458c5b501570fc"
+    },
+    "22": {
+      "descriptor": "0x55f508",
+      "name": "Hurry.wav",
+      "clip": "hurry.wav",
+      "sha256": "dd4a9e35d04870c33007406977fea90204f0d0865926f954d928f1c15b69af7c"
+    },
+    "23": {
+      "descriptor": "0x55f510",
+      "name": "IllGetYou.wav",
+      "clip": "illget~1.wav",
+      "sha256": "b9a27e324f4c02f4eb1057b8a8e1bda9a3ed7d4998d8d63eee97b9461b45d7cb"
+    },
+    "24": {
+      "descriptor": "0x55f518",
+      "name": "Incoming.wav",
+      "clip": "incoming.wav",
+      "sha256": "797f1f88d0d30ff9c8ccfddefc2103d9b58184a9b6c57c187cb577cf6084df5c"
+    },
+    "25": {
+      "descriptor": "0x55f520",
+      "name": "Jump1.wav",
+      "clip": "jump1.wav",
+      "sha256": "9622c3d736da30370e764c9cb5a0d31fddd2347a558582843ee419de21dbf04b"
+    },
+    "26": {
+      "descriptor": "0x55f528",
+      "name": "Jump2.wav",
+      "clip": "jump2.wav",
+      "sha256": "01f7117f255304c598b447adfd11117b58a8d8f3982f6b0bef038fb04f766fd2"
+    },
+    "27": {
+      "descriptor": "0x55f530",
+      "name": "JustYouWait.wav",
+      "clip": "justyo~1.wav",
+      "sha256": "d1d5dad4d3fbbeae215c05d67e0074055f910122bd187f9112cd7f5832e22f5b"
+    },
+    "28": {
+      "descriptor": "0x55f538",
+      "name": "Kamikaze.wav",
+      "clip": "kamikaze.wav",
+      "sha256": "67a53ca0bfb18c2be947dd61b52b24d8bae645564c8bfcaa968cc71763e05a40"
+    },
+    "29": {
+      "descriptor": "0x55f540",
+      "name": "Laugh.wav",
+      "clip": "laugh.wav",
+      "sha256": "1be84736e9cd7756d1e66e776d6b9cdecae8daf9b11b9f1facf979c655e153c1"
+    },
+    "30": {
+      "descriptor": "0x55f548",
+      "name": "LeaveMeAlone.wav",
+      "clip": "leavem~1.wav",
+      "sha256": "b3f79ddbfce76357270f7baac9458ab85a177eddb02809d6f54707b5fedb2d18"
+    },
+    "31": {
+      "descriptor": "0x55f550",
+      "name": "Missed.wav",
+      "clip": "missed.wav",
+      "sha256": "5d4a1b079fd90cc6168a1db3e69ca7fec1f9811a39e573b6485a1a4bcf05d386"
+    },
+    "32": {
+      "descriptor": "0x55f558",
+      "name": "Nooo.wav",
+      "clip": "nooo.wav",
+      "sha256": "9e22fb843f6a64ec11c79207638e4170e0ade6b4f7563fbf371545b438f4aa64"
+    },
+    "33": {
+      "descriptor": "0x55f560",
+      "name": "OhDear.wav",
+      "clip": "ohdear.wav",
+      "sha256": "1910e276b11b2a55fa412574386c2068c0e83819445e6eeee482f798173aa170"
+    },
+    "34": {
+      "descriptor": "0x55f568",
+      "name": "OiNutter.wav",
+      "clip": "oinutter.wav",
+      "sha256": "add31ca33265f740abbf9e93864de94334022470cd56ee8594652fc5d951a753"
+    },
+    "35": {
+      "descriptor": "0x55f570",
+      "name": "ooff1.wav",
+      "clip": "ooff1.wav",
+      "sha256": "6aef8571f4ff6964c88ce38b178db3b9f03131dbfd9f06e2feacd6a38ca31350"
+    },
+    "36": {
+      "descriptor": "0x55f578",
+      "name": "ooff2.wav",
+      "clip": "ooff2.wav",
+      "sha256": "88dc6e54ecd725208d21cc57c4875312d99512d1baafc6b17b22e128da2140d8"
+    },
+    "37": {
+      "descriptor": "0x55f580",
+      "name": "ooff3.wav",
+      "clip": "ooff3.wav",
+      "sha256": "436fabef5d5246ef200e476aa576207f4affae5bbf7f5ec748660b363a33d457"
+    },
+    "41": {
+      "descriptor": "0x55f588",
+      "name": "Oops.wav",
+      "clip": "oops.wav",
+      "sha256": "e17fd94f2c388b2d30a51be408630f28d9a32c69370cdf623a1cf3eb23444832"
+    },
+    "42": {
+      "descriptor": "0x55f590",
+      "name": "Orders.wav",
+      "clip": "orders.wav",
+      "sha256": "6e7f8c450b3827a67e3426a3029c4c66bb6f388d8a117c33291b27445c73c8bf"
+    },
+    "43": {
+      "descriptor": "0x55f598",
+      "name": "Ouch.wav",
+      "clip": "ouch.wav",
+      "sha256": "5af7468c2df17560d2f86b98ade07d9f32deab82e081a7e6566ce6f085e5b839"
+    },
+    "38": {
+      "descriptor": "0x55f5a0",
+      "name": "ow1.wav",
+      "clip": "ow1.wav",
+      "sha256": "723cc9e310059c03f3c2f76cb573c2f21b30fb270f5390ce5c21f47ea3a0f302"
+    },
+    "39": {
+      "descriptor": "0x55f5a8",
+      "name": "ow2.wav",
+      "clip": "ow2.wav",
+      "sha256": "8ff1be52f0be6e15128fe79529e12ccb797034b560c99721539c21230cbd15b2"
+    },
+    "40": {
+      "descriptor": "0x55f5b0",
+      "name": "ow3.wav",
+      "clip": "ow3.wav",
+      "sha256": "dc8b089dcdff80a89f6eb79eb7909fce05730b680c99377b2eca0a0b458245e5"
+    },
+    "44": {
+      "descriptor": "0x55f5b8",
+      "name": "Perfect.wav",
+      "clip": "perfect.wav",
+      "sha256": "5ffb9e7e18fc3816c4af70895a6407e225ee2fb96a8f944c6419919e662e943c"
+    },
+    "45": {
+      "descriptor": "0x55f5c0",
+      "name": "Revenge.wav",
+      "clip": "revenge.wav",
+      "sha256": "1dfface4dc92e437318e26e08ce087499f0f06b0392d6f3262a088f6ce6a6bf4"
+    },
+    "46": {
+      "descriptor": "0x55f5c8",
+      "name": "RunAway.wav",
+      "clip": "runaway.wav",
+      "sha256": "bf935698da6cad8527bdf3933eb58f9b23128f7f13744e84eddd3478e6612a41"
+    },
+    "47": {
+      "descriptor": "0x55f5d0",
+      "name": "Stupid.wav",
+      "clip": "stupid.wav",
+      "sha256": "b0799640a99d21c2f7f2a2b70fd8084ebc6ef3bc88f66b18cf9651fa633bf8d8"
+    },
+    "48": {
+      "descriptor": "0x55f5d8",
+      "name": "TakeCover.wav",
+      "clip": "takeco~1.wav",
+      "sha256": "9d6dd2e8e02095caf00161b0967885e9319c811cc1fe89dd06fdacda01dcb9fe"
+    },
+    "49": {
+      "descriptor": "0x55f5e0",
+      "name": "Traitor.wav",
+      "clip": "traitor.wav",
+      "sha256": "f4481eebc1193e86d9f4e31758148b5a1d0b1bb840ac8247ce833340528755d9"
+    },
+    "50": {
+      "descriptor": "0x55f5e8",
+      "name": "Uh-Oh.wav",
+      "clip": "uh-oh.wav",
+      "sha256": "b2615dc0a39d53e9ac9c57fcaf98dcad04332779b7d0a986bfad667646931774"
+    },
+    "51": {
+      "descriptor": "0x55f5f0",
+      "name": "Victory.wav",
+      "clip": "victory.wav",
+      "sha256": "3d6478f8cc0115e309cc62b54ea1f29e7ed698e0d5cd2cb621f0ed9e0e93bf9f"
+    },
+    "52": {
+      "descriptor": "0x55f5f8",
+      "name": "WatchThis.wav",
+      "clip": "watcht~1.wav",
+      "sha256": "9fd24db04333d32f8f853232245b27008c891656ba20d566c2466663bb731ed3"
+    },
+    "53": {
+      "descriptor": "0x55f600",
+      "name": "WhatThe.wav",
+      "clip": "whatthe.wav",
+      "sha256": "8a29b7158419c5570c110344a682685a63ff4780f7a5746352b5247ca0494fdd"
+    },
+    "54": {
+      "descriptor": "0x55f608",
+      "name": "Wobble.wav",
+      "clip": "wobble.wav",
+      "sha256": "f2daec4ab28f89d11bb2619652e0eb2fbd4f964f35dc52be1faa494293cf1f59"
+    },
+    "55": {
+      "descriptor": "0x55f610",
+      "name": "YesSir.wav",
+      "clip": "yessir.wav",
+      "sha256": "8a03807f35a48366fe4d1e18595983351362927655d02cdce9f1eabc70c5f94f"
+    },
+    "56": {
+      "descriptor": "0x55f618",
+      "name": "YoullRegretThat.wav",
+      "clip": "youllr~1.wav",
+      "sha256": "9f0039d76640931516c7c7d8372e2de8aab741fd2ed4266ba0b7978fd6a011fd"
+    }
+  }
+}
