@@ -44,6 +44,7 @@ test("live hard landing plays native recovery and returns to idle", async ({
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.evaluate(() => {
     window.hurtProbe = { names: [], recovering: false, done: false };
     window.siege.debug.dropWormForRecovery(0);
@@ -66,5 +67,7 @@ test("live hard landing plays native recovery and returns to idle", async ({
     .poll(() => page.evaluate(() => window.hurtProbe.done), { timeout: 10000 })
     .toBe(true);
   expect(await page.evaluate(() => window.hurtProbe.names)).toContain("wtwang");
+  await expect(page.locator("#fire")).toBeEnabled();
+  await expect(page.locator("#angle")).toBeEnabled();
   expect(errors).toEqual([]);
 });

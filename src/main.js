@@ -1322,7 +1322,9 @@ function beginTurn() {
 function updateUI() {
   // Only touch the DOM when its underlying simulation state changed.
   const loadout = ammo[team] ?? {};
-  const key = `${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  // Recovery can finish without changing HP or knocked state. Refresh controls
+  // whenever action eligibility changes, including native hurt/recovery gates.
+  const key = `${canAct()}|${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   updateHudTeams(worms, team);
