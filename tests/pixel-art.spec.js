@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("generated art stays on an integer pixel grid without bitmap requests", async ({
+test("original art stays on an integer pixel grid without bitmap requests", async ({
   page,
 }, info) => {
   const bitmaps = [],
@@ -66,21 +66,11 @@ test("generated art stays on an integer pixel grid without bitmap requests", asy
       .toBe(true);
   }
   const pixels = await page.evaluate(async () => {
-    const { pixelArt } = await import("/src/pixel-art.js");
-    return [
-      "soldier",
-      "crate",
-      "mine",
-      "grenade",
-      "sticky",
-      "rocket",
-      "landscape",
-    ].every((kind) => {
-      const c = pixelArt(kind),
-        data = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
-      for (let i = 3; i < data.length; i += 4)
-        if (data[i] !== 0 && data[i] !== 255) return false;
-      return true;
+    const { originalVisual } = await import("/src/armageddon/art.js");
+    return ["wblink1","grenade","missile","mineoff"].every(name => {
+      const c=originalVisual(name).map.image;
+      const data=c.getContext("2d").getImageData(0,0,c.width,c.height).data;
+      return [...data].every((v,i)=>i%4!==3||v===0||v===255);
     });
   });
   expect(pixels).toBe(true);

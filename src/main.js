@@ -1,3 +1,8 @@
+import { attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
+import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
+import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
+import firePunchCut from "./armageddon/fire-punch-cut.json";
+import { bodyBlocked } from "./physics.js";
 import { startOriginalAxe, stepOriginalAxe } from "./armageddon/art.js";
 import { nativeBatRequest } from "./armageddon/bat.js";
 import { nativeProdRequest } from "./armageddon/prod.js";
@@ -89,6 +94,8 @@ import {
 } from "./armageddon/maps.js";
 import {
   loadOriginalHUDIcons,
+  originalHUDIcon,
+  HUD_ICONS,
   updateOriginalHUDIcons,
 } from "./armageddon/hud-icons.js";
 import {
@@ -172,8 +179,7 @@ import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
 import { loadOriginalWormLabels, updateOriginalWormLabel } from "./armageddon/worm-label.js";
-import { landscape } from "./island-art.js";
-import { pixelTexture, mountPixelArt, pixelViewport } from "./pixel-art.js";
+import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater } from "./water.js";
 import * as THREE from "three";
 import "./style.css";
@@ -200,13 +206,7 @@ import {
   GRAVITY,
 } from "./physics.js";
 import {
-  createWeaponRig,
-  createStars,
-  createProjectile,
   createAimOverlay,
-  createCrate,
-  createMine,
-  createBarrel,
 } from "./combat-visuals.js";
 import {
   loadOriginalTerrain,
@@ -218,7 +218,6 @@ import { paintTerrain } from "./terrain-paint.js";
 import {
   WEAPONS,
   WEAPON_ORDER,
-  PROJECTILE_ORDER,
   SPECIAL_WEAPONS,
   freshAmmo,
   ammoFor,
@@ -262,7 +261,6 @@ arena.before(battlefieldFrame);
 battlefieldFrame.appendChild(arena);
 const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
 renderer.setPixelRatio(1);
-mountPixelArt();
 mountPixelHUD(arena);
 $("#scene").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
@@ -446,8 +444,7 @@ const originalAssets = Promise.all([
   loadOriginalNumbers(),
   loadOriginalWormLabels(),
   loadOriginalGirders(),
-]);
-originalAssets
+])
   .then(() =>
     Promise.all([
       loadOriginalDecorations($("#terrain-theme").value),
@@ -455,8 +452,8 @@ originalAssets
     ]),
   )
   .then(() => {
-    assetsReady = true;
     updateOriginalHUDIcons();
+    mountCurrentMenuArt();
     updateOriginalWindHUD(wind);
     timerKey = "";
     terrainDirty = true;
@@ -464,35 +461,23 @@ originalAssets
   .catch((error) => {
     originalArtError = error.message;
     console.error("Original sprite loading failed", error);
-    assetsReady = true;
+    throw error;
   });
-const backdropMap = pixelTexture("landscape");
-const soldierMaps = [pixelTexture("soldier", 0), pixelTexture("soldier", 1)];
-const hurtMaps = [
-  pixelTexture("soldier", 0, true),
-  pixelTexture("soldier", 1, true),
-];
-const poseMaps = Object.fromEntries(
-  [
-    "blink",
-    "aim",
-    "recoil",
-    "panic",
-    "victory",
-    "walk",
-    "walk2",
-    "walk3",
-    "jump",
-    "fall",
-    "land",
-  ].map((pose) => [
-    pose,
-    [pixelTexture("soldier", 0, pose), pixelTexture("soldier", 1, pose)],
-  ]),
-);
-const portraitMaps = soldierMaps;
-const crateMap = pixelTexture("crate");
-const mineMap = pixelTexture("mine");
+function mountCurrentMenuArt() {
+  for (const canvas of document.querySelectorAll("canvas[data-art]")) {
+    const name = canvas.dataset.art === "soldier" ? "wblink1" : projectileSprites[canvas.dataset.art] ?? "mineoff";
+    const visual = originalVisual(name);
+    if (!visual) throw new Error(`Missing current menu art: ${name}`);
+    const source = canvas.dataset.art === "soldier" ? visual.map.image : originalHUDIcon(HUD_ICONS[canvas.dataset.art] ?? "grenade");
+    canvas.width = source.width; canvas.height = source.height;
+    canvas.dataset.originalSprite = name;
+    canvas.getContext("2d").drawImage(source,0,0);
+  }
+}
+const backdropMap = new THREE.CanvasTexture(document.createElement("canvas"));
+backdropMap.colorSpace = THREE.SRGBColorSpace;
+backdropMap.minFilter = backdropMap.magFilter = THREE.NearestFilter;
+backdropMap.generateMipmaps = false;
 const backdrop = new THREE.Mesh(
   new THREE.PlaneGeometry(W, H),
   new THREE.MeshBasicMaterial({ map: backdropMap }),
@@ -538,41 +523,18 @@ const debrisPrototype = new THREE.Mesh(debrisGeometry, debrisMaterials[0]);
 debrisPrototype.visible = false;
 debrisPrototype.frustumCulled = false;
 group.add(debrisPrototype);
-const projectilePrototypes = Object.fromEntries(
-  PROJECTILE_ORDER.map((kind) => {
-    const prototype = createProjectile(kind);
-    prototype.visible = false;
-    prototype.frustumCulled = false;
-    group.add(prototype);
-    return [kind, prototype];
-  }),
-);
 function projectileMesh(kind) {
-  const original = createOriginalVisual(projectileSprites[kind]);
-  if (original) return original;
-  const mesh = projectilePrototypes[kind].clone(true);
-  mesh.visible = true;
+  const mesh = createOriginalVisual(projectileSprites[kind]);
+  if (!mesh) throw new Error(`Missing current projectile art: ${kind}`);
   return mesh;
 }
-function releaseProjectileMesh(mesh) {
-  if (mesh.userData.originalSprite) dispose(mesh);
-  else group.remove(mesh);
-}
-function prewarmShaders() {
-  for (const kind of PROJECTILE_ORDER)
-    projectilePrototypes[kind].visible = true;
-  debrisPrototype.visible = true;
-  renderer.compile(scene, camera);
-  for (const kind of PROJECTILE_ORDER)
-    projectilePrototypes[kind].visible = false;
-  debrisPrototype.visible = false;
-}
+function releaseProjectileMesh(mesh) { if (mesh) group.remove(mesh); }
+function prewarmShaders() { renderer.compile(scene, camera); }
 function createWorm(t, i, x, spawnY = null) {
   const g = new THREE.Group();
   const body = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
     new THREE.MeshBasicMaterial({
-      map: soldierMaps[t],
       transparent: true,
       alphaTest: 0.03,
       depthWrite: false,
@@ -582,22 +544,12 @@ function createWorm(t, i, x, spawnY = null) {
   body.position.set(0, 22, 24);
   body.scale.set(64, 64, 1);
   g.add(body);
-  const rig = createWeaponRig(t);
-  rig.pivot.position.z = 10;
+  const rig = { pivot: new THREE.Group() };
+  rig.pivot.visible = false;
   g.add(rig.pivot);
-  rig.mine = new THREE.Mesh(
-    new THREE.PlaneGeometry(26, 26),
-    new THREE.MeshBasicMaterial({
-      map: mineMap,
-      transparent: true,
-      depthWrite: false,
-    }),
-  );
-  rig.mine.position.set(17, 0, 7);
-  rig.pivot.add(rig.mine);
-  const stars = createStars();
-  g.add(stars);
+  const stars = new THREE.Group();
   stars.visible = false;
+  g.add(stars);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(14, 24),
     new THREE.MeshBasicMaterial({
@@ -1026,8 +978,7 @@ function spawnCrate() {
     if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
     const kind = PICKUP_KINDS[Math.floor(logicRandom() * PICKUP_KINDS.length)],
       mesh =
-        createOriginalObject(crateSprite(kind, true), -10) ||
-        createCrate(kind, crateMap),
+        createOriginalObject(crateSprite(kind, true), -10),
       targetY = ground + 10;
     mesh.position.set(x, H + 34, 18);
     group.add(mesh);
@@ -1055,7 +1006,7 @@ function spawnHazards() {
       if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 70)) continue;
       if (crate && Math.abs(crate.x - x) < 55) continue;
       if (hazards.some((h) => Math.abs(h.x - x) < 70)) continue;
-      const mesh = createOriginalObject("oildrum1", -14) || createBarrel();
+      const mesh = createOriginalObject("oildrum1", -14);
       mesh.position.set(x, ground + 14, 17);
       group.add(mesh);
       hazards.push({ x, y: ground + 14, mesh });
@@ -1373,7 +1324,7 @@ function updateUI() {
     weapon === "mine" ||
     weapon === "dynamite" ||
     WEAPONS[weapon]?.special === "airstrike" ||
-    ["prod", "axe"].includes(weapon);
+    ["prod", "axe", "firepunch"].includes(weapon);
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = availableAmmo(loadout, button.dataset.weapon);
     const delay = weaponDelay(weaponDelays[team], button.dataset.weapon);
@@ -2034,10 +1985,11 @@ async function shareResultCard() {
   }
   ctx.fillStyle = "#38283f";
   ctx.fillRect(0, 0, 630, 630);
-  if (portraitMaps[0].image)
-    ctx.drawImage(portraitMaps[0].image, 650, 220, 320, 320);
-  if (portraitMaps[1].image)
-    ctx.drawImage(portraitMaps[1].image, 875, 270, 288, 288);
+  const portrait = originalVisual("wblink1")?.map.image;
+  if (portrait) {
+    ctx.drawImage(portrait,650,220,portrait.width*8,portrait.height*8);
+    ctx.drawImage(portrait,875,270,portrait.width*8,portrait.height*8);
+  }
   const result =
     lastResult.winner === 0
       ? "MOSS COMPANY WINS"
@@ -2197,6 +2149,7 @@ function updateSliders() {
     minigun: "FIRE MINIGUN",
     prod: "PROD",
     axe: "SWING AXE",
+    firepunch: "FIRE PUNCH",
     homing: homingTarget ? null : "SET TARGET",
     pigeon: homingTarget ? null : "SET TARGET",
     magic: homingTarget ? null : "SET TARGET",
@@ -2250,6 +2203,7 @@ function startCharge(source) {
     fireBulletWeapon(false, weapon);
     return;
   }
+  if (weapon === "firepunch") { firePunch(); return; }
   if (weapon === "axe") { fireAxe(); return; }
   if (weapon === "prod") { fireProd(); return; }
   if (weapon === "bat") {
@@ -2373,7 +2327,7 @@ function placeMine() {
     return;
   }
   const w = worms[current],
-    mesh = createOriginalObject("mineoff", 4) || createMine(mineMap);
+    mesh = createOriginalObject("mineoff", 4);
   const release = nativeProjectileLaunchGeometry("mine", w, angle, 0, H, () => matchRandom.logicUint());
   const mine = {
     ...release,
@@ -2453,7 +2407,7 @@ function spawnBomb({
   const mesh =
     (grounded
       ? createOriginalObject(sprite, -4)
-      : createOriginalVisual(sprite)) || createProjectile("grenade");
+      : createOriginalVisual(sprite));
   mesh.position.set(x, y, 40);
   const ball = mesh.children[0];
   if (ball?.material?.color)
@@ -2526,7 +2480,7 @@ function stepAirstrikes() {
         if(packet) explode(missile.x,missile.y,missile.kind,missile.owner,packet);
         continue;
       }
-      missile.mesh=createNativeProjectileVisual(missile.nativeRender) || createProjectile("grenade");
+      missile.mesh=createNativeProjectileVisual(missile.nativeRender);
       missile.mesh.position.set(missile.x,missile.y,40);
       group.add(missile.mesh); bombs.push(missile);
     }
@@ -2563,7 +2517,7 @@ function placeDynamite() {
       .find(event => event.operation === "blast")?.request;
     if (packet) explode(body.x, body.y, body.kind, body.owner, packet);
   } else {
-    body.mesh = createOriginalVisual("dynamite") || createProjectile("grenade");
+    body.mesh = createOriginalVisual("dynamite");
     body.mesh.position.set(body.x, body.y, 40);
     group.add(body.mesh);
     bombs.push(body);
@@ -2574,6 +2528,7 @@ function applyNativeAreaRequest(targets, request) {
     for (const dispatch of nativeAreaDamage(targets, request)) {
       if (dispatch.sound?.[0] === 0x61) sfx("batimpact");
       if (dispatch.sound?.[0] === 0x21) sfx("axeimpact");
+      if (dispatch.sound?.[0] === 0x65) sfx("firepunchimpact");
       if (dispatch.effect) spawnNativeParticleRequest(dispatch.effect);
       if (!dispatch.packet) continue;
       const mine = targets[dispatch.body].mine;
@@ -2780,6 +2735,36 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     if (burst && playback) burst.playback = playback;
   }
 }
+function dispatchFirePunchCalls(w, calls) {
+  for (const call of calls) {
+    if (call.operation === "terrain") {
+      terrain.craterRim ??= new Uint8Array(W * H);
+      carveNativeToolMask(terrain.data, W, H, firePunchCut, call.request[1], call.request[2], terrain.craterRim);
+      terrainDirty = true;
+    } else if (call.operation === "particle") spawnNativeParticleRequest(call.request);
+    else if (call.operation === "camera") queueWormCamera(w);
+    else if (call.operation === "area") {
+      const targets = [...nativeWormHitscanBodies(worms,w,H), ...nativeMineHitBodies(mines)].sort((a,b)=>a.type-b.type);
+      applyNativeAreaRequest(targets,call.request);
+    }
+  }
+}
+function firePunch(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "firepunch") <= 0) return;
+  const w = worms[current];
+  if (!prepared && startOriginalPreparation(w,"firepunch",angle)) {
+    pendingFire = {worm:w, angle, kind:"firepunch", stage:"prepare"};
+    wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
+    updateUI(); return;
+  }
+  spendSpecial("firepunch"); shotCount++;
+  const record = nativeHitscanWeapon("firepunch").record;
+  const calls = attachNativeFirePunchFlight(w, {height:H}, record["0x7c"]);
+  startOriginalFirePunch(w);
+  dispatchFirePunchCalls(w,calls);
+  pendingFire = {worm:w, angle, kind:"firepunch", stage:"firepunch", spent:true};
+  updateUI();
+}
 function fireAxe(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team], "axe") <= 0) return;
   const w = worms[current];
@@ -2877,6 +2862,7 @@ function fire() {
     fireBulletWeapon(false, kind);
     return;
   }
+  if (kind === "firepunch") { firePunch(); return; }
   if (kind === "axe") { fireAxe(); return; }
   if (kind === "prod") { fireProd(); return; }
   if (kind === "bat") {
@@ -3008,7 +2994,7 @@ function explodeProjectile(p) {
         if (packet) explode(child.x, child.y, child.kind, child.owner, packet);
         return;
       }
-      child.mesh = createNativeProjectileVisual(child.nativeRender) || createProjectile("grenade");
+      child.mesh = createNativeProjectileVisual(child.nativeRender);
       child.mesh.position.set(child.x, child.y, 40);
       group.add(child.mesh);
       bombs.push(child);
@@ -3896,6 +3882,21 @@ function step(dt) {
       if (teleport?.relocate) queueWormCamera(w);
       continue;
     }
+    if (w.originalFirePunch && !w.originalHurt && !w.frozen) {
+      const result = stepNativeFirePunchFlight(w, {
+        height:H, waterLevel, gravityScale, frame:matchRandom.frame,
+        random:()=>matchRandom.logicUint(),
+      }, (x,y)=>bodyBlocked(terrain,x,y)?1:0,
+      w.originalFirePunch.player.current.id, nativeHitscanWeapon("firepunch").record);
+      updateOriginalFirePunch(w,result.calls);
+      dispatchFirePunchCalls(w,result.calls);
+      if (result.finished) {
+        w.originalFirePunch = null;
+        startOriginalRecoil(w,"firepunch",angle,matchRandom.frame);
+        if (pendingFire?.worm === w) pendingFire.stage = "firepunch-recoil";
+      }
+      continue;
+    }
     if (w.originalRecovery) {
       for (const call of stepOriginalRecovery(w)) {
         if (call.operation === "sound" && sound) {
@@ -4220,9 +4221,14 @@ function step(dt) {
     if (phase !== "aim" || w !== worms[current] || w.hp <= 0 || w.knocked || w.frozen || w.hurt > 0.35) {
       w.originalPreparation = null;
       w.originalAxe = null;
+      if (w.originalFirePunch) { w.originalFirePunch = null; w.nativeFlight = null; }
       stopBurstSound(pending.burst);
       pendingFire = null;
       if ((pending.burst?.spent || pending.spent) && phase === "aim") finishAction("Firing interrupted. Retreat!");
+    } else if (pending.stage === "firepunch") {
+      // Native body/state tick runs in the worm loop above.
+    } else if (pending.stage === "firepunch-recoil") {
+      if (!w.originalRecoil) { pendingFire = null; finishAction("Fire punch complete. Retreat!"); }
     } else if (pending.stage === "axe") {
       for (const call of stepOriginalAxe(w, nativeHitscanWeapon("axe").record["0x70"], H)) {
         if (call.operation === "sound") sfx("axerelease");
@@ -4258,7 +4264,8 @@ function step(dt) {
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;
-        if (pending.kind === "axe") fireAxe(true);
+        if (pending.kind === "firepunch") firePunch(true);
+        else if (pending.kind === "axe") fireAxe(true);
         else if (pending.kind === "prod") fireProd(true);
         else if (pending.kind === "bat") fireBat(true);
         else fireBulletWeapon(true, pending.kind ?? "shotgun", pending.burst);
@@ -4680,23 +4687,6 @@ function frame(now) {
 
     const facing = w.facing;
     const moving = active && w.moving && w.ground;
-    const bounce =
-      menu.open || reducedMotion
-        ? 0
-        : Math.sin(now * (moving ? 0.019 : 0.003) + w.x) * (moving ? 3 : 1.2);
-    // Keep sprite texels square, with whole-pixel steps instead of squash/rotation.
-    const pixelWorldY = view.h / renderer.domElement.height;
-    const nativeSize = soldierMaps[w.team].image.width;
-    const spritePixels = Math.max(
-      nativeSize,
-      Math.round(size / pixelWorldY / nativeSize) * nativeSize,
-    );
-    const spriteSize = spritePixels * pixelWorldY;
-    w.body.scale.set(spriteSize * facing, spriteSize, 1);
-    w.body.position.y =
-      Math.round((spriteSize * (13 / 32) - 12 + bounce) / pixelWorldY) *
-      pixelWorldY;
-    w.body.rotation.z = 0;
     const panic =
       w.knocked ||
       (!w.ground && w.vy < -100) ||
@@ -4725,12 +4715,6 @@ function frame(now) {
                       : Math.floor((now + w.x * 13) / 180) % 22 === 0
                         ? "blink"
                         : "idle";
-    w.body.material.map =
-      pose === "hurt"
-        ? hurtMaps[w.team]
-        : poseMaps[pose]?.[w.team] || soldierMaps[w.team];
-    w.body.position.x =
-      Math.round((w.recoil > 0 ? -facing * 4 : 0) / pixelWorldY) * pixelWorldY;
     w.g.userData.pose = pose;
     const original = originalWormFrame(
       w,
@@ -4740,6 +4724,7 @@ function frame(now) {
       weapon,
       active,
     );
+    w.body.visible = Boolean(original);
     if (original) {
       w.body.material.map = original.map;
       // 004AFB00/00498890 center the canvas on the physics body. Preserve
@@ -4781,35 +4766,7 @@ function frame(now) {
       (Math.cos((a * Math.PI) / 180) < 0 ? -1 : 1) * geometry.rigScale,
       1,
     );
-    w.rig.pivot.visible =
-      !original?.equipped &&
-      !original?.name.startsWith("wfly") &&
-      !w.originalRope &&
-      !w.originalParachute &&
-      !w.originalTeleport &&
-      !w.originalJetpack &&
-      active &&
-      w.hp > 0 &&
-      w.hurt < 0.75 &&
-      (phase === "aim" || charging || w.recoil > 0);
-    w.rig.mine.visible = active && weapon === "mine";
-    w.rig.barrel.visible =
-      !active || ["rocket", "mortar", "homing", "pigeon", "magic", "shotgun"].includes(weapon);
-    w.rig.grenade.visible = active && WEAPONS[weapon].timed;
-    w.rig.grenade.children[0].material.color.setHex(
-      weapon === "sticky" ? 0xe96e57 : 0x9caf59,
-    );
-    w.rig.barrel.scale.y = active && weapon === "mortar" ? 1.4 : 1;
-    w.rig.barrel.position.x = -Math.sin((w.recoil / 0.3) * Math.PI) * 7;
-    w.rig.flash.visible = w.recoil > 0.19 && weapon === "rocket";
-    w.rig.flash.scale.setScalar(0.8 + Math.sin(now * 0.09) * 0.2);
-    w.stars.visible = !original && w.hp > 0 && w.hurt > 0;
-    w.stars.position.set(0, size + 30, 20);
-    w.stars.children.forEach((star, i) => {
-      const a = now * 0.007 + (i * Math.PI * 2) / 3;
-      star.position.set(Math.cos(a) * 17, Math.sin(a) * 5, 0);
-      star.rotation.z = a;
-    });
+    w.rig.pivot.visible = false;
     updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick);
     updateOriginalSelection(
       w.label,
@@ -5303,16 +5260,27 @@ async function prepareDecorations() {
 }
 $("#terrain-theme").addEventListener("change", prepareDecorations);
 $("#map-layout").addEventListener("change", prepareDecorations);
-prepareDecorations();
-syncMenuOptions();
-updateRecordUI();
-reset();
-menu.showModal();
-resetMenuScroll();
-updateUI();
-resize();
-prewarmShaders();
-requestAnimationFrame(frame);
+async function bootCurrentArt() {
+  try {
+    await originalAssets;
+    await prepareDecorations();
+    if (originalArtError) throw new Error(originalArtError);
+    syncMenuOptions(); updateRecordUI(); reset();
+    menu.showModal(); resetMenuScroll(); updateUI(); resize(); prewarmShaders();
+    last = performance.now();
+    requestAnimationFrame(now => {
+      frame(now);
+      assetsReady = true;
+      document.body.classList.remove("assets-loading");
+      $("#asset-loading").remove();
+    });
+  } catch (error) {
+    originalArtError = error.message;
+    $("#asset-loading").textContent = "Game assets could not load. Reload to retry.";
+    $("#asset-loading").setAttribute("role", "alert");
+  }
+}
+bootCurrentArt();
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   const registerServiceWorker = () =>
     navigator.serviceWorker
@@ -5323,7 +5291,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 }
 // Read-only diagnostics for regression checks and reproducible bug reports.
 window.siege = {
-  getState: () => ({
+  getState: () => !assetsReady ? { assetsReady, originalArtError } : ({
     assetsReady,
     originalArtError,
     mapLayout: terrain.layout,

@@ -63,9 +63,17 @@ for (const [kind, total, spread, mode] of [["uzi", 10, 15, 5], ["minigun", 20, 2
 
 test("pausing an automatic burst stops audio and resumes remaining bullets", async ({ page }) => {
   await start(page, "uzi");
+  await page.evaluate(() => {
+    const pauseDuringBurst = () => {
+      if (window.siege.getState().shotCount >= 1 && window.weaponLoops.length)
+        document.querySelector('#help').click();
+      else requestAnimationFrame(pauseDuringBurst);
+    };
+    requestAnimationFrame(pauseDuringBurst);
+  });
   await page.locator("#fire").click();
   await expect.poll(() => page.evaluate(() => window.weaponLoops.length)).toBe(1);
-  await page.locator("#help").click();
+  await expect(page.locator("#menu")).toBeVisible();
   const paused = await page.evaluate(() => window.siege.getState().shotCount);
   expect(paused).toBeLessThan(10);
   await page.waitForTimeout(400);

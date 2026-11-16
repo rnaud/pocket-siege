@@ -1,4 +1,4 @@
-const CACHE = "pocket-siege-armageddon-v11";
+const CACHE = "pocket-siege-armageddon-v12";
 
 async function precache() {
   const cache = await caches.open(CACHE);

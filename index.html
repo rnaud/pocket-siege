@@ -41,7 +41,13 @@
     />
     <link rel="manifest" href="./manifest.webmanifest" />
   </head>
-  <body>
+  <style>
+    body.assets-loading { margin:0; background:#181818; }
+    body.assets-loading #app { visibility:hidden; }
+    #asset-loading { position:fixed; inset:0; display:grid; place-items:center; color:#eee; background:#181818; font:16px monospace; z-index:9999; }
+  </style>
+  <body class="assets-loading">
+    <div id="asset-loading" role="status">Loading game assets…</div>
     <div id="app">
       <header>
         <a class="brand" href="./"
@@ -244,6 +250,7 @@
                 <button data-weapon="bat" type="button">
                   <span>⚾</span>Bat<small>3</small>
                 </button>
+                <button data-weapon="firepunch" type="button"><span>✊</span>Fire punch<small>3</small></button>
                 <button data-weapon="axe" type="button">
                   <span>⚒</span>Battle axe<small>2</small>
                 </button>

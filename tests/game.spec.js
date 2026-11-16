@@ -216,12 +216,12 @@ test("touch controls fit the screen in portrait and landscape", async ({
   await fits();
 });
 
-test("generated art loads and character labels stay readable", async ({
+test("original art loads and character labels stay readable", async ({
   page,
 }, info) => {
   const missing = [];
   page.on("response", (r) => {
-    if (r.url().includes("/art/") && r.status() !== 200) missing.push(r.url());
+    if (r.url().includes("/armageddon/") && r.status() !== 200) missing.push(r.url());
   });
   await page.goto("/");
   await expect
@@ -1231,7 +1231,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator("#special-toggle").click();
-  await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(17);
+  await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(18);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {

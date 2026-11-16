@@ -57,34 +57,10 @@ test("compact arsenal, overview and charge work across layouts", async ({
   expect(errors).toEqual([]);
 });
 
-test("generated expressions remain opaque pixel art and distinct", async ({
-  page,
-}) => {
-  await page.goto("/");
-  const result = await page.evaluate(async () => {
-    const { pixelArt } = await import("/src/pixel-art.js");
-    const poses = [
-      false,
-      true,
-      "blink",
-      "aim",
-      "panic",
-      "victory",
-      "walk",
-      "walk2",
-      "walk3",
-      "jump",
-      "fall",
-      "land",
-    ];
-    const signatures = poses.map((pose) => {
-      const c = pixelArt("soldier", 0, pose),
-        data = c.getContext("2d").getImageData(0, 0, 32, 32).data;
-      if ([...data].some((v, i) => i % 4 === 3 && v !== 0 && v !== 255))
-        throw new Error("Antialiased sprite");
-      return Array.from(data).join(",");
-    });
-    return new Set(signatures).size;
-  });
-  expect(result).toBe(12);
+test("menu portraits use original sprites", async ({page}) => {
+  await page.goto('/');
+  await page.waitForFunction(()=>window.siege?.getState().assetsReady);
+  const portraits=page.locator('canvas[data-art="soldier"]');
+  for (const canvas of await portraits.all())
+    await expect(canvas).toHaveAttribute('data-original-sprite','wblink1');
 });

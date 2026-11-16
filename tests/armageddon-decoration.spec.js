@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 test("all themes place deterministic, destructible original object pixels", async ({
   page,
 }) => {
+  test.setTimeout(120000); // Full pixel comparisons across every imported terrain theme.
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   const results = await page.evaluate(async () => {

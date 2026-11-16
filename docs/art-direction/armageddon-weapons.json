@@ -136,8 +136,8 @@
     {
       "slot": 16,
       "native_name": "FirePunch",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "firepunch",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 1
     },

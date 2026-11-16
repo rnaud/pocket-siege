@@ -11,6 +11,7 @@ const sounds = {
   shotgun: "shotgunfire",
   batimpact: "baseballbatimpact",
   axeimpact: "vikingaxeimpact",
+  firepunchimpact: "firepunchimpact",
   axerelease: "vikingaxerelease",
   shotgunreload: "shotgunreload",
   grenade: "throwrelease",
