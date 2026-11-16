@@ -1,3 +1,5 @@
+import { H } from "../physics.js";
+import { nativeFlightSprite, nativeFlightProgress } from "./flight-art.js";
 import { nativeJetpackTick } from "./jetpack.js";
 import { fixedDivide } from "./numeric.js";
 import {
@@ -95,6 +97,8 @@ const names = [
     spriteIds.sprites[0x82].name,
     spriteIds.sprites[0x1aa].name,
     "wfly1",
+    "wfly2",
+    "wfly3",
     "wwinner",
     "wdie",
     "wbaz",
@@ -732,6 +736,44 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       aimed: false,
       equipped: false,
     };
+  }
+
+  if (
+    worm.hp > 0 &&
+    !worm.frozen &&
+    (worm.knocked || pose === "hurt" || pose === "panic")
+  ) {
+    // Host velocities are per second and upward-positive; native bodies use
+    // downward-positive fixed point per 50 Hz tick.
+    const vx = Math.round(((worm.vx || 0) * 65536) / 50) | 0;
+    const vy = Math.round((-(worm.vy || 0) * 65536) / 50) | 0;
+    const id = nativeFlightSprite(
+      Math.round(worm.x * 65536),
+      Math.round((H - worm.y) * 65536),
+    );
+    const name = spriteIds.sprites[id].name;
+    const animation = animations.get(name);
+    if (animation) {
+      worm.originalFlightProgress = nativeFlightProgress(
+        vx,
+        vy,
+        worm.originalFlightProgress ?? 0,
+      );
+      const index = nativeSpriteFrame(
+        animation.sprite.frames.length,
+        animation.sprite.metadata[2],
+        worm.originalFlightProgress,
+      );
+      const facing = vx < -0x6666 ? -1 : vx > 0x6666 ? 1 : worm.facing;
+      return {
+        map: texture(name, index),
+        name,
+        index,
+        facing,
+        aimed: false,
+        equipped: false,
+      };
+    }
   }
 
   const jumping = worm.originalJump;

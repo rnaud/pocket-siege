@@ -3754,6 +3754,7 @@ function frame(now) {
     );
     w.rig.pivot.visible =
       !original?.equipped &&
+      !original?.name.startsWith("wfly") &&
       !w.originalRope &&
       !w.originalParachute &&
       !w.originalTeleport &&
@@ -3773,7 +3774,7 @@ function frame(now) {
     w.rig.barrel.position.x = -Math.sin((w.recoil / 0.3) * Math.PI) * 7;
     w.rig.flash.visible = w.recoil > 0.19 && weapon === "rocket";
     w.rig.flash.scale.setScalar(0.8 + Math.sin(now * 0.09) * 0.2);
-    w.stars.visible = w.hp > 0 && w.hurt > 0;
+    w.stars.visible = !original && w.hp > 0 && w.hurt > 0;
     w.stars.position.set(0, size + 30, 20);
     w.stars.children.forEach((star, i) => {
       const a = now * 0.007 + (i * Math.PI * 2) / 3;
