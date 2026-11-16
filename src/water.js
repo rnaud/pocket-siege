@@ -1,54 +1,92 @@
 import * as THREE from "three";
+import { decodeSprite, spriteFrameRGBA } from "./armageddon/sprite.js";
+import { decodeImage } from "./armageddon/image.js";
 
-// Discrete palette, stepped wave silhouettes, and grid-aligned ripple clusters.
-export function createWater(width, level) {
-  const material = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-      time: { value: 0 },
-      size: { value: new THREE.Vector2(width, level + 8) },
-    },
-    vertexShader: `varying vec2 uvWater;
-      void main(){ uvWater=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-    fragmentShader: `precision mediump float;
-      varying vec2 uvWater; uniform float time; uniform vec2 size;
-      void main(){
-        vec2 p=floor(uvWater*size/3.0)*3.0;
-        float tick=floor(time*6.0)/6.0;
-        float wave=size.y-8.0+floor(sin(p.x*.018+tick)*1.5)*3.0;
-        float depth=wave-p.y;
-        if(depth<0.0) discard;
-        vec3 color=depth<15.0 ? vec3(.19,.43,.45) :
-          depth<40.0 ? vec3(.14,.37,.40) : vec3(.11,.30,.35);
-        if(depth<3.0) color=vec3(.57,.68,.60);
-        float row=floor(depth/12.0);
-        float cell=floor((p.x+row*37.0)/36.0);
-        float noise=fract(sin(cell*127.1+row*311.7)*43758.5453);
-        float segment=mod(p.x+row*37.0+floor(tick*3.0)*3.0,36.0);
-        if(mod(depth,12.0)<3.0 && noise>.7 && segment<15.0){
-          color=vec3(.32,.53,.54);
-          if(abs(p.x-size.x*.73)<65.0+depth*.7 && noise>.65)
-            color=vec3(.86,.65,.43);
-        }
-        gl_FragColor=vec4(color,1.0);
-      }`,
-  });
-  const baseHeight = level + 8;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, baseHeight),
-    material,
+let waterArt;
+export async function loadOriginalWater() {
+  const base = `${import.meta.env.BASE_URL}armageddon/media/water/blue/water/`;
+  const [layer, fill] = await Promise.all(
+    ["layer/layer.spr", "fill.img"].map(async (name) => {
+      const response = await fetch(base + name);
+      if (!response.ok) throw new Error(`Cannot load original water ${name}`);
+      return response.arrayBuffer();
+    }),
   );
-  mesh.position.set(width / 2, baseHeight / 2, 22);
+  const sprite = decodeSprite(layer),
+    image = decodeImage(fill);
+  const color = image.palette.slice(
+    image.pixels[0] * 4,
+    image.pixels[0] * 4 + 3,
+  );
+  const frames = sprite.frames.map((_, i) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = sprite.width;
+    canvas.height = sprite.height;
+    canvas
+      .getContext("2d")
+      .putImageData(
+        new ImageData(spriteFrameRGBA(sprite, i), sprite.width, sprite.height),
+        0,
+        0,
+      );
+    return canvas;
+  });
+  waterArt = { sprite, frames, color: `rgb(${color.join(",")})` };
+}
+
+// Native wave pixels tiled horizontally over the source fill colour. The
+// browser clock currently drives this zero-rate strip; native layer timing
+// and parallax are separate remaining ports.
+export function createWater(width, level) {
+  const canvas = document.createElement("canvas"),
+    context = canvas.getContext("2d");
+  canvas.width = Math.ceil(width);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = texture.magFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, 1),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  let currentLevel = level,
+    lastFrame = -1,
+    lastHeight = -1;
   mesh.userData.update = (time) => {
-    material.uniforms.time.value = time;
+    if (!waterArt) return;
+    const { sprite, frames, color } = waterArt;
+    const frame = Math.floor(Math.max(0, time) * 25) % frames.length;
+    const crest = Math.floor(sprite.height / 2);
+    const height = Math.max(1, Math.ceil(currentLevel) + crest);
+    if (lastFrame === frame && lastHeight === height) return;
+    if (canvas.height !== height) {
+      texture.dispose();
+      canvas.height = height;
+    }
+    context.clearRect(0, 0, canvas.width, height);
+    context.fillStyle = color;
+    context.fillRect(0, crest, canvas.width, height - crest);
+    context.imageSmoothingEnabled = false;
+    for (let x = 0; x < width; x += sprite.width)
+      context.drawImage(frames[frame], x, 0);
+    mesh.scale.y = height;
+    mesh.position.set(width / 2, height / 2, 22);
+    texture.needsUpdate = true;
+    lastFrame = frame;
+    lastHeight = height;
+    Object.assign(mesh.userData, {
+      originalSprite: "water/blue/water/layer/layer.spr",
+      originalFrame: frame,
+      surfaceLevel: currentLevel,
+    });
   };
-  // Sudden death lifts the same plane; the shader reads the new surface height.
   mesh.userData.setLevel = (nextLevel) => {
-    const height = nextLevel + 8;
-    mesh.scale.y = height / baseHeight;
-    mesh.position.y = height / 2;
-    material.uniforms.size.value.y = height;
+    currentLevel = nextLevel;
+    lastHeight = -1;
   };
   return mesh;
 }

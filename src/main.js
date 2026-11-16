@@ -42,7 +42,7 @@ import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
 import { landscape } from "./island-art.js";
 import { pixelTexture, mountPixelArt, pixelViewport } from "./pixel-art.js";
-import { createWater } from "./water.js";
+import { createWater, loadOriginalWater } from "./water.js";
 import * as THREE from "three";
 import "./style.css";
 import "./pixel-hud.css";
@@ -75,7 +75,12 @@ import {
   createMine,
   createBarrel,
 } from "./combat-visuals.js";
-import { loadOriginalTerrain } from "./armageddon/terrain.js";
+import {
+  loadOriginalTerrain,
+  paintOriginalBackdrop,
+  createTerrainDebris,
+  updateTerrainDebris,
+} from "./armageddon/terrain.js";
 import { paintTerrain } from "./terrain-paint.js";
 import {
   WEAPONS,
@@ -308,7 +313,7 @@ let lastShot = null,
   lastResult = null;
 let assetsReady = false;
 let originalArtError = null;
-Promise.all([loadOriginalArt(), loadOriginalTerrain()])
+Promise.all([loadOriginalArt(), loadOriginalTerrain(), loadOriginalWater()])
   .then(() => {
     assetsReady = true;
     terrainDirty = true;
@@ -351,6 +356,18 @@ const backdrop = new THREE.Mesh(
 );
 backdrop.position.set(W / 2, H / 2, -180);
 group.add(backdrop);
+function updateOriginalBackdrop() {
+  if (!terrain || backdrop.userData.originalTheme === terrain.theme) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  if (!paintOriginalBackdrop(canvas.getContext("2d"), terrain.theme, WATER))
+    return;
+  backdropMap.dispose();
+  backdropMap.image = canvas;
+  backdropMap.needsUpdate = true;
+  backdrop.userData.originalTheme = terrain.theme;
+}
 const motes = [];
 for (let i = 0; i < 26; i++) {
   const mote = new THREE.Mesh(
@@ -715,7 +732,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   }
   for (const effect of originalEffects) dispose(effect.mesh);
   originalEffects.length = 0;
-  for (const p of particles) group.remove(p.mesh);
+  for (const p of particles) releaseParticle(p.mesh);
   particles = [];
   for (const m of mines) dispose(m.mesh);
   mines = [];
@@ -740,6 +757,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     bridges: "BRIDGES",
   }[terrain.layout];
   paintTerrain(ctx, terrain, texture);
+  updateOriginalBackdrop();
   terrainDirty = false;
   worms = [
     ...names[0].map((_, i) => createWorm(0, i, [180, 340, 490][i])),
@@ -1335,6 +1353,7 @@ function addGirder(cx, cy, angle = 0, length = 64) {
     }
   }
   paintTerrain(ctx, terrain, texture);
+  updateOriginalBackdrop();
   terrainDirty = false;
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(length, 7, 5),
@@ -2447,9 +2466,11 @@ function explode(x, y, kind, ownerIndex = -1) {
     const a = visualRandom() * Math.PI * 2,
       s = 40 + visualRandom() * 210,
       size = 2 + visualRandom() * 6;
-    const mesh = new THREE.Mesh(debrisGeometry, debrisMaterials[i % 3 ? 0 : 1]);
+    const mesh =
+      createTerrainDebris(terrain.theme, i) ||
+      new THREE.Mesh(debrisGeometry, debrisMaterials[i % 3 ? 0 : 1]);
     mesh.position.set(x, y, 35);
-    mesh.scale.setScalar(size);
+    if (!mesh.userData.originalTerrainDebris) mesh.scale.setScalar(size);
     group.add(mesh);
     particles.push({
       mesh,
@@ -2460,6 +2481,7 @@ function explode(x, y, kind, ownerIndex = -1) {
       vy: Math.sin(a) * s,
       life: 0.5 + visualRandom() * 0.8,
       max: 1.3,
+      age: 0,
     });
   }
   const reports = [];
@@ -2503,6 +2525,10 @@ function explode(x, y, kind, ownerIndex = -1) {
     ? reports.join("   /   ")
     : "Terrain destroyed. No worms hit.";
   updateUI();
+}
+function releaseParticle(mesh) {
+  if (mesh.userData.originalTerrainDebris) dispose(mesh);
+  else group.remove(mesh);
 }
 function spawnDust(x, y) {
   const mesh = new THREE.Mesh(dustGeometry, dustMaterial),
@@ -3196,9 +3222,12 @@ function step(dt) {
     integrate(p, dt, 0, gravityScale);
     p.life -= dt;
     p.mesh.position.set(p.x, p.y, 35);
-    p.mesh.scale.setScalar(Math.max(0.01, (p.life / p.max) * p.size));
+    if (p.mesh.userData.originalTerrainDebris) {
+      p.age += dt;
+      updateTerrainDebris(p.mesh, p.age);
+    } else p.mesh.scale.setScalar(Math.max(0.01, (p.life / p.max) * p.size));
     if (p.life <= 0) {
-      group.remove(p.mesh);
+      releaseParticle(p.mesh);
       particles.splice(i, 1);
     }
   }
@@ -3605,6 +3634,7 @@ function frame(now) {
   if (terrainDirty) {
     terrainDirty = false;
     paintTerrain(ctx, terrain, texture);
+    updateOriginalBackdrop();
   }
   renderer.render(scene, camera);
 }
@@ -3954,6 +3984,7 @@ window.siege = {
     originalArtError,
     mapLayout: terrain.layout,
     terrainTheme: terrain.theme,
+    backdropTheme: backdrop.userData.originalTheme,
     mapSeed: terrain.seed,
     random: matchRandom.snapshot(),
     logicStepMs: LOGIC_STEP_SECONDS * 1000,
@@ -3979,6 +4010,12 @@ window.siege = {
     round,
     wind,
     explosions,
+    debrisSprites: particles
+      .filter((p) => p.mesh.userData.originalTerrainDebris)
+      .map((p) => ({
+        theme: p.mesh.userData.terrainTheme,
+        frame: p.mesh.userData.originalFrame,
+      })),
     weapon,
     teamWeapon: [...teamWeapon],
     difficulty,
@@ -4083,6 +4120,8 @@ window.siege = {
     parachuteArmed,
     frozen: worms.map((w) => w.frozen ?? 0),
     waterLevel,
+    waterSprite: water.userData.originalSprite,
+    waterFrame: water.userData.originalFrame,
     suddenDeath,
     hitStop,
     lastAiPlanMs: Math.round(lastAiPlanMs * 10) / 10,
