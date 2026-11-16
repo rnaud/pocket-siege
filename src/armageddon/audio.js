@@ -125,7 +125,14 @@ export function playNativeDeathVoice(context, request) {
 // Speech descriptors 0055F59C/0055F5A4/0055F5AC carry IDs 38/39/40.
 export function playNativeHitVoice(context, request, previousPlayback) {
   previousPlayback?.stop();
-  const name = { 38: "ouch", 39: "ow1", 40: "ow2" }[request.index];
+  const name = {
+    35: "oinutter",
+    36: "ooff1",
+    37: "ooff2",
+    38: "ouch",
+    39: "ow1",
+    40: "ow2",
+  }[request.index];
   if (!name) return null;
   return playOriginalClip(context, `voices/english/${name}.wav`, () => {}, 1);
 }

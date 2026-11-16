@@ -744,7 +744,10 @@ export function stepOriginalDeath(worm, random = () => 0) {
 }
 
 export function startOriginalHurt(worm, state) {
-  const entry = nativeHurtEntry(state, worm.nativeFlight?.angle ?? 0);
+  const entry = nativeHurtEntry(
+    state,
+    worm.nativeHurtBody?.angle ?? worm.nativeFlight?.angle ?? 0,
+  );
   if (!entry) return;
   worm.originalHurt = {
     state,
@@ -752,6 +755,11 @@ export function startOriginalHurt(worm, state) {
     sprite: entry.calls[1].sprite_id,
   };
   if (worm.nativeFlight) worm.nativeFlight.angle = entry.angle;
+  if (worm.nativeHurtBody) {
+    worm.nativeHurtBody.state = state;
+    worm.nativeHurtBody.angle = entry.angle;
+  }
+  worm.originalRecovery = null;
 }
 
 // One original 50 Hz rotation step. Translation/collision still come from

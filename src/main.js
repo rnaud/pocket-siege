@@ -1,3 +1,4 @@
+import { stepNativeHurtFlight } from "./armageddon/hurt-flight.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
@@ -109,7 +110,8 @@ import {
   stepOriginalWalking,
   startOriginalDeath,
   startOriginalHurt,
-  stepOriginalHurt,
+  startOriginalRecovery,
+  stepOriginalRecovery,
   stepOriginalDeath,
   stopOriginalJetpack,
   stepOriginalTeleport,
@@ -121,6 +123,7 @@ import {
 import {
   playOriginalSound,
   playNativeHitVoice,
+  playNativeRecoverySound,
   playNativeWaterSound,
   playNativeLandingSound,
   playNativeDeathVoice,
@@ -152,6 +155,7 @@ import {
   blastImpulse,
   walkWorm,
   stepWorm,
+  bodyBlocked,
   terrainNormal,
   reflectVelocity,
   launchGeometry,
@@ -1383,6 +1387,8 @@ function canAct() {
   return (
     phase === "aim" &&
     !pendingFire &&
+    !worms[current]?.originalRecovery &&
+    !worms[current]?.nativeHurtBody &&
     !(team === 1 && mode === "ai") &&
     !menu.open &&
     !replaying &&
@@ -1396,7 +1402,9 @@ function canMove() {
     !charging &&
     !replaying &&
     worms[current]?.hp > 0 &&
-    !worms[current]?.knocked
+    !worms[current]?.knocked &&
+    !worms[current]?.originalRecovery &&
+    !worms[current]?.nativeHurtBody
   );
 }
 function canSelectWorm() {
@@ -2205,7 +2213,11 @@ function injure(w, damage, direction = 0, native = false) {
   w.hp = accounting.hp;
   w.damageTaken = accounting.total;
   const actualDamage = previousHp - w.hp;
-  if (!native) w.originalHurt = null;
+  if (!native) {
+    w.originalHurt = null;
+    w.nativeHurtBody = null;
+    w.originalRecovery = null;
+  }
   w.hurt = 1.4;
   sfx("hit");
   w.hits++;
@@ -3563,6 +3575,24 @@ function step(dt) {
       if (teleport?.relocate) cameraSnap = true;
       continue;
     }
+    if (w.originalRecovery) {
+      for (const call of stepOriginalRecovery(w)) {
+        if (call.operation === "sound" && sound) {
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          w.nativeHitVoicePlayback = playNativeRecoverySound(
+            audio,
+            call.request,
+            w.nativeHitVoicePlayback,
+          );
+        }
+        if (call.operation === "state") {
+          w.hurt = 0;
+          w.knocked = false;
+          w.nativeHurtBody = null;
+        }
+      }
+      continue;
+    }
     let result = { fallDamage: 0 };
     if (w === worms[current] && jetpack.active) {
       stepJetpack(w, dt);
@@ -3580,10 +3610,65 @@ function step(dt) {
       // Preserve the existing browser fall-speed limit throughout deployment;
       // the original body-force/drag transition is a separate physics port.
       if (w.originalParachute) w.vy = Math.max(w.vy, -70);
-      result = stepWorm(w, terrain, dt, gravityScale);
+      if (w.originalHurt && !w.frozen) {
+        result = stepNativeHurtFlight(
+          w,
+          {
+            height: H,
+            waterLevel,
+            gravityScale,
+            frame: matchRandom.frame,
+            index: worms.indexOf(w),
+            random: () => matchRandom.logicUint(),
+          },
+          (x, y) => (bodyBlocked(terrain, x, y) ? 1 : 0),
+        );
+        for (const call of result.events) {
+          if (call.operation === "health") injure(w, call.request[0], 0, true);
+          if (call.operation === "particle")
+            spawnNativeParticleRequest(call.request);
+          if (call.operation === "voice" && sound) {
+            audio ??= new (window.AudioContext || window.webkitAudioContext)();
+            w.nativeHitVoicePlayback = playNativeHitVoice(
+              audio,
+              { index: call.slot },
+              w.nativeHitVoicePlayback,
+            );
+          }
+          if (call.operation === "state") {
+            if (call.target === 0x76) {
+              const calls = startOriginalRecovery(
+                w,
+                call.previous,
+                result.body.maxVy,
+                result.body.field250,
+                () => matchRandom.logicUint(),
+              );
+              for (const event of calls)
+                if (event.operation === "sound" && sound) {
+                  audio ??= new (
+                    window.AudioContext || window.webkitAudioContext
+                  )();
+                  w.nativeHitVoicePlayback = playNativeRecoverySound(
+                    audio,
+                    event.request,
+                    w.nativeHitVoicePlayback,
+                  );
+                }
+              w.nativeHurtBody = null;
+              w.hurt = 0;
+              w.knocked = false;
+            } else if (call.target === 0x65) {
+              w.originalHurt = null;
+              w.nativeHurtBody = null;
+              w.hurt = 0;
+              w.knocked = false;
+            } else startOriginalHurt(w, call.target);
+          }
+        }
+      } else result = stepWorm(w, terrain, dt, gravityScale);
       if (w.originalParachute) w.vy = Math.max(w.vy, -70);
     }
-    stepOriginalHurt(w);
     if (result.landed && w.ground && !w.landing) {
       w.landing = 0.16;
       const landingSound = startOriginalLanding(
@@ -4947,6 +5032,8 @@ window.siege = {
         renderY,
         moving,
         deathPending,
+        nativeHurtBody,
+        originalRecovery,
       }) => ({
         name,
         hp,
@@ -4957,6 +5044,8 @@ window.siege = {
         ground,
         knocked,
         deathPending,
+        nativeHurtState: nativeHurtBody?.state ?? null,
+        recovering: !!originalRecovery,
         hurt,
         hits,
         recoil,
@@ -5015,6 +5104,17 @@ if (import.meta.env.DEV) {
     },
     triggerSuddenDeath() {
       return applySuddenDeath();
+    },
+    dropWormForRecovery(index = current) {
+      const w = worms[index];
+      w.y += 100;
+      w.vx = 0;
+      w.vy = -600;
+      w.ground = false;
+      w.knocked = true;
+      w.hurt = 1.4;
+      w.nativeHurtBody = null;
+      startOriginalHurt(w, 0x80);
     },
     dropWormForParachute(index = current) {
       const w = worms[index];
