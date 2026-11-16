@@ -1,3 +1,4 @@
+import { nativeHurtEntry } from "./hurt-entry.js";
 import { nativeDeathCue } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
@@ -129,6 +130,8 @@ const names = [
     "wland2",
     spriteIds.sprites[0x82].name,
     spriteIds.sprites[0x1aa].name,
+    "wroll",
+    "wslide",
     "wfly1",
     "wfly2",
     "wfly3",
@@ -735,6 +738,17 @@ export function stepOriginalDeath(worm, random = () => 0) {
   return cue.complete;
 }
 
+export function startOriginalHurt(worm, state) {
+  const entry = nativeHurtEntry(state, worm.nativeFlight?.angle ?? 0);
+  if (!entry) return;
+  worm.originalHurt = {
+    state,
+    angle: entry.angle,
+    sprite: entry.calls[1].sprite_id,
+  };
+  if (worm.nativeFlight) worm.nativeFlight.angle = entry.angle;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
     const state = worm.originalJetpack;
@@ -873,6 +887,35 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       pose === "panic" ||
       (worm.deathPending && !worm.ground))
   ) {
+    if (
+      worm.originalHurt?.state === 0x80 ||
+      worm.originalHurt?.state === 0x7f
+    ) {
+      const hurt = worm.originalHurt;
+      const name = spriteIds.sprites[hurt.sprite].name;
+      const animation = animations.get(name);
+      // 004DDBD0 state 0x80: rolling pose follows the low word of body angle, mirrored
+      // by facing. Host knockback still lacks the native angular integrator.
+      const progress =
+        hurt.state === 0x80
+          ? Math.imul(
+              (worm.nativeFlight?.angle ?? hurt.angle) & 65535,
+              worm.facing,
+            )
+          : 0;
+      const index = nativeSpriteFrame(
+        animation.sprite.frames.length,
+        animation.sprite.metadata[2],
+        progress,
+      );
+      return {
+        map: texture(name, index),
+        name,
+        index,
+        aimed: false,
+        equipped: false,
+      };
+    }
     // Host velocities are per second and upward-positive; native bodies use
     // downward-positive fixed point per 50 Hz tick.
     const vx = Math.round(((worm.vx || 0) * 65536) / 50) | 0;

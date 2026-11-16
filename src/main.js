@@ -108,6 +108,7 @@ import {
   stepOriginalJetpack,
   stepOriginalWalking,
   startOriginalDeath,
+  startOriginalHurt,
   stepOriginalDeath,
   stopOriginalJetpack,
   stepOriginalTeleport,
@@ -2179,7 +2180,7 @@ function adjustAim(direction, dt) {
   angle = facing > 0 ? next : 180 - next;
   updateSliders();
 }
-function injure(w, damage, direction = 0) {
+function injure(w, damage, direction = 0, native = false) {
   // Frozen state 0x88 bypasses weapon damage in events 0x404/0x433.
   if (w.hp <= 0 || damage <= 0) return;
   if (w.frozen > 0) {
@@ -2203,6 +2204,7 @@ function injure(w, damage, direction = 0) {
   w.hp = accounting.hp;
   w.damageTaken = accounting.total;
   const actualDamage = previousHp - w.hp;
+  if (!native) w.originalHurt = null;
   w.hurt = 1.4;
   sfx("hit");
   w.hits++;
@@ -2479,6 +2481,7 @@ function fireShotgun(prepared = false) {
       victim.nativeBlastAccumulated = response.result.accumulated;
       victim.nativeBlastResponseState = response.result.state;
       for (const call of response.output) {
+        if (call.state) startOriginalHurt(victim, call.state);
         if (call.base) {
           applyNativeWeaponImpulse(victim, vx, vy);
           victim.knocked = true;
@@ -2506,7 +2509,7 @@ function fireShotgun(prepared = false) {
             () => matchRandom.logicUint(),
           ))
             spawnNativeParticleRequest(request);
-        if (call.health) injure(victim, call.health[0], Math.sign(vx));
+        if (call.health) injure(victim, call.health[0], Math.sign(vx), true);
       }
     }
     terrain.craterRim ??= new Uint8Array(W * H);
@@ -2822,6 +2825,7 @@ function explode(x, y, kind, ownerIndex = -1) {
         [Math.round(x * 65536), Math.round((H - y) * 65536)],
       );
       for (const call of response.output) {
+        if (call.state) startOriginalHurt(w, call.state);
         if (!call.blood) continue;
         for (const request of nativeBloodBurst(
           ...call.blood,
@@ -2852,7 +2856,7 @@ function explode(x, y, kind, ownerIndex = -1) {
         continue;
       }
       const hpBefore = w.hp;
-      injure(w, damage, direction);
+      injure(w, damage, direction, !!native);
       const actualDamage = hpBefore - w.hp;
       if (ownerIndex >= 0 && worms[ownerIndex]?.team !== w.team)
         dealt += actualDamage;
