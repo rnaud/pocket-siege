@@ -1,4 +1,4 @@
-"""Execute airborne worm contact decisions in 004D6E30.
+"""Execute airborne and drill worm contact decisions in004D6E30.
 
 Real body getters/setters and position attempt 004D1260 run. Collision manager,
 RNG/voice/audio, and state entry are explicit interfaces. Decision cases stop
@@ -76,7 +76,7 @@ def observe(cpu,address,size,user):
         cpu.reg_write(UC_X86_REG_EAX,environment['soundHandle'])
 cpu.hook_add(UC_HOOK_CODE,observe)
 cases=[];complete=[]
-for state in [0x6c,0x79,0x7d,0x7e]:
+for state in [0x6c,0x6e,0x79,0x7d,0x7e]:
     for side in [0,1,2,3,4,99]:
         for other_type in [1,2,15]:
             for vy in [-65537,-65536,-65535,0,200000]:

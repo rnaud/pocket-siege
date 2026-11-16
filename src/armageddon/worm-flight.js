@@ -47,6 +47,22 @@ function nativeAirborneBody(worm, height, friction) {
   };
 }
 
+// 65 -> 6E retains complex body response and flags;004D7730 changes its
+// category to3.004F7490 supplies no launch impulse or suspension change.
+export function attachNativeDrillFlight(worm, { height, friction = 96 }) {
+  const body = nativeAirborneBody(worm, height, friction);
+  body.state = 0x6e;
+  body.type = 3;
+  body.complex = 1;
+  worm.nativeFlight = body;
+}
+
+export function stepNativeDrillFlight(worm, environment, collide) {
+  const result = stepNativeJumpFlight(worm, environment, collide);
+  worm.ground = !nativeBodyAwake(worm.nativeFlight);
+  return result;
+}
+
 // 65 -> 6c common transition clears collision flag4, preserves complex bounce,
 // and changes category to3. The original entry supplies the launch velocity.
 export function attachNativeFirePunchFlight(worm, { height, friction = 96 }, power) {

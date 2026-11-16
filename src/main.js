@@ -3,7 +3,7 @@ import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
-import { attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
+import { attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
@@ -2839,6 +2839,7 @@ function stopDrill(pending = pendingFire) {
   if (pending?.kind !== "drill") return;
   pending.playback?.stop();
   pending.worm.originalDrill = null;
+  if (pending.worm.nativeFlight?.state === 0x6e) pending.worm.nativeFlight = null;
 }
 function fireDrill(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team], "drill") <= 0) return;
@@ -2851,6 +2852,7 @@ function fireDrill(prepared = false) {
   spendSpecial("drill"); shotCount++;
   const entry = nativeDrillEntry({ loopHandle:0 }, nativeHitscanWeapon("drill").record, w.nativeDrillCounter ?? 0);
   w.nativeDrillCounter = entry.counter;
+  attachNativeDrillFlight(w, { height:H });
   startOriginalDrill(w);
   pendingFire = { worm:w, angle, kind:"drill", stage:"drill", spent:true, body:entry.body };
   updateUI();
@@ -4014,6 +4016,13 @@ function step(dt) {
     if (w.originalTeleport) {
       const teleport = stepOriginalTeleport(w);
       if (teleport?.relocate) queueWormCamera(w);
+      continue;
+    }
+    if (w.originalDrill && !w.originalHurt && !w.frozen) {
+      stepNativeDrillFlight(w, {
+        height:H, waterLevel, gravityScale, frame:matchRandom.frame,
+        random:()=>matchRandom.logicUint(),
+      }, (x,y)=>bodyBlocked(terrain,x,y)?1:0);
       continue;
     }
     if (w.originalFirePunch && !w.originalHurt && !w.frozen) {
