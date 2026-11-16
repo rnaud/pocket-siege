@@ -6,6 +6,7 @@ import {
 import { nativeWeaponAnimation } from "./weapon-animation.js";
 import { nativeWeaponEquip } from "./equip.js";
 import { nativePostFire, nativeRecoilTick } from "./recoil.js";
+import { nativePreparation, nativePreparationTick } from "./preparation.js";
 import weaponFields from "./weapon-art-fields.json";
 import { WEAPON_SLOTS } from "./delays.js";
 import { nativeFreezeAnimation } from "./freeze.js";
@@ -54,6 +55,7 @@ const names = [
     "wbaz",
     "wshotg",
     "wshotf",
+    "wshotp",
     "wparacht",
     "wjetfly1",
   ]),
@@ -108,6 +110,56 @@ function aimProgress(angle) {
   return Math.round((pitch / Math.PI + 0.5) * 0xffff);
 }
 
+function applyAnimationCalls(player, calls) {
+  for (const call of calls) {
+    if (call.operation === "clear") player.clear();
+    else if (call.operation === "setProgress")
+      player.setProgress(call.progress);
+    else
+      player.enqueue(
+        call.sprite_id,
+        animations.get(spriteIds.sprites[call.sprite_id].name).metadata,
+        call.progress,
+      );
+  }
+}
+
+export function startOriginalPreparation(worm, weapon, angle) {
+  // Currently connected to shotgun actions; other native preparation paths are
+  // verified separately and await their action/event adapters.
+  if (weapon !== "shotgun" || !animations.has("wshotp")) return false;
+  const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
+  const record = weaponFields[WEAPON_SLOTS[weapon]];
+  const state = nativePreparation(
+    record,
+    player.current.id,
+    aimProgress(angle),
+  );
+  applyAnimationCalls(player, state.calls);
+  worm.originalPreparation = { record, ...state };
+  worm.originalRecoil = null;
+  worm.originalAnimationKey = null;
+  worm.originalEquipped = true;
+  return true;
+}
+
+// Called once per simulation tick, independently of render rate.
+export function stepOriginalPreparation(worm) {
+  const state = worm.originalPreparation;
+  if (!state) return null;
+  const player = worm.originalPlayer;
+  player.advance();
+  const result = nativePreparationTick(state.record, {
+    ...state,
+    sprite: player.current.id,
+    progress: player.current.progress,
+  });
+  applyAnimationCalls(player, result.calls);
+  Object.assign(state, result);
+  if (result.released) worm.originalPreparation = null;
+  return result;
+}
+
 // Browser action adapter: native preparation/firing event scheduling is still unported.
 export function startOriginalRecoil(worm, weapon, angle, frame) {
   const id = WEAPON_SLOTS[weapon];
@@ -135,6 +187,23 @@ export function startOriginalRecoil(worm, weapon, angle, frame) {
 }
 
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  if (worm.originalPreparation) {
+    const player = worm.originalPlayer;
+    const name = spriteIds.sprites[player.current.id].name;
+    const sprite = animations.get(name).sprite;
+    const index = nativeSpriteFrame(
+      sprite.frames.length,
+      sprite.metadata[2],
+      player.current.progress,
+    );
+    return {
+      map: texture(name, index),
+      name,
+      index,
+      aimed: false,
+      equipped: true,
+    };
+  }
   const recoil = worm.originalRecoil;
   if (
     recoil &&

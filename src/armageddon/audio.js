@@ -6,6 +6,7 @@ const sounds = {
   homing: "rocketrelease",
   mortar: "rocketrelease",
   shotgun: "shotgunfire",
+  shotgunreload: "shotgunreload",
   grenade: "throwrelease",
   sticky: "throwrelease",
   cluster: "throwrelease",

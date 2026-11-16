@@ -1167,12 +1167,17 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await expect(page.locator("#special-weapons [data-weapon]")).toHaveCount(8);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.locator("#fire").click();
-  await page.waitForTimeout(250);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().shotCount))
+    .toBe(1);
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.ammo[0].shotgun).toBe(2);
   expect(state.phase).toBe("aim");
   expect(state.shotgunRemaining).toBe(1);
   await page.locator("#fire").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().shotCount))
+    .toBe(2);
   state = await page.evaluate(() => window.siege.getState());
   expect(state.ammo[0].shotgun).toBe(2);
   expect(state.shotgunRemaining).toBe(0);

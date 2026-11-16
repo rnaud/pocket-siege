@@ -11,6 +11,8 @@ import {
   loadOriginalArt,
   originalWormFrame,
   startOriginalRecoil,
+  startOriginalPreparation,
+  stepOriginalPreparation,
 } from "./armageddon/art.js";
 import { playOriginalSound } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
@@ -236,6 +238,7 @@ let format = "single",
   targetUtility = null,
   homingTarget = null,
   shotgunRemaining = 0,
+  pendingFire = null,
   rope = { attached: false, anchor: null, length: 0, mesh: null },
   jetpack = {
     active: false,
@@ -665,6 +668,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   retreat = 0;
   shotCount = 0;
   shotgunRemaining = 0;
+  pendingFire = null;
   homingTarget = null;
   fuse = 3;
   bounce = 0.55;
@@ -1002,7 +1006,7 @@ function beginTurn() {
 function updateUI() {
   // Only touch the DOM when its underlying simulation state changed.
   const loadout = ammo[team] ?? {};
-  const key = `${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  const key = `${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   updateHudTeams(worms, team);
@@ -1151,6 +1155,7 @@ function updateUI() {
 function canAct() {
   return (
     phase === "aim" &&
+    !pendingFire &&
     !(team === 1 && mode === "ai") &&
     !menu.open &&
     !replaying &&
@@ -2090,12 +2095,21 @@ function placeDynamite() {
   finishAction("Dynamite dropped. Three-second fuse — retreat!");
   tone(430, 0.12, "square");
 }
-function fireShotgun() {
+function fireShotgun(prepared = false) {
   if (
-    !canAct() ||
+    (!prepared && !canAct()) ||
     (!shotgunRemaining && (availableAmmo(ammo[team], "shotgun") ?? 0) <= 0)
   )
     return;
+  if (!prepared && startOriginalPreparation(worms[current], "shotgun", angle)) {
+    pendingFire = { worm: worms[current], angle };
+    wormLocked = true;
+    move = aimInput = 0;
+    charging = false;
+    chargeSource = null;
+    updateUI();
+    return;
+  }
   const w = worms[current],
     origin = shot(w, angle, "shotgun"),
     start = terrain.solid(origin.muzzle.x, origin.muzzle.y)
@@ -2897,6 +2911,29 @@ function step(dt) {
     mines.splice(i, 1);
     dispose(mine.mesh);
     explode(mine.x, mine.y, "mine", mine.owner);
+  }
+  if (pendingFire) {
+    const pending = pendingFire;
+    const w = pending.worm;
+    if (
+      phase !== "aim" ||
+      w !== worms[current] ||
+      w.hp <= 0 ||
+      w.knocked ||
+      w.frozen ||
+      w.hurt > 0.35
+    ) {
+      w.originalPreparation = null;
+      pendingFire = null;
+    } else {
+      const result = stepOriginalPreparation(w);
+      if (result?.sounds.includes(0x51)) sfx("shotgunreload");
+      if (result?.released) {
+        pendingFire = null;
+        angle = pending.angle;
+        fireShotgun(true);
+      }
+    }
   }
   if (phase === "aim") updateUI();
   if (projectile) {
@@ -3806,6 +3843,12 @@ window.siege = {
     random: matchRandom.snapshot(),
     logicStepMs: LOGIC_STEP_SECONDS * 1000,
     shotgunRemaining,
+    preparing: pendingFire
+      ? {
+          weapon: "shotgun",
+          delay: pendingFire.worm.originalPreparation?.delay,
+        }
+      : null,
     homingTarget,
     aim: lastAim,
     phase,
