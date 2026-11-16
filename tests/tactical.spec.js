@@ -61,6 +61,15 @@ test("homing selects a fixed world target through the current camera", async ({
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.homingTarget.x).toBeCloseTo(camera.x + camera.w * 0.6, -1);
   expect(state.homingTarget.y).toBeCloseTo(camera.y + camera.h * 0.6, -1);
+  const marker = page.locator('canvas[aria-label="Homing target"]');
+  await expect(marker).toBeVisible();
+  await expect(marker).toHaveAttribute("data-original-sprite", "markerg");
+  const markerBox = await marker.boundingBox();
+  expect(markerBox.width).toBe(60);
+  expect(markerBox.height).toBe(60);
+  await page.screenshot({
+    path: test.info().outputPath("original-target.png"),
+  });
   await page.locator("#fire").dispatchEvent("pointerdown", { pointerId: 1 });
   await page.waitForTimeout(500);
   await page.locator("#fire").dispatchEvent("pointerup", { pointerId: 1 });

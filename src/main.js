@@ -1,3 +1,4 @@
+import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
 import { stepOriginalSight } from "./armageddon/sight.js";
 import { updateOriginalCharge } from "./armageddon/charge-hud.js";
@@ -181,28 +182,10 @@ const camera = new THREE.OrthographicCamera(0, W, H, 0, 0.1, 2000);
 camera.position.z = 1000;
 const view = { ...FULL_VIEW };
 const targetMarker = document.createElement("canvas");
-targetMarker.width = targetMarker.height = 17;
+targetMarker.width = targetMarker.height = 60;
 targetMarker.setAttribute("aria-label", "Homing target");
 targetMarker.style.cssText =
-  "position:absolute;width:34px;height:34px;image-rendering:pixelated;pointer-events:none;z-index:8";
-const markerBrush = targetMarker.getContext("2d");
-markerBrush.fillStyle = "#342638";
-for (const [x, y, w, h] of [
-  [6, 0, 5, 6],
-  [6, 11, 5, 6],
-  [0, 6, 6, 5],
-  [11, 6, 6, 5],
-])
-  markerBrush.fillRect(x, y, w, h);
-markerBrush.fillStyle = "#ffe4af";
-for (const [x, y, w, h] of [
-  [8, 1, 1, 4],
-  [8, 12, 1, 4],
-  [1, 8, 4, 1],
-  [12, 8, 4, 1],
-  [8, 8, 1, 1],
-])
-  markerBrush.fillRect(x, y, w, h);
+  "position:absolute;width:60px;height:60px;image-rendering:pixelated;pointer-events:none;z-index:8";
 arena.appendChild(targetMarker);
 let overview = false;
 window.addEventListener("siege-overview", (event) => {
@@ -3657,13 +3640,13 @@ function frame(now) {
   targetMarker.style.display = targetMarker.hidden ? "none" : "block";
   if (!targetMarker.hidden) {
     const p = screen(markedTarget.x, markedTarget.y);
-    const scale = Math.max(
-      1,
-      Math.round(arena.clientWidth / renderer.domElement.width),
-    );
-    targetMarker.style.width = targetMarker.style.height = 17 * scale + "px";
-    targetMarker.style.left = (Math.round(p.x / scale) - 8) * scale + "px";
-    targetMarker.style.top = (Math.round(p.y / scale) - 8) * scale + "px";
+    const markerTeam =
+      projectile?.kind === "homing"
+        ? (worms[projectile.owner]?.team ?? team)
+        : team;
+    updateOriginalTarget(targetMarker, markerTeam, selectionTick);
+    targetMarker.style.left = `${Math.round(p.x) - 30}px`;
+    targetMarker.style.top = `${Math.round(p.y) - 30}px`;
   }
   updateAimHUD();
   updateHudPower(charging ? power : 0, weapon);
