@@ -1,3 +1,7 @@
+import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
+import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
+import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
+import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
 import { nativeMineTimer, nativeMineInitialTimer, nativeMineSprite, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
 import { playNativeMineSound } from "./armageddon/audio.js";
@@ -2320,18 +2324,26 @@ function placeMine() {
   }
   const w = worms[current],
     mesh = createOriginalObject("mineoff", 4) || createMine(mineMap);
-  mesh.position.set(w.x, w.y - 4, 18);
-  group.add(mesh);
-  mines.push({
-    x: w.x,
-    y: w.y - 4,
+  const release = nativeProjectileLaunchGeometry("mine", w, angle, 0, H, () => matchRandom.logicUint());
+  const mine = {
+    ...release,
     owner: current,
     team,
     arm: nativeMineInitialTimer().arm / 1000,
     nativeTimer: { ...nativeMineInitialTimer(), damage: NATIVE_MINE_DAMAGE, placed: 1, forceBlast: 0, dud: 0 },
     mesh,
     bob: visualRandom() * Math.PI * 2,
-  });
+  };
+  mine.nativeBody = nativeMineBody(nativeMineBase(NATIVE_MINE_FRICTION), {
+    x: Math.round(release.x * 65536), y: Math.round((H - release.y) * 65536),
+    vx: Math.round(release.vx / 50 * 65536), vy: Math.round(-release.vy / 50 * 65536),
+  }, mine.nativeTimer.arm, NATIVE_MINE_FRICTION, (x, y, body) =>
+    nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H));
+  mine.x = mine.nativeBody.x / 65536;
+  mine.y = H - mine.nativeBody.y / 65536;
+  mesh.position.set(mine.x, mine.y, 18);
+  group.add(mesh);
+  mines.push(mine);
   ammo[team].mine = spendAmmo(ammo[team].mine);
   if (ammo[team].mine === 0) setWeapon("rocket");
   charging = false;
@@ -2412,7 +2424,7 @@ function queueWormCamera(w) {
     active: w === worms[current] ? 1 : 0, state: nativeWormState(w),
     motion: [Math.round(w.vx / 50 * 65536), Math.round(-w.vy / 50 * 65536), 0, 0, 0],
   }, {
-    left: 0, right: W * 65536, top: -256 * 65536, bottom: H - waterLevel,
+    left: 0, right: W * 65536, top: -256 * 65536, bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
     sameTeam: w.team === team, override: false,
   });
   if (request) pendingWormCamera.push(request);
@@ -3935,6 +3947,28 @@ function step(dt) {
   }
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
     const mine = mines[i];
+    const collide = (x, y, body) => nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
+    mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
+      frame: matchRandom.frame, index: i, waterY: Math.floor(H - waterLevel),
+      gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
+    }, {
+      awake: nativeBodyAwake, collide,
+      bounce: (body, hit, side) => {
+        const other = hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : {type: 1, vx: 0, vy: 0};
+        if (other.worm) {
+          const response = nativeWormReceiver(other, body, side, {});
+          Object.assign(body, response.incoming);
+          Object.assign(other, response.receiver);
+          if (response.result) { applyNativeWormContact(worms[hit - 2], other); return; }
+        }
+        const response = nativeSimpleBounce(body, other, side, (x, y) => collide(x, y, body));
+        Object.assign(body, response.body);
+        if (hit >= 2) applyNativeWormContact(worms[hit - 2], {...other, ...response.other});
+      },
+    });
+    mine.x = mine.nativeBody.x / 65536;
+    mine.y = H - mine.nativeBody.y / 65536;
+    mine.mesh.position.set(mine.x, mine.y, 18);
     const proximity = (radius) => {
       const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
         x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
@@ -3945,18 +3979,28 @@ function step(dt) {
       }, radius, candidates) >= 0;
     };
     const result = nativeMineTimer(mine.nativeTimer, {
-      vx: 0, vy: 0, awake: 0, submerged: mine.y <= waterLevel ? 1 : 0,
-      frame: matchRandom.frame, friction: 66,
+      vx: mine.nativeBody.vx, vy: mine.nativeBody.vy, awake: nativeBodyAwake(mine.nativeBody), submerged: mine.nativeBody.submerged,
+      frame: matchRandom.frame, friction: NATIVE_MINE_FRICTION,
     }, proximity);
     mine.nativeTimer = result.body;
     mine.arm = result.body.arm / 1000;
+    for (const call of result.calls) {
+      if (call.operation === "friction") mine.nativeBody.tangent = call.request[0];
+      if (call.operation === "complex") mine.nativeBody.complex = call.request[0];
+    }
     if (sound) for (const call of result.calls) {
       if (call.operation !== "sound") continue;
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
       audio.resume();
       playNativeMineSound(audio, call.request);
     }
-    if (!result.expired) continue;
+    if (!result.expired) {
+      if ((mine.nativeBody.y >> 16) >= nativeProjectileDepth(Math.floor(H - waterLevel))) {
+        mines.splice(i, 1);
+        dispose(mine.mesh);
+      }
+      continue;
+    }
     const expiry = nativeMineExpiry(mine.nativeTimer, {
       x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), dudsEnabled: true,
     }, mineDudPool, {
@@ -4628,7 +4672,7 @@ function frame(now) {
       crate.mesh.userData.beacon.rotation.y = now * 0.002;
   }
   for (const mine of mines) {
-    updateOriginalObject(mine.mesh, nativeMineSprite(mine.nativeTimer), 0);
+    updateOriginalObject(mine.mesh, nativeMineSprite(mine.nativeTimer), 0, mine.nativeBody.angle);
     if (mine.mesh.userData.light)
       mine.mesh.userData.light.visible =
         mine.arm > 0 ? Math.floor(now / 160) % 2 === 0 : true;
@@ -5202,6 +5246,7 @@ window.siege = {
       y: Math.round(m.y),
       arm: Math.round(m.arm * 10) / 10,
       nativeTimer: { ...m.nativeTimer },
+      nativeBody: { ...m.nativeBody },
       sprite: m.mesh.userData.originalSprite,
       team: m.team,
     })),

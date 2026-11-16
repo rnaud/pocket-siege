@@ -941,6 +941,11 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   expect(state.mines[0].nativeTimer.placed).toBe(1);
   expect(state.mines[0].nativeTimer.arm).toBeGreaterThan(3500);
   await expect.poll(() => page.evaluate(() => window.siege.getState().mines[0]?.nativeTimer.triggered), { timeout: 7000 }).toBe(1);
+  const armed = await page.evaluate(() => window.siege.getState().mines[0]);
+  expect(armed.nativeBody.type).toBe(10);
+  expect(armed.nativeBody.shape).toBe(2);
+  expect(armed.nativeBody.complex).toBe(1);
+  expect(Math.abs(armed.x - state.mines[0].x) + Math.abs(armed.y - state.mines[0].y)).toBeGreaterThan(1);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().explosions), {
       timeout: 12000,

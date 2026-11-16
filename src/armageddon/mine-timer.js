@@ -27,7 +27,7 @@ export function nativeMineTimer(previous, environment, proximity) {
       operation: "friction",
       request: [Math.trunc((environment.friction << 16) / 100)],
     });
-    calls.push({ operation: "enabled", request: [1] });
+    calls.push({ operation: "complex", request: [1] });
     body.arm = 0;
   };
   const sound = (id) =>

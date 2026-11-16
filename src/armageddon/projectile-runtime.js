@@ -36,6 +36,7 @@ const kinds = new Set([
   "cluster",
   "holy",
   "dynamite",
+  "mine",
   "airstrike",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
@@ -90,6 +91,7 @@ export function nativeProjectileLaunchGeometry(kind, worm, angle, power, height,
     vx: vx / 65536 * 50, vy: -vy / 65536 * 50 };
 }
 export function attachNativeProjectile(p, height) {
+  if ((p.nativeWeaponKind ?? p.kind) === "mine") return false;
   const record = weaponRecord(p.nativeWeaponKind ?? p.kind);
   if (!record) return false;
   // Preserve release dispatch separately from per-projectile fuse audio.

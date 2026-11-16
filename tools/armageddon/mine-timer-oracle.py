@@ -33,7 +33,7 @@ def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 from unicorn.x86_const import UC_X86_REG_EDI
 context=0x3000000;cpu.mem_map(context,0x20000);write(owner+0x38,context)
 vtable=owner+0x1000
-hooks={0x4e9f00:('proximity',1),0x4edb40:('announce',0),0x4edc90:('sound',5),stop+0x100:('awake',0),stop+0x200:('submerged',0),stop+0x300:('friction',1),stop+0x400:('enabled',1)}
+hooks={0x4e9f00:('proximity',1),0x4edb40:('announce',0),0x4edc90:('sound',5),stop+0x100:('awake',0),stop+0x200:('submerged',0),stop+0x300:('friction',1),stop+0x400:('complex',1)}
 for offset,address in [(0xf4,stop+0x100),(0xf8,stop+0x200),(0x94,stop+0x300),(0x58,stop+0x400)]:write(vtable+offset,address)
 for address,(name,count) in hooks.items():cpu.mem_write(address,b'\xc2'+struct.pack('<H',count*4) if count else b'\xc3')
 calls=[];environment={};expired=False
@@ -66,5 +66,5 @@ for arm in [-1,0,1,20,21,4000]:
        if not expired and cpu.reg_read(UC_X86_REG_EIP)!=0x4ea499:raise RuntimeError('Mine block did not finish')
        after={name:signed(read(owner+offset)) for name,offset in fields.items()}
        cases.append(dict(before=before,environment=environment,after=after,calls=calls,expired=expired))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004EA0F4..004EA499 executes unchanged; expiry stops at004EA200 before dud/blast dispatch. Awake/submerged/proximity supplied, friction/enabled/audio interfaces captured.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004EA0F4..004EA499 executes unchanged; expiry stops at004EA200 before dud/blast dispatch. Awake/submerged/proximity supplied, friction/complex/audio interfaces captured.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} mine timer cases')
