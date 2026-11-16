@@ -1,6 +1,7 @@
 """Extract WA 3.0.0.0's native sprite IDs from its resource descriptor table.
 
-The loader at 004CBB50 passes table 00564A78. Each descriptor is
+The Gfx loader 004CBB50 passes table 00564A78; the water loader
+004CBB70 passes table 00566E78. Each descriptor is
 {uint32 id, char *filename, uint32 flags}; an all-zero record ends the table.
 No executable code is emitted or executed.
 """
@@ -13,6 +14,7 @@ import struct
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
+parser.add_argument('--bank', choices=['gfx', 'water'], default='gfx')
 args = parser.parse_args()
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -32,7 +34,7 @@ def offset(address):
     raise ValueError(f'Address outside file-backed PE sections: {address:08x}')
 
 sprites = {}
-address = 0x564a78
+address = 0x564a78 if args.bank == 'gfx' else 0x566e78
 while True:
     identity, pointer, flags = struct.unpack_from('<III', data, offset(address))
     if not (identity or pointer or flags): break
@@ -42,10 +44,11 @@ while True:
         raise ValueError(f'Unexpected descriptor at {address:08x}')
     sprites[identity] = {'name': name[:-4], 'flags': flags}
     address += 12
-if len(sprites) != 767:
+if len(sprites) != (767 if args.bank == 'gfx' else 74):
     raise ValueError(f'Unexpected descriptor count {len(sprites)}')
 args.output.parent.mkdir(parents=True, exist_ok=True)
 args.output.write_text(json.dumps({'executable_sha256': digest,
-    'table': '00564A78', 'loader': '004CBB50',
+    'table': '00564A78' if args.bank == 'gfx' else '00566E78',
+    'loader': '004CBB50' if args.bank == 'gfx' else '004CBB70',
     'sprites': dict(sorted(sprites.items()))}, indent=2)+'\n')
 print(f'Extracted {len(sprites)} native sprite IDs; terminator {address:08X}')

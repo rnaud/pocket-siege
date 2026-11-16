@@ -3168,7 +3168,16 @@ function step(dt) {
       if (!lastPoint || Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y) > 6)
         lastShot.points.push({ x: p.x, y: p.y });
     }
-    if (!updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age))
+    if (
+      !updateOriginalProjectile(
+        p.mesh,
+        p.kind,
+        p.vx,
+        p.vy,
+        p.age,
+        p.y < waterLevel,
+      )
+    )
       p.mesh.rotation.z =
         p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
     if (Math.floor(p.age * 60) !== Math.floor((p.age - dt) * 60)) {
@@ -4228,6 +4237,8 @@ window.siege = {
           target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,
+          sprite: projectile.mesh.userData.originalSprite,
+          frame: projectile.mesh.userData.originalFrame,
         }
       : null,
   }),

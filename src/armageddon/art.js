@@ -15,6 +15,7 @@ import weaponFields from "./weapon-art-fields.json";
 import { WEAPON_SLOTS } from "./delays.js";
 import { nativeFreezeAnimation } from "./freeze.js";
 import spriteIds from "./sprite-ids.json";
+import waterSpriteIds from "./water-sprite-ids.json";
 import * as THREE from "three";
 import { decodeSprite, spriteFrameRGBA } from "./sprite.js";
 
@@ -98,9 +99,14 @@ const names = [
 const animations = new Map();
 export async function loadOriginalArt() {
   await Promise.all(
-    names.map(async (name) => {
+    [
+      ...names,
+      ...Object.values(waterSpriteIds.sprites).map(
+        ({ name }) => `water/${name}`,
+      ),
+    ].map(async (name) => {
       const response = await fetch(
-        `${import.meta.env.BASE_URL}armageddon/sprites/${name}.spr`,
+        `${import.meta.env.BASE_URL}armageddon/${name.startsWith("water/") ? `media/water/blue/water/${name.slice(6)}` : `sprites/${name}`}.spr`,
       );
       if (!response.ok) throw new Error(`Cannot load ${name}`);
       const sprite = decodeSprite(await response.arrayBuffer());
@@ -227,14 +233,56 @@ export function createOriginalVisual(name) {
   return mesh;
 }
 
-export function updateOriginalProjectile(mesh, kind, vx, vy, age) {
-  const name = projectileSprites[kind];
-  if (!name || mesh.userData.originalSprite !== name) return false;
-  const directed = ["rocket", "mortar", "homing"].includes(kind);
-  // The shipped 32-direction strips start pointing up and turn clockwise.
-  const turn = directed ? Math.atan2(vx, vy) / (Math.PI * 2) : age * 0.8;
-  const index = ((Math.round(turn * 32) % 32) + 32) % 32;
+export function updateOriginalProjectile(
+  mesh,
+  kind,
+  vx,
+  vy,
+  age,
+  submerged = false,
+) {
+  const base = projectileSprites[kind];
+  if (!base || ![base, `water/${base}`].includes(mesh.userData.originalSprite))
+    return false;
+  const name = submerged ? `water/${base}` : base;
+  const animation = animations.get(name);
+  if (!animation) return false;
+  let index;
+  if (submerged) {
+    // The water bank has its own frame counts/rates: most sinking objects
+    // are one-frame poses, while the homing missile has a timed strip.
+    let playback = mesh.userData.waterPlayback;
+    const tick = Math.max(0, Math.round(age * 50));
+    if (
+      !playback ||
+      mesh.userData.originalSprite !== name ||
+      tick < playback.tick
+    ) {
+      const player = new NativeAnimationPlayer();
+      const id = +Object.keys(waterSpriteIds.sprites).find(
+        (id) => waterSpriteIds.sprites[id].name === base,
+      );
+      player.enqueue(id, animation.metadata);
+      playback = mesh.userData.waterPlayback = { player, tick };
+    }
+    while (playback.tick < tick) {
+      playback.player.advance();
+      playback.tick++;
+    }
+    index = nativeSpriteFrame(
+      animation.sprite.frames.length,
+      animation.sprite.metadata[2],
+      playback.player.current.progress,
+    );
+  } else {
+    const directed = ["rocket", "mortar", "homing"].includes(kind);
+    // The shipped 32-direction strips start pointing up and turn clockwise.
+    const turn = directed ? Math.atan2(vx, vy) / (Math.PI * 2) : age * 0.8;
+    index = ((Math.round(turn * 32) % 32) + 32) % 32;
+    mesh.userData.waterPlayback = null;
+  }
   mesh.material.map = texture(name, index);
+  mesh.userData.originalSprite = name;
   mesh.userData.originalFrame = index;
   mesh.rotation.z = 0;
   return true;

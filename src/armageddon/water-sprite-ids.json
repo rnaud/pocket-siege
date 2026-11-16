@@ -1,0 +1,303 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "table": "00566E78",
+  "loader": "004CBB70",
+  "sprites": {
+    "11": {
+      "name": "wdrown",
+      "flags": 0
+    },
+    "12": {
+      "name": "wfdrown",
+      "flags": 0
+    },
+    "588": {
+      "name": "wswim",
+      "flags": 0
+    },
+    "589": {
+      "name": "wfloat",
+      "flags": 0
+    },
+    "590": {
+      "name": "wstd2flt",
+      "flags": 0
+    },
+    "591": {
+      "name": "wflt2std",
+      "flags": 0
+    },
+    "592": {
+      "name": "wflt2drn",
+      "flags": 0
+    },
+    "687": {
+      "name": "oildrum",
+      "flags": 0
+    },
+    "688": {
+      "name": "grave1",
+      "flags": 0
+    },
+    "689": {
+      "name": "grave2",
+      "flags": 0
+    },
+    "690": {
+      "name": "grave3",
+      "flags": 0
+    },
+    "691": {
+      "name": "grave4",
+      "flags": 0
+    },
+    "692": {
+      "name": "grave5",
+      "flags": 0
+    },
+    "693": {
+      "name": "grave6",
+      "flags": 0
+    },
+    "694": {
+      "name": "donor",
+      "flags": 0
+    },
+    "695": {
+      "name": "targets",
+      "flags": 0
+    },
+    "696": {
+      "name": "targetw",
+      "flags": 0
+    },
+    "697": {
+      "name": "wcrate1",
+      "flags": 0
+    },
+    "698": {
+      "name": "mcrate1",
+      "flags": 0
+    },
+    "699": {
+      "name": "ucrate1",
+      "flags": 0
+    },
+    "700": {
+      "name": "cowwalk",
+      "flags": 0
+    },
+    "701": {
+      "name": "sally",
+      "flags": 0
+    },
+    "702": {
+      "name": "mole",
+      "flags": 0
+    },
+    "703": {
+      "name": "woman",
+      "flags": 0
+    },
+    "704": {
+      "name": "skunk",
+      "flags": 0
+    },
+    "705": {
+      "name": "sheep",
+      "flags": 0
+    },
+    "706": {
+      "name": "clone",
+      "flags": 0
+    },
+    "707": {
+      "name": "pigeonr0",
+      "flags": 0
+    },
+    "708": {
+      "name": "pigeonr1",
+      "flags": 0
+    },
+    "709": {
+      "name": "pigeonr2",
+      "flags": 0
+    },
+    "710": {
+      "name": "pigeonr3",
+      "flags": 0
+    },
+    "711": {
+      "name": "arrow",
+      "flags": 0
+    },
+    "712": {
+      "name": "mineon",
+      "flags": 0
+    },
+    "713": {
+      "name": "mineoff",
+      "flags": 0
+    },
+    "714": {
+      "name": "missile",
+      "flags": 0
+    },
+    "715": {
+      "name": "meteor",
+      "flags": 0
+    },
+    "716": {
+      "name": "drill",
+      "flags": 0
+    },
+    "717": {
+      "name": "bullet",
+      "flags": 0
+    },
+    "718": {
+      "name": "donkey",
+      "flags": 0
+    },
+    "719": {
+      "name": "hmissil1",
+      "flags": 0
+    },
+    "720": {
+      "name": "hmissil2",
+      "flags": 0
+    },
+    "721": {
+      "name": "airmisl",
+      "flags": 0
+    },
+    "722": {
+      "name": "hairmsl",
+      "flags": 0
+    },
+    "723": {
+      "name": "letter1",
+      "flags": 0
+    },
+    "724": {
+      "name": "letter2",
+      "flags": 0
+    },
+    "725": {
+      "name": "grenade",
+      "flags": 0
+    },
+    "726": {
+      "name": "hgrenade",
+      "flags": 0
+    },
+    "727": {
+      "name": "bible",
+      "flags": 0
+    },
+    "728": {
+      "name": "tamborin",
+      "flags": 0
+    },
+    "729": {
+      "name": "mortar",
+      "flags": 0
+    },
+    "730": {
+      "name": "cluster",
+      "flags": 0
+    },
+    "731": {
+      "name": "clustlet",
+      "flags": 0
+    },
+    "732": {
+      "name": "hcluster",
+      "flags": 0
+    },
+    "733": {
+      "name": "hclustlt",
+      "flags": 0
+    },
+    "734": {
+      "name": "banana",
+      "flags": 0
+    },
+    "735": {
+      "name": "sbanana",
+      "flags": 0
+    },
+    "736": {
+      "name": "petrolbm",
+      "flags": 0
+    },
+    "737": {
+      "name": "dynamite",
+      "flags": 0
+    },
+    "738": {
+      "name": "can",
+      "flags": 0
+    },
+    "739": {
+      "name": "vase",
+      "flags": 0
+    },
+    "740": {
+      "name": "vasebit1",
+      "flags": 0
+    },
+    "741": {
+      "name": "vasebit2",
+      "flags": 0
+    },
+    "742": {
+      "name": "vasebit3",
+      "flags": 0
+    },
+    "743": {
+      "name": "mbbomb",
+      "flags": 0
+    },
+    "744": {
+      "name": "carpet1",
+      "flags": 0
+    },
+    "745": {
+      "name": "carpet2",
+      "flags": 0
+    },
+    "746": {
+      "name": "sheepfal",
+      "flags": 0
+    },
+    "747": {
+      "name": "sheepbrn",
+      "flags": 0
+    },
+    "748": {
+      "name": "aquashp1",
+      "flags": 0
+    },
+    "749": {
+      "name": "aquashp2",
+      "flags": 0
+    },
+    "832": {
+      "name": "bubble1",
+      "flags": 0
+    },
+    "833": {
+      "name": "bubble2",
+      "flags": 0
+    },
+    "834": {
+      "name": "bubble3",
+      "flags": 0
+    },
+    "835": {
+      "name": "bubble4",
+      "flags": 0
+    }
+  }
+}
