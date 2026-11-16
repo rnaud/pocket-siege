@@ -4,6 +4,7 @@ import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileFragments } from "./projectile-fragments.js";
 import { nativeProjectilePlacement } from "./projectile-placement.js";
 import { nativeWormState } from "./worm-collision-type.js";
+import { nativeAirstrikeInitial, nativeAirstrikeTick } from "./airstrike.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
@@ -35,6 +36,7 @@ const kinds = new Set([
   "cluster",
   "holy",
   "dynamite",
+  "airstrike",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
 // presets remain modifiers around this baseline until scheme UI is ported.
@@ -97,7 +99,7 @@ export function attachNativeProjectile(p, height) {
   });
   const block = Array.from(
     { length: 94 },
-    (_, i) => record["0x" + (0x74 + i * 4).toString(16)],
+    (_, i) => record["0x" + ((p.nativeBlockOffset ?? 0x74) + i * 4).toString(16)],
   );
   const payload = {
     owner: p.owner ?? 0,
@@ -218,6 +220,32 @@ export function nativeProjectileChildren(p, height, random, construct = () => {}
     construct(child);
   });
   return children;
+}
+
+export function createNativeAirstrike(x, y, direction, owner, height, gravityScale = 1) {
+  const record = weaponRecord("airstrike");
+  const config = {
+    count: record["0x74"], spacing: record["0x78"], speed: record["0x7c"],
+    kind: record["0x84"], airborne: record["0xc8"], direction: direction << 16,
+    targetX: fixed(x), targetY: fixed(height - y),
+  };
+  return { config, body: nativeAirstrikeInitial(config, Math.round(0x3d70 * gravityScale)),
+    owner, sprite: record["0x70"], sound: record["0x80"],
+    payload: [owner,0,0,0,direction << 16,0,config.targetX,config.targetY,0,0,0] };
+}
+
+export function stepNativeAirstrike(strike, height) {
+  const result = nativeAirstrikeTick(strike.body, strike.config, strike.payload);
+  strike.body = result.body;
+  const missiles = result.calls.filter(c => c.operation === "missile").map(({payload}) => {
+    const p = { kind: "bomblet", nativeWeaponKind: "airstrike", nativeBlockOffset: 0x88,
+      x: payload[2] / 65536, y: height - payload[3] / 65536,
+      vx: payload[4] / 65536 * 50, vy: -payload[5] / 65536 * 50,
+      owner: strike.owner, fuse: 0, bounce: 0, age: 0 };
+    attachNativeProjectile(p,height);
+    return p;
+  });
+  return { missiles, calls: result.calls, removed: result.calls.some(c => c.operation === "delete") };
 }
 
 // Owner age is irrelevant to the original manager: every body overlapping the

@@ -81,6 +81,8 @@ import {
 } from "./armageddon/terrain-decoration.js";
 import {
   nativeProjectileLaunchGeometry,
+  createNativeAirstrike,
+  stepNativeAirstrike,
   nativeProjectileCollision,
   attachNativeProjectile,
   stepNativeProjectile,
@@ -141,7 +143,7 @@ import {
 } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
-import { fragments, airstrikePattern } from "./weapon-behavior.js";
+import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
 import { landscape } from "./island-art.js";
@@ -335,6 +337,7 @@ let format = "single",
   girders = [],
   graves = [],
   bombs = [],
+  airstrikes = [],
   fires = [],
   hazards = [],
   slowMo = 0,
@@ -859,6 +862,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   graves = [];
   for (const b of bombs) { b.nativeFusePlayback?.stop(); dispose(b.mesh); }
   bombs = [];
+  for (const strike of airstrikes) if(strike.mesh) dispose(strike.mesh);
+  airstrikes = [];
   for (const f of fires) dispose(f.mesh);
   fires = [];
   for (const h of hazards) dispose(h.mesh);
@@ -1601,7 +1606,7 @@ function handleUtilityTarget(e) {
       return;
     }
     ammo[team].airstrike = spendAmmo(ammo[team].airstrike);
-    spawnAirstrike(x);
+    spawnAirstrike(x, y);
     finishUtilityTurn("Air strike called. Bombs away!");
     return;
   }
@@ -2382,25 +2387,43 @@ function spawnBomb({
     age: 0,
   });
 }
-function spawnAirstrike(x) {
+function spawnAirstrike(x, y) {
   const direction = Number($("#strike-direction").value);
-  for (const bomb of airstrikePattern(
-    x,
-    terrain.surface(x),
-    direction,
-    H,
-    GRAVITY * gravityScale,
-  )) {
-    spawnBomb({
-      ...bomb,
-      fuse: 5,
-      owner: current,
-      kind: "bomblet",
-      sprite: "airmisl",
-    });
+  const strike = createNativeAirstrike(x,y,direction,current,H,gravityScale);
+  strike.mesh = createOriginalVisual("airjetg");
+  if (strike.mesh) {
+    strike.mesh.position.set(strike.body.x / 65536,H - strike.body.y / 65536,45);
+    strike.mesh.scale.x = Math.abs(strike.mesh.scale.x) * (direction > 0 ? -1 : 1);
+    group.add(strike.mesh);
   }
+  airstrikes.push(strike);
   sfx("airstrike");
 }
+function stepAirstrikes() {
+  for (let i=airstrikes.length-1; i>=0; i--) {
+    const strike=airstrikes[i], result=stepNativeAirstrike(strike,H);
+    for (const missile of result.missiles) {
+      if (nativeProjectilePlacementHit(missile,terrain,worms,H)) {
+        const packet=nativeProjectileDetonationEvents(missile,()=>matchRandom.logicUint())
+          .find(event=>event.operation==="blast")?.request;
+        if(packet) explode(missile.x,missile.y,missile.kind,missile.owner,packet);
+        continue;
+      }
+      missile.mesh=createOriginalVisual("airmisl") || createProjectile("grenade");
+      missile.mesh.position.set(missile.x,missile.y,40);
+      group.add(missile.mesh); bombs.push(missile);
+    }
+    if(strike.mesh) {
+      strike.mesh.position.set(strike.body.x/65536,H-strike.body.y/65536,45);
+      updateOriginalObject(strike.mesh,"airjetg",0,strike.body.progress);
+    }
+    if(result.removed) {
+      if(strike.mesh) dispose(strike.mesh);
+      airstrikes.splice(i,1);
+    }
+  }
+}
+
 function placeDynamite() {
   if (!canAct() || (availableAmmo(ammo[team], "dynamite") ?? 0) <= 0) return;
   const w = worms[current];
@@ -4058,6 +4081,7 @@ function step(dt) {
       updateUI();
     }
   }
+  stepAirstrikes();
   stepBombs(dt);
   stepFires(dt);
   if (crate) crate.artAge = (crate.artAge || 0) + dt;
@@ -4081,6 +4105,7 @@ function step(dt) {
     const settled =
       !projectile &&
       bombs.length === 0 &&
+      airstrikes.length === 0 &&
       retreat <= 0 &&
       worms.every(
         (w) =>
@@ -5054,6 +5079,7 @@ window.siege = {
           age: Math.round(projectile.age * 10) / 10,
         }
       : null,
+    airstrikes: airstrikes.map(s => ({ x:s.body.x/65536, y:H-s.body.y/65536, remaining:s.body.count, sprite:s.mesh?.userData.originalSprite })),
     bombs: bombs.map((b) => ({
       x: Math.round(b.x),
       y: Math.round(b.y),

@@ -100,6 +100,7 @@ const names = [
     "flame1",
     "dynamite",
     "airmisl",
+    "airjetg",
     "clustlet",
     "petrolbm",
     ...Object.values(weaponSprites)

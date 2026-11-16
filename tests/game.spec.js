@@ -1272,7 +1272,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   );
   const box = await page.locator("#arena").boundingBox();
   await page.mouse.click(box.x + box.width * 0.65, box.y + box.height * 0.4);
-  await page.waitForTimeout(250);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().bombs.length)).toBe(5);
   state = await page.evaluate(() => window.siege.getState());
   expect(state.ammo[0].airstrike).toBe(0);
   expect(state.bombs.length).toBe(5);
