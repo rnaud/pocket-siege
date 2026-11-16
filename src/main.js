@@ -1,3 +1,4 @@
+import { originalMapSpawns } from "./armageddon/map-placement.js";
 import {
   originalMapCatalog,
   loadOriginalMap,
@@ -463,7 +464,7 @@ function prewarmShaders() {
     projectilePrototypes[kind].visible = false;
   debrisPrototype.visible = false;
 }
-function createWorm(t, i, x) {
+function createWorm(t, i, x, spawnY = null) {
   const g = new THREE.Group();
   const body = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
@@ -514,6 +515,7 @@ function createWorm(t, i, x) {
   $("#labels").appendChild(label);
   group.add(g);
   const y =
+    spawnY ??
     Math.max(...[-16, -8, 0, 8, 16].map((dx) => terrain.surface(x + dx))) + 12;
   return {
     team: t,
@@ -823,28 +825,17 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   paintTerrain(ctx, terrain, texture);
   updateOriginalBackdrop();
   terrainDirty = false;
-  const spawnX = (fraction) => {
-    if (!authored) return fraction;
-    const target = Math.round((fraction / 1200) * W);
-    // Host placement adapter: find exposed land above water near each team slot.
-    for (let distance = 0; distance < W; distance += 4) {
-      for (const x of [target - distance, target + distance]) {
-        if (x < 24 || x > W - 24) continue;
-        const top = terrain.surface(x);
-        if (
-          top > waterLevel + 24 &&
-          top < H - 50 &&
-          [-12, 12].every((dx) => Math.abs(terrain.surface(x + dx) - top) < 18)
-        )
-          return x;
-      }
-    }
-    return target;
-  };
-  worms = [
-    ...names[0].map((_, i) => createWorm(0, i, spawnX([180, 340, 490][i]))),
-    ...names[1].map((_, i) => createWorm(1, i, spawnX([710, 860, 1020][i]))),
-  ];
+  const slots = [180, 340, 490, 710, 860, 1020];
+  const spawns = authored
+    ? originalMapSpawns(
+        terrain,
+        waterLevel,
+        slots.map((x) => x / 1200),
+      )
+    : slots.map((x) => ({ x, y: null }));
+  worms = spawns.map((p, index) =>
+    createWorm(index < 3 ? 0 : 1, index % 3, p.x, p.y),
+  );
   for (let i = 0; i < 240; i++)
     for (const w of worms) stepWorm(w, terrain, 1 / 120, gravityScale);
   for (const w of worms) w.g.position.set(w.x, w.y, 15);

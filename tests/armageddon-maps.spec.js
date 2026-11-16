@@ -91,3 +91,39 @@ test("authored map is playable at full size and switching back restores the host
     height: 650,
   });
 });
+
+test("all authored maps support six separated, grounded worm spawns including caves", async () => {
+  const { originalMapSpawns } =
+    await import("../src/armageddon/map-placement.js");
+  const { stepWorm, bodyBlocked } = await import("../src/physics.js");
+  for (const asset of maps) {
+    const terrain = new OriginalMapTerrain(read(asset), asset.id);
+    const positions = originalMapSpawns(
+      terrain,
+      80,
+      [180, 340, 490, 710, 860, 1020].map((x) => x / 1200),
+    );
+    expect(positions, asset.id).toHaveLength(6);
+    const worms = positions.map((p) => ({
+      ...p,
+      vx: 0,
+      vy: 0,
+      hp: 100,
+      ground: true,
+    }));
+    for (let tick = 0; tick < 240; tick++)
+      for (const worm of worms) stepWorm(worm, terrain, 1 / 120);
+    for (const [i, worm] of worms.entries()) {
+      expect(worm.y, asset.id).toBeGreaterThan(104);
+      expect(worm.y, asset.id).toBeLessThanOrEqual(646);
+      expect(worm.ground, asset.id).toBe(true);
+      expect(bodyBlocked(terrain, worm.x, worm.y), asset.id).toBe(false);
+      expect(Math.abs(worm.y - positions[i].y), asset.id).toBeLessThan(1);
+      for (const other of worms.slice(0, i))
+        expect(
+          Math.abs(worm.x - other.x) >= 40 || Math.abs(worm.y - other.y) >= 60,
+          asset.id,
+        ).toBe(true);
+    }
+  }
+});
