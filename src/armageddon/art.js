@@ -306,8 +306,9 @@ export function updateOriginalProjectile(
   age,
   submerged = false,
   guidanceActive = true,
+  nativeRender = null,
 ) {
-  const base = kind === "homing" && !guidanceActive ? "hmissil2" : projectileSprites[kind];
+  const base = nativeRender ? spriteIds.sprites[nativeRender.sprite]?.name : kind === "homing" && !guidanceActive ? "hmissil2" : projectileSprites[kind];
   const allowed = kind === "homing" ? ["hmissil1", "hmissil2", "water/hmissil1", "water/hmissil2"] : [base, `water/${base}`];
   if (!base || !allowed.includes(mesh.userData.originalSprite))
     return false;
@@ -315,7 +316,12 @@ export function updateOriginalProjectile(
   const animation = animations.get(name);
   if (!animation) return false;
   let index;
-  if (submerged) {
+  if (nativeRender) {
+    // Original render queue uses zero progress for submerged projectiles.
+    index = nativeSpriteFrame(animation.sprite.frames.length,
+      animation.sprite.metadata[2], submerged ? 0 : nativeRender.progress);
+    mesh.userData.waterPlayback = null;
+  } else if (submerged) {
     // The water bank has its own frame counts/rates: most sinking objects
     // are one-frame poses, while the homing missile has a timed strip.
     let playback = mesh.userData.waterPlayback;

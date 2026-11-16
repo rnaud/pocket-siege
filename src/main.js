@@ -3930,6 +3930,7 @@ function step(dt) {
         p.age,
         p.y < waterLevel,
         Boolean(p.nativeGuidance?.initialized),
+        p.nativeRender,
       )
     )
       p.mesh.rotation.z =

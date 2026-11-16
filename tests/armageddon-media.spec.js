@@ -222,3 +222,25 @@ test("homing switches between native launch and active-guidance sprites", async 
   });
   expect(result).toEqual([[true,"hmissil2"],[true,"hmissil1"],[true,"hmissil2"]]);
 });
+
+test("native projectile render progress overrides host velocity and wall time", async ({ page }) => {
+  await page.goto("/");
+  const frames = await page.evaluate(async () => {
+    const art = await import("/src/armageddon/art.js");
+    await art.loadOriginalArt();
+    const mesh = art.createOriginalVisual("grenade");
+    const frames = [];
+    for (const age of [0, 0.5, 30]) {
+      art.updateOriginalProjectile(mesh, "grenade", 0, 0, age, false, false,
+        { sprite: 653, progress: 16384, facing: 1 });
+      frames.push(mesh.userData.originalFrame);
+    }
+    art.updateOriginalProjectile(mesh, "grenade", 500, -500, 31, true, false,
+      { sprite: 653, progress: 49152, facing: 1 });
+    const water = [mesh.userData.originalSprite, mesh.userData.originalFrame];
+    mesh.geometry.dispose(); mesh.material.dispose();
+    return { frames, water };
+  });
+  expect(frames.frames).toEqual([8,8,8]);
+  expect(frames.water).toEqual(["water/grenade",0]);
+});

@@ -193,3 +193,11 @@ test("homing activates after 500ms and integrates native guidance for 3500ms", (
   const last = stepNativeProjectile(p, { ...environment, waterLevel: -10000, frame: 201 }, () => 0);
   expect(last.events.some(e => e.guidance && e.operation === "steer")).toBe(false);
 });
+
+test("native grenade visual progress follows body rotation instead of host age", () => {
+  const p = projectile("grenade", { age: 50, vx: 200, vy: 0 });
+  stepNativeProjectile(p, environment, () => 0);
+  expect(p.nativeRender.sprite).toBe(653);
+  expect(p.nativeRender.progress).toBe(p.nativeBody.angle);
+  expect(p.nativeRender.progress).not.toBe(0);
+});

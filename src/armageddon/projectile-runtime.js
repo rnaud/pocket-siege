@@ -1,3 +1,4 @@
+import { nativeProjectileArt } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
 import { nativeProjectileTimer } from "./projectile-timer.js";
 import { nativeProjectileContact } from "./projectile-contact.js";
@@ -118,7 +119,24 @@ export function attachNativeProjectile(p, height) {
     targetX: fixed(p.target?.x ?? p.x),
     targetY: fixed(height - (p.target?.y ?? p.y)),
   };
+  p.nativeArt = {
+    primary: { sprite: words[6], mode: words[7] },
+    secondary: { sprite: words[25], mode: words[26] },
+    total: words[17], progress: 0,
+  };
+  updateNativeProjectileArt(p);
   return true;
+}
+
+function updateNativeProjectileArt(p) {
+  const selected = p.nativeGuidance?.initialized ? p.nativeArt.secondary : p.nativeArt.primary;
+  p.nativeRender = nativeProjectileArt({ ...selected,
+    remaining: p.nativeTimer.remaining, total: p.nativeArt.total,
+    progress: p.nativeArt.progress, angle: p.nativeBody.angle,
+    vx: p.nativeBody.vx, vy: p.nativeBody.vy, facing: p.nativeBody.facing,
+    override: 0,
+  });
+  p.nativeArt.progress = p.nativeRender.progress;
 }
 
 // Owner age is irrelevant to the original manager: every body overlapping the
@@ -228,6 +246,7 @@ export function stepNativeProjectile(
       events.push(...guidance.calls.map(call => ({ ...call, guidance: true })));
     }
   }
+  updateNativeProjectileArt(p);
   p.x = p.nativeBody.x / 65536;
   p.y = height - p.nativeBody.y / 65536;
   p.vx = (p.nativeBody.vx / 65536) * 50;
