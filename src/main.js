@@ -5,6 +5,7 @@ import { nativeMineContact } from "./armageddon/mine-contact.js";
 import { nativeMineArt } from "./armageddon/mine-art.js";
 import { nativeMineWater } from "./armageddon/mine-water.js";
 import { nativeMineStateEvents } from "./armageddon/mine-state.js";
+import { nativeMineHit, nativeMineHitBodies } from "./armageddon/mine-hit.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
@@ -2560,7 +2561,7 @@ function fireShotgun(prepared = false) {
     nativeShotgunRay.spread,
     () => matchRandom.logicUint(),
   )[0];
-  const targets = nativeWormHitscanBodies(worms, w, H);
+  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a, b) => a.type - b.type);
   const bodyHit = nativeHitscanBody(
     targets,
     ray[2] >> 16,
@@ -2598,6 +2599,11 @@ function fireShotgun(prepared = false) {
     // 004F7DA0 selects every nearby body, including self, and emits 0x433.
     for (const dispatch of nativeAreaDamage(targets, resolution.area)) {
       if (!dispatch.packet) continue;
+      const mine = targets[dispatch.body].mine;
+      if (mine) {
+        mine.nativeBody = nativeMineHit(mine.nativeBody, dispatch.packet);
+        continue;
+      }
       const victim = targets[dispatch.body].worm;
       const [, , , vx, vy] = dispatch.packet;
       const response = nativeDirectHitResponse(
