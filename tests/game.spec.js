@@ -487,7 +487,17 @@ test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", a
   await page.waitForTimeout(600);
   await page.keyboard.up("ArrowRight");
   expect(await page.evaluate(() => window.fireFlickers)).toBe(0);
-  await page.waitForTimeout(300);
+  // Original terrain objects can create a drop after walking. Charging is
+  // intentionally grounded-only; wait for landing instead of a fixed delay.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.siege.getState();
+        const worm = state.worms[state.current];
+        return worm.ground && !worm.knocked;
+      }),
+    )
+    .toBe(true);
   await page.keyboard.down("Space");
   await expect(page.locator(".reticle-charge")).toBeVisible();
   await expect

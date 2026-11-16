@@ -1,4 +1,8 @@
 import {
+  loadOriginalDecorations,
+  placeOriginalDecorations,
+} from "./armageddon/terrain-decoration.js";
+import {
   nativeProjectileLaunch,
   attachNativeProjectile,
   stepNativeProjectile,
@@ -313,7 +317,18 @@ let lastShot = null,
   lastResult = null;
 let assetsReady = false;
 let originalArtError = null;
-Promise.all([loadOriginalArt(), loadOriginalTerrain(), loadOriginalWater()])
+const originalAssets = Promise.all([
+  loadOriginalArt(),
+  loadOriginalTerrain(),
+  loadOriginalWater(),
+]);
+originalAssets
+  .then(() =>
+    Promise.all([
+      loadOriginalDecorations($("#terrain-theme").value),
+      loadOriginalDecorations("forest"),
+    ]),
+  )
   .then(() => {
     assetsReady = true;
     terrainDirty = true;
@@ -748,6 +763,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   matchRandom.reset(matchSeed);
   terrain = new Terrain(matchSeed, isDaily ? "fern" : $("#map-layout").value);
   terrain.theme = isDaily ? "forest" : $("#terrain-theme").value;
+  placeOriginalDecorations(terrain, W, H);
   $(".location span").textContent = {
     fern: "FERN ISLAND",
     highlands: "HIGHLANDS",
@@ -3960,6 +3976,25 @@ $("#weapon-delay").addEventListener("change", () => {
   saveSettings();
 });
 applySettings();
+let decorationLoadVersion = 0;
+async function prepareDecorations() {
+  const version = ++decorationLoadVersion;
+  $("#start").disabled = $("#daily").disabled = true;
+  try {
+    await originalAssets;
+    await Promise.all([
+      loadOriginalDecorations($("#terrain-theme").value),
+      loadOriginalDecorations("forest"),
+    ]);
+    if (version !== decorationLoadVersion) return;
+    $("#start").disabled = $("#daily").disabled = false;
+  } catch (error) {
+    originalArtError = error.message;
+    console.error("Terrain decoration loading failed", error);
+  }
+}
+$("#terrain-theme").addEventListener("change", prepareDecorations);
+prepareDecorations();
 syncMenuOptions();
 updateRecordUI();
 reset();
@@ -3984,6 +4019,7 @@ window.siege = {
     originalArtError,
     mapLayout: terrain.layout,
     terrainTheme: terrain.theme,
+    terrainDecorations: terrain.decorations || [],
     backdropTheme: backdrop.userData.originalTheme,
     mapSeed: terrain.seed,
     random: matchRandom.snapshot(),

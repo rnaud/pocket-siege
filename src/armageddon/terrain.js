@@ -62,6 +62,14 @@ export function paintOriginalTerrain(ctx, terrain) {
     const worldY = height - 1 - y;
     for (let x = 0; x < width; x++) {
       if (terrain.data[worldY * width + x] !== 1) continue;
+      const offset = (y * width + x) * 4;
+      if (terrain.decorationPixels?.[offset + 3]) {
+        output.data.set(
+          terrain.decorationPixels.subarray(offset, offset + 4),
+          offset,
+        );
+        continue;
+      }
       const depth = terrain.artSurface[x] - 1 - worldY;
       const useGrass =
         depth >= 0 &&
