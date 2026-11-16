@@ -1,3 +1,4 @@
+import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
 import { stepOriginalSight } from "./armageddon/sight.js";
 import { updateOriginalCharge } from "./armageddon/charge-hud.js";
 import { updateOriginalCrosshair } from "./armageddon/crosshair-hud.js";
@@ -605,29 +606,21 @@ function updateAimHUD() {
       worms[current].originalSight,
     );
     const geometry = shot(worms[current]);
-    const origin = screen(geometry.pivot.x, geometry.pivot.y);
-    const r = (angle * Math.PI) / 180,
-      dx = (Math.cos(r) * arena.clientWidth) / view.w,
-      dy = (-Math.sin(r) * arena.clientHeight) / view.h;
-    const length = Math.hypot(dx, dy),
-      reach =
-        Math.min(100, arena.clientWidth * 0.23) *
-        ((worms[current].originalSight?.opening ?? 0) / 65536);
-    const ux = dx / length,
-      uy = dy / length;
-    const distance = Math.max(
-      0,
-      Math.min(
-        reach,
-        Math.abs(ux) < 0.0001
-          ? Infinity
-          : ((ux > 0 ? arena.clientWidth - 24 : 24) - origin.x) / ux,
-        Math.abs(uy) < 0.0001
-          ? Infinity
-          : ((uy > 0 ? arena.clientHeight - 45 : 45) - origin.y) / uy,
-      ),
+    const worm = worms[current];
+    const sight = worm.originalSight;
+    const nativeGeometry = nativeSightGeometry(
+      Math.round(worm.x * 65536),
+      Math.round((H - worm.y) * 65536),
+      sight?.aim ?? 0x8000,
+      Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1,
+      sight?.opening ?? 0,
     );
-    const target = { x: origin.x + ux * distance, y: origin.y + uy * distance };
+    const projectSight = (x, y) => screen(x >> 16, H - (y >> 16));
+    const origin = projectSight(nativeGeometry.x, nativeGeometry.y);
+    const target = projectSight(
+      (nativeGeometry.x + nativeGeometry.dx) | 0,
+      (nativeGeometry.y + nativeGeometry.dy) | 0,
+    );
     updateOriginalCharge(
       aimHUD.chargeSprites,
       charging ? chargeFixed : 0,
@@ -635,6 +628,7 @@ function updateAimHUD() {
       target,
       arena.clientWidth,
       arena.clientHeight,
+      { geometry: nativeGeometry, project: projectSight },
     );
     aimHUD.reticle.setAttribute(
       "transform",
@@ -646,7 +640,12 @@ function updateAimHUD() {
     if (aimHUD.text.textContent !== aimText) aimHUD.text.textContent = aimText;
     aimHUD.charge.style.display = charging ? "" : "none";
     aimHUD.charge.setAttribute("stroke-dasharray", `${power} 100`);
-    lastAim = { ...geometry, reticle: target, angle };
+    lastAim = {
+      ...geometry,
+      reticle: target,
+      angle,
+      nativeSight: nativeGeometry,
+    };
   }
   aimHUD.tag.hidden = !projectile;
   if (projectile) {

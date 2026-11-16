@@ -1,8 +1,8 @@
 import { nativeChargeBlobs } from "./charge-art.js";
 import { nativeSpriteFrame } from "./animation.js";
 import { originalVisual } from "./art.js";
-// The original request arithmetic is preserved; origin and sight vector are
-// supplied in host screen pixels until native aiming geometry is integrated.
+// Live callers supply native world geometry and project only the final integer
+// draw positions. Screen-coordinate inputs remain available to isolated callers.
 export function updateOriginalCharge(
   canvas,
   power,
@@ -10,6 +10,7 @@ export function updateOriginalCharge(
   target,
   width,
   height,
+  native = null,
 ) {
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
@@ -21,12 +22,18 @@ export function updateOriginalCharge(
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, width, height);
   ctx.imageSmoothingEnabled = false;
+  const geometry = native?.geometry ?? {
+    x: Math.round(origin.x * 65536),
+    y: Math.round(origin.y * 65536),
+    dx: Math.round((target.x - origin.x) * 65536),
+    dy: Math.round((target.y - origin.y) * 65536),
+  };
   const requests = nativeChargeBlobs(
     power,
-    Math.round(origin.x * 65536),
-    Math.round(origin.y * 65536),
-    Math.round((target.x - origin.x) * 65536),
-    Math.round((target.y - origin.y) * 65536),
+    geometry.x,
+    geometry.y,
+    geometry.dx,
+    geometry.dy,
   );
   for (const request of requests) {
     const frame = originalVisual(
@@ -34,10 +41,13 @@ export function updateOriginalCharge(
       nativeSpriteFrame(16, 1, request.progress),
     );
     if (!frame) continue;
+    const point = native
+      ? native.project(request.x, request.y)
+      : { x: request.x >> 16, y: request.y >> 16 };
     ctx.drawImage(
       frame.map.image,
-      (request.x >> 16) - 32,
-      (request.y >> 16) - 32,
+      Math.round(point.x) - 32,
+      Math.round(point.y) - 32,
     );
   }
   canvas.dataset.blobCount = requests.length;
