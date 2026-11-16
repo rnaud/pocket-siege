@@ -1,3 +1,4 @@
+import { nativeBatRequest } from "./armageddon/bat.js";
 import { nativeProdRequest } from "./armageddon/prod.js";
 import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
 import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
@@ -1371,7 +1372,7 @@ function updateUI() {
     weapon === "mine" ||
     weapon === "dynamite" ||
     WEAPONS[weapon]?.special === "airstrike" ||
-    weapon === "bat";
+    weapon === "prod";
   document.querySelectorAll("[data-weapon]").forEach((button) => {
     const count = availableAmmo(loadout, button.dataset.weapon);
     const delay = weaponDelay(weaponDelays[team], button.dataset.weapon);
@@ -2568,6 +2569,8 @@ function placeDynamite() {
 }
 function applyNativeAreaRequest(targets, request) {
     for (const dispatch of nativeAreaDamage(targets, request)) {
+      if (dispatch.sound?.[0] === 0x61) sfx("batimpact");
+      if (dispatch.effect) spawnNativeParticleRequest(dispatch.effect);
       if (!dispatch.packet) continue;
       const mine = targets[dispatch.body].mine;
       if (mine) {
@@ -2794,34 +2797,34 @@ function fireProd(prepared = false) {
   startOriginalRecoil(w, "prod", angle, matchRandom.frame);
   finishAction("Prod complete. Retreat!");
 }
-function fireBat() {
-  if (!canAct() || (availableAmmo(ammo[team], "bat") ?? 0) <= 0) return;
+function fireBat(prepared = false) {
+  if ((!prepared && !canAct()) || (availableAmmo(ammo[team], "bat") ?? 0) <= 0) return;
   const w = worms[current];
-  startOriginalRecoil(w, "bat", angle, matchRandom.frame);
-  let victim = null,
-    best = 52;
-  for (const t of worms) {
-    if (t.hp <= 0 || t.team === w.team) continue;
-    const d = Math.hypot(t.x - w.x, (t.y - w.y) * 0.7);
-    if (d < best) ((best = d), (victim = t));
+  if (!prepared && startOriginalPreparation(w, "bat", angle)) {
+    pendingFire = { worm: w, angle, kind: "bat", stage: "prepare" };
+    wormLocked = true;
+    move = aimInput = 0;
+    charging = false;
+    chargeSource = null;
+    updateUI();
+    return;
   }
+  const config = nativeHitscanWeapon("bat");
+  const launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint());
+  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a,b) => a.type - b.type);
+  applyNativeAreaRequest(targets, nativeBatRequest(config.record,
+    launch.x, launch.y, launch.vx, launch.vy, w.facing));
   spendSpecial("bat");
   shotCount++;
   wormLocked = true;
-  if (victim) {
-    const dir = Math.sign(victim.x - w.x) || 1;
-    injure(victim, WEAPONS.bat.damage, dir);
-    victim.knocked = true;
-    victim.ground = false;
-    victim.vx = victim.frozen > 0 ? 0 : dir * 360;
-    victim.vy = 165;
-    impactFlash(victim.x, victim.y + 20);
-    finishAction(`${w.name} sends ${victim.name} flying with the bat.`);
-    tone(120, 0.2, "square");
-  } else {
-    finishAction("Bat swing. Nothing in range.");
-    tone(260, 0.1);
+  startOriginalRecoil(w, "bat", angle, matchRandom.frame);
+  if (sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeProjectileReleaseSound(audio, nativeLaunchAudio(config.record,
+      { loop: 0, burst: 0, ordinal: 1, flag: 0, team: w.team }));
   }
+  finishAction("Bat swing complete. Retreat!");
 }
 function beginAirstrikeTargeting() {
   if ((availableAmmo(ammo[team], weapon) ?? 0) <= 0) return;
@@ -4219,6 +4222,7 @@ function step(dt) {
         pendingFire = null;
         angle = pending.angle;
         if (pending.kind === "prod") fireProd(true);
+        else if (pending.kind === "bat") fireBat(true);
         else fireBulletWeapon(true, pending.kind ?? "shotgun", pending.burst);
       }
     }
@@ -5612,6 +5616,20 @@ if (import.meta.env.DEV) {
       w.hurt = 1.4;
       w.nativeHurtBody = null;
       startOriginalHurt(w, 0x80);
+    },
+    stageMeleeTargets() {
+      const shooter = worms[current];
+      const ally = worms.findIndex(w => w !== shooter && w.team === shooter.team);
+      const enemy = worms.findIndex(w => w.team !== shooter.team);
+      const rear = worms.findIndex((w,i) => w !== shooter && i !== ally && i !== enemy);
+      for (let y = 0; y < H; y++) for (let x = 350; x < 500; x++) terrain.data[y * W + x] = y < 250 ? 1 : 0;
+      terrainDirty = true;
+      for (const [index,x] of [[current,400],[ally,420],[enemy,440],[rear,380]]) {
+        const w = worms[index];
+        Object.assign(w, { x, y:258, renderY:258, vx:0, vy:0, ground:true, knocked:false, hurt:0,
+          nativeHurtBody:null, nativeFlight:null, originalHurt:null, originalJump:null });
+      }
+      return { shooter:current, ally, enemy, rear };
     },
     stageWormContact() {
       for (const [index, vx] of [

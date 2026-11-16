@@ -172,7 +172,7 @@ export const WEAPONS = {
     label: "Baseball bat",
     icon: "⚾",
     radius: 34,
-    damage: 32,
+    damage: 30,
     wind: false,
     speed: 0,
     timed: false,
