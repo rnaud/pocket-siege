@@ -1,0 +1,925 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entry": "004DC470",
+  "method": "Original jetpack tick, easing and fixed multiply execute unchanged; animation and state interfaces observed.",
+  "cases": [
+    {
+      "input": {
+        "facing": -1,
+        "lean": -229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": -229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -229376,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 50,
+        "lean": -229376,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -229376,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": -229376,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": -229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -163840,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 50,
+        "lean": -229376,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -163840,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": -229376,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": -163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -98304,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 51,
+        "lean": -163840,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -98304,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": -163840,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": -98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -32768,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 52,
+        "lean": -98304,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": -32768,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": -98304,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 0,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": -65536,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 0,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 53,
+        "lean": -65536,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 0,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": -65536,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": -32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 32768,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 53,
+        "lean": -32768,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 32768,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": -32768,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": 32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 98304,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 53,
+        "lean": 32768,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 98304,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": 32768,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": 98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 163840,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 52,
+        "lean": 98304,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 163840,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": 98304,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": 163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 229376,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 51,
+        "lean": 163840,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "lean": 229376,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": 163840,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": -163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -229376,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 51,
+        "lean": -163840,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -229376,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": -163840,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": -98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -163840,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 52,
+        "lean": -98304,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -163840,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": -98304,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": -32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -98304,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 53,
+        "lean": -32768,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -98304,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": -32768,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": 32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -32768,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 53,
+        "lean": 32768,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": -32768,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": 32768,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 0,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": 65536,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 0,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 53,
+        "lean": 65536,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 0,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 53,
+        "lean": 65536,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 32768,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": 98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 32768,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 52,
+        "lean": 98304,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 32768,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 52,
+        "lean": 98304,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 98304,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": 163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 98304,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 51,
+        "lean": 163840,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 98304,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 51,
+        "lean": 163840,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 163840,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": 229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 163840,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 50,
+        "lean": 229376,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 163840,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": 229376,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": 229376,
+        "side": 0,
+        "down": 0,
+        "fuel": 6553600
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 229376,
+        "side": 65536,
+        "down": 65536,
+        "fuel": 1
+      },
+      "output": {
+        "target": 101,
+        "sprite": 50,
+        "lean": 229376,
+        "side": 58983,
+        "down": 58983,
+        "fuel": 0
+      }
+    },
+    {
+      "input": {
+        "facing": 1,
+        "lean": 229376,
+        "side": 32768,
+        "down": 19660,
+        "fuel": 6553600
+      },
+      "output": {
+        "target": null,
+        "sprite": 50,
+        "lean": 229376,
+        "side": 26215,
+        "down": 13107,
+        "fuel": 6548358
+      }
+    }
+  ]
+}

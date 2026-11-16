@@ -52,6 +52,8 @@ import {
   stepOriginalJump,
   startOriginalParachute,
   startOriginalTeleport,
+  stepOriginalJetpack,
+  stopOriginalJetpack,
   stepOriginalTeleport,
   setOriginalRope,
   stepOriginalParachute,
@@ -1394,6 +1396,7 @@ function stopRope() {
   if (activeUtility === "rope") activeUtility = null;
 }
 function stopJetpack() {
+  for (const w of worms) stopOriginalJetpack(w);
   jetpack = {
     active: false,
     fuel: 30,
@@ -1590,6 +1593,7 @@ function startJetpack() {
   wormLocked = true;
   const w = worms[current];
   w.originalParachute = null;
+  stepOriginalJetpack(w, 0, 0);
   w.ground = false;
   w.vx = 0;
   w.vy = 0;
@@ -1625,6 +1629,7 @@ function stepJetpack(w, dt) {
   w.ground = false;
   w.moving = Boolean(move);
   w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
+  stepOriginalJetpack(w, move, thrust);
   if (jetpack.fuel <= 0) stopJetpack();
 }
 function makeRopeLine(anchor, w) {
@@ -3461,6 +3466,7 @@ function step(dt) {
         (w) =>
           !w.deathPending &&
           !w.originalTeleport &&
+          !w.originalJetpack &&
           w.dying <= 0 &&
           (w.hp <= 0 || (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)),
       );
@@ -3725,7 +3731,7 @@ function frame(now) {
       const scale = Math.max(1, Math.round((size / pixelWorldY / 60) * 1.45));
       const unit = terrain.pixels ? 1 : scale * pixelWorldY;
       w.body.scale.set(
-        -facing * original.map.image.width * unit,
+        -(original.facing ?? facing) * original.map.image.width * unit,
         original.map.image.height * unit,
         1,
       );
@@ -3762,6 +3768,7 @@ function frame(now) {
       !w.originalRope &&
       !w.originalParachute &&
       !w.originalTeleport &&
+      !w.originalJetpack &&
       active &&
       w.hp > 0 &&
       w.hurt < 0.75 &&

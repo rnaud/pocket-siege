@@ -1,3 +1,5 @@
+import { nativeJetpackTick } from "./jetpack.js";
+import { fixedDivide } from "./numeric.js";
 import {
   nativeTeleportTick,
   nativeTeleportRenderProgress,
@@ -106,6 +108,11 @@ const names = [
     "ropecuff",
     "ropetip",
     "wjetfly1",
+    "wjetfly2",
+    "wjetfly3",
+    "wjetfly4",
+    "wjetflmb",
+    "wjetflmd",
   ]),
 ];
 const animations = new Map();
@@ -579,7 +586,80 @@ export function stepOriginalTeleport(worm) {
   return next;
 }
 
+export function stopOriginalJetpack(worm) {
+  worm.originalJetpack?.map.dispose();
+  worm.originalJetpack = null;
+}
+export function stepOriginalJetpack(worm, steering, thrust) {
+  let state = worm.originalJetpack;
+  if (!state) {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 100;
+    const map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.minFilter = map.magFilter = THREE.NearestFilter;
+    map.generateMipmaps = false;
+    state = worm.originalJetpack = {
+      lean: worm.facing * 0x38000,
+      side: 0,
+      down: 0,
+      map,
+    };
+    worm.originalJump = worm.originalLanding = worm.originalParachute = null;
+  }
+  // 004DC560 adds thrust to the controlled flame progress, clamped to one.
+  const next = nativeJetpackTick({
+    facing: worm.facing,
+    lean: state.lean,
+    side: Math.min(0x10000, state.side + (steering ? 0x4ccc : 0)),
+    down: Math.min(0x10000, state.down + (thrust > 0 ? 0x4ccc : 0)),
+    fuel: 0x640000,
+  });
+  Object.assign(state, next);
+  const ctx = state.map.image.getContext("2d");
+  ctx.clearRect(0, 0, 100, 100);
+  ctx.imageSmoothingEnabled = false;
+  const draw = (name, index, dx, dy, flip) => {
+    ctx.save();
+    ctx.translate(50 + dx, 50 + dy);
+    ctx.scale(flip ? -1 : 1, 1);
+    ctx.drawImage(texture(name, index).image, -30, -30);
+    ctx.restore();
+  };
+  // 004DC2C0 offsets both flame layers in the native downward-positive grid.
+  state.name = spriteIds.sprites[state.sprite].name;
+  draw(state.name, 0, 0, 0, state.lean >= 0);
+  state.sideFrame = nativeSpriteFrame(6, 1, state.side);
+  state.downFrame = nativeSpriteFrame(6, 1, state.down);
+  draw(
+    "wjetflmb",
+    state.sideFrame,
+    Math.floor(-fixedDivide(state.lean * 14, 0x38000) / 65536),
+    3,
+    state.lean > 0,
+  );
+  draw(
+    "wjetflmd",
+    state.downFrame,
+    Math.floor(-fixedDivide(state.lean * 7, 0x38000) / 65536),
+    16,
+    false,
+  );
+  state.map.needsUpdate = true;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
+    const state = worm.originalJetpack;
+    return {
+      map: state.map,
+      name: state.name,
+      index: 0,
+      facing: -1,
+      aimed: false,
+      equipped: false,
+    };
+  }
   if (worm.originalTeleport && worm.hp > 0) {
     const animation = animations.get("wteldsv");
     const index = nativeSpriteFrame(
