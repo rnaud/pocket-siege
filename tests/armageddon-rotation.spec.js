@@ -46,21 +46,30 @@ test("live blast advances the original rolling frames", async ({ page }) => {
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  const frames = await page.evaluate(async () => {
-    const w = window.siege.getState().worms[0];
+  const result = await page.evaluate(async () => {
+    const initial = window.siege.getState();
+    const w = initial.worms[0];
     window.siege.debug.explodeAt(w.x - 20, w.y, "death");
     const seen = new Set(),
+      states = new Set(),
       start = performance.now();
+    let ticks = 0;
     await new Promise((resolve) => {
       function sample() {
-        const worm = window.siege.getState().worms[0];
+        const state = window.siege.getState();
+        const worm = state.worms[0];
+        ticks = state.random.frame - initial.random.frame;
+        states.add(`${worm.nativeHurtState}:${worm.originalSprite}`);
         if (worm.originalSprite === "wroll") seen.add(worm.originalFrame);
-        if (seen.size >= 2 || performance.now() - start > 1500) resolve();
+        // CI rendering can be slower than the 50Hz simulation budget. Observe
+        // 1.5 simulation seconds, with a wall-clock guard for a stalled game.
+        if (seen.size >= 2 || ticks >= 75 || performance.now() - start > 10000)
+          resolve();
         else requestAnimationFrame(sample);
       }
       requestAnimationFrame(sample);
     });
-    return [...seen];
+    return { frames: [...seen], ticks, states: [...states] };
   });
-  expect(frames.length).toBeGreaterThan(1);
+  expect(result.frames.length, JSON.stringify(result)).toBeGreaterThan(1);
 });
