@@ -1,3 +1,6 @@
+import { nativeProjectileContact } from "./projectile-contact.js";
+import { nativeWormReceiver } from "./worm-receiver.js";
+import { nativeDamageVariation } from "./hitscan-resolution.js";
 import { nativeWaterSound, enqueueNativeSound } from "./water-audio.js";
 import records from "./scheme-weapon-data.json" with { type: "json" };
 import { WEAPON_SLOTS } from "./delays.js";
@@ -91,6 +94,14 @@ export function attachNativeProjectile(p, height) {
     payload,
     96,
   );
+  const words = selected.words;
+  Object.assign(p.nativeBody, {
+    type: 15, mode: words[23], hitMask: words[0], sideMask: words[28],
+    chance: words[29], sound: words[27], effectKind: words[31],
+    effect: words[32], effectRange: words[33], count: words[34],
+    sprite: words[6], impact: 0, state: 0, phase: 0, armed: 0, delay: 0,
+    impactVx: 0, impactVy: 0,
+  });
   return true;
 }
 
@@ -115,11 +126,13 @@ export function stepNativeProjectile(
     wind = 0,
     gravityScale = 1,
     frame = 0,
-    bounces = false,
+    random = () => 0,
+    collisionBody = () => ({ type: 1, vx: 0, vy: 0 }),
+    updateCollisionBody = () => {},
   },
   collide,
 ) {
-  const sounds = [];
+  const sounds = [], events = [];
   const waterSound = (body, skim) => {
     const event = nativeWaterSound(body, skim);
     body.splashSuppress = event.suppress;
@@ -151,15 +164,30 @@ export function stepNativeProjectile(
       bounce: (body, hit, side) => {
         firstHit ||= hit;
         contacts++;
-        if (bounces)
-          Object.assign(
-            body,
-            nativeSimpleBounce(body, { vx: 0, vy: 0 }, side).body,
-          );
-        else {
-          body.vx = 0;
-          body.vy = 0;
-        }
+        const other = collisionBody(hit);
+        const response = nativeProjectileContact(body, other.type, side, {
+          random,
+          effectRandom: (amount, variance) => nativeDamageVariation(amount, variance, random),
+          probe: (x, y) => collide(x / 65536, height - y / 65536, body),
+          respond: (incoming, contactSide) => {
+            if (other.worm) {
+              const received = nativeWormReceiver(other, incoming, contactSide, {});
+              Object.assign(incoming, received.incoming);
+              Object.assign(other, received.receiver);
+              if (received.result) {
+                updateCollisionBody(hit, other);
+                return;
+              }
+            }
+            const bounced = nativeSimpleBounce(incoming, other, contactSide,
+              (x, y) => collide(x / 65536, height - y / 65536, incoming));
+            Object.assign(incoming, bounced.body);
+            updateCollisionBody(hit, bounced.other);
+          },
+        });
+        Object.assign(body, response.body);
+        events.push(...response.calls);
+
       },
     },
   );
@@ -167,5 +195,5 @@ export function stepNativeProjectile(
   p.y = height - p.nativeBody.y / 65536;
   p.vx = (p.nativeBody.vx / 65536) * 50;
   p.vy = (-p.nativeBody.vy / 65536) * 50;
-  return { hit: firstHit, contacts, sounds };
+  return { hit: firstHit, contacts, sounds, events, detonate: p.nativeBody.state === 1 };
 }

@@ -117,3 +117,30 @@ test("live water transitions emit one splash and skimming emits its separate cue
   );
   expect(skim.sounds).toEqual([[0x3a, 0, 65536, 65536, 0]]);
 });
+
+test("native contact masks detonate rockets and keep grenade contacts alive", () => {
+  for (const [kind, detonate] of [["rocket", true], ["grenade", false]]) {
+    const p = projectile(kind, { x: 200, vx: 1200, vy: 0 });
+    const result = stepNativeProjectile(p, environment, (x) => x >= 210 ? 1 : 0);
+    expect(result.contacts).toBeGreaterThan(0);
+    expect(result.detonate).toBe(detonate);
+    expect(p.nativeBody.enabled).toBe(detonate ? 0 : 1);
+    if (!detonate) expect(result.events.some(e => e.operation === "sound" && e.request[0] === 113)).toBe(true);
+  }
+});
+
+test("grenade receiver dispatch updates a hurt worm instead of bouncing against zero velocity", () => {
+  const p = projectile("grenade", { x: 200, vx: 600, vy: 0 });
+  let other = { worm: true, type: 3, state: 0x80, mass: 65536, tangent: 65536, vx: 0, vy: 0 };
+  let updates = 0;
+  const result = stepNativeProjectile(p, {
+    ...environment,
+    collisionBody: () => other,
+    updateCollisionBody: (hit, value) => { expect(hit).toBe(2); other = value; updates++; },
+  }, x => x >= 205 ? 2 : 0);
+  expect(updates).toBeGreaterThan(0);
+  expect(other.vx).toBeGreaterThan(0);
+  expect(p.vx).toBeGreaterThan(0);
+  expect(p.vx).toBeLessThan(600);
+  expect(result.detonate).toBe(false);
+});

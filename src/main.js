@@ -1,3 +1,4 @@
+import { playNativeProjectileContactSound } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
   nativeWormContactBody,
@@ -3835,7 +3836,11 @@ function step(dt) {
             wind,
             gravityScale,
             frame: matchRandom.frame,
-            bounces: WEAPONS[p.kind].bounces,
+            random: () => matchRandom.logicUint(),
+            collisionBody: (hit) => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+            updateCollisionBody: (hit, body) => {
+              if (hit >= 2) applyNativeWormContact(worms[hit - 2], body);
+            },
           },
           (x, y, body) => {
             return nativeProjectileCollision(p, x, y, terrain, worms, H, body);
@@ -3847,7 +3852,11 @@ function step(dt) {
           for (const event of nativeContact.sounds)
             playNativeWaterSound(audio, event);
         }
-        if (nativeContact.contacts && WEAPONS[p.kind].bounces) sfx("bounce");
+        if (sound) for (const event of nativeContact.events) {
+          if (event.operation !== "sound") continue;
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          p.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, p.nativeContactPlayback);
+        }
       } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     }
     p.age += dt;
@@ -3877,7 +3886,7 @@ function step(dt) {
       if (contact.hit >= 2) hitWorm = worms[contact.hit - 2];
     }
     let boom =
-      (!WEAPONS[p.kind].timed && hit) ||
+      (p.nativeBody ? Boolean(nativeContact?.detonate) : (!WEAPONS[p.kind].timed && hit)) ||
       (WEAPONS[p.kind].timed && p.age >= p.fuse);
     if (hit && p.kind === "sticky" && !p.stuck) {
       p.stuck = true;
