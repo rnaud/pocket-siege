@@ -93,3 +93,53 @@ export function nativeSweep({ x, y, vx, vy }, fraction, collide, side = 99) {
   }
   return { x: endX, y: endY, remaining: 0, side, hit: 0 };
 }
+
+// 004F4860, simple-body branch (body+0x4c == 0). Coefficients are
+// signed 16.16: horizontal restitution, vertical restitution, tangential drag.
+// The original also stops the contacted body below the Manhattan-speed cutoff.
+export function nativeSimpleBounce(body, other, side) {
+  let { vx, vy } = body;
+  if (side === 1 || side === 3) {
+    vx = fixedMultiply(vx, body.tangent);
+    vy = -fixedMultiply(vy, body.restitutionY) | 0;
+  } else if (side === 2 || side === 4) {
+    vx = -fixedMultiply(vx, body.restitutionX) | 0;
+    vy = fixedMultiply(vy, body.tangent);
+  }
+  const stop = (x, y) =>
+    add(abs(x), abs(y)) < 0x6666 ? { vx: 0, vy: 0 } : { vx: x, vy: y };
+  return { body: stop(vx, vy), other: stop(other.vx, other.vy) };
+}
+
+// 004C9F10: bodies carrying flag 0x400000 can skim the water surface.
+// A successful skim emits body virtual event +0x40; otherwise water applies
+// drag and a fixed downward acceleration. Collision uses native coordinates.
+export function nativeWaterMotion(body, waterY, suppressSkim, collide) {
+  let { y, vx, vy, submerged = 0 } = body;
+  if (!(body.flags & 0x400000) || y >> 16 <= waterY)
+    return { y, vx, vy, submerged, skim: false, result: 0 };
+  if (
+    !suppressSkim &&
+    (Math.imul(abs(vy), 3) | 0) < abs(fixedMultiply(vx, body.skimScale)) &&
+    abs(vy) < 0x80000 &&
+    abs(vx) > 0x60000 &&
+    !collide(body.x, waterY << 16)
+  ) {
+    return {
+      y: waterY << 16,
+      vx: fixedMultiply(vx, 0xcccc),
+      vy: -vy | 0,
+      submerged,
+      skim: true,
+      result: 0,
+    };
+  }
+  return {
+    y,
+    vx: fixedMultiply(vx, body.waterDrag),
+    vy: add(fixedMultiply(vy, body.waterDrag), 0x4ccc),
+    submerged: 1,
+    skim: false,
+    result: 1,
+  };
+}

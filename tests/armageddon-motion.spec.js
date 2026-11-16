@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
-import { nativeAirForces, nativeSweep } from "../src/armageddon/motion.js";
+import {
+  nativeAirForces,
+  nativeSweep,
+  nativeSimpleBounce,
+  nativeWaterMotion,
+} from "../src/armageddon/motion.js";
 const fixture = JSON.parse(
   fs.readFileSync(
     new URL("./fixtures/armageddon/motion.json", import.meta.url),
@@ -87,4 +92,55 @@ test("browser sweep catches a one-pixel wall and retains its collision identity"
   expect(result.y).toBe(100);
   expect(result.remaining).toBeGreaterThan(0);
   expect(queries.some(([x]) => Math.floor(x) === 5)).toBe(true);
+});
+
+test("simple-body bounce matches original axis response and both velocity cutoffs", () => {
+  expect(fixture.bounces).toHaveLength(960);
+  for (const v of fixture.bounces) {
+    const result = nativeSimpleBounce(
+      {
+        vx: v.velocity[0],
+        vy: v.velocity[1],
+        restitutionX: v.coefficients[0],
+        restitutionY: v.coefficients[1],
+        tangent: v.coefficients[2],
+      },
+      { vx: v.other_velocity[0], vy: v.other_velocity[1] },
+      v.side,
+    );
+    expect(result, JSON.stringify(v)).toEqual({
+      body: { vx: v.velocity_out[0], vy: v.velocity_out[1] },
+      other: { vx: v.other_velocity_out[0], vy: v.other_velocity_out[1] },
+    });
+  }
+});
+
+test("water entry and skimming match original thresholds, event and collision queries", () => {
+  expect(fixture.water).toHaveLength(224);
+  for (const v of fixture.water) {
+    const queries = [];
+    const result = nativeWaterMotion(
+      {
+        flags: v.flags,
+        x: 4 << 16,
+        y: v.y,
+        vx: v.velocity[0],
+        vy: v.velocity[1],
+        skimScale: 65536,
+        waterDrag: 0xcccc,
+      },
+      5,
+      v.suppress,
+      collision(v.shape, queries),
+    );
+    expect(result, JSON.stringify(v)).toEqual({
+      y: v.y_out,
+      vx: v.velocity_out[0],
+      vy: v.velocity_out[1],
+      submerged: v.submerged,
+      skim: v.skim,
+      result: v.result,
+    });
+    expect(queries).toEqual(v.queries);
+  }
 });

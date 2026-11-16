@@ -1,4 +1,4 @@
-"""Execute original airborne forces and pixel collision sweep in Unicorn.
+"""Execute original forces, pixel sweep, simple bounce and water motion in Unicorn.
 
 Collision predicates receive fixed-point coordinates and return explicit hit IDs.
 No game entry point runs.
@@ -45,10 +45,10 @@ def observe(cpu,address,size,unused):
     x,y=struct.unpack('<2i',cpu.mem_read(sp+8,8))
     queries.append([x,y]);cpu.reg_write(UC_X86_REG_EAX,7 if solid(x,y) else 0)
 cpu.hook_add(UC_HOOK_CODE,observe,begin=collision,end=collision)
-def run(address,arguments):
+def run(address,arguments,this=owner):
     queries.clear()
     cpu.mem_write(stack+0xff00,struct.pack('<I',stop)+b''.join(struct.pack('<I',v&0xffffffff) for v in arguments))
-    cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+    cpu.reg_write(UC_X86_REG_ECX,this);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
     cpu.emu_start(address,stop,count=50000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop: raise RuntimeError('Native routine did not return')
     return cpu.reg_read(UC_X86_REG_EAX)
@@ -74,8 +74,40 @@ for gravity in [-32768,0,32768]:
                         result=run(0x4ca110,[body])
                         forces.append({'gravity':gravity,'wind':wind,'velocity':velocity,'scale':scale,'drag':drag,'shape':shape,
                             'result':result,'velocity_out':list(struct.unpack('<2i',cpu.mem_read(body+0x9c,8))),'moving':read(body+0xc4),'queries':list(queries)})
+bounces=[]
+other=owner+0x4000
+velocities=[[0,0],[0x6665,0],[0x6666,0],[-0x6666,0],[0x3333,0x3332],[0x3333,0x3333],[8<<16,-3<<16],[-8<<16,3<<16],[0x7fffffff,1],[-0x80000000,0]]
+for velocity in velocities:
+    for other_velocity in [[0,0],[0x6665,0],[0x6666,0],[-0x80000000,1]]:
+        for coefficients in [[0,0,0],[65536,65536,65536],[0x9999,0x8000,0xcccc],[-32768,98304,60000]]:
+            for side in [0,1,2,3,4,99]:
+                write(body+0x4c,0)
+                for offset,value in zip([0x9c,0xa0,0x78,0x7c,0x80],velocity+coefficients):write(body+offset,value&0xffffffff)
+                for offset,value in zip([0x9c,0xa0],other_velocity):write(other+offset,value&0xffffffff)
+                run(0x4f4860,[other,side],body)
+                bounces.append({'velocity':velocity,'other_velocity':other_velocity,'coefficients':coefficients,'side':side,
+                    'velocity_out':list(struct.unpack('<2i',cpu.mem_read(body+0x9c,8))),
+                    'other_velocity_out':list(struct.unpack('<2i',cpu.mem_read(other+0x9c,8)))})
+water=[]
+body_vtable,skim_event=owner+0xb00,owner+0xc00
+write(body,body_vtable);write(body_vtable+0x40,skim_event);cpu.mem_write(skim_event,b'\xc3')
+skims=[]
+def on_skim(cpu,address,size,unused): skims.append(True)
+cpu.hook_add(UC_HOOK_CODE,on_skim,begin=skim_event,end=skim_event)
+for flags in [0,0x400000]:
+    for y in [4<<16,5<<16,(5<<16)+65535,6<<16]:
+        for velocity in [[6<<16,0],[(6<<16)+1,0],[10<<16,2<<16],[-10<<16,-2<<16],[24<<16,8<<16],[24<<16,(8<<16)-1],[0,0]]:
+            for suppress in [0,1]:
+                for shape in ['empty','floor']:
+                    skims.clear();write(owner+0x3b4,5)
+                    for offset,value in {0x40:flags,0x90:4<<16,0x94:y,0x9c:velocity[0],0xa0:velocity[1],0xb4:65536,0x60:0xcccc,0xbc:0}.items():write(body+offset,value&0xffffffff)
+                    result=run(0x4c9f10,[body,suppress])
+                    water.append({'flags':flags,'y':y,'velocity':velocity,'suppress':suppress,'shape':shape,
+                        'y_out':struct.unpack('<i',cpu.mem_read(body+0x94,4))[0],
+                        'velocity_out':list(struct.unpack('<2i',cpu.mem_read(body+0x9c,8))),
+                        'submerged':read(body+0xbc),'skim':bool(skims),'result':result,'queries':list(queries)})
 args.output.parent.mkdir(parents=True,exist_ok=True)
-args.output.write_text(json.dumps({'executable_sha256':digest,'entries':['004CA110','004C9AA0'],
-    'method':'Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7.',
-    'sweeps':sweeps,'forces':forces},indent=2)+'\n')
-print(f'Captured {len(sweeps)} sweeps and {len(forces)} force cases')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entries':['004CA110','004C9AA0','004F4860','004C9F10'],
+    'method':'Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects.',
+    'sweeps':sweeps,'forces':forces,'bounces':bounces,'water':water},indent=2)+'\n')
+print(f'Captured {len(sweeps)} sweeps and {len(forces)} force cases and {len(bounces)} simple-body bounces and {len(water)} water cases')
