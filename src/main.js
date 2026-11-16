@@ -1,5 +1,10 @@
+import { nativeHitscanRays } from "./armageddon/hitscan-spread.js";
+import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { nativeCasing } from "./armageddon/casing.js";
-import { nativeShotgunImpact } from "./armageddon/hitscan-art.js";
+import {
+  nativeShotgunImpact,
+  nativeShotgunRay,
+} from "./armageddon/hitscan-art.js";
 import {
   createImpactBag,
   nativeExplosionArt,
@@ -2334,7 +2339,7 @@ function fireShotgun(prepared = false) {
     start = terrain.solid(origin.muzzle.x, origin.muzzle.y)
       ? { x: origin.pivot.x, y: origin.pivot.y }
       : { x: origin.muzzle.x, y: origin.muzzle.y },
-    r = (angle * Math.PI) / 180;
+    turn = Math.round((angle * 65536) / 360);
   startOriginalRecoil(w, "shotgun", angle, matchRandom.frame);
   spawnNativeParticleRequest(
     nativeCasing(
@@ -2346,11 +2351,31 @@ function fireShotgun(prepared = false) {
       () => matchRandom.visualUint(),
     ),
   );
+  const ray = nativeHitscanRays(
+    [
+      w.team,
+      current,
+      Math.round(start.x * 65536),
+      Math.round((H - start.y) * 65536),
+      nativeCos(turn),
+      -nativeSin(turn),
+      0,
+      0,
+      0,
+      0,
+      0,
+    ],
+    nativeShotgunRay.count,
+    nativeShotgunRay.spread,
+    () => matchRandom.logicUint(),
+  )[0];
+  const dx = ray[4] / 65536,
+    dy = -ray[5] / 65536;
   let hit = null,
     victim = null;
   for (let d = 4; d <= 300; d += 2) {
-    const x = start.x + Math.cos(r) * d,
-      y = start.y + Math.sin(r) * d;
+    const x = start.x + dx * d,
+      y = start.y + dy * d;
     const target = worms.find(
       (t) => t.hp > 0 && (t !== w || d > 28) && hitsWorm(t, x, y, 5),
     );
@@ -2365,8 +2390,8 @@ function fireShotgun(prepared = false) {
     }
   }
   hit ??= {
-    x: start.x + Math.cos(r) * 300,
-    y: start.y + Math.sin(r) * 300,
+    x: start.x + dx * 300,
+    y: start.y + dy * 300,
   };
   if (!shotgunRemaining) {
     ammo[team].shotgun = spendAmmo(ammo[team].shotgun);
