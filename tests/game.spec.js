@@ -281,7 +281,9 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
     path: `test-results/${info.project.name}-aim-up.png`,
     fullPage: true,
   });
-  await setAim(page, "-60");
+  // Fire vertically into the ground beneath the shooter. A diagonal shot
+  // can pass the ledge and explode outside self-damage range with native masks.
+  await setAim(page, "-90");
   await expect
     .poll(() =>
       page.evaluate(() => window.siege.getState().worms[0].weaponRotation),
