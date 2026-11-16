@@ -4,19 +4,25 @@ import {
   nativeSimpleBounce,
 } from "./motion.js";
 import { nativeWormHurtCollision } from "./hurt-contact.js";
-import { nativeWormBodyCollision } from "./body-collision.js";
+import { nativeWormReceiver } from "./worm-receiver.js";
+import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
+import { nativeHurtEntry } from "./hurt-entry.js";
 import schemes from "./scheme-runtime-data.json" with { type: "json" };
 const scheme = schemes.schemes.find((s) => s.resource_id === 195);
 const byte = (address) => scheme.bytes[address - schemes.context_offset];
 const fixed = (value) => Math.round(value * 65536) | 0;
 
-export function nativeWormContactBody(worm) {
+export function nativeWormContactBody(worm, height = 0) {
   const body = worm.nativeHurtBody ?? worm.nativeFlight;
+  const state = nativeWormState(worm);
   return {
-    type: 2,
-    state: worm.frozen
-      ? 0x88
-      : (body?.state ?? worm.originalHurt?.state ?? 0x65),
+    worm: true,
+    type: nativeWormCollisionType(state),
+    state,
+    x: fixed(worm.x), y: fixed(height - worm.y),
+    team: worm.team ?? 0,
+    soundHandle: body?.soundHandle ?? 0,
+    suspended: body?.suspended ?? 0,
     vx: body?.vx ?? fixed((worm.vx ?? 0) / 50),
     vy: body?.vy ?? fixed(-(worm.vy ?? 0) / 50),
     mass: body?.mass ?? 65536,
@@ -25,6 +31,25 @@ export function nativeWormContactBody(worm) {
 }
 
 export function applyNativeWormContact(worm, body) {
+  // State entry must happen before the next sweep query, so the registry
+  // stops treating the newly hurt receiver as an ordinary type2 body.
+  if (body.state !== undefined && body.state !== nativeWormState(worm)) {
+    const entry = nativeHurtEntry(body.state, worm.nativeHurtBody?.angle ?? worm.nativeFlight?.angle ?? 0);
+    if (entry) {
+      worm.originalHurt = { state: body.state, angle: entry.angle, sprite: entry.calls[1].sprite_id };
+      worm.originalRecovery = null;
+      worm.ground = false;
+      worm.knocked = true;
+      worm.hurt = Math.max(worm.hurt ?? 0, 1.4);
+      if (worm.nativeHurtBody) {
+        worm.nativeHurtBody.state = body.state;
+        worm.nativeHurtBody.type = nativeWormCollisionType(body.state);
+        worm.nativeHurtBody.angle = entry.angle;
+      }
+      // Hurt translation owns the body from this point onward.
+      worm.nativeFlight = null;
+    }
+  }
   worm.vx = (body.vx / 65536) * 50;
   worm.vy = (-body.vy / 65536) * 50;
   for (const attached of [worm.nativeHurtBody, worm.nativeFlight])
@@ -62,7 +87,8 @@ export function attachNativeHurtFlight(worm, height) {
     skimScale: 0x20000,
     complex: 1,
     state: worm.originalHurt.state,
-    type: 2,
+    type: nativeWormCollisionType(worm.originalHurt.state),
+    field150: worm.nativeContactMarked ?? 0,
     shape: 3,
     mass: 65536,
     facing: worm.facing,
@@ -140,13 +166,17 @@ export function stepNativeHurtFlight(worm, environment, collide) {
           },
           probe,
           (incoming, receiver, side) => {
-            if (receiver.type !== 2) return false;
-            const contact = nativeWormBodyCollision(
-              receiver.state,
-              receiver,
-              incoming,
-              side,
-            );
+            if (!receiver.worm) return false;
+            const contact = nativeWormReceiver(receiver, incoming, side, {
+              recordAvailable: true, // Worm event7D3 (004DF270) always succeeds.
+              marked: incoming.field150 ?? 0,
+              matched: environment.contactOwnerMatches?.(worm) ?? false,
+              scale: byte(0x11d6e),
+              get random() { return random(); },
+              voiceId: 0, soundHandle: 0,
+            });
+            for (const call of contact.calls)
+              events.push({ ...call, receiverHit: hit });
             Object.assign(incoming, contact.incoming);
             Object.assign(receiver, contact.receiver);
             return Boolean(contact.result);
@@ -169,6 +199,7 @@ export function stepNativeHurtFlight(worm, environment, collide) {
     body.state = 0x65;
     events.push({ operation: "state", target: 0x65 });
   }
+  body.type = nativeWormCollisionType(body.state);
   worm.nativeHurtBody = body;
   worm.x = body.x / 65536;
   worm.y = height - body.y / 65536;

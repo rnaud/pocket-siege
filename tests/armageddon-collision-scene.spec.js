@@ -90,3 +90,15 @@ test("projectile collision callbacks see the current body after the first sweep"
   expect(origins.some((x) => x !== 2 << 16)).toBe(true);
   expect(p.vx).toBeLessThan(0);
 });
+
+test("worm state changes move registry categories and invalidate overlap caching", () => {
+  const p = projectile(), terrain = { solid: () => false };
+  const target = { x: 20, y: 20, hp: 100 };
+  for (const [state, type] of [[0x65,2],[0x80,3],[0x79,4],[0x73,5],[0x88,6],[0x65,2]]) {
+    target.nativeHurtBody = { state };
+    for (let selected = 2; selected <= 6; selected++) {
+      p.nativeBody.flags = 1 << selected;
+      expect(nativeProjectileCollision(p,20,20,terrain,[target],height)).toBe(selected === type ? 2 : 0);
+    }
+  }
+});

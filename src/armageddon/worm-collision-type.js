@@ -13,3 +13,12 @@ export function nativeWormCollisionType(state) {
   ) return 3;
   return 2;
 }
+
+// Resolve the host's currently represented native states. Other traversal
+// controllers still need their complete native state-entry adapters.
+export function nativeWormState(worm) {
+  if (worm.frozen) return 0x88;
+  return worm.nativeHurtBody?.state ?? worm.nativeFlight?.state ??
+    worm.originalHurt?.state ?? (worm.originalRecovery ? 0x76 :
+    worm.originalParachute ? 0x7d : worm.originalJump ? 0x79 : 0x65);
+}

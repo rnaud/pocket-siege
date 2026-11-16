@@ -47,7 +47,7 @@ function environment(terrain, worms) {
           frame,
           collisionBody: (hit) =>
             hit >= 2
-              ? nativeWormContactBody(worms[hit - 2])
+              ? nativeWormContactBody(worms[hit - 2], height)
               : { type: 1, vx: 0, vy: 0 },
           updateCollisionBody: (hit, body) => {
             if (hit >= 2) applyNativeWormContact(worms[hit - 2], body);
@@ -60,12 +60,12 @@ function environment(terrain, worms) {
   };
 }
 
-test("registered hurt worm excludes itself and shares momentum with another hurt worm", () => {
+test("registered hurt worm excludes itself and other hurt types", () => {
   const a = worm(100, 200, 600),
     b = worm(118, 200);
   attachNativeHurtFlight(a, height);
   attachNativeHurtFlight(b, height);
-  expect(a.nativeHurtBody.type).toBe(2);
+  expect(a.nativeHurtBody.type).toBe(3);
   expect(a.nativeHurtBody.shape).toBe(3);
   const terrain = { solid: () => false },
     worms = [a, b];
@@ -73,21 +73,24 @@ test("registered hurt worm excludes itself and shares momentum with another hurt
     nativeSceneCollision(a, a.nativeHurtBody, a.x, a.y, terrain, worms, height),
   ).toBe(0);
   environment(terrain, worms).step(a);
-  expect(a.vx).toBeGreaterThan(0);
-  expect(a.vx).toBeLessThan(600);
-  expect(b.vx).toBeGreaterThan(0);
-  expect(a.vx + b.vx).toBeCloseTo(600, 5);
-  expect(b.nativeHurtBody.vx).toBe(Math.round((b.vx / 50) * 65536));
+  expect(a.vx).toBe(600);
+  expect(b.vx).toBe(0);
 });
 
-test("standing and frozen receivers decline momentum, causing native incoming bounce", () => {
-  for (const frozen of [false, true]) {
-    const a = worm(100, 200, 600),
-      b = { ...worm(118, 200, 0, 0, null), frozen };
-    environment({ solid: () => false }, [a, b]).step(a);
-    expect(a.vx).toBeLessThan(0);
-    expect(b.vx).toBe(0);
-  }
+test("hurt contact imparts horizontal velocity and state to a standing receiver", () => {
+  const a = worm(100, 200, 600), b = worm(118, 200, 0, 0, null);
+  const result = environment({ solid: () => false }, [a, b]).step(a);
+  expect(a.vx).toBe(600);
+  expect(b.vx).toBe(600);
+  expect(result.events).toContainEqual({ operation: "state", target: 0x80, receiverHit: 3 });
+  expect(result.events.some(c => c.operation === "voice" && c.receiverHit === 3)).toBe(true);
+});
+
+test("frozen receiver declines the hurt impulse and causes native incoming bounce", () => {
+  const a = worm(100, 200, 600), b = { ...worm(118, 200, 0, 0, null), frozen: true };
+  environment({ solid: () => false }, [a, b]).step(a);
+  expect(a.vx).toBeLessThan(0);
+  expect(b.vx).toBe(0);
 });
 
 test("falling onto a worm uses type2 contact without terrain fall damage or twang", () => {
@@ -101,13 +104,13 @@ test("falling onto a worm uses type2 contact without terrain fall damage or twan
     calls.push(...result.events);
     if ([0x65, 0x76].includes(result.body.state)) break;
   }
-  expect(a.ground).toBe(true);
-  expect(a.y).toBeGreaterThan(b.y);
+  expect(a.ground).toBe(false);
+  expect(b.originalHurt.state).toBe(0x7f);
   expect(result.body.field250).toBe(0);
   expect(calls.some((c) => c.operation === "health")).toBe(false);
 });
 
-test("live update preserves momentum transferred into the next worm", async ({
+test("live update preserves native hurt impulse into the next standing worm", async ({
   page,
 }) => {
   const errors = [];
@@ -131,8 +134,8 @@ test("live update preserves momentum transferred into the next worm", async ({
     .not.toBeNull();
   const contact = await page.evaluate(() => window.wormContact);
   expect(contact.a).toBeGreaterThan(0);
-  expect(contact.a).toBeLessThan(600);
+  expect(contact.a).toBeCloseTo(600, 1);
   expect(contact.b).toBeGreaterThan(0);
-  expect(contact.a + contact.b).toBeCloseTo(600, 1);
+  expect(contact.b).toBeGreaterThan(500);
   expect(errors).toEqual([]);
 });

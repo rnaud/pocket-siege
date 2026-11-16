@@ -1,3 +1,4 @@
+import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
 import shapes from "./collision-shapes.json" with { type: "json" };
 import { nativeCollisionOverlap } from "./collision-mask.js";
 import { NativeCollisionRegistry } from "./collision-registry.js";
@@ -13,6 +14,7 @@ export class NativeCollisionScene {
     this.terrain = terrain;
     this.actors = new WeakMap();
     this.worms = [];
+    this.wormBodies = [];
     this.rows = Array.from({ length: 32 }, () => []);
     const terrainMask = {};
     this.rows[1].push({
@@ -46,8 +48,10 @@ export class NativeCollisionScene {
       worms.some((w, i) => w !== this.worms[i])
     ) {
       this.worms = [...worms];
-      this.rows[2] = worms.map((w, i) => ({
+      for (let type = 2; type <= 6; type++) this.rows[type] = [];
+      this.wormBodies = worms.map((w, i) => ({
         id: i + 2,
+        type: -1,
         shape: 3,
         mask: shapes.shapes[3],
         overlap: 0,
@@ -55,19 +59,29 @@ export class NativeCollisionScene {
       // Original add/remove004C8F80/004C9460 invalidate the current actor.
       this.manager.cache = null;
     }
-    worms.forEach((w, i) =>
-      Object.assign(this.rows[2][i], {
-        x: fixed(w.x),
-        y: fixed(this.height - w.y),
-        enabled: Number(w.hp > 0),
-      }),
-    );
+    worms.forEach((w, i) => {
+      const body = this.wormBodies[i];
+      const type = nativeWormCollisionType(nativeWormState(w));
+      if (body.type !== type) {
+        if (body.type >= 0) {
+          const row = this.rows[body.type];
+          row[row.indexOf(body)] = null;
+        }
+        const row = this.rows[type], free = row.indexOf(null);
+        if (free < 0) row.push(body); else row[free] = body;
+        body.type = type;
+        this.manager.cache = null;
+      }
+      Object.assign(body, {
+        x: fixed(w.x), y: fixed(this.height - w.y), enabled: Number(w.hp > 0),
+      });
+    });
   }
 
   query(identity, body, x, y) {
     const wormIndex = this.worms.indexOf(identity);
     let actor =
-      wormIndex >= 0 ? this.rows[2][wormIndex] : this.actors.get(identity);
+      wormIndex >= 0 ? this.wormBodies[wormIndex] : this.actors.get(identity);
     if (!actor) {
       actor = {};
       this.actors.set(identity, actor);

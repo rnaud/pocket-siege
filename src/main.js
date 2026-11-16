@@ -3627,7 +3627,7 @@ function step(dt) {
             random: () => matchRandom.logicUint(),
             collisionBody: (hit) =>
               hit >= 2
-                ? nativeWormContactBody(worms[hit - 2])
+                ? nativeWormContactBody(worms[hit - 2], H)
                 : { type: 1, vx: 0, vy: 0 },
             updateCollisionBody: (hit, body) => {
               if (hit >= 2) applyNativeWormContact(worms[hit - 2], body);
@@ -3637,6 +3637,21 @@ function step(dt) {
             nativeSceneCollision(w, body, x, y, terrain, worms, H),
         );
         for (const call of result.events) {
+          if (call.receiverHit >= 2) {
+            const target = worms[call.receiverHit - 2];
+            if (call.operation === "state") {
+              startOriginalHurt(target, call.target);
+              target.ground = false;
+              target.knocked = true;
+              target.hurt = Math.max(target.hurt, 1.4);
+            }
+            if (call.operation === "voice" && sound) {
+              audio ??= new (window.AudioContext || window.webkitAudioContext)();
+              target.nativeHitVoicePlayback = playNativeHitVoice(audio,
+                { index: call.slot }, target.nativeHitVoicePlayback);
+            }
+            continue;
+          }
           if (call.operation === "health") injure(w, call.request[0], 0, true);
           if (call.operation === "particle")
             spawnNativeParticleRequest(call.request);
@@ -5148,7 +5163,8 @@ if (import.meta.env.DEV) {
           hurt: 1.4,
           nativeHurtBody: null,
         });
-        startOriginalHurt(w, 0x80);
+        if (index === 0) startOriginalHurt(w, 0x80);
+        else { w.originalHurt = null; w.nativeFlight = null; w.originalJump = null; }
       }
     },
     dropWormForParachute(index = current) {
