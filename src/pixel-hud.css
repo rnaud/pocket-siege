@@ -2199,6 +2199,7 @@ body.native-game-hud {
 
 /* Keep an expanded arsenal inside the viewport as the weapon roster grows. */
 .controls > .weapon-panel {
+  height: auto;
   max-height: calc(100dvh - 200px);
   overflow-y: auto;
   overscroll-behavior: contain;

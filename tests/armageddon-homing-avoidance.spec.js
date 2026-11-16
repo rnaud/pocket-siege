@@ -80,8 +80,6 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
   expect(state.projectile.sprite).toMatch(sprite);
   expect(state.projectile.target).toEqual(target);
   expect(state.ammo[0][kind]).toBe(0);
-  await expect.poll(() => page.evaluate(() => window.siege.getState().projectile?.nativeGuidance?.initialized)).toBe(1);
-  await expect.poll(() => page.evaluate(name => window.siege.getState().nativeParticles.some(p => p.sprite === name), trail)).toBe(true);
   if (kind === "magic") {
     await expect.poll(() => page.evaluate(() => window.projectileLoops.length)).toBe(1);
     await page.locator("#help").click();
@@ -92,6 +90,8 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
     await page.keyboard.press("Escape");
     await expect.poll(() => page.evaluate(() => window.projectileLoops.length)).toBe(2);
   }
+  await expect.poll(() => page.evaluate(() => window.siege.getState().projectile?.nativeGuidance?.initialized)).toBe(1);
+  await expect.poll(() => page.evaluate(name => window.siege.getState().nativeParticles.some(p => p.sprite === name), trail)).toBe(true);
   await expect.poll(() => page.evaluate(() => window.siege.getState().projectile), { timeout: 15000 }).toBeNull();
   if (kind === "magic") expect(await page.evaluate(() => window.projectileLoops)).toEqual([{ stopped: true }, { stopped: true }]);
 });
