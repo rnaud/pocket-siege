@@ -1,0 +1,9943 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entry": "004F4990",
+  "method": "Original routine executes with explicit body velocities, masses, tangential damping and contact sides. No callbacks stubbed.",
+  "cases": [
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        -98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        -98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        -98304
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        -98304
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        -98304
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        -98304
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        -393216
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        1048576,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        -393216
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        1048576,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        -393216
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        1048576,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        -393216
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        1048576,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        -393216
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        1048576,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        -393216
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        1048576,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        65536,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        65536,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        65536,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        65536,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        65536,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        65536,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        -262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        -262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        98304
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        -262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        98304
+      ],
+      "incoming_out": [
+        419424,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        -262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        98304
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        -262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        98304
+      ],
+      "incoming_out": [
+        524288,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        -262144,
+        0
+      ],
+      "incoming_out": [
+        262144,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": -196608,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        524288,
+        -196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        65536,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        65536,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        65536,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        65536,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        65536,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        65536,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        393216
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        1048576,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        393216
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        1048576,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        393216
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        1048576,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        393216
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        1048576,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        393216
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        1048576,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        393216
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        1048576,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        524288,
+        98304
+      ],
+      "incoming_out": [
+        0,
+        -98304
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        262144,
+        196608
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 0,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        524288,
+        196608
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        32768
+      ],
+      "incoming_out": [
+        0,
+        32768
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        131072,
+        -131072
+      ],
+      "incoming_out": [
+        131072,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        32768
+      ],
+      "incoming_out": [
+        0,
+        32768
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        131072,
+        -131072
+      ],
+      "incoming_out": [
+        131072,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        32768
+      ],
+      "incoming_out": [
+        419424,
+        32768
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        131072,
+        -131072
+      ],
+      "incoming_out": [
+        131072,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        32768
+      ],
+      "incoming_out": [
+        419424,
+        32768
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        131072,
+        -131072
+      ],
+      "incoming_out": [
+        131072,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        32768
+      ],
+      "incoming_out": [
+        524288,
+        32768
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        131072,
+        -131072
+      ],
+      "incoming_out": [
+        131072,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        32768
+      ],
+      "incoming_out": [
+        524288,
+        32768
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        131072,
+        -131072
+      ],
+      "incoming_out": [
+        131072,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        327680
+      ],
+      "incoming_out": [
+        0,
+        81920
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        917504,
+        -131072
+      ],
+      "incoming_out": [
+        229376,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        327680
+      ],
+      "incoming_out": [
+        0,
+        81920
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        917504,
+        -131072
+      ],
+      "incoming_out": [
+        229376,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        327680
+      ],
+      "incoming_out": [
+        419424,
+        81920
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        917504,
+        -131072
+      ],
+      "incoming_out": [
+        229376,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        327680
+      ],
+      "incoming_out": [
+        419424,
+        81920
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        917504,
+        -131072
+      ],
+      "incoming_out": [
+        229376,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        327680
+      ],
+      "incoming_out": [
+        524288,
+        81920
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        917504,
+        -131072
+      ],
+      "incoming_out": [
+        229376,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        327680
+      ],
+      "incoming_out": [
+        524288,
+        81920
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        917504,
+        -131072
+      ],
+      "incoming_out": [
+        229376,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        -40960
+      ],
+      "incoming_out": [
+        0,
+        -163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        -65536,
+        -131072
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        -40960
+      ],
+      "incoming_out": [
+        0,
+        -163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        -65536,
+        -131072
+      ],
+      "incoming_out": [
+        -262144,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        -40960
+      ],
+      "incoming_out": [
+        419424,
+        -163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        -65536,
+        -131072
+      ],
+      "incoming_out": [
+        -262144,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        -40960
+      ],
+      "incoming_out": [
+        419424,
+        -163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        -65536,
+        -131072
+      ],
+      "incoming_out": [
+        -262144,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        -40960
+      ],
+      "incoming_out": [
+        524288,
+        -163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        -65536,
+        -131072
+      ],
+      "incoming_out": [
+        -262144,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        -40960
+      ],
+      "incoming_out": [
+        524288,
+        -163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        -65536,
+        -131072
+      ],
+      "incoming_out": [
+        -262144,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        -163840
+      ],
+      "incoming_out": [
+        0,
+        163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        -393216,
+        -131072
+      ],
+      "incoming_out": [
+        393216,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        -163840
+      ],
+      "incoming_out": [
+        0,
+        163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        -393216,
+        -131072
+      ],
+      "incoming_out": [
+        393216,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        -163840
+      ],
+      "incoming_out": [
+        419424,
+        163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        -393216,
+        -131072
+      ],
+      "incoming_out": [
+        393216,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        -163840
+      ],
+      "incoming_out": [
+        419424,
+        163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        -393216,
+        -131072
+      ],
+      "incoming_out": [
+        393216,
+        157284
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        -262144,
+        -163840
+      ],
+      "incoming_out": [
+        524288,
+        163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        -393216,
+        -131072
+      ],
+      "incoming_out": [
+        393216,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        -262144,
+        -163840
+      ],
+      "incoming_out": [
+        524288,
+        163840
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        -393216,
+        -131072
+      ],
+      "incoming_out": [
+        393216,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": -262144,
+        "vy": -131072,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 524288,
+        "vy": 196608,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        -262144,
+        -131072
+      ],
+      "incoming_out": [
+        524288,
+        196608
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        26214,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        26214,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        26214,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        26214,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        26214,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        26214,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        65535,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        65535,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        65535,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        65535,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        65535,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        65535,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        65534,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        65534,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        65534,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        65534,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        65534,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        65534,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        26213,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26214,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        26214,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        52426,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        52426,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        52426,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        52426,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        52426,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        52426,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 0,
+        "vy": 0,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 26213,
+        "vy": 0,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 1,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 2,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 3,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        0,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 4,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 131072,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 32768
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 0
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 52428
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 0,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 1,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 2,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 3,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 4,
+      "receiver_out": [
+        0,
+        0
+      ],
+      "incoming_out": [
+        0,
+        0
+      ],
+      "result": 1
+    },
+    {
+      "receiver": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": 65536,
+        "tangent": 65536
+      },
+      "incoming": {
+        "vx": 13107,
+        "vy": 13107,
+        "mass": -65536
+      },
+      "side": 99,
+      "receiver_out": [
+        13107,
+        13107
+      ],
+      "incoming_out": [
+        13107,
+        13107
+      ],
+      "result": 1
+    }
+  ]
+}
