@@ -126,3 +126,55 @@ export function nativeWormJumpLandingEntry(input, next, environment) {
   body.soundHandle = environment.soundHandle;
   return { body, calls };
 }
+
+const weaponActionState = (state) =>
+  state >= 0x68 && state <= 0x75 && state !== 0x73;
+
+// 004D8189..004D82CF. Called after the target state's entry routine.
+// Returns scheduler writes and the queued 0x432 event alongside body changes.
+export function nativeWormTransitionFinalize(input, previous, next, timer) {
+  const body = { ...input, state: next };
+  const calls = [];
+  if (
+    weaponActionState(previous) &&
+    !weaponActionState(next) &&
+    body.field298 === body.field29c &&
+    previous !== 0x70 &&
+    !body.field2e0
+  ) {
+    const payload = [body.team, body.worm, body.weaponId];
+    body.field298 = body.field29c = body.weaponId = body.weaponRecord = 0;
+    calls.push({
+      operation: "event",
+      delay: 0x14,
+      flags: 0,
+      id: 0x432,
+      size: 0x124,
+      payload,
+    });
+  }
+  const busy =
+    weaponActionState(next) || body.field26c !== 0 || body.field2e0 !== 0
+      ? 1
+      : 0;
+  if (busy && next !== 0x74) timer = 12;
+  return { body, calls, scheduler: { state: next, busy, timer } };
+}
+
+// State-specific branches 004DEB8D / 004DEBC5 of the worm update.
+// Native vertical velocity is positive downward: the apex, not animation
+// progress, triggers the wflyup -> wflylnk -> wflydn queue.
+export function nativeWormJumpLandingTick(state, sprite, progress, vy) {
+  if (state === 0x79 && sprite === 0x16 && vy > 0)
+    return {
+      calls: [
+        { operation: "queue", sprite_id: 0x18, progress: 0 },
+        { operation: "queue", sprite_id: 0x17, progress: 0 },
+      ],
+      target: null,
+    };
+  return {
+    calls: [],
+    target: state === 0x7a && progress >= 65536 ? 0x65 : null,
+  };
+}

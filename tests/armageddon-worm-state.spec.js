@@ -27,3 +27,30 @@ test("jump/landing entries match native sprite selection, voices and velocity-ba
     ).toEqual(v.result);
   }
 });
+
+import { nativeWormTransitionFinalize } from "../src/armageddon/worm-state.js";
+const finalization = JSON.parse(
+  fs.readFileSync(
+    new URL("./fixtures/armageddon/worm-finalize.json", import.meta.url),
+  ),
+);
+test("worm transition finalization preserves native event and scheduler decisions", () => {
+  expect(finalization.cases).toHaveLength(7220);
+  for (const v of finalization.cases) {
+    expect(
+      nativeWormTransitionFinalize(v.input, v.previous, v.next, v.timer),
+      JSON.stringify(v),
+    ).toEqual(v.result);
+  }
+});
+
+import { nativeWormJumpLandingTick } from "../src/armageddon/worm-state.js";
+test("jump and landing ticks match native apex and animation completion boundaries", () => {
+  expect(finalization.jump_landing_ticks).toHaveLength(420);
+  for (const v of finalization.jump_landing_ticks) {
+    expect(
+      nativeWormJumpLandingTick(v.state, v.sprite, v.progress, v.vy),
+      JSON.stringify(v),
+    ).toEqual(v.result);
+  }
+});
