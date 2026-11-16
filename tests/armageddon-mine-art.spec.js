@@ -17,6 +17,10 @@ test("mine water sprites, rotation and render order match the original executabl
 test("live submerged mines use original water artwork at zero rotation", async ({
   page,
 }) => {
+  const splashes = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/splash.wav")) splashes.push(request.url());
+  });
   await page.goto("/");
   await expect
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
@@ -24,6 +28,7 @@ test("live submerged mines use original water artwork at zero rotation", async (
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await page.locator("#sound").click();
   await page.locator("#inventory-toggle").click();
   const mine = page.locator('[data-weapon="mine"]');
   if (!(await mine.isVisible())) await page.locator("#special-toggle").click();
@@ -53,4 +58,5 @@ test("live submerged mines use original water artwork at zero rotation", async (
       timeout: 6000,
     })
     .toBe(0);
+  expect(splashes.length).toBeGreaterThan(0);
 });

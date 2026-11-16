@@ -6,6 +6,7 @@ import { nativeMineArt } from "./armageddon/mine-art.js";
 import { nativeMineWater } from "./armageddon/mine-water.js";
 import { nativeMineStateEvents } from "./armageddon/mine-state.js";
 import { nativeMineHit, nativeMineHitBodies } from "./armageddon/mine-hit.js";
+import { nativeWaterSound } from "./armageddon/water-audio.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
@@ -3966,12 +3967,21 @@ function step(dt) {
   }
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
     const mine = mines[i];
+    const waterSound = (body, skim) => {
+      const { sound: request } = nativeWaterSound(body, skim);
+      if (!sound || !request) return;
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      playNativeWaterSound(audio, request);
+    };
     const collide = (x, y, body) => nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
     mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
       frame: matchRandom.frame, index: i, waterY: Math.floor(H - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
     }, {
       awake: nativeBodyAwake, collide,
+      skim: body => waterSound(body, true),
+      waterChanged: body => waterSound(body, false),
       bounce: (body, hit, side) => {
         const other = hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : {type: 1, vx: 0, vy: 0};
         nativeMineContact(body, mine.nativeTimer, side, 0, {
@@ -5513,7 +5523,7 @@ if (import.meta.env.DEV) {
       if (!mine) return;
       Object.assign(mine.nativeBody, {
         x: 8 * 65536, y: Math.round((H - waterLevel + 5) * 65536),
-        vx: 0, vy: 0, angle: 32768, submerged: 1,
+        vx: 0, vy: 0, angle: 32768, submerged: 0,
       });
     },
     setMinePhysicalState(state = 1, index = 0) {

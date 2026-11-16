@@ -1,0 +1,587 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "entries": [
+    "004F4FC0",
+    "004F4FE0",
+    "004EDC90"
+  ],
+  "method": "Original callbacks execute the original sound queue with counts 0,15,16. No audio backend called. Static descriptors 0055F258 and 0055F260 map IDs 57/58 to Splash.wav/Splish.wav.",
+  "cases": [
+    {
+      "skim": false,
+      "velocity": [
+        0,
+        0
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        57,
+        0,
+        65536,
+        32768,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        0,
+        0
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        57,
+        0,
+        65536,
+        32768,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        0,
+        0
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        65536,
+        0
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        57,
+        0,
+        65536,
+        45875,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        65536,
+        0
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        57,
+        0,
+        65536,
+        45875,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        65536,
+        0
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        -65536,
+        32768
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        57,
+        0,
+        65536,
+        52428,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        -65536,
+        32768
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        57,
+        0,
+        65536,
+        52428,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        -65536,
+        32768
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        786432,
+        -262144
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        57,
+        0,
+        65536,
+        242483,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        786432,
+        -262144
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        57,
+        0,
+        65536,
+        242483,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        786432,
+        -262144
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        2147483647,
+        1
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        57,
+        0,
+        65536,
+        -429463961,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        2147483647,
+        1
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        57,
+        0,
+        65536,
+        -429463961,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        2147483647,
+        1
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        -2147483648,
+        0
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        57,
+        0,
+        65536,
+        -429463961,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        -2147483648,
+        0
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        57,
+        0,
+        65536,
+        -429463961,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": false,
+      "velocity": [
+        -2147483648,
+        0
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        0,
+        0
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        0,
+        0
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        0,
+        0
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        65536,
+        0
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        65536,
+        0
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        65536,
+        0
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        -65536,
+        32768
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        -65536,
+        32768
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        -65536,
+        32768
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        786432,
+        -262144
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        786432,
+        -262144
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        786432,
+        -262144
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        2147483647,
+        1
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        2147483647,
+        1
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        2147483647,
+        1
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        -2147483648,
+        0
+      ],
+      "suppress": 0,
+      "count": 0,
+      "after": 1,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        -2147483648,
+        0
+      ],
+      "suppress": 0,
+      "count": 15,
+      "after": 16,
+      "sound": [
+        58,
+        0,
+        65536,
+        65536,
+        0
+      ],
+      "suppress_out": 0
+    },
+    {
+      "skim": true,
+      "velocity": [
+        -2147483648,
+        0
+      ],
+      "suppress": 0,
+      "count": 16,
+      "after": 16,
+      "sound": null,
+      "suppress_out": 0
+    }
+  ]
+}
