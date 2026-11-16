@@ -102,8 +102,10 @@ test("contact friction stops sliding and projectile hits include the head", () =
   expect(hitsWorm(w, w.x, w.y + 55)).toBe(false);
 });
 test("charge power grows with hold duration, caps, and bounce reflects normal", () => {
-  expect(chargePower(0.2)).toBe(10);
-  expect(chargePower(1)).toBe(50);
+  expect(chargePower(0.2)).toBe((8730 / 65536) * 100);
+  expect(chargePower(1)).toBe((43650 / 65536) * 100);
+  expect(chargePower(1.5)).toBe((65475 / 65536) * 100);
+  expect(chargePower(1.52)).toBe(100);
   expect(chargePower(3)).toBe(100);
   const p = { vx: 80, vy: -100 };
   reflectVelocity(p, { x: 0, y: 1 }, 0.5);

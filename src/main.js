@@ -1,3 +1,4 @@
+import { nativeChargeTick } from "./armageddon/power.js";
 import { freezeTeam } from "./armageddon/freeze.js";
 import {
   WEAPON_SLOTS,
@@ -42,7 +43,6 @@ import {
   stepWorm,
   terrainNormal,
   reflectVelocity,
-  chargePower,
   launchGeometry,
   GRAVITY,
 } from "./physics.js";
@@ -266,7 +266,7 @@ let shotFuse = null,
   aiPlan = null,
   hitStop = 0;
 let charging = false,
-  chargeSeconds = 0,
+  chargeFixed = 0,
   chargeSource = null,
   aimInput = 0,
   retreat = 0,
@@ -1902,7 +1902,7 @@ function startCharge(source) {
     return;
   }
   charging = true;
-  chargeSeconds = 0;
+  chargeFixed = 0;
   power = 0;
   move = 0;
   aimInput = 0;
@@ -1913,7 +1913,7 @@ function startCharge(source) {
 function cancelCharge() {
   if (chargeSource === "ai") aiWait = 0.3;
   charging = false;
-  chargeSeconds = 0;
+  chargeFixed = 0;
   power = 0;
   chargeSource = null;
 }
@@ -2737,7 +2737,7 @@ function aiAim() {
   power = 0;
   charging = true;
   chargeSource = "ai";
-  chargeSeconds = 0;
+  chargeFixed = 0;
   aiWait = Infinity;
   updateSliders();
   $("#status").textContent =
@@ -2782,8 +2782,8 @@ function step(dt) {
       updateUI();
     }
     if (charging) {
-      chargeSeconds += dt;
-      power = chargePower(chargeSeconds);
+      chargeFixed = nativeChargeTick(1, chargeFixed).power;
+      power = (chargeFixed / 65536) * 100;
       if (power >= (chargeSource === "ai" ? aiPower : 100)) {
         charging = false;
         chargeSource = null;

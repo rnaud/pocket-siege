@@ -1,3 +1,5 @@
+import { NATIVE_CHARGE_STEP } from "./armageddon/power.js";
+import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { generateTerrain } from "./map-generator.js";
 import { islandTop, islandVoid } from "./island-profile.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
@@ -261,7 +263,8 @@ export function reflectVelocity(p, n, restitution = 0.55) {
   p.vy -= ty * tangent;
 }
 export function chargePower(seconds) {
-  return Math.min(100, Math.max(0, (seconds / 2) * 100));
+  const ticks = Math.max(0, Math.floor(seconds / LOGIC_STEP_SECONDS + 1e-9));
+  return (Math.min(65536, ticks * NATIVE_CHARGE_STEP) / 65536) * 100;
 }
 
 // Sample intervening rock before a blast carves it away. Thick cover attenuates
