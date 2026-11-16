@@ -150,11 +150,20 @@ test("explosions render native debris for the selected terrain and release it", 
   await page.locator("#terrain-theme").selectOption("snow");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.explodeAt(600, 500, "rocket"));
-  const debris = await page.evaluate(
-    () => window.siege.getState().debrisSprites,
-  );
-  expect(debris).toHaveLength(46);
+  const { debris, explosions } = await page.evaluate(() => {
+    window.siege.debug.resetSeed(42);
+    const before = window.siege.getState().explosions;
+    window.siege.debug.explodeAt(600, 500, "rocket");
+    const state = window.siege.getState();
+    return {
+      debris: state.debrisSprites,
+      explosions: state.explosions - before,
+    };
+  });
+  // A barrel in range can synchronously add a second explosion. Each emits
+  // 46 original fragments; both are valid and must use the selected theme.
+  expect(explosions).toBeGreaterThanOrEqual(1);
+  expect(debris).toHaveLength(46 * explosions);
   expect(debris.every((p) => p.theme === "snow")).toBe(true);
   await expect
     .poll(
