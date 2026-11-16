@@ -18,6 +18,7 @@ test("settings round-trip and reject unknown values", () => {
   expect(readSettings(storage)).toEqual(defaultSettings());
   const settings = {
     sound: true,
+    weaponDelays: { holy: 2, airstrike: -1 },
     mode: "local",
     difficulty: "veteran",
     format: "best3",
@@ -31,6 +32,9 @@ test("settings round-trip and reject unknown values", () => {
   };
   writeSettings(settings, storage);
   expect(readSettings(storage)).toEqual(settings);
+  const { weaponDelays, ...legacy } = settings;
+  writeSettings(legacy, storage);
+  expect(readSettings(storage)).toEqual({ ...legacy, weaponDelays: {} });
   writeSettings({ ...settings, mode: "online", weather: "snow" }, storage);
   expect(readSettings(storage).mode).toBe("ai");
   expect(readSettings(storage).weather).toBe("clear");
