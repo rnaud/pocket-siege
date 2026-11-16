@@ -1503,7 +1503,7 @@ function handleUtilityTarget(e) {
     utilityAmmo[team].teleport = spendAmmo(utilityAmmo[team].teleport);
     w.vx = w.vy = 0;
     startOriginalTeleport(w, x, y);
-    finishUtilityTurn("Teleported. Turn over.");
+    finishUtilityTurn("Teleporting. Turn ends after arrival.");
     return;
   }
   if (targetUtility === "girder") {
