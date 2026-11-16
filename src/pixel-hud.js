@@ -2,6 +2,7 @@ import {
   paintNativeHUDFrame,
   paintNativeTeamHealth,
 } from "./armageddon/hud-frame.js";
+import { loadNativeFont, paintNativeText } from "./armageddon/font.js";
 
 const frames = new Set();
 function frame(element, ornate = false) {
@@ -91,6 +92,23 @@ export function mountPixelHUD(arena) {
   frame(document.querySelector("#menu"), true);
   document.querySelector(".team-lime b").textContent = "MOSS";
   document.querySelector(".team-coral b").textContent = "CORAL";
+  for (const [selector, fontName] of [
+    [".team-lime b", "stdgrn1"],
+    [".team-coral b", "stdred1"],
+  ]) {
+    const label = document.querySelector(selector);
+    loadNativeFont(fontName)
+      .then((font) => {
+        const canvas = document.createElement("canvas");
+        canvas.className = "native-team-name";
+        canvas.setAttribute("aria-hidden", "true");
+        label.setAttribute("aria-label", label.textContent);
+        paintNativeText(canvas, font, label.textContent);
+        label.replaceChildren(canvas);
+        label.dataset.nativeFont = fontName;
+      })
+      .catch((error) => console.warn("Native team font unavailable", error));
+  }
   document.querySelector("#restart").textContent = "MENU";
   document.querySelector(".brand small").textContent = "";
   document.querySelector(".move-heading > span").textContent = "MOVE";

@@ -45,8 +45,9 @@ export function paintNativeHUDFrame(canvas, width, height, fill) {
 }
 export function paintNativeTeamHealth(canvas, hp, maxHp, color) {
   const amount = Math.max(0, Math.min(100, Math.floor((hp * 100) / maxHp)));
-  paintNativeHUDFrame(canvas, amount + 4, 13, color);
+  // 004B8350 takes the standard font's 16px height; 004B87B0 adds one.
+  paintNativeHUDFrame(canvas, amount + 4, 17, color);
   canvas.style.width = `${canvas.width * 2}px`;
-  canvas.style.height = "26px";
+  canvas.style.height = "34px";
   canvas.dataset.nativeHealth = String(amount);
 }

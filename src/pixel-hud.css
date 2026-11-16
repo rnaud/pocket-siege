@@ -1972,14 +1972,14 @@ body.native-game-hud {
   top: 8px;
   width: 320px;
   max-width: calc(100% - 16px);
-  height: 26px;
+  height: 34px;
   padding: 0;
   background: none;
   border: 0;
   box-shadow: none;
 }
 .native-game-hud .team-coral {
-  top: 38px;
+  top: 46px;
 }
 .native-game-hud .team .team-portrait,
 .native-game-hud .team .team-roster,
@@ -2007,13 +2007,13 @@ body.native-game-hud {
     -1px -1px #000;
 }
 .native-game-hud .team.active-team b::before {
-  content: "▶ ";
+  content: none;
   color: #fff;
 }
 .native-game-hud .health-track {
   width: 208px;
   min-width: 0;
-  height: 26px;
+  height: 34px;
   margin: 0;
   background: none;
   box-shadow: none;
@@ -2021,6 +2021,11 @@ body.native-game-hud {
 .native-game-hud .native-team-health {
   display: block;
   max-width: none;
+  image-rendering: pixelated;
+}
+.native-game-hud .native-team-name {
+  display: block;
+  margin-left: auto;
   image-rendering: pixelated;
 }
 .native-game-hud .turn {
@@ -2112,7 +2117,7 @@ body.native-game-hud {
     width: 88px;
   }
   .native-game-hud .arena-top {
-    top: 70px;
+    top: 84px;
   }
   .native-game-hud #wind.original-wind {
     right: 8px;
