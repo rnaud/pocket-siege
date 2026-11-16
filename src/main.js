@@ -1,3 +1,7 @@
+import {
+  loadOriginalGirders,
+  stampOriginalGirder,
+} from "./armageddon/girders.js";
 import { originalMapSpawns } from "./armageddon/map-placement.js";
 import {
   originalMapCatalog,
@@ -349,6 +353,7 @@ const originalAssets = Promise.all([
   loadOriginalTerrain(),
   loadOriginalWater(),
   loadOriginalHUDIcons(),
+  loadOriginalGirders(),
 ]);
 originalAssets
   .then(() =>
@@ -1431,32 +1436,16 @@ function finishUtilityTurn(text) {
   updateUI();
 }
 function addGirder(cx, cy, angle = 0, length = 64) {
-  const r = (angle * Math.PI) / 180;
-  for (let t = -length / 2; t <= length / 2; t += 1) {
-    const gx = Math.round(cx + Math.cos(r) * t),
-      gy = Math.round(cy + Math.sin(r) * t);
-    for (let n = -3; n <= 3; n++) {
-      const x = Math.round(gx + Math.sin(r) * n),
-        y = Math.round(gy - Math.cos(r) * n);
-      if (x >= 0 && x < W && y >= 0 && y < H) terrain.data[y * W + x] = 1;
-    }
-  }
+  const index = Math.max(0, Math.min(8, 4 - Math.round(angle / 22.5)));
+  const name = `grd${length > 72 ? "l" : "s"}${index}`;
+  const original = stampOriginalGirder(terrain, W, H, cx, cy, name);
+  if (!original) return false;
   paintTerrain(ctx, terrain, texture);
-  updateOriginalBackdrop();
   terrainDirty = false;
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(length, 7, 5),
-    new THREE.MeshBasicMaterial({ color: 0x6f8a52 }),
-  );
-  const ink = new THREE.LineSegments(
-    new THREE.EdgesGeometry(mesh.geometry),
-    new THREE.LineBasicMaterial({ color: 0x17383b }),
-  );
-  mesh.add(ink);
-  mesh.position.set(cx, cy, 18);
-  mesh.rotation.z = r;
-  group.add(mesh);
-  girders.push({ mesh, cx, cy, angle, length });
+  // Keep placement metadata; artwork is part of the destructible terrain.
+  const mesh = new THREE.Group();
+  girders.push({ mesh, cx, cy, angle, length, original });
+  return true;
 }
 function handleUtilityTarget(e) {
   if (!targetUtility) return;
@@ -4382,6 +4371,9 @@ window.siege = {
         }
       : null,
     girders: girders.map((g) => ({
+      sprite: g.original?.name,
+      width: g.original?.width,
+      height: g.original?.height,
       x: Math.round(g.cx),
       y: Math.round(g.cy),
       angle: g.angle,
