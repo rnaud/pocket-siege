@@ -168,8 +168,8 @@
     {
       "slot": 20,
       "native_name": "Prod",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "prod",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 9
     },

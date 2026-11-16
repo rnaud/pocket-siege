@@ -152,6 +152,7 @@ const names = [
     "wdie",
     "wbaz",
     "wshotg",
+    "wprod",
     "wshotf",
     "wshotp",
     "wparacht",
@@ -533,7 +534,7 @@ export function stepOriginalLanding(worm) {
 }
 
 export function startOriginalPreparation(worm, weapon, angle) {
-  if (!["shotgun", "handgun", "uzi", "minigun"].includes(weapon)) return false;
+  if (!["shotgun", "handgun", "uzi", "minigun", "prod"].includes(weapon)) return false;
   const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
   const record = weaponFields[WEAPON_SLOTS[weapon]];
   const state = nativePreparation(

@@ -180,6 +180,10 @@ export const WEAPONS = {
     ammo: 3,
     special: "melee",
   },
+  prod: {
+    label: "Prod", icon: "☞", radius: 12, damage: 0,
+    wind: false, speed: 0, timed: false, bounces: false, ammo: -1, special: "prod",
+  },
   magic: {
     label: "Magic bullet", icon: "➹", radius: 100, damage: 100,
     wind: false, speed: 1, timed: false, bounces: false, ammo: 1, special: "homing",
@@ -250,6 +254,7 @@ export const WEAPONS = {
 };
 
 export const SPECIAL_WEAPONS = [
+  "prod",
   "uzi", "minigun",
   "handgun",
   "postal",
@@ -277,6 +282,7 @@ export const PROJECTILE_ORDER = [
   "holy",
 ];
 export const freshAmmo = () => ({
+  prod: WEAPONS.prod.ammo,
   uzi: WEAPONS.uzi.ammo,
   minigun: WEAPONS.minigun.ammo,
   handgun: WEAPONS.handgun.ammo,

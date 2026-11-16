@@ -1,3 +1,4 @@
+import { nativeProdRequest } from "./armageddon/prod.js";
 import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
 import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
 import { nativeMineBlast } from "./armageddon/mine-blast.js";
@@ -2192,6 +2193,7 @@ function updateSliders() {
     handgun: "FIRE HANDGUN",
     uzi: "FIRE UZI",
     minigun: "FIRE MINIGUN",
+    prod: "PROD",
     homing: homingTarget ? null : "SET TARGET",
     pigeon: homingTarget ? null : "SET TARGET",
     magic: homingTarget ? null : "SET TARGET",
@@ -2245,6 +2247,7 @@ function startCharge(source) {
     fireBulletWeapon(false, weapon);
     return;
   }
+  if (weapon === "prod") { fireProd(); return; }
   if (weapon === "bat") {
     fireBat();
     return;
@@ -2563,6 +2566,72 @@ function placeDynamite() {
   }
   finishAction("Dynamite dropped. Five-second fuse — retreat!");
 }
+function applyNativeAreaRequest(targets, request) {
+    for (const dispatch of nativeAreaDamage(targets, request)) {
+      if (!dispatch.packet) continue;
+      const mine = targets[dispatch.body].mine;
+      if (mine) {
+        mine.nativeBody = nativeMineHit(mine.nativeBody, dispatch.packet);
+        continue;
+      }
+      const victim = targets[dispatch.body].worm;
+      const [, , , vx, vy] = dispatch.packet;
+      const response = nativeDirectHitResponse(
+        {
+          state: victim.frozen > 0 ? 0x88 : 0x65,
+          vx: Math.round((victim.vx * 65536) / 50),
+          vy: Math.round((-victim.vy * 65536) / 50),
+          x: Math.round(victim.x * 65536),
+          y: Math.round((H - victim.y) * 65536),
+          fieldB0: 0,
+          accumulated: victim.nativeBlastAccumulated ?? 0,
+          seen: victim.nativeDirectHitFrame === matchRandom.frame ? 1 : 0,
+        },
+        dispatch.packet,
+        0, // Host scheme delay adapter; native scheme receiver state remains partial.
+        1,
+        {
+          frame: matchRandom.frame,
+          previousFrame: victim.nativeHitVoiceFrame ?? 0,
+          nextRandom: () => matchRandom.logicUint(),
+        },
+      );
+      if (response.result.seen) victim.nativeDirectHitFrame = matchRandom.frame;
+      victim.nativeBlastAccumulated = response.result.accumulated;
+      victim.nativeBlastResponseState = response.result.state;
+      for (const call of response.output) {
+        if (call.state) startOriginalHurt(victim, call.state);
+        if (call.base) {
+          applyNativeWeaponImpulse(victim, vx, vy);
+          victim.knocked = true;
+          victim.ground = false;
+        }
+        if (call.sound) sfx("frozenhit");
+        if (call.voice) {
+          victim.nativeHitVoiceFrame = call.voice.frame;
+          if (sound) {
+            audio ??= new (window.AudioContext || window.webkitAudioContext)();
+            audio.resume();
+            victim.nativeHitVoicePlayback = playNativeHitVoice(
+              audio,
+              call.voice,
+              victim.nativeHitVoicePlayback,
+            );
+          }
+        }
+        if (call.blood)
+          for (const request of nativeBloodBurst(
+            ...call.blood,
+            nativeBloodAmount,
+            0,
+            Math.round(0x3d70 * gravityScale),
+            () => matchRandom.logicUint(),
+          ))
+            spawnNativeParticleRequest(request);
+        if (call.health) injure(victim, call.health[0], Math.sign(vx), true);
+      }
+    }
+}
 function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
   const config = nativeHitscanWeapon(kind, burst);
   const rayConfig = config.ray, resolutionConfig = config.resolution;
@@ -2655,70 +2724,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
   wormLocked = true;
   if (resolution.area) {
     // 004F7DA0 selects every nearby body, including self, and emits 0x433.
-    for (const dispatch of nativeAreaDamage(targets, resolution.area)) {
-      if (!dispatch.packet) continue;
-      const mine = targets[dispatch.body].mine;
-      if (mine) {
-        mine.nativeBody = nativeMineHit(mine.nativeBody, dispatch.packet);
-        continue;
-      }
-      const victim = targets[dispatch.body].worm;
-      const [, , , vx, vy] = dispatch.packet;
-      const response = nativeDirectHitResponse(
-        {
-          state: victim.frozen > 0 ? 0x88 : 0x65,
-          vx: Math.round((victim.vx * 65536) / 50),
-          vy: Math.round((-victim.vy * 65536) / 50),
-          x: Math.round(victim.x * 65536),
-          y: Math.round((H - victim.y) * 65536),
-          fieldB0: 0,
-          accumulated: victim.nativeBlastAccumulated ?? 0,
-          seen: victim.nativeDirectHitFrame === matchRandom.frame ? 1 : 0,
-        },
-        dispatch.packet,
-        0, // Bullet kind 3 does not read the scheme delay byte.
-        1,
-        {
-          frame: matchRandom.frame,
-          previousFrame: victim.nativeHitVoiceFrame ?? 0,
-          nextRandom: () => matchRandom.logicUint(),
-        },
-      );
-      if (response.result.seen) victim.nativeDirectHitFrame = matchRandom.frame;
-      victim.nativeBlastAccumulated = response.result.accumulated;
-      victim.nativeBlastResponseState = response.result.state;
-      for (const call of response.output) {
-        if (call.state) startOriginalHurt(victim, call.state);
-        if (call.base) {
-          applyNativeWeaponImpulse(victim, vx, vy);
-          victim.knocked = true;
-          victim.ground = false;
-        }
-        if (call.sound) sfx("frozenhit");
-        if (call.voice) {
-          victim.nativeHitVoiceFrame = call.voice.frame;
-          if (sound) {
-            audio ??= new (window.AudioContext || window.webkitAudioContext)();
-            audio.resume();
-            victim.nativeHitVoicePlayback = playNativeHitVoice(
-              audio,
-              call.voice,
-              victim.nativeHitVoicePlayback,
-            );
-          }
-        }
-        if (call.blood)
-          for (const request of nativeBloodBurst(
-            ...call.blood,
-            nativeBloodAmount,
-            0,
-            Math.round(0x3d70 * gravityScale),
-            () => matchRandom.logicUint(),
-          ))
-            spawnNativeParticleRequest(request);
-        if (call.health) injure(victim, call.health[0], Math.sign(vx), true);
-      }
-    }
+    applyNativeAreaRequest(targets, resolution.area);
     terrain.craterRim ??= new Uint8Array(W * H);
     carveNativeCrater(
       terrain.data,
@@ -2765,6 +2771,28 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     const playback = playNativeProjectileReleaseSound(audio, release);
     if (burst && playback) burst.playback = playback;
   }
+}
+function fireProd(prepared = false) {
+  if ((!prepared && !canAct()) || (availableAmmo(ammo[team], "prod") ?? 0) <= 0) return;
+  const w = worms[current];
+  if (!prepared && startOriginalPreparation(w, "prod", angle)) {
+    pendingFire = { worm: w, angle, kind: "prod", stage: "prepare" };
+    wormLocked = true;
+    move = aimInput = 0;
+    charging = false;
+    chargeSource = null;
+    updateUI();
+    return;
+  }
+  const config = nativeHitscanWeapon("prod");
+  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a,b) => a.type - b.type);
+  applyNativeAreaRequest(targets, nativeProdRequest(config.record,
+    Math.round(w.x * 65536), Math.round((H - w.y) * 65536), w.facing));
+  spendSpecial("prod");
+  shotCount++;
+  wormLocked = true;
+  startOriginalRecoil(w, "prod", angle, matchRandom.frame);
+  finishAction("Prod complete. Retreat!");
 }
 function fireBat() {
   if (!canAct() || (availableAmmo(ammo[team], "bat") ?? 0) <= 0) return;
@@ -2823,6 +2851,7 @@ function fire() {
     fireBulletWeapon(false, kind);
     return;
   }
+  if (kind === "prod") { fireProd(); return; }
   if (kind === "bat") {
     fireBat();
     return;
@@ -4189,7 +4218,8 @@ function step(dt) {
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;
-        fireBulletWeapon(true, pending.kind ?? "shotgun", pending.burst);
+        if (pending.kind === "prod") fireProd(true);
+        else fireBulletWeapon(true, pending.kind ?? "shotgun", pending.burst);
       }
     }
   }
