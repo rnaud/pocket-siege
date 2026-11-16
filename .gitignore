@@ -5,3 +5,6 @@ playwright-report/
 .DS_Store
 
 .pnpm-store/
+
+# Local reverse-engineering artifacts from user-provided games.
+.local-research/

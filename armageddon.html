@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Armageddon asset library</title>
+    <style>
+      @font-face {
+        font-family: Pixel;
+        src: url("./fonts/siege-pixel.ttf");
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #182932;
+        color: #f4e4c5;
+        font:
+          18px Pixel,
+          monospace;
+        padding: 24px;
+      }
+      main {
+        max-width: 1000px;
+        margin: auto;
+      }
+      a {
+        color: #cddd9c;
+      }
+      h1 {
+        font-size: 28px;
+      }
+      section {
+        border: 3px solid #566452;
+        padding: 20px;
+        margin: 20px 0;
+        background: #23363d;
+      }
+      label {
+        display: inline-block;
+        margin: 8px;
+      }
+      select,
+      button,
+      input {
+        font: inherit;
+        background: #10212b;
+        color: inherit;
+        padding: 8px;
+        border: 2px solid #78866a;
+        max-width: 100%;
+      }
+      button {
+        cursor: pointer;
+      }
+      canvas {
+        display: block;
+        image-rendering: pixelated;
+        background: #344651;
+        max-width: 100%;
+        margin: 16px 0;
+      }
+      #details {
+        line-height: 1.5;
+      }
+      audio {
+        display: block;
+        width: 100%;
+        margin-top: 16px;
+      }
+      p {
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a href="./">← PLAY POCKET SIEGE</a>
+      <h1>ARMAGEDDON ASSET LIBRARY</h1>
+      <p>
+        Original pixels and audio from your disc. Pick an animation, step
+        through its frames, or audition a sound.
+      </p>
+      <section>
+        <label
+          >ANIMATION
+          <select id="sprite"></select></label
+        ><button id="pause">PAUSE</button
+        ><label
+          >SCALE
+          <select id="scale">
+            <option>2</option>
+            <option selected>4</option>
+            <option>6</option>
+          </select></label
+        ><canvas id="preview"></canvas
+        ><label
+          >FRAME <input id="frame" type="range" min="0" value="0"
+        /></label>
+        <p id="details">Loading…</p>
+      </section>
+      <section>
+        <label
+          >SOUND BANK
+          <select id="bank">
+            <option value="effects">EFFECTS</option>
+          </select></label
+        ><label
+          >SOUND
+          <select id="sound"></select></label
+        ><button id="play">PLAY SOUND</button
+        ><audio id="audio" controls></audio>
+      </section>
+      <p id="status" role="status"></p>
+    </main>
+    <script type="module" src="/src/armageddon/gallery.js"></script>
+  </body>
+</html>

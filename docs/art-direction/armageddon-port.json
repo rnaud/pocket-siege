@@ -1,0 +1,29 @@
+{
+  "objective": "Port everything back to our game from the decomp",
+  "reference_version": "3.0.0.0",
+  "status": "incomplete",
+  "verified": {
+    "numeric_primitives": "Signed 16.16 multiply/divide and two uint32 RNG recurrences match 317 native executable cases. Fixed arithmetic is not yet connected to movement."
+  },
+  "partial": {
+    "simulation_clock": "50 Hz integrated. Original input queues, frame dispatch, pause handling and fast-forward remain unported.",
+    "random_streams": "Gameplay and cosmetic streams integrated. Original caller masks, draw order and map RNG remain unported.",
+    "original_media": "User explicitly requested original sprites, animations and sounds, superseding the procedural-only art preference. Imported 770 SPR animations (14,273 frames), 123 effects and 49 voice banks (2,692 samples). All are browsable in armageddon.html. Core worm states, bazooka/shotgun aim strips and gameplay effect mappings are integrated. Remaining animation transitions, weapon art, utility art, HUD, sound priorities and voice triggers still require wiring. Preview animation rate is 25 fps, not verified task-specific original timing."
+  },
+  "remaining": [
+    "Worm collision geometry, integration, friction, gravity, walking, jumping, falling, knockback and drowning",
+    "Decode 71 weapon records, scheme overrides and all weapon state machines",
+    "Signed 16-bit ammo, per-weapon delay and availability consumers",
+    "Blast geometry, damage, occlusion, impulse, terrain carving, fire and chain reactions",
+    "Rope, jetpack, parachute, teleport, girders, freeze and other utilities",
+    "Team rotation, selection, timers, multiple shots, retreat, loss of control and sudden death",
+    "Map generation, collision masks, placement constraints, water, bridges and 29 terrain theme structures",
+    "Original animation timing, transitions, remaining weapon/utility aim poses and HUD integration",
+    "Original audio triggers, speech selection, looping and priorities",
+    "AI movement, trajectory search, weapon selection and difficulty",
+    "Missions, training, team setup, saved schemes and campaign progression",
+    "Replay, save and network input formats and state synchronization",
+    "Representative full-match trace comparison against the original"
+  ],
+  "constraints": "Original media imported from the user-provided ISO at their explicit request. Native SPR pixels are decoded directly without JPEG/PNG resampling. Executables and decompiled listings remain private. Current regression tests do not establish full gameplay equivalence."
+}

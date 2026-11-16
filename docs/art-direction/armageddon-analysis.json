@@ -1,0 +1,104 @@
+{
+  "analysis_date": "2026-11-15",
+  "input": {
+    "iso": "/Users/anf/Downloads/Worms Armageddon.iso",
+    "volume": "WA",
+    "executable": "/INSTALL/INSTALL/WA.EXE",
+    "file_version": "3.0.0.0",
+    "linker_timestamp": "1999-04-26 (header metadata, not independently authenticated)",
+    "executable_bytes": 4828672,
+    "sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56"
+  },
+  "method": {
+    "tool": "Ghidra 11.3.2",
+    "detected_functions_exported": 8025,
+    "scope": "Static analysis; pseudocode includes library functions, thunks and uncertain recovered types. Not recovered original source, not a verified rebuild.",
+    "game_executed": false,
+    "numeric_routines_executed": true,
+    "port_tracking": "docs/art-direction/armageddon-port.json",
+    "project_archive": ".local-research/armageddon/analysis.zip",
+    "working_directory": "/private/tmp/wa-analysis"
+  },
+  "confirmed_observations": [
+    {
+      "topic": "Weapon configuration",
+      "evidence": [
+        "decompiled/004b90a0.c",
+        "decompiled/004edad0.c"
+      ],
+      "finding": "Initializer clears 0x9038 bytes; getter indexes records with stride 0x208. This is 71 configuration records of 520 bytes, not a claim of 71 player-selectable weapons. 2,127 literal initializer writes were extracted, but most field meanings and overrides remain undecoded.",
+      "comparison": "Pocket Siege has compact hand-authored profiles. Expand behavior/state modeling only after relevant fields are verified."
+    },
+    {
+      "topic": "Weapon inventory and delays",
+      "evidence": [
+        "decompiled/0043f2e0.c",
+        "decompiled/00440470.c",
+        "decompiled/00440510.c"
+      ],
+      "finding": "Mission loader routes Ammo_Shotgun and Delay_Shotgun through separate helpers with index 0xB. Ammo loader treats -1 as unlimited and adds finite amounts to existing finite ammo; delay loader writes a separate 16-bit value.",
+      "comparison": "Pocket Siege has per-team ammo but no general per-weapon availability-delay configuration."
+    },
+    {
+      "topic": "Movement and placement arithmetic",
+      "evidence": [
+        "decompiled/004b7c00.c",
+        "decompiled/004b7a80.c"
+      ],
+      "finding": "Placement helper multiplies coordinates by 0x10000; related code shifts by 16. Candidate X is 32 + random modulo 1856. Collision-based placement searches are bounded at 75 attempts. Exact caller-specific placement semantics remain partially unresolved.",
+      "comparison": "Pocket Siege uses floating-point world coordinates and fixed horizontal spawn anchors. Matching behavior requires tracing fixed-point rules and collision profiles, not copying constants into the current units."
+    },
+    {
+      "topic": "Deterministic randomness",
+      "evidence": [
+        "decompiled/004ee960.c",
+        "decompiled/00440860.c"
+      ],
+      "finding": "The extra context field is the completed logic frame counter (004a1a00). Logic RNG computes (state + frame) * 1664525 + 1013904223 in uint32 arithmetic. A separate visual RNG at 004ee930 omits the frame addition. Both initialize from the mission seed (0049ca90). Native executable test vectors verify both recurrences.",
+      "comparison": "Pocket Siege now uses separate seeded gameplay and visual streams. Original caller masks, draw order and full frame dispatch remain unported."
+    },
+    {
+      "topic": "Turn and utility rules",
+      "evidence": [
+        "decompiled/00440860.c"
+      ],
+      "finding": "Mission options separately include WeaponsDontEndTurn, LossOfControlDoesntEndTurn, PauseTimerWhileFiring (default 1 in this loader), JetPackTimeLimit (default 20 here), destructibility and friction. These are loader defaults, not asserted standard-match defaults.",
+      "comparison": "Pocket Siege hardcodes more of these interactions and uses fuel-based jetpack behavior."
+    },
+    {
+      "topic": "Terrain structure",
+      "evidence": [
+        "terrain-archives.json",
+        "terrain-metadata/FOREST/index.txt",
+        "terrain-metadata/FOREST/tree1.inf",
+        "decompiled/0040a850.c"
+      ],
+      "finding": "29 terrain-theme archives contain separately named soil, grass, bridge pieces, background sprites, debris and object-placement metadata. Frontend code constructs landgen commands with bridges, water, generation, custom and mission modes. Presence of the command string does not prove an external landgen.exe is required or present.",
+      "comparison": "Pocket Siege terrain is procedural but its object placement and terrain material system are much simpler."
+    },
+    {
+      "topic": "Animation breadth",
+      "evidence": [
+        "exe-strings.txt"
+      ],
+      "finding": "788 .spr name strings, of which 591 begin with w. These are filename references, not independently decoded animations or frame counts. Examples include float/stand/drown transitions and up/down idle variants.",
+      "comparison": "Pocket Siege has a small whole-body pose set; weapon-specific transitions and aim variants remain a large visual gap."
+    }
+  ],
+  "not_yet_verified": [
+    "Original gravity and integration order",
+    "Exact jump and rope impulses",
+    "Weapon field meanings and final scheme-adjusted values",
+    "Explosion occlusion and damage formulas",
+    "Original animation frame dimensions/timing",
+    "Bit-for-bit or gameplay equivalence"
+  ],
+  "recommended_next_pass": [
+    "Identify projectile and worm movement handlers and their virtual tables",
+    "Decode selected weapon records and validate consumers before porting constants",
+    "Trace simulation clock and fixed-point rounding",
+    "Reconstruct terrain placement metadata semantics",
+    "Add reproducible gameplay RNG and configurable weapon delays in original code, backed by tests"
+  ],
+  "distribution": "Executables, pseudocode and Ghidra project remain local and gitignored. At the user's subsequent explicit request, original SPR animations, sound effects and voice banks are now imported in public/armageddon. See armageddon-port.json for integration coverage."
+}

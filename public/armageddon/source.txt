@@ -1,0 +1,7 @@
+Original sprites and audio: Worms Armageddon, Team17, disc version 3.0.0.0.
+Imported from the user's supplied ISO at their request.
+Graphics: installer DATA/Gfx/Gfx.dir (770 SPR files, 14,273 frames).
+Effects: installer DATA/Wav/Effects (123 WAV files).
+Speech: disc DATA/USER/SPEECH (49 banks, 2,692 WAV files).
+The SPR files retain their original palettes, pixels and frame rectangles.
+Animation preview defaults to 25 fps; original task-specific timing is still being traced.

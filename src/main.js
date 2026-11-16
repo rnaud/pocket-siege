@@ -1,3 +1,7 @@
+import { MatchRandom } from "./armageddon/random.js";
+import { loadOriginalArt, originalWormFrame } from "./armageddon/art.js";
+import { playOriginalSound } from "./armageddon/audio.js";
+import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
 import { fragments, airstrikePattern } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
@@ -64,6 +68,9 @@ import { UTILITIES, UTILITY_KINDS, freshUtilities } from "./utilities.js";
 import { SCHEMES } from "./schemes.js";
 import { modifierSettings } from "./modifiers.js";
 import { readSettings, writeSettings } from "./settings.js";
+const matchRandom = new MatchRandom(0);
+const logicRandom = () => matchRandom.logic();
+const visualRandom = () => matchRandom.visual();
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const coarsePointer = matchMedia("(pointer: coarse)").matches;
@@ -259,8 +266,17 @@ let lastShot = null,
   replayDuration = 1,
   replayReady = false,
   lastResult = null;
-// Procedural sprites are ready synchronously; no asset downloads are needed.
-const assetsReady = true;
+let assetsReady = false;
+let originalArtError = null;
+loadOriginalArt()
+  .then(() => {
+    assetsReady = true;
+  })
+  .catch((error) => {
+    originalArtError = error.message;
+    console.error("Original sprite loading failed", error);
+    assetsReady = true;
+  });
 const backdropMap = pixelTexture("landscape");
 const soldierMaps = [pixelTexture("soldier", 0), pixelTexture("soldier", 1)];
 const hurtMaps = [
@@ -530,7 +546,7 @@ function sfx(kind) {
   soundTimes.set(kind, now);
   audio ??= new (window.AudioContext || window.webkitAudioContext)();
   audio.resume();
-  playSound(audio, kind);
+  playOriginalSound(audio, kind, () => playSound(audio, kind));
 }
 function tone(freq, duration = 0.1, type = "sine") {
   if (!sound) return;
@@ -658,10 +674,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   fires = [];
   for (const h of hazards) dispose(h.mesh);
   hazards = [];
-  terrain = new Terrain(
-    seed ?? Math.floor(Math.random() * 0x7fffffff),
-    isDaily ? "fern" : $("#map-layout").value,
-  );
+  const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
+  matchRandom.reset(matchSeed);
+  terrain = new Terrain(matchSeed, isDaily ? "fern" : $("#map-layout").value);
   $(".location span").textContent = {
     fern: "FERN ISLAND",
     highlands: "HIGHLANDS",
@@ -711,11 +726,11 @@ function applyWeather() {
 function spawnCrate() {
   if (crate || !terrain) return;
   for (let tries = 0; tries < 40; tries++) {
-    const x = 150 + Math.random() * (W - 300),
+    const x = 150 + logicRandom() * (W - 300),
       ground = terrain.surface(x);
     if (ground < waterLevel + 30) continue;
     if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
-    const kind = PICKUP_KINDS[Math.floor(Math.random() * PICKUP_KINDS.length)],
+    const kind = PICKUP_KINDS[Math.floor(logicRandom() * PICKUP_KINDS.length)],
       mesh = createCrate(kind, crateMap),
       targetY = ground + 10;
     mesh.position.set(x, H + 34, 18);
@@ -726,7 +741,7 @@ function spawnCrate() {
       targetY,
       kind,
       mesh,
-      bob: Math.random() * Math.PI * 2,
+      bob: visualRandom() * Math.PI * 2,
       falling: true,
       vy: 0,
     };
@@ -737,7 +752,7 @@ function spawnHazards() {
   if (hazards.length || !terrain) return;
   for (let i = 0; i < 2; i++) {
     for (let tries = 0; tries < 30; tries++) {
-      const x = 180 + Math.random() * (W - 360),
+      const x = 180 + logicRandom() * (W - 360),
         ground = terrain.surface(x);
       if (ground < waterLevel + 50) continue;
       if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 70)) continue;
@@ -753,9 +768,9 @@ function spawnHazards() {
 }
 function spawnFire(x, y, owner = -1) {
   const mesh = new THREE.Mesh(
-    new THREE.CircleGeometry(28 + Math.random() * 10, 16),
+    new THREE.CircleGeometry(28 + visualRandom() * 10, 16),
     new THREE.MeshBasicMaterial({
-      color: Math.random() < 0.5 ? 0xff8b3c : 0xffc04d,
+      color: visualRandom() < 0.5 ? 0xff8b3c : 0xffc04d,
       transparent: true,
       opacity: 0.62,
       depthWrite: false,
@@ -820,7 +835,7 @@ function collectCrate(w) {
   let label;
   if (kind === "utility") {
     const pool = ["jetpack", "parachute", "teleport", "girder", "freeze"];
-    const utility = pool[Math.floor(Math.random() * pool.length)];
+    const utility = pool[Math.floor(logicRandom() * pool.length)];
     utilityAmmo[w.team][utility] = Math.min(
       3,
       (utilityAmmo[w.team][utility] ?? 0) + 1,
@@ -828,7 +843,7 @@ function collectCrate(w) {
     label = `+1 ${UTILITIES[utility].label}`;
   } else if (kind === "special") {
     const special =
-      SPECIAL_WEAPONS[Math.floor(Math.random() * SPECIAL_WEAPONS.length)];
+      SPECIAL_WEAPONS[Math.floor(logicRandom() * SPECIAL_WEAPONS.length)];
     ammo[w.team][special] = Math.min(3, (ammo[w.team][special] ?? 0) + 1);
     label = `+1 ${WEAPONS[special].label}`;
   } else {
@@ -903,7 +918,7 @@ function beginTurn() {
   wormLocked = false;
   time = turnSeconds;
   const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
-  wind = (Math.random() - 0.5) * windMax;
+  wind = (logicRandom() - 0.5) * windMax;
   slowMo = 0;
   angle = team ? 135 : 45;
   active.facing = team ? -1 : 1;
@@ -1937,7 +1952,7 @@ function placeMine() {
     team,
     arm: 1.2,
     mesh,
-    bob: Math.random() * Math.PI * 2,
+    bob: visualRandom() * Math.PI * 2,
   });
   ammo[team].mine = Math.max(0, ammo[team].mine - 1);
   if (ammo[team].mine === 0) setWeapon("rocket");
@@ -2283,7 +2298,7 @@ function explode(x, y, kind, ownerIndex = -1) {
   if (kind === "napalm") {
     for (let i = 0; i < 3; i++)
       spawnFire(
-        x + (i - 1) * 42 + (Math.random() - 0.5) * 12,
+        x + (i - 1) * 42 + (logicRandom() - 0.5) * 12,
         y - 10,
         ownerIndex,
       );
@@ -2297,9 +2312,9 @@ function explode(x, y, kind, ownerIndex = -1) {
     explode(h.x, h.y, "barrel", ownerIndex);
   }
   for (let i = 0; i < 46; i++) {
-    const a = Math.random() * Math.PI * 2,
-      s = 40 + Math.random() * 210,
-      size = 2 + Math.random() * 6;
+    const a = visualRandom() * Math.PI * 2,
+      s = 40 + visualRandom() * 210,
+      size = 2 + visualRandom() * 6;
     const mesh = new THREE.Mesh(debrisGeometry, debrisMaterials[i % 3 ? 0 : 1]);
     mesh.position.set(x, y, 35);
     mesh.scale.setScalar(size);
@@ -2311,7 +2326,7 @@ function explode(x, y, kind, ownerIndex = -1) {
       y,
       vx: Math.cos(a) * s,
       vy: Math.sin(a) * s,
-      life: 0.5 + Math.random() * 0.8,
+      life: 0.5 + visualRandom() * 0.8,
       max: 1.3,
     });
   }
@@ -2354,7 +2369,7 @@ function explode(x, y, kind, ownerIndex = -1) {
 }
 function spawnDust(x, y) {
   const mesh = new THREE.Mesh(dustGeometry, dustMaterial),
-    size = 2 + Math.random() * 3;
+    size = 2 + visualRandom() * 3;
   mesh.position.set(x, y, 30);
   mesh.scale.setScalar(size);
   group.add(mesh);
@@ -2363,8 +2378,8 @@ function spawnDust(x, y) {
     size,
     x,
     y,
-    vx: (Math.random() - 0.5) * 18,
-    vy: 8 + Math.random() * 14,
+    vx: (visualRandom() - 0.5) * 18,
+    vy: 8 + visualRandom() * 14,
     life: 0.4,
     max: 0.4,
   });
@@ -2611,7 +2626,7 @@ function startAiTurn() {
     difficulty,
     crate,
     worms,
-    random: Math.random,
+    random: logicRandom,
   });
   if (reposition && w.ground) {
     aiMoveTime = reposition.time;
@@ -2638,6 +2653,7 @@ function aiAim() {
     bounce: 0.55,
     gravityScale,
     blastScale,
+    random: logicRandom,
   });
   lastAiPlanMs = performance.now() - started;
   const chosen = plan ?? {
@@ -2996,6 +3012,7 @@ function step(dt) {
       particles.splice(i, 1);
     }
   }
+  matchRandom.finishFrame();
 }
 function screen(x, y) {
   return {
@@ -3043,9 +3060,9 @@ function frame(now) {
   accumulator += frameDt * (slow ? 0.35 : 1);
   last = now;
   arena.classList.toggle("slow-mo", slow);
-  while (accumulator >= 1 / 120) {
-    step(1 / 120);
-    accumulator -= 1 / 120;
+  while (accumulator >= LOGIC_STEP_SECONDS) {
+    step(LOGIC_STEP_SECONDS);
+    accumulator -= LOGIC_STEP_SECONDS;
   }
   let camTarget = chooseCameraTarget({
     phase,
@@ -3220,6 +3237,24 @@ function frame(now) {
     w.body.position.x =
       Math.round((w.recoil > 0 ? -facing * 4 : 0) / pixelWorldY) * pixelWorldY;
     w.g.userData.pose = pose;
+    const original = originalWormFrame(
+      w,
+      pose,
+      matchRandom.frame,
+      angle,
+      weapon,
+      active,
+    );
+    if (original) {
+      w.body.material.map = original.map;
+      // Original 60px canvases have a baseline at row 43. Native worms face left.
+      const scale = Math.max(1, Math.round((size / pixelWorldY / 60) * 1.45));
+      const unit = scale * pixelWorldY;
+      w.body.scale.set(-facing * 60 * unit, 60 * unit, 1);
+      w.body.position.set(0, 13 * unit, 24);
+      w.g.userData.originalSprite = original.name;
+      w.g.userData.originalFrame = original.index;
+    }
     w.body.material.color.setHex(
       w.hurt > 0.75 && Math.floor(w.hurt * 14) % 2 ? 0xff806c : 0xffffff,
     );
@@ -3243,6 +3278,7 @@ function frame(now) {
       1,
     );
     w.rig.pivot.visible =
+      !original?.aimed &&
       active &&
       w.hp > 0 &&
       w.hurt < 0.75 &&
@@ -3695,8 +3731,11 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 window.siege = {
   getState: () => ({
     assetsReady,
+    originalArtError,
     mapLayout: terrain.layout,
     mapSeed: terrain.seed,
+    random: matchRandom.snapshot(),
+    logicStepMs: LOGIC_STEP_SECONDS * 1000,
     shotgunRemaining,
     homingTarget,
     aim: lastAim,
@@ -3899,6 +3938,12 @@ if (import.meta.env.DEV) {
     setAmmo(teamIndex = 0, kind = "grenade", value = 5) {
       ammo[teamIndex][kind] = value;
       updateUI();
+    },
+    resetSeed(seed = 42) {
+      reset({ seed });
+    },
+    consumeVisualRandom(count = 1) {
+      for (let i = 0; i < count; i++) visualRandom();
     },
     setCrateKind(kind = "special") {
       if (crate) crate.kind = kind;
