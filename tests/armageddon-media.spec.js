@@ -205,3 +205,20 @@ test("original projectiles select drawn directional frames without rotating pixe
       expect(entry.frames).toEqual([0, 8, 16, 24]);
   }
 });
+
+test("homing switches between native launch and active-guidance sprites", async ({ page }) => {
+  await page.goto("/");
+  const result = await page.evaluate(async () => {
+    const art = await import("/src/armageddon/art.js");
+    await art.loadOriginalArt();
+    const mesh = art.createOriginalVisual("hmissil1");
+    const names = [];
+    for (const active of [false, true, false]) {
+      const updated = art.updateOriginalProjectile(mesh, "homing", 100, 20, 1, false, active);
+      names.push([updated, mesh.userData.originalSprite]);
+    }
+    mesh.geometry.dispose(); mesh.material.dispose();
+    return names;
+  });
+  expect(result).toEqual([[true,"hmissil2"],[true,"hmissil1"],[true,"hmissil2"]]);
+});

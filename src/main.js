@@ -3814,19 +3814,6 @@ function step(dt) {
       p.y = p.attached.w.y + p.attached.dy;
     }
     if (!p.sleeping && !p.stuck) {
-      if (p.kind === "homing" && p.age > 0.3) {
-        const target = p.target;
-        if (target) {
-          const speed = Math.hypot(p.vx, p.vy),
-            current = Math.atan2(p.vy, p.vx),
-            desired = Math.atan2(target.y - p.y, target.x - p.x);
-          let delta =
-            ((desired - current + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-          delta = Math.max(-2.8 * dt, Math.min(2.8 * dt, delta));
-          p.vx = Math.cos(current + delta) * speed;
-          p.vy = Math.sin(current + delta) * speed;
-        }
-      }
       if (p.nativeBody) {
         nativeContact = stepNativeProjectile(
           p,
@@ -3942,6 +3929,7 @@ function step(dt) {
         p.vy,
         p.age,
         p.y < waterLevel,
+        Boolean(p.nativeGuidance?.initialized),
       )
     )
       p.mesh.rotation.z =

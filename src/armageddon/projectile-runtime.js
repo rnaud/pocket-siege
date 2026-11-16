@@ -1,3 +1,4 @@
+import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
 import { nativeProjectileTimer } from "./projectile-timer.js";
 import { nativeProjectileContact } from "./projectile-contact.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
@@ -109,6 +110,14 @@ export function attachNativeProjectile(p, height) {
     specialSprite: words[38], phase: 0, loopSound: 0,
     warningPending: 0, warningBlocked: 0, warningScale: 0, state: 0,
   };
+  if (words[23] === 1) p.nativeGuidance = {
+    delay: words[32], duration: words[33], kind: words[31],
+    initialized: 0, steerX: 0, steerY: 0,
+    owner: p.nativeOwnerId ?? 0,
+    primaryTrail: words.slice(8, 12), secondaryTrail: words.slice(27, 31),
+    targetX: fixed(p.target?.x ?? p.x),
+    targetY: fixed(height - (p.target?.y ?? p.y)),
+  };
   return true;
 }
 
@@ -204,6 +213,21 @@ export function stepNativeProjectile(
   p.nativeTimer = timer.body;
   p.nativeBody.state = timer.body.state;
   events.push(...timer.calls.map(call => ({ ...call, timer: true })));
+  if (p.nativeBody.mode === 1 && p.nativeGuidance) {
+    if (p.nativeBody.submerged && (p.nativeBody.hitMask & 0x400000))
+      p.nativeBody.mode = 0;
+    else {
+      const guidance = nativeHomingSchedule({ ...p.nativeGuidance,
+        x: p.nativeBody.x, y: p.nativeBody.y,
+        vx: p.nativeBody.vx, vy: p.nativeBody.vy,
+      }, { steer: body => Object.assign(body, nativeHomingSteer(body)) });
+      p.nativeGuidance = guidance.body;
+      p.nativeTrail.fields = guidance.body.initialized ? guidance.body.secondaryTrail : guidance.body.primaryTrail;
+      p.nativeBody.vx = guidance.body.vx;
+      p.nativeBody.vy = guidance.body.vy;
+      events.push(...guidance.calls.map(call => ({ ...call, guidance: true })));
+    }
+  }
   p.x = p.nativeBody.x / 65536;
   p.y = height - p.nativeBody.y / 65536;
   p.vx = (p.nativeBody.vx / 65536) * 50;

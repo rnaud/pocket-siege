@@ -78,6 +78,7 @@ const names = [
     "missile",
     "mortar",
     "hmissil1",
+    "hmissil2",
     "grenade",
     "cluster",
     "hgrenade",
@@ -304,9 +305,11 @@ export function updateOriginalProjectile(
   vy,
   age,
   submerged = false,
+  guidanceActive = true,
 ) {
-  const base = projectileSprites[kind];
-  if (!base || ![base, `water/${base}`].includes(mesh.userData.originalSprite))
+  const base = kind === "homing" && !guidanceActive ? "hmissil2" : projectileSprites[kind];
+  const allowed = kind === "homing" ? ["hmissil1", "hmissil2", "water/hmissil1", "water/hmissil2"] : [base, `water/${base}`];
+  if (!base || !allowed.includes(mesh.userData.originalSprite))
     return false;
   const name = submerged ? `water/${base}` : base;
   const animation = animations.get(name);

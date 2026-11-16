@@ -169,3 +169,27 @@ test("resting holy grenade completes its native delay and queues one holy cue", 
   expect(sounds.map(s => s.request)).toEqual([[104,4,65536,65536,0]]);
   expect(stepNativeProjectile(p, { ...environment, frame: 241 }, () => 0).detonate).toBe(true);
 });
+
+test("homing activates after 500ms and integrates native guidance for 3500ms", () => {
+  const p = projectile("homing", { vx: 200, vy: 0, target: { x: 400, y: 500 } });
+  p.nativeBody.gravityScale = 0;
+  for (let frame = 1; frame <= 25; frame++) {
+    const result = stepNativeProjectile(p, { ...environment, waterLevel: -10000, frame }, () => 0);
+    expect(result.events.some(e => e.guidance && e.operation === "steer")).toBe(false);
+    expect(Math.abs(p.vy)).toBe(0);
+  }
+  expect(p.nativeGuidance.delay).toBe(0);
+  expect(p.nativeTrail.fields[0]).toBe(0);
+  const first = stepNativeProjectile(p, { ...environment, waterLevel: -10000, frame: 26 }, () => 0);
+  expect(first.events).toContainEqual({ operation: "steer", guidance: true });
+  expect(p.vy).toBeGreaterThan(0);
+  expect(p.nativeGuidance.duration).toBe(3480);
+  expect(p.nativeTrail.fields[0]).toBe(810);
+  for (let frame = 27; frame <= 200; frame++)
+    stepNativeProjectile(p, { ...environment, waterLevel: -10000, frame }, () => 0);
+  expect(p.nativeGuidance.duration).toBe(0);
+  expect(p.nativeTrail.fields[0]).toBe(0);
+  expect(p.nativeGuidance.initialized).toBe(0);
+  const last = stepNativeProjectile(p, { ...environment, waterLevel: -10000, frame: 201 }, () => 0);
+  expect(last.events.some(e => e.guidance && e.operation === "steer")).toBe(false);
+});
