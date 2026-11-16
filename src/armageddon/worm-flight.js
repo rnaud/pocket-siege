@@ -1,21 +1,16 @@
+import { nativeFirePunchEntry, nativeFirePunchTick } from "./fire-punch.js";
 import { nativeWormJumpLaunch, nativeBodyImpulse } from "./jump.js";
 import { nativeSimpleBodyTick, nativeBodyAwake } from "./motion.js";
 import { nativeWormAirborneCollision } from "./worm-contact.js";
 const fixed = (value) => Math.round(value * 65536) | 0;
 
-// Browser coordinate adapter around recovered jump/body routines. Call only
-// after state 0x77 preparation completes. Native units are pixels per 50 Hz
-// tick, y-down. The caller supplies the real collision silhouette and events.
-export function attachNativeJumpFlight(
-  worm,
-  { height, friction = 96 },
-  direction,
-  backflip = 0,
-) {
+// Shared constructor fields for unrestrained airborne worms. State-specific
+// entry changes are applied after this common body has been created.
+function nativeAirborneBody(worm, height, friction) {
   const x = fixed(worm.x),
     y = fixed(height - worm.y);
   const sum = (x + y) | 0;
-  const body = {
+  return {
     x,
     y,
     vx: fixed(worm.vx / 50),
@@ -50,6 +45,37 @@ export function attachNativeJumpFlight(
     field268: 0,
     field26c: 0,
   };
+}
+
+// 65 -> 6c common transition clears collision flag4, preserves complex bounce,
+// and changes category to3. The original entry supplies the launch velocity.
+export function attachNativeFirePunchFlight(worm, { height, friction = 96 }, power) {
+  const body = nativeAirborneBody(worm, height, friction);
+  body.state = 0x6c;
+  body.type = 3;
+  body.complex = 1;
+  body.flags &= ~4;
+  const calls = nativeFirePunchEntry(power, body.x, body.y);
+  const velocity = calls.find(call => call.operation === "velocity");
+  body.vx = velocity.x;
+  body.vy = velocity.y;
+  worm.nativeFlight = body;
+  worm.ground = false;
+  worm.vx = body.vx / 65536 * 50;
+  worm.vy = -body.vy / 65536 * 50;
+  return calls;
+}
+
+// Browser coordinate adapter around recovered jump/body routines. Call only
+// after state 0x77 preparation completes. Native units are pixels per 50 Hz
+// tick, y-down. The caller supplies the real collision silhouette and events.
+export function attachNativeJumpFlight(
+  worm,
+  { height, friction = 96 },
+  direction,
+  backflip = 0,
+) {
+  const body = nativeAirborneBody(worm, height, friction);
   const launch = nativeWormJumpLaunch(
     65536,
     direction,
@@ -69,7 +95,7 @@ export function stepNativeJumpFlight(
   { height, waterLevel, gravityScale = 1, frame = 0, random = () => 0 },
   collide,
 ) {
-  if (!worm.nativeFlight) throw new Error("Native jump flight is not attached");
+  if (!worm.nativeFlight) throw new Error("Native airborne flight is not attached");
   const events = [];
   let landingSpeed = 0;
   const collision = (x, y) => collide(x / 65536, height - y / 65536);
@@ -131,6 +157,25 @@ export function stepNativeJumpFlight(
   // The host resumes its grounded state once the landing event is delivered.
   if (landed) worm.nativeFlight = null;
   return { landed, landingSpeed, events };
+}
+
+// Physics precedes the state6C tick. Landing remains in6C until its awake
+// getter becomes false; unlike a jump, it must not enter landing state7A.
+// The caller dispatches terrain, particles, camera and animation operations.
+export function stepNativeFirePunchFlight(worm, environment, collide, sprite, record) {
+  const result = stepNativeJumpFlight(worm, environment, collide);
+  const body = worm.nativeFlight;
+  const calls = nativeFirePunchTick({
+    ...body, sprite, motionActive: nativeBodyAwake(body),
+  }, record, environment.random ?? (() => 0));
+  const finished = calls.some(call => call.operation === "state");
+  if (finished) {
+    body.state = 0x6a;
+    body.flags |= 4;
+    worm.ground = true;
+    worm.nativeFlight = null;
+  }
+  return { ...result, calls, finished };
 }
 
 // 0x433 reaches the base body's +0x118 impulse method (004F4CB0).
