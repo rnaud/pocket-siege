@@ -6,7 +6,8 @@ const pixel = (image, x, y) =>
     : image.pixels[y * image.width + x];
 const put = (image, x, y, value) => {
   if (x >= 0 && y >= 0 && x < image.width && y < image.height)
-    image.pixels[y * image.width + x] = value;
+    image.pixels[y * image.width + x] =
+      image.depth === 1 ? Number(value !== 0) : value;
 };
 
 // LANDGEN 00409790 constructs a radius-50 hole and a radius-55 rim.
