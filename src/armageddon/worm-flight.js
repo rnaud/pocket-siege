@@ -1,4 +1,4 @@
-import { nativeWormJumpLaunch } from "./jump.js";
+import { nativeWormJumpLaunch, nativeBodyImpulse } from "./jump.js";
 import { nativeSimpleBodyTick, nativeBodyAwake } from "./motion.js";
 import { nativeWormAirborneCollision } from "./worm-contact.js";
 const fixed = (value) => Math.round(value * 65536) | 0;
@@ -131,4 +131,23 @@ export function stepNativeJumpFlight(
   // The host resumes its grounded state once the landing event is delivered.
   if (landed) worm.nativeFlight = null;
   return { landed, landingSpeed, events };
+}
+
+// 0x433 reaches the base body's +0x118 impulse method (004F4CB0).
+// Browser HP and worm-state transitions remain with the caller.
+export function applyNativeWeaponImpulse(worm, x, y) {
+  const body = worm.nativeFlight ?? {
+    vx: fixed(worm.vx / 50),
+    vy: fixed(-worm.vy / 50),
+    mass: 65536,
+    angularVelocity: 0,
+    suspended: 0,
+  };
+  const { result, ...velocity } = nativeBodyImpulse(body, x, y);
+  // Frozen receiver 004D97F0 applies the impulse then clears horizontal speed.
+  if (worm.frozen > 0) velocity.vx = 0;
+  if (worm.nativeFlight) Object.assign(worm.nativeFlight, velocity);
+  worm.vx = (velocity.vx / 65536) * 50;
+  worm.vy = (-velocity.vy / 65536) * 50;
+  return result;
 }

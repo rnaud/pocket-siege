@@ -1,3 +1,5 @@
+import { nativeAreaDamage } from "./armageddon/area-damage.js";
+import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
 import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
 import { nativeHitscanBody } from "./armageddon/hitscan-body.js";
@@ -2374,16 +2376,17 @@ function fireShotgun(prepared = false) {
   )[0];
   // Native body projection; current host bodies place their collision centre
   // 17 pixels above the foot anchor.
+  const targets = worms
+    .filter((t) => t.hp > 0)
+    .map((t) => ({
+      x: Math.round(t.x * 65536),
+      y: Math.round((H - t.y - 17) * 65536),
+      type: 2,
+      self: t === w,
+      worm: t,
+    }));
   const bodyHit = nativeHitscanBody(
-    worms
-      .filter((t) => t.hp > 0)
-      .map((t) => ({
-        x: Math.round(t.x * 65536),
-        y: Math.round((H - t.y - 17) * 65536),
-        type: 2,
-        self: t === w,
-        worm: t,
-      })),
+    targets,
     ray[2] >> 16,
     ray[3] >> 16,
     ray[4],
@@ -2408,11 +2411,6 @@ function fireShotgun(prepared = false) {
   );
   const effect = resolution.event ?? resolution.effect;
   const hit = { x: effect[1] / 65536, y: H - effect[2] / 65536 };
-  const victim =
-    bodyHit.distance >= 0 &&
-    (terrainDistance < 0 || bodyHit.distance <= terrainDistance)
-      ? bodyHit.body.worm
-      : null;
   if (!shotgunRemaining) {
     ammo[team].shotgun = spendAmmo(ammo[team].shotgun);
     shotgunRemaining = 2;
@@ -2420,14 +2418,18 @@ function fireShotgun(prepared = false) {
   shotgunRemaining--;
   shotCount++;
   wormLocked = true;
-  if (victim) {
-    const dir = Math.sign(victim.x - w.x) || 1;
-    injure(victim, Math.round(WEAPONS.shotgun.damage * blastScale), dir);
-    victim.knocked = true;
-    victim.ground = false;
-    victim.vx = victim.frozen > 0 ? 0 : dir * 230;
-    victim.vy = 130;
-  } else if (resolution.event) {
+  if (resolution.area) {
+    // 004F7DA0 selects every nearby body, including self, and emits 0x433.
+    // HP/state handling still uses the host adapter around the native packet.
+    for (const dispatch of nativeAreaDamage(targets, resolution.area)) {
+      if (!dispatch.packet) continue;
+      const victim = targets[dispatch.body].worm;
+      const [, , , vx, vy, damage] = dispatch.packet;
+      injure(victim, damage, Math.sign(vx));
+      applyNativeWeaponImpulse(victim, vx, vy);
+      victim.knocked = true;
+      victim.ground = false;
+    }
     terrain.carve(hit.x, hit.y, 14);
     terrainDirty = true;
   }
