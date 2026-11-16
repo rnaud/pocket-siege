@@ -1078,6 +1078,7 @@ function stepBombs(dt) {
       }
       const result = stepNativeProjectile(b, {
         height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame,
+        solid: (x, y) => terrain.solid(x, H - y),
         random: () => matchRandom.logicUint(),
         collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
         updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
@@ -1631,7 +1632,7 @@ function handleUtilityTarget(e) {
     ),
     y = view.y + (1 - (e.clientY - rect.top) / rect.height) * view.h;
   const w = worms[current];
-  if (targetUtility === "homing") {
+  if (WEAPONS[targetUtility]?.special === "homing") {
     homingTarget = { x, y };
     targetUtility = null;
     activeUtility = null;
@@ -2187,6 +2188,7 @@ function updateSliders() {
     uzi: "FIRE UZI",
     minigun: "FIRE MINIGUN",
     homing: homingTarget ? null : "SET TARGET",
+    pigeon: homingTarget ? null : "SET TARGET",
     bat: "SWING BAT",
     airstrike: "CALL AIRSTRIKE",
     postal: "CALL POSTAL STRIKE",
@@ -2218,8 +2220,8 @@ function startCharge(source) {
   )
     return;
   wormLocked = true;
-  if (weapon === "homing" && !homingTarget) {
-    targetUtility = "homing";
+  if (WEAPONS[weapon]?.special === "homing" && !homingTarget) {
+    targetUtility = weapon;
     $("#status").textContent =
       "Click or tap a target. Use MAP to see the whole battlefield.";
     updateUI();
@@ -2827,7 +2829,7 @@ function fire() {
     setWeapon("rocket");
     return;
   }
-  if (kind === "homing" && !homingTarget) return;
+  if (WEAPONS[kind]?.special === "homing" && !homingTarget) return;
   const selectedTarget = homingTarget ? { ...homingTarget } : null;
   const origin = launchGeometry(w, angle, kind, terrain),
     nativeVelocity = nativeProjectileLaunchGeometry(kind, w, angle, power, H, () => matchRandom.logicUint()),
@@ -2898,8 +2900,8 @@ function fire() {
   phase = "flight";
   bannerTime = 0;
   $("#status").textContent =
-    kind === "homing"
-      ? "Homing missile away. Tracking your marked target!"
+    WEAPONS[kind]?.special === "homing"
+      ? `${WEAPONS[kind].label} away. Tracking your marked target!`
       : kind === "rocket"
         ? "Rocket away. Incoming!"
         : kind === "mortar"
@@ -4203,6 +4205,7 @@ function step(dt) {
           p,
           {
             height: H,
+            solid: (x, y) => terrain.solid(x, H - y),
             waterLevel,
             wind,
             gravityScale,
@@ -4542,16 +4545,16 @@ function frame(now) {
     $("#replay").disabled = !canReplay;
   }
   const markedTarget =
-    projectile?.kind === "homing" ? projectile.target : homingTarget;
+    WEAPONS[projectile?.kind]?.special === "homing" ? projectile.target : homingTarget;
   targetMarker.hidden =
     !markedTarget ||
     menu.open ||
-    (phase !== "aim" && projectile?.kind !== "homing");
+    (phase !== "aim" && WEAPONS[projectile?.kind]?.special !== "homing");
   targetMarker.style.display = targetMarker.hidden ? "none" : "block";
   if (!targetMarker.hidden) {
     const p = screen(markedTarget.x, markedTarget.y);
     const markerTeam =
-      projectile?.kind === "homing"
+      WEAPONS[projectile?.kind]?.special === "homing"
         ? (worms[projectile.owner]?.team ?? team)
         : team;
     updateOriginalTarget(targetMarker, markerTeam, selectionTick);
@@ -4708,7 +4711,7 @@ function frame(now) {
       (phase === "aim" || charging || w.recoil > 0);
     w.rig.mine.visible = active && weapon === "mine";
     w.rig.barrel.visible =
-      !active || ["rocket", "mortar", "homing", "shotgun"].includes(weapon);
+      !active || ["rocket", "mortar", "homing", "pigeon", "shotgun"].includes(weapon);
     w.rig.grenade.visible = active && WEAPONS[weapon].timed;
     w.rig.grenade.children[0].material.color.setHex(
       weapon === "sticky" ? 0xe96e57 : 0x9caf59,
@@ -4854,7 +4857,7 @@ function frame(now) {
 function setWeapon(kind) {
   if (shotgunRemaining) return;
   homingTarget = null;
-  if (targetUtility === "homing") targetUtility = null;
+  if (WEAPONS[targetUtility]?.special === "homing") targetUtility = null;
   if (!WEAPONS[kind]) return;
   if (availableAmmo(ammo[team], kind) <= 0)
     kind =
@@ -5520,6 +5523,7 @@ window.siege = {
           age: projectile.age,
           fuse: projectile.fuse,
           nativeTimer: projectile.nativeTimer ? { ...projectile.nativeTimer } : null,
+          nativeGuidance: projectile.nativeGuidance ? { ...projectile.nativeGuidance } : null,
           target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,

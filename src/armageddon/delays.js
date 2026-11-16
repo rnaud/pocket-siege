@@ -4,6 +4,7 @@ export const WEAPON_SLOTS = Object.freeze({
   rocket: 1,
   homing: 2,
   mortar: 3,
+  pigeon: 4,
   grenade: 6,
   cluster: 7,
   banana: 8,

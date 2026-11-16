@@ -20,6 +20,7 @@ export const HUD_ICONS = Object.freeze({
   napalm: "petrolbm",
   bat: "baseball",
   homing: "hmissile",
+  pigeon: "pigeon",
   holy: "hgrenade",
   rope: "rope",
   jetpack: "jetpack",

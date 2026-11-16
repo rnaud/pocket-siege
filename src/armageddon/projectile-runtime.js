@@ -7,7 +7,7 @@ import { nativeWormState } from "./worm-collision-type.js";
 import { nativeAirstrikeInitial, nativeAirstrikeTick } from "./airstrike.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
-import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
+import { nativeHomingSteer, nativeHomingSchedule, nativeHomingAvoid } from "./homing.js";
 import { nativeProjectileTimer } from "./projectile-timer.js";
 import { nativeProjectileContact } from "./projectile-contact.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
@@ -31,6 +31,7 @@ const fixed = (value) => Math.round(value * 65536) | 0;
 const kinds = new Set([
   "rocket",
   "homing",
+  "pigeon",
   "mortar",
   "grenade",
   "cluster",
@@ -276,6 +277,7 @@ export function stepNativeProjectile(
     frame = 0,
     depth = nativeProjectileDepth(Math.floor(height - waterLevel)),
     random = () => 0,
+    solid = () => false,
     collisionBody = () => ({ type: 1, vx: 0, vy: 0 }),
     updateCollisionBody = () => {},
   },
@@ -361,7 +363,8 @@ export function stepNativeProjectile(
       const guidance = nativeHomingSchedule({ ...p.nativeGuidance,
         x: p.nativeBody.x, y: p.nativeBody.y,
         vx: p.nativeBody.vx, vy: p.nativeBody.vy,
-      }, { steer: body => Object.assign(body, nativeHomingSteer(body)) });
+      }, { steer: body => Object.assign(body, nativeHomingSteer(body)),
+        avoid: body => Object.assign(body, nativeHomingAvoid(body, solid)) });
       p.nativeGuidance = guidance.body;
       p.nativeTrail.fields = guidance.body.initialized ? guidance.body.secondaryTrail : guidance.body.primaryTrail;
       p.nativeBody.vx = guidance.body.vx;

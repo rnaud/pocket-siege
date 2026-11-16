@@ -79,6 +79,7 @@ const names = [
     "missile",
     "mortar",
     "hmissil1",
+    "pigeonr0", "pigeonr1", "pigeonr2", "pigeonr3",
     "hmissil2",
     "grenade",
     "cluster",
@@ -225,6 +226,7 @@ export const projectileSprites = {
   rocket: "missile",
   mortar: "mortar",
   homing: "hmissil1",
+  pigeon: "pigeonr0",
   grenade: "grenade",
   cluster: "cluster",
   banana: "banana",
@@ -319,7 +321,7 @@ export function updateOriginalProjectile(
   nativeRender = null,
 ) {
   const base = nativeRender ? spriteIds.sprites[nativeRender.sprite]?.name : kind === "homing" && !guidanceActive ? "hmissil2" : projectileSprites[kind];
-  const allowed = kind === "homing" ? ["hmissil1", "hmissil2", "water/hmissil1", "water/hmissil2"] : [base, `water/${base}`];
+  const allowed = kind === "pigeon" ? [0,1,2,3].flatMap(i => [`pigeonr${i}`, `water/pigeonr${i}`]) : kind === "homing" ? ["hmissil1", "hmissil2", "water/hmissil1", "water/hmissil2"] : [base, `water/${base}`];
   if (!base || !allowed.includes(mesh.userData.originalSprite))
     return false;
   const name = submerged ? `water/${base}` : base;
@@ -365,6 +367,9 @@ export function updateOriginalProjectile(
     mesh.userData.waterPlayback = null;
   }
   mesh.material.map = texture(name, index);
+  if (kind === "pigeon") mesh.scale.set(
+    animation.sprite.width / mesh.geometry.parameters.width * (nativeRender?.facing ?? (vx < 0 ? -1 : 1)),
+    animation.sprite.height / mesh.geometry.parameters.height, 1);
   mesh.userData.originalSprite = name;
   mesh.userData.originalFrame = index;
   mesh.rotation.z = 0;

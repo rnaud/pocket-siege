@@ -180,6 +180,10 @@ export const WEAPONS = {
     ammo: 3,
     special: "melee",
   },
+  pigeon: {
+    label: "Homing pigeon", icon: "➹", radius: 75, damage: 75,
+    wind: false, speed: 1, timed: false, bounces: false, ammo: 1, special: "homing",
+  },
   homing: {
     label: "Homing",
     icon: "➹",
@@ -253,6 +257,7 @@ export const SPECIAL_WEAPONS = [
   "napalm",
   "bat",
   "homing",
+  "pigeon",
   "holy",
 ];
 export const WEAPON_ORDER = ["rocket", "grenade", "mortar", "sticky"];
@@ -261,6 +266,7 @@ export const PROJECTILE_ORDER = [
   ...WEAPON_ORDER,
   "cluster",
   "homing",
+  "pigeon",
   "napalm",
   "holy",
 ];
@@ -281,6 +287,7 @@ export const freshAmmo = () => ({
   napalm: WEAPONS.napalm.ammo,
   bat: WEAPONS.bat.ammo,
   homing: WEAPONS.homing.ammo,
+  pigeon: WEAPONS.pigeon.ammo,
   holy: WEAPONS.holy.ammo,
 });
 export const ammoFor = (loadout, kind, delays) =>
