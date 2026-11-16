@@ -690,7 +690,7 @@ function updateAimHUD() {
     aimHUD.tag.style.top =
       Math.max(14, Math.min(arena.clientHeight - 25, p.y - 22)) + "px";
     aimHUD.tag.textContent = WEAPONS[projectile.kind].timed
-      ? `✹ ${Math.max(0, projectile.fuse - projectile.age).toFixed(1)}s`
+      ? `✹ ${Math.max(0, projectile.nativeTimer ? projectile.nativeTimer.remaining / 1000 : projectile.fuse - projectile.age).toFixed(1)}s`
       : p.y < 0
         ? projectile.kind === "mortar"
           ? "↑ MORTAR"
@@ -3855,7 +3855,9 @@ function step(dt) {
         if (sound) for (const event of nativeContact.events) {
           if (event.operation !== "sound") continue;
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
-          p.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, p.nativeContactPlayback);
+          if (event.timer) {
+            if (event.request[0] === 104) playOriginalSound(audio, "holy", () => {}, event.request[3] / 65536);
+          } else p.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, p.nativeContactPlayback);
         }
       } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     }
@@ -3863,7 +3865,7 @@ function step(dt) {
     emitProjectileTrail(p);
     if (
       WEAPONS[p.kind].timed &&
-      p.fuse - p.age < 1.5 &&
+      (p.nativeTimer ? p.nativeTimer.remaining > 0 && p.nativeTimer.remaining < 1500 : p.fuse - p.age < 1.5) &&
       Math.floor(p.age * 4) !== Math.floor((p.age - dt) * 4)
     )
       sfx("fuse");
@@ -3887,7 +3889,7 @@ function step(dt) {
     }
     let boom =
       (p.nativeBody ? Boolean(nativeContact?.detonate) : (!WEAPONS[p.kind].timed && hit)) ||
-      (WEAPONS[p.kind].timed && p.age >= p.fuse);
+      (!p.nativeBody && WEAPONS[p.kind].timed && p.age >= p.fuse);
     if (hit && p.kind === "sticky" && !p.stuck) {
       p.stuck = true;
       p.vx = 0;

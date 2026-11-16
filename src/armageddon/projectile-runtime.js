@@ -1,3 +1,4 @@
+import { nativeProjectileTimer } from "./projectile-timer.js";
 import { nativeProjectileContact } from "./projectile-contact.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
 import { nativeDamageVariation } from "./hitscan-resolution.js";
@@ -69,7 +70,7 @@ export function attachNativeProjectile(p, height) {
     vx: fixed(p.vx / 50),
     vy: fixed(-p.vy / 50),
     repeat: 0,
-    timer: Math.round(p.fuse * 50),
+    timer: Math.round(p.fuse * 1000),
     bounce: Math.round(p.bounce * 100),
   };
   const selected = nativeProjectileSelection(block, payload);
@@ -102,6 +103,12 @@ export function attachNativeProjectile(p, height) {
     sprite: words[6], impact: 0, state: 0, phase: 0, armed: 0, delay: 0,
     impactVx: 0, impactVy: 0,
   });
+  p.nativeTimer = {
+    remaining: words[17], delay: words[21], delayPlayed: 0,
+    waitForRest: words[19], delaySound: words[20], mode: words[23],
+    specialSprite: words[38], phase: 0, loopSound: 0,
+    warningPending: 0, warningBlocked: 0, warningScale: 0, state: 0,
+  };
   return true;
 }
 
@@ -191,6 +198,12 @@ export function stepNativeProjectile(
       },
     },
   );
+  const timer = nativeProjectileTimer({ ...p.nativeTimer,
+    state: p.nativeBody.state, phase: p.nativeBody.phase,
+  }, { submerged: p.nativeBody.submerged, awake: nativeBodyAwake(p.nativeBody), random });
+  p.nativeTimer = timer.body;
+  p.nativeBody.state = timer.body.state;
+  events.push(...timer.calls.map(call => ({ ...call, timer: true })));
   p.x = p.nativeBody.x / 65536;
   p.y = height - p.nativeBody.y / 65536;
   p.vx = (p.nativeBody.vx / 65536) * 50;

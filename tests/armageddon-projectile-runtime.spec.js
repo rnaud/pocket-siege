@@ -144,3 +144,28 @@ test("grenade receiver dispatch updates a hurt worm instead of bouncing against 
   expect(p.vx).toBeLessThan(600);
   expect(result.detonate).toBe(false);
 });
+
+test("live fuse uses milliseconds and native next-tick expiration instead of host age", () => {
+  const p = projectile("grenade", { fuse: 3, vx: 0, vy: 0, age: 999 });
+  p.nativeBody.gravityScale = 0;
+  expect(p.nativeTimer.remaining).toBe(3000);
+  for (let frame = 1; frame <= 150; frame++) {
+    const result = stepNativeProjectile(p, { ...environment, frame }, () => 0);
+    expect(result.detonate).toBe(false);
+  }
+  expect(p.nativeTimer.remaining).toBe(0);
+  expect(stepNativeProjectile(p, { ...environment, frame: 151 }, () => 0).detonate).toBe(true);
+});
+
+test("resting holy grenade completes its native delay and queues one holy cue", () => {
+  const p = projectile("holy", { vx: 0, vy: 0 });
+  p.nativeBody.gravityScale = 0;
+  const sounds = [];
+  for (let frame = 1; frame <= 240; frame++) {
+    const result = stepNativeProjectile(p, { ...environment, frame }, () => 0);
+    sounds.push(...result.events.filter(e => e.timer && e.operation === "sound"));
+    expect(result.detonate).toBe(false);
+  }
+  expect(sounds.map(s => s.request)).toEqual([[104,4,65536,65536,0]]);
+  expect(stepNativeProjectile(p, { ...environment, frame: 241 }, () => 0).detonate).toBe(true);
+});
