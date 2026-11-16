@@ -61,6 +61,8 @@ const names = [
     "shotcase",
     "uzicase",
     "shothit",
+    "wormhit1",
+    "wormhit2",
     "uzihit",
     "smklt25",
     "smklt50",

@@ -1,3 +1,4 @@
+import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
 import { nativeDamageAccounting } from "./armageddon/damage-accounting.js";
 import { nativeBlastDamage } from "./armageddon/blast-damage.js";
@@ -2769,6 +2770,17 @@ function explode(x, y, kind, ownerIndex = -1) {
         1,
         [Math.round(x * 65536), Math.round((H - y) * 65536)],
       );
+      for (const call of response.output) {
+        if (!call.blood) continue;
+        for (const request of nativeBloodBurst(
+          ...call.blood,
+          nativeBloodAmount,
+          0,
+          Math.round(0x3d70 * gravityScale),
+          () => matchRandom.logicUint(),
+        ))
+          spawnNativeParticleRequest(request);
+      }
       w.nativeBlastAccumulated = response.result.accumulated;
       w.nativeBlastResponseState = response.result.state;
       w.facing = response.result.facing;
