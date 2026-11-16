@@ -1,3 +1,4 @@
+import catalog from "./map-catalog.json" with { type: "json" };
 import { decodeImage, imageRGBA } from "./image.js";
 
 // Full-size authored terrain. Coordinates are upward-positive like the host
@@ -56,4 +57,28 @@ export class OriginalMapTerrain {
     }
     return removed;
   }
+}
+
+export const originalMapCatalog = catalog;
+const sourceMaps = new Map();
+export async function loadOriginalMap(id) {
+  if (!id.startsWith("original:")) return;
+  const asset = catalog.find((a) => `original:${a.id}` === id);
+  if (!asset) throw new Error(`Unknown original map ${id}`);
+  if (!sourceMaps.has(id)) {
+    const response = await fetch(
+      `${import.meta.env.BASE_URL}armageddon/${asset.path}`,
+    );
+    if (!response.ok) throw new Error(`Cannot load ${asset.id}`);
+    const buffer = await response.arrayBuffer();
+    new OriginalMapTerrain(buffer, id); // Validate before enabling match start.
+    sourceMaps.set(id, buffer);
+  }
+}
+export function createOriginalMap(id) {
+  const source = sourceMaps.get(id);
+  if (!source) return null;
+  const terrain = new OriginalMapTerrain(source, id);
+  terrain.layout = id;
+  return terrain;
 }

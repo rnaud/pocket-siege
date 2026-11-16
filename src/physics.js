@@ -4,9 +4,13 @@ import { nativeSweep } from "./armageddon/motion.js";
 import { generateTerrain } from "./map-generator.js";
 import { islandTop, islandVoid } from "./island-profile.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
-export const W = 1200,
-  H = 650,
-  WATER = 80,
+export let W = 1200,
+  H = 650;
+export function setWorldDimensions(width = 1200, height = 650) {
+  W = width;
+  H = height;
+}
+export const WATER = 80,
   GRAVITY = 145;
 export class Terrain {
   constructor(seed = 42, layout = "fern") {

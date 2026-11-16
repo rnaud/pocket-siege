@@ -1,4 +1,9 @@
 import {
+  originalMapCatalog,
+  loadOriginalMap,
+  createOriginalMap,
+} from "./armageddon/maps.js";
+import {
   loadOriginalHUDIcons,
   updateOriginalHUDIcons,
 } from "./armageddon/hud-icons.js";
@@ -68,6 +73,7 @@ import "./style.css";
 import "./pixel-hud.css";
 import {
   Terrain,
+  setWorldDimensions,
   clearBodyPath,
   blastExposure,
   W,
@@ -416,7 +422,7 @@ for (let i = 0; i < 26; i++) {
   group.add(mote);
   motes.push(mote);
 }
-const water = createWater(W, WATER);
+let water = createWater(W, WATER);
 group.add(water);
 // Debris and projectiles share GPU resources; only one prototype per kind is built.
 const debrisGeometry = new THREE.PlaneGeometry(2, 2);
@@ -769,23 +775,75 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
   bubbleSeed = matchSeed >>> 0;
-  terrain = new Terrain(matchSeed, isDaily ? "fern" : $("#map-layout").value);
+  const layout = isDaily ? "fern" : $("#map-layout").value;
+  const authored = createOriginalMap(layout);
+  const width = authored?.width ?? 1200,
+    height = authored?.height ?? 650;
+  if (W !== width || H !== height) {
+    setWorldDimensions(width, height);
+    texture.dispose();
+    canvas.width = W;
+    canvas.height = H;
+    ctx.imageSmoothingEnabled = false;
+    for (const mesh of [land, backdrop]) {
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.PlaneGeometry(W, H);
+      mesh.position.x = W / 2;
+      mesh.position.y = H / 2;
+    }
+    backdrop.userData.originalTheme = null;
+    group.remove(water);
+    water.geometry.dispose();
+    water.material.map.dispose();
+    water.material.dispose();
+    water = createWater(W, WATER);
+    group.add(water);
+    Object.assign(view, cameraView(W / 2, H / 2, 1));
+    cameraX = W / 2;
+    cameraY = H / 2;
+    cameraZoom = 1;
+    cameraSnap = true;
+  }
+  terrain =
+    authored ??
+    new Terrain(matchSeed, layout.startsWith("original:") ? "fern" : layout);
+  terrain.seed = matchSeed;
   terrain.theme = isDaily ? "forest" : $("#terrain-theme").value;
-  placeOriginalDecorations(terrain, W, H);
-  $(".location span").textContent = {
-    fern: "FERN ISLAND",
-    highlands: "HIGHLANDS",
-    archipelago: "ARCHIPELAGO",
-    forts: "FORTS",
-    caverns: "CAVERNS",
-    bridges: "BRIDGES",
-  }[terrain.layout];
+  if (!authored) placeOriginalDecorations(terrain, W, H);
+  $(".location span").textContent =
+    {
+      fern: "FERN ISLAND",
+      highlands: "HIGHLANDS",
+      archipelago: "ARCHIPELAGO",
+      forts: "FORTS",
+      caverns: "CAVERNS",
+      bridges: "BRIDGES",
+    }[terrain.layout] ??
+    terrain.layout.replace("original:", "").replace(".img", "").toUpperCase();
   paintTerrain(ctx, terrain, texture);
   updateOriginalBackdrop();
   terrainDirty = false;
+  const spawnX = (fraction) => {
+    if (!authored) return fraction;
+    const target = Math.round((fraction / 1200) * W);
+    // Host placement adapter: find exposed land above water near each team slot.
+    for (let distance = 0; distance < W; distance += 4) {
+      for (const x of [target - distance, target + distance]) {
+        if (x < 24 || x > W - 24) continue;
+        const top = terrain.surface(x);
+        if (
+          top > waterLevel + 24 &&
+          top < H - 50 &&
+          [-12, 12].every((dx) => Math.abs(terrain.surface(x + dx) - top) < 18)
+        )
+          return x;
+      }
+    }
+    return target;
+  };
   worms = [
-    ...names[0].map((_, i) => createWorm(0, i, [180, 340, 490][i])),
-    ...names[1].map((_, i) => createWorm(1, i, [710, 860, 1020][i])),
+    ...names[0].map((_, i) => createWorm(0, i, spawnX([180, 340, 490][i]))),
+    ...names[1].map((_, i) => createWorm(1, i, spawnX([710, 860, 1020][i]))),
   ];
   for (let i = 0; i < 240; i++)
     for (const w of worms) stepWorm(w, terrain, 1 / 120, gravityScale);
@@ -1068,14 +1126,18 @@ function beginTurn() {
     `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 5).toFixed(1)}`;
   $(".location span").textContent = daily
     ? "DAILY ISLAND"
-    : {
+    : ({
         fern: "FERN ISLAND",
         highlands: "HIGHLANDS",
         archipelago: "ARCHIPELAGO",
         forts: "FORTS",
         caverns: "CAVERNS",
         bridges: "BRIDGES",
-      }[terrain.layout];
+      }[terrain.layout] ??
+      terrain.layout
+        .replace("original:", "")
+        .replace(".img", "")
+        .toUpperCase());
   updateSeriesHUD();
   const weatherNote =
     weather === "storm"
@@ -3440,19 +3502,20 @@ function screen(x, y) {
   };
 }
 function resize() {
+  const stageAspect = terrain?.pixels ? W / H : 16 / 9;
   const stageWidth = Math.max(
     1,
     Math.floor(
       Math.min(
         battlefieldFrame.clientWidth,
-        (battlefieldFrame.clientHeight * 16) / 9,
+        battlefieldFrame.clientHeight * stageAspect,
       ),
     ),
   );
   const portrait =
     !overview && battlefieldFrame.clientHeight > battlefieldFrame.clientWidth;
   arena.style.width = `${portrait ? battlefieldFrame.clientWidth : stageWidth}px`;
-  arena.style.height = `${portrait ? battlefieldFrame.clientHeight : Math.floor((stageWidth * 9) / 16)}px`;
+  arena.style.height = `${portrait ? battlefieldFrame.clientHeight : Math.floor(stageWidth / stageAspect)}px`;
   arena.classList.toggle("portrait-camera", portrait);
   const pixels = pixelViewport(arena.clientWidth, arena.clientHeight);
   renderer.setSize(pixels.width, pixels.height, false);
@@ -3668,7 +3731,7 @@ function frame(now) {
       w.body.material.map = original.map;
       // Original 60px canvases have a baseline at row 43. Native worms face left.
       const scale = Math.max(1, Math.round((size / pixelWorldY / 60) * 1.45));
-      const unit = scale * pixelWorldY;
+      const unit = terrain.pixels ? 1 : scale * pixelWorldY;
       w.body.scale.set(
         -facing * original.map.image.width * unit,
         original.map.image.height * unit,
@@ -3730,7 +3793,10 @@ function frame(now) {
     });
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
-    const p = screen(w.x, w.renderY + spriteSize * 0.83 - 7);
+    const p = screen(
+      w.x,
+      w.renderY + (terrain.pixels ? 36 : spriteSize * 0.83 - 7),
+    );
     const visible = w.hp > 0 && w.x > view.x + 12 && w.x < view.x + view.w - 12;
     w.label.style.visibility = visible ? "visible" : "hidden";
     if (active) {
@@ -4166,6 +4232,23 @@ $("#weapon-delay").addEventListener("change", () => {
   markSchemeCustom();
   saveSettings();
 });
+for (const folder of ["image", "mission"]) {
+  const optgroup = document.createElement("optgroup");
+  optgroup.label =
+    folder === "image"
+      ? "Armageddon maps"
+      : "Armageddon mission / training terrain";
+  for (const asset of originalMapCatalog.filter((a) =>
+    a.id.startsWith(folder + "/"),
+  ))
+    optgroup.append(
+      new Option(
+        asset.id.split("/")[1].replace(".img", ""),
+        "original:" + asset.id,
+      ),
+    );
+  $("#map-layout").append(optgroup);
+}
 applySettings();
 let decorationLoadVersion = 0;
 async function prepareDecorations() {
@@ -4174,6 +4257,7 @@ async function prepareDecorations() {
   try {
     await originalAssets;
     await Promise.all([
+      loadOriginalMap($("#map-layout").value),
       loadOriginalDecorations($("#terrain-theme").value),
       loadOriginalDecorations("forest"),
     ]);
@@ -4185,6 +4269,7 @@ async function prepareDecorations() {
   }
 }
 $("#terrain-theme").addEventListener("change", prepareDecorations);
+$("#map-layout").addEventListener("change", prepareDecorations);
 prepareDecorations();
 syncMenuOptions();
 updateRecordUI();
@@ -4209,6 +4294,7 @@ window.siege = {
     assetsReady,
     originalArtError,
     mapLayout: terrain.layout,
+    world: { width: W, height: H },
     terrainTheme: terrain.theme,
     terrainDecorations: terrain.decorations || [],
     backdropTheme: backdrop.userData.originalTheme,

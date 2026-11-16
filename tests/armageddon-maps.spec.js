@@ -65,3 +65,29 @@ test("map destruction clears artwork and collision together without changing sou
   expect(new Uint8Array(buffer)).toEqual(originalBytes);
   expect(terrain.carve(cx, cy, radius)).toBe(0);
 });
+
+test("authored map is playable at full size and switching back restores the host world", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("original:image/artclass.img");
+  await page.locator("#start").click();
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.mapLayout).toBe("original:image/artclass.img");
+  expect(state.world).toEqual({ width: 1920, height: 696 });
+  expect(state.worms).toHaveLength(6);
+  expect(state.worms.every((w) => w.hp === 100 && w.y > state.waterLevel)).toBe(
+    true,
+  );
+  await page.screenshot({ path: info.outputPath("original-artclass-map.png") });
+  await page.evaluate(() => window.siege.debug.explodeAt(960, 350, "cluster"));
+  await page.evaluate(() => {
+    document.querySelector("#map-layout").value = "fern";
+    window.siege.debug.resetSeed(42);
+  });
+  expect((await page.evaluate(() => window.siege.getState())).world).toEqual({
+    width: 1200,
+    height: 650,
+  });
+});
