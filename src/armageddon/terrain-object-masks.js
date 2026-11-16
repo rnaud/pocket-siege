@@ -78,3 +78,23 @@ export function nativeTerrainObjectFits(mask, grid, x, y) {
     }
   return true;
 }
+
+// 00408F30 scans one grid cell at a time, rejecting out-of-bounds starts
+// immediately. Returns the coordinates passed to the native draw operation.
+export function nativeFindTerrainObject(mask, grid, x, y, direction) {
+  if (!Number.isInteger(direction) || direction < 0 || direction > 3)
+    throw new Error("Invalid terrain scan direction");
+  while (
+    x >= 0 &&
+    y >= 0 &&
+    x + mask.width <= grid.width &&
+    y + mask.height <= grid.height
+  ) {
+    if (nativeTerrainObjectFits(mask, grid, x, y)) return { x, y };
+    if (direction === 0) x--;
+    else if (direction === 1) x++;
+    else if (direction === 2) y--;
+    else y++;
+  }
+  return null;
+}

@@ -1,6 +1,6 @@
 """Run Landgen's original object occupancy/placement-mask routines.
 
-Only allocation is stubbed. Native image size/pixel methods, orientation,
+Allocation and the final draw operation are stubbed; draw coordinates are recorded. Native image size/pixel methods, orientation,
 mask generation and row-copy helper run unchanged. No game entry point runs.
 """
 import argparse, base64, hashlib, json, struct
@@ -32,6 +32,13 @@ def hook(cpu,address,size,user):
   cpu.mem_write(next_alloc,bytes(n));cpu.reg_write(UC_X86_REG_EAX,next_alloc)
   next_alloc+=(n+15)&~15;cpu.reg_write(UC_X86_REG_ESP,sp+4);cpu.reg_write(UC_X86_REG_EIP,read(sp))
 cpu.hook_add(UC_HOOK_CODE,hook,begin=0x40b540,end=0x40b540)
+drawn=None
+def observe_draw(cpu,address,size,user):
+ global drawn
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ drawn={'x':read(sp+8),'y':read(sp+12)}
+ cpu.reg_write(UC_X86_REG_ESP,sp+16);cpu.reg_write(UC_X86_REG_EIP,read(sp))
+cpu.hook_add(UC_HOOK_CODE,observe_draw,begin=0x408d90,end=0x408d90)
 results=[]
 for case in json.loads(a.inputs.read_text()):
  cpu.mem_write(owner,bytes(0x2000));next_alloc=heap
@@ -63,6 +70,16 @@ for case in json.loads(a.inputs.read_text()):
   cpu.emu_start(0x408ce0,stop,count=100000000)
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Native fit did not return')
   result['fits'].append(bool(cpu.reg_read(UC_X86_REG_EAX)))
+ result['scans']=[]
+ write(world+0x14,bw*8+7);write(world+0x18,bh*8+7)
+ for x,y,direction in [(0,1,1),(2,1,0),(1,0,3),(1,2,2),(1,1,0),(-1,1,1),(bw,1,0),(1,bh,2)]:
+  drawn=None;sp=stack+0xf000
+  for off,value in [(0,stop),(4,owner),(8,x),(12,y),(16,direction)]:write(sp+off,value)
+  cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,world)
+  cpu.emu_start(0x408f30,stop,count=100000000)
+  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Native scan did not return')
+  if bool(cpu.reg_read(UC_X86_REG_EAX)) != (drawn is not None):raise RuntimeError('Unexpected scan result')
+  result['scans'].append(drawn)
  results.append(result)
-a.output.write_text(json.dumps({'executable_sha256':digest,'routines':['00405720','004058D0','00405840','00402EE0','004032A0','00408CE0'],'cases':results},indent=2)+'\n')
+a.output.write_text(json.dumps({'executable_sha256':digest,'routines':['00405720','004058D0','00405840','00402EE0','004032A0','00408CE0','00408F30'],'cases':results},indent=2)+'\n')
 print(len(results),'native terrain-mask cases')

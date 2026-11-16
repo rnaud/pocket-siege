@@ -5,6 +5,7 @@ import { decodeImage } from "../src/armageddon/image.js";
 import {
   nativeTerrainObjectMasks,
   nativeTerrainObjectFits,
+  nativeFindTerrainObject,
 } from "../src/armageddon/terrain-object-masks.js";
 const root = new URL("../", import.meta.url);
 const definitions = JSON.parse(
@@ -46,6 +47,31 @@ test("terrain masks match original Landgen for every listed object and boundary 
       return nativeTerrainObjectFits(actual, { width, height, cells }, 1, 1);
     });
     expect(fits, entry.asset || "synthetic").toEqual(entry.fits);
+    const width = actual.width + 2,
+      height = actual.height + 2;
+    const cells = new Uint8Array(width * height);
+    for (let y = 0; y < actual.height; y++)
+      for (let x = 0; x < actual.width; x++)
+        cells[(y + 1) * width + x + 1] = actual.placement[y * actual.width + x];
+    const scans = [
+      [0, 1, 1],
+      [2, 1, 0],
+      [1, 0, 3],
+      [1, 2, 2],
+      [1, 1, 0],
+      [-1, 1, 1],
+      [width, 1, 0],
+      [1, height, 2],
+    ].map(([x, y, direction]) =>
+      nativeFindTerrainObject(
+        actual,
+        { width, height, cells },
+        x,
+        y,
+        direction,
+      ),
+    );
+    expect(scans, entry.asset || "synthetic").toEqual(entry.scans);
   }
 });
 test("ordered terrain definitions preserve their six original fields and source bytes", () => {
