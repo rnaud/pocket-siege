@@ -1,5 +1,18 @@
 import { nativeSin, nativeCos } from "./trig.js";
 
+// 004FCB20 passes weapon+70 (seven words) and the eleven-word launch packet
+// to004D33C0. Base task registration/scheduling remain the caller's interface.
+export function nativeDragonBallBody(record, launch) {
+  return {
+    x: launch[2] | 0, y: launch[3] | 0, progress: 0,
+    releaseSound: record["0x70"] | 0, sound: record["0x74"] | 0,
+    sprite: record["0x78"] | 0, damage: record["0x7c"] | 0,
+    angle: record["0x80"] | 0, push: record["0x84"] | 0,
+    remaining: record["0x88"] | 0, direction: launch[4] | 0,
+    launch: launch.slice(0, 11).map(value => value | 0),
+  };
+}
+
 // 004D34D0. Preserve registry order, native category filtering and signed
 // absolute-value overflow. The first matching receiver ends the scan.
 export function nativeDragonBallHit(body, receivers) {

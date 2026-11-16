@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/dragon-ball.json" with { type: "json" };
 import hitFixture from "./fixtures/armageddon/dragon-ball-hit.json" with { type: "json" };
-import { nativeDragonBallEvent, nativeDragonBallHit } from "../src/armageddon/dragon-ball.js";
+import bodyFixture from "./fixtures/armageddon/dragon-ball-body.json" with { type: "json" };
+import { nativeDragonBallBody, nativeDragonBallEvent, nativeDragonBallHit } from "../src/armageddon/dragon-ball.js";
 
 test("Dragon Ball task events match original motion, expiry and dispatch order", { tag: "@logic" }, () => {
+  for (const row of bodyFixture.cases)
+    expect(nativeDragonBallBody(row.record, row.launch)).toEqual(row.output);
   for (const row of fixture.cases) {
     expect(nativeDragonBallEvent(row.body, row.event, row.bounds, {
       hit: () => row.hit, solid: () => row.solid,
