@@ -80,7 +80,7 @@ import {
   placeOriginalDecorations,
 } from "./armageddon/terrain-decoration.js";
 import {
-  nativeProjectileLaunch,
+  nativeProjectileLaunchGeometry,
   nativeProjectileCollision,
   attachNativeProjectile,
   stepNativeProjectile,
@@ -2663,11 +2663,11 @@ function fire() {
   if (kind === "homing" && !homingTarget) return;
   const selectedTarget = homingTarget ? { ...homingTarget } : null;
   const origin = launchGeometry(w, angle, kind, terrain),
-    nativeVelocity = nativeProjectileLaunch(kind, angle, power),
+    nativeVelocity = nativeProjectileLaunchGeometry(kind, w, angle, power, H, () => matchRandom.logicUint()),
     v = nativeVelocity ?? launch(angle, power);
-  const launchPoint = terrain.solid(origin.muzzle.x, origin.muzzle.y)
+  const launchPoint = nativeVelocity ?? (terrain.solid(origin.muzzle.x, origin.muzzle.y)
     ? origin.pivot
-    : origin.muzzle;
+    : origin.muzzle);
   if (!nativeVelocity) {
     v.vx *= meta.speed;
     v.vy *= meta.speed;
@@ -2747,7 +2747,42 @@ function fire() {
       playNativeProjectileReleaseSound(audio, projectile.nativeRelease);
     }
   } else sfx(kind);
+  if (projectile.nativeBody && nativeProjectilePlacementHit(projectile, terrain, worms, H)) {
+    explodeProjectile(projectile);
+    releaseProjectileMesh(projectile.mesh);
+    projectile = null;
+    phase = "settle";
+  }
   updateUI();
+}
+function explodeProjectile(p) {
+  if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
+  const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);
+  const best = recordBest(record, { longest: distance });
+  if (best.longest !== record.longest) {
+    record = best;
+    writeRecord(record);
+    updateRecordUI();
+  }
+  const nativePacket = p.nativeDetonation
+    ? nativeProjectileDetonationEvents(p, () => matchRandom.logicUint())
+        .find(event => event.operation === "blast")?.request
+    : null;
+  explode(p.x, p.y, p.kind, p.owner, nativePacket);
+  if (p.nativeDetonation) {
+    nativeProjectileChildren(p, H, () => matchRandom.logicUint(), child => {
+      if (nativeProjectilePlacementHit(child, terrain, worms, H)) {
+        const packet = nativeProjectileDetonationEvents(child, () => matchRandom.logicUint())
+          .find(event => event.operation === "blast")?.request;
+        if (packet) explode(child.x, child.y, child.kind, child.owner, packet);
+        return;
+      }
+      child.mesh = createOriginalVisual("clustlet") || createProjectile("grenade");
+      child.mesh.position.set(child.x, child.y, 40);
+      group.add(child.mesh);
+      bombs.push(child);
+    });
+  }
 }
 function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   const sourceX = x, sourceY = y;
@@ -3994,33 +4029,7 @@ function step(dt) {
       ))
     ) {
       if (boom && p.y > waterLevel) {
-        if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
-        const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);
-        const best = recordBest(record, { longest: distance });
-        if (best.longest !== record.longest) {
-          record = best;
-          writeRecord(record);
-          updateRecordUI();
-        }
-        const nativePacket = p.nativeDetonation
-          ? nativeProjectileDetonationEvents(p, () => matchRandom.logicUint())
-              .find(event => event.operation === "blast")?.request
-          : null;
-        explode(p.x, p.y, p.kind, p.owner, nativePacket);
-        if (p.nativeDetonation) {
-          nativeProjectileChildren(p, H, () => matchRandom.logicUint(), child => {
-            if (nativeProjectilePlacementHit(child, terrain, worms, H)) {
-              const packet = nativeProjectileDetonationEvents(child, () => matchRandom.logicUint())
-                .find(event => event.operation === "blast")?.request;
-              if (packet) explode(child.x, child.y, child.kind, child.owner, packet);
-              return;
-            }
-            child.mesh = createOriginalVisual("clustlet") || createProjectile("grenade");
-            child.mesh.position.set(child.x, child.y, 40);
-            group.add(child.mesh);
-            bombs.push(child);
-          });
-        }
+        explodeProjectile(p);
       }
       releaseProjectileMesh(p.mesh);
       projectile = null;

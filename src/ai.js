@@ -1,5 +1,6 @@
 import {
-  nativeProjectileLaunch,
+  nativeProjectileLaunchGeometry,
+  nativeProjectilePlacementHit,
   attachNativeProjectile,
   stepNativeProjectile,
 } from "./armageddon/projectile-runtime.js";
@@ -73,19 +74,21 @@ function blastPoint(
 ) {
   const meta = WEAPONS[kind];
   const start = launchGeometry(me, angle, kind, terrain);
-  if (start.blocked)
+  const nativeVelocity = nativeProjectileLaunchGeometry(kind, me, angle, power, H, () => 0, true);
+  if (!nativeVelocity && start.blocked)
     return { x: start.muzzle.x, y: start.muzzle.y, blocked: true };
-  const nativeVelocity = nativeProjectileLaunch(kind, angle, power);
   const velocity = nativeVelocity ?? launch(angle, power);
   const p = {
-    x: start.muzzle.x,
-    y: start.muzzle.y,
+    x: nativeVelocity?.x ?? start.muzzle.x,
+    y: nativeVelocity?.y ?? start.muzzle.y,
     vx: velocity.vx * (nativeVelocity ? 1 : meta.speed),
     vy: velocity.vy * (nativeVelocity ? 1 : meta.speed),
     age: 0,
   };
   Object.assign(p, { kind, fuse, bounce });
   attachNativeProjectile(p, H);
+  if (p.nativeBody && nativeProjectilePlacementHit(p, terrain, worms, H))
+    return { x: p.x, y: p.y, blocked: true };
   const targets = worms.filter((w) => w.hp > 0);
   const maxAge = meta.timed ? fuse : 12;
   for (let tick = 0; tick < maxAge / STEP; tick++) {

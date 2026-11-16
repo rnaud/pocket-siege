@@ -1,4 +1,5 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
+import { nativeLaunch } from "./launch.js";
 import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileFragments } from "./projectile-fragments.js";
 import { nativeProjectilePlacement } from "./projectile-placement.js";
@@ -62,6 +63,22 @@ export function nativeProjectileLaunch(kind, angle, power) {
     fixed(Math.max(0, Math.min(100, power)) / 100),
   );
   return { vx: (vx / 65536) * 50, vy: (-vy / 65536) * 50 };
+}
+
+export function nativeProjectileLaunchGeometry(kind, worm, angle, power, height, random = () => 0, preview = false) {
+  const record = weaponRecord(kind);
+  if (!record) return null;
+  const radians = angle * Math.PI / 180;
+  // Host degrees map to the original facing plus doubled half-turn aim.
+  const aim = Math.round((Math.asin(Math.sin(radians)) / Math.PI + 0.5) * 65536);
+  const origin = nativeLaunch(record, {
+    x: fixed(worm.x), y: fixed(height - worm.y), angle: aim,
+    facing: Math.cos(radians) < 0 ? -1 : 1, preview, random,
+  });
+  const [vx, vy] = nativeLaunchVelocity(record, origin.vx, origin.vy,
+    fixed(Math.max(0, Math.min(100, power)) / 100));
+  return { x: origin.x / 65536, y: height - origin.y / 65536,
+    vx: vx / 65536 * 50, vy: -vy / 65536 * 50 };
 }
 export function attachNativeProjectile(p, height) {
   const record = weaponRecord(p.nativeWeaponKind ?? p.kind);

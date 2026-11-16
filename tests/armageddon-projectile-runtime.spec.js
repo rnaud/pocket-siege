@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   nativeProjectileLaunch,
+  nativeProjectileLaunchGeometry,
   attachNativeProjectile,
   stepNativeProjectile,
   nativeProjectileDetonationEvents,
@@ -300,4 +301,23 @@ test("secondary construction runs between random draws for successive fragments"
   nativeProjectileChildren(p, 650, () => { order.push("random"); return 42; },
     child => order.push(child.nativeRepeat));
   expect(order).toEqual(["random","random",1,"random","random",2,"random","random",3,"random","random",4,"random","random",5]);
+});
+
+
+test("native live launch geometry uses body-origin throws and fourteen-pixel rocket offsets", () => {
+  const worm = { x: 200, y: 400 };
+  for (const kind of ["rocket", "homing", "mortar", "grenade", "cluster", "holy"]) {
+    for (const angle of [-180,-90,0,90,180]) {
+      let draws = 0;
+      const fired = nativeProjectileLaunchGeometry(kind,worm,angle,100,650,() => { draws++; return 42; });
+      const preview = nativeProjectileLaunchGeometry(kind,worm,angle,100,650,() => { throw Error("Preview consumed RNG"); },true);
+      expect(fired).toEqual(preview);
+      expect(draws).toBe(1);
+      const distance = ["rocket","homing","mortar"].includes(kind) ? 14 : 0;
+      expect(fired.x).toBeCloseTo(worm.x + distance * Math.cos(angle * Math.PI / 180),4);
+      expect(fired.y).toBeCloseTo(worm.y + distance * Math.sin(angle * Math.PI / 180),4);
+      expect(fired.vx).toBeCloseTo(1200 * Math.cos(angle * Math.PI / 180),4);
+      expect(fired.vy).toBeCloseTo(1200 * Math.sin(angle * Math.PI / 180),4);
+    }
+  }
 });
