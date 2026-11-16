@@ -1,0 +1,820 @@
+{
+  "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "blocks": [
+    "004DC9D0\u2013004DCA92",
+    "004DB89D\u2013004DB8E4"
+  ],
+  "method": "Original progress and slope instructions execute; animation setter and audio backend stubbed.",
+  "cases": [
+    {
+      "previous": 0,
+      "cycle": -1,
+      "progress": 3932,
+      "next_cycle": 0
+    },
+    {
+      "previous": 0,
+      "cycle": 0,
+      "progress": 3932,
+      "next_cycle": 0
+    },
+    {
+      "previous": 3932,
+      "cycle": -1,
+      "progress": 7864,
+      "next_cycle": 0
+    },
+    {
+      "previous": 3932,
+      "cycle": 0,
+      "progress": 7864,
+      "next_cycle": 0
+    },
+    {
+      "previous": 7864,
+      "cycle": -1,
+      "progress": 11796,
+      "next_cycle": 0
+    },
+    {
+      "previous": 7864,
+      "cycle": 0,
+      "progress": 11796,
+      "next_cycle": 0
+    },
+    {
+      "previous": 11796,
+      "cycle": -1,
+      "progress": 15728,
+      "next_cycle": 0
+    },
+    {
+      "previous": 11796,
+      "cycle": 0,
+      "progress": 15728,
+      "next_cycle": 0
+    },
+    {
+      "previous": 15728,
+      "cycle": -1,
+      "progress": 19660,
+      "next_cycle": 0
+    },
+    {
+      "previous": 15728,
+      "cycle": 0,
+      "progress": 19660,
+      "next_cycle": 0
+    },
+    {
+      "previous": 19660,
+      "cycle": -1,
+      "progress": 23592,
+      "next_cycle": 0
+    },
+    {
+      "previous": 19660,
+      "cycle": 0,
+      "progress": 23592,
+      "next_cycle": 0
+    },
+    {
+      "previous": 23592,
+      "cycle": -1,
+      "progress": 27524,
+      "next_cycle": 0
+    },
+    {
+      "previous": 23592,
+      "cycle": 0,
+      "progress": 27524,
+      "next_cycle": 0
+    },
+    {
+      "previous": 27524,
+      "cycle": -1,
+      "progress": 31456,
+      "next_cycle": 0
+    },
+    {
+      "previous": 27524,
+      "cycle": 0,
+      "progress": 31456,
+      "next_cycle": 0
+    },
+    {
+      "previous": 31456,
+      "cycle": -1,
+      "progress": 35388,
+      "next_cycle": 0
+    },
+    {
+      "previous": 31456,
+      "cycle": 0,
+      "progress": 35388,
+      "next_cycle": 0
+    },
+    {
+      "previous": 35388,
+      "cycle": -1,
+      "progress": 39320,
+      "next_cycle": 0
+    },
+    {
+      "previous": 35388,
+      "cycle": 0,
+      "progress": 39320,
+      "next_cycle": 0
+    },
+    {
+      "previous": 39320,
+      "cycle": -1,
+      "progress": 43252,
+      "next_cycle": 0
+    },
+    {
+      "previous": 39320,
+      "cycle": 0,
+      "progress": 43252,
+      "next_cycle": 0
+    },
+    {
+      "previous": 43252,
+      "cycle": -1,
+      "progress": 47184,
+      "next_cycle": 0
+    },
+    {
+      "previous": 43252,
+      "cycle": 0,
+      "progress": 47184,
+      "next_cycle": 0
+    },
+    {
+      "previous": 47184,
+      "cycle": -1,
+      "progress": 51116,
+      "next_cycle": 0
+    },
+    {
+      "previous": 47184,
+      "cycle": 0,
+      "progress": 51116,
+      "next_cycle": 0
+    },
+    {
+      "previous": 51116,
+      "cycle": -1,
+      "progress": 55048,
+      "next_cycle": 0
+    },
+    {
+      "previous": 51116,
+      "cycle": 0,
+      "progress": 55048,
+      "next_cycle": 0
+    },
+    {
+      "previous": 55048,
+      "cycle": -1,
+      "progress": 58980,
+      "next_cycle": 0
+    },
+    {
+      "previous": 55048,
+      "cycle": 0,
+      "progress": 58980,
+      "next_cycle": 0
+    },
+    {
+      "previous": 58980,
+      "cycle": -1,
+      "progress": 62912,
+      "next_cycle": 0
+    },
+    {
+      "previous": 58980,
+      "cycle": 0,
+      "progress": 62912,
+      "next_cycle": 0
+    },
+    {
+      "previous": 62912,
+      "cycle": -1,
+      "progress": 66844,
+      "next_cycle": 1
+    },
+    {
+      "previous": 62912,
+      "cycle": 0,
+      "progress": 66844,
+      "next_cycle": 1
+    },
+    {
+      "previous": 66844,
+      "cycle": -1,
+      "progress": 70776,
+      "next_cycle": 1
+    },
+    {
+      "previous": 66844,
+      "cycle": 1,
+      "progress": 70776,
+      "next_cycle": 1
+    },
+    {
+      "previous": 70776,
+      "cycle": -1,
+      "progress": 74708,
+      "next_cycle": 1
+    },
+    {
+      "previous": 70776,
+      "cycle": 1,
+      "progress": 74708,
+      "next_cycle": 1
+    },
+    {
+      "previous": 74708,
+      "cycle": -1,
+      "progress": 78640,
+      "next_cycle": 1
+    },
+    {
+      "previous": 74708,
+      "cycle": 1,
+      "progress": 78640,
+      "next_cycle": 1
+    },
+    {
+      "previous": 78640,
+      "cycle": -1,
+      "progress": 82572,
+      "next_cycle": 1
+    },
+    {
+      "previous": 78640,
+      "cycle": 1,
+      "progress": 82572,
+      "next_cycle": 1
+    },
+    {
+      "previous": 82572,
+      "cycle": -1,
+      "progress": 86504,
+      "next_cycle": 1
+    },
+    {
+      "previous": 82572,
+      "cycle": 1,
+      "progress": 86504,
+      "next_cycle": 1
+    },
+    {
+      "previous": 86504,
+      "cycle": -1,
+      "progress": 90436,
+      "next_cycle": 1
+    },
+    {
+      "previous": 86504,
+      "cycle": 1,
+      "progress": 90436,
+      "next_cycle": 1
+    },
+    {
+      "previous": 90436,
+      "cycle": -1,
+      "progress": 94368,
+      "next_cycle": 1
+    },
+    {
+      "previous": 90436,
+      "cycle": 1,
+      "progress": 94368,
+      "next_cycle": 1
+    },
+    {
+      "previous": 94368,
+      "cycle": -1,
+      "progress": 98300,
+      "next_cycle": 1
+    },
+    {
+      "previous": 94368,
+      "cycle": 1,
+      "progress": 98300,
+      "next_cycle": 1
+    },
+    {
+      "previous": 98300,
+      "cycle": -1,
+      "progress": 102232,
+      "next_cycle": 1
+    },
+    {
+      "previous": 98300,
+      "cycle": 1,
+      "progress": 102232,
+      "next_cycle": 1
+    },
+    {
+      "previous": 102232,
+      "cycle": -1,
+      "progress": 106164,
+      "next_cycle": 1
+    },
+    {
+      "previous": 102232,
+      "cycle": 1,
+      "progress": 106164,
+      "next_cycle": 1
+    },
+    {
+      "previous": 106164,
+      "cycle": -1,
+      "progress": 110096,
+      "next_cycle": 1
+    },
+    {
+      "previous": 106164,
+      "cycle": 1,
+      "progress": 110096,
+      "next_cycle": 1
+    },
+    {
+      "previous": 110096,
+      "cycle": -1,
+      "progress": 114028,
+      "next_cycle": 1
+    },
+    {
+      "previous": 110096,
+      "cycle": 1,
+      "progress": 114028,
+      "next_cycle": 1
+    },
+    {
+      "previous": 114028,
+      "cycle": -1,
+      "progress": 117960,
+      "next_cycle": 1
+    },
+    {
+      "previous": 114028,
+      "cycle": 1,
+      "progress": 117960,
+      "next_cycle": 1
+    },
+    {
+      "previous": 117960,
+      "cycle": -1,
+      "progress": 121892,
+      "next_cycle": 1
+    },
+    {
+      "previous": 117960,
+      "cycle": 1,
+      "progress": 121892,
+      "next_cycle": 1
+    },
+    {
+      "previous": 121892,
+      "cycle": -1,
+      "progress": 125824,
+      "next_cycle": 1
+    },
+    {
+      "previous": 121892,
+      "cycle": 1,
+      "progress": 125824,
+      "next_cycle": 1
+    },
+    {
+      "previous": 125824,
+      "cycle": -1,
+      "progress": 129756,
+      "next_cycle": 1
+    },
+    {
+      "previous": 125824,
+      "cycle": 1,
+      "progress": 129756,
+      "next_cycle": 1
+    },
+    {
+      "previous": 129756,
+      "cycle": -1,
+      "progress": 133688,
+      "next_cycle": 2
+    },
+    {
+      "previous": 129756,
+      "cycle": 1,
+      "progress": 133688,
+      "next_cycle": 2
+    },
+    {
+      "previous": 133688,
+      "cycle": -1,
+      "progress": 137620,
+      "next_cycle": 2
+    },
+    {
+      "previous": 133688,
+      "cycle": 2,
+      "progress": 137620,
+      "next_cycle": 2
+    },
+    {
+      "previous": 137620,
+      "cycle": -1,
+      "progress": 141552,
+      "next_cycle": 2
+    },
+    {
+      "previous": 137620,
+      "cycle": 2,
+      "progress": 141552,
+      "next_cycle": 2
+    },
+    {
+      "previous": 141552,
+      "cycle": -1,
+      "progress": 145484,
+      "next_cycle": 2
+    },
+    {
+      "previous": 141552,
+      "cycle": 2,
+      "progress": 145484,
+      "next_cycle": 2
+    },
+    {
+      "previous": 145484,
+      "cycle": -1,
+      "progress": 149416,
+      "next_cycle": 2
+    },
+    {
+      "previous": 145484,
+      "cycle": 2,
+      "progress": 149416,
+      "next_cycle": 2
+    },
+    {
+      "previous": 149416,
+      "cycle": -1,
+      "progress": 153348,
+      "next_cycle": 2
+    },
+    {
+      "previous": 149416,
+      "cycle": 2,
+      "progress": 153348,
+      "next_cycle": 2
+    },
+    {
+      "previous": 153348,
+      "cycle": -1,
+      "progress": 157280,
+      "next_cycle": 2
+    },
+    {
+      "previous": 153348,
+      "cycle": 2,
+      "progress": 157280,
+      "next_cycle": 2
+    },
+    {
+      "previous": 157280,
+      "cycle": -1,
+      "progress": 161212,
+      "next_cycle": 2
+    },
+    {
+      "previous": 157280,
+      "cycle": 2,
+      "progress": 161212,
+      "next_cycle": 2
+    },
+    {
+      "previous": 161212,
+      "cycle": -1,
+      "progress": 165144,
+      "next_cycle": 2
+    },
+    {
+      "previous": 161212,
+      "cycle": 2,
+      "progress": 165144,
+      "next_cycle": 2
+    },
+    {
+      "previous": 165144,
+      "cycle": -1,
+      "progress": 169076,
+      "next_cycle": 2
+    },
+    {
+      "previous": 165144,
+      "cycle": 2,
+      "progress": 169076,
+      "next_cycle": 2
+    },
+    {
+      "previous": 169076,
+      "cycle": -1,
+      "progress": 173008,
+      "next_cycle": 2
+    },
+    {
+      "previous": 169076,
+      "cycle": 2,
+      "progress": 173008,
+      "next_cycle": 2
+    },
+    {
+      "previous": 173008,
+      "cycle": -1,
+      "progress": 176940,
+      "next_cycle": 2
+    },
+    {
+      "previous": 173008,
+      "cycle": 2,
+      "progress": 176940,
+      "next_cycle": 2
+    },
+    {
+      "previous": 176940,
+      "cycle": -1,
+      "progress": 180872,
+      "next_cycle": 2
+    },
+    {
+      "previous": 176940,
+      "cycle": 2,
+      "progress": 180872,
+      "next_cycle": 2
+    },
+    {
+      "previous": 180872,
+      "cycle": -1,
+      "progress": 184804,
+      "next_cycle": 2
+    },
+    {
+      "previous": 180872,
+      "cycle": 2,
+      "progress": 184804,
+      "next_cycle": 2
+    },
+    {
+      "previous": 184804,
+      "cycle": -1,
+      "progress": 188736,
+      "next_cycle": 2
+    },
+    {
+      "previous": 184804,
+      "cycle": 2,
+      "progress": 188736,
+      "next_cycle": 2
+    },
+    {
+      "previous": 188736,
+      "cycle": -1,
+      "progress": 192668,
+      "next_cycle": 2
+    },
+    {
+      "previous": 188736,
+      "cycle": 2,
+      "progress": 192668,
+      "next_cycle": 2
+    },
+    {
+      "previous": 192668,
+      "cycle": -1,
+      "progress": 196600,
+      "next_cycle": 2
+    },
+    {
+      "previous": 192668,
+      "cycle": 2,
+      "progress": 196600,
+      "next_cycle": 2
+    },
+    {
+      "previous": 196600,
+      "cycle": -1,
+      "progress": 200532,
+      "next_cycle": 3
+    },
+    {
+      "previous": 196600,
+      "cycle": 2,
+      "progress": 200532,
+      "next_cycle": 3
+    },
+    {
+      "previous": 200532,
+      "cycle": -1,
+      "progress": 204464,
+      "next_cycle": 3
+    },
+    {
+      "previous": 200532,
+      "cycle": 3,
+      "progress": 204464,
+      "next_cycle": 3
+    },
+    {
+      "previous": 204464,
+      "cycle": -1,
+      "progress": 208396,
+      "next_cycle": 3
+    },
+    {
+      "previous": 204464,
+      "cycle": 3,
+      "progress": 208396,
+      "next_cycle": 3
+    },
+    {
+      "previous": 208396,
+      "cycle": -1,
+      "progress": 212328,
+      "next_cycle": 3
+    },
+    {
+      "previous": 208396,
+      "cycle": 3,
+      "progress": 212328,
+      "next_cycle": 3
+    },
+    {
+      "previous": 212328,
+      "cycle": -1,
+      "progress": 216260,
+      "next_cycle": 3
+    },
+    {
+      "previous": 212328,
+      "cycle": 3,
+      "progress": 216260,
+      "next_cycle": 3
+    },
+    {
+      "previous": 216260,
+      "cycle": -1,
+      "progress": 220192,
+      "next_cycle": 3
+    },
+    {
+      "previous": 216260,
+      "cycle": 3,
+      "progress": 220192,
+      "next_cycle": 3
+    },
+    {
+      "previous": 220192,
+      "cycle": -1,
+      "progress": 224124,
+      "next_cycle": 3
+    },
+    {
+      "previous": 220192,
+      "cycle": 3,
+      "progress": 224124,
+      "next_cycle": 3
+    },
+    {
+      "previous": 224124,
+      "cycle": -1,
+      "progress": 228056,
+      "next_cycle": 3
+    },
+    {
+      "previous": 224124,
+      "cycle": 3,
+      "progress": 228056,
+      "next_cycle": 3
+    },
+    {
+      "previous": 228056,
+      "cycle": -1,
+      "progress": 231988,
+      "next_cycle": 3
+    },
+    {
+      "previous": 228056,
+      "cycle": 3,
+      "progress": 231988,
+      "next_cycle": 3
+    },
+    {
+      "previous": 231988,
+      "cycle": -1,
+      "progress": 235920,
+      "next_cycle": 3
+    },
+    {
+      "previous": 231988,
+      "cycle": 3,
+      "progress": 235920,
+      "next_cycle": 3
+    },
+    {
+      "previous": -1,
+      "cycle": -1,
+      "progress": 3931,
+      "next_cycle": 0
+    },
+    {
+      "previous": -1,
+      "cycle": -1,
+      "progress": 3931,
+      "next_cycle": 0
+    },
+    {
+      "previous": 32768,
+      "cycle": -1,
+      "progress": 36700,
+      "next_cycle": 0
+    },
+    {
+      "previous": 32768,
+      "cycle": 0,
+      "progress": 36700,
+      "next_cycle": 0
+    },
+    {
+      "previous": 65535,
+      "cycle": -1,
+      "progress": 69467,
+      "next_cycle": 1
+    },
+    {
+      "previous": 65535,
+      "cycle": 0,
+      "progress": 69467,
+      "next_cycle": 1
+    },
+    {
+      "previous": 2147483647,
+      "cycle": -1,
+      "progress": -2147479717,
+      "next_cycle": -32768
+    },
+    {
+      "previous": 2147483647,
+      "cycle": 32767,
+      "progress": -2147479717,
+      "next_cycle": -32768
+    },
+    {
+      "previous": -2147483648,
+      "cycle": -1,
+      "progress": -2147479716,
+      "next_cycle": -32768
+    },
+    {
+      "previous": -2147483648,
+      "cycle": -32768,
+      "progress": -2147479716,
+      "next_cycle": -32768
+    }
+  ],
+  "slopes": [
+    {
+      "slope": -2147483648,
+      "sprite": 33
+    },
+    {
+      "slope": -10,
+      "sprite": 33
+    },
+    {
+      "slope": -1,
+      "sprite": 33
+    },
+    {
+      "slope": 0,
+      "sprite": 32
+    },
+    {
+      "slope": 1,
+      "sprite": 34
+    },
+    {
+      "slope": 10,
+      "sprite": 34
+    },
+    {
+      "slope": 2147483647,
+      "sprite": 34
+    }
+  ]
+}

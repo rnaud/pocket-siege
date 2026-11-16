@@ -57,6 +57,7 @@ import {
   startOriginalParachute,
   startOriginalTeleport,
   stepOriginalJetpack,
+  stepOriginalWalking,
   stopOriginalJetpack,
   stepOriginalTeleport,
   setOriginalRope,
@@ -3113,6 +3114,7 @@ function step(dt) {
     }
   }
   for (const w of worms) {
+    stepOriginalWalking(w);
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
     w.landing = Math.max(0, (w.landing || 0) - dt);
     stepOriginalLanding(w);

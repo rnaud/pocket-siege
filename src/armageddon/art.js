@@ -1,3 +1,4 @@
+import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
 import { nativeFlightSprite, nativeFlightProgress } from "./flight-art.js";
 import { nativeJetpackTick } from "./jetpack.js";
@@ -86,6 +87,8 @@ const names = [
     "wbrth1",
     "wblink1",
     "wwalk",
+    "wwalku",
+    "wwalkd",
     "wjump",
     "wflyup",
     "wflylnk",
@@ -652,6 +655,27 @@ export function stepOriginalJetpack(worm, steering, thrust) {
   state.map.needsUpdate = true;
 }
 
+export function stepOriginalWalking(worm) {
+  if (
+    !worm.moving ||
+    !worm.ground ||
+    worm.knocked ||
+    worm.hp <= 0 ||
+    worm.frozen ||
+    worm.hurt > 0.35
+  ) {
+    worm.originalWalking = null;
+    return;
+  }
+  const facing = worm.walkDirection || worm.facing;
+  let state = worm.originalWalking;
+  if (!state || state.facing !== facing) state = { progress: 0, facing };
+  Object.assign(state, nativeWalkingTick(state.progress));
+  // Host movement supplies slope until the native walking body is ported.
+  state.sprite = nativeWalkingSprite(-Math.sign(worm.walkRise || 0));
+  worm.originalWalking = state;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
     const state = worm.originalJetpack;
@@ -770,6 +794,27 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
         name,
         index,
         facing,
+        aimed: false,
+        equipped: false,
+      };
+    }
+  }
+
+  if (worm.originalWalking && pose.startsWith("walk")) {
+    const state = worm.originalWalking;
+    const name = spriteIds.sprites[state.sprite].name;
+    const animation = animations.get(name);
+    if (animation) {
+      const index = nativeSpriteFrame(
+        animation.sprite.frames.length,
+        animation.sprite.metadata[2],
+        state.progress,
+      );
+      return {
+        map: texture(name, index),
+        name,
+        index,
+        facing: state.facing,
         aimed: false,
         equipped: false,
       };

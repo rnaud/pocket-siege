@@ -172,6 +172,8 @@ export function blastImpulse(w, x, y, radius, strength = 270) {
 }
 export function walkWorm(w, terrain, direction, dt) {
   if (!w.ground || w.knocked) return false;
+  const startY = w.y;
+  w.walkDirection = Math.sign(direction);
   const steps = Math.max(1, Math.ceil(42 * dt));
   let moved = false;
   for (let step = 0; step < steps; step++) {
@@ -190,6 +192,7 @@ export function walkWorm(w, terrain, direction, dt) {
     }
     if (!found || !w.ground) break;
   }
+  w.walkRise = w.y - startY;
   return moved;
 }
 
