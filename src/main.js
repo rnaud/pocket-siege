@@ -8,6 +8,7 @@ import { nativeMineStateEvents } from "./armageddon/mine-state.js";
 import { nativeMineHit, nativeMineHitBodies } from "./armageddon/mine-hit.js";
 import { nativeMineCameraRequest } from "./armageddon/mine-camera.js";
 import { nativeMineRegistration } from "./armageddon/mine-registration.js";
+import { NativeRenderOrder } from "./armageddon/render-order.js";
 import { nativeWaterSound } from "./armageddon/water-audio.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
@@ -236,6 +237,7 @@ import { modifierSettings } from "./modifiers.js";
 import { readSettings, writeSettings } from "./settings.js";
 const matchRandom = new MatchRandom(0);
 let mineDudPool = new NativeMineDudPool();
+let nativeRenderOrder = new NativeRenderOrder();
 const nativeCamera = new NativeCameraPriority();
 let nativeCameraFocus = null;
 let nativeCameraFraming = null;
@@ -899,6 +901,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
   mineDudPool = new NativeMineDudPool();
+  nativeRenderOrder = new NativeRenderOrder();
   smokeRandom = matchSeed >>> 0;
   impactBag = createImpactBag();
   bubbleSeed = matchSeed >>> 0;
@@ -2324,6 +2327,13 @@ function injure(w, damage, direction = 0, native = false) {
   }
   updateUI();
 }
+function removeMine(index) {
+  const mine = mines[index];
+  nativeRenderOrder.release(mine.nativeOrderId);
+  mine.impactPlayback?.stop?.();
+  dispose(mine.mesh);
+  mines.splice(index, 1);
+}
 function placeMine() {
   if (!canAct() || !worms[current]?.ground || worms[current].knocked) return;
   wormLocked = true;
@@ -2358,11 +2368,12 @@ function placeMine() {
     frame: old.nativeCreatedFrame, x: old.nativeBody.x, y: old.nativeBody.y,
   };
   const registration = nativeMineRegistration(mineSlots, matchRandom.frame, team === 0 ? 2 : 0);
+  mine.nativeOrderId = nativeRenderOrder.allocate();
   for (const call of registration.calls) {
     if (call.operation === "effect") spawnNativeParticleRequest(call.request);
     else if (call.operation === "delete") {
       const oldIndex = mines.findIndex(old => old.nativeSlot === registration.slot);
-      if (oldIndex >= 0) { dispose(mines[oldIndex].mesh); mines.splice(oldIndex, 1); }
+      if (oldIndex >= 0) removeMine(oldIndex);
     }
   }
   mine.nativeSlot = registration.slot;
@@ -3981,6 +3992,7 @@ function step(dt) {
     );
     if (collector) collectCrate(collector);
   }
+  const mineCameraRequests = [];
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
     const mine = mines[i];
     const waterSound = (body, skim) => {
@@ -4053,9 +4065,13 @@ function step(dt) {
     }
     if (!result.expired) {
       if ((mine.nativeBody.y >> 16) >= nativeProjectileDepth(Math.floor(H - waterLevel))) {
-        mines.splice(i, 1);
-        dispose(mine.mesh);
+        removeMine(i);
         continue;
+      }
+      const cameraRequest = nativeMineCameraRequest(mine.nativeBody, mine.nativeTimer);
+      if (cameraRequest) {
+        nativeRenderOrder.promote(mine.nativeOrderId);
+        mineCameraRequests.push(cameraRequest);
       }
       const water = nativeMineWater({
         ...mine.nativeWater, flags: mine.nativeBody.flags, forceBlast: mine.nativeTimer.forceBlast,
@@ -4079,8 +4095,7 @@ function step(dt) {
       for (const call of nativeMineStateEvents(mine.nativeBody, mine.nativeTimer.damage)) {
         if (call.operation === "blast") explode(mine.x, mine.y, "mine", mine.owner, call.request);
         else if (call.operation === "delete") {
-          mines.splice(i, 1);
-          dispose(mine.mesh);
+          removeMine(i);
         }
       }
       continue;
@@ -4099,8 +4114,7 @@ function step(dt) {
         audio.resume();
         playNativeMineSound(audio, call.request);
       } else if (call.operation === "delete") {
-        mines.splice(i, 1);
-        dispose(mine.mesh);
+        removeMine(i);
       }
     }
   }
@@ -4337,7 +4351,6 @@ function step(dt) {
   stepWaterBubbles();
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
-  const mineCameraRequests = mines.map(mine => nativeMineCameraRequest(mine.nativeBody, mine.nativeTimer)).filter(Boolean);
   const teleportTracking = worms.some((w) => w.originalTeleport);
   if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || teleportTracking || pendingWormCamera.length)) {
     nativeCamera.reset();
@@ -4758,7 +4771,7 @@ function frame(now) {
       crate.mesh.userData.beacon.rotation.y = now * 0.002;
   }
   for (const mine of mines) {
-    const art = nativeMineArt(mine.nativeBody, mine.nativeTimer);
+    const art = nativeMineArt(mine.nativeBody, mine.nativeTimer, nativeRenderOrder.orders[mine.nativeOrderId]);
     updateOriginalObject(mine.mesh, art.name, 0, art.progress);
     if (mine.mesh.userData.light)
       mine.mesh.userData.light.visible =
@@ -5330,6 +5343,8 @@ window.siege = {
     })),
     mines: mines.map((m) => ({
       nativeSlot: m.nativeSlot,
+      nativeOrderId: m.nativeOrderId,
+      nativeRenderRank: nativeRenderOrder.orders[m.nativeOrderId],
       nativeCreatedFrame: m.nativeCreatedFrame,
       x: Math.round(m.x),
       y: Math.round(m.y),
