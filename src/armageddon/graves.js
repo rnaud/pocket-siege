@@ -1,4 +1,5 @@
-import { stepWorm } from "../physics.js";
+import { nativeGraveLifecycle } from "./grave-lifecycle.js";
+import { H, stepWorm } from "../physics.js";
 import { createOriginalVisual, originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
 
@@ -18,6 +19,8 @@ export function createOriginalGrave(worm, style = worm.team + 1) {
     facing: worm.facing,
     style,
     progress: 0,
+    bubblePhase: 0,
+    bubbleRequests: 0,
     wet: false,
     mesh,
   };
@@ -29,11 +32,21 @@ export function stepOriginalGrave(
   waterLevel,
   gravityScale = 1,
 ) {
-  grave.progress = (grave.progress + 0x51e) | 0;
   if (grave.wet || grave.y < waterLevel) {
     grave.wet = true;
     grave.y -= 24 * dt;
   } else stepWorm(grave, terrain, dt, gravityScale);
+  const lifecycle = nativeGraveLifecycle(
+    grave.progress,
+    grave.bubblePhase,
+    grave.wet,
+    Math.round((H - grave.y) * 65536),
+    H,
+  );
+  grave.progress = lifecycle.progress;
+  grave.bubblePhase = lifecycle.phase;
+  grave.bubbleRequests = lifecycle.bubbles;
+  if (!lifecycle.alive) return false;
   const name = `${grave.wet ? "water/" : ""}grave${grave.style}`;
   const art = originalVisual(name);
   const index = nativeSpriteFrame(art.count, art.flags, grave.progress);
@@ -42,5 +55,5 @@ export function stepOriginalGrave(
   grave.mesh.scale.x = grave.facing > 0 ? -1 : 1;
   grave.mesh.userData.originalSprite = name;
   grave.mesh.userData.originalFrame = index;
-  return grave.y > 0;
+  return true;
 }

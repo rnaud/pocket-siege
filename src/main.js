@@ -3264,6 +3264,15 @@ function step(dt) {
     if (!stepOriginalGrave(graves[i], terrain, dt, waterLevel, gravityScale)) {
       dispose(graves[i].mesh);
       graves.splice(i, 1);
+    } else {
+      const grave = graves[i];
+      for (let n = 0; n < grave.bubbleRequests; n++)
+        spawnWaterBubble(
+          grave.x,
+          grave.y,
+          0,
+          (matchRandom.visualUint() & 3) + 1,
+        );
     }
   }
   if (crate) {

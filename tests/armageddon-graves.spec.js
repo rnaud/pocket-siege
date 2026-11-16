@@ -58,6 +58,6 @@ test("original grave strips preserve dry/wet pixels and switch on submersion", a
     wet: "water/grave1",
     removed: true,
     flip: -1,
-    progress: 3 * 0x51e,
+    progress: 2 * 0x51e,
   });
 });
