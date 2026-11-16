@@ -1098,9 +1098,11 @@ test("field kit teleport and girder target the battlefield", async ({
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.utilities.teleport).toBe(0);
   expect(state.phase).toBe("settle");
+  await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).not.toBeNull();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().worms[0].y))
     .toBeGreaterThan(300);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
 
   await page.reload();
   await expect

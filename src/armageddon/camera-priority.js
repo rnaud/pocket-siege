@@ -49,3 +49,16 @@ export function nativeProjectileCameraRequest(body, [left, right, top]) {
       : 5;
   return [priority, body.x, body.y];
 }
+
+// 004D6760, including the original 004D11E0 movement predicate.
+export function nativeWormCameraRequest(body, environment) {
+  const { x, y, active, state, motion } = body;
+  const { left, right, top, bottom, sameTeam, override } = environment;
+  if (y < -9999 * 65536 || y > bottom << 16) return null;
+  let priority;
+  if (active) priority = !sameTeam || override ? 11 : 1;
+  else if (state === 0x87) priority = 9;
+  else if (motion.some((v) => v !== 0)) priority = 2;
+  else priority = x >= left && x <= right && y >= top ? 4 : 3;
+  return [priority, x, y];
+}

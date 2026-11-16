@@ -1,5 +1,5 @@
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
-import { NativeCameraPriority, nativeProjectileCameraRequest } from "./armageddon/camera-priority.js";
+import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
@@ -221,6 +221,7 @@ const matchRandom = new MatchRandom(0);
 const nativeCamera = new NativeCameraPriority();
 let nativeCameraFocus = null;
 let nativeCameraFraming = null;
+let pendingWormCamera = [];
 const logicRandom = () => matchRandom.logic();
 const visualRandom = () => matchRandom.visual();
 const $ = (s) => document.querySelector(s);
@@ -872,6 +873,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeCamera.reset();
   nativeCameraFocus = null;
   nativeCameraFraming = null;
+  pendingWormCamera = [];
   for (const f of fires) dispose(f.mesh);
   fires = [];
   for (const h of hazards) dispose(h.mesh);
@@ -1632,6 +1634,7 @@ function handleUtilityTarget(e) {
     utilityAmmo[team].teleport = spendAmmo(utilityAmmo[team].teleport);
     w.vx = w.vy = 0;
     startOriginalTeleport(w, x, y);
+    queueWormCamera(w);
     finishUtilityTurn("Teleporting. Turn ends after arrival.");
     return;
   }
@@ -2394,6 +2397,18 @@ function spawnBomb({
     initialFuse: fuse,
     age: 0,
   });
+}
+// Original teleport entry and relocation both dispatch004D6760.
+function queueWormCamera(w) {
+  const request = nativeWormCameraRequest({
+    x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
+    active: w === worms[current] ? 1 : 0, state: nativeWormState(w),
+    motion: [Math.round(w.vx / 50 * 65536), Math.round(-w.vy / 50 * 65536), 0, 0, 0],
+  }, {
+    left: 0, right: W * 65536, top: -256 * 65536, bottom: H - waterLevel,
+    sameTeam: w.team === team, override: false,
+  });
+  if (request) pendingWormCamera.push(request);
 }
 function spawnAirstrike(x, y) {
   const direction = Number($("#strike-direction").value);
@@ -3715,7 +3730,7 @@ function step(dt) {
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
     if (w.originalTeleport) {
       const teleport = stepOriginalTeleport(w);
-      if (teleport?.relocate) cameraSnap = true;
+      if (teleport?.relocate) queueWormCamera(w);
       continue;
     }
     if (w.originalRecovery) {
@@ -4158,7 +4173,8 @@ function step(dt) {
   stepWaterBubbles();
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
-  if (!nativeCameraFraming && trackedProjectiles.length) {
+  const teleportTracking = worms.some((w) => w.originalTeleport);
+  if (!nativeCameraFraming && (trackedProjectiles.length || teleportTracking || pendingWormCamera.length)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
       Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
@@ -4167,8 +4183,10 @@ function step(dt) {
   for (const tracked of trackedProjectiles) {
     nativeCamera.offer(...nativeProjectileCameraRequest(tracked.nativeBody, [0, W * 65536, -256 * 65536]));
   }
+  for (const request of pendingWormCamera) nativeCamera.offer(...request);
+  pendingWormCamera = [];
   const bounds = nativeCamera.select(matchRandom.frame);
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || teleportTracking)) {
     const aspect = arena.clientHeight > arena.clientWidth
       ? arena.clientWidth / arena.clientHeight : W / H;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
