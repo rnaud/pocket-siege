@@ -18,5 +18,9 @@ test("hitscan directions, complete packets and RNG match original spread loop", 
     expect(state).toBe(row.random);
     expect(shot).toEqual(row.shot);
   }
-  expect(nativeShotgunRay).toEqual({ count: 1, spread: 0 });
+  expect(nativeShotgunRay).toEqual({
+    count: 1,
+    spread: 0,
+    collisionMask: 4332670,
+  });
 });

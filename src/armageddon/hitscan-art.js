@@ -14,4 +14,5 @@ export const nativeShotgunImpact = Object.freeze({
 export const nativeShotgunRay = Object.freeze({
   count: shotgun[(0x80 - 0x48) / 4],
   spread: shotgun[(0x84 - 0x48) / 4],
+  collisionMask: shotgun[(0x88 - 0x48) / 4],
 });
