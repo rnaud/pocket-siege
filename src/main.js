@@ -1,3 +1,8 @@
+import {
+  nativeDebrisBurst,
+  nativeDebrisBody,
+  nativeDebrisTick,
+} from "./armageddon/debris.js";
 import { carveNativeCrater } from "./armageddon/crater-mask.js";
 import { nativeAreaDamage } from "./armageddon/area-damage.js";
 import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
@@ -817,6 +822,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeParticles.length = 0;
   for (const p of originalSmoke) dispose(p.mesh);
   originalSmoke.length = 0;
+  for (const p of originalDebris) dispose(p.mesh);
+  originalDebris.length = 0;
   for (const bubble of waterBubbles) dispose(bubble.mesh);
   waterBubbles.length = 0;
   for (const p of particles) releaseParticle(p.mesh);
@@ -2439,6 +2446,7 @@ function fireShotgun(prepared = false) {
       effect[2] >> 16,
       Math.imul(nativeShotgunResolution.extentFactor, effect[4]),
     );
+    spawnOriginalDebris(effect[1], effect[2], effect[4]);
     terrainDirty = true;
   }
   spawnExplosionArt(
@@ -2739,6 +2747,54 @@ function spawnDust(x, y) {
       0,
       Math.trunc((0x51e * art.rate) / art.count),
     );
+}
+const originalDebris = [];
+function spawnOriginalDebris(x, y, strength) {
+  const requests = nativeDebrisBurst(
+    x,
+    y,
+    Math.trunc((strength << 16) / 8) + 2,
+    Math.trunc(strength / 6),
+    originalDebris.length,
+    () => matchRandom.visualUint(),
+  );
+  for (const request of requests) {
+    const body = nativeDebrisBody(request);
+    const mesh = createOriginalVisual("flame1");
+    if (!mesh) continue;
+    mesh.scale.x = body.sprite & 0x40000 ? -1 : 1;
+    mesh.position.set(Math.round(x / 65536), Math.round(H - y / 65536), 35);
+    group.add(mesh);
+    originalDebris.push({ ...body, mesh });
+  }
+}
+function updateOriginalDebris() {
+  for (let i = originalDebris.length - 1; i >= 0; i--) {
+    const p = originalDebris[i];
+    const tick = nativeDebrisTick(
+      p,
+      Math.round(0x3d70 * gravityScale),
+      Math.floor(H - waterLevel),
+      () => (smokeRandom = nextVisualRandom(smokeRandom)),
+    );
+    spawnOriginalSmoke(tick.smoke);
+    if (tick.sounds.length) sfx("sizzle");
+    if (!tick.alive) {
+      dispose(p.mesh);
+      originalDebris.splice(i, 1);
+      continue;
+    }
+    Object.assign(p, tick.body);
+    const art = originalVisual("flame1"),
+      frame = nativeSpriteFrame(art.count, art.flags, p.progress);
+    p.mesh.material.map = originalVisual("flame1", frame).map;
+    p.mesh.userData.originalFrame = frame;
+    p.mesh.position.set(
+      Math.round(p.x / 65536),
+      Math.round(H - p.y / 65536),
+      35,
+    );
+  }
 }
 const originalSmoke = [];
 let smokeRandom = 0;
@@ -3714,6 +3770,7 @@ function step(dt) {
   }
   stepOriginalEffects(dt);
   updateNativeParticles();
+  updateOriginalDebris();
   updateOriginalSmoke();
   stepWaterBubbles();
   matchRandom.finishFrame();
@@ -4569,6 +4626,12 @@ window.siege = {
       frame: b.mesh.userData.originalFrame,
       x: b.mesh.position.x,
       y: b.mesh.position.y,
+    })),
+    originalDebris: originalDebris.map((p) => ({
+      x: p.x,
+      y: p.y,
+      sprite: "flame1",
+      progress: p.progress,
     })),
     originalSmoke: originalSmoke.map((p) => ({
       sprite: p.name,

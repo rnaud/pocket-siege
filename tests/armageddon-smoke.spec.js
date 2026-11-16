@@ -49,7 +49,7 @@ test("death smoke spans the name label in native 24-pixel intervals", () => {
     );
   }
 });
-test("all original light smoke frames retain source palette pixels", async ({
+test("original flame and light/dark smoke frames retain source palette pixels", async ({
   page,
 }) => {
   await page.goto("/");
@@ -60,7 +60,16 @@ test("all original light smoke frames retain source palette pixels", async ({
       await import("/src/armageddon/sprite.js");
     let frames = 0,
       mismatch = 0;
-    for (const name of ["smklt25", "smklt50", "smklt75"]) {
+    for (const name of [
+      "smklt25",
+      "smklt50",
+      "smklt75",
+      "smklt100",
+      "smkdrk20",
+      "smkdrk30",
+      "smkdrk40",
+      "flame1",
+    ]) {
       const source = decodeSprite(
         await fetch(`/armageddon/sprites/${name}.spr`).then((r) =>
           r.arrayBuffer(),

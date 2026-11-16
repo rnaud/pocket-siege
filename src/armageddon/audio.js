@@ -1,5 +1,6 @@
 const sounds = {
   splash: "splash",
+  sizzle: "sizzle", // Native ID 0x37, descriptor 0055F228.
   splish: "splish",
   freeze: "freeze",
   unfreeze: "unfreeze",
