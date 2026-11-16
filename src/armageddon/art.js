@@ -51,6 +51,10 @@ const names = [
     "wblink1",
     "wwalk",
     "wjump",
+    "wflyup",
+    "wflylnk",
+    "wflydn",
+    "wbackflp",
     "wfall",
     "wland1",
     "wland2",
@@ -131,6 +135,63 @@ function applyAnimationCalls(player, calls) {
   }
 }
 
+// Browser jump adapter: launch velocities and preparation remain browser-owned.
+// This starts the native airborne entry once launch has actually occurred.
+export function startOriginalJump(worm, backflip = false) {
+  const result = nativeWormJumpLandingEntry(
+    {
+      state: 0x77,
+      team: worm.team,
+      field2b0: 0,
+      field2b4: backflip ? 1 : 0,
+      soundHandle: 0,
+    },
+    0x79,
+    { soundHandle: 0, voiceId: 0 },
+  );
+  const calls = result.calls.filter((call) =>
+    ["clear", "queue"].includes(call.operation),
+  );
+  if (
+    calls.some(
+      (call) =>
+        call.operation === "queue" &&
+        !animations.has(spriteIds.sprites[call.sprite_id].name),
+    )
+  )
+    return false;
+  const player = new NativeAnimationPlayer();
+  applyAnimationCalls(player, calls);
+  worm.originalJump = player;
+  worm.originalLanding = null;
+  return true;
+}
+
+export function stepOriginalJump(worm) {
+  const player = worm.originalJump;
+  if (!player) return;
+  if (
+    worm.hp <= 0 ||
+    worm.frozen ||
+    worm.knocked ||
+    worm.hurt > 0.35 ||
+    worm.ground ||
+    worm.originalPreparation ||
+    worm.originalRecoil
+  ) {
+    worm.originalJump = null;
+    return;
+  }
+  const result = nativeWormJumpLandingTick(
+    0x79,
+    player.current.id,
+    player.current.progress,
+    Math.round((-worm.vy * 65536) / 50) | 0,
+  );
+  applyAnimationCalls(player, result.calls);
+  player.advance();
+}
+
 // Browser landing adapter. Physics still supplies impact speed in pixels/second;
 // native velocity is signed 16.16 pixels per 50 Hz tick, positive downward.
 export function startOriginalLanding(worm, speed, previousState = 0x65) {
@@ -142,7 +203,11 @@ export function startOriginalLanding(worm, speed, previousState = 0x65) {
       field19c: 0,
     },
     0x7a,
-    { previousSprite: worm.originalPlayer?.current.id || 0, soundHandle: 0 },
+    {
+      previousSprite:
+        worm.originalJump?.current.id || worm.originalPlayer?.current.id || 0,
+      soundHandle: 0,
+    },
   );
   const queue = result.calls.filter((call) => call.operation === "queue");
   if (
@@ -157,7 +222,8 @@ export function startOriginalLanding(worm, speed, previousState = 0x65) {
     result.calls.filter((call) => ["clear", "queue"].includes(call.operation)),
   );
   worm.originalLanding = player;
-  return true;
+  worm.originalJump = null;
+  return result.calls.find((call) => call.operation === "sound").request;
 }
 
 // Advance independently of rendering, once per simulation tick.
@@ -252,6 +318,33 @@ export function startOriginalRecoil(worm, weapon, angle, frame) {
 }
 
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  const jumping = worm.originalJump;
+  if (
+    jumping &&
+    worm.hp > 0 &&
+    !worm.frozen &&
+    !worm.knocked &&
+    !(worm.hurt > 0.35) &&
+    !worm.ground &&
+    !worm.originalPreparation &&
+    !worm.originalRecoil
+  ) {
+    const name = spriteIds.sprites[jumping.current.id].name;
+    const sprite = animations.get(name).sprite;
+    const index = nativeSpriteFrame(
+      sprite.frames.length,
+      sprite.metadata[2],
+      jumping.current.progress,
+    );
+    return {
+      map: texture(name, index),
+      name,
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
+
   const landing = worm.originalLanding;
   if (
     landing &&

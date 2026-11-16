@@ -21,8 +21,14 @@ import {
   stepOriginalPreparation,
   startOriginalLanding,
   stepOriginalLanding,
+  startOriginalJump,
+  stepOriginalJump,
 } from "./armageddon/art.js";
-import { playOriginalSound, playNativeWaterSound } from "./armageddon/audio.js";
+import {
+  playOriginalSound,
+  playNativeWaterSound,
+  playNativeLandingSound,
+} from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
 import { fragments, airstrikePattern } from "./weapon-behavior.js";
@@ -2674,6 +2680,7 @@ function jump(kind = "forward") {
     w.vx = w.facing * (double ? -65 : 65);
   }
   w.ground = false;
+  startOriginalJump(w, kind === "backflip" || (kind === "up" && double));
   lastJump = { kind: double ? null : kind, time: jumpClock };
   sfx("jump");
 }
@@ -2840,6 +2847,7 @@ function step(dt) {
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
     w.landing = Math.max(0, (w.landing || 0) - dt);
     stepOriginalLanding(w);
+    stepOriginalJump(w);
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
     if (w.dying > 0) {
@@ -2868,8 +2876,12 @@ function step(dt) {
     }
     if (result.landed && w.ground && !w.landing) {
       w.landing = 0.16;
-      startOriginalLanding(w, result.landingSpeed);
-      sfx("land");
+      const landingSound = startOriginalLanding(w, result.landingSpeed);
+      if (landingSound && sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        playNativeLandingSound(audio, landingSound);
+      } else if (!landingSound) sfx("land");
     }
     if (result.fallDamage) injure(w, result.fallDamage);
     if (

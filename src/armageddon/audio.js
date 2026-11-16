@@ -74,3 +74,10 @@ export function playNativeWaterSound(context, request) {
     request[0] === 0x39 ? "splash" : request[0] === 0x3a ? "splish" : null;
   if (kind) playOriginalSound(context, kind, () => {}, request[3] / 65536);
 }
+
+// 0055F120 maps native ID 0x23 to WormLanding.wav. Strength comes from
+// 004D7E5C (absolute native vertical velocity / 8); gain remains a host adapter.
+export function playNativeLandingSound(context, request) {
+  if (request[0] === 0x23)
+    playOriginalSound(context, "land", () => {}, request[3] / 65536);
+}
