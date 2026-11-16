@@ -19,6 +19,8 @@ import {
   startOriginalRecoil,
   startOriginalPreparation,
   stepOriginalPreparation,
+  startOriginalLanding,
+  stepOriginalLanding,
 } from "./armageddon/art.js";
 import { playOriginalSound, playNativeWaterSound } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
@@ -2837,6 +2839,7 @@ function step(dt) {
   for (const w of worms) {
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
     w.landing = Math.max(0, (w.landing || 0) - dt);
+    stepOriginalLanding(w);
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
     if (w.dying > 0) {
@@ -2865,6 +2868,7 @@ function step(dt) {
     }
     if (result.landed && w.ground && !w.landing) {
       w.landing = 0.16;
+      startOriginalLanding(w, result.landingSpeed);
       sfx("land");
     }
     if (result.fallDamage) injure(w, result.fallDamage);

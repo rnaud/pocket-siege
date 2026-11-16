@@ -127,3 +127,13 @@ test("low gravity scales projectile and body gravity", () => {
   integrate(p, 1, 0, 0.5);
   expect(p.vy).toBeCloseTo(-GRAVITY * 0.5, 5);
 });
+
+test("landing reports impact speed before grounded velocity is cleared", () => {
+  const w = worm(0, 11);
+  w.vy = -300;
+  const result = stepWorm(w, floor, 1 / 50);
+  expect(result.landed).toBe(true);
+  expect(result.landingSpeed).toBeGreaterThan(300);
+  expect(w.vy).toBe(0);
+  expect(stepWorm(w, floor, 1 / 50).landingSpeed).toBe(0);
+});

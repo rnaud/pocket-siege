@@ -1,4 +1,8 @@
 import {
+  nativeWormJumpLandingEntry,
+  nativeWormJumpLandingTick,
+} from "./worm-state.js";
+import {
   NativeAnimationPlayer,
   animationMetadata,
   nativeSpriteFrame,
@@ -49,6 +53,9 @@ const names = [
     "wjump",
     "wfall",
     "wland1",
+    "wland2",
+    spriteIds.sprites[0x82].name,
+    spriteIds.sprites[0x1aa].name,
     "wfly1",
     "wwinner",
     "wdie",
@@ -124,6 +131,64 @@ function applyAnimationCalls(player, calls) {
   }
 }
 
+// Browser landing adapter. Physics still supplies impact speed in pixels/second;
+// native velocity is signed 16.16 pixels per 50 Hz tick, positive downward.
+export function startOriginalLanding(worm, speed, previousState = 0x65) {
+  const result = nativeWormJumpLandingEntry(
+    {
+      state: previousState,
+      vy: Math.round((speed * 65536) / 50) | 0,
+      soundHandle: 0,
+      field19c: 0,
+    },
+    0x7a,
+    { previousSprite: worm.originalPlayer?.current.id || 0, soundHandle: 0 },
+  );
+  const queue = result.calls.filter((call) => call.operation === "queue");
+  if (
+    queue.some(
+      (call) => !animations.has(spriteIds.sprites[call.sprite_id].name),
+    )
+  )
+    return false;
+  const player = new NativeAnimationPlayer();
+  applyAnimationCalls(
+    player,
+    result.calls.filter((call) => ["clear", "queue"].includes(call.operation)),
+  );
+  worm.originalLanding = player;
+  return true;
+}
+
+// Advance independently of rendering, once per simulation tick.
+export function stepOriginalLanding(worm) {
+  const player = worm.originalLanding;
+  if (!player) return;
+  if (
+    worm.hp <= 0 ||
+    worm.frozen ||
+    worm.knocked ||
+    worm.hurt > 0.35 ||
+    !worm.ground ||
+    worm.moving ||
+    worm.originalPreparation ||
+    worm.originalRecoil
+  ) {
+    worm.originalLanding = null;
+    return;
+  }
+  player.advance();
+  if (
+    nativeWormJumpLandingTick(
+      0x7a,
+      player.current.id,
+      player.current.progress,
+      0,
+    ).target !== null
+  )
+    worm.originalLanding = null;
+}
+
 export function startOriginalPreparation(worm, weapon, angle) {
   // Currently connected to shotgun actions; other native preparation paths are
   // verified separately and await their action/event adapters.
@@ -187,6 +252,34 @@ export function startOriginalRecoil(worm, weapon, angle, frame) {
 }
 
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  const landing = worm.originalLanding;
+  if (
+    landing &&
+    worm.hp > 0 &&
+    !worm.frozen &&
+    !worm.knocked &&
+    !(worm.hurt > 0.35) &&
+    worm.ground &&
+    !worm.moving &&
+    !worm.originalPreparation &&
+    !worm.originalRecoil
+  ) {
+    const name = spriteIds.sprites[landing.current.id].name;
+    const sprite = animations.get(name).sprite;
+    const index = nativeSpriteFrame(
+      sprite.frames.length,
+      sprite.metadata[2],
+      landing.current.progress,
+    );
+    return {
+      map: texture(name, index),
+      name,
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
+
   if (worm.originalPreparation) {
     const player = worm.originalPlayer;
     const name = spriteIds.sprites[player.current.id].name;

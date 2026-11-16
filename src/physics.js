@@ -203,6 +203,7 @@ export function stepWorm(w, terrain, dt, gravityScale = 1) {
     w.vy -= GRAVITY * gravityScale * dt;
   }
   let landed = false,
+    landingSpeed = 0,
     fallDamage = 0;
   // Sweep at subpixel-to-two-pixel intervals so fast knockback cannot tunnel.
   const count = Math.max(
@@ -224,6 +225,7 @@ export function stepWorm(w, terrain, dt, gravityScale = 1) {
     } else if (w.vy < 0) {
       const speed = -w.vy;
       landed = true;
+      landingSpeed = Math.max(landingSpeed, speed);
       if (!wasGround && speed > 185)
         fallDamage = Math.max(
           fallDamage,
@@ -246,7 +248,7 @@ export function stepWorm(w, terrain, dt, gravityScale = 1) {
     w.vx = 0;
     w.knocked = false;
   }
-  return { landed, fallDamage };
+  return { landed, landingSpeed, fallDamage };
 }
 export function terrainNormal(terrain, x, y, vx, vy, radius = 4) {
   let nx = 0,
