@@ -48,6 +48,7 @@ const names = [
       `arrowdn${color}`,
       `arrowsd${color}`,
     ]),
+    ...[1, 2, 3, 4, 5, 6].map((style) => `grave${style}`),
     "blob",
     "missile",
     "mortar",

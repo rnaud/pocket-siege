@@ -1,3 +1,4 @@
+import { createOriginalGrave, stepOriginalGrave } from "./armageddon/graves.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
 import { stepOriginalSight } from "./armageddon/sight.js";
@@ -280,6 +281,7 @@ let format = "single",
   crate = null,
   mines = [],
   girders = [],
+  graves = [],
   bombs = [],
   fires = [],
   hazards = [],
@@ -796,6 +798,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   mines = [];
   for (const g of girders) dispose(g.mesh);
   girders = [];
+  for (const grave of graves) dispose(grave.mesh);
+  graves = [];
   for (const b of bombs) dispose(b.mesh);
   bombs = [];
   for (const f of fires) dispose(f.mesh);
@@ -3170,6 +3174,11 @@ function step(dt) {
       if (w.dying === 0 && w.deathPending) {
         w.deathPending = false;
         explode(w.x, w.y + 6, "death");
+        const grave = createOriginalGrave(w);
+        if (grave) {
+          graves.push(grave);
+          group.add(grave.mesh);
+        }
       }
     }
     w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;
@@ -3249,6 +3258,12 @@ function step(dt) {
     } else if (w.deathPending && w.ground && Math.abs(w.vx) < 2) {
       startOriginalDeath(w);
       w.dying = 1;
+    }
+  }
+  for (let i = graves.length - 1; i >= 0; i--) {
+    if (!stepOriginalGrave(graves[i], terrain, dt, waterLevel, gravityScale)) {
+      dispose(graves[i].mesh);
+      graves.splice(i, 1);
     }
   }
   if (crate) {
@@ -4359,6 +4374,13 @@ window.siege = {
     round,
     wind,
     explosions,
+    graves: graves.map((g) => ({
+      x: g.x,
+      y: g.y,
+      wet: g.wet,
+      sprite: g.mesh.userData.originalSprite,
+      frame: g.mesh.userData.originalFrame,
+    })),
     waterBubbles: waterBubbles.map((b) => ({
       sprite: b.name,
       frame: b.mesh.userData.originalFrame,

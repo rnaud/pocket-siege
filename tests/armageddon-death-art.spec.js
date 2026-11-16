@@ -93,4 +93,12 @@ test("live death plays past the old cutoff before its explosion", async ({
   expect(
     await page.evaluate(() => window.siege.getState().explosions),
   ).toBeGreaterThanOrEqual(3);
+  expect(await page.evaluate(() => window.siege.getState().graves.length)).toBe(
+    3,
+  );
+  await page.screenshot({
+    path: test.info().outputPath("original-graves.png"),
+  });
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  expect(await page.evaluate(() => window.siege.getState().graves)).toEqual([]);
 });
