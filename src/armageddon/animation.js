@@ -25,6 +25,25 @@ export function nativeSpriteFrame(count, flags, progress) {
   return index;
 }
 
+// 004AFB00. The crop's anchor is measured from the full canvas center,
+// independent of the visible feet or the current frame's bottom edge.
+// 00498890 subtracts these anchors from the integer body draw position.
+export function nativeSpriteBounds(sprite, progress) {
+  const index = nativeSpriteFrame(
+    sprite.frames.length,
+    sprite.metadata[2],
+    progress,
+  );
+  const frame = sprite.frames[index];
+  return {
+    index,
+    width: frame.right - frame.left,
+    height: frame.bottom - frame.top,
+    anchorX: (sprite.width >> 1) - frame.left,
+    anchorY: (sprite.height >> 1) - frame.top,
+  };
+}
+
 // 004FD2B0/004FD4B0/004FD3B0: 16-slot ring with one slot left empty.
 export class NativeAnimationPlayer {
   constructor() {
