@@ -1,7 +1,7 @@
 {
   "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
-  "block": "004FADDB\u2013004FAE51",
-  "method": "Original ejection block and LCG, original 004C8C60 gravity getter; captured twelve-word 004EE7F0 request.",
+  "block": "004FA874\u2013004FA894 then 004FADDB\u2013004FAE51",
+  "method": "Original position/velocity getters 004D0F50/004D0F70 fill firing stack, followed by ejection block and LCG, original 004C8C60 gravity getter; captured twelve-word 004EE7F0 request.",
   "cases": [
     {
       "sprite": 0,

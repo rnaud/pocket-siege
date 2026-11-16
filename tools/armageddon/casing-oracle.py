@@ -38,6 +38,8 @@ def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 context=0x2300000;cpu.mem_map(context,0x20000);write(owner+0x38,context)
 manager,vtable=owner+0x3000,owner+0x5000
 write(context+0x7d4,manager);write(manager,vtable);write(vtable+0x24,0x4c8c60)
+worm_vtable=owner+0x6000
+write(owner,worm_vtable);write(worm_vtable+0x5c,0x4d0f50);write(worm_vtable+0x60,0x4d0f70)
 state={}
 def capture(cpu,address,size,user):
  if address==0x4ee7f0:
@@ -52,9 +54,14 @@ for sprite in [0,0x338,0x33c]:
    for gravity in [0,0x3d70,-0x3d70]:
     state.clear();state['request']=None
     write(context+0x1ad0,seed);write(manager+0x3b8,gravity&0xffffffff);write(owner+0x1b0,facing&0xffffffff)
-    sp=stack+0xf000;write(sp+0x40,200*65536+123);write(sp+0x44,100*65536+456)
+    sp=stack+0xf000
+    write(owner+0x90,100*65536+456);write(owner+0x94,200*65536+123)
+    write(owner+0x9c,0);write(owner+0xa0,0)
+    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ESI,owner)
+    cpu.emu_start(0x4fa874,0x4fa894,count=1000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=0x4fa894:raise RuntimeError('Position getter block did not finish')
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ESI,owner);cpu.reg_write(UC_X86_REG_EBX,sprite)
     cpu.emu_start(0x4faddb,stop,count=1000)
     cases.append(dict(sprite=sprite,facing=facing,seed=seed,gravity=gravity,x=100*65536+456,y=200*65536+123,request=state['request'],random=read(context+0x1ad0)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004FADDB–004FAE51',method='Original ejection block and LCG, original 004C8C60 gravity getter; captured twelve-word 004EE7F0 request.',cases=cases),indent=2)+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004FA874–004FA894 then 004FADDB–004FAE51',method='Original position/velocity getters 004D0F50/004D0F70 fill firing stack, followed by ejection block and LCG, original 004C8C60 gravity getter; captured twelve-word 004EE7F0 request.',cases=cases),indent=2)+'\n')
 print(f'Captured {len(cases)} casing requests')

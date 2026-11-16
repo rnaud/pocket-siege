@@ -2340,8 +2340,8 @@ function fireShotgun(prepared = false) {
     nativeCasing(
       0x33c,
       w.facing,
-      Math.round(origin.pivot.x * 65536),
-      Math.round((H - origin.pivot.y) * 65536),
+      Math.round(w.x * 65536),
+      Math.round((H - w.y) * 65536),
       Math.round(0x3d70 * gravityScale),
       () => matchRandom.visualUint(),
     ),
