@@ -72,6 +72,8 @@ import {
   startOriginalTeleport,
   stepOriginalJetpack,
   stepOriginalWalking,
+  startOriginalDeath,
+  stepOriginalDeath,
   stopOriginalJetpack,
   stepOriginalTeleport,
   setOriginalRope,
@@ -3161,7 +3163,10 @@ function step(dt) {
             (matchRandom.visualUint() & 3) + 1,
           );
       }
-      w.dying = Math.max(0, w.dying - dt);
+      if (w.deathPending && !w.drowned) {
+        if (!w.originalDeath) startOriginalDeath(w);
+        w.dying = stepOriginalDeath(w) ? 0 : 1;
+      } else w.dying = Math.max(0, w.dying - dt);
       if (w.dying === 0 && w.deathPending) {
         w.deathPending = false;
         explode(w.x, w.y + 6, "death");
@@ -3241,7 +3246,10 @@ function step(dt) {
         }
       }
       updateUI();
-    } else if (w.deathPending && w.ground && Math.abs(w.vx) < 2) w.dying = 0.8;
+    } else if (w.deathPending && w.ground && Math.abs(w.vx) < 2) {
+      startOriginalDeath(w);
+      w.dying = 1;
+    }
   }
   if (crate) {
     const collector = worms.find(
@@ -3762,10 +3770,10 @@ function frame(now) {
       w.hurt > 0.75 && Math.floor(w.hurt * 14) % 2 ? 0xff806c : 0xffffff,
     );
     w.body.material.opacity =
-      w.drowned || w.hp > 0 || (w.deathPending && !w.dying)
+      w.originalDeath || w.drowned || w.hp > 0 || (w.deathPending && !w.dying)
         ? 1
         : Math.min(1, w.dying * 1.4);
-    if (w.hp <= 0 && w.dying > 0 && !w.drowned) {
+    if (w.hp <= 0 && w.dying > 0 && !w.drowned && !w.originalDeath) {
       w.body.position.y -= 20 * (1 - w.dying);
     }
     const a = active ? angle : w.facing < 0 ? 155 : 25,

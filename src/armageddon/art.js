@@ -683,6 +683,25 @@ export function stepOriginalWalking(worm) {
   worm.originalWalking = state;
 }
 
+// 004D7730 state 0x84 queues sprite 10. 004DDBD0 waits until its
+// controlled progress crosses 0x10000 before the death completion path.
+export function startOriginalDeath(worm) {
+  const animation = animations.get("wdie");
+  if (!animation) return false;
+  const player = new NativeAnimationPlayer();
+  player.enqueue(10, animation.metadata);
+  worm.originalDeath = player;
+  worm.originalJump = worm.originalLanding = worm.originalRecoil = null;
+  worm.originalPreparation = null;
+  return true;
+}
+export function stepOriginalDeath(worm) {
+  const player = worm.originalDeath;
+  if (!player) return false;
+  player.advance();
+  return (player.current.progress & 0xffff0000) > 0xffff;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
     const state = worm.originalJetpack;
@@ -770,6 +789,22 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   }
 
   // An explicit native jump queue takes precedence over the host panic pose.
+  if (worm.originalDeath && !worm.drowned) {
+    const animation = animations.get("wdie");
+    const index = nativeSpriteFrame(
+      animation.sprite.frames.length,
+      animation.sprite.metadata[2],
+      worm.originalDeath.current.progress,
+    );
+    return {
+      map: texture("wdie", index),
+      name: "wdie",
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
+
   const jumping = worm.originalJump;
   if (
     jumping &&
@@ -798,9 +833,12 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   }
 
   if (
-    worm.hp > 0 &&
+    (worm.hp > 0 || worm.deathPending) &&
     !worm.frozen &&
-    (worm.knocked || pose === "hurt" || pose === "panic")
+    (worm.knocked ||
+      pose === "hurt" ||
+      pose === "panic" ||
+      (worm.deathPending && !worm.ground))
   ) {
     // Host velocities are per second and upward-positive; native bodies use
     // downward-positive fixed point per 50 Hz tick.
