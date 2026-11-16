@@ -68,13 +68,23 @@ test("live death plays past the old cutoff before its explosion", async ({
   await page.evaluate(() => {
     // Late frames last less than a second. Keep the maximum on every render
     // instead of hoping Playwright's backoff poll lands inside that window.
-    window.deathFrameProbe = { max: 0, smoke: 0, rings: false, active: true };
+    window.deathFrameProbe = {
+      max: 0,
+      smoke: 0,
+      debris: 0,
+      rings: false,
+      active: true,
+    };
     const sample = () => {
       const probe = window.deathFrameProbe;
       if (!probe.active) return;
       probe.smoke = Math.max(
         probe.smoke,
         window.siege.getState().originalSmoke.length,
+      );
+      probe.debris = Math.max(
+        probe.debris,
+        window.siege.getState().originalDebris.length,
       );
       probe.rings ||= window.siege
         .getState()
@@ -111,6 +121,9 @@ test("live death plays past the old cutoff before its explosion", async ({
     await page.evaluate(() => window.deathFrameProbe.smoke),
   ).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.deathFrameProbe.rings)).toBe(true);
+  expect(
+    await page.evaluate(() => window.deathFrameProbe.debris),
+  ).toBeGreaterThan(0);
   await page.evaluate(() => {
     window.deathFrameProbe.active = false;
   });

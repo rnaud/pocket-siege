@@ -2644,7 +2644,23 @@ function explode(x, y, kind, ownerIndex = -1) {
   const exposure = new Map(
     worms.map((w) => [w, blastExposure(terrain, x, y, w.x, w.y + 17)]),
   );
-  terrain.carve(x, y, radius);
+  if (kind === "death") {
+    // 004DE70C calls 004DC050 with strength30 to the shared terrain event; browser blast
+    // scaling still applies to host damage, but not this original terrain call.
+    const nativeX = Math.round(x * 65536),
+      nativeY = Math.round((H - y) * 65536);
+    terrain.craterRim ??= new Uint8Array(W * H);
+    carveNativeCrater(
+      terrain.data,
+      W,
+      H,
+      nativeX >> 16,
+      nativeY >> 16,
+      30,
+      terrain.craterRim,
+    );
+    spawnOriginalDebris(nativeX, nativeY, 30);
+  } else terrain.carve(x, y, radius);
   terrainDirty = true;
   explosions++;
   shakeUntil = performance.now() + 350;

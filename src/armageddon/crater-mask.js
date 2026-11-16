@@ -48,3 +48,30 @@ export function carveNativeCrater(terrain, width, height, x, y, strength, rim) {
 export function nativeRimPixel(mask, solid, color, original) {
   return mask && solid ? color : original;
 }
+
+// 004A85F0 dispatch plan. Bank0 is the generated hole bitmap; bank1 is its
+// rim. 004AC717 clears the separate backing layer before the main hole blit.
+export function nativeCraterPlan(strength, x, y, locked = false) {
+  if (locked) return [];
+  const value = Math.max(0, Math.min(100, strength));
+  const { index, outer } = nativeCraterMask(value);
+  const output = [
+    { bounds: [x - outer, y - outer, x + outer + 1, y + outer + 1] },
+  ];
+  if (value >= 75) {
+    const smaller = Math.trunc((value * 15) / 130);
+    const centre = Math.trunc((smaller * 94) / 15) + 11;
+    output.push({
+      bank: 0,
+      index: smaller,
+      x: x - centre,
+      y: y - centre,
+      operation: "0x4ac717",
+    });
+  }
+  output.push(
+    { bank: 0, index, x: x - outer, y: y - outer, operation: "0x4ac071" },
+    { bank: 1, index, x: x - outer, y: y - outer, operation: "0x4ac59e" },
+  );
+  return output;
+}
