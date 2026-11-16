@@ -515,23 +515,25 @@ test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", a
     )
     .toBe(true);
   await page.keyboard.down("Space");
-  await expect(page.locator(".reticle-charge")).toBeVisible();
+  await expect(page.locator(".original-charge-blobs")).toBeVisible();
   await expect
     .poll(async () =>
       Number(await page.locator("#power-meter").getAttribute("aria-valuenow")),
     )
     .toBeGreaterThan(0);
   await expect
-    .poll(
-      async () =>
-        parseFloat(
-          await page
-            .locator(".reticle-charge")
-            .getAttribute("stroke-dasharray"),
-        ),
-      { timeout: 5000 },
+    .poll(() =>
+      page.locator(".original-charge-blobs").evaluate((canvas) => {
+        const pixels = canvas
+          .getContext("2d")
+          .getImageData(0, 0, canvas.width, canvas.height).data;
+        return (
+          +canvas.dataset.blobCount > 1 &&
+          pixels.some((value, i) => i % 4 === 3 && value > 0)
+        );
+      }),
     )
-    .toBeGreaterThan(10);
+    .toBe(true);
   await page.screenshot({
     path: `test-results/${info.project.name}-hud-charge.png`,
   });
