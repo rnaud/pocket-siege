@@ -3,6 +3,7 @@ import { nativeLaunch } from "./launch.js";
 import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileFragments } from "./projectile-fragments.js";
 import { nativeProjectilePlacement } from "./projectile-placement.js";
+import { nativeWormState } from "./worm-collision-type.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule } from "./homing.js";
@@ -33,6 +34,7 @@ const kinds = new Set([
   "grenade",
   "cluster",
   "holy",
+  "dynamite",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
 // presets remain modifiers around this baseline until scheme UI is ported.
@@ -73,18 +75,23 @@ export function nativeProjectileLaunchGeometry(kind, worm, angle, power, height,
   const aim = Math.round((Math.asin(Math.sin(radians)) / Math.PI + 0.5) * 65536);
   const origin = nativeLaunch(record, {
     x: fixed(worm.x), y: fixed(height - worm.y), angle: aim,
-    facing: Math.cos(radians) < 0 ? -1 : 1, preview, random,
+    facing: record["0x68"] === 2 ? (worm.facing ?? 1) : Math.cos(radians) < 0 ? -1 : 1, preview, random,
   });
+  // 004F9FA0 type2 selects fixed release power from record+78 (mode2),
+  // or0xCCC for modes1/3. It does not use the host charge slider.
+  const charge = record["0x68"] === 2
+    ? record["0x70"] === 2 ? Math.trunc((record["0x78"] << 16) / 100) : 0xccc
+    : fixed(Math.max(0, Math.min(100, power)) / 100);
   const [vx, vy] = nativeLaunchVelocity(record, origin.vx, origin.vy,
-    fixed(Math.max(0, Math.min(100, power)) / 100));
+    charge, nativeWormState(worm), fixed(-(worm.vy ?? 0) / 50));
   return { x: origin.x / 65536, y: height - origin.y / 65536,
     vx: vx / 65536 * 50, vy: -vy / 65536 * 50 };
 }
 export function attachNativeProjectile(p, height) {
   const record = weaponRecord(p.nativeWeaponKind ?? p.kind);
   if (!record) return false;
-  // These six projectile families release once and have no looping weapon
-  // audio or casing emission. Preserve the original dispatch for playback.
+  // Preserve release dispatch separately from per-projectile fuse audio.
+  // Repeating weapon action state and casing emission remain separate ports.
   p.nativeRelease = nativeLaunchAudio(record, {
     loop: 0, burst: 0, ordinal: 0, flag: 0, team: p.owner ?? 0,
   });
@@ -146,9 +153,10 @@ export function attachNativeProjectile(p, height) {
   p.nativeTimer = {
     remaining: words[17], delay: words[21], delayPlayed: 0,
     waitForRest: words[19], delaySound: words[20], mode: words[23],
-    specialSprite: words[38], phase: 0, loopSound: 0,
+    specialSprite: words[38], phase: 0, loopSound: words[18],
     warningPending: 0, warningBlocked: 0, warningScale: 0, state: 0,
   };
+  p.nativeFuseSound = words[18];
   if (words[23] === 1) p.nativeGuidance = {
     delay: words[32], duration: words[33], kind: words[31],
     initialized: 0, steerX: 0, steerY: 0,

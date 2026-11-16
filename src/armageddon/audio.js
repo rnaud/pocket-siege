@@ -56,7 +56,7 @@ function loadOriginalClip(context, name) {
     );
   return cache.get(name);
 }
-function playOriginalClip(context, name, fallback, level) {
+function playOriginalClip(context, name, fallback, level, loop = false) {
   const requested = performance.now();
   let cancelled = false,
     activeSource = null;
@@ -76,6 +76,7 @@ function playOriginalClip(context, name, fallback, level) {
         gain = context.createGain();
       activeSource = source;
       source.buffer = buffer;
+      source.loop = loop;
       gain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
       source.connect(gain);
       gain.connect(context.destination);
@@ -162,13 +163,24 @@ export function playNativeProjectileContactSound(context, request, previous) {
 }
 
 // Original descriptors 0055F2B0/0055F2C0 map release IDs 73/75.
-// Only the six live native projectile families are routed here; weapon loops,
-// speech and casing emission still need their native weapon lifecycle.
+// Native projectile releases and type2 English laugh speech are routed here;
+// weapon loops, team voice selection and casing emission remain separate ports.
 export function playNativeProjectileReleaseSound(context, release) {
   for (const event of release.calls) {
+    // Speech descriptor0055F540 maps native slot29 to Laugh.wav.
+    if (event.operation === "voice" && event.request[1] === 29) {
+      playOriginalClip(context, "voices/english/laugh.wav", () => {}, 1);
+      continue;
+    }
     if (event.operation !== "sound") continue;
     const name = { 73: "throwrelease", 75: "rocketrelease" }[event.request[0]];
     if (name)
       playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536);
   }
+}
+
+// 004E2050 starts record+31C; descriptor0055F278 is ID66 Fuse.wav.
+export function playNativeProjectileFuse(context, sound) {
+  if ((sound & 65535) !== 66) return null;
+  return playOriginalClip(context, "sounds/fuse.wav", () => {}, 1, Boolean(sound & 0x10000));
 }

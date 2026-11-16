@@ -1,4 +1,4 @@
-import { playNativeProjectileContactSound, playNativeProjectileReleaseSound } from "./armageddon/audio.js";
+import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
   nativeWormContactBody,
@@ -857,7 +857,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   girders = [];
   for (const grave of graves) dispose(grave.mesh);
   graves = [];
-  for (const b of bombs) dispose(b.mesh);
+  for (const b of bombs) { b.nativeFusePlayback?.stop(); dispose(b.mesh); }
   bombs = [];
   for (const f of fires) dispose(f.mesh);
   fires = [];
@@ -1025,6 +1025,11 @@ function stepBombs(dt) {
   for (let i = bombs.length - 1; i >= 0; i--) {
     const b = bombs[i];
     if (b.nativeBody) {
+      if (sound && b.nativeTimer.loopSound && !b.nativeFusePlayback) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        b.nativeFusePlayback = playNativeProjectileFuse(audio, b.nativeFuseSound);
+      }
       const result = stepNativeProjectile(b, {
         height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame,
         random: () => matchRandom.logicUint(),
@@ -1032,6 +1037,10 @@ function stepBombs(dt) {
         updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
       }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
       b.age += dt;
+      if (!b.nativeTimer.loopSound || result.removed || result.detonate) {
+        b.nativeFusePlayback?.stop();
+        b.nativeFusePlayback = null;
+      }
       b.mesh.position.set(b.x, b.y, 40);
       updateOriginalProjectile(b.mesh, b.kind, b.vx, b.vy, b.age,
         Boolean(b.nativeBody.submerged), false, b.nativeRender);
@@ -2399,16 +2408,27 @@ function placeDynamite() {
   w.recoil = 0.2;
   startOriginalRecoil(w, "dynamite", angle, matchRandom.frame);
   shotCount++;
-  spawnBomb({
-    x: w.x,
-    y: w.y + 4,
-    fuse: 3,
-    owner: current,
-    kind: "dynamite",
-    grounded: true,
-  });
-  finishAction("Dynamite dropped. Three-second fuse — retreat!");
-  tone(430, 0.12, "square");
+  const body = {
+    ...nativeProjectileLaunchGeometry("dynamite", w, angle, 0, H, () => matchRandom.logicUint()),
+    fuse: 5, bounce: 0.3, owner: current, kind: "dynamite", age: 0,
+  };
+  attachNativeProjectile(body, H);
+  if (sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeProjectileReleaseSound(audio, body.nativeRelease);
+  }
+  if (nativeProjectilePlacementHit(body, terrain, worms, H)) {
+    const packet = nativeProjectileDetonationEvents(body, () => matchRandom.logicUint())
+      .find(event => event.operation === "blast")?.request;
+    if (packet) explode(body.x, body.y, body.kind, body.owner, packet);
+  } else {
+    body.mesh = createOriginalVisual("dynamite") || createProjectile("grenade");
+    body.mesh.position.set(body.x, body.y, 40);
+    group.add(body.mesh);
+    bombs.push(body);
+  }
+  finishAction("Dynamite dropped. Five-second fuse — retreat!");
 }
 function fireShotgun(prepared = false) {
   if (
@@ -4767,6 +4787,10 @@ $("#daily").addEventListener("click", () => {
 });
 $("#sound").onclick = () => {
   sound = !sound;
+  if (!sound) for (const b of bombs) {
+    b.nativeFusePlayback?.stop();
+    b.nativeFusePlayback = null;
+  }
   updateSoundButton();
   saveSettings();
   tone(440);
