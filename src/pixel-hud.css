@@ -1855,3 +1855,27 @@ body:has(#utilities:not([hidden])) #announcement,
 body:has(.controls.inventory-open) #announcement {
   visibility: hidden;
 }
+
+/* Original wind strips retain their 96x13 source grid. */
+#wind.original-wind {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 0;
+  width: 193px;
+  background: transparent;
+  color: #ffe4af;
+  clip-path: none;
+  border: 0;
+  border-radius: 0;
+  text-shadow: 1px 1px #211c2b;
+}
+#wind.original-wind::before {
+  content: none;
+}
+#wind.original-wind canvas {
+  width: 193px;
+  height: 13px;
+  image-rendering: pixelated;
+}

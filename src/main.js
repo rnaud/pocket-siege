@@ -1,4 +1,8 @@
 import {
+  loadOriginalWindHUD,
+  updateOriginalWindHUD,
+} from "./armageddon/wind-hud.js";
+import {
   loadOriginalGirders,
   stampOriginalGirder,
 } from "./armageddon/girders.js";
@@ -354,6 +358,7 @@ const originalAssets = Promise.all([
   loadOriginalTerrain(),
   loadOriginalWater(),
   loadOriginalHUDIcons(),
+  loadOriginalWindHUD(),
   loadOriginalGirders(),
 ]);
 originalAssets
@@ -366,6 +371,7 @@ originalAssets
   .then(() => {
     assetsReady = true;
     updateOriginalHUDIcons();
+    updateOriginalWindHUD(wind);
     terrainDirty = true;
   })
   .catch((error) => {
@@ -1123,8 +1129,7 @@ function beginTurn() {
       : team
         ? "CORAL’S MOVE"
         : "MOSS’S MOVE";
-  $("#wind").textContent =
-    `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 5).toFixed(1)}`;
+  updateOriginalWindHUD(wind);
   $(".location span").textContent = daily
     ? "DAILY ISLAND"
     : ({
