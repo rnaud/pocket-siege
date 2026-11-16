@@ -254,6 +254,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await expect(page.locator("#aim-reticle")).toBeVisible();
   await setAim(page, "90");
   await expect

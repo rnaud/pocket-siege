@@ -1,3 +1,5 @@
+import { nativeBubble, nativeBubbleTick } from "./armageddon/bubble.js";
+import { nativeSpriteFrame } from "./armageddon/animation.js";
 import {
   loadOriginalDecorations,
   placeOriginalDecorations,
@@ -33,6 +35,8 @@ import {
   stepOriginalLanding,
   startOriginalJump,
   stepOriginalJump,
+  startOriginalDrowning,
+  stepOriginalDrowning,
 } from "./armageddon/art.js";
 import {
   playOriginalSound,
@@ -747,6 +751,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   }
   for (const effect of originalEffects) dispose(effect.mesh);
   originalEffects.length = 0;
+  for (const bubble of waterBubbles) dispose(bubble.mesh);
+  waterBubbles.length = 0;
   for (const p of particles) releaseParticle(p.mesh);
   particles = [];
   for (const m of mines) dispose(m.mesh);
@@ -761,6 +767,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   hazards = [];
   const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
+  bubbleSeed = matchSeed >>> 0;
   terrain = new Terrain(matchSeed, isDaily ? "fern" : $("#map-layout").value);
   terrain.theme = isDaily ? "forest" : $("#terrain-theme").value;
   placeOriginalDecorations(terrain, W, H);
@@ -2564,6 +2571,58 @@ function spawnDust(x, y) {
   });
 }
 const originalEffects = [];
+const waterBubbles = [];
+let bubbleSeed = 42;
+function spawnWaterBubble(x, y, facing, size) {
+  if (waterBubbles.length >= 96 || y > waterLevel) return;
+  const name = `water/bubble${size}`;
+  const mesh = createOriginalVisual(name);
+  if (!mesh) return;
+  mesh.position.set(Math.round(x), Math.round(y), 46);
+  group.add(mesh);
+  waterBubbles.push({
+    mesh,
+    name,
+    state: nativeBubble(
+      Math.round(x * 65536),
+      Math.round((H - y) * 65536),
+      facing * 0x30000,
+      0,
+      size,
+    ),
+  });
+}
+function stepWaterBubbles() {
+  for (let i = waterBubbles.length - 1; i >= 0; i--) {
+    const bubble = waterBubbles[i];
+    const result = nativeBubbleTick(
+      bubble.state,
+      bubbleSeed,
+      Math.floor(H - waterLevel),
+    );
+    bubbleSeed = result.seed;
+    if (!result.alive) {
+      dispose(bubble.mesh);
+      waterBubbles.splice(i, 1);
+      continue;
+    }
+    bubble.state = result.bubble;
+    const art = originalVisual(bubble.name);
+    const index = nativeSpriteFrame(
+      art.count,
+      art.flags,
+      bubble.state.progress,
+    );
+    bubble.mesh.material.map = originalVisual(bubble.name, index).map;
+    bubble.mesh.userData.originalFrame = index;
+    bubble.mesh.position.set(
+      Math.round(bubble.state.x / 65536),
+      Math.round(H - bubble.state.y / 65536),
+      46,
+    );
+  }
+}
+
 function impactFlash(x, y, name = "expow") {
   const mesh = createOriginalVisual(name);
   if (!mesh) return;
@@ -2929,6 +2988,16 @@ function step(dt) {
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
     if (w.dying > 0) {
+      if (w.drowned) {
+        w.y -= 24 * dt;
+        if (stepOriginalDrowning(w))
+          spawnWaterBubble(
+            w.x + w.facing * 3,
+            w.y + 5,
+            w.facing,
+            (matchRandom.visualUint() & 3) + 1,
+          );
+      }
       w.dying = Math.max(0, w.dying - dt);
       if (w.dying === 0 && w.deathPending) {
         w.deathPending = false;
@@ -2976,9 +3045,11 @@ function step(dt) {
       w.deathPending = false;
       w.drowned = true;
       w.dying = 0.65;
+      w.y = Math.min(w.y, waterLevel - 8);
+      startOriginalDrowning(w);
       w.hurt = 0.65;
       slowMo = Math.max(slowMo, 0.5);
-      impactFlash(w.x, waterLevel);
+
       tone(150, 0.3);
       damageLabel(w, "SPLASH");
       if (w === worms[current]) {
@@ -3257,6 +3328,7 @@ function step(dt) {
     }
   }
   stepOriginalEffects(dt);
+  stepWaterBubbles();
   matchRandom.finishFrame();
 }
 function screen(x, y) {
@@ -3504,8 +3576,10 @@ function frame(now) {
       w.hurt > 0.75 && Math.floor(w.hurt * 14) % 2 ? 0xff806c : 0xffffff,
     );
     w.body.material.opacity =
-      w.hp > 0 || (w.deathPending && !w.dying) ? 1 : Math.min(1, w.dying * 1.4);
-    if (w.hp <= 0 && w.dying > 0) {
+      w.drowned || w.hp > 0 || (w.deathPending && !w.dying)
+        ? 1
+        : Math.min(1, w.dying * 1.4);
+    if (w.hp <= 0 && w.dying > 0 && !w.drowned) {
       w.body.position.y -= 20 * (1 - w.dying);
     }
     const a = active ? angle : w.facing < 0 ? 155 : 25,
@@ -4055,6 +4129,12 @@ window.siege = {
     round,
     wind,
     explosions,
+    waterBubbles: waterBubbles.map((b) => ({
+      sprite: b.name,
+      frame: b.mesh.userData.originalFrame,
+      x: b.mesh.position.x,
+      y: b.mesh.position.y,
+    })),
     debrisSprites: particles
       .filter((p) => p.mesh.userData.originalTerrainDebris)
       .map((p) => ({
@@ -4267,6 +4347,13 @@ if (import.meta.env.DEV) {
     },
     triggerSuddenDeath() {
       return applySuddenDeath();
+    },
+    submergeWorm(index = current, frozen = false) {
+      const w = worms[index];
+      w.y = waterLevel - 12;
+      w.x = 8;
+      w.frozen = frozen;
+      w.ground = false;
     },
     explodeAt(x = 600, y = 350, kind = "cluster") {
       explode(x, y, kind, 0);

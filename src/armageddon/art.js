@@ -484,7 +484,48 @@ export function startOriginalRecoil(worm, weapon, angle, frame) {
   worm.originalEquipped = true;
 }
 
+// 004D7730 state 0x87 selects wfdrown after freeze (0x88), wdrown otherwise.
+// The browser still owns water-entry detection and the drowning lifetime.
+export function startOriginalDrowning(worm) {
+  const id = worm.frozen ? 12 : 11;
+  const name = `water/${waterSpriteIds.sprites[id].name}`;
+  const animation = animations.get(name);
+  if (!animation) return;
+  const player = new NativeAnimationPlayer();
+  player.enqueue(id, animation.metadata);
+  worm.originalDrowning = { name, player, bubbleProgress: 0 };
+}
+export function stepOriginalDrowning(worm) {
+  const drowning = worm.originalDrowning;
+  if (!drowning) return false;
+  drowning.player.advance();
+  // 004DCD60 states 0x85/0x87 accumulate 0x4000 before emitting.
+  drowning.bubbleProgress += 0x4000;
+  if (drowning.bubbleProgress > 0xffff) {
+    drowning.bubbleProgress -= 0x10000;
+    return true;
+  }
+  return false;
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
+  if (worm.drowned && worm.originalDrowning) {
+    const { name, player } = worm.originalDrowning;
+    const sprite = animations.get(name).sprite;
+    const index = nativeSpriteFrame(
+      sprite.frames.length,
+      sprite.metadata[2],
+      player.current.progress,
+    );
+    return {
+      map: texture(name, index),
+      name,
+      index,
+      aimed: false,
+      equipped: false,
+    };
+  }
+
   const jumping = worm.originalJump;
   if (
     jumping &&
