@@ -1,4 +1,9 @@
-import { stepNativeHurtFlight } from "./armageddon/hurt-flight.js";
+import {
+  stepNativeHurtFlight,
+  nativeWormContactBody,
+  applyNativeWormContact,
+} from "./armageddon/hurt-flight.js";
+import { nativeSceneCollision } from "./armageddon/collision-scene.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
@@ -156,7 +161,6 @@ import {
   blastImpulse,
   walkWorm,
   stepWorm,
-  bodyBlocked,
   terrainNormal,
   reflectVelocity,
   launchGeometry,
@@ -3621,8 +3625,16 @@ function step(dt) {
             frame: matchRandom.frame,
             index: worms.indexOf(w),
             random: () => matchRandom.logicUint(),
+            collisionBody: (hit) =>
+              hit >= 2
+                ? nativeWormContactBody(worms[hit - 2])
+                : { type: 1, vx: 0, vy: 0 },
+            updateCollisionBody: (hit, body) => {
+              if (hit >= 2) applyNativeWormContact(worms[hit - 2], body);
+            },
           },
-          (x, y) => (bodyBlocked(terrain, x, y) ? 1 : 0),
+          (x, y, body) =>
+            nativeSceneCollision(w, body, x, y, terrain, worms, H),
         );
         for (const call of result.events) {
           if (call.operation === "health") injure(w, call.request[0], 0, true);
@@ -5119,6 +5131,25 @@ if (import.meta.env.DEV) {
       w.hurt = 1.4;
       w.nativeHurtBody = null;
       startOriginalHurt(w, 0x80);
+    },
+    stageWormContact() {
+      for (const [index, vx] of [
+        [0, 600],
+        [1, 0],
+      ]) {
+        const w = worms[index];
+        Object.assign(w, {
+          x: 400 + index * 18,
+          y: H - 150,
+          vx,
+          vy: 0,
+          ground: false,
+          knocked: true,
+          hurt: 1.4,
+          nativeHurtBody: null,
+        });
+        startOriginalHurt(w, 0x80);
+      }
     },
     dropWormForParachute(index = current) {
       const w = worms[index];

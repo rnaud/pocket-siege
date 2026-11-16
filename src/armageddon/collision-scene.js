@@ -65,7 +65,9 @@ export class NativeCollisionScene {
   }
 
   query(identity, body, x, y) {
-    let actor = this.actors.get(identity);
+    const wormIndex = this.worms.indexOf(identity);
+    let actor =
+      wormIndex >= 0 ? this.rows[2][wormIndex] : this.actors.get(identity);
     if (!actor) {
       actor = {};
       this.actors.set(identity, actor);

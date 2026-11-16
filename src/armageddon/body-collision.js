@@ -40,9 +40,9 @@ export function nativeBodyCollision(receiver, incoming, side) {
   return { receiver: stop(a), incoming: stop(b), result: 1 };
 }
 
-// 004D6AD0 ordinary-projectile branch (incoming type 0x0f). Worm/rope
-// collisions take other branches and are deliberately outside this adapter.
-export function nativeWormProjectileCollision(state, receiver, incoming, side) {
+// 004D6AD0 common gate: incoming worms(type2) and ordinary projectiles(type15).
+// Special incoming types3/4 take additional branches outside this adapter.
+export function nativeWormBodyCollision(state, receiver, incoming, side) {
   if (state !== 0x79 && (state < 0x7e || state > 0x81))
     return {
       receiver: { vx: receiver.vx, vy: receiver.vy },
@@ -51,3 +51,4 @@ export function nativeWormProjectileCollision(state, receiver, incoming, side) {
     };
   return nativeBodyCollision(receiver, incoming, side);
 }
+export const nativeWormProjectileCollision = nativeWormBodyCollision;

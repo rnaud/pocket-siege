@@ -4,14 +4,35 @@ import {
   nativeSimpleBounce,
 } from "./motion.js";
 import { nativeWormHurtCollision } from "./hurt-contact.js";
+import { nativeWormBodyCollision } from "./body-collision.js";
 import schemes from "./scheme-runtime-data.json" with { type: "json" };
 const scheme = schemes.schemes.find((s) => s.resource_id === 195);
 const byte = (address) => scheme.bytes[address - schemes.context_offset];
 const fixed = (value) => Math.round(value * 65536) | 0;
 
+export function nativeWormContactBody(worm) {
+  const body = worm.nativeHurtBody ?? worm.nativeFlight;
+  return {
+    type: 2,
+    state: worm.frozen
+      ? 0x88
+      : (body?.state ?? worm.originalHurt?.state ?? 0x65),
+    vx: body?.vx ?? fixed((worm.vx ?? 0) / 50),
+    vy: body?.vy ?? fixed(-(worm.vy ?? 0) / 50),
+    mass: body?.mass ?? 65536,
+    tangent: body?.tangent ?? Math.trunc((byte(0x11ba0) << 16) / 100),
+  };
+}
+
+export function applyNativeWormContact(worm, body) {
+  worm.vx = (body.vx / 65536) * 50;
+  worm.vy = (-body.vy / 65536) * 50;
+  for (const attached of [worm.nativeHurtBody, worm.nativeFlight])
+    if (attached) Object.assign(attached, { vx: body.vx, vy: body.vy });
+}
+
 // Constructor fields from 004F4000/004D5A40, entering hurt from ordinary
-// unrestrained state. Live terrain queries use the native mask through a host
-// predicate; full native body-registry dispatch remains to be connected.
+// unrestrained state. Live collision dispatch supplies native terrain/worm IDs.
 export function attachNativeHurtFlight(worm, height) {
   const x = fixed(worm.x),
     y = fixed(height - worm.y);
@@ -41,7 +62,8 @@ export function attachNativeHurtFlight(worm, height) {
     skimScale: 0x20000,
     complex: 1,
     state: worm.originalHurt.state,
-    type: 3,
+    type: 2,
+    shape: 3,
     mass: 65536,
     facing: worm.facing,
     lastFacingFrame: 0,
@@ -74,7 +96,8 @@ export function stepNativeHurtFlight(worm, environment, collide) {
   if (input.voiceCooldown) input.voiceCooldown--;
   if (input.state === 0x7f) input.damageScale = byte(0x11d40);
   const events = [];
-  const collision = (x, y) => collide(x / 65536, height - y / 65536);
+  const collision = (x, y, current = input) =>
+    collide(x / 65536, height - y / 65536, current);
   const body = nativeSimpleBodyTick(
     input,
     {
@@ -88,17 +111,22 @@ export function stepNativeHurtFlight(worm, environment, collide) {
       awake: nativeBodyAwake,
       collide: collision,
       bounce: (body, hit, side) => {
+        const other = environment.collisionBody?.(hit) ?? {
+          type: 1,
+          vx: 0,
+          vy: 0,
+        };
+        const probe = (x, y) => collision(x, y, body);
         if (![0x7f, 0x80, 0x81].includes(body.state)) {
-          Object.assign(
-            body,
-            nativeSimpleBounce(body, { vx: 0, vy: 0 }, side, collision).body,
-          );
+          const response = nativeSimpleBounce(body, other, side, probe);
+          Object.assign(body, response.body);
+          environment.updateCollisionBody?.(hit, response.other);
           return;
         }
         const previous = body.state;
         const response = nativeWormHurtCollision(
           body,
-          { type: 1, vx: 0, vy: 0 },
+          other,
           side,
           {
             frame,
@@ -110,9 +138,22 @@ export function stepNativeHurtFlight(worm, environment, collide) {
             factor: 1,
             bloodMode: 0,
           },
-          collision,
+          probe,
+          (incoming, receiver, side) => {
+            if (receiver.type !== 2) return false;
+            const contact = nativeWormBodyCollision(
+              receiver.state,
+              receiver,
+              incoming,
+              side,
+            );
+            Object.assign(incoming, contact.incoming);
+            Object.assign(receiver, contact.receiver);
+            return Boolean(contact.result);
+          },
         );
         Object.assign(body, response.body);
+        environment.updateCollisionBody?.(hit, response.other);
         for (const call of response.calls) {
           if (call.operation === "state" && call.target === 0x80)
             body.angle = 0;
