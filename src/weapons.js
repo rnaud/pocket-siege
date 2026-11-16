@@ -180,6 +180,10 @@ export const WEAPONS = {
     ammo: 3,
     special: "melee",
   },
+  blowtorch: {
+    label: "Blowtorch", damage: 15, radius: 12, wind: false, speed: 0,
+    timed: false, bounces: false, ammo: 3, special: "blowtorch",
+  },
   drill: {
     label: "Pneumatic drill", damage: 15, radius: 16, wind: false, speed: 0,
     timed: false, bounces: false, ammo: 3, special: "drill",
@@ -270,6 +274,7 @@ export const WEAPONS = {
 };
 
 export const SPECIAL_WEAPONS = [
+  "blowtorch",
   "drill",
   "firepunch",
   "dragonball",
@@ -306,6 +311,7 @@ export const freshAmmo = () => ({
   firepunch: WEAPONS.firepunch.ammo,
   dragonball: WEAPONS.dragonball.ammo,
   drill: WEAPONS.drill.ammo,
+  blowtorch: WEAPONS.blowtorch.ammo,
   prod: WEAPONS.prod.ammo,
   uzi: WEAPONS.uzi.ammo,
   minigun: WEAPONS.minigun.ammo,

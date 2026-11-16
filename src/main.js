@@ -1,3 +1,7 @@
+import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
+import { nativeLaunch } from "./armageddon/launch.js";
+import { nativeTryBodyPosition } from "./armageddon/motion.js";
+import { startOriginalBlowtorch, finishOriginalBlowtorch } from "./armageddon/art.js";
 import { nativeDrillEntry, nativeDrillTick } from "./armageddon/drill.js";
 import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop } from "./armageddon/audio.js";
@@ -742,6 +746,7 @@ function stopProjectileSound(p = projectile) {
 }
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   cancelCharge();
+  if (pendingFire?.kind === "blowtorch") pendingFire.worm.originalBlowtorch = null;
   stopDrill();
   uiKey = "";
   timerKey = "";
@@ -1318,7 +1323,7 @@ function updateUI() {
     w.label.classList.toggle("active", i === current && phase !== "over");
     w.label.classList.toggle("frozen", w.frozen > 0);
   }
-  $("#fire").disabled = !canStopDrill() && (
+  $("#fire").disabled = !canStopTool() && (
     (!shotgunRemaining && availableAmmo(loadout, weapon) <= 0) ||
     !canAct() ||
     worms[current]?.knocked ||
@@ -2147,7 +2152,7 @@ function updateSliders() {
   $("#angle").value = angle;
   $("#angle-value").textContent = Math.round(angle) + "°";
   $("#fire").classList.toggle("charging", charging);
-  const specialLabel = canStopDrill() ? "STOP DRILL" : {
+  const specialLabel = canStopTool() ? (pendingFire.kind === "drill" ? "STOP DRILL" : "STOP TORCH") : {
     mine: "PLACE MINE",
     dynamite: "DROP DYNAMITE",
     shotgun: shotgunRemaining ? "SECOND SHOT" : "FIRE SHOTGUN",
@@ -2159,6 +2164,7 @@ function updateSliders() {
     firepunch: "FIRE PUNCH",
     dragonball: "DRAGON BALL",
     drill: "DRILL",
+    blowtorch: "BLOWTORCH",
     homing: homingTarget ? null : "SET TARGET",
     pigeon: homingTarget ? null : "SET TARGET",
     magic: homingTarget ? null : "SET TARGET",
@@ -2180,17 +2186,19 @@ function updateSliders() {
       ? "HOLD / RELEASE"
       : "HOLD SPACE";
 }
-function canStopDrill() {
+function canStopTool() {
   const w = worms[current];
-  return pendingFire?.stage === "drill" && pendingFire.worm === w &&
+  return ["drill", "blowtorch"].includes(pendingFire?.stage) && pendingFire.worm === w &&
     phase === "aim" && !menu.open && w.hp > 0 && !w.knocked && !w.frozen && w.hurt <= 0.35;
 }
 function startCharge(source) {
   // Original004F9FA0: Fire while in state6E returns directly to state65.
   // This precedes ammunition/ground checks: the action already spent its shot.
-  if (canStopDrill()) {
-    stopDrill(); pendingFire = null;
-    finishAction("Drilling stopped. Retreat!");
+  if (canStopTool()) {
+    const isTorch = pendingFire.kind === "blowtorch";
+    if (isTorch) stopBlowtorch(); else stopDrill();
+    pendingFire = null;
+    finishAction(isTorch ? "Blowtorch stopped. Retreat!" : "Drilling stopped. Retreat!");
     updateSliders();
     return;
   }
@@ -2227,6 +2235,7 @@ function startCharge(source) {
     return;
   }
   if (weapon === "dragonball") { fireDragonBall(); return; }
+  if (weapon === "blowtorch") { fireBlowtorch(); return; }
   if (weapon === "drill") { fireDrill(); return; }
   if (weapon === "firepunch") { firePunch(); return; }
   if (weapon === "axe") { fireAxe(); return; }
@@ -2556,6 +2565,7 @@ function applyNativeHitPackets(targets, dispatches) {
     for (const dispatch of dispatches) {
       if (dispatch.sound?.[0] === 0x61) sfx("batimpact");
       if (dispatch.sound?.[0] === 0x21) sfx("axeimpact");
+      if (dispatch.sound?.[0] === 0x37) sfx("sizzle");
       if (dispatch.sound?.[0] === 0x55) sfx("drillimpact");
       if (dispatch.sound?.[0] === 0x65) sfx("firepunchimpact");
       if (dispatch.effect) spawnNativeParticleRequest(dispatch.effect);
@@ -2850,6 +2860,61 @@ function stepDragonBall() {
     }
   }
 }
+function torchPosition(w, body, x, y, flags = body.flags) {
+  const candidate = { ...body, flags };
+  return nativeTryBodyPosition(candidate,x,y,(px,py) =>
+    nativeSceneCollision(w,candidate,px/65536,H-py/65536,terrain,worms,H)).result;
+}
+function syncTorchPosition(w, body) {
+  w.x = body.x/65536; w.y = H-body.y/65536;
+}
+function fireBlowtorch(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team],"blowtorch") <= 0) return;
+  const w = worms[current];
+  if (!prepared && beginWeaponPreparation(w,"blowtorch",angle)) {
+    pendingFire = {worm:w,angle,kind:"blowtorch",stage:"prepare"};
+    wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
+    updateUI(); return;
+  }
+  const record = nativeHitscanWeapon("blowtorch").record;
+  const body = {x:Math.round(w.x*65536),y:Math.round((H-w.y)*65536),
+    aim:Math.round((Math.asin(Math.sin(angle*Math.PI/180))/Math.PI+0.5)*65536),
+    facing:w.facing,shape:3,flags:0x420cc6,sleeping:0,suspended:0,field19c:0};
+  const entry = nativeBlowtorchEntry(body,record,w.nativeTorchStats ?? {counter58c:0,counter590:0},
+    torchPosition(w,body,body.x & -65536,body.y & -65536));
+  w.nativeTorchStats = entry.stats;
+  spendSpecial("blowtorch"); shotCount++;
+  startOriginalBlowtorch(w); syncTorchPosition(w,entry.body);
+  pendingFire = {worm:w,angle,kind:"blowtorch",stage:"blowtorch",spent:true,body:entry.body};
+  updateSliders(); updateUI();
+}
+function stopBlowtorch(pending = pendingFire) {
+  if (pending?.stage !== "blowtorch" || !pending.worm.originalBlowtorch) return;
+  const w = pending.worm;
+  const exitBody = {...pending.body,x:Math.round(w.x*65536),y:Math.round((H-w.y)*65536)};
+  const result = nativeBlowtorchExit(exitBody,nativeHitscanWeapon("blowtorch").record,
+    (x,y)=>nativeSceneCollision(w,exitBody,x/65536,H-y/65536,terrain,worms,H),
+    (x,y,body)=>torchPosition(w,body,x,y));
+  syncTorchPosition(w,result.body);
+  finishOriginalBlowtorch(w,result.calls);
+  w.ground = false;
+}
+function stepBlowtorch(pending) {
+  const w = pending.worm, record = nativeHitscanWeapon("blowtorch").record;
+  const launch = nativeLaunch(record,{...pending.body,angle:pending.body.aim});
+  const result = nativeBlowtorchTick({...pending.body,sprite:w.originalBlowtorch.player.current.id},record,launch.vy,
+    (x,y,flags,body)=>torchPosition(w,body,x,y,flags),
+    (call) => {
+      if (call.operation === "progress") w.originalBlowtorch.player.setProgress(call.value);
+      dispatchFirePunchCalls(w,[call]);
+    });
+  pending.body = result.body; syncTorchPosition(w,result.body);
+  if (result.calls.some(call=>call.operation === "state")) {
+    stopBlowtorch(pending); pendingFire = null;
+    finishAction("Blowtorch complete. Retreat!"); updateSliders();
+  }
+}
+
 function stopDrill(pending = pendingFire) {
   if (pending?.kind !== "drill") return;
   pending.playback?.stop();
@@ -3014,6 +3079,7 @@ function fire() {
     return;
   }
   if (kind === "dragonball") { fireDragonBall(); return; }
+  if (kind === "blowtorch") { fireBlowtorch(); return; }
   if (kind === "drill") { fireDrill(); return; }
   if (kind === "firepunch") { firePunch(); return; }
   if (kind === "axe") { fireAxe(); return; }
@@ -4035,6 +4101,7 @@ function step(dt) {
       if (teleport?.relocate) queueWormCamera(w);
       continue;
     }
+    if (w.originalBlowtorch && !w.originalHurt && !w.frozen) continue;
     if (w.originalDrill && !w.originalHurt && !w.frozen) {
       stepNativeDrillFlight(w, {
         height:H, waterLevel, gravityScale, frame:matchRandom.frame,
@@ -4384,10 +4451,13 @@ function step(dt) {
       w.originalPreparation = null;
       w.originalAxe = null;
       if (w.originalFirePunch) { w.originalFirePunch = null; w.nativeFlight = null; }
+      stopBlowtorch(pending);
       stopDrill(pending);
       stopBurstSound(pending.burst);
       pendingFire = null;
       if ((pending.burst?.spent || pending.spent) && phase === "aim") finishAction("Firing interrupted. Retreat!");
+    } else if (pending.stage === "blowtorch") {
+      stepBlowtorch(pending);
     } else if (pending.stage === "drill") {
       stepDrill(pending);
     } else if (pending.stage === "firepunch") {
@@ -4429,7 +4499,8 @@ function step(dt) {
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;
-        if (pending.kind === "drill") fireDrill(true);
+        if (pending.kind === "blowtorch") fireBlowtorch(true);
+        else if (pending.kind === "drill") fireDrill(true);
         else if (pending.kind === "dragonball") fireDragonBall(true);
         else if (pending.kind === "firepunch") firePunch(true);
         else if (pending.kind === "axe") fireAxe(true);

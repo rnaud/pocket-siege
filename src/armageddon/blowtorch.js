@@ -30,13 +30,14 @@ import { nativeSin, nativeCos } from './trig.js';
 
 // Original004F8E50. The caller supplies004FAF90's vertical direction and
 // the collision-aware position-attempt interface, preserving call order.
-export function nativeBlowtorchTick(input, record, slope, tryPosition) {
+export function nativeBlowtorchTick(input, record, slope, tryPosition, dispatch = () => {}) {
   const body = { ...input }, calls = [];
+  const emit = (...events) => { for (const event of events) { calls.push(event); dispatch(event, body); } };
   if (body.sprite !== 125) return { body, calls };
-  calls.push({ operation:'launchSetup', value:0 });
+  emit({ operation:'launchSetup', value:0 });
   const oldX = body.x, oldY = body.y;
   body.field1f8 = (body.field1f8 + 0xf5c) | 0;
-  calls.push({ operation:'progress', value:body.field1f8 });
+  emit({ operation:'progress', value:body.field1f8 });
   if (body.field1f4 !== body.field1f8 >> 16) {
     body.field1f4 = body.field1f8 >> 16;
     body.field1fc = oldX;
@@ -45,7 +46,7 @@ export function nativeBlowtorchTick(input, record, slope, tryPosition) {
   const delta = fixedMultiply(fixedMultiply(slope, 0x90000), 0xf5c);
   const y = (oldY + Math.trunc((delta << 2) / 5)) | 0;
   const angle = Math.trunc((record['0x78'] << 16) / 360);
-  calls.push({ operation:'area', request:[
+  emit({ operation:'area', request:[
     (x + Math.imul(body.facing, 0xc0000)) | 0, y, 0xc0000, 0x190000, record['0x70'],
     Math.imul(Math.trunc(Math.imul(nativeSin(angle),record['0x74']) / 10),body.facing),
     Math.trunc(Math.imul(nativeCos(angle),record['0x74']) / -10) | 0,
@@ -53,19 +54,19 @@ export function nativeBlowtorchTick(input, record, slope, tryPosition) {
   ] });
   const mask = body.facing < 0 ? (slope < -0x1999 ? 6 : 7 + Number(slope > 0x1999))
     : (slope < -0x1999 ? 9 : 10 + Number(slope > 0x1999));
-  calls.push({ operation:'terrain', request:[mask,x >> 16,y >> 16] });
+  emit({ operation:'terrain', request:[mask,x >> 16,y >> 16] });
   const attempt = (px,py) => {
     px |= 0; py |= 0;
-    calls.push({ operation:'tryPosition', request:[px,py] });
-    const accepted = tryPosition(px,py,body.flags);
+    emit({ operation:'tryPosition', request:[px,py] });
+    const accepted = tryPosition(px,py,body.flags,body);
     if (accepted) { body.x = px; body.y = py; }
     return accepted;
   };
-  const stop = () => { calls.push({ operation:'state', value:0x65 }); return { body,calls }; };
+  const stop = () => { emit({ operation:'state', value:0x65 }); return { body,calls }; };
   const flags = body.flags;
-  body.flags = 2; calls.push({ operation:'flags', value:2 });
+  body.flags = 2; emit({ operation:'flags', value:2 });
   const moved = attempt(x,y);
-  body.flags = flags; calls.push({ operation:'flags', value:flags });
+  body.flags = flags; emit({ operation:'flags', value:flags });
   if (!moved) return stop();
   if (attempt(x,y+0x60000)) { attempt(oldX,oldY); return stop(); }
   for (const offset of [5,4,3]) {
@@ -73,7 +74,7 @@ export function nativeBlowtorchTick(input, record, slope, tryPosition) {
   }
   body.remaining = (body.remaining - 20) | 0;
   if (body.remaining <= 0) return stop();
-  calls.push({ operation:'camera' });
+  emit({ operation:'camera' });
   return { body,calls };
 }
 
@@ -90,7 +91,7 @@ export function nativeBlowtorchExit(input, record, probe, tryPosition) {
   let nextY = (y+65536)|0;
   for (;;) {
     calls.push({ operation:'tryPosition', request:[x,nextY] });
-    if (!tryPosition(x,nextY)) break;
+    if (!tryPosition(x,nextY,body)) break;
     body.x = x; body.y = nextY;
     nextY = (nextY+65536)|0;
   }

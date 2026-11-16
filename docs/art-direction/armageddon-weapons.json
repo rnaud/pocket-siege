@@ -264,8 +264,8 @@
     {
       "slot": 32,
       "native_name": "BlowTorch",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "blowtorch",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 11
     },
