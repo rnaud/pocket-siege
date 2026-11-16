@@ -1788,3 +1788,26 @@ select:focus-visible {
 body:has(#airstrike-settings:not([hidden])) #turn-banner {
   display: none;
 }
+
+.weapon-delay-options {
+  margin: 12px 0;
+  border: 2px solid #53675b;
+  padding: 10px;
+  background: #172c28;
+  color: #e0e6bf;
+}
+.weapon-delay-options summary {
+  cursor: pointer;
+  font: inherit;
+  min-height: 28px;
+}
+.weapon-delay-options .pace-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+.weapon-delay-options select {
+  width: 100%;
+  min-width: 0;
+}

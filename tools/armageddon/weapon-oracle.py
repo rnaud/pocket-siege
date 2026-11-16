@@ -8,8 +8,8 @@ import hashlib
 import json
 from pathlib import Path
 import struct
-from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_MEM_INVALID
-from unicorn.x86_const import UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EAX
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_MEM_INVALID, UC_HOOK_CODE
+from unicorn.x86_const import UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EAX, UC_X86_REG_ESI
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
@@ -97,9 +97,44 @@ for count in [-2147483648,-2,-1,0,1,9,32767,2147483647]:
             cpu.mem_write(context+0x2c10,struct.pack('<i',bypass))
             value=invoke(0x4c2ee0,[0,11])
             inventory.append({'operation':'available','count':count,'delay':delay,'bypass':bool(bypass),'result':value})
+delay_vectors = []
+# Run the original counter block and conditional countdown call. Stop before
+# localized notification/audio: only those side effects are outside this test.
+def end_countdown(cpu,address,size,unused):
+    if address == 0x4e6689: cpu.emu_stop()
+hook = cpu.hook_add(UC_HOOK_CODE,end_countdown,begin=0x4e6689,end=0x4e6689)
+runtime = context+0x1b94
+for previous_turns in [0,1,2,2147483647]:
+    for bypass in [False,True]:
+        for bank in [0,1]:
+            cpu.mem_write(context,bytes(0x20000))
+            cpu.mem_write(owner+0x38,struct.pack('<I',context))
+            cpu.mem_write(owner+0x3c,struct.pack('<i',bank))
+            cpu.mem_write(owner+0x60,struct.pack('<i',previous_turns))
+            cpu.mem_write(owner+0xc8,bytes(4))
+            cpu.mem_write(runtime+8+bank*0x51c,struct.pack('<i',bank))
+            cpu.mem_write(runtime+0x2c10,struct.pack('<i',int(bypass)))
+            initial = [-1,0,1,2,5,2147483647]*12
+            initial = initial[:71]
+            initial[0] = 7 # Reserved slot must not count down.
+            offset = runtime+0x1fd4+bank*0x8e*4
+            cpu.mem_write(offset,struct.pack('<71i',*initial))
+            cpu.reg_write(UC_X86_REG_ESI,owner)
+            cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+            cpu.emu_start(0x4e71be,0x4e71df,count=10000)
+            if cpu.reg_read(UC_X86_REG_EIP) != 0x4e71df:
+                raise RuntimeError('Team counter block instruction limit')
+            cpu.emu_start(0x4e721e,0x4e722d,count=100000)
+            if cpu.reg_read(UC_X86_REG_EIP) not in (0x4e722d,0x4e6689):
+                raise RuntimeError('Delay countdown block instruction limit')
+            delay_vectors.append({'previous_turns':previous_turns,'bypass':bypass,'bank':bank,
+                'initial':initial,'turns':struct.unpack('<i',cpu.mem_read(owner+0x60,4))[0],
+                'delays':list(struct.unpack('<71i',cpu.mem_read(offset,284))),
+                'unlocked':bool(struct.unpack('<i',cpu.mem_read(owner+0xc8,4))[0])})
+cpu.hook_del(hook)
 args.output.parent.mkdir(parents=True,exist_ok=True)
 args.output.write_text(json.dumps({'executable_sha256':digest,
     'entry':'004B90A0','method':'Original x86 instructions executed with Unicorn',
     'inputs':'Zeroed context except 0x11d57=1 and percentage divisors 0x11c98/0x11cde=100; localized names empty. Not standard-match defaults.',
-    'records':records,'inventory_vectors':inventory},indent=2)+'\n')
-print(f'Captured {len(records)} weapon records and {len(inventory)} inventory vectors')
+    'records':records,'inventory_vectors':inventory,'delay_vectors':delay_vectors},indent=2)+'\n')
+print(f'Captured {len(records)} weapon records, {len(inventory)} inventory vectors and {len(delay_vectors)} delay vectors')

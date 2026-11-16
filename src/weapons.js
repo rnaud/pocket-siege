@@ -1,3 +1,4 @@
+import { weaponDelay } from "./armageddon/delays.js";
 import { WATER } from "./physics.js";
 import { displayAmmo } from "./armageddon/inventory.js";
 
@@ -233,10 +234,14 @@ export const freshAmmo = () => ({
   homing: WEAPONS.homing.ammo,
   holy: WEAPONS.holy.ammo,
 });
-export const ammoFor = (loadout, kind) =>
-  displayAmmo(
-    kind === "rocket" ? (loadout?.rocket ?? Infinity) : (loadout?.[kind] ?? 0),
-  );
+export const ammoFor = (loadout, kind, delays) =>
+  weaponDelay(delays, kind) !== 0
+    ? 0
+    : displayAmmo(
+        kind === "rocket"
+          ? (loadout?.rocket ?? Infinity)
+          : (loadout?.[kind] ?? 0),
+      );
 
 export const SUDDEN_DEATH_ROUND = 6;
 export const WATER_RISE = 18;

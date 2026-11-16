@@ -244,6 +244,7 @@ export function planTurn({
   waterLevel = WATER,
   difficulty = "regular",
   ammo = {},
+  delays,
   fuse = 2,
   bounce = 0.55,
   gravityScale = 1,
@@ -252,7 +253,7 @@ export function planTurn({
 }) {
   const profile = DIFFICULTIES[difficulty] ?? DIFFICULTIES.regular;
   if (!worms.some((w) => w.hp > 0 && w.team !== me.team)) return null;
-  const kinds = WEAPON_ORDER.filter((kind) => ammoFor(ammo, kind) > 0);
+  const kinds = WEAPON_ORDER.filter((kind) => ammoFor(ammo, kind, delays) > 0);
   if (!kinds.length) return null;
   const context = {
     terrain,

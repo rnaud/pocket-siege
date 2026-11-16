@@ -1,3 +1,9 @@
+import {
+  WEAPON_SLOTS,
+  advanceNativeDelays,
+  createWeaponDelays,
+  weaponDelay,
+} from "./armageddon/delays.js";
 import { MatchRandom } from "./armageddon/random.js";
 import { addAmmo, spendAmmo, displayAmmo } from "./armageddon/inventory.js";
 import { loadOriginalArt, originalWormFrame } from "./armageddon/art.js";
@@ -188,6 +194,10 @@ let terrain,
   accumulator = 0,
   explosions = 0,
   shakeUntil = 0;
+let configuredDelays = {};
+let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
+const availableAmmo = (loadout, kind) =>
+  ammoFor(loadout, kind, weaponDelays[team]);
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -625,6 +635,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const carriedAmmo = keepSeries && stockpile ? ammo : null;
   const carriedUtilities = keepSeries && stockpile ? utilityAmmo : null;
   ammo = carriedAmmo ?? [freshAmmo(), freshAmmo()];
+  weaponDelays = [0, 1].map(() =>
+    createWeaponDelays(isDaily ? {} : configuredDelays),
+  );
   utilityAmmo = carriedUtilities ?? [freshUtilities(), freshUtilities()];
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
@@ -879,6 +892,8 @@ function updateRecordUI() {
     surrender.hidden = !matchStarted || phase === "menu" || phase === "over";
 }
 function beginTurn() {
+  const inventory = weaponDelays[team];
+  weaponDelays[team] = advanceNativeDelays(inventory.turns, inventory.delays);
   shotgunRemaining = 0;
   homingTarget = null;
   stopRope();
@@ -991,7 +1006,7 @@ function beginTurn() {
 function updateUI() {
   // Only touch the DOM when its underlying simulation state changed.
   const loadout = ammo[team] ?? {};
-  const key = `${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  const key = `${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   updateHudTeams(worms, team);
@@ -1010,6 +1025,7 @@ function updateUI() {
     w.label.classList.toggle("frozen", w.frozen > 0);
   }
   $("#fire").disabled =
+    (!shotgunRemaining && availableAmmo(loadout, weapon) <= 0) ||
     !canAct() ||
     worms[current]?.knocked ||
     Boolean(targetUtility) ||
@@ -1023,9 +1039,22 @@ function updateUI() {
     weapon === "airstrike" ||
     weapon === "bat";
   document.querySelectorAll("[data-weapon]").forEach((button) => {
-    const count = ammoFor(loadout, button.dataset.weapon);
+    const count = availableAmmo(loadout, button.dataset.weapon);
+    const delay = weaponDelay(weaponDelays[team], button.dataset.weapon);
     button.querySelector("small").textContent =
-      count === Infinity ? "∞" : count;
+      delay < 0
+        ? "LOCK"
+        : delay > 0
+          ? `WAIT ${delay}`
+          : count === Infinity
+            ? "∞"
+            : count;
+    button.title =
+      delay < 0
+        ? "Unavailable this match"
+        : delay > 0
+          ? `Available after ${delay} more team turns`
+          : WEAPONS[button.dataset.weapon].label;
     button.disabled =
       !canAct() || charging || shotgunRemaining > 0 || count <= 0;
     button.setAttribute(
@@ -1288,7 +1317,7 @@ function handleUtilityTarget(e) {
     return;
   }
   if (targetUtility === "airstrike") {
-    if ((ammoFor(ammo[team], "airstrike") ?? 0) <= 0) {
+    if ((availableAmmo(ammo[team], "airstrike") ?? 0) <= 0) {
       targetUtility = null;
       activeUtility = null;
       updateUI();
@@ -1766,6 +1795,7 @@ function updateSoundButton() {
 function saveSettings() {
   writeSettings({
     sound,
+    weaponDelays: configuredDelays,
     mode: $("#mode").value,
     difficulty: $("#difficulty").value,
     format: $("#format").value,
@@ -1780,6 +1810,8 @@ function saveSettings() {
 }
 function applySettings() {
   const saved = readSettings();
+  configuredDelays = saved.weaponDelays;
+  syncDelayControl();
   const set = (selector, value) => {
     const control = $(selector);
     if (!control || ![...control.options].some((o) => o.value === value))
@@ -1826,6 +1858,7 @@ function updateSliders() {
       : "HOLD SPACE";
 }
 function startCharge(source) {
+  if (!shotgunRemaining && availableAmmo(ammo[team], weapon) <= 0) return;
   if (
     charging ||
     !canAct() ||
@@ -1939,7 +1972,7 @@ function injure(w, damage, direction = 0) {
 function placeMine() {
   if (!canAct() || !worms[current]?.ground || worms[current].knocked) return;
   wormLocked = true;
-  if (ammoFor(ammo[team], "mine") <= 0) {
+  if (availableAmmo(ammo[team], "mine") <= 0) {
     setWeapon("rocket");
     return;
   }
@@ -2035,7 +2068,7 @@ function spawnAirstrike(x) {
   sfx("airstrike");
 }
 function placeDynamite() {
-  if (!canAct() || (ammoFor(ammo[team], "dynamite") ?? 0) <= 0) return;
+  if (!canAct() || (availableAmmo(ammo[team], "dynamite") ?? 0) <= 0) return;
   const w = worms[current];
   spendSpecial("dynamite");
   w.recoil = 0.2;
@@ -2054,7 +2087,7 @@ function placeDynamite() {
 function fireShotgun() {
   if (
     !canAct() ||
-    (!shotgunRemaining && (ammoFor(ammo[team], "shotgun") ?? 0) <= 0)
+    (!shotgunRemaining && (availableAmmo(ammo[team], "shotgun") ?? 0) <= 0)
   )
     return;
   const w = worms[current],
@@ -2123,7 +2156,7 @@ function fireShotgun() {
   sfx("shotgun");
 }
 function fireBat() {
-  if (!canAct() || (ammoFor(ammo[team], "bat") ?? 0) <= 0) return;
+  if (!canAct() || (availableAmmo(ammo[team], "bat") ?? 0) <= 0) return;
   const w = worms[current];
   let victim = null,
     best = 52;
@@ -2151,7 +2184,7 @@ function fireBat() {
   }
 }
 function beginAirstrikeTargeting() {
-  if ((ammoFor(ammo[team], "airstrike") ?? 0) <= 0) return;
+  if ((availableAmmo(ammo[team], "airstrike") ?? 0) <= 0) return;
   targetUtility = "airstrike";
   activeUtility = "airstrike";
   specialOpen = false;
@@ -2186,7 +2219,7 @@ function fire() {
     beginAirstrikeTargeting();
     return;
   }
-  if (ammoFor(ammo[team], kind) <= 0) {
+  if (availableAmmo(ammo[team], kind) <= 0) {
     setWeapon("rocket");
     return;
   }
@@ -2651,6 +2684,7 @@ function aiAim() {
     waterLevel,
     difficulty,
     ammo: ammo[1],
+    delays: weaponDelays[1],
     fuse: 2,
     bounce: 0.55,
     gravityScale,
@@ -2658,13 +2692,12 @@ function aiAim() {
     random: logicRandom,
   });
   lastAiPlanMs = performance.now() - started;
-  const chosen = plan ?? {
-    weapon: "rocket",
-    angle: w.facing < 0 ? 135 : 45,
-    power: 60,
-    fuse: 0,
-    bounce: 0.55,
-  };
+  if (!plan) {
+    time = 0;
+    aiWait = Infinity;
+    return;
+  }
+  const chosen = plan;
   aiPlan = chosen;
   angle = chosen.angle;
   aiPower = chosen.power;
@@ -3415,7 +3448,11 @@ function setWeapon(kind) {
   if (shotgunRemaining) return;
   homingTarget = null;
   if (targetUtility === "homing") targetUtility = null;
-  if (ammoFor(ammo[team], kind) <= 0) kind = "rocket";
+  if (!WEAPONS[kind]) return;
+  if (availableAmmo(ammo[team], kind) <= 0)
+    kind =
+      Object.keys(WEAPONS).find((k) => availableAmmo(ammo[team], k) > 0) ??
+      "rocket";
   specialOpen = false;
   weapon = kind;
   teamWeapon[team] = kind;
@@ -3699,6 +3736,8 @@ $("#scheme").addEventListener("change", (e) => {
     saveSettings();
     return;
   }
+  configuredDelays = {};
+  syncDelayControl();
   $("#format").value = preset.format;
   $("#weather").value = preset.weather;
   $("#modifier").value = preset.modifier;
@@ -3706,6 +3745,23 @@ $("#scheme").addEventListener("change", (e) => {
   $("#retreat-time").value = String(preset.retreatTime);
   $("#sudden-death").value = preset.suddenDeath;
   syncMenuOptions();
+  saveSettings();
+});
+for (const kind of Object.keys(WEAPON_SLOTS)) {
+  const option = document.createElement("option");
+  option.value = kind;
+  option.textContent = WEAPONS[kind].label;
+  $("#delay-weapon").append(option);
+}
+function syncDelayControl() {
+  $("#weapon-delay").value = String(
+    configuredDelays[$("#delay-weapon").value] ?? 0,
+  );
+}
+$("#delay-weapon").addEventListener("change", syncDelayControl);
+$("#weapon-delay").addEventListener("change", () => {
+  configuredDelays[$("#delay-weapon").value] = +$("#weapon-delay").value;
+  markSchemeCustom();
   saveSettings();
 });
 applySettings();
@@ -3819,6 +3875,10 @@ window.siege = {
     daily: daily ? { date: daily.date, seed: daily.seed } : null,
     record: { ...record, daily: { ...record.daily } },
     ammo: ammo.map((loadout) => ({ ...loadout })),
+    weaponDelays: weaponDelays.map((state) => ({
+      ...state,
+      delays: [...state.delays],
+    })),
     utilities: { ...utilityAmmo[team] },
     activeUtility,
     targetUtility,

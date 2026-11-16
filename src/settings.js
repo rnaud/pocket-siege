@@ -1,3 +1,4 @@
+import { WEAPON_SLOTS } from "./armageddon/delays.js";
 import { MAP_LAYOUTS } from "./map-generator.js";
 const KEY = "pocket-siege-settings-v1";
 const MODES = ["ai", "local"];
@@ -26,6 +27,7 @@ const SCHEMES = [
 export function defaultSettings() {
   return {
     sound: false,
+    weaponDelays: {},
     mode: "ai",
     difficulty: "regular",
     format: "single",
@@ -55,6 +57,16 @@ export function readSettings(storage) {
     const base = defaultSettings();
     return {
       ...base,
+      weaponDelays: Object.fromEntries(
+        Object.keys(WEAPON_SLOTS)
+          .filter(
+            (k) =>
+              Number.isInteger(parsed.weaponDelays?.[k]) &&
+              parsed.weaponDelays[k] >= -1 &&
+              parsed.weaponDelays[k] <= 9,
+          )
+          .map((k) => [k, parsed.weaponDelays[k]]),
+      ),
       sound: Boolean(parsed.sound),
       mapLayout: MAP_LAYOUTS.includes(parsed.mapLayout)
         ? parsed.mapLayout
