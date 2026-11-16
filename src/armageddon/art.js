@@ -58,6 +58,8 @@ const names = [
     "elipse50",
     "elipse75",
     "elips100",
+    "shotcase",
+    "uzicase",
     "shothit",
     "uzihit",
     "smklt25",

@@ -1204,6 +1204,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   expect(state.ammo[0].shotgun).toBe(2);
   expect(state.phase).toBe("aim");
   expect(state.shotgunRemaining).toBe(1);
+  expect(state.nativeParticles.some((p) => p.sprite === "shotcase")).toBe(true);
   await expect
     .poll(() =>
       page.evaluate(() =>

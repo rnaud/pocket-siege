@@ -25,3 +25,24 @@ export function stepNativeParticles(pool) {
   }
   return removed;
 }
+
+// 004E15D0 event 0x43E copies the packet into the native particle layout.
+export function nativeParticleRequest(request) {
+  const [layer, x, y, rotation, vx, vy, ax, ay, sprite, progress, end, step] =
+    request;
+  return {
+    layer,
+    x,
+    y,
+    rotation,
+    vx,
+    vy,
+    ax,
+    ay,
+    sprite: sprite & 0xffff,
+    mirror: !!(sprite & 0x40000),
+    progress,
+    end,
+    step,
+  };
+}

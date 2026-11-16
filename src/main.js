@@ -1,3 +1,4 @@
+import { nativeCasing } from "./armageddon/casing.js";
 import { nativeShotgunImpact } from "./armageddon/hitscan-art.js";
 import {
   createImpactBag,
@@ -40,6 +41,7 @@ import {
 } from "./armageddon/hud-icons.js";
 import {
   addNativeParticle,
+  nativeParticleRequest,
   stepNativeParticles,
 } from "./armageddon/particles.js";
 import nativeSpriteIds from "./armageddon/sprite-ids.json";
@@ -2334,6 +2336,16 @@ function fireShotgun(prepared = false) {
       : { x: origin.muzzle.x, y: origin.muzzle.y },
     r = (angle * Math.PI) / 180;
   startOriginalRecoil(w, "shotgun", angle, matchRandom.frame);
+  spawnNativeParticleRequest(
+    nativeCasing(
+      0x33c,
+      w.facing,
+      Math.round(origin.pivot.x * 65536),
+      Math.round((H - origin.pivot.y) * 65536),
+      Math.round(0x3d70 * gravityScale),
+      () => matchRandom.visualUint(),
+    ),
+  );
   let hit = null,
     victim = null;
   for (let d = 4; d <= 300; d += 2) {
@@ -2686,17 +2698,7 @@ function spawnExplosionArt(x, y, strength, mode = 1) {
     impactBag,
   );
   spawnOriginalSmoke(requests.smoke);
-  for (const request of requests.effects) {
-    const name = nativeSpriteIds.sprites[request[8]].name;
-    spawnNativeParticle(
-      name,
-      request[1] / 65536,
-      H - request[2] / 65536,
-      request[3],
-      request[4],
-      request[11],
-    );
-  }
+  for (const request of requests.effects) spawnNativeParticleRequest(request);
 }
 function spawnDeathSmoke(worm) {
   const requests = nativeDeathSmoke(
@@ -2747,6 +2749,23 @@ function updateOriginalSmoke() {
   }
 }
 const nativeParticles = [];
+function spawnNativeParticleRequest(request) {
+  if (!request || nativeParticles.length >= 64) return;
+  const body = nativeParticleRequest(request),
+    name = nativeSpriteIds.sprites[body.sprite]?.name;
+  if (!name) return;
+  const mesh = createOriginalVisual(name);
+  if (!mesh) return;
+  mesh.scale.x = body.mirror ? -1 : 1;
+  mesh.position.set(
+    Math.round(body.x / 65536),
+    Math.round(H - body.y / 65536),
+    35,
+  );
+  group.add(mesh);
+  addNativeParticle(nativeParticles, { ...body, name, mesh });
+}
+
 function spawnNativeParticle(name, x, y, vx, vy, step) {
   if (nativeParticles.length >= 64) return;
   const mesh = createOriginalVisual(name);
