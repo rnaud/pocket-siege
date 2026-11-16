@@ -21,6 +21,7 @@ test("hitscan directions, complete packets and RNG match original spread loop", 
   expect(nativeShotgunRay).toEqual({
     count: 1,
     spread: 0,
+    range: 1920,
     collisionMask: 4332670,
   });
 });

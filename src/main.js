@@ -1,3 +1,4 @@
+import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
 import { nativeHitscanBody } from "./armageddon/hitscan-body.js";
 import { nativeHitscanRays } from "./armageddon/hitscan-spread.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
@@ -2373,7 +2374,7 @@ function fireShotgun(prepared = false) {
   const dx = ray[4] / 65536,
     dy = -ray[5] / 65536;
   // Native body projection; current host bodies place their collision centre
-  // 17 pixels above the foot anchor. Terrain traversal is still host-owned.
+  // 17 pixels above the foot anchor.
   const bodyHit = nativeHitscanBody(
     worms
       .filter((t) => t.hp > 0)
@@ -2388,21 +2389,25 @@ function fireShotgun(prepared = false) {
     ray[3] >> 16,
     ray[4],
     ray[5],
-    300,
+    nativeShotgunRay.range,
     nativeShotgunRay.collisionMask,
   );
-  let hit = null,
-    victim = null,
-    terrainDistance = -1;
-  for (let d = 4; d <= 300; d += 2) {
-    const x = start.x + dx * d,
-      y = start.y + dy * d;
-    if (terrain.solid(x, y)) {
-      hit = { x, y };
-      terrainDistance = d;
-      break;
-    }
-  }
+  const terrainDistance = nativeHitscanTerrain(
+    ray[2] >> 16,
+    ray[3] >> 16,
+    ray[4],
+    ray[5],
+    nativeShotgunRay.range,
+    (x, y) => terrain.solid(x, H - y),
+  );
+  let hit =
+      terrainDistance < 0
+        ? null
+        : {
+            x: start.x + dx * terrainDistance,
+            y: start.y + dy * terrainDistance,
+          },
+    victim = null;
   if (
     bodyHit.distance >= 0 &&
     (terrainDistance < 0 || bodyHit.distance <= terrainDistance)
@@ -2414,8 +2419,8 @@ function fireShotgun(prepared = false) {
     victim = bodyHit.body.worm;
   }
   hit ??= {
-    x: start.x + dx * 300,
-    y: start.y + dy * 300,
+    x: start.x + dx * nativeShotgunRay.range,
+    y: start.y + dy * nativeShotgunRay.range,
   };
   if (!shotgunRemaining) {
     ammo[team].shotgun = spendAmmo(ammo[team].shotgun);
