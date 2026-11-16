@@ -1,3 +1,4 @@
+import { stepOriginalSight } from "./armageddon/sight.js";
 import { updateOriginalCharge } from "./armageddon/charge-hud.js";
 import { updateOriginalCrosshair } from "./armageddon/crosshair-hud.js";
 import { updateOriginalSelection } from "./armageddon/selection-hud.js";
@@ -597,14 +598,21 @@ function updateAimHUD() {
   aimHUD.guide.style.display = visible ? "" : "none";
   if (!visible) lastAim = null;
   if (visible) {
-    updateOriginalCrosshair(aimHUD.crosshair, worms[current].team, angle);
+    updateOriginalCrosshair(
+      aimHUD.crosshair,
+      worms[current].team,
+      angle,
+      worms[current].originalSight,
+    );
     const geometry = shot(worms[current]);
     const origin = screen(geometry.pivot.x, geometry.pivot.y);
     const r = (angle * Math.PI) / 180,
       dx = (Math.cos(r) * arena.clientWidth) / view.w,
       dy = (-Math.sin(r) * arena.clientHeight) / view.h;
     const length = Math.hypot(dx, dy),
-      reach = Math.min(100, arena.clientWidth * 0.23);
+      reach =
+        Math.min(100, arena.clientWidth * 0.23) *
+        ((worms[current].originalSight?.opening ?? 0) / 65536);
     const ux = dx / length,
       uy = dy / length;
     const distance = Math.max(
@@ -3140,6 +3148,18 @@ function step(dt) {
     }
   }
   for (const w of worms) {
+    stepOriginalSight(
+      w,
+      weapon,
+      angle,
+      w === worms[current] &&
+        phase === "aim" &&
+        w.hp > 0 &&
+        !w.frozen &&
+        !targetUtility &&
+        !rope.attached &&
+        !jetpack.active,
+    );
     stepOriginalWalking(w);
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
     w.landing = Math.max(0, (w.landing || 0) - dt);
