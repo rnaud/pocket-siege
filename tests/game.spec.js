@@ -937,6 +937,8 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   expect(state.ammo[0].mine).toBe(1);
   expect(state.phase).toBe("settle");
   expect(state.mines[0].nativeTimer.fuse).toBe(3000);
+  expect(state.mines[0].nativeTimer.damage).toBe(50);
+  expect(state.mines[0].nativeTimer.placed).toBe(1);
   expect(state.mines[0].nativeTimer.arm).toBeGreaterThan(3500);
   await expect.poll(() => page.evaluate(() => window.siege.getState().mines[0]?.nativeTimer.triggered), { timeout: 7000 }).toBe(1);
   await expect

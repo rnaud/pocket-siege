@@ -1,4 +1,5 @@
-import { nativeMineTimer, nativeMineInitialTimer, nativeMineSprite, NATIVE_MINE_MASK } from "./armageddon/mine-timer.js";
+import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
+import { nativeMineTimer, nativeMineInitialTimer, nativeMineSprite, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
 import { playNativeMineSound } from "./armageddon/audio.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
@@ -221,6 +222,7 @@ import { SCHEMES } from "./schemes.js";
 import { modifierSettings } from "./modifiers.js";
 import { readSettings, writeSettings } from "./settings.js";
 const matchRandom = new MatchRandom(0);
+let mineDudPool = new NativeMineDudPool();
 const nativeCamera = new NativeCameraPriority();
 let nativeCameraFocus = null;
 let nativeCameraFraming = null;
@@ -883,6 +885,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   hazards = [];
   const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
+  mineDudPool = new NativeMineDudPool();
   smokeRandom = matchSeed >>> 0;
   impactBag = createImpactBag();
   bubbleSeed = matchSeed >>> 0;
@@ -2325,7 +2328,7 @@ function placeMine() {
     owner: current,
     team,
     arm: nativeMineInitialTimer().arm / 1000,
-    nativeTimer: nativeMineInitialTimer(),
+    nativeTimer: { ...nativeMineInitialTimer(), damage: NATIVE_MINE_DAMAGE, placed: 1, forceBlast: 0, dud: 0 },
     mesh,
     bob: visualRandom() * Math.PI * 2,
   });
@@ -3932,10 +3935,7 @@ function step(dt) {
   }
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
     const mine = mines[i];
-    const result = nativeMineTimer(mine.nativeTimer, {
-      vx: 0, vy: 0, awake: 0, submerged: mine.y <= waterLevel ? 1 : 0,
-      frame: matchRandom.frame, friction: 66,
-    }, (radius) => {
+    const proximity = (radius) => {
       const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
         x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
         type: nativeWormCollisionType(nativeWormState(w)),
@@ -3943,7 +3943,11 @@ function step(dt) {
       return nativeMineProximity({
         x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), mask: NATIVE_MINE_MASK,
       }, radius, candidates) >= 0;
-    });
+    };
+    const result = nativeMineTimer(mine.nativeTimer, {
+      vx: 0, vy: 0, awake: 0, submerged: mine.y <= waterLevel ? 1 : 0,
+      frame: matchRandom.frame, friction: 66,
+    }, proximity);
     mine.nativeTimer = result.body;
     mine.arm = result.body.arm / 1000;
     if (sound) for (const call of result.calls) {
@@ -3953,9 +3957,24 @@ function step(dt) {
       playNativeMineSound(audio, call.request);
     }
     if (!result.expired) continue;
-    mines.splice(i, 1);
-    dispose(mine.mesh);
-    explode(mine.x, mine.y, "mine", mine.owner);
+    const expiry = nativeMineExpiry(mine.nativeTimer, {
+      x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), dudsEnabled: true,
+    }, mineDudPool, {
+      logic: () => matchRandom.logicUint(), visual: () => matchRandom.visualUint(), proximity,
+    });
+    mine.nativeTimer = expiry.body;
+    for (const call of expiry.calls) {
+      if (call.operation === "blast") explode(mine.x, mine.y, "mine", mine.owner, call.request);
+      else if (call.operation === "smoke") spawnOriginalSmoke([call.request]);
+      else if (call.operation === "sound" && sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        playNativeMineSound(audio, call.request);
+      } else if (call.operation === "delete") {
+        mines.splice(i, 1);
+        dispose(mine.mesh);
+      }
+    }
   }
   if (pendingFire) {
     const pending = pendingFire;

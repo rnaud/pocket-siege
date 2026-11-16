@@ -15,6 +15,7 @@ export function nativeMineInitialTimer() {
   };
 }
 export const NATIVE_MINE_MASK = word(0x7c);
+export const NATIVE_MINE_DAMAGE = word(0x8c);
 
 // 004EA0F4..004EA499; expiry hands off to the separate dud/blast dispatch.
 export function nativeMineTimer(previous, environment, proximity) {
