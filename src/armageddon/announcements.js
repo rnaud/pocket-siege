@@ -137,3 +137,11 @@ export function nativeVictorySpeech(damageTotals) {
   const total = damageTotals.reduce((sum, damage) => (sum + damage) | 0, 0);
   return [total === 0 ? 17 : 51, 8, 65536, 65536, 0];
 }
+
+// 004DE639..004DE68E (death) / 004DE35A..004DE3AE (drowning).
+// These run at removal, after death effects or leaving the playfield.
+export function nativeWormDeathAnnouncement(name, color, drowned, nextRandom) {
+  const variants = drowned ? elimination.drowning : elimination.death;
+  return { text: variants[(nextRandom() & 255) % variants.length].replace("%s", () => name),
+    font: color + 17 };
+}

@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -735,6 +735,10 @@ function updateAimHUD() {
 }
 function announce(text) {
   queueNativeAnnouncement(nativeAnnouncements, text, 23);
+}
+function announceWormDeath(worm) {
+  const message = nativeWormDeathAnnouncement(worm.name, worm.team ? 0 : 2, worm.drowned, () => matchRandom.logicUint());
+  queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 function announceMatchResult(winner) {
   if (winner !== null && sound) {
@@ -4378,6 +4382,7 @@ function step(dt) {
           height: H, waterLevel, gravityScale, frame: matchRandom.frame,
         }) ? 1 : 0;
         if (w.dying) queueWormCamera(w);
+        else announceWormDeath(w);
         stepOriginalDrowning(w, {
           height: H, random: () => matchRandom.visualUint(),
           emit: ([x, y, vx, vy, size]) => spawnWaterBubble(
@@ -4404,6 +4409,7 @@ function step(dt) {
           graves.push(grave);
           group.add(grave.mesh);
         }
+        announceWormDeath(w);
       }
     }
     w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;

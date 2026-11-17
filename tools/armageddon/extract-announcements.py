@@ -1,4 +1,4 @@
-"""Extract WA 3.0.0.0 English elimination, victory, draw and sudden-death announcement variants."""
+"""Extract WA 3.0.0.0 English match and worm lifecycle announcement variants."""
 import argparse, hashlib, json, struct
 from pathlib import Path
 parser=argparse.ArgumentParser(description=__doc__)
@@ -26,6 +26,8 @@ def messages_at(table):
 result={'sha256':digest,'table':'00558A60','messages':messages_at(0x558a60),
  'victoryTable':'005589A8','victory':messages_at(0x5589a8),
  'drawTable':'00558A90','draw':messages_at(0x558a90),
- 'suddenDeathTable':'00558AF0','suddenDeath':messages_at(0x558af0)}
+ 'suddenDeathTable':'00558AF0','suddenDeath':messages_at(0x558af0),
+ 'deathTable':'005589C0','death':messages_at(0x5589c0),
+ 'drowningTable':'00558AC0','drowning':messages_at(0x558ac0)}
 a.output.write_text(json.dumps(result,indent=2)+'\n')
-print({key:len(result[key]) for key in ['messages','victory','draw','suddenDeath']})
+print({key:len(result[key]) for key in ['messages','victory','draw','suddenDeath','death','drowning']})

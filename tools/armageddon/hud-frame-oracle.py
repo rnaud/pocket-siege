@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import struct
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
-from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_ESI, UC_X86_REG_EBP
+from unicorn.x86_const import UC_X86_REG_EDI, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_ESI, UC_X86_REG_EBP
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
@@ -402,5 +402,19 @@ for totals in [[],[0],[0,0,0],[1,0,0],[0,20,0],[0,0,100],[100,100,100],[-1,1],[0
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4b419f:raise RuntimeError('Victory speech selection did not finish')
   request=list(struct.unpack('<5i',cpu.mem_read(cpu.reg_read(UC_X86_REG_ESP),20)))
   victory_speech_cases.append({'team':team,'totals':totals,'request':request})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases,'victorySpeechCases':victory_speech_cases},separators=(',',':'))+'\n')
+announcement_message_mode=True
+worm_death_cases=[]
+for drowned,table,start,end in [(False,0x5589c0,0x4de639,0x4de68e),(True,0x558ac0,0x4de35a,0x4de3ae)]:
+ for seed in [0,1,42,0x12345678,0xffffffff]:
+  for frame in [0,1,50,2000]:
+   for name,color in [('Fern',2),('Coral',0),('Cash $&',2)]:
+    cpu.mem_write(owner+0x304,name.encode()+b'\0');write(owner+0x38,context);write(owner+0x10c,color)
+    write(context+0x1acc,seed);write(context+0x7f0,frame)
+    cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_EAX,table)
+    cpu.reg_write(UC_X86_REG_EBX,0);cpu.reg_write(UC_X86_REG_EBP,0)
+    cpu.reg_write(UC_X86_REG_ESP,stack+0xf000)
+    announcement_message=None;cpu.emu_start(start,end,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=end:raise RuntimeError('Worm removal announcement did not finish')
+    worm_death_cases.append({'drowned':drowned,'seed':seed,'frame':frame,'name':name,'color':color,'random':read(context+0x1acc),'message':announcement_message})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases,'victorySpeechCases':victory_speech_cases,'wormDeathCases':worm_death_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')
