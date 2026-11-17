@@ -1,3 +1,7 @@
+import barrelBodies from "./fixtures/armageddon/barrel-body.json" with { type: "json" };
+import { nativeBarrelBody } from "../src/armageddon/barrel-body.js";
+import barrelTicks from "./fixtures/armageddon/barrel-tick.json" with { type: "json" };
+import { nativeBarrelTick } from "../src/armageddon/barrel-tick.js";
 import barrelHits from "./fixtures/armageddon/barrel-hit.json" with { type: "json" };
 import { nativeBarrelHit } from "../src/armageddon/barrel-hit.js";
 import barrelDetonation from "./fixtures/armageddon/barrel-detonation.json" with { type: "json" };
@@ -224,6 +228,31 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(burns).toBeGreaterThan(0);
     expect(hits).toBeGreaterThan(0);
     expect(pool.filter(Boolean)).toHaveLength(0);
+  }
+  for (const row of barrelBodies.cases) {
+    const queries = [];
+    const body = nativeBarrelBody(row.x, row.y, row.settle, row.water, row.friction, (x, y, b) => {
+      const hit = b.flags === 2 ? row.reject : Number(row.floor !== null && y >= row.floor * 65536);
+      queries.push([x, y, b.flags, hit]); return hit;
+    });
+    expect(body).toEqual(row.body);
+    expect(queries).toEqual(row.queries);
+  }
+  for (const row of barrelTicks.cases) {
+    const events = [];
+    const result = nativeBarrelTick(row.input, row.bottom, {
+      motion: body => { events.push(["motion"]); return body; },
+      moving: body => body.moving,
+      camera: request => events.push(["camera", ...request]),
+      busy: () => events.push(["busy"]),
+      visualRandom: () => { events.push(["random"]); return 6; },
+      bubble: request => events.push(["bubble", ...request]),
+      detonate: () => events.push(["detonate"]),
+      delete: mode => events.push(["delete", mode]),
+    });
+    expect(result.body).toEqual(row.output);
+    expect(events).toEqual(row.events);
+    expect(result.deleted).toBe(row.events.some(event => event[0] === "delete"));
   }
   for (const row of barrelHits.cases) {
     const packet = [...row.packet];
