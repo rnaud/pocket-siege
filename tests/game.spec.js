@@ -1061,6 +1061,7 @@ test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   let attached = false;
   for (const angle of [0, -10, 10, -30, 30, -50]) {

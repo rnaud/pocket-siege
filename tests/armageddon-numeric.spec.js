@@ -55,8 +55,8 @@ test("seeded live match reproduces initial wind, crates and hazards", async ({
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   const sample = async () =>
-    page.evaluate(() => {
-      window.siege.debug.resetSeed(78961);
+    page.evaluate(async () => {
+      await window.siege.debug.resetSeed(78961);
       const s = window.siege.getState();
       return {
         seed: s.mapSeed,

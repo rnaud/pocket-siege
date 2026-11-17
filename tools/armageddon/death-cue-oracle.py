@@ -61,5 +61,26 @@ for sprite in [10,11]:
     cpu.emu_start(0x4de582,stop,count=1000)
     state['spoken']=struct.unpack('<i',cpu.mem_read(owner+0x208,4))[0]
     cases.append(dict(sprite=sprite,progress=progress,spoken=spoken,random=random_value,result=dict(state)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004DE582–004DE5F6 / 004DE6A5',method='Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return.',cases=cases),indent=2)+'\n')
+# Death entry uses original virtual velocity/rotation/suspension setters.
+animator,anim_vt,clear,queue=owner+0x1000,owner+0x1100,owner+0x1200,owner+0x1300
+write(owner,0x526de0);write(owner+0x350,animator);write(animator,anim_vt)
+write(anim_vt+0x14,clear);write(anim_vt+0x1c,queue)
+cpu.mem_write(clear,b'\xc3');cpu.mem_write(queue,b'\xc2\x04\x00')
+def entry_hook(cpu,address,size,user):
+ if address==clear:entry_calls.append(dict(operation='clear'))
+ elif address==queue:entry_calls.append(dict(operation='queue',sprite_id=read(cpu.reg_read(UC_X86_REG_ESP)+4),progress=0))
+for address in [clear,queue]:cpu.hook_add(UC_HOOK_CODE,entry_hook,begin=address,end=address)
+fields=dict(vx=0x9c,vy=0xa0,angularVelocity=0xa4,suspended=0x54,spoken=0x208)
+entries=[]
+for speed in [-655360,0,655360]:
+ for suspended in [0,1]:
+  for spoken in [0,1,-1]:
+   initial=dict(vx=speed,vy=-speed,angularVelocity=12345,suspended=suspended,spoken=spoken)
+   for key,offset in fields.items():write(owner+offset,initial[key]&0xffffffff)
+   sp=stack+0xf000;cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_EBP,0x526de0);entry_calls=[]
+   cpu.emu_start(0x4d8030,0x4d8189,count=1000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=0x4d8189:raise RuntimeError('Death entry did not reach state tail')
+   body={key:struct.unpack('<i',cpu.mem_read(owner+offset,4))[0] for key,offset in fields.items()}
+   entries.append(dict(input=initial,result=dict(body=body,calls=entry_calls)))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004DE582–004DE5F6 / 004DE6A5',method='Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink.',cases=cases,entries=entries),indent=2)+'\n')
 print(f'Captured {len(cases)} death cue cases')

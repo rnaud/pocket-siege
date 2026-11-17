@@ -1,7 +1,7 @@
 {
   "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
   "block": "004DE582\u2013004DE5F6 / 004DE6A5",
-  "method": "Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return.",
+  "method": "Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink.",
   "cases": [
     {
       "sprite": 10,
@@ -2713,6 +2713,512 @@
         "sound": null,
         "complete": false,
         "spoken": -1
+      }
+    }
+  ],
+  "entries": [
+    {
+      "input": {
+        "vx": -655360,
+        "vy": 655360,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": 0
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": -655360,
+        "vy": 655360,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": 1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": -655360,
+        "vy": 655360,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": -1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": -655360,
+        "vy": 655360,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": 0
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": -655360,
+        "vy": 655360,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": 1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": -655360,
+        "vy": 655360,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": -1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 0,
+        "vy": 0,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": 0
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 0,
+        "vy": 0,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": 1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 0,
+        "vy": 0,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": -1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 0,
+        "vy": 0,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": 0
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 0,
+        "vy": 0,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": 1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 0,
+        "vy": 0,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": -1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 655360,
+        "vy": -655360,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": 0
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 655360,
+        "vy": -655360,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": 1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 655360,
+        "vy": -655360,
+        "angularVelocity": 12345,
+        "suspended": 0,
+        "spoken": -1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 655360,
+        "vy": -655360,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": 0
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 655360,
+        "vy": -655360,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": 1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "vx": 655360,
+        "vy": -655360,
+        "angularVelocity": 12345,
+        "suspended": 1,
+        "spoken": -1
+      },
+      "result": {
+        "body": {
+          "vx": 0,
+          "vy": 0,
+          "angularVelocity": 0,
+          "suspended": 1,
+          "spoken": 0
+        },
+        "calls": [
+          {
+            "operation": "clear"
+          },
+          {
+            "operation": "queue",
+            "sprite_id": 10,
+            "progress": 0
+          }
+        ]
       }
     }
   ]

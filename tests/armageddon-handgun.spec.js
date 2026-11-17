@@ -15,7 +15,7 @@ async function start(page) {
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  await page.evaluate(() => { window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, "handgun", 1); });
+  await page.evaluate(async () => { await window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, "handgun", 1); });
   await page.locator("#inventory-toggle").click();
 
   await page.locator('[data-weapon="handgun"]').click();

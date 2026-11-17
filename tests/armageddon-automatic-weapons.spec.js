@@ -18,7 +18,7 @@ async function start(page, kind) {
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  await page.evaluate(kind => { window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, kind, 1); }, kind);
+  await page.evaluate(async kind => { await window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, kind, 1); }, kind);
   await page.locator("#sound").click();
   await page.locator("#inventory-toggle").click();
 

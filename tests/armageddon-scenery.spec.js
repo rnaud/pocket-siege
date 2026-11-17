@@ -150,8 +150,8 @@ test("explosions render native debris for the selected terrain and release it", 
   await page.locator("#terrain-theme").selectOption("snow");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  const { debris, explosions } = await page.evaluate(() => {
-    window.siege.debug.resetSeed(42);
+  const { debris, explosions } = await page.evaluate(async () => {
+    await window.siege.debug.resetSeed(42);
     const before = window.siege.getState().explosions;
     window.siege.debug.explodeAt(600, 500, "rocket");
     const state = window.siege.getState();

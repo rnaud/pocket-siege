@@ -32,7 +32,7 @@ test(`live Prod ${interrupt ? 'cancels on damage without spending' : 'waits for 
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('#mode').selectOption('local');
   await page.locator('#start').click();
-  await page.evaluate(() => { window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, 'prod', 2); });
+  await page.evaluate(async () => { await window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, 'prod', 2); });
   await page.locator('#inventory-toggle').click();
 
   await page.locator('[data-weapon="prod"]').click();

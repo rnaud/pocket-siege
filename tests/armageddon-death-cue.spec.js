@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/death-cue.json" with { type: "json" };
-import { nativeDeathCue } from "../src/armageddon/death-cue.js";
+import { nativeDeathCue, nativeDeathEntry } from "../src/armageddon/death-cue.js";
 test("death voice threshold, random consumption and completion match original x86", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(216);
+  for (const row of fixture.entries) expect(nativeDeathEntry(row.input)).toEqual(row.result);
   for (const row of fixture.cases) {
     let calls = 0;
     const result = nativeDeathCue(row.sprite, row.progress, row.spoken, () => {
@@ -22,6 +23,7 @@ test("native death playback emits one original English voice at the animation th
     const { startOriginalDeath, stepOriginalDeath } =
       await import("/src/armageddon/art.js");
     const { playNativeDeathVoice } = await import("/src/armageddon/audio.js");
+    const { nativeWormState } = await import("/src/armageddon/worm-collision-type.js");
     const events = [],
       starts = [],
       bytes = [];
@@ -41,8 +43,12 @@ test("native death playback emits one original English voice at the animation th
       }),
     };
     for (const random of [0, 0x10000]) {
-      const worm = {};
+      const worm = { vx: 100, vy: -200, frozen: true,
+        nativeHurtBody: { state: 0x80, vx: 1000, vy: -2000, angularVelocity: 123, suspended: 0 } };
       startOriginalDeath(worm);
+      if (worm.vx || worm.vy || worm.nativeHurtBody.vx || worm.nativeHurtBody.vy ||
+          worm.nativeHurtBody.angularVelocity || !worm.nativeHurtBody.suspended || nativeWormState(worm) !== 0x84)
+        throw new Error('Death entry did not stop and suspend the native body');
       let calls = 0,
         ticks = 0,
         previous = 0;

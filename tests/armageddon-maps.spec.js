@@ -82,9 +82,9 @@ test("authored map is playable at full size and switching back restores the host
   );
   await page.screenshot({ path: info.outputPath("original-artclass-map.png") });
   await page.evaluate(() => window.siege.debug.explodeAt(960, 350, "cluster"));
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     document.querySelector("#map-layout").value = "fern";
-    window.siege.debug.resetSeed(42);
+    await window.siege.debug.resetSeed(42);
   });
   expect((await page.evaluate(() => window.siege.getState())).world).toEqual({
     width: 1200,

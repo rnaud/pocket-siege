@@ -52,6 +52,7 @@ test("rope poses and attachments preserve every source pixel and clear on releas
   });
   expect(result).toEqual({ mismatches: 0, frames: 64 });
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   for (const angle of [0, -10, 10, -30, 30, -50]) {
@@ -60,6 +61,7 @@ test("rope poses and attachments preserve every source pixel and clear on releas
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }, angle);
     await page.keyboard.press("r");
+    await expect.poll(() => page.evaluate(() => window.siege.getState().rope.firing)).toBe(false);
     if (await page.evaluate(() => window.siege.getState().rope.attached)) break;
   }
   await expect

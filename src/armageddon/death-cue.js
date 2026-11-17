@@ -1,3 +1,9 @@
+// 004D8030..004D806F, after common state preparation.
+export function nativeDeathEntry(input) {
+  return { body: { ...input, spoken: 0, vx: 0, vy: 0, angularVelocity: 0, suspended: 1 },
+    calls: [{ operation: 'clear' }, { operation: 'queue', sprite_id: 10, progress: 0 }] };
+}
+
 // 004DE582–004DE5F6: state 0x84, original sprite 10. RNG is consumed only
 // when the one-shot voice cue becomes due. Team sound lookup is external.
 export function nativeDeathCue(sprite, progress, spoken, random) {

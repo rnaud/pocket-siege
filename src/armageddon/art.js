@@ -3,7 +3,7 @@ import { nativeWormBubbles } from "./worm-water.js";
 import { nativeRecoveryEntry, nativeRecoveryTick } from "./recovery.js";
 import { nativeBodyRotation } from "./motion.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
-import { nativeDeathCue } from "./death-cue.js";
+import { nativeDeathCue, nativeDeathEntry } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
 import { nativeFlightSprite, nativeFlightProgress } from "./flight-art.js";
@@ -814,10 +814,20 @@ export function stepOriginalWalking(worm) {
 export function startOriginalDeath(worm) {
   const animation = animations.get("wdie");
   if (!animation) return false;
+  const entry = nativeDeathEntry({
+    vx: worm.vx ?? 0, vy: worm.vy ?? 0,
+    angularVelocity: 0, suspended: 0, spoken: worm.originalDeathSpoken ?? 0,
+  });
+  worm.vx = entry.body.vx; worm.vy = entry.body.vy;
+  for (const body of [worm.nativeHurtBody, worm.nativeFlight, worm.nativeRopeBody])
+    if (body) Object.assign(body, { state: 0x84, vx: 0, vy: 0, angularVelocity: 0, suspended: 1 });
   const player = new NativeAnimationPlayer();
-  player.enqueue(10, animation.metadata);
+  for (const call of entry.calls) {
+    if (call.operation === 'clear') player.clear();
+    else player.enqueue(call.sprite_id, animation.metadata, call.progress);
+  }
   worm.originalDeath = player;
-  worm.originalDeathSpoken = 0;
+  worm.originalDeathSpoken = entry.body.spoken;
   worm.originalDeathVoice = null;
   worm.originalJump = worm.originalLanding = worm.originalRecoil = worm.originalAxe = worm.originalFirePunch = null;
   worm.originalPreparation = null;

@@ -82,9 +82,10 @@ test("live falling worm deploys original canopy, slows continuously and folds on
 }, info) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  await page.evaluate(() => {
-    window.siege.debug.resetSeed(42);
+  await page.evaluate(async () => {
+    await window.siege.debug.resetSeed(42);
     window.siege.debug.dropWormForParachute();
   });
   await expect

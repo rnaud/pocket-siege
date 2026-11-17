@@ -63,10 +63,10 @@ test("live native death blast selects the rolling hurt pose", async ({
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   const observed = await page.evaluate(
     () =>
       new Promise((resolve) => {
-        window.siege.debug.resetSeed(42);
         const w = window.siege.getState().worms[0];
         window.siege.debug.explodeAt(w.x - 20, w.y, "death");
         // Observe each rendered frame: remote CI polling can miss this short pose.

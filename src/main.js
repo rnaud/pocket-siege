@@ -4252,7 +4252,8 @@ function step(dt) {
       }
       if (w.deathPending && !w.drowned) {
         if (!w.originalDeath) startOriginalDeath(w);
-        w.dying = stepOriginalDeath(w, () => matchRandom.visualUint()) ? 0 : 1;
+        w.dying = stepOriginalDeath(w, () => matchRandom.logicUint()) ? 0 : 1;
+        queueWormCamera(w);
         if (w.originalDeathVoice && sound) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();
