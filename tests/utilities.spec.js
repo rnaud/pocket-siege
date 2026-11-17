@@ -1,3 +1,5 @@
+import flameHits from "./fixtures/armageddon/flame-hit.json" with { type: "json" };
+import { nativeFlameHit } from "../src/armageddon/flame-hit.js";
 import flameSpread from "./fixtures/armageddon/flame-spread.json" with { type: "json" };
 import { nativeFlameSpread, registerNativeFlame } from "../src/armageddon/flame-spread.js";
 import flameMotion from "./fixtures/armageddon/flame-motion.json" with { type: "json" };
@@ -161,6 +163,18 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  for (const row of flameHits.cases) {
+    const events = []; let visualIndex = 0;
+    const result = nativeFlameHit(row.input, row.candidates, {
+      hit: (target, ...args) => events.push(['hit', row.candidates.indexOf(target), ...args]),
+      logicRandom: () => { events.push(['logic']); return 255; },
+      visualRandom: () => { events.push(['visual']); return [0, 65535, 123456][visualIndex++]; },
+      smoke: request => events.push(['smoke', request]),
+      busy: () => events.push(['busy']),
+    });
+    expect(result).toEqual(row.output);
+    expect(events).toEqual(row.events);
+  }
   for (const row of flameSpread.spread) {
     const events = []; let probes = 0;
     const result = nativeFlameSpread(row.record, {
