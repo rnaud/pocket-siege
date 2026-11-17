@@ -1,3 +1,6 @@
+import { captureReplayEnvironment, restoreReplayEnvironment } from "../src/armageddon/replay-environment-adapter.js";
+import { MatchRandom } from "../src/armageddon/random.js";
+import { NativeGamePalette } from "../src/armageddon/game-palette.js";
 import { test, expect } from "@playwright/test";
 import {
   Terrain,
@@ -153,4 +156,37 @@ test("terrain craters remove solid ground and preserve distant terrain", { tag: 
   expect(t.solid(x, y)).toBe(false);
   expect(t.surface(800)).toBe(other);
   expect(t.carve(x, y, 50)).toBe(0);
+  // Replay restoration must rewind both collision and painted terrain, while
+  // preserving the objects held by collision/render adapters.
+  const random = new MatchRandom(987), collision = t.data;
+  t.pixels = new Uint8ClampedArray(1200 * 650 * 4);
+  t.pixels.set([17, 23, 41, 255], 0);
+  t.craterRim = new Uint8Array(1200 * 650); t.craterRim[5] = 1;
+  t.nativePalette = new NativeGamePalette(137, 248);
+  t.nativePalette.add([17, 23, 41]);
+  const palette = t.nativePalette, pixels = t.pixels;
+  const saved = captureReplayEnvironment(t, random, 1200, 650);
+  const expectedRandom = [random.logicUint(), random.visualUint()];
+  const removed = t.carve(800, other - 15, 40);
+  t.pixels.fill(0); t.craterRim.fill(0);
+  t.decorationPixels = new Uint8ClampedArray(1200 * 650 * 4);
+  t.nativePalette.add([1, 2, 3]); random.finishFrame();
+  let repainted = false;
+  restoreReplayEnvironment(saved, t, random, 1200, 650, restored => {
+    expect(restored).toBe(t); repainted = true;
+  });
+  expect(repainted).toBe(true);
+  expect(t.data).toBe(collision); expect(t.pixels).toBe(pixels); expect(t.nativePalette).toBe(palette);
+  expect([...t.pixels.slice(0, 4)]).toEqual([17, 23, 41, 255]);
+  expect(t.craterRim[5]).toBe(1); expect(t.decorationPixels).toBeUndefined();
+  expect(t.nativePalette.used).toHaveLength(1);
+  expect([random.logicUint(), random.visualUint()]).toEqual(expectedRandom);
+  expect(t.carve(800, other - 15, 40)).toBe(removed);
+  restoreReplayEnvironment(saved, t, random, 1200, 650);
+  expect(t.carve(800, other - 15, 40)).toBe(removed);
+  const before = random.snapshot();
+  expect(() => restoreReplayEnvironment({ ...saved, random: { ...saved.random, logic: -1 } }, t, random, 1200, 650)).toThrow(RangeError);
+  expect(random.snapshot()).toEqual(before);
+  expect(t.solid(800, other - 15)).toBe(false);
+
 });
