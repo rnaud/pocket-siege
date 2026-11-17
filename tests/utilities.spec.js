@@ -1,3 +1,7 @@
+import crateHits from "./fixtures/armageddon/crate-hit.json" with { type: "json" };
+import { nativeCrateHit } from "../src/armageddon/crate-hit.js";
+import detonation from "./fixtures/armageddon/crate-detonation.json" with { type: "json" };
+import { nativeCrateDetonation } from "../src/armageddon/crate-detonation.js";
 import { test, expect } from "@playwright/test";
 import { UTILITIES, UTILITY_KINDS, freshUtilities } from "../src/utilities.js";
 import environment from './fixtures/armageddon/team-environment.json' with { type: 'json' };
@@ -149,6 +153,30 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  for (const row of crateHits.cases) {
+    const packet = [...row.packet];
+    expect(nativeCrateHit(row.input, packet, row.extentFactor)).toEqual(row.output);
+    expect(packet[5]).toBe(row.report);
+  }
+  for (const row of detonation.cases) {
+    const events = [];
+    let allocationIndex = 0;
+    const result = nativeCrateDetonation(row.input, row.inventory, {
+      parent: (...args) => { events.push(['parent', ...args]); return args[0]; },
+      blast: request => events.push(['blast', ...request]),
+      allocate: size => {
+        const accepted = (row.allocationMask >> allocationIndex++) & 1;
+        events.push(['allocate', size, accepted]); return accepted;
+      },
+      debris: (allocation, parent, record) => events.push(['debris', parent, record]),
+      sound: request => events.push(['sound', ...request]),
+      contents: (...args) => events.push(['contents', ...args]),
+      broadcast: (...args) => events.push(['broadcast', ...args]),
+    });
+    expect(events).toEqual(row.events);
+    expect(result.body).toEqual({ ...row.input, destroyed: row.destroyed });
+    expect(result.missionStatus).toBe(row.missionStatus);
+  }
   const collide = (x, y, body) => nativeCollisionBitmapOverlap(
     shapes.shapes[body.shape], x >> 16, y >> 16,
     { width: 1000, height: 1000, left: 0, top: 0, solid: (x, y) => y >= 500 },
