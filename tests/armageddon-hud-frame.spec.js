@@ -1,3 +1,5 @@
+import replayFrame from "./fixtures/armageddon/replay-frame.json" with { type: "json" };
+import { nativeReplayFrame } from "../src/armageddon/replay-frame.js";
 import replayEntry from "./fixtures/armageddon/replay-entry.json" with { type: "json" };
 import { nativeReplayEntry } from "../src/armageddon/replay-entry.js";
 import replayDispatch from "./fixtures/armageddon/replay-dispatch.json" with { type: "json" };
@@ -70,6 +72,25 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const { mask, limit, result } of replayFrame.cases) {
+    const scene = new Uint8Array(0x20000), view = new DataView(scene.buffer), calls = [];
+    view.setInt32(0x1d444, mask & 1, true);
+    view.setInt32(0x1b8ec, 0x7fffffff, true);
+    const manager = { playbackError: 0, playbackFailure: 0, paused: mask & 4, suppressRender: mask & 8,
+      abortValue: mask & 32 ? 9 : 0, abortFirst: 88, abortSecond: 99, abortMode: 77 };
+    let count = 0;
+    nativeReplayFrame(scene, manager, {
+      audio: mask & 2 ? {} : null, updateAudio: () => calls.push('audio'),
+      incoming: 'incoming', recording: 'recording', collectInput: queue => calls.push(['collect', queue]),
+      dispatchEvents: queue => { calls.push(['dispatch', queue]); view.setInt32(0x1d448, ++count < limit ? 1 : 0, true); },
+      advanceInput: () => calls.push('advanceInput'), advancePlayback: () => calls.push('advancePlayback'),
+      dispatchRoot: (event, data) => calls.push(['root', event, data.length, 0]), renderFrame: () => calls.push('render'),
+      queryRoot: (event, data) => { calls.push(['query', event, data.length]); new DataView(data.buffer).setInt32(4, mask & 16 ? -7 : 0, true); return !(mask & 16); },
+    });
+    expect({ fields: [0x1b8ec, 0x1d448].map(offset => view.getInt32(offset, true)),
+      manager: [manager.abortValue, manager.abortFirst, manager.abortSecond, manager.abortMode], calls,
+    }).toEqual(result);
+  }
   for (const row of replayEntry.cases) {
     const scene = new Uint8Array(0x20000), view = new DataView(scene.buffer);
     const put = (offset, value) => view.setInt32(offset, value, true);

@@ -1,5 +1,5 @@
 {
-  "focus": "Port native replay frame advancement, then connect snapshot and event playback to live game state.",
+  "focus": "Port replay frame-advance, input and audio helpers, then connect native playback to live game state.",
   "note": "The game is playable, but the offline rewrite is not yet equivalent to Worms Armageddon. Verified routines can still be waiting for live integration.",
   "areas": [
     {
@@ -100,9 +100,10 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native snapshot restoration, capture/session transitions, playback entry and offline event dispatch have executable comparisons, alongside buffers and constructors; live integration remains.",
-      "remaining": "Port native frame advancement, verify resource-heavy actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
+      "live": "The current replay is a trajectory overlay. Native snapshot restoration, capture/session transitions, playback entry, offline frame orchestration and event dispatch have executable comparisons, alongside buffers and constructors; live integration remains.",
+      "remaining": "Port internal frame/input/audio helpers, verify resource-heavy actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_replay_offline_frame",
         "native_replay_playback_entry",
         "native_replay_offline_dispatch",
         "native_replay_capture_session",
