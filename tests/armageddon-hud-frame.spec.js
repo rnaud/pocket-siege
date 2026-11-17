@@ -1,3 +1,5 @@
+import replayChildren from "./fixtures/armageddon/replay-children.json" with { type: "json" };
+import { nativeWriteReplayTask, nativeReplayTaskTypes } from "../src/armageddon/replay-task.js";
 import replayTask from "./fixtures/armageddon/replay-task.json" with { type: "json" };
 import { nativeWriteTaskHeader, nativeWriteMatchController, nativeWritePhysicsEnvironment } from "../src/armageddon/replay-task.js";
 import replayStream from "./fixtures/armageddon/replay-stream.json" with { type: "json" };
@@ -41,6 +43,24 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayChildren.cases) {
+    const schema = nativeReplayTaskTypes.find(type => type.tag === row.tag);
+    const memory = Uint8Array.from({ length: schema.size }, (_, i) => (i * 13 + row.tag * 7 + row.position) & 255);
+    const view = new DataView(memory.buffer), set = (offset, value) => view.setInt32(offset, value, true);
+    set(0x14, 0); set(0x2c, row.tag); set(0x28, 0x115); set(0x24, 0x129);
+    if (schema.physics) { set(0x3c, 2); set(0xc8, row.count ? 1 : 0); set(0xdc, row.count); set(0xe4, -29); set(0xe8, 88); }
+    const task = { id: 1, type: row.tag, memory, children: [],
+      physicsPoints: Uint8Array.from({ length: row.count * 8 }, (_, i) => (i * 17 + row.tag) & 255),
+      animation: Uint8Array.from({ length: 0x15c }, (_, i) => (i * 19 + row.tag) & 255) };
+    const environment = { all: row.membership === 1 ? [null, 1, 1] : row.membership === 2 ? [2, null, 1] : [null, 2],
+      categories: { 2: row.membership === 1 ? [2, null, 1] : [null, 2] } };
+    const stream = new NativeReplayStream(0x4000);
+    stream.bytes.fill(0xa5); stream.seek(row.position); stream.length = row.position;
+    const result = nativeWriteReplayTask(stream, task, environment);
+    expect({ result, length: stream.length, bytes: [...stream.bytes.slice(0, stream.position)],
+      references: schema.physics ? [view.getInt32(0xe4, true), view.getInt32(0xe8, true)] : null })
+      .toEqual({ result: row.result, length: row.length, bytes: row.bytes, references: row.references });
+  }
   for (const row of replayTask.cases) {
     const stream = new NativeReplayStream(2048);
     stream.bytes.fill(0xa5); stream.seek(row.position); stream.length = row.position;

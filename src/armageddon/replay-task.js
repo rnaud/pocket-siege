@@ -28,3 +28,40 @@ export function nativeWritePhysicsEnvironment(stream, bytes) {
   stream.writeBlock(bytes);
   return 1;
 }
+
+import taskTypes from './replay-task-types.json' with { type: 'json' };
+export const nativeReplayTaskTypes = taskTypes;
+
+// All21 concrete child serializers reachable from004B2230. memory contains
+// the native task record; object references use stable IDs in environment lists.
+export function nativeWriteReplayTask(stream, task, environment) {
+  const schema = taskTypes.find(row => row.tag === task.type);
+  if (!schema) throw new RangeError(`Unknown native replay task ${task.type}`);
+  if (!schema.block) return 1; // Original no-op serializers emit no header.
+  const view = new DataView(task.memory.buffer, task.memory.byteOffset, task.memory.byteLength);
+  nativeWriteTaskHeader(stream, {
+    type: view.getInt32(0x2c, true), registryType: view.getInt32(0x28, true),
+    registryIndex: view.getInt32(0x24, true), children: task.children,
+  }, child => nativeWriteReplayTask(stream, child, environment));
+  stream.writeByte(2);
+  if (schema.physics) {
+    stream.writeByte(3);
+    const category = view.getInt32(0x3c, true);
+    // Original004C9300 preserves holes and returns the first matching index.
+    view.setInt32(0xe8, environment.all.indexOf(task.id), true);
+    view.setInt32(0xe4, (environment.categories[category] ?? []).indexOf(task.id), true);
+    stream.writeBlock(task.memory.slice(0x3c, 0xec));
+    if (view.getInt32(0xc8, true))
+      stream.writeBlock(task.physicsPoints.slice(0, view.getInt32(0xdc, true) * 8));
+    view.setInt32(0xe4, -1, true);
+    view.setInt32(0xe8, -1, true);
+  }
+  stream.writeByte(task.type);
+  const [offset, size] = schema.block;
+  stream.writeBlock(task.memory.slice(offset, offset + size));
+  if (schema.nestedAnimation) {
+    stream.writeByte(0x20);
+    stream.writeBlock(task.animation);
+  }
+  return 1;
+}

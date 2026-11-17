@@ -1,0 +1,260 @@
+[
+  {
+    "tag": 7,
+    "size": 160,
+    "constructor": "004eaa10",
+    "vtable": "0x527428",
+    "writer": "004eaa50",
+    "physics": false,
+    "block": [
+      60,
+      100
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 8,
+    "size": 404,
+    "constructor": "004e98b0",
+    "vtable": "0x527300",
+    "writer": "004e9c10",
+    "physics": true,
+    "block": [
+      252,
+      148
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 9,
+    "size": 348,
+    "constructor": "004e8a20",
+    "vtable": "0x5271d8",
+    "writer": "004e8a60",
+    "physics": true,
+    "block": [
+      252,
+      96
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 10,
+    "size": 288,
+    "constructor": "004e5090",
+    "vtable": "0x5271b8",
+    "writer": "004e50d0",
+    "physics": false,
+    "block": [
+      60,
+      80
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 11,
+    "size": 992,
+    "constructor": "004e1d30",
+    "vtable": "0x527090",
+    "writer": "004e1d80",
+    "physics": true,
+    "block": [
+      252,
+      720
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 13,
+    "size": 3136,
+    "constructor": "004e1570",
+    "vtable": "0x527070",
+    "writer": "004e15b0",
+    "physics": false,
+    "block": null,
+    "nestedAnimation": false
+  },
+  {
+    "tag": 15,
+    "size": 628,
+    "constructor": "004e0080",
+    "vtable": "0x526f48",
+    "writer": "004e00d0",
+    "physics": true,
+    "block": [
+      252,
+      360
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 16,
+    "size": 96,
+    "constructor": "004df9a0",
+    "vtable": "0x526f28",
+    "writer": "004df9e0",
+    "physics": false,
+    "block": null,
+    "nestedAnimation": false
+  },
+  {
+    "tag": 17,
+    "size": 528,
+    "constructor": "004df5d0",
+    "vtable": "0x526f08",
+    "writer": "004df640",
+    "physics": false,
+    "block": [
+      60,
+      468
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 18,
+    "size": 912,
+    "constructor": "004d6240",
+    "vtable": "0x526de0",
+    "writer": "004d62e0",
+    "physics": true,
+    "block": [
+      252,
+      572
+    ],
+    "nestedAnimation": true
+  },
+  {
+    "tag": 21,
+    "size": 284,
+    "constructor": "004d5410",
+    "vtable": "0x526cb8",
+    "writer": "004d5450",
+    "physics": true,
+    "block": [
+      252,
+      32
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 22,
+    "size": 100,
+    "constructor": "004d4fc0",
+    "vtable": "0x526c98",
+    "writer": "004d5000",
+    "physics": false,
+    "block": null,
+    "nestedAnimation": false
+  },
+  {
+    "tag": 23,
+    "size": 96,
+    "constructor": "004d4d40",
+    "vtable": "0x526c78",
+    "writer": "004d4d80",
+    "physics": false,
+    "block": [
+      60,
+      36
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 24,
+    "size": 184,
+    "constructor": "004d3da0",
+    "vtable": "0x526c58",
+    "writer": "004d3e10",
+    "physics": false,
+    "block": [
+      60,
+      116
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 25,
+    "size": 112,
+    "constructor": "004d38a0",
+    "vtable": "0x526c38",
+    "writer": "004d38e0",
+    "physics": false,
+    "block": [
+      60,
+      52
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 26,
+    "size": 144,
+    "constructor": "004d3450",
+    "vtable": "0x526c18",
+    "writer": "004d3490",
+    "physics": false,
+    "block": [
+      60,
+      84
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 27,
+    "size": 88,
+    "constructor": "004d3250",
+    "vtable": "0x526bf8",
+    "writer": "004d3290",
+    "physics": false,
+    "block": null,
+    "nestedAnimation": false
+  },
+  {
+    "tag": 28,
+    "size": 5980,
+    "constructor": "004d2180",
+    "vtable": "0x526ad0",
+    "writer": "004d2290",
+    "physics": true,
+    "block": [
+      252,
+      16
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 29,
+    "size": 104,
+    "constructor": "004d1d70",
+    "vtable": "0x526ab0",
+    "writer": "004d1de0",
+    "physics": false,
+    "block": null,
+    "nestedAnimation": false
+  },
+  {
+    "tag": 30,
+    "size": 272,
+    "constructor": "004d1480",
+    "vtable": "0x526988",
+    "writer": "004d14c0",
+    "physics": true,
+    "block": [
+      252,
+      20
+    ],
+    "nestedAnimation": false
+  },
+  {
+    "tag": 31,
+    "size": 11732,
+    "constructor": "004cd180",
+    "vtable": "0x526958",
+    "writer": "004cd2a0",
+    "physics": false,
+    "block": [
+      212,
+      11496
+    ],
+    "nestedAnimation": false
+  }
+]
