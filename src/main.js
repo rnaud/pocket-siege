@@ -1,4 +1,4 @@
-import { nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
+import { nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
@@ -387,7 +387,6 @@ let pendingTurnStart = false;
 let matchDamageSourceActive = false;
 let nativeMatchStatistics = { damage: 0, deaths: 0 };
 let nativeDamageReaction = createNativeDamageReaction();
-let turnStartShotCount = 0;
 let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
@@ -1313,7 +1312,6 @@ function beginTurn() {
   pendingTurnStart = false;
   matchDamageSourceActive = false;
   nativeDamageReaction = { ...createNativeDamageReaction(), firstBlood: nativeDamageReaction.firstBlood };
-  turnStartShotCount = shotCount;
   nativeClockTarget = 65536;
   const inventory = weaponDelays[team];
   weaponDelays[team] = advanceNativeDelays(inventory.turns, inventory.delays);
@@ -2688,10 +2686,13 @@ function spawnPlacedMine(release) {
   chargeSource = null;
   w.recoil = 0.15;
   startOriginalRecoil(w, "mine", angle, matchRandom.frame);
-  shotCount++;
+  shotCount++; recordReactionWeaponUse("mine");
   tone(420, 0.1, "square");
   updateSliders();
   updateUI();
+}
+function recordReactionWeaponUse(kind) {
+  nativeReactionWeaponUse(nativeDamageReaction, nativeReactionWeaponFlag(kind));
 }
 function finishAction(message) {
   phase = "settle";
@@ -2773,6 +2774,7 @@ function queueWormCamera(w, priority = null) {
   if (request) pendingWormCamera.push(request);
 }
 function spawnAirstrike(x, y, kind = "airstrike") {
+  recordReactionWeaponUse(kind);
   const direction = Number($("#strike-direction").value);
   const strike = createNativeAirstrike(x,y,direction,current,H,gravityScale,kind);
   strike.mesh = createNativeProjectileVisual({sprite: strike.sprite});
@@ -2828,7 +2830,7 @@ function spawnPlacedDynamite(release) {
   spendSpecial("dynamite");
   w.recoil = 0.2;
   startOriginalRecoil(w, "dynamite", angle, matchRandom.frame);
-  shotCount++;
+  shotCount++; recordReactionWeaponUse("dynamite");
   const body = {
     ...release,
     fuse: 5, bounce: 0.3, owner: current, kind: "dynamite", age: 0,
@@ -3027,7 +3029,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     ammo[team][kind] = spendAmmo(ammo[team][kind]);
     burst.spent = true;
   }
-  shotCount++;
+  shotCount++; recordReactionWeaponUse(kind);
   wormLocked = true;
   if (resolution.area) {
     // 004F7DA0 selects every nearby body, including self, and emits 0x433.
@@ -3105,7 +3107,7 @@ function fireDragonBall(prepared = false) {
   const launch = nativeBulletLaunch(config, w, w.facing < 0 ? 180 : 0, H, () => matchRandom.logicUint());
   const body = nativeDragonBallBody(config.record,
     [team + 1, current, launch.x, launch.y, launch.vx, launch.vy, 0, 0, 0, 30, 0]);
-  spendSpecial("dragonball"); shotCount++;
+  spendSpecial("dragonball"); shotCount++; recordReactionWeaponUse("dragonball");
   startOriginalRecoil(w, "dragonball", angle, matchRandom.frame);
   projectile = {kind:"dragonball", owner:current, age:0, x:body.x/65536, y:H-body.y/65536,
     vx:body.direction/65536*300, vy:0, nativeDragonBall:body,
@@ -3175,7 +3177,7 @@ function fireBlowtorch(prepared = false) {
   const entry = nativeBlowtorchEntry(body,record,w.nativeTorchStats ?? {counter58c:0,counter590:0},
     torchPosition(w,body,body.x & -65536,body.y & -65536));
   w.nativeTorchStats = entry.stats;
-  spendSpecial("blowtorch"); shotCount++;
+  spendSpecial("blowtorch"); shotCount++; recordReactionWeaponUse("blowtorch");
   startOriginalBlowtorch(w); syncTorchPosition(w,entry.body);
   pendingFire = {worm:w,angle,kind:"blowtorch",stage:"blowtorch",spent:true,body:entry.body};
   updateSliders(); updateUI();
@@ -3221,7 +3223,7 @@ function fireDrill(prepared = false) {
     wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
     updateUI(); return;
   }
-  spendSpecial("drill"); shotCount++;
+  spendSpecial("drill"); shotCount++; recordReactionWeaponUse("drill");
   const entry = nativeDrillEntry({ loopHandle:0 }, nativeHitscanWeapon("drill").record, w.nativeDrillCounter ?? 0);
   w.nativeDrillCounter = entry.counter;
   attachNativeDrillFlight(w, { height:H });
@@ -3265,7 +3267,7 @@ function firePunch(prepared = false) {
     wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
     updateUI(); return;
   }
-  spendSpecial("firepunch"); shotCount++;
+  spendSpecial("firepunch"); shotCount++; recordReactionWeaponUse("firepunch");
   const record = nativeHitscanWeapon("firepunch").record;
   const calls = attachNativeFirePunchFlight(w, {height:H}, record["0x7c"]);
   startOriginalFirePunch(w);
@@ -3286,7 +3288,7 @@ function fireAxe(prepared = false) {
     return;
   }
   spendSpecial("axe");
-  shotCount++;
+  shotCount++; recordReactionWeaponUse("axe");
   startOriginalAxe(w);
   pendingFire = { worm:w, angle, kind:"axe", stage:"axe", spent:true };
   updateUI();
@@ -3308,7 +3310,7 @@ function fireProd(prepared = false) {
   applyNativeAreaRequest(targets, nativeProdRequest(config.record,
     Math.round(w.x * 65536), Math.round((H - w.y) * 65536), w.facing));
   spendSpecial("prod");
-  shotCount++;
+  shotCount++; recordReactionWeaponUse("prod");
   wormLocked = true;
   startOriginalRecoil(w, "prod", angle, matchRandom.frame);
   finishAction("Prod complete. Retreat!");
@@ -3331,7 +3333,7 @@ function fireBat(prepared = false) {
   applyNativeAreaRequest(targets, nativeBatRequest(config.record,
     launch.x, launch.y, launch.vx, launch.vy, w.facing));
   spendSpecial("bat");
-  shotCount++;
+  shotCount++; recordReactionWeaponUse("bat");
   wormLocked = true;
   startOriginalRecoil(w, "bat", angle, matchRandom.frame);
   if (sound) {
@@ -3424,7 +3426,7 @@ function fire() {
   }
   updateSliders();
   firedPower = power;
-  shotCount++;
+  shotCount++; recordReactionWeaponUse(kind);
   retreat = retreatSeconds;
   if (kind !== "rocket" || ammo[team].rocket !== undefined) {
     ammo[team][kind] = spendAmmo(ammo[team][kind]);
@@ -4087,10 +4089,9 @@ function nextTurn() {
     queueNativeAnnouncement(nativeAnnouncements, killMessage.text, killMessage.font);
     return;
   }
-  nativeDamageReaction.shot = Number(shotCount > turnStartShotCount);
   const reaction = nativeDamageReactionVoice(nativeDamageReaction, {
     sourceTeam: killer?.matchStats.team ?? 0, sourceWorm: killer?.matchStats.worm ?? 0,
-    turnTeam: team + 1, usedWeapon: shotCount > turnStartShotCount,
+    turnTeam: team + 1, usedWeapon: nativeDamageReaction.usedWeapon,
     teamAlive: id => worms.some(w => w.team + 1 === id && w.hp > 0),
     // Host task/position adapter until the native actor registry is connected.
     nearbyTeam: id => worms.filter(w => w.hp > 0 && w.team + 1 !== id)

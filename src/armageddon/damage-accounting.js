@@ -92,7 +92,7 @@ export function nativeRecordMatchDamage(match, victim, source, damage) {
 }
 
 export function createNativeDamageReaction() {
-  return { firstBlood: 0, shot: 0, perfectTeam: 0, amazingTeam: 0, excellentTeam: 0, brilliantTeam: 0, fatality: 0,
+  return { usedWeapon: 0, firstBlood: 0, shot: 0, perfectTeam: 0, amazingTeam: 0, excellentTeam: 0, brilliantTeam: 0, fatality: 0,
     kills: 0, damage: 0, revengeTeam: 0, friendlyTeam: 0, selfTeam: 0,
     maxDamage: 0, maxVictimTeam: 0 };
 }

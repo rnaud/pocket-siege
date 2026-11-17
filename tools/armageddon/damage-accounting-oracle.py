@@ -176,5 +176,15 @@ for scenario in scenarios:
    cpu.emu_start(0x4b43d0,stop,count=10000)
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Damage reaction voice did not return')
    voices.append(dict(input=initial,seed=seed,frame=50,alive=alive,nearby=nearby,source=source,used=used,turn=turn,random=read(context+0x1acc),result=dict(state={field:signed(owner+offset) for field,offset in voice_fields.items()},handled=cpu.reg_read(UC_X86_REG_EAX),speech=voice_speech,statistics=voice_stats)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices),separators=(',',':'))+'\n')
+weapon_use=[]
+for flag in [0,1,2,-1]:
+ for used,shot in [(0,0),(1,0),(0,1),(1,1),(5,7)]:
+  write(owner+0x164,used);write(owner+0x1a8,shot);write(owner+0x5060,flag & 0xffffffff)
+  cpu.reg_write(UC_X86_REG_ESI,owner);cpu.reg_write(UC_X86_REG_EBP,owner+0x5000)
+  cpu.emu_start(0x4b5350,0x4b5361,count=100)
+  if cpu.reg_read(UC_X86_REG_EIP)!=0x4b5361:raise RuntimeError('Weapon-used flag block did not finish')
+  cpu.emu_start(0x4b53b4,0x4b53c5,count=100)
+  if cpu.reg_read(UC_X86_REG_EIP)!=0x4b53c5:raise RuntimeError('Shot flag block did not finish')
+  weapon_use.append(dict(flag=flag,input=dict(usedWeapon=used,shot=shot),result=dict(usedWeapon=read(owner+0x164),shot=read(owner+0x1a8))))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,weaponUse=weapon_use),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')

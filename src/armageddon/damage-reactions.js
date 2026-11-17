@@ -1,3 +1,14 @@
+import records from "./scheme-weapon-data.json" with { type: "json" };
+import { WEAPON_SLOTS } from "./delays.js";
+const baseline = records.schemes.find(s => s.resource_id === 195).weapons;
+export function nativeReactionWeaponFlag(kind) {
+  return baseline[WEAPON_SLOTS[kind]]?.[(0x60 - 0x48) / 4] ?? 0;
+}
+// Event0x431 blocks004B5350..004B5361 and004B53B4..004B53C5.
+export function nativeReactionWeaponUse(state, flag) {
+  if (flag) state.usedWeapon = state.shot = 1;
+}
+
 // 004B43D0: one reaction wins; transient flags clear even when no voice plays.
 const transient = ['kills', 'damage', 'shot', 'perfectTeam', 'amazingTeam',
   'excellentTeam', 'brilliantTeam', 'revengeTeam', 'friendlyTeam', 'selfTeam',
