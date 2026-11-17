@@ -3,12 +3,12 @@ export const NATIVE_MINE_FRICTION = schemes.schemes.find(
   (s) => s.resource_id === 195,
 ).bytes[0x11ba0 - schemes.context_offset];
 
-// Numeric fields from004F4000(context,type10,shape2).
-export function nativeMineBase(friction) {
+// Shared numeric fields from004F4000(context,type,shape).
+export function nativeBodyBase(friction, type, shape) {
   return {
-    type: 10,
+    type,
     state: 0,
-    shape: 2,
+    shape,
     complex: 0,
     mass: 65536,
     impulseScale: 65536,
@@ -37,6 +37,7 @@ export function nativeMineBase(friction) {
     tangent: Math.trunc(((friction & 255) << 16) / 100),
   };
 }
+export const nativeMineBase = friction => nativeBodyBase(friction, 10, 2);
 //004E9512..004E96B4: placement uses only terrain mask2. Rejection retains
 // the base sentinel position; the original constructor does not delete it.
 export function nativeMineBody(base, payload, arm, friction, collide) {

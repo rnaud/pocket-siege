@@ -21,6 +21,10 @@ import { nativePickupCandidate } from '../src/armageddon/crate-pickup.js';
 import transfer from './fixtures/armageddon/crate-transfer.json' with { type: 'json' };
 import { nativeCrateTransfer } from '../src/armageddon/crate-transfer.js';
 import { addNativeAmmo } from '../src/armageddon/inventory.js';
+import { nativeBodyBase } from '../src/armageddon/mine-body.js';
+import { createNativeCrateBody, stepNativeCrateBody } from '../src/armageddon/crate-runtime.js';
+import { nativeCollisionBitmapOverlap } from '../src/armageddon/collision-mask.js';
+import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json' };
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
@@ -63,6 +67,8 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(nativeCrateArt(row.input)).toEqual(row.art);
   }
   for (const row of crateBody.cases) {
+    const base = nativeBodyBase(row.friction, 11, 6);
+    for (const [key, value] of Object.entries(base)) expect(value).toBe(row.before[key]);
     const events = [];
     let queries = 0;
     const result = nativeCratePlacement(row.before, row, row.mode, row.bottom, {
@@ -143,4 +149,29 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  const collide = (x, y, body) => nativeCollisionBitmapOverlap(
+    shapes.shapes[body.shape], x >> 16, y >> 16,
+    { width: 1000, height: 1000, left: 0, top: 0, solid: (x, y) => y >= 500 },
+  );
+  const hooks = {
+    shape: (body, shape) => { body.shape = shape; }, collide,
+    sound: () => {}, effect: () => {}, remove: () => {}, register: () => {},
+    other: () => ({ type: 1, vx: 0, vy: 0 }), receive: () => 0,
+    impactSound: () => {}, camera: () => {}, busy: () => {}, delete: () => {},
+    detonate: () => {}, visualRandom: () => 0, bubble: () => {},
+  };
+  let body = createNativeCrateBody({ kind: 1, x: 100 * 65536, y: 0 }, 1, 800, 96, hooks);
+  for (let frame = 0; frame < 600; frame++) {
+    const result = stepNativeCrateBody(body, {
+      frame, index: 0, gravity: 0x3d70, wind: 0, waterY: 750, bottom: 800,
+    }, hooks);
+    body = result.body;
+    expect(result.deleted).toBe(false);
+    if (frame === 49) expect([body.state, body.y, body.vy]).toEqual([100, 0, 0]);
+    if (frame === 50) expect([body.state, body.y]).toEqual([101, 0]);
+  }
+  expect(body.state).toBe(104);
+  expect(body.vy).toBe(0);
+  expect(collide(body.x, body.y, body)).toBe(0);
+  expect(collide(body.x, body.y + 65536, body)).toBe(1);
 });

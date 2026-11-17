@@ -65,5 +65,5 @@ for state in [99,100,101,102,103,104]:
       if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Crate tick did not return')
       after={key:signed(read(owner+offset)) for key,offset in fields.items()}
       cases.append({'input':body,'clearance':clearance,'bottom':10,'output':after,'events':events,'missionStatus':read(context+0x1b90),'busy':read(context+0x800)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0F20 event3EA','method':'Original lifecycle with unchanged state entry, position/velocity/submersion getters and busy setter. Base motion, moving predicate, collision probes, camera, detonation, deletion and visual RNG/bubbles captured interfaces. Render rank already0.','cases':cases},separators=(',',':'))+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0F20 event3EA','method':'Original lifecycle with unchanged state entry, position/velocity/submersion getters and busy setter. Base event/audio cleanup, moving predicate, collision probes, camera, detonation, deletion and visual RNG/bubbles captured interfaces. Render rank already0.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} crate tick cases')

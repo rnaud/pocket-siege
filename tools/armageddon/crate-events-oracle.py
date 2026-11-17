@@ -50,5 +50,5 @@ for kind in [1,3,5]:
     call(0x4e0f20,[0,event,0,0])
     after={key:signed(read(owner+offset)) for key,offset in fields.items()}
     cases.append({'input':body,'event':event,'output':after})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0F20 events3ED/3FF/433/444','method':'Original animation, landing and destruction events execute unchanged with original state entry/getters and restitution setter. No hooks.','cases':cases},separators=(',',':'))+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0F20 events3ED/3FF/433/444','method':'Original animation, global drop/cancel and destruction events execute unchanged with original state entry/getters and restitution setter. No hooks.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} crate events')

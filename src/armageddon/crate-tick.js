@@ -1,6 +1,7 @@
 import { nativeCrateState } from './crate-state.js';
 
-// 004E0F20 event3EA, after composing the base body's motion event.
+// 004E0F20 event3EA lifecycle. The motion interface composes the separately
+// scheduled physics tick; native base event004F4410 only cleans up audio.
 export function nativeCrateTick(input, bottom, interfaces) {
   let body = interfaces.motion({ ...input }), missionStatus = 0, deleted = false;
   const changeState = state => {
