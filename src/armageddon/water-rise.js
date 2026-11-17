@@ -29,3 +29,13 @@ export function nativeWaterRiseTick(input) {
   body.busy = 12;
   return { body, calls };
 }
+
+// Terrain virtual+20 ->004A8CE0 clears [0,y,width,y+1] in both bitmaps.
+// Host collision storage is Y-up; authored RGBA storage is already Y-down.
+export function clearNativeWaterRow(terrain, width, height, waterY) {
+  if (waterY < 0 || waterY >= height) return false;
+  const row = height - 1 - waterY;
+  terrain.data.fill(0, row * width, (row + 1) * width);
+  terrain.pixels?.fill(0, waterY * width * 4, (waterY + 1) * width * 4);
+  return true;
+}

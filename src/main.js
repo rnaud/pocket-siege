@@ -1,3 +1,5 @@
+import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
+let nativeWaterRise = null;
 import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage, nativeWormPoisonTurnReset } from "./armageddon/worm-poison.js";
 import { nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
@@ -950,6 +952,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 };
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
+  nativeWaterRise = null;
   suddenDeath = false;
   suddenDeathType = isDaily ? "water" : $("#sudden-death")?.value || "water";
   sdTriggered = false;
@@ -1522,7 +1525,7 @@ function freezeNativeTeam(targetTeam) {
     dispatchWormEntryAudio(w, [{ operation: "sound", request: [24, 3, 65536, 65536, 0] }]);
 }
 function beginTurn() {
-  if (nativeAnnouncementsPending(nativeAnnouncements)) {
+  if (nativeAnnouncementsPending(nativeAnnouncements) || nativeWaterRise?.progress >= 0) {
     pendingTurnStart = true;
     phase = "settle";
     return;
@@ -2465,6 +2468,27 @@ function applyPoisonTick() {
   if (hits) $("#status").textContent = "Poison damages infected worms.";
   updateUI();
 }
+function startNativeWaterRise(targetLevel) {
+  const target = Math.max(0, Math.floor(H - targetLevel));
+  if (nativeWaterRise?.progress >= 0 && nativeWaterRise.target === (target << 16)) return;
+  nativeWaterRise = nativeWaterRiseStart({ start: 0, target: 0, progress: -1, duration: 8,
+    waterY: Math.floor(H - waterLevel), cameraTop: 0, cameraBottom: 0, bottom: 0, busy: 0,
+  }, [Math.floor(H - waterLevel) - target, 8]);
+}
+function stepNativeWaterRise() {
+  if (!nativeWaterRise || nativeWaterRise.progress < 0) return;
+  const result = nativeWaterRiseTick(nativeWaterRise);
+  nativeWaterRise = result.body;
+  for (const call of result.calls) {
+    if (call.operation === 'terrain') {
+      if (clearNativeWaterRow(terrain, W, H, call.waterY)) terrainDirty = true;
+    } else {
+      // All live native body environments read this water bound each frame.
+      waterLevel = H - call.waterY;
+      water.userData.setLevel?.(waterLevel);
+    }
+  }
+}
 function applySuddenDeath() {
   if (sdTriggered) return false;
   sdTriggered = true;
@@ -2477,8 +2501,7 @@ function applySuddenDeath() {
     nativeSoundQueue.enqueue([94, 8, 65536, 65536, 0]);
   }
   if (suddenDeathType === "water") {
-    waterLevel = waterLevelForRound(round);
-    water.userData.setLevel?.(waterLevel);
+    startNativeWaterRise(waterLevelForRound(round));
     return false;
   }
   if (suddenDeathType === "health") {
@@ -4492,8 +4515,7 @@ function nextTurn() {
     if (suddenDeath && suddenDeathType === "water") {
       const nextWater = waterLevelForRound(round);
       if (nextWater > waterLevel) {
-        waterLevel = nextWater;
-        water.userData.setLevel?.(waterLevel);
+        startNativeWaterRise(nextWater);
         announce("THE WATER IS RISING");
       }
     }
@@ -4668,6 +4690,7 @@ function stepFrame(dt) {
     } else if (operation === "volume") announcementPlayback?.setVolume(announcementVolume / 65536);
     else { announcementPlayback?.stop(); announcementPlayback = null; }
   }
+  if (phase !== "over" && phase !== "menu" && phase !== "break") stepNativeWaterRise();
   if (pendingTurnStart && !nativeAnnouncementsPending(nativeAnnouncements)) beginTurn();
   nativeClockProgress = nativeClockSlide(nativeClockProgress, nativeClockTarget);
   updateOriginalClockPanel(nativeClockProgress, team);
@@ -6665,6 +6688,7 @@ window.siege = {
     bungeeArmed,
     frozen: worms.map((w) => w.frozen ?? 0),
     waterLevel,
+    nativeWaterRise: nativeWaterRise ? { ...nativeWaterRise } : null,
     waterSprite: water.userData.originalSprite,
     waterFrame: water.userData.originalFrame,
     suddenDeath,
