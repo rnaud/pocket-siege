@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -382,6 +382,7 @@ let terrain,
 let configuredDelays = {};
 let nativeAnnouncements = createNativeAnnouncements();
 let pendingTurnStart = false;
+let matchDamageSourceActive = false;
 let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
@@ -632,6 +633,7 @@ function createWorm(t, i, x, spawnY = null) {
     hitDirection: 1,
     hits: 0,
     damageTaken: 0,
+    matchDamageTaken: 0,
     shadow,
     facing: t ? -1 : 1,
     label,
@@ -735,6 +737,12 @@ function announce(text) {
   queueNativeAnnouncement(nativeAnnouncements, text, 23);
 }
 function announceMatchResult(winner) {
+  if (winner !== null && sound) {
+    const request = nativeVictorySpeech(worms.filter(w => w.team === winner).map(w => w.matchDamageTaken));
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeSpeech(audio, request[0], request[3] / 65536);
+  }
   const message = nativeMatchResultAnnouncement(winner ? "CORAL CREW" : "MOSS COMPANY", winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
@@ -1034,6 +1042,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   announcementPlayback?.stop(); announcementPlayback = null; announcementVolume = 0;
   nativeAnnouncements = createNativeAnnouncements();
   pendingTurnStart = false;
+  matchDamageSourceActive = false;
   setWeapon("rocket");
   mode = $("#mode").value;
   applyWeather();
@@ -1282,6 +1291,7 @@ function beginTurn() {
     return;
   }
   pendingTurnStart = false;
+  matchDamageSourceActive = false;
   nativeClockTarget = 65536;
   const inventory = weaponDelays[team];
   weaponDelays[team] = advanceNativeDelays(inventory.turns, inventory.delays);
@@ -1308,6 +1318,7 @@ function beginTurn() {
   const active = roster[next];
   turnCount[team] = (next + 1) % roster.length;
   current = worms.indexOf(active);
+  matchDamageSourceActive = true;
   active.nativePlacedAction = null;
   active.nativeFireInput = null;
   phase = "aim";
@@ -2545,6 +2556,11 @@ function accountWormDamage(w, damage, options = {}) {
     damage,
     options,
   );
+  // 004B4CE0 event0x430 -> 004C2A00: only attributed, reportable damage
+  // enters match statistics. The host turn adapter supplies source presence.
+  if (matchDamageSourceActive)
+    for (const event of accounting.events)
+      if (event[3]) w.matchDamageTaken = (w.matchDamageTaken + event[2]) | 0;
   w.hp = accounting.hp;
   w.damageTaken = accounting.total;
   w.nativeHealthDisplay.pending = accounting.displayed;
@@ -4041,6 +4057,7 @@ function nextTurn() {
   showNativeTeamPanel(nativeTeamPanel);
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
+  matchDamageSourceActive = false;
   team = 1 - team;
   if (team === 0) {
     round++;

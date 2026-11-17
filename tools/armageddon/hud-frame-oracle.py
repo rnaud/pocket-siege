@@ -386,5 +386,21 @@ for kind,table in [('elimination',0x558a60),('victory',0x5589a8),('draw',0x558a9
     announcement_message=None;cpu.emu_start(0x4eeee0,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Elimination message selection did not finish')
     elimination_cases.append({'kind':kind,'seed':seed,'frame':frame,'name':name,'color':color,'random':read(context+0x1acc),'message':announcement_message})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases},separators=(',',':'))+'\n')
+announcement_message_mode=False
+victory_speech_cases=[]
+for totals in [[],[0],[0,0,0],[1,0,0],[0,20,0],[0,0,100],[100,100,100],[-1,1],[0x7fffffff,1],[0x7fffffff,0x7fffffff,2]]:
+ for team in [1,2,6]:
+  stats=context+0x1b94
+  write(stats+team*0x51c,len(totals))
+  for index,total in enumerate(totals):write(stats+team*0x51c-0x488+index*0x9c,total & 0xffffffff)
+  sp=stack+0xff00;write(sp,stop);write(sp+4,team)
+  cpu.reg_write(UC_X86_REG_ECX,stats);cpu.reg_write(UC_X86_REG_ESP,sp)
+  cpu.emu_start(0x4c2c80,stop,count=1000)
+  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Victory damage sum did not finish')
+  cpu.reg_write(UC_X86_REG_ESP,sp)
+  cpu.emu_start(0x4b4187,0x4b419f,count=1000)
+  if cpu.reg_read(UC_X86_REG_EIP)!=0x4b419f:raise RuntimeError('Victory speech selection did not finish')
+  request=list(struct.unpack('<5i',cpu.mem_read(cpu.reg_read(UC_X86_REG_ESP),20)))
+  victory_speech_cases.append({'team':team,'totals':totals,'request':request})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases,'victorySpeechCases':victory_speech_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

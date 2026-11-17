@@ -130,3 +130,10 @@ export function nativeSuddenDeathAnnouncement(nextRandom) {
   const variants = elimination.suddenDeath;
   return { text: variants[(nextRandom() & 255) % variants.length], font: 23 };
 }
+
+// 004C2C80 sums every roster member's match damage received, including dead
+// worms. 004B4187..004B419F chooses the winning team's speech request.
+export function nativeVictorySpeech(damageTotals) {
+  const total = damageTotals.reduce((sum, damage) => (sum + damage) | 0, 0);
+  return [total === 0 ? 17 : 51, 8, 65536, 65536, 0];
+}
