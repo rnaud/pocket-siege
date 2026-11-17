@@ -1,3 +1,5 @@
+import waterRise from "./fixtures/armageddon/water-rise.json" with { type: "json" };
+import { nativeWaterRiseStart, nativeWaterRiseTick } from "../src/armageddon/water-rise.js";
 import suddenDeath from "./fixtures/armageddon/sudden-death.json" with { type: "json" };
 import { nativeSuddenDeathActivation } from "../src/armageddon/sudden-death.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
@@ -77,6 +79,10 @@ import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json'
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of waterRise.starts)
+    expect({ body: nativeWaterRiseStart(row.input, row.record), calls: [] }).toEqual(row.result);
+  for (const row of waterRise.ticks)
+    expect(nativeWaterRiseTick(row.input)).toEqual(row.result);
   for (const row of suddenDeath.cases)
     expect(nativeSuddenDeathActivation(row.input)).toEqual(row.calls);
   for (const row of poison.cases) {
