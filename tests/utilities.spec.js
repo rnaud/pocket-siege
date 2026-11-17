@@ -61,7 +61,7 @@ import { nativeCrateEvent } from '../src/armageddon/crate-events.js';
 import pickup from './fixtures/armageddon/crate-pickup.json' with { type: 'json' };
 import { nativePickupCandidate } from '../src/armageddon/crate-pickup.js';
 import transfer from './fixtures/armageddon/crate-transfer.json' with { type: 'json' };
-import { nativeCrateTransfer } from '../src/armageddon/crate-transfer.js';
+import { nativeCrateTransfer, nativeCratePickupAudio } from '../src/armageddon/crate-transfer.js';
 import { addNativeAmmo } from '../src/armageddon/inventory.js';
 import { nativeBodyBase } from '../src/armageddon/mine-body.js';
 import { createNativeCrateBody, stepNativeCrateBody } from '../src/armageddon/crate-runtime.js';
@@ -71,6 +71,8 @@ import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json'
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of transfer.audio_cases)
+    expect(nativeCratePickupAudio(row.kind, row.team, () => 1234)).toEqual(row.calls);
   for (const row of transfer.cases) {
     const stocks = { 1: [...row.recipient], 2: [...row.donor] };
     let hp = row.hp;

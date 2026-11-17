@@ -1,4 +1,4 @@
-"""Execute original team environment modifiers."""
+"""Execute original pickup inventory transfer and completion audio."""
 import argparse
 import hashlib
 import json
@@ -36,8 +36,20 @@ inventory=context+0x1b94
 formatfn=stop+0x100;write(0x5178f4,formatfn)
 def ret(cleanup):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_EAX,0);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target)
+sound_calls = []
+soundfn = 0x4edb90
+write(owner, owner + 0x1000); write(owner + 0x1048, 0x4dd5d0)
 def hook(cpu,address,size,user):
- if address==formatfn:ret(0)
+ if address == 0x4edaf0:
+  sp = cpu.reg_read(UC_X86_REG_ESP)
+  sound_calls.append({"operation":"voice", "team":read(sp+4), "slot":read(sp+8)})
+  ret(8); cpu.reg_write(UC_X86_REG_EAX, 1234)
+ elif address == soundfn:
+  sp = cpu.reg_read(UC_X86_REG_ESP)
+  sound_calls.append({"operation":"sound", "request":[read(sp+i) for i in [4,8,12,16,20]]})
+  ret(20)
+ elif address==formatfn:ret(0)
+
  elif address==0x4ef000:ret(12)
  elif address==0x4eefb0:ret(8)
 cpu.hook_add(UC_HOOK_CODE,hook)
@@ -60,5 +72,14 @@ for kind in [0,1,2,3,4,5]:
      cpu.emu_start(0x4f596c,0x4f5b49,count=20000)
      if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5b49:raise RuntimeError('Transfer did not finish')
      cases.append({'record':record,'hp':hp,'recipient':recipient,'donor':donor,'output':{'hp':signed(read(hpaddr)),'recipient':[signed(read(ammo(1,i))) for i in range(71)],'donor':[signed(read(ammo(2,i))) for i in range(71)]}})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F596C..004F5B49','method':'Original pickup transfer branches, ammo add/set, health get/set and weapon lookup execute unchanged. Text formatting and notification interfaces omitted. Recipient team1/worm1; donor may alias recipient.','cases':cases},separators=(',',':'))+'\n')
+audio_cases=[]
+for kind in [0,1,2,3,4,5]:
+ for team in [1,2,6]:
+  sound_calls.clear()
+  sp=stack+0xf000;write(sp+0x30,kind)
+  cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,team)
+  cpu.emu_start(0x4f5b57,0x4f5b82,count=1000)
+  if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5b82:raise RuntimeError('Audio did not finish')
+  audio_cases.append({'kind':kind,'team':team,'calls':list(sound_calls)})
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F596C..004F5B49','method':'Original pickup transfer branches, ammo add/set, health get/set and weapon lookup execute unchanged. Text formatting and notification interfaces omitted. Recipient team1/worm1; donor may alias recipient.','cases':cases,'audio_cases':audio_cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} pickup transfers')

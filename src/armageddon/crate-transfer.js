@@ -20,3 +20,13 @@ export function nativeCrateTransfer(record, team, worm, interfaces) {
     }
   }
 }
+
+// 004F5B57..004F5B82 resolves team speech slot7 except for donor kind5.
+// Worm virtual+48 (004DD5D0) owns the sound and inserts priority3.
+export function nativeCratePickupAudio(kind, team, resolveVoice) {
+  if (kind === 5) return [{ operation: 'sound', request: [21, 3, 65536, 65536, 0] }];
+  return [
+    { operation: 'voice', team, slot: 7 },
+    { operation: 'sound', request: [resolveVoice(team, 7), 3, 65536, 65536, 0] },
+  ];
+}

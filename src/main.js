@@ -1,3 +1,4 @@
+import { nativeCratePickupAudio } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
 import { nativeBarrelBody } from "./armageddon/barrel-body.js";
 import { stepNativeBarrelBody } from "./armageddon/barrel-runtime.js";
@@ -1477,7 +1478,7 @@ function collectCrate(w, crate = crates[0]) {
   $("#status").textContent = `${w.name} grabs a supply crate: ${label}.`;
   dispose(mesh);
   crates.splice(crates.indexOf(crate), 1);
-  tone(720, 0.12, "triangle");
+  dispatchWormEntryAudio(w, nativeCratePickupAudio(crate.nativeBody.kind, w.team + 1, (_team, slot) => slot));
   updateUI();
 }
 function pickupLabel(w, text) {
