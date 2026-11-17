@@ -1,3 +1,4 @@
+import { nativeFlameBlast } from "./armageddon/flame-blast.js";
 import { nativeCrateHit } from "./armageddon/crate-hit.js";
 import { nativeCrateDetonation } from "./armageddon/crate-detonation.js";
 import { nativeCrateContents } from "./armageddon/crate-contents.js";
@@ -3856,6 +3857,8 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   let dealt = 0;
   if (nativeStrength !== null) {
     const packet = nativePacket ?? [1, Math.round(x * 65536), Math.round((H - y) * 65536), nativePush, nativeStrength, 0];
+    for (const flame of nativeFlames) if (flame)
+      flame.body = nativeFlameBlast(flame.body, packet);
     for (const crate of crates) {
       if (!crate.nativeBody.destroyed) {
         crate.nativeBody = nativeCrateHit(crate.nativeBody, [...packet]);

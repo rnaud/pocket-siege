@@ -1,3 +1,5 @@
+import flameBlasts from "./fixtures/armageddon/flame-blast.json" with { type: "json" };
+import { nativeFlameBlast } from "../src/armageddon/flame-blast.js";
 import crateProjectile from "../src/armageddon/crate-projectile-data.json" with { type: "json" };
 import schemeWeapons from "../src/armageddon/scheme-weapon-data.json" with { type: "json" };
 import { attachNativeProjectileBlock } from "../src/armageddon/projectile-runtime.js";
@@ -215,6 +217,8 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(hits).toBeGreaterThan(0);
     expect(pool.filter(Boolean)).toHaveLength(0);
   }
+  for (const row of flameBlasts.cases)
+    expect(nativeFlameBlast(row.input, row.packet, row.extent)).toEqual(row.output);
   for (const row of flameArt.cases) {
     const result = nativeFlameArt(row.input);
     expect(result.body).toEqual(row.output);

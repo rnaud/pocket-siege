@@ -274,5 +274,6 @@
   "constraints": "Original media imported from the user-provided ISO at their explicit request. Native SPR pixels are decoded directly without JPEG/PNG resampling. Executables and decompiled listings remain private. Current regression tests do not establish full gameplay equivalence.",
   "scope_exclusions": {
     "online_play": "Explicitly excluded by user on 2026-11-17: multiplayer networking, matchmaking, online lobbies and network synchronization. Local play, AI, local replays and saves remain in scope."
-  }
+  },
+  "flame_blast_response": "004D4B80 flame blast response matches 315 original executable cases with unchanged normalization. Live native explosions dispatch to existing flames: Manhattan reach, strength recovery, radial velocity and airborne reset. Full task ordering, event3FD terrain disable and event400 persistent strength loss remain incomplete."
 }
