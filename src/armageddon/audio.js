@@ -67,7 +67,7 @@ function loadOriginalClip(context, name) {
     );
   return cache.get(name);
 }
-function playOriginalClip(context, name, fallback, level, loop = false) {
+function playOriginalClip(context, name, fallback, level, loop = false, rate = 1) {
   const requested = performance.now();
   let cancelled = false,
     activeSource = null, activeGain = null;
@@ -93,6 +93,7 @@ function playOriginalClip(context, name, fallback, level, loop = false) {
       activeGain = gain;
       source.buffer = buffer;
       source.loop = loop;
+      if (rate !== 1) source.playbackRate.value = rate;
       gain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
       source.connect(gain);
       gain.connect(context.destination);
@@ -218,4 +219,12 @@ export function playNativeMineSound(context, request) {
 // The host applies tick-requested volume changes.
 export function playNativeDrillLoop(context) {
   return playOriginalClip(context, "sounds/drill.wav", () => {}, 1, true);
+}
+
+// Original descriptor {93, TimerTick.wav}; speech slot 22 is Hurry.wav.
+export function playNativeClockSound(context, request) {
+  if (request[0] === 0x10016) return playNativeSpeech(context, 22, request[3] / 65536);
+  if (request[0] === 0x5d)
+    return playOriginalClip(context, "sounds/timertick.wav", () => {}, request[3] / 65536, false, request[2] / 65536);
+  return null;
 }

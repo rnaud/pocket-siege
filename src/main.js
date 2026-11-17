@@ -96,6 +96,7 @@ import {
   loadOriginalNumbers,
   updateOriginalTimer,
   nativeClockSlide,
+  nativeClockPresentationTick,
   updateOriginalClockPanel,
 } from "./armageddon/number-hud.js";
 import {
@@ -191,6 +192,7 @@ import {
 import {
   playOriginalSound,
   playNativeSpeech,
+  playNativeClockSound,
   playNativeHitVoice,
   playNativeRecoverySound,
   playNativeWaterSound,
@@ -764,6 +766,7 @@ function stopProjectileSound(p = projectile) {
   if (p) p.nativeFusePlayback = null;
 }
 let nativeClockProgress = 0, nativeClockTarget = 0;
+let nativeClockPresentation = { displayed: 45000, warned: 0, lastSecond: 0, phase: 0 };
 let nativeTeamList = createNativeTeamList();
 let nativeTeamHealthMaximum = 1;
 let nativeTeamHealthBusyTicks = 0;
@@ -804,6 +807,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   timerKey = "";
   selectionTick = 0;
   nativeClockProgress = nativeClockTarget = 0;
+  nativeClockPresentation.phase = 0;
   nativeTeamList = createNativeTeamList();
   nativeTeamHealthMaximum = 1;
   nativeTeamHealthBusyTicks = 0;
@@ -1287,6 +1291,8 @@ function beginTurn() {
   cameraSnap = true; manualCamera = null;
   wormLocked = false;
   time = turnSeconds;
+  nativeClockPresentation.displayed = turnSeconds * 1000;
+  nativeClockPresentation.warned = 0;
   const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
   wind = (logicRandom() - 0.5) * windMax;
   slowMo = 0;
@@ -4205,6 +4211,7 @@ function step(dt) {
       updateUI();
     }
   }
+  const clockWasActive = phase === "aim";
   if (phase === "aim") {
     time -= dt;
     if (time <= 0) {
@@ -4241,6 +4248,13 @@ function step(dt) {
           startAiTurn();
       }
     }
+  }
+  const clockUpdate = nativeClockPresentationTick(nativeClockPresentation, Math.max(0, Math.round(time * 1000)), clockWasActive);
+  nativeClockPresentation = clockUpdate.state;
+  if (sound && clockUpdate.sounds.length) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    for (const request of clockUpdate.sounds) playNativeClockSound(audio, request);
   }
   if (canMove() && move && !rope.attached && !jetpack.active) {
     const w = worms[current];
@@ -5274,8 +5288,8 @@ function frame(now) {
   }
   $("#turn-banner").classList.toggle("shown", bannerTime > 0 && !menu.open);
   const timerValue =
-    retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time));
-  const timerMilliseconds = Math.max(0, Math.round((retreat > 0 ? retreat : time) * 1000));
+    retreat > 0 ? Math.ceil(retreat) : Math.trunc((nativeClockPresentation.displayed + 999) / 1000);
+  const timerMilliseconds = Math.max(0, (retreat > 0 ? Math.round(retreat * 1000) : nativeClockPresentation.displayed));
   const timerRunning = phase === "aim" && retreat <= 0;
   const timerState = `${timerValue}:${retreat > 0}:${Math.trunc(timerMilliseconds / 250)}:${timerRunning}`;
   if (timerState !== timerKey) {

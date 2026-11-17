@@ -77,3 +77,25 @@ export function updateOriginalClockPanel(progress, team, root = document) {
   // 004B5860: center (38, screenHeight - 60 * progress + 30).
   panel.style.bottom = `${Math.round(fixedMultiply(60 << 16, progress) / 65536) - 51}px`;
 }
+
+// 004B64B0, 004B6616..004B6727. Speech ID is resolved by the host team bank;
+// 0x10016 is an adapter token for native speech slot 22 (Hurry).
+export function nativeClockPresentationTick(input, remaining, selected) {
+  const state = { ...input }, sounds = [];
+  const difference = (remaining - state.displayed) | 0;
+  if (difference !== 0)
+    state.displayed = difference < 0 ? remaining : (state.displayed + Math.trunc(((difference + 9) | 0) / 10)) | 0;
+  if (remaining < 5000 && selected) {
+    if (!state.warned) {
+      sounds.push([0x10016, 8, 65536, 65536, 0]);
+      state.warned = 1;
+    } else if (state.lastSecond !== Math.trunc(remaining / 1000)) {
+      const seconds = Math.trunc(((remaining + 999) | 0) / 1000);
+      sounds.push([0x5d, 8, (Math.trunc((seconds << 16) / -20) + 65536) | 0, 65536, 0]);
+    }
+    state.lastSecond = Math.trunc(remaining / 1000);
+    const speed = (Math.trunc(((-999 - remaining) | 0) / 100) + 50) | 0;
+    state.phase = (state.phase + Math.trunc((speed << 16) / 500) + 0x666) | 0;
+  } else state.phase = (state.phase + 0x666) | 0;
+  return { state, sounds };
+}

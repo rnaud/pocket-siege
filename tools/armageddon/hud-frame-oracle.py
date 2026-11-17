@@ -38,7 +38,10 @@ keys=(0,0)
 list_calls=[]
 list_scores=[101,201]
 clock_frame_mode=False
+clock_presentation_mode=False
 def hook(cpu,address,size,user):
+ if clock_presentation_mode and address==0x4b6727:
+  cpu.emu_stop();return
  if clock_frame_mode and address==0x4edb70:
   sp=cpu.reg_read(UC_X86_REG_ESP)
   cpu.reg_write(UC_X86_REG_EAX,22 if read(sp+4)==8 else 33)
@@ -199,5 +202,22 @@ cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,sp)
 calls=[];cpu.emu_start(0x4b56a0,stop,count=10000)
 if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Clock frame did not finish')
 clock_frame=calls[:]
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame},separators=(',',':'))+'\n')
+clock_frame_mode=False
+clock_presentation_mode=True
+clock_presentation_cases=[]
+clock_fields={'displayed':0x184,'warned':0x168,'lastSecond':0x17c,'phase':0x194}
+for remaining in [0,1,999,1000,1001,3999,4000,4999,5000,5001,45000]:
+ for selected in [False,True]:
+  for displayed,warned,last_second in [(45000,0,0),(0,1,4),(remaining,1,remaining//1000)]:
+   before={'displayed':displayed,'warned':warned,'lastSecond':last_second,'phase':123456}
+   for key,offset in clock_fields.items():write(owner+offset,before[key])
+   write(owner+0x38,context);write(owner+0x188,remaining);write(owner+0x128,int(selected))
+   write(context+0x1b808+82*4,0x10016);write(context+0x1cad4,0)
+   cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+   cpu.emu_start(0x4b6616,0x4b6727,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=0x4b6727:raise RuntimeError('Clock presentation did not finish')
+   after={key:struct.unpack('<i',cpu.mem_read(owner+offset,4))[0] for key,offset in clock_fields.items()}
+   sounds=[list(struct.unpack('<5i',cpu.mem_read(context+0x1c994+j*20,20))) for j in range(read(context+0x1cad4))]
+   clock_presentation_cases.append({'before':before,'remaining':remaining,'selected':selected,'after':{'state':after,'sounds':sounds}})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')
