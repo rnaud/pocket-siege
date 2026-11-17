@@ -1,46 +1,35 @@
-import { decodeImage, imageRGBA } from "./image.js";
+import { loadNativeFont, paintNativeText } from "./font.js";
 
-let strip;
-// 004CB380 loads stdnumw.img. Its ten digits occupy 8x11 pixels at
-// y = digit * 16; the strip repeats zero at y=160.
-// This adapter uses static digits; native rolling/recoloring remains unported.
+const fontNames = ["lnumred1", "lnumwht1", "lnumred2", "lnumwht2"];
+let fonts;
+// 004A6B10 registers IDs 24..27; 004B5860 selects the turn-clock font.
 export async function loadOriginalNumbers() {
-  const response = await fetch(
-    `${import.meta.env.BASE_URL}armageddon/media/gfx/gfx/stdnumw.img`,
-  );
-  if (!response.ok) throw new Error("Cannot load original number strip");
-  const image = decodeImage(await response.arrayBuffer());
-  strip = document.createElement("canvas");
-  strip.width = image.width;
-  strip.height = image.height;
-  strip
-    .getContext("2d")
-    .putImageData(
-      new ImageData(imageRGBA(image), image.width, image.height),
-      0,
-      0,
-    );
+  fonts = await Promise.all(fontNames.map(loadNativeFont));
 }
-export const originalNumberStrip = () => strip;
-export function paintOriginalNumber(canvas, value) {
-  if (!strip) return false;
+export function nativeTimerFont(milliseconds, running) {
+  milliseconds |= 0;
+  if (milliseconds === 0) return 24;
+  const warning = milliseconds <= 5000 && (Math.trunc(milliseconds / 250) & 1);
+  return (running ? 25 : 27) - Number(Boolean(warning));
+}
+export function paintOriginalNumber(canvas, value, font = 25) {
+  if (!fonts) return false;
   const digits = String(Math.max(0, Math.floor(value)));
-  if (!/^\d+$/.test(digits)) return false;
-  canvas.width = digits.length * 8;
-  canvas.height = 11;
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  for (let i = 0; i < digits.length; i++)
-    ctx.drawImage(strip, 0, Number(digits[i]) * 16, 8, 11, i * 8, 0, 8, 11);
-  canvas.dataset.originalSprite = "stdnumw";
+  if (!/^\d+$/.test(digits) || font < 24 || font > 27) return false;
+  const key = `${digits}:${font}`;
+  if (canvas.dataset.nativeNumber !== key) {
+    paintNativeText(canvas, fonts[font - 24], digits, 1);
+    canvas.dataset.nativeNumber = key;
+    canvas.dataset.nativeFont = fontNames[font - 24];
+  }
   return true;
 }
-export function updateOriginalTimer(value, retreat = false, root = document) {
+export function updateOriginalTimer(value, retreat = false, root = document, milliseconds = value * 1000, running = !retreat) {
   const target = root.querySelector("#timer");
   if (!target) return;
   const label = `${value} ${retreat ? "RETREAT" : "SEC"}`;
   target.setAttribute("aria-label", label);
-  if (!strip) {
+  if (!fonts) {
     target.textContent = label;
     return;
   }
@@ -54,7 +43,5 @@ export function updateOriginalTimer(value, retreat = false, root = document) {
     target.classList.add("original-timer");
   }
   target.querySelector(".original-timer-text").textContent = label;
-  paintOriginalNumber(canvas, value);
-  canvas.style.width = `${canvas.width * 2}px`;
-  canvas.style.height = "22px";
+  paintOriginalNumber(canvas, value, nativeTimerFont(milliseconds, running));
 }

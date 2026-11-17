@@ -8,40 +8,23 @@ test("original timer digits preserve every glyph pixel at integer scale", async 
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await expect(page.locator("#timer canvas")).toHaveAttribute(
-    "data-original-sprite",
-    "stdnumw",
+    "data-native-font",
+    "lnumwht1",
   );
   const result = await page.evaluate(async () => {
-    const { paintOriginalNumber, originalNumberStrip, updateOriginalTimer } =
-      await import("/src/armageddon/number-hud.js");
-    const { decodeImage, imageRGBA } = await import("/src/armageddon/image.js");
-    const source = decodeImage(
-      await fetch("/armageddon/media/gfx/gfx/stdnumw.img").then((r) =>
-        r.arrayBuffer(),
-      ),
-    );
-    const rgba = imageRGBA(source);
-    const actual = originalNumberStrip()
-      .getContext("2d")
-      .getImageData(0, 0, 8, 171).data;
-    let mismatch = actual.reduce((n, v, i) => n + (v !== rgba[i]), 0);
+    const { paintOriginalNumber, updateOriginalTimer } = await import("/src/armageddon/number-hud.js");
+    const { loadNativeFont, rasterNativeText } = await import("/src/armageddon/font.js");
+    let mismatch = 0;
     const canvas = document.createElement("canvas");
-    for (const value of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 45, 60, 100, 120]) {
-      paintOriginalNumber(canvas, value);
-      const digits = String(value);
-      const pixels = canvas
-        .getContext("2d")
-        .getImageData(0, 0, canvas.width, 11).data;
-      for (let y = 0; y < 11; y++)
-        for (let x = 0; x < canvas.width; x++)
-          for (let c = 0; c < 4; c++) {
-            const sy = Number(digits[Math.floor(x / 8)]) * 16 + y;
-            if (
-              pixels[(y * canvas.width + x) * 4 + c] !==
-              rgba[(sy * 8 + (x % 8)) * 4 + c]
-            )
-              mismatch++;
-          }
+    for (const [index, name] of ["lnumred1", "lnumwht1", "lnumred2", "lnumwht2"].entries()) {
+      const font = await loadNativeFont(name);
+      for (const value of [0,1,2,3,4,5,6,7,8,9,10,45,60,100,120]) {
+        paintOriginalNumber(canvas, value, index + 24);
+        const expected = rasterNativeText(font, String(value));
+        const actual = canvas.getContext("2d").getImageData(0,0,canvas.width,canvas.height).data;
+        mismatch += actual.reduce((n,v,i) => n + (v !== expected.pixels[i]), 0);
+        if (canvas.width !== expected.width || canvas.height !== expected.height) mismatch++;
+      }
     }
     const root = document.createElement("div");
     root.innerHTML = '<span id="timer"></span>';
@@ -68,8 +51,8 @@ test("original timer digits preserve every glyph pixel at integer scale", async 
     ],
   });
   const size = await page.locator("#timer canvas").boundingBox();
-  expect(size.width).toBe(32);
-  expect(size.height).toBe(22);
+  expect(size.width).toBe(33);
+  expect(size.height).toBe(32);
   const frame = await page.locator(".turn").boundingBox();
   expect(size.y + size.height).toBeLessThanOrEqual(frame.y + frame.height);
   await page.screenshot({ path: info.outputPath("original-timer.png") });

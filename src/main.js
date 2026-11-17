@@ -5267,10 +5267,12 @@ function frame(now) {
   $("#turn-banner").classList.toggle("shown", bannerTime > 0 && !menu.open);
   const timerValue =
     retreat > 0 ? Math.ceil(retreat) : Math.max(0, Math.ceil(time));
-  const timerState = `${timerValue}:${retreat > 0}`;
+  const timerMilliseconds = Math.max(0, Math.round((retreat > 0 ? retreat : time) * 1000));
+  const timerRunning = phase === "aim" && retreat <= 0;
+  const timerState = `${timerValue}:${retreat > 0}:${Math.trunc(timerMilliseconds / 250)}:${timerRunning}`;
   if (timerState !== timerKey) {
     timerKey = timerState;
-    updateOriginalTimer(timerValue, retreat > 0);
+    updateOriginalTimer(timerValue, retreat > 0, document, timerMilliseconds, timerRunning);
   }
   if (now > announceUntil && $("#announcement").style.opacity !== "0")
     $("#announcement").style.opacity = 0;

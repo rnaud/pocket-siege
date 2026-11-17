@@ -164,5 +164,15 @@ for operation in ['sort','remove','tick']:
     after=get_list();events=list_calls[:];list_calls=[];write(owner+0x6000,0)
     run_list(0x4efda0,[0,0,owner+0x6000,len(after['order'])*16])
     list_cases.append({'operation':operation,'scores':list_scores,'before':before,'after':after,'result':events if operation=='tick' else result,'rows':list_calls[:]})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases},separators=(',',':'))+'\n')
+timer_cases=[]
+for milliseconds in [0,1,249,250,251,499,500,749,750,999,1000,4750,4999,5000,5001,45000]:
+ for running in [False,True]:
+  write(owner+0x38,context);write(owner+0x184,milliseconds)
+  for offset in [0x14c,0x170,0x174,0x160]:write(owner+offset,0)
+  write(owner+0x128,int(running));cpu.mem_write(context+0x11d5f,b'\0')
+  cpu.reg_write(UC_X86_REG_ESI,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+  cpu.emu_start(0x4b59fb,0x4b5aa5,count=10000)
+  if cpu.reg_read(UC_X86_REG_EIP)!=0x4b5aa5:raise RuntimeError('Timer font prefix did not finish')
+  timer_cases.append({'milliseconds':milliseconds,'running':running,'font':cpu.reg_read(UC_X86_REG_EBP)})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')
