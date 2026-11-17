@@ -1,3 +1,5 @@
+import suddenDeath from "./fixtures/armageddon/sudden-death.json" with { type: "json" };
+import { nativeSuddenDeathActivation } from "../src/armageddon/sudden-death.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { nativePoisonAnnouncement } from "../src/armageddon/announcements.js";
 import poison from "./fixtures/armageddon/worm-poison.json" with { type: "json" };
@@ -75,6 +77,8 @@ import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json'
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of suddenDeath.cases)
+    expect(nativeSuddenDeathActivation(row.input)).toEqual(row.calls);
   for (const row of poison.cases) {
     let random = 17;
     const calls = row.operation === 'tick' ? nativeWormPoisonDamage(row.input, row.hp) : [];
