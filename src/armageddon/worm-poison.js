@@ -17,3 +17,8 @@ export function nativeWormPoisonDamage(body, hp) {
   const target = Math.max(1, (hp - body.amount) | 0);
   return target < hp ? [[(hp - target) | 0, 0, 1]] : [];
 }
+
+// Event420 broadcast by004B3210 after team activation. Dose persists.
+export function nativeWormPoisonTurnReset(input) {
+  return { ...input, latched: 0 };
+}

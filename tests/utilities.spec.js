@@ -1,5 +1,5 @@
 import poison from "./fixtures/armageddon/worm-poison.json" with { type: "json" };
-import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage } from "../src/armageddon/worm-poison.js";
+import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage, nativeWormPoisonTurnReset } from "../src/armageddon/worm-poison.js";
 import wormPickup from "./fixtures/armageddon/worm-pickup.json" with { type: "json" };
 import { nativeWormPickupEvent, nativeWormPickupQuery, nativeWormPickupTick, nativeWormPickupContact } from "../src/armageddon/worm-pickup.js";
 import barrelArt from "./fixtures/armageddon/barrel-art.json" with { type: "json" };
@@ -75,7 +75,8 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
   for (const row of poison.cases) {
     const body = row.operation === 'infect' ? nativeWormPoisonInfect(row.input, row.added)
-      : row.operation === 'pickup' ? nativeWormPoisonPickup(row.input, row.record) : row.input;
+      : row.operation === 'pickup' ? nativeWormPoisonPickup(row.input, row.record)
+      : row.operation === 'reset' ? nativeWormPoisonTurnReset(row.input) : row.input;
     const calls = row.operation === 'tick' ? nativeWormPoisonDamage(row.input, row.hp) : [];
     expect({ body, calls }).toEqual(row.result);
   }

@@ -1,4 +1,4 @@
-import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage } from "./armageddon/worm-poison.js";
+import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage, nativeWormPoisonTurnReset } from "./armageddon/worm-poison.js";
 import { nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
 import { nativeBarrelBody } from "./armageddon/barrel-body.js";
@@ -1556,6 +1556,8 @@ function beginTurn() {
       dispatchWormEntryAudio(w, [{ operation: "sound", request: [25, 3, 65536, 65536, 0] }]);
     w.frozen = 0;
   }
+  // Native420 follows team activation and resets every worm infection latch.
+  for (const w of worms) w.nativePoison = nativeWormPoisonTurnReset(w.nativePoison);
   applyPoisonTick();
   const roster = worms.filter((w) => w.team === team);
   if (!roster.some((w) => w.hp > 0)) return endGame();

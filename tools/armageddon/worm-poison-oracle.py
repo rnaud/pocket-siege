@@ -60,6 +60,7 @@ for state in [0x65,0x6f,0x88]:
  for amount in [-1,0,5,2147483647]:
   for latched in [0,1]:
    body=dict(team=2,worm=3,state=state,amount=amount,latched=latched)
+   cases.append({'operation':'reset','input':body,'result':run(body,0x4dadc9,0x4db56f,[])})
    for hp in [0,1,3,100,2147483647]:
     cases.append({'operation':'tick','input':body,'hp':hp,'result':run(body,0x4daec8,0x4db56f,[])})
    for team in [1,2]:
@@ -68,5 +69,5 @@ for state in [0x65,0x6f,0x88]:
      cases.append({'operation':'pickup','input':body,'record':record,'result':run(body,0x4da0a7,0x4db56f,record)})
    for amountAdded in [-1,0,5]:
     cases.append({'operation':'infect','input':body,'added':amountAdded,'result':run(body,0x4db44b,0x4db49d,[amountAdded])})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Original426 damage decision and3EF cure branches;439 state prefix before report/text. Native state getter executes unchanged; HP lookup and damage interface captured.','cases':cases},separators=(',',':'))+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Original420 latch reset,426 damage decision and3EF cure branches;439 state prefix before report/text. Native state getter executes unchanged; HP lookup and damage interface captured.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} poison cases')
