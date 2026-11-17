@@ -91,12 +91,19 @@ test("computer takes its turn and returns control", async ({ page }) => {
     })
     .toBe(1);
   await expect(page.locator("#fire")).toBeDisabled();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().round), {
-      timeout: 25000,
-    })
-    .toBe(2);
-  expect(await page.evaluate(() => window.siege.getState().lastShot?.points ?? 0)).toBeGreaterThan(1);
+  // Bound the simulation, not the runner's render speed. This still executes
+  // the actual AI, projectile and settlement steps, with no forced turn change.
+  const after = await page.evaluate(() => {
+    for (let frames=0;frames<1500;frames+=25) {
+      window.siege.debug.advanceReplayFrames(25);
+      const state = window.siege.getState();
+      if (state.team === 0 && state.round === 2 && state.phase === "aim") return state;
+    }
+    return window.siege.getState();
+  });
+  expect(after.round).toBe(2);
+  expect(after.team).toBe(0);
+  expect(after.lastShot?.points ?? 0).toBeGreaterThan(1);
   await expect(page.locator("#fire")).toBeEnabled();
 });
 test("movement, jump, and pointer aiming", async ({
