@@ -39,6 +39,7 @@ import { createNativeGamePaletteBanks } from "./palette-banks.js";
 import { nativeStartupFonts, nativeStartupPalette } from "./startup-palette.js";
 import { loadNativeFont } from "./font.js";
 import spritePaletteData from "./sprite-palette-data.json";
+import { nativePaletteDisplay } from "./palette-material.js";
 
 const spriteIdByName = new Map(
   Object.entries(spriteIds.sprites).map(([id, sprite]) => [sprite.name, +id]),
@@ -342,6 +343,7 @@ export function updateOriginalObject(group, name, age, progress = null) {
   const position = progress ?? playback.player.current.progress;
   const index = nativeSpriteFrame(frame.count, frame.flags, position);
   plane.material.map = texture(name, index);
+  nativePaletteDisplay.bind(plane.material, name.startsWith("water/") ? 2 : 1);
   plane.scale.set(frame.width, frame.height, 1);
   plane.position.y =
     frame.bottom - frame.height / 2 + group.userData.footOffset;
@@ -362,6 +364,7 @@ export function createOriginalVisual(name) {
     }),
   );
   mesh.userData.originalSprite = name;
+  nativePaletteDisplay.bind(mesh.material, name.startsWith("water/") ? 2 : 1);
   return mesh;
 }
 
@@ -422,6 +425,7 @@ export function updateOriginalProjectile(
     mesh.userData.waterPlayback = null;
   }
   mesh.material.map = texture(name, index);
+  nativePaletteDisplay.bind(mesh.material, submerged ? 2 : 1);
   if (kind === "pigeon") mesh.scale.set(
     animation.sprite.width / mesh.geometry.parameters.width * (nativeRender?.facing ?? (vx < 0 ? -1 : 1)),
     animation.sprite.height / mesh.geometry.parameters.height, 1);

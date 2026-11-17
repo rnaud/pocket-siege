@@ -1,5 +1,10 @@
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
 let nativeWaterRise = null;
+import { nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
+import { nativePaletteDisplay } from "./armageddon/palette-material.js";
+import { playNativeNuclearLoop } from "./armageddon/audio.js";
+let nativeNuclearEffect = null;
+const nuclearPlaybacks = new Map();
 import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage, nativeWormPoisonTurnReset } from "./armageddon/worm-poison.js";
 import { nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
@@ -379,7 +384,7 @@ texture.minFilter = texture.magFilter = THREE.NearestFilter;
 texture.generateMipmaps = false;
 const land = new THREE.Mesh(
   new THREE.PlaneGeometry(W, H),
-  new THREE.MeshBasicMaterial({ map: texture, transparent: true }),
+  nativePaletteDisplay.bind(new THREE.MeshBasicMaterial({ map: texture, transparent: true }), 3),
 );
 land.position.set(W / 2, H / 2, 0);
 group.add(land);
@@ -559,7 +564,7 @@ backdropMap.minFilter = backdropMap.magFilter = THREE.NearestFilter;
 backdropMap.generateMipmaps = false;
 const backdrop = new THREE.Mesh(
   new THREE.PlaneGeometry(W, H),
-  new THREE.MeshBasicMaterial({ map: backdropMap }),
+  nativePaletteDisplay.bind(new THREE.MeshBasicMaterial({ map: backdropMap }), 3),
 );
 backdrop.position.set(W / 2, H / 2, -180);
 group.add(backdrop);
@@ -953,6 +958,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
   nativeWaterRise = null;
+  stopNativeNuclearAudio();
+  nativeNuclearEffect = null;
+  nativePaletteDisplay.update();
   suddenDeath = false;
   suddenDeathType = isDaily ? "water" : $("#sudden-death")?.value || "water";
   sdTriggered = false;
@@ -1527,7 +1535,7 @@ function freezeNativeTeam(targetTeam) {
     dispatchWormEntryAudio(w, [{ operation: "sound", request: [24, 3, 65536, 65536, 0] }]);
 }
 function beginTurn() {
-  if (nativeAnnouncementsPending(nativeAnnouncements) || nativeWaterRise?.progress >= 0) {
+  if (nativeAnnouncementsPending(nativeAnnouncements) || nativeWaterRise?.progress >= 0 || nativeNuclearEffect?.progress >= 0) {
     pendingTurnStart = true;
     phase = "settle";
     return;
@@ -2491,6 +2499,44 @@ function stepNativeWaterRise() {
     }
   }
 }
+function stopNativeNuclearAudio() {
+  for (const playback of nuclearPlaybacks.values()) playback.stop();
+  nuclearPlaybacks.clear();
+  if (nativeNuclearEffect) nativeNuclearEffect.handleA = nativeNuclearEffect.handleB = 0;
+}
+function startNativeNuclearEffect(duration = 8) {
+  // Event442 restarts progress without discarding owned loops or volume.
+  nativeNuclearEffect = { ...(nativeNuclearEffect ?? { volume: 0, target: 0,
+    handleA: 0, handleB: 0, flash: 0, fade: 0, shake: 0, busy: 0 }), progress: 0, duration };
+}
+function stepNativeNuclearEffect() {
+  if (!nativeNuclearEffect) return;
+  if (!sound) stopNativeNuclearAudio();
+  for (const [handle, field] of [[1, "handleA"], [2, "handleB"]]) {
+    if (nuclearPlaybacks.get(handle)?.finished) {
+      nuclearPlaybacks.get(handle).stop(); nuclearPlaybacks.delete(handle);
+      nativeNuclearEffect[field] = 0;
+    }
+  }
+  const result = nativeNuclearEffectTick(nativeNuclearEffect, request => {
+    if (!sound) return 0;
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    const handle = request[0] === 0x10004 ? 1 : 2;
+    const playback = playNativeNuclearLoop(audio, request);
+    if (!playback) return 0;
+    nuclearPlaybacks.set(handle, playback);
+    return handle;
+  });
+  nativeNuclearEffect = result.body;
+  for (const call of result.calls) {
+    if (call.operation === "volume") nuclearPlaybacks.get(call.handle)?.setVolume(call.volume / 65536);
+    else if (call.operation === "stop") {
+      nuclearPlaybacks.get(call.handle)?.stop(); nuclearPlaybacks.delete(call.handle);
+    }
+  }
+  nativePaletteDisplay.update({ flash: result.body.flash, fade: result.body.fade });
+}
 function applySuddenDeath() {
   if (sdTriggered) return false;
   sdTriggered = true;
@@ -2517,6 +2563,9 @@ function applySuddenDeath() {
     return false;
   }
   if (suddenDeathType === "nuke") {
+    // Duration8 comes from native sudden-death event442. Full event routing
+    // and camera-shake consumption remain separate from this display adapter.
+    startNativeNuclearEffect(8);
     // Host sudden-death trigger supplies the dose until native scheme/event routing.
     for (const w of worms) w.nativePoison = nativeWormPoisonInfect(
       { ...w.nativePoison, team: w.matchStats.team, worm: w.matchStats.worm, state: nativeWormState(w) }, 5, {
@@ -4374,6 +4423,9 @@ function revealWormHealth(w) {
   }
 }
 function finishMatch(winner, series) {
+  stopNativeNuclearAudio();
+  nativeNuclearEffect = null;
+  nativePaletteDisplay.update();
   nativeClockTarget = 0;
   phase = "over";
   cameraSnap = true; manualCamera = null;
@@ -4415,6 +4467,9 @@ function finishMatch(winner, series) {
   updateUI();
 }
 function endGame() {
+  stopNativeNuclearAudio();
+  nativeNuclearEffect = null;
+  nativePaletteDisplay.update();
   const a = worms.some((w) => w.team === 0 && w.hp > 0),
     b = worms.some((w) => w.team === 1 && w.hp > 0);
   const winner = a && !b ? 0 : b && !a ? 1 : null;
@@ -4671,6 +4726,7 @@ function stepFrame(dt) {
   if (mapLoading) return;
   if (menu.open || document.hidden) {
     stopBurstSound(); stopProjectileSound();
+    stopNativeNuclearAudio();
     announcementPlayback?.stop(); announcementPlayback = null;
     return;
   }
@@ -4692,7 +4748,10 @@ function stepFrame(dt) {
     } else if (operation === "volume") announcementPlayback?.setVolume(announcementVolume / 65536);
     else { announcementPlayback?.stop(); announcementPlayback = null; }
   }
-  if (phase !== "over" && phase !== "menu" && phase !== "break") stepNativeWaterRise();
+  if (phase !== "over" && phase !== "menu" && phase !== "break") {
+    stepNativeWaterRise();
+    stepNativeNuclearEffect();
+  }
   if (pendingTurnStart && !nativeAnnouncementsPending(nativeAnnouncements)) beginTurn();
   nativeClockProgress = nativeClockSlide(nativeClockProgress, nativeClockTarget);
   updateOriginalClockPanel(nativeClockProgress, team);
@@ -6341,6 +6400,7 @@ $("#daily").addEventListener("click", () => {
 });
 $("#sound").onclick = () => {
   sound = !sound;
+  if (!sound) stopNativeNuclearAudio();
   if (!sound) { stopBurstSound(); stopProjectileSound(); }
   if (!sound) for (const b of bombs) {
     b.nativeFusePlayback?.stop();
@@ -6691,6 +6751,7 @@ window.siege = {
     frozen: worms.map((w) => w.frozen ?? 0),
     waterLevel,
     nativeWaterRise: nativeWaterRise ? { ...nativeWaterRise } : null,
+    nativeNuclearEffect: nativeNuclearEffect ? { ...nativeNuclearEffect } : null,
     waterSprite: water.userData.originalSprite,
     waterFrame: water.userData.originalFrame,
     suddenDeath,

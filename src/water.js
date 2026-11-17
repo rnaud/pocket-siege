@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { decodeSprite, spriteFrameRGBA } from "./armageddon/sprite.js";
 import { decodeImage } from "./armageddon/image.js";
+import { nativePaletteDisplay } from "./armageddon/palette-material.js";
 
 let waterArt;
 export async function loadOriginalWater() {
@@ -47,11 +48,11 @@ export function createWater(width, level) {
   texture.generateMipmaps = false;
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(width, 1),
-    new THREE.MeshBasicMaterial({
+    nativePaletteDisplay.bind(new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
       depthWrite: false,
-    }),
+    }), 2),
   );
   let currentLevel = level,
     lastFrame = -1,

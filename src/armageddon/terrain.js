@@ -4,6 +4,7 @@ import { decodeImage, imageRGBA } from "./image.js";
 import { decodeSprite, spriteFrameRGBA } from "./sprite.js";
 import themes from "./terrain-themes.js";
 import { nativeTerrainPalette } from "./terrain-palette.js";
+import { nativePaletteDisplay } from "./palette-material.js";
 
 const art = new Map();
 export async function loadOriginalTerrain() {
@@ -128,7 +129,7 @@ export function createTerrainDebris(theme, variant = 0) {
   if (!sprite) return null;
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(sprite.width, sprite.height),
-    new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }),
+    nativePaletteDisplay.bind(new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }), 3),
   );
   Object.assign(mesh.userData, {
     terrainTheme: theme,

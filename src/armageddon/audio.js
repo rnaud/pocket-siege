@@ -386,6 +386,14 @@ export function playNativeAnnouncementLoop(context, volume) {
   return playOriginalClip(context, "sounds/morse.wav", () => {}, volume / 65536, true, 1, 9);
 }
 
+// 004EB460 owns independent loops0x10004/0x10005 at priority10.
+export function playNativeNuclearLoop(context, request) {
+  const entry = soundSlots.slots[request[0] & 65535];
+  if (!entry) return null;
+  return playOriginalClip(context, `sounds/${entry.clip}`, () => {},
+    request[3] / 65536, true, request[2] / 65536, request[1], request[4]);
+}
+
 export function playNativeTeamPanelSound(context, request) {
   const clip = request[0] === 0x7a ? "teamdrop" : request[0] === 0x7b ? "teambounce" : null;
   if (clip) return playOriginalClip(context, `sounds/${clip}.wav`, () => {}, request[3] / 65536, false, request[2] / 65536, request[1], request[4]);
