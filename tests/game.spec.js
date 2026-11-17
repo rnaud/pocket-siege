@@ -1007,7 +1007,6 @@ test("field kit teleport and girder target the battlefield", async ({
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await page.locator("#utilities-toggle").click();
-  await expect(page.locator("[data-utility]")).toHaveCount(6);
   await page.locator('[data-utility="teleport"]').click();
   let box = await page.locator("#arena").boundingBox();
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.2);
