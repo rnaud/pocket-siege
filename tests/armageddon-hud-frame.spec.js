@@ -1,3 +1,5 @@
+import girderBitmap from "./fixtures/armageddon/girder-bitmap.json" with { type: "json" };
+import { nativeGirderPlacement } from "../src/armageddon/girder-placement.js";
 import placementBitmap from "./fixtures/armageddon/placement-bitmap.json" with { type: "json" };
 import { nativePlacementBitmapBlit } from "../src/armageddon/placement-bitmap.js";
 import collisionDraw from "./fixtures/armageddon/collision-draw.json" with { type: "json" };
@@ -98,6 +100,19 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for(const c of girderBitmap.cases) {
+    const memory=new Uint8Array(0x50),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x12000),scene=new DataView(sceneMemory.buffer);
+    body.setInt32(0x3c,2,true);body.setInt32(0x4c,3,true);scene.setUint16(0x11d6c,c.distance,true);
+    const mask=(width,height,anchorX,anchorY,pixels)=>({width,height,anchorX,anchorY,bitmap:{width,height,pixels}});
+    const registry=Array.from({length:32},()=>[]);
+    registry[1]=[null,{enabled:1,x:100*65536,y:100*65536,mask:mask(32,16,0,0,girderBitmap.terrain)}];
+    registry[2]=[null,{enabled:c.enabled,x:140*65536,y:120*65536,mask:mask(8,8,4,4,girderBitmap.actor)}];
+    const sprite={width:8,height:4,pixels:Uint8Array.from({length:32},(_,i)=>!c.pattern || ((i%8)+Math.floor(i/8))%3===0?173:0)};
+    const surface={width:1920,height:696,pixels:Uint8Array.from({length:1920*696},(_,i)=>(0xa5>>(i%8))&1)};
+    const result=nativeGirderPlacement(memory,sceneMemory,c.x,c.y,sprite,registry,()=>({x:90*65536,y:90*65536}),surface);
+    const packed=new Uint8Array(surface.pixels.length/8);surface.pixels.forEach((value,i)=>{if(value)packed[i>>3]|=1<<(i&7);});
+    expect({result,surfaceHash:createHash("sha256").update(packed).digest("hex")}).toEqual({result:c.result,surfaceHash:c.surfaceHash});
+  }
   for(const c of placementBitmap.cases) {
     const destination={width:32,height:16,clip:c.clip,pixels:Uint8Array.from(c.initial)};
     const source={width:24,height:12,pixels:Uint8Array.from(c.source)};
