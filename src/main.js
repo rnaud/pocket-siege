@@ -1,3 +1,4 @@
+import { MAP_LAYOUTS } from "./map-generator.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
@@ -290,11 +291,13 @@ targetMarker.setAttribute("aria-label", "Homing target");
 targetMarker.style.cssText =
   "position:absolute;width:60px;height:60px;image-rendering:pixelated;pointer-events:none;z-index:8";
 arena.appendChild(targetMarker);
+let manualCamera = null;
+let touchPan = null;
 let overview = false;
 window.addEventListener("siege-overview", (event) => {
   overview = event.detail;
   resize();
-  cameraSnap = true;
+  cameraSnap = true; manualCamera = null;
 });
 let cameraZoom = 1,
   cameraX = W / 2,
@@ -794,7 +797,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   }
   breakTimer = 0;
   slowMo = 0;
-  cameraSnap = true;
+  cameraSnap = true; manualCamera = null;
   replaying = false;
   lastShot = null;
   replayReady = false;
@@ -892,7 +895,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   smokeRandom = matchSeed >>> 0;
   impactBag = createImpactBag();
   bubbleSeed = matchSeed >>> 0;
-  const layout = isDaily ? "fern" : $("#map-layout").value;
+  const selectedLayout = $("#map-layout").value;
+  const layout = isDaily ? "fern" : selectedLayout === "random"
+    ? MAP_LAYOUTS[(matchSeed >>> 0) % MAP_LAYOUTS.length] : selectedLayout;
   const authored = createOriginalMap(layout);
   const width = authored?.width ?? 1200,
     height = authored?.height ?? 650;
@@ -919,7 +924,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     cameraX = W / 2;
     cameraY = H / 2;
     cameraZoom = 1;
-    cameraSnap = true;
+    cameraSnap = true; manualCamera = null;
   }
   terrain =
     authored ??
@@ -1230,7 +1235,7 @@ function beginTurn() {
   active.nativePlacedAction = null;
   active.nativeFireInput = null;
   phase = "aim";
-  cameraSnap = true;
+  cameraSnap = true; manualCamera = null;
   wormLocked = false;
   time = turnSeconds;
   const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
@@ -1514,7 +1519,7 @@ function cycleWorm(direction = 1) {
   chargeSource = null;
   next.facing = team ? -1 : 1;
   angle = team ? 135 : 45;
-  cameraSnap = true;
+  cameraSnap = true; manualCamera = null;
   wormLocked = false;
   setWeapon(teamWeapon[team] || "rocket");
   updateSliders();
@@ -2186,7 +2191,7 @@ async function shareResultCard() {
 function startReplay() {
   if (replaying || !lastShot || lastShot.points.length < 2) return;
   replaying = true;
-  cameraSnap = true;
+  cameraSnap = true; manualCamera = null;
   const full = cameraView(W / 2, H / 2, 1);
   Object.assign(view, full);
   cameraZoom = 1;
@@ -2333,6 +2338,7 @@ function startCharge(source) {
     jetpack.active
   )
     return;
+  manualCamera = null;
   wormLocked = true;
   if (WEAPONS[weapon]?.special === "homing" && !homingTarget) {
     targetUtility = weapon;
@@ -3878,7 +3884,7 @@ function damageLabel(w, n, direction = 0) {
 }
 function finishMatch(winner, series) {
   phase = "over";
-  cameraSnap = true;
+  cameraSnap = true; manualCamera = null;
   aimHUD.guide.style.display = "none";
   const name =
     winner === 0
@@ -4909,7 +4915,8 @@ function frame(now) {
   }
   if (nativeCameraFocus) camTarget = { zoom: 1, cx: nativeCameraFocus.x, cy: nativeCameraFocus.y };
   if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
-  if (cameraSnap || (nativeCameraFocus && !overview)) {
+  if (manualCamera && !overview) camTarget = manualCamera;
+  if (manualCamera || cameraSnap || (nativeCameraFocus && !overview)) {
     cameraZoom = camTarget.zoom;
     cameraX = camTarget.cx;
     cameraY = camTarget.cy;
@@ -4925,7 +4932,7 @@ function frame(now) {
     cameraY,
     cameraZoom,
     arena.clientWidth / arena.clientHeight,
-    nativeCameraFocus && !overview ? H + 256 : H,
+    nativeCameraFocus && !overview && !manualCamera ? H + 256 : H,
   );
   view.x = nextView.x;
   view.y = nextView.y;
@@ -5302,7 +5309,7 @@ function pointerAim(e) {
     return;
   const rect = arena.getBoundingClientRect(),
     x = view.x + ((e.clientX - rect.left) / rect.width) * view.w,
-    y = H - ((e.clientY - rect.top) / rect.height) * H,
+    y = view.y + (1 - (e.clientY - rect.top) / rect.height) * view.h,
     w = worms[current];
   let a =
     (Math.atan2(y - shot(w).pivot.y, x - shot(w).pivot.x) * 180) / Math.PI;
@@ -5312,20 +5319,45 @@ function pointerAim(e) {
   updateSliders();
 }
 arena.addEventListener("pointerdown", (e) => {
-  if (e.target.closest("button, a, input, select")) return;
-  if (targetUtility) {
-    handleUtilityTarget(e);
+  if (e.target.closest("button, a, input, select") || menu.open || !matchStarted) return;
+  if (e.pointerType === "touch") {
+    if (touchPan) return;
+    e.preventDefault();
+    touchPan = { id: e.pointerId, x: e.clientX, y: e.clientY,
+      cx: view.x + view.w / 2, cy: view.y + view.h / 2,
+      w: view.w, h: view.h, zoom: view.zoom, dragged: false };
+    arena.setPointerCapture(e.pointerId);
     return;
   }
+  if (targetUtility) { handleUtilityTarget(e); return; }
   aiming = true;
   arena.setPointerCapture(e.pointerId);
   pointerAim(e);
 });
 arena.addEventListener("pointermove", (e) => {
-  if (aiming) pointerAim(e);
+  if (touchPan?.id === e.pointerId) {
+    e.preventDefault();
+    const dx = e.clientX - touchPan.x, dy = e.clientY - touchPan.y;
+    touchPan.dragged ||= Math.hypot(dx, dy) > 6;
+    if (!touchPan.dragged || overview) return;
+    const rect = arena.getBoundingClientRect();
+    const next = cameraView(touchPan.cx - dx * touchPan.w / rect.width,
+      touchPan.cy + dy * touchPan.h / rect.height, touchPan.zoom,
+      rect.width / rect.height);
+    manualCamera = { cx: next.x + next.w / 2, cy: next.y + next.h / 2, zoom: next.zoom };
+  } else if (aiming) pointerAim(e);
 });
-for (const event of ["pointerup", "pointercancel"])
-  arena.addEventListener(event, () => (aiming = false));
+for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
+  arena.addEventListener(event, e => {
+    if (touchPan?.id === e.pointerId) {
+      if (event === "pointerup" && !touchPan.dragged) {
+        if (targetUtility) handleUtilityTarget(e);
+        else pointerAim(e);
+      }
+      touchPan = null;
+    }
+    aiming = false;
+  });
 window.addEventListener("keydown", (e) => {
   if (menu.open) return;
   const controlled = [
@@ -5417,6 +5449,8 @@ window.addEventListener("keyup", (e) => {
     aimInput = 0;
 });
 function releaseInputs() {
+  touchPan = null;
+  aiming = false;
   stopBurstSound();
   stopProjectileSound();
   move = 0;

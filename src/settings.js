@@ -33,7 +33,7 @@ export function defaultSettings() {
     difficulty: "regular",
     format: "single",
     weather: "clear",
-    mapLayout: "fern",
+    mapLayout: "random",
     terrainTheme: "forest",
     modifier: "standard",
     scheme: "classic",
@@ -73,7 +73,7 @@ export function readSettings(storage) {
       terrainTheme: terrainThemes.includes(parsed.terrainTheme)
         ? parsed.terrainTheme
         : base.terrainTheme,
-      mapLayout: MAP_LAYOUTS.includes(parsed.mapLayout)
+      mapLayout: parsed.mapLayout === "random" || MAP_LAYOUTS.includes(parsed.mapLayout)
         ? parsed.mapLayout
         : base.mapLayout,
       mode: MODES.includes(parsed.mode) ? parsed.mode : base.mode,

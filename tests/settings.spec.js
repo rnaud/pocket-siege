@@ -40,7 +40,7 @@ test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
   expect(readSettings(storage).mode).toBe("ai");
   expect(readSettings(storage).weather).toBe("clear");
   writeSettings({ ...settings, mapLayout: "invalid" }, storage);
-  expect(readSettings(storage).mapLayout).toBe("fern");
+  expect(readSettings(storage).mapLayout).toBe("random");
   writeSettings({ ...settings, terrainTheme: "invalid" }, storage);
   expect(readSettings(storage).terrainTheme).toBe("forest");
   storage.setItem("pocket-siege-settings-v1", "{nope");
