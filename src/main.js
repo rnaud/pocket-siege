@@ -4469,7 +4469,8 @@ function stepFrame(dt) {
       if (w.originalDrill) audioState = 0x6e;
       else if (w === worms[current] && charging) audioState = 0x68;
       else if (w.originalPreparation) audioState = 0x69;
-      else if (w.originalRecoil) audioState = 0x6a;
+      else if (w.originalRecoil || (pendingFire?.worm === w && pendingFire.stage === "recoil")) audioState = 0x6a;
+      else if (pendingFire?.worm === w && pendingFire.stage === "burst") audioState = 0x6b;
     }
     cleanupNativeWormAudio(w, audioState);
     stepOriginalWalking(w);
