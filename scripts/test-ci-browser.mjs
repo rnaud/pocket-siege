@@ -30,7 +30,11 @@ if (!full) {
   }
 }
 const list = args => {
-  const output = execFileSync(process.execPath, [cli, 'test', ...config, '--project=desktop', '--list', '--reporter=json', '--pass-with-no-tests', ...args], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  // Discovery must return JSON on stdout. CI's artifact destination applies
+  // only to the actual test run, otherwise Playwright prints a text listing.
+  const env = { ...process.env };
+  for (const key of ['PLAYWRIGHT_JSON_OUTPUT_NAME', 'PLAYWRIGHT_JSON_OUTPUT_FILE', 'PLAYWRIGHT_JSON_OUTPUT_DIR']) delete env[key];
+  const output = execFileSync(process.execPath, [cli, 'test', ...config, '--project=desktop', '--list', '--reporter=json', '--pass-with-no-tests', ...args], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, env });
   const report = JSON.parse(output);
   if (report.errors?.length) throw new Error(JSON.stringify(report.errors));
   const specs = [];
