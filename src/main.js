@@ -67,6 +67,7 @@ import {
 import { carveNativeCrater } from "./armageddon/crater-mask.js";
 import { nativeAreaDamage } from "./armageddon/area-damage.js";
 import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
+import { nativeJetpackInput, nativeJetpackVelocity } from "./armageddon/jetpack.js";
 import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
 import { nativeHitscanBody, nativeWormHitscanBodies } from "./armageddon/hitscan-body.js";
@@ -1901,12 +1902,15 @@ function stepJetpack(w, dt) {
     jetpack.fuel -= dt * 8;
   }
   const thrust =
-    aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0) + (move ? 0 : 0);
-  w.vx += move * 220 * dt;
-  w.vy += thrust * 300 * dt;
-  w.vy -= GRAVITY * gravityScale * 0.18 * dt;
-  w.vx *= 0.995;
-  w.vy *= 0.995;
+    aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0);
+  const gravity = Math.round(0x3d70 * gravityScale);
+  const input = nativeJetpackInput({ facing: w.facing, side: 0, down: 0 },
+    { left: move < 0, right: move > 0, up: thrust > 0 }, gravity);
+  applyNativeWeaponImpulse(w, input.impulse[0], input.impulse[1]);
+  const velocity = nativeJetpackVelocity(Math.round(w.vx / 50 * 65536),
+    Math.round(-w.vy / 50 * 65536));
+  w.vx = velocity.vx / 65536 * 50;
+  w.vy = -(velocity.vy + gravity) / 65536 * 50;
   const px = w.x,
     py = w.y;
   w.x = Math.max(12, Math.min(W - 12, w.x + w.vx * dt));
@@ -1919,7 +1923,7 @@ function stepJetpack(w, dt) {
   }
   w.ground = false;
   w.moving = Boolean(move);
-  w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
+  w.facing = input.facing;
   stepOriginalJetpack(w, move, thrust);
   if (jetpack.fuel <= 0) stopJetpack();
 }

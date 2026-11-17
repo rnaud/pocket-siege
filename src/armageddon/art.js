@@ -7,7 +7,7 @@ import { nativeDeathCue, nativeDeathEntry } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
 import { nativeFlightSprite, nativeFlightProgress } from "./flight-art.js";
-import { nativeJetpackTick } from "./jetpack.js";
+import { nativeJetpackInput, nativeJetpackTick } from "./jetpack.js";
 import { fixedDivide } from "./numeric.js";
 import {
   nativeTeleportTick,
@@ -774,12 +774,13 @@ export function stepOriginalJetpack(worm, steering, thrust) {
     };
     worm.originalJump = worm.originalLanding = worm.originalParachute = null;
   }
-  // 004DC560 adds thrust to the controlled flame progress, clamped to one.
+  const input = nativeJetpackInput({ ...state, facing: worm.facing },
+    { left: steering < 0, right: steering > 0, up: thrust > 0 }, 0);
   const next = nativeJetpackTick({
-    facing: worm.facing,
+    facing: input.facing,
     lean: state.lean,
-    side: Math.min(0x10000, state.side + (steering ? 0x4ccc : 0)),
-    down: Math.min(0x10000, state.down + (thrust > 0 ? 0x4ccc : 0)),
+    side: input.side,
+    down: input.down,
     fuel: 0x640000,
   });
   Object.assign(state, next);

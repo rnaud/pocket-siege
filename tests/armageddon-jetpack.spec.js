@@ -1,9 +1,13 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/jetpack.json" with { type: "json" };
-import { nativeJetpackTick } from "../src/armageddon/jetpack.js";
+import { nativeJetpackInput, nativeJetpackVelocity, nativeJetpackTick } from "../src/armageddon/jetpack.js";
 test("jetpack poses and easing match 54 original executable ticks", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeJetpackTick(row.input)).toEqual(row.output);
+  for (const row of fixture.inputCases) {
+    const input = nativeJetpackInput(row.input, row.controls, row.gravity);
+    expect({ ...input, velocity: nativeJetpackVelocity(...row.velocity) }).toEqual(row.output);
+  }
 });
 test("jetpack turns through original poses and renders thrust flames", async ({
   page,

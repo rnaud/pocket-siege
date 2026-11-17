@@ -1,7 +1,7 @@
 {
   "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
-  "entry": "004DC470",
-  "method": "Original jetpack tick, easing and fixed multiply execute unchanged; animation and state interfaces observed.",
+  "entry": "004DC470 / 004DC560",
+  "method": "Original animation, input dispatch, easing and clamping execute unchanged; body impulse/getter/setter interfaces observed.",
   "cases": [
     {
       "input": {
@@ -919,6 +919,2984 @@
         "side": 26215,
         "down": 13107,
         "fuel": 6548358
+      }
+    }
+  ],
+  "inputCases": [
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 0,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          -6553,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          -6553,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          -6553,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          6553,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          6553,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          6553,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          -6553,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          -6553,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          -6553,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          6553,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          6553,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          6553,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 7864,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -13106,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          -13106,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          -13106,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          -13106,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          13106,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          13106,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          13106,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          -13106,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          -13106,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          -13106,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          13106,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          13106,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          13106,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 15728,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -26213,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          -26213,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          -26213,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          -26213,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          26213,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          26213,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          26213,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": false
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          0,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": false,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          -26213,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          -26213,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": false,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          -26213,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          26213,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": 1,
+        "side": 19660,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          26213,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": false,
+        "right": true,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          26213,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": 1,
+        "side": 65536,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 0,
+        "down": 0
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        0,
+        0
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 0,
+          "vy": 0
+        },
+        "facing": -1,
+        "side": 0,
+        "down": 19660
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 61440,
+        "down": 65535
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        -458752,
+        458752
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": -327680,
+          "vy": 327680
+        },
+        "facing": -1,
+        "side": 61440,
+        "down": 65536
+      }
+    },
+    {
+      "input": {
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
+      },
+      "controls": {
+        "left": true,
+        "right": true,
+        "up": true
+      },
+      "gravity": 31456,
+      "velocity": [
+        327680,
+        -327680
+      ],
+      "output": {
+        "impulse": [
+          0,
+          -52426,
+          0
+        ],
+        "velocity": {
+          "vx": 327680,
+          "vy": -327680
+        },
+        "facing": -1,
+        "side": 65536,
+        "down": 65536
       }
     }
   ]

@@ -7,7 +7,7 @@ function approach(value, target, minimum) {
     ? target
     : (value + Math.sign(delta) * step) | 0;
 }
-// 004DC470. Input dispatch and browser fuel units remain adapters.
+// 004DC470. Browser fuel units remain an adapter.
 export function nativeJetpackTick({ facing, lean, side, down, fuel }) {
   lean = approach(lean, facing < 0 ? -0x38000 : 0x38000, 0x10000);
   const magnitude = Math.abs(lean);
@@ -28,4 +28,26 @@ export function nativeJetpackTick({ facing, lean, side, down, fuel }) {
     fuel,
     target,
   };
+}
+
+// 004DC560: directional input is boolean; opposing horizontal keys cancel.
+// The impulse precedes the velocity getter and the +/-5 px/tick speed clamp.
+export function nativeJetpackInput(input, { left = false, right = false, up = false }, gravity) {
+  let { facing, side, down } = input;
+  const force = Math.trunc(Math.imul(gravity, 5) / 3);
+  let x = 0, y = 0;
+  if (Boolean(left) !== Boolean(right)) {
+    facing = left ? -1 : 1;
+    x = facing * Math.trunc(force / 2);
+    side = Math.max(0, Math.min(65536, (side + 0x4ccc) | 0));
+  }
+  if (up) {
+    y = -force;
+    down = Math.max(0, Math.min(65536, (down + 0x4ccc) | 0));
+  }
+  return { facing, side, down, impulse: [x || 0, y || 0, 0] };
+}
+export function nativeJetpackVelocity(vx, vy) {
+  return { vx: Math.max(-0x50000, Math.min(0x50000, vx)),
+    vy: Math.max(-0x50000, Math.min(0x50000, vy)) };
 }
