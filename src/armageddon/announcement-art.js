@@ -38,6 +38,7 @@ export function updateNativeAnnouncement(state, target) {
     }
     const canvas = document.createElement("canvas");
     canvas.width = width; canvas.height = height;
+    canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
     canvas.setAttribute("aria-hidden", "true");
     target.replaceChildren(canvas); target.setAttribute("aria-label", entry.text);
     target.style.top = `${16 - Math.trunc(height / 2)}px`;
