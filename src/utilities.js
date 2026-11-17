@@ -45,6 +45,12 @@ export const UTILITIES = {
     fresh: 0,
     help: "Accelerate to double walking speed for this turn",
   },
+  lowgravity: {
+    label: "Low Gravity",
+    icon: "↑",
+    fresh: 0,
+    help: "Halve gravity for this turn",
+  },
 };
 
 export const UTILITY_KINDS = Object.keys(UTILITIES);

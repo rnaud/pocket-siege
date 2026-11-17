@@ -1,4 +1,5 @@
 import { NativeSoundQueue } from "./armageddon/sound-queue.js";
+import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
@@ -1274,7 +1275,7 @@ function collectCrate(w) {
   const { kind, mesh } = crate;
   let label;
   if (kind === "utility") {
-    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk", "bungee"];
+    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk", "bungee", "lowgravity"];
     const utility = pool[Math.floor(logicRandom() * pool.length)];
     utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], 1);
     label = `+1 ${UTILITIES[utility].label}`;
@@ -1335,6 +1336,9 @@ function beginTurn() {
     return;
   }
   pendingTurnStart = false;
+  // 004B3210 resets the shared environment before the next team's turn.
+  // Preserve the selected browser match modifier as the baseline.
+  gravityScale = modifierSettings(modifier).gravityScale;
   matchDamageSourceActive = false;
   nativeDamageReaction = { ...createNativeDamageReaction(), firstBlood: nativeDamageReaction.firstBlood };
   nativeClockTarget = 65536;
@@ -1551,6 +1555,7 @@ function updateUI() {
       charging ||
       shotgunRemaining > 0 ||
       (kind === "fastwalk" && Boolean(worms[current].nativeTeamModifiers & 2)) ||
+      (kind === "lowgravity" && Boolean(worms[current].nativeTeamModifiers & 1)) ||
       (count <= 0 && activeUtility !== kind) ||
       (activeUtility !== null && activeUtility !== kind);
     button.classList.toggle("selected", activeUtility === kind);
@@ -1874,13 +1879,20 @@ function useUtility(kind) {
     updateUI();
     return;
   }
-  if (kind === "fastwalk") {
-    if (worms[current].nativeTeamModifiers & 2) return;
+  if (kind === "fastwalk" || kind === "lowgravity") {
+    const flag = kind === "fastwalk" ? 2 : 1;
+    if (worms[current].nativeTeamModifiers & flag) return;
     // 004FCF47: utility subtype19 ORs the record's bit into team flags.
     // Original slot64 uses bit1; movement consumes it in004DD2B0.
     for (const w of worms) if (w.team === team)
-      w.nativeTeamModifiers = (w.nativeTeamModifiers || 0) | 2;
-    utilityAmmo[team].fastwalk = spendAmmo(utilityAmmo[team].fastwalk);
+      w.nativeTeamModifiers = (w.nativeTeamModifiers || 0) | flag;
+    if (kind === "lowgravity") {
+      const environment = nativeTeamEnvironment(
+        { damageMultiplier: 1, gravityPercent: 100 }, worms[current].nativeTeamModifiers,
+      );
+      gravityScale = environment.gravity / 0x3d70;
+    }
+    utilityAmmo[team][kind] = spendAmmo(utilityAmmo[team][kind]);
     utilitiesOpen = false;
     updateUI();
     return;
