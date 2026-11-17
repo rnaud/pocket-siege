@@ -408,7 +408,7 @@ let format = "single",
   seriesWins = [0, 0],
   seriesRound = 1,
   breakTimer = 0,
-  crate = null,
+  crates = [],
   mines = [],
   girders = [],
   graves = [],
@@ -959,10 +959,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   stopProjectileSound();
   if (projectile) releaseProjectileMesh(projectile.mesh);
   projectile = null;
-  if (crate) {
-    dispose(crate.mesh);
-    crate = null;
-  }
+  for (const crate of crates) dispose(crate.mesh);
+  crates.length = 0;
   for (const effect of originalEffects) dispose(effect.mesh);
   originalEffects.length = 0;
   for (const p of nativeParticles) dispose(p.mesh);
@@ -1098,8 +1096,27 @@ function crateSprite(kind, falling) {
   const prefix = kind === "health" ? "m" : kind === "utility" ? "u" : "w";
   return `${prefix}crate${falling ? 2 : 1}`;
 }
+function crateSnapshot(crate) {
+  return {
+    x: crate.x,
+    y: crate.y,
+    kind: crate.kind,
+    falling: crate.falling,
+    sprite: crate.mesh.userData.originalSprite,
+    frame: crate.mesh.userData.originalFrame,
+    content: crate.content,
+  };
+}
+function chooseCrateContent(kind) {
+  if (kind === "utility") {
+    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk", "bungee", "lowgravity", ...Object.keys(AUTOMATIC_UTILITIES)];
+    return pool[Math.floor(logicRandom() * pool.length)];
+  }
+  if (kind === "special") return SPECIAL_WEAPONS[Math.floor(logicRandom() * SPECIAL_WEAPONS.length)];
+  return kind;
+}
 function spawnCrate(announceDrop = false) {
-  if (crate || !terrain) return;
+  if (!terrain) return;
   for (let tries = 0; tries < 40; tries++) {
     const x = 150 + logicRandom() * (W - 300),
       ground = terrain.surface(x);
@@ -1111,7 +1128,8 @@ function spawnCrate(announceDrop = false) {
       targetY = ground + 10;
     mesh.position.set(x, H + 34, 18);
     group.add(mesh);
-    crate = {
+    const crate = {
+      content: chooseCrateContent(kind),
       x,
       y: H + 34,
       targetY,
@@ -1122,6 +1140,7 @@ function spawnCrate(announceDrop = false) {
       artAge: 0,
       vy: 0,
     };
+    crates.push(crate);
     if (announceDrop) {
       const message = nativeCrateDropAnnouncement(kind, () => matchRandom.logicUint());
       queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
@@ -1142,7 +1161,7 @@ function spawnHazards() {
         ground = terrain.surface(x);
       if (ground < waterLevel + 50) continue;
       if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 70)) continue;
-      if (crate && Math.abs(crate.x - x) < 55) continue;
+      if (crates.some(crate => Math.abs(crate.x - x) < 55)) continue;
       if (hazards.some((h) => Math.abs(h.x - x) < 70)) continue;
       const mesh = createOriginalObject("oildrum1", -14);
       mesh.position.set(x, ground + 14, 17);
@@ -1275,18 +1294,16 @@ function stepFires(dt) {
     }
   }
 }
-function collectCrate(w) {
-  if (!crate) return;
+function collectCrate(w, crate = crates[0]) {
+  if (!crate || !crates.includes(crate)) return;
   const { kind, mesh } = crate;
   let label;
   if (kind === "utility") {
-    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk", "bungee", "lowgravity", ...Object.keys(AUTOMATIC_UTILITIES)];
-    const utility = pool[Math.floor(logicRandom() * pool.length)];
+    const utility = crate.content;
     utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], 1);
     label = `+1 ${(UTILITIES[utility] || AUTOMATIC_UTILITIES[utility]).label}`;
   } else if (kind === "special") {
-    const special =
-      SPECIAL_WEAPONS[Math.floor(logicRandom() * SPECIAL_WEAPONS.length)];
+    const special = crate.content;
     ammo[w.team][special] = addAmmo(ammo[w.team][special], 1);
     label = `+1 ${WEAPONS[special].label}`;
   } else {
@@ -1298,7 +1315,7 @@ function collectCrate(w) {
   pickupLabel(w, label);
   $("#status").textContent = `${w.name} grabs a supply crate: ${label}.`;
   dispose(mesh);
-  crate = null;
+  crates.splice(crates.indexOf(crate), 1);
   tone(720, 0.12, "triangle");
   updateUI();
 }
@@ -4259,7 +4276,7 @@ function nextTurn() {
   if (team === 0) {
     round++;
     if (
-      !crate &&
+      !crates.length &&
       (crateRain ? round % 2 === 0 : round >= 3 && round % 3 === 0)
     ) {
       spawnCrate(true);
@@ -4328,7 +4345,8 @@ function startAiTurn() {
     me: w,
     waterLevel,
     difficulty,
-    crate,
+    crate: crates.filter(crate => !crate.falling).reduce((nearest, crate) =>
+      !nearest || Math.abs(crate.x - w.x) < Math.abs(nearest.x - w.x) ? crate : nearest, null),
     worms,
     random: logicRandom,
   });
@@ -4860,14 +4878,14 @@ function stepFrame(dt) {
         );
     }
   }
-  if (crate) {
+  for (const crate of [...crates]) {
     const collector = worms.find(
       (w) =>
         !crate.falling &&
         w.hp > 0 &&
         Math.hypot(w.x - crate.x, w.y + 20 - crate.y) < 30,
     );
-    if (collector) collectCrate(collector);
+    if (collector) collectCrate(collector, crate);
   }
   const mineCameraRequests = [];
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
@@ -5233,12 +5251,12 @@ function stepFrame(dt) {
   stepAirstrikes();
   stepBombs(dt);
   stepFires(dt);
-  if (crate) crate.artAge = (crate.artAge || 0) + dt;
+  for (const crate of crates) crate.artAge = (crate.artAge || 0) + dt;
   for (const hazard of hazards) {
     hazard.artAge = (hazard.artAge || 0) + dt;
     updateOriginalObject(hazard.mesh, "oildrum1", hazard.artAge);
   }
-  if (crate?.falling) {
+  for (const crate of crates) if (crate.falling) {
     crate.vy -= 220 * dt;
     crate.y += crate.vy * dt;
     crate.mesh.position.set(crate.x, crate.y, 18);
@@ -5655,7 +5673,7 @@ function frame(now) {
     updateOriginalSelection(w.label, w.team, selectionTick, active && w.hp > 0 && phase !== "over",
       { x: arrowPoint.x - labelLeft, y: arrowPoint.y - labelTop });
   }
-  if (crate) {
+  for (const crate of crates) {
     crate.mesh.position.y = Math.round(crate.y);
     updateOriginalObject(
       crate.mesh,
@@ -6260,16 +6278,8 @@ window.siege = {
       y: Math.round(view.y),
       zoom: Math.round(view.zoom * 100) / 100,
     },
-    crate: crate
-      ? {
-          x: crate.x,
-          y: crate.y,
-          kind: crate.kind,
-          falling: crate.falling,
-          sprite: crate.mesh.userData.originalSprite,
-          frame: crate.mesh.userData.originalFrame,
-        }
-      : null,
+    crate: crates.length ? crateSnapshot(crates[0]) : null,
+    crates: crates.map(crateSnapshot),
     girders: girders.map((g) => ({
       sprite: g.original?.name,
       width: g.original?.width,
@@ -6476,7 +6486,7 @@ if (import.meta.env.DEV) {
       if (phase === "break") breakTimer = 0;
     },
     collectCrate() {
-      if (crate) collectCrate(worms[current]);
+      collectCrate(worms[current]);
     },
     hit(teamIndex = 1, damage = 200) {
       for (const w of worms) if (w.team === teamIndex) injure(w, damage, 1);
@@ -6570,7 +6580,7 @@ if (import.meta.env.DEV) {
       for (let i = 0; i < count; i++) visualRandom();
     },
     setCrateKind(kind = "special") {
-      if (crate) crate.kind = kind;
+      if (crates[0]) { crates[0].kind = kind; crates[0].content = chooseCrateContent(kind); }
     },
     releaseRope() {
       releaseRope();
