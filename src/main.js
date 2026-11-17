@@ -53,7 +53,7 @@ import { nativeSceneCollision } from "./armageddon/collision-scene.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
-import { nativeDamageAccounting } from "./armageddon/damage-accounting.js";
+import { nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "./armageddon/damage-accounting.js";
 import { nativeBlastDamage } from "./armageddon/blast-damage.js";
 import {
   nativeDebrisBurst,
@@ -597,6 +597,7 @@ function createWorm(t, i, x, spawnY = null) {
     team: t,
     name: names[t][i],
     hp: 100,
+    nativeHealthDisplay: { value: 100 << 16, target: 100 << 16, progress: 0, active: 0, pending: 0 },
     x,
     y,
     renderY: y,
@@ -2046,7 +2047,8 @@ function applyPoisonTick() {
   let hits = 0;
   for (const w of worms) {
     if (w.hp <= 0 || w.frozen > 0) continue;
-    w.hp = Math.max(0, w.hp - 5);
+    accountWormDamage(w, 5);
+    w.nativeHealthDisplay = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp).body;
     w.hurt = Math.max(w.hurt, 0.65);
     damageLabel(w, 5);
     hits++;
@@ -2071,7 +2073,8 @@ function applySuddenDeath() {
   if (suddenDeathType === "health") {
     for (const w of worms)
       if (w.hp > 0) {
-        w.hp = 1;
+        accountWormDamage(w, w.hp - 1);
+        w.nativeHealthDisplay = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp).body;
         w.hurt = Math.max(w.hurt, 0.5);
       }
     announce("SUDDEN DEATH — EVERY WORM HAS 1 HP");
@@ -2456,9 +2459,9 @@ function accountWormDamage(w, damage, options = {}) {
     {
       hp: w.hp,
       total: w.damageTaken ?? 0,
-      displayed: 0,
-      reset: 0,
-      resetActive: false,
+      displayed: w.nativeHealthDisplay.pending,
+      reset: w.nativeHealthDisplay.progress,
+      resetActive: w.nativeHealthDisplay.active,
       team: w.team,
       worm: worms.indexOf(w),
       state: nativeWormState(w),
@@ -2468,6 +2471,8 @@ function accountWormDamage(w, damage, options = {}) {
   );
   w.hp = accounting.hp;
   w.damageTaken = accounting.total;
+  w.nativeHealthDisplay.pending = accounting.displayed;
+  w.nativeHealthDisplay.progress = accounting.reset;
   return accounting;
 }
 function injure(w, damage, direction = 0, native = false) {
@@ -4223,6 +4228,7 @@ function step(dt) {
         !jetpack.active,
     );
     stepOriginalWalking(w);
+    w.nativeHealthDisplay = nativeHealthDisplayTick(w.nativeHealthDisplay, w.hp).body;
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
     w.landing = Math.max(0, (w.landing || 0) - dt);
     stepOriginalLanding(w);
@@ -4822,7 +4828,10 @@ function step(dt) {
           w.dying <= 0 &&
           (w.hp <= 0 || (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)),
       );
-    shotWait = settled ? shotWait + dt : 0;
+    if (settled) for (const w of worms)
+      w.nativeHealthDisplay = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp).body;
+    const healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
+    shotWait = settled && !healthDisplayBusy ? shotWait + dt : 0;
     if (shotWait > 0.7) nextTurn();
   }
   for (let i = particles.length - 1; i >= 0; i--) {

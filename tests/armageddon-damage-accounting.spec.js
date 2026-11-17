@@ -1,8 +1,12 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
-import { nativeDamageAccounting } from "../src/armageddon/damage-accounting.js";
+import { nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
 test("health, cumulative/displayed damage and events match original damage routine", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(288);
+  for (const row of fixture.presentation)
+    expect(nativeHealthDisplayTick(row.input, row.hp)).toEqual(row.result);
+  for (const row of fixture.reveals)
+    expect(nativeHealthDisplayReveal(row.input, row.hp)).toEqual(row.result);
   for (const row of fixture.cases) {
     expect(
       nativeDamageAccounting(

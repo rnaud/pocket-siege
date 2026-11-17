@@ -1,3 +1,32 @@
+import { fixedMultiply } from './numeric.js';
+
+// 004DCEF0. Health presentation is independent of actual damage accounting.
+export function nativeHealthDisplayTick(input, hp) {
+  const body = { ...input }, calls = [];
+  if (body.active) {
+    calls.push({ operation: 'busy' });
+    body.progress = (body.progress + 0x395) | 0;
+    if (body.progress >= 0x10000) body.progress = body.active = 0;
+  } else if ((body.value >> 16) < hp) body.target = hp << 16;
+  if (body.target !== body.value) {
+    body.value = (fixedMultiply(body.value, 0xe666) + fixedMultiply(body.target, 0x1999)) | 0;
+    const difference = (body.target - body.value) | 0;
+    const sign = difference >> 31;
+    if ((((difference ^ sign) - sign) | 0) < 0x10000) body.value = body.target;
+    calls.push({ operation: 'healthText', value: Math.max(0, Math.min(9999, body.value >> 16)) });
+  }
+  return { body, calls };
+}
+
+// Event0x42c prefix004DAFB9..004DB035, before render-order changes.
+export function nativeHealthDisplayReveal(input, hp) {
+  if (!input.pending) return { body: { ...input }, calls: [] };
+  return {
+    body: { ...input, target: hp << 16, progress: 0, active: 1, pending: 0 },
+    calls: [{ operation: 'damageText', value: input.pending }, { operation: 'clearDamageTotal' }],
+  };
+}
+
 // 004D8440. Team health and cumulative damage are supplied by the host store;
 // displayed is worm+0x188, reset is +0x180, resetActive is +0x184.
 export function nativeDamageAccounting(body, damage, options = {}) {

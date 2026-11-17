@@ -20,14 +20,16 @@ export function updateOriginalWormLabel(label, worm, selected, tick) {
   const fontId = nativeWormLabelFont(worm.team ? 0 : 2, selected, false, tick);
   const fontIndex = fontId === 15 ? 2 : worm.team;
   const teamName = worm.team ? "CORAL" : "MOSS";
-  const key = `${fontIndex}:${worm.name}:${worm.hp}:${teamName}`;
+  const displayedHealth = worm.nativeHealthDisplay
+    ? Math.max(0, Math.min(9999, worm.nativeHealthDisplay.value >> 16)) : worm.hp;
+  const key = `${fontIndex}:${worm.name}:${worm.hp}:${displayedHealth}:${teamName}`;
   if (label.dataset.nativeLabel === key) return true;
   const font = fonts[fontIndex];
   // Native offsets are -58 (team), -42 (name), -25 (health).
   const lines = [
     [teamName, 0],
     [worm.name, 16],
-    [String(worm.hp), 33],
+    [String(displayedHealth), 33],
   ];
   const width = Math.max(
     ...lines.map(([text]) => measureNativeText(font, text).width),

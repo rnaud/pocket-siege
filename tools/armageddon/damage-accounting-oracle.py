@@ -64,5 +64,41 @@ for hp in [0,10,100]:
      if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Damage accounting failed to return')
      displayed=read(owner+0x188);displayed=displayed if displayed<0x80000000 else displayed-0x100000000
      cases.append(dict(hp=hp,damage=damage,multiplier=multiplier,immune=immune,force=force,uncapped=uncapped,state=native_state,result=dict(hp=health,total=total,displayed=displayed,reset=read(owner+0x180),events=events)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430.',cases=cases),separators=(',',':'))+'\n')
+# Presentation004DCEF0 executes its original fixed multiply and clamp.
+position=owner+0x3100
+write(vtable+0x5c,position);cpu.mem_write(position,b'\xc2\x08\x00')
+for address in [0x4eebe0,0x4aab40]:cpu.mem_write(address,b'\xc3')
+def presentation_capture(cpu,address,size,user):
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ if address==0x4eebe0:display_calls.append(dict(operation='busy'))
+ elif address==0x4aab40:display_calls.append(dict(operation='healthText',value=struct.unpack('<i',cpu.mem_read(sp+8,4))[0]))
+for address in [0x4eebe0,0x4aab40]:cpu.hook_add(UC_HOOK_CODE,presentation_capture,begin=address,end=address)
+fields=dict(value=0x178,target=0x17c,progress=0x180,active=0x184,pending=0x188)
+def read_display():return {key:struct.unpack('<i',cpu.mem_read(owner+offset,4))[0] for key,offset in fields.items()}
+presentation=[]
+for value,target in [(100<<16,100<<16),(100<<16,50<<16),(10<<16,0),(0,100<<16),(-65536,0),(10000<<16,10001<<16),(0x7fffffff,-2147483648)]:
+ for hp in [0,50,110]:
+  for active,progress in [(0,0),(1,0),(1,0xfc6a),(1,0xfc6b),(1,0x7fffffff)]:
+   initial=dict(value=value,target=target,active=active,progress=progress,pending=7)
+   for key,offset in fields.items():write(owner+offset,initial[key]&0xffffffff)
+   health=hp;display_calls=[]
+   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4dcef0,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Health display did not return')
+   presentation.append(dict(input=initial,hp=hp,result=dict(body=read_display(),calls=display_calls)))
+reveals=[]
+for hp in [0,17,100]:
+ for pending in [0,5,125,-1]:
+  initial=dict(value=100<<16,target=100<<16,active=0,progress=99,pending=pending)
+  for key,offset in fields.items():write(owner+offset,initial[key]&0xffffffff)
+  health=hp;total=123;display_calls=[]
+  sp=stack+0xf000;cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,0)
+  # zero pending branches out of this event directly.
+  cpu.emu_start(0x4dafb9,0x4db035 if pending else 0x4db56f,count=10000)
+  expected=0x4db035 if pending else 0x4db56f
+  if cpu.reg_read(UC_X86_REG_EIP)!=expected:raise RuntimeError('Health reveal did not reach boundary')
+  calls=[dict(operation='damageText',value=c['value']) for c in display_calls]
+  if pending:calls.append(dict(operation='clearDamageTotal'))
+  reveals.append(dict(input=initial,hp=hp,result=dict(body=read_display(),calls=calls)))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')
