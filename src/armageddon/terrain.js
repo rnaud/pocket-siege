@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { decodeImage, imageRGBA } from "./image.js";
 import { decodeSprite, spriteFrameRGBA } from "./sprite.js";
 import themes from "./terrain-themes.js";
+import { nativeTerrainPalette } from "./terrain-palette.js";
 
 const art = new Map();
 export async function loadOriginalTerrain() {
@@ -16,32 +17,23 @@ export async function loadOriginalTerrain() {
             );
             if (!response.ok) throw new Error(`Cannot load ${theme}/${name}`);
             const buffer = await response.arrayBuffer();
-            if (name === "debris.spr")
-              return { ...decodeSprite(buffer), textures: [] };
-            if (name === "back.spr") {
-              const sprite = decodeSprite(buffer);
-              const canvas = document.createElement("canvas");
-              canvas.width = sprite.width;
-              canvas.height = sprite.height;
-              canvas
-                .getContext("2d")
-                .putImageData(
-                  new ImageData(
-                    spriteFrameRGBA(sprite, 0),
-                    sprite.width,
-                    sprite.height,
-                  ),
-                  0,
-                  0,
-                );
-              return canvas;
-            }
-            const image = decodeImage(buffer);
-            return { ...image, rgba: imageRGBA(image, false) };
+            return name.endsWith(".spr") ? decodeSprite(buffer) : decodeImage(buffer);
           },
         ),
       );
-      art.set(theme, { soil, grass, gradient, background, debris });
+      const mapped = nativeTerrainPalette({ soil, grass, gradient, background, debris });
+      for (const name of ["soil", "grass", "gradient"])
+        mapped[name].rgba = imageRGBA(mapped[name], false, mapped[name].sharedPalette);
+      mapped.debris.textures = [];
+      const canvas = document.createElement("canvas");
+      canvas.width = background.width;
+      canvas.height = background.height;
+      canvas.getContext("2d").putImageData(new ImageData(
+        spriteFrameRGBA(mapped.background, 0, mapped.background.sharedPalette),
+        background.width, background.height), 0, 0);
+      mapped.backgroundSprite = mapped.background;
+      mapped.background = canvas;
+      art.set(theme, mapped);
     }),
   );
 }
@@ -159,7 +151,7 @@ export function updateTerrainDebris(mesh, age) {
       .getContext("2d")
       .putImageData(
         new ImageData(
-          spriteFrameRGBA(sprite, index),
+          spriteFrameRGBA(sprite, index, sprite.sharedPalette),
           sprite.width,
           sprite.height,
         ),

@@ -4,11 +4,31 @@ import crypto from "node:crypto";
 import { decodeImage, imageRGBA, nativeImagePaletteMap } from "../src/armageddon/image.js";
 import { NativeGamePalette } from "../src/armageddon/game-palette.js";
 import imagePalettes from "./fixtures/armageddon/image-palette.json" with { type: "json" };
+import terrainPalettes from "./fixtures/armageddon/terrain-palette.json" with { type: "json" };
+import { nativeTerrainPalette } from "../src/armageddon/terrain-palette.js";
 import { decodeSprite } from "../src/armageddon/sprite.js";
 const root = new URL("../public/armageddon/", import.meta.url);
 const catalog = JSON.parse(fs.readFileSync(new URL("media.json", root)));
 
 test("every imported visual preserves its original bytes and native containers decode", { tag: "@logic" }, () => {
+  for (const row of terrainPalettes.cases) {
+    const sources = {};
+    for (const asset of row.rows) {
+      const bytes = fs.readFileSync(new URL(`media/level/${row.theme}/level/${asset.name}`, root));
+      expect(crypto.createHash("sha256").update(bytes).digest("hex")).toBe(asset.sha256);
+      sources[asset.name === "back.spr" ? "background" : asset.name.split(".")[0]] =
+        (asset.name.endsWith(".spr") ? decodeSprite : decodeImage)(bytes);
+    }
+    const mapped = nativeTerrainPalette(sources);
+    for (const asset of row.rows) {
+      const name = asset.name === "back.spr" ? "background" : asset.name.split(".")[0];
+      expect(Array.from(mapped[name].sharedPalette.mapping), `${row.theme}/${name}`).toEqual(asset.mapping);
+      expect(mapped[name].sharedPalette.mapping.includes(255)).toBe(false);
+      expect(mapped[name].sharedPalette.colors).toBe(mapped.palette.colors);
+    }
+    expect(mapped.palette.used.map(index => [index, mapped.palette.colors[index]]))
+      .toEqual(row.rows.at(-1).entries);
+  }
   for (const row of imagePalettes.cases) {
     const bytes = fs.readFileSync(new URL(`../${row.path}`, import.meta.url));
     expect(crypto.createHash("sha256").update(bytes).digest("hex")).toBe(row.sha256);
