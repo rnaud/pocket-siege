@@ -1,3 +1,4 @@
+import { createNativeRopeShot, stepNativeRopeShot } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
 import { nativeLaunch } from "./armageddon/launch.js";
 import { nativeFireInput } from "./armageddon/fire-input.js";
@@ -1460,6 +1461,7 @@ function canAct() {
   return (
     phase === "aim" &&
     !pendingFire &&
+    !rope.firing &&
     !worms[current]?.originalRecovery &&
     !worms[current]?.nativeHurtBody &&
     !(team === 1 && mode === "ai") &&
@@ -1535,6 +1537,7 @@ function skipTurn() {
 }
 function stopRope() {
   for (const w of worms) w.originalRope = null;
+  if (rope.tip) dispose(rope.tip);
   if (rope.cuff) {
     group.remove(rope.cuff);
     rope.cuff.geometry.dispose();
@@ -1774,7 +1777,7 @@ function stepJetpack(w, dt) {
 function makeRopeLine(anchor, w) {
   const geometry = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(anchor.x, anchor.y, 30),
-    new THREE.Vector3(w.x, w.y + 18, 30),
+    new THREE.Vector3(w.x, w.y, 30),
   ]);
   const material = new THREE.LineBasicMaterial({
     color: 0xf4e4c0,
@@ -1787,34 +1790,62 @@ function makeRopeLine(anchor, w) {
   return line;
 }
 function fireRope() {
-  if (!canAct() || charging || targetUtility) return;
-  if (rope.attached) {
-    releaseRope();
-    return;
-  }
+  if (rope.firing || !canAct() || charging || targetUtility) return;
+  if (rope.attached) { releaseRope(); return; }
   const w = worms[current];
-  const start = { x: w.x, y: w.y + 18 };
-  const r = (angle * Math.PI) / 180;
-  let hit = null;
-  for (let d = 8; d <= 270; d += 3) {
-    const x = start.x + Math.cos(r) * d,
-      y = start.y + Math.sin(r) * d;
-    if (terrain.solid(x, y)) {
-      hit = {
-        x: start.x + Math.cos(r) * Math.max(0, d - 4),
-        y: start.y + Math.sin(r) * Math.max(0, d - 4),
-      };
-      break;
-    }
+  const body = createNativeRopeShot(w, angle, H);
+  rope = { attached: false, firing: true, body, anchor: null, length: 0,
+    tip: createOriginalVisual("ropetip"), mesh: makeRopeLine({ x: w.x, y: w.y }, w) };
+  if (rope.tip) {
+    // Original004F80C0 renders sprite646 at progress0x8000-ropeAngle.
+    const art = originalVisual("ropetip");
+    const frame = nativeSpriteFrame(art.count, art.flags, 0x8000 - body.ropeAngle);
+    rope.tip.material.map = originalVisual("ropetip", frame).map;
+    rope.tip.userData.originalFrame = frame;
+    rope.tip.position.set(w.x, w.y, 31);
+    group.add(rope.tip);
   }
-  if (!hit) {
+  activeUtility = "rope";
+  wormLocked = true;
+  utilitiesOpen = false;
+  sfx("ropefire");
+  $("#status").textContent = "Rope firing…";
+  updateUI();
+}
+function stepRopeShot(w) {
+  if (!rope.firing) return;
+  if (w.hp <= 0 || w.frozen || w.knocked || w.nativeHurtBody || phase !== "aim") {
+    stopRope(); return;
+  }
+  const result = stepNativeRopeShot(rope.body, w, H,
+    (x, y) => terrain.solid(x, H - y),
+    (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H));
+  rope.body = result.body;
+  w.x = result.body.x / 65536;
+  w.y = H - result.body.y / 65536;
+  if (result.calls.some(call => call.operation === "sound")) sfx("ropeimpact");
+  if (rope.tip) rope.tip.position.set(result.tip.x, result.tip.y, 31);
+  const positions = rope.mesh.geometry.attributes.position;
+  positions.setXYZ(0, result.tip.x, result.tip.y, 30);
+  positions.setXYZ(1, w.x, w.y, 30);
+  positions.needsUpdate = true;
+  if (result.body.constrained) {
+    const body = result.body;
+    const hit = { x: body.anchorX / 65536, y: H - body.anchorY / 65536 };
+    if (rope.tip) dispose(rope.tip);
+    dispose(rope.mesh);
+    attachRope(w, hit, body.length / 65536, body);
+  } else if (!result.body.ropeFiring) {
+    stopRope();
     $("#status").textContent = "No rope anchor there. Aim at the island.";
-    return;
+    updateUI();
   }
+}
+function attachRope(w, hit, length, body) {
   rope = {
     attached: true,
     anchor: hit,
-    length: Math.hypot(start.x - hit.x, start.y - hit.y),
+    length, body,
     mesh: null,
   };
   rope.mesh = makeRopeLine(hit, w);
@@ -1845,9 +1876,9 @@ function stepRope(w, dt) {
   if (!rope.attached || w !== worms[current]) return;
   const a = rope.anchor;
   if (aimInput)
-    rope.length = Math.max(34, Math.min(300, rope.length - aimInput * 95 * dt));
+    rope.length = Math.max(34, Math.min(rope.body?.ropeLength ?? 300, rope.length - aimInput * 95 * dt));
   let dx = w.x - a.x,
-    dy = w.y + 18 - a.y,
+    dy = w.y - a.y,
     len = Math.hypot(dx, dy) || 1;
   const tx = -dy / len,
     ty = dx / len;
@@ -1861,13 +1892,13 @@ function stepRope(w, dt) {
   w.x += w.vx * dt;
   w.y += w.vy * dt;
   dx = w.x - a.x;
-  dy = w.y + 18 - a.y;
+  dy = w.y - a.y;
   len = Math.hypot(dx, dy) || 1;
   const nx = dx / len,
     ny = dy / len;
   if (len > rope.length) {
     w.x = a.x + nx * rope.length;
-    w.y = a.y + ny * rope.length - 18;
+    w.y = a.y + ny * rope.length;
     const radial = Math.max(0, w.vx * nx + w.vy * ny);
     w.vx -= radial * nx;
     w.vy -= radial * ny;
@@ -1885,7 +1916,7 @@ function stepRope(w, dt) {
 function updateRopeVisual(w) {
   if (!rope.mesh || !rope.attached) return;
   const bodyAngle = Math.round(
-    (Math.atan2(rope.anchor.y - (w.y + 18), w.x - rope.anchor.x) * 0x10000) /
+    (Math.atan2(rope.anchor.y - (w.y), w.x - rope.anchor.x) * 0x10000) /
       (Math.PI * 2),
   );
   setOriginalRope(w, bodyAngle);
@@ -1898,7 +1929,7 @@ function updateRopeVisual(w) {
   }
   const pos = rope.mesh.geometry.attributes.position;
   pos.setXYZ(0, rope.anchor.x, rope.anchor.y, 30);
-  pos.setXYZ(1, w.x, w.y + 18, 30);
+  pos.setXYZ(1, w.x, w.y, 30);
   pos.needsUpdate = true;
 }
 function surrenderMatch() {
@@ -4076,6 +4107,7 @@ function step(dt) {
         walkWorm(w, terrain, aiRetreatDirection, dt);
     }
   }
+  if (rope.firing) stepRopeShot(worms[current]);
   for (const w of worms) {
     stepOriginalSight(
       w,
@@ -5740,6 +5772,8 @@ window.siege = {
     activeUtility,
     targetUtility,
     rope: {
+      firing: Boolean(rope.firing),
+      tip: rope.tip ? { x: rope.tip.position.x, y: rope.tip.position.y } : null,
       attached: rope.attached,
       length: Math.round(rope.length),
       anchor: rope.anchor,

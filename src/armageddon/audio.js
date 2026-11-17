@@ -15,6 +15,8 @@ const sounds = {
   axeimpact: "vikingaxeimpact",
   firepunchimpact: "firepunchimpact",
   drillimpact: "drillimpact",
+  ropefire: "ninjaropefire",
+  ropeimpact: "ninjaropeimpact",
   dragonball: "dragonballrelease",
   dragonballimpact: "dragonballimpact",
   axerelease: "vikingaxerelease",
