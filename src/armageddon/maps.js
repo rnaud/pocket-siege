@@ -1,5 +1,6 @@
 import catalog from "./map-catalog.json" with { type: "json" };
-import { decodeImage, imageRGBA } from "./image.js";
+import { decodeImage, imageRGBA, nativeImagePaletteMap } from "./image.js";
+import { NativeGamePalette } from "./game-palette.js";
 
 // Full-size authored terrain. Coordinates are upward-positive like the host
 // simulation; source IMG rows are top-down. Index zero is empty space.
@@ -10,7 +11,12 @@ export class OriginalMapTerrain {
     this.id = id;
     this.width = image.width;
     this.height = image.height;
-    this.pixels = imageRGBA(image, true);
+    // 004A78A0 obtains graphics bank3 before loading the level bitmaps.
+    // Retain source indices as well as RGBA for subsequent palette effects.
+    this.nativePalette = new NativeGamePalette(137, 248);
+    this.nativePaletteMapping = nativeImagePaletteMap(image, this.nativePalette);
+    this.sourcePixels = image.pixels;
+    this.pixels = imageRGBA(image, true, { mapping: this.nativePaletteMapping, colors: this.nativePalette.colors });
     this.data = new Uint8Array(this.width * this.height);
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {

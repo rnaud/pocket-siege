@@ -20,12 +20,15 @@ test("all 100 authored maps retain full source pixels and collision orientation"
       source = decodeImage(buffer);
     const terrain = new OriginalMapTerrain(buffer, asset.id);
     expect([terrain.width, terrain.height]).toEqual([1920, 696]);
+    expect([terrain.nativePalette.first, terrain.nativePalette.last]).toEqual([137, 248]);
+    expect(terrain.nativePaletteMapping.includes(255), asset.id).toBe(false);
     let mismatches = 0,
       solids = 0;
     for (let i = 0; i < source.pixels.length; i++) {
       const index = source.pixels[i],
         x = i % source.width;
       const y = source.height - 1 - Math.floor(i / source.width);
+      if (terrain.sourcePixels[i] !== index) mismatches++;
       if (terrain.solid(x, y) !== (index !== 0)) mismatches++;
       if (index) solids++;
       for (let c = 0; c < 4; c++) {

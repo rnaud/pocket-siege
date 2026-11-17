@@ -1,3 +1,8 @@
+import { nativeSpritePaletteMap } from "./sprite.js";
+
+// 00492750..00492858 uses the same RGB insertion/byte translation as SPR.
+export const nativeImagePaletteMap = nativeSpritePaletteMap;
+
 // Native Team17 IMG: indexed RGB palette, dimensions, optional LZ stream.
 // Decode original pixels directly; no raster conversion or resampling.
 export function decodeImage(buffer) {
@@ -65,11 +70,17 @@ export function decodeImage(buffer) {
   return { width, height, palette, pixels };
 }
 
-export function imageRGBA(image, transparent = true) {
+export function imageRGBA(image, transparent = true, sharedPalette = null) {
   const rgba = new Uint8ClampedArray(image.width * image.height * 4);
   for (let i = 0; i < image.pixels.length; i++) {
-    const index = image.pixels[i];
+    const source = image.pixels[i];
+    const index = sharedPalette ? sharedPalette.mapping[source] : source;
     if (transparent && !index) continue;
+    if (sharedPalette) {
+      rgba.set(sharedPalette.colors[index], i * 4);
+      rgba[i * 4 + 3] = 255;
+      continue;
+    }
     rgba.set(image.palette.subarray(index * 4, index * 4 + 4), i * 4);
   }
   return rgba;

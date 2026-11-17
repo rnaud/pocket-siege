@@ -1,12 +1,26 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { decodeImage } from "../src/armageddon/image.js";
+import { decodeImage, imageRGBA, nativeImagePaletteMap } from "../src/armageddon/image.js";
+import { NativeGamePalette } from "../src/armageddon/game-palette.js";
+import imagePalettes from "./fixtures/armageddon/image-palette.json" with { type: "json" };
 import { decodeSprite } from "../src/armageddon/sprite.js";
 const root = new URL("../public/armageddon/", import.meta.url);
 const catalog = JSON.parse(fs.readFileSync(new URL("media.json", root)));
 
 test("every imported visual preserves its original bytes and native containers decode", { tag: "@logic" }, () => {
+  for (const row of imagePalettes.cases) {
+    const bytes = fs.readFileSync(new URL(`../${row.path}`, import.meta.url));
+    expect(crypto.createHash("sha256").update(bytes).digest("hex")).toBe(row.sha256);
+    const image = decodeImage(bytes);
+    const palette = new NativeGamePalette(row.first, row.last);
+    const mapping = nativeImagePaletteMap(image, palette);
+    expect(Array.from(mapping)).toEqual(row.mapping);
+    expect(palette.used.map(index => [index, palette.colors[index]])).toEqual(row.entries);
+    if (!mapping.includes(255)) for (const transparent of [false, true])
+      expect(Buffer.from(imageRGBA(image, transparent, { mapping, colors: palette.colors })))
+        .toEqual(Buffer.from(imageRGBA(image, transparent)));
+  }
   expect(catalog.assets).toHaveLength(3094);
   const counts = { img: 0, spr: 0, bmp: 0 };
   let frames = 0;
