@@ -1,3 +1,4 @@
+import { nativeProjectileSoundTick } from "./projectile-timer.js";
 import soundSlots from "./sound-slots.json";
 import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";
 import { nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup } from "./sound-queue.js";
@@ -308,6 +309,30 @@ export function playNativeProjectileFuse(context, sound) {
   const entry = soundSlots.slots[sound & 65535];
   if (!sound || !entry) return null;
   return playOriginalClip(context, `sounds/${entry.clip}`, () => {}, 1, Boolean(sound & 0x10000), 1, 4, 0, true);
+}
+
+// 004E4B39 owns fuse(+3D8) and secondary-phase(+3D4) independently.
+export function updateNativeProjectileAudio(context, projectile) {
+  const slots = { 1: "nativeFusePlayback", 2: "nativeSecondaryPlayback" };
+  const result = nativeProjectileSoundTick({
+    fuse: projectile.nativeFusePlayback ? 1 : 0,
+    secondary: projectile.nativeSecondaryPlayback ? 2 : 0,
+    active: projectile.nativeBody.delay,
+    sound: projectile.nativeSecondarySound,
+  }, {
+    finished: handle => projectile[slots[handle]].finished,
+    stop: handle => {
+      projectile[slots[handle]].stop();
+      projectile[slots[handle]] = null;
+    },
+    start: request => {
+      if (!context) return 0;
+      projectile.nativeSecondaryPlayback = playNativeProjectileFuse(context, request[0]);
+      return projectile.nativeSecondaryPlayback ? 2 : 0;
+    },
+  });
+  if (!result.fuse && projectile.nativeFusePlayback === null)
+    projectile.nativeTimer.loopSound = 0;
 }
 
 // Executable descriptors0055F328/330/338: MineArm, MineTick, MineDud.

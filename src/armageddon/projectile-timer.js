@@ -39,3 +39,20 @@ export function nativeProjectileTimer(input, environment) {
   }
   return done();
 }
+
+// 004E4B39..004E4BC3: completed fuse handle and the secondary-phase sound
+// have independent ownership. Starting a sample can fail and is retried next tick.
+export function nativeProjectileSoundTick(input, callbacks) {
+  const body = { ...input };
+  if (body.fuse && callbacks.finished(body.fuse)) {
+    callbacks.stop(body.fuse);
+    body.fuse = 0;
+  }
+  if (body.active && !body.secondary)
+    body.secondary = callbacks.start([body.sound, 4, 65536, 65536, 0]);
+  if (!body.active && body.secondary) {
+    callbacks.stop(body.secondary);
+    body.secondary = 0;
+  }
+  return body;
+}

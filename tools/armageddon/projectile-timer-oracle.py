@@ -58,5 +58,30 @@ for remaining in [-1,0,1,19,20,21,799,800,819,820,3000]:
    calls=[];cpu.emu_start(0x4e45ed,0x4e477a,count=1000)
    if cpu.reg_read(UC_X86_REG_EIP)!=0x4e477a:raise RuntimeError('Timer block did not finish')
    cases.append(dict(body=body,environment=environment,output={name:signed(read(owner+offset)) for name,offset in fields.items()},calls=calls))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004E45ED..004E477A. Submerged/awake getters, state setter, RNG, warning/sound and special transition interfaces supplied/captured.',cases=cases),separators=(',',':'))+'\n')
+# Execute the independent owned-sound lifecycle block after motion/guidance.
+sound_cases=[]
+def sound_hook(cpu,address,size,user):
+ if address not in [0x4edc10,0x4edb90]:return
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ count=1 if address==0x4edc10 else 5
+ request=[signed(read(sp+4+4*i)) for i in range(count)]
+ calls.append(dict(operation='finished' if count==1 else 'start',request=request))
+ cpu.reg_write(UC_X86_REG_EAX,finished if count==1 else started)
+ cpu.reg_write(UC_X86_REG_ESP,sp+4+4*count)
+ cpu.reg_write(UC_X86_REG_EIP,read(sp))
+cpu.hook_add(UC_HOOK_CODE,sound_hook)
+for fuse in [0,11]:
+ for secondary in [0,22]:
+  for active in [0,1,10]:
+   for sound in [0,62,65568,65598]:
+    for finished in [0,1]:
+     for started in [0,33]:
+      body=dict(fuse=fuse,secondary=secondary,active=active,sound=sound)
+      for key,offset in dict(fuse=0x3d8,secondary=0x3d4,active=0x3ac,sound=0x33c).items():write(owner+offset,body[key])
+      cpu.reg_write(UC_X86_REG_ESI,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+      calls=[];cpu.emu_start(0x4e4b39,0x4e4bc3,count=1000)
+      if cpu.reg_read(UC_X86_REG_EIP)!=0x4e4bc3:raise RuntimeError('Sound block did not finish')
+      output=dict(body,fuse=read(owner+0x3d8),secondary=read(owner+0x3d4))
+      sound_cases.append(dict(body=body,finished=finished,started=started,output=output,calls=calls))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004E45ED..004E477A. Submerged/awake getters, state setter, RNG, warning/sound and special transition interfaces supplied/captured. Sound cases execute004E4B39..004E4BC3 with sample start, completion and stop boundaries captured.',cases=cases,soundCases=sound_cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} projectile timer cases')

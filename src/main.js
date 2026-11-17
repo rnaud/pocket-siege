@@ -43,7 +43,7 @@ import { nativeMineTimer, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
-import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
+import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse, updateNativeProjectileAudio } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
   attachNativeDrowningFlight,
@@ -789,7 +789,8 @@ function stopBurstSound(burst = pendingFire?.burst) {
 function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
   p?.nativeContactPlayback?.stop();
-  if (p) p.nativeFusePlayback = p.nativeContactPlayback = null;
+  p?.nativeSecondaryPlayback?.stop();
+  if (p) p.nativeFusePlayback = p.nativeContactPlayback = p.nativeSecondaryPlayback = null;
 }
 let nativeClockProgress = 0, nativeClockTarget = 0;
 let nativeClockPresentation = { displayed: 45000, warned: 0, lastSecond: 0, phase: 0 };
@@ -1166,6 +1167,7 @@ function stepBombs(dt) {
         updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
       }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
       b.age += dt;
+      updateNativeProjectileAudio(sound ? audio : null, b);
       if (!b.nativeTimer.loopSound || result.removed || result.detonate) {
         b.nativeFusePlayback?.stop();
         b.nativeFusePlayback = null;
@@ -5040,6 +5042,7 @@ function stepFrame(dt) {
       p.mesh.rotation.z =
         p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
 
+    if (p.nativeBody) updateNativeProjectileAudio(sound ? audio : null, p);
     if (!p.nativeTimer?.loopSound) {
       p.nativeFusePlayback?.stop();
       p.nativeFusePlayback = null;

@@ -202,6 +202,7 @@ export function attachNativeProjectile(p, height) {
     warningPending: 0, warningBlocked: 0, warningScale: 0, state: 0,
   };
   p.nativeFuseSound = words[18];
+  p.nativeSecondarySound = words[26];
   if (words[23] === 1) p.nativeGuidance = {
     delay: words[32], duration: words[33], kind: words[31],
     initialized: 0, steerX: 0, steerY: 0,
