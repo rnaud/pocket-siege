@@ -1968,18 +1968,18 @@ body.native-game-hud {
 }
 .native-game-hud .team {
   position: absolute;
-  left: 8px;
-  top: 8px;
-  width: 320px;
+  left: calc(50% + 8px);
+  top: calc(100% - var(--team-panel-offset, 0px));
+  width: 0;
   max-width: calc(100% - 16px);
-  height: 34px;
+  height: 16px;
   padding: 0;
   background: none;
   border: 0;
   box-shadow: none;
 }
 .native-game-hud .team-coral {
-  top: 46px;
+  top: calc(100% - var(--team-panel-offset, 0px) + 16px);
 }
 .native-game-hud .team .team-portrait,
 .native-game-hud .team .team-roster,
@@ -1991,12 +1991,13 @@ body.native-game-hud {
 .native-game-hud .team > div:not(.team-roster) {
   inset: 0;
   position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: block;
 }
 .native-game-hud .team b {
-  width: 100px;
+  position: absolute;
+  right: 12px;
+  top: 0;
+  width: max-content;
   flex: none;
   font-size: 10px;
   line-height: 12px;
@@ -2011,9 +2012,12 @@ body.native-game-hud {
   color: #fff;
 }
 .native-game-hud .health-track {
-  width: 208px;
+  position: absolute;
+  left: 12px;
+  top: 0;
+  width: 104px;
   min-width: 0;
-  height: 34px;
+  height: 16px;
   margin: 0;
   background: none;
   box-shadow: none;

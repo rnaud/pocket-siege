@@ -47,7 +47,26 @@ export function paintNativeTeamHealth(canvas, hp, maxHp, color) {
   const amount = Math.max(0, Math.min(100, Math.floor((hp * 100) / maxHp)));
   // 004B8350 takes the standard font's 16px height; 004B87B0 adds one.
   paintNativeHUDFrame(canvas, amount + 4, 17, color);
-  canvas.style.width = `${canvas.width * 2}px`;
-  canvas.style.height = "34px";
+  canvas.style.width = `${canvas.width}px`;
+  canvas.style.height = "17px";
   canvas.dataset.nativeHealth = String(amount);
+}
+
+// 004EC470 / 004EC5D0 / 004EC5F0: fixed 50Hz team panel controller.
+export function nativeTeamPanelTick(panel) {
+  if (panel.countdown !== 0 && --panel.countdown === 0) panel.target = 0;
+  const difference = (panel.target - panel.progress) | 0;
+  const sign = difference >> 31;
+  if (((difference ^ sign) - sign | 0) < 0x199a) panel.progress = panel.target;
+  else {
+    if (panel.progress < panel.target) panel.progress = (panel.progress + 0xccc) | 0;
+    if (panel.target < panel.progress) panel.progress = (panel.progress - 0xccc) | 0;
+  }
+}
+export function showNativeTeamPanel(panel) {
+  panel.target = 65536;
+  return panel.progress === 65536;
+}
+export function hideNativeTeamPanelAfterInput(panel) {
+  if (panel.countdown === 0) panel.countdown = 50;
 }

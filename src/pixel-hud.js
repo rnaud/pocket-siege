@@ -106,7 +106,7 @@ export function mountPixelHUD(arena) {
         canvas.className = "native-team-name";
         canvas.setAttribute("aria-hidden", "true");
         label.setAttribute("aria-label", label.textContent);
-        paintNativeText(canvas, font, label.textContent);
+        paintNativeText(canvas, font, label.textContent, 1);
         label.replaceChildren(canvas);
         label.dataset.nativeFont = fontName;
       })
@@ -183,4 +183,9 @@ export function updateHudTeams(worms, activeTeam) {
       `${t ? "Coral" : "Moss"}: ${hp} health, ${alive} worms alive`,
     );
   });
+}
+
+export function updateHudTeamPanel(progress) {
+  // 004EC600: center-origin X + 8, bottom minus total row height * visibility.
+  document.querySelector(".match-bar").style.setProperty("--team-panel-offset", `${Math.round(32 * progress / 65536)}px`);
 }

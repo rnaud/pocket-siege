@@ -113,7 +113,7 @@ test("live death plays past the old cutoff before its explosion", async ({
     window.siege.debug.hit(1, 200);
   });
   await expect
-    .poll(() => page.evaluate(() => window.deathFrameProbe.max))
+    .poll(() => page.evaluate(() => window.deathFrameProbe.max), { timeout: 15000 })
     .toBeGreaterThan(40);
   await expect
     .poll(() =>

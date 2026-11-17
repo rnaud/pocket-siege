@@ -118,6 +118,8 @@ test("live update preserves native hurt impulse into the next standing worm", as
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
+  // This contact fixture needs empty air at its fixed world coordinates.
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => {
     window.wormContact = null;

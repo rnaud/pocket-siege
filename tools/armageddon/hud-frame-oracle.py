@@ -48,5 +48,16 @@ for width,height in [(4,5),(20,12),(104,17),(181,17),(200,40)]:
  cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4b8660,stop,count=1000000)
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('HUD routine did not return')
  cases.append({'width':width,'height':height,'calls':calls})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases},separators=(',',':'))+'\n')
-print(cases[2])
+panel_cases=[]
+for progress in [0,3276,6553,6554,32768,62260,65536]:
+ for target in [0,65536]:
+  for countdown in [0,1,2,50]:
+   for offset,value in [(0x74,progress),(0x78,target),(0x7c,countdown),(0x80,0)]:write(owner+offset,value)
+   cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+   cpu.emu_start(0x4ec470,0x4ec4ff,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=0x4ec4ff:raise RuntimeError('Panel prefix did not finish')
+   panel_cases.append({'before':{'progress':progress,'target':target,'countdown':countdown},
+     'after':dict(zip(['progress','target','countdown'],[read(owner+o) for o in [0x74,0x78,0x7c]]))})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases},separators=(',',':'))+'\n')
+print(f'{len(cases)} frames, {len(panel_cases)} panel ticks')

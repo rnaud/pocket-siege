@@ -1,3 +1,4 @@
+import { nativeTeamPanelTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
@@ -198,7 +199,7 @@ import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
-import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
+import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel } from "./pixel-hud.js";
 import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode } from "./armageddon/worm-label.js";
 import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater } from "./water.js";
@@ -760,6 +761,7 @@ function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
   if (p) p.nativeFusePlayback = null;
 }
+const nativeTeamPanel = { progress: 0, target: 65536, countdown: 0 };
 let mapLoading = false;
 let preparedRandomSeed = null;
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
@@ -792,6 +794,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   uiKey = "";
   timerKey = "";
   selectionTick = 0;
+  Object.assign(nativeTeamPanel, { progress: 0, target: 65536, countdown: 0 });
   labelMode = 1;
   updateLabelModeButton();
   if (!keepSeries) {
@@ -2468,6 +2471,7 @@ function turnFacing(direction) {
 function setMove(direction) {
   if (targetUtility) return;
   if (canMove()) {
+    hideNativeTeamPanelAfterInput(nativeTeamPanel);
     wormLocked = true;
     move = direction;
     if (!rope.attached && !jetpack.active) turnFacing(direction);
@@ -2475,6 +2479,7 @@ function setMove(direction) {
 }
 function adjustAim(direction, dt) {
   if (!canAct() || charging) return;
+  hideNativeTeamPanelAfterInput(nativeTeamPanel);
   const facing = worms[current].facing,
     elevation = facing > 0 ? angle : 180 - angle;
   const next = Math.max(-85, Math.min(90, elevation + direction * 65 * dt));
@@ -3999,6 +4004,7 @@ function endGame() {
   finishMatch(winner, false);
 }
 function nextTurn() {
+  showNativeTeamPanel(nativeTeamPanel);
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
   team = 1 - team;
@@ -4153,6 +4159,8 @@ function step(dt) {
   }
   nativeCamera.beginFrame();
   selectionTick = (selectionTick + 1) | 0;
+  nativeTeamPanelTick(nativeTeamPanel);
+  updateHudTeamPanel(nativeTeamPanel.progress);
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -4841,8 +4849,10 @@ function step(dt) {
     let deathStarted = false;
     if (settled && !healthDisplayBusy) {
       if (worms.some(w => w.nativeHealthDisplay.pending)) {
-        for (const w of worms) revealWormHealth(w);
-        healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
+        if (showNativeTeamPanel(nativeTeamPanel)) {
+          for (const w of worms) revealWormHealth(w);
+        }
+        healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active || w.nativeHealthDisplay.pending);
       } else if (!worms.some(w => w.nativeDeathRequest)) {
         const teams = [0, 1].map(team => worms.filter(w => w.team === team));
         const dispatch = nativeNextDeath(teams.map(roster => roster.map(w => ({
@@ -4850,6 +4860,7 @@ function step(dt) {
           x: Math.round(w.x * 65536) | 0,
         }))));
         if (dispatch) {
+          showNativeTeamPanel(nativeTeamPanel);
           const w = teams[(dispatch.target >> 4) - 1][(dispatch.target & 15) - 1];
           w.nativeDeathRequest = 1;
           deathStarted = true;
