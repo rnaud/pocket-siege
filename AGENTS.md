@@ -9,3 +9,7 @@ Keep the public changelog and remaining offline parity work current with every r
 - Run `npm run build` for progress data changes; it validates that public evidence references exist in the canonical tracker. Follow the existing related-test hook for code changes; documentation maintenance alone does not call for new browser or iPhone tests.
 
 See `docs/art-direction/progress-page.md` for publishing and maintenance details.
+
+# CI scope
+
+Normal pushes run all native logic checks plus affected browser files and the smoke cases selected by `scripts/test-ci-browser.mjs`. The selector includes browser-side dynamic imports and falls back to the full browser suite for app entry, asset, dependency or CI configuration changes, or a missing comparison revision. Full regression is also available through the workflow's `full_browser` input. Keep smoke names synchronized when renaming tests; missing smoke coverage fails selection. Browser checks use test-level parallelism so large files do not leave workers idle.

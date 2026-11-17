@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      full_browser:
+        description: Run the complete browser regression suite
+        type: boolean
+        default: true
 permissions:
   contents: read
   pages: write
@@ -23,9 +28,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test -- --project=logic --workers=2
+      - run: npm test -- --config=playwright.precommit.config.js --project=logic --workers=2
+        env:
+          RELATED_LOGIC_ONLY: '1'
   test:
-    name: Browser (shard ${{ matrix.shard }}/2)
+    name: Browser checks (${{ matrix.shard }}/2)
     # Keep browser system dependencies on Playwright's supported Ubuntu release.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -35,14 +42,19 @@ jobs:
         shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm test -- --project=desktop --shard=${{ matrix.shard }}/2 --workers=2
+      - run: node scripts/test-ci-browser.mjs
         env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          FULL_BROWSER: ${{ inputs.full_browser == true }}
+          CI_SHARD: ${{ matrix.shard }}/2
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/results.json
       - uses: actions/upload-artifact@v4
         if: always()
