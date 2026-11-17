@@ -1,3 +1,5 @@
+import replayStream from "./fixtures/armageddon/replay-stream.json" with { type: "json" };
+import { NativeReplayStream } from "../src/armageddon/replay-stream.js";
 import replayBuffer from "./fixtures/armageddon/replay-buffer.json" with { type: "json" };
 import { NativeReplayBuffer } from "../src/armageddon/replay-buffer.js";
 import replayControl from "./fixtures/armageddon/replay-control.json" with { type: "json" };
@@ -37,6 +39,23 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayStream.cases) {
+    const stream = new NativeReplayStream(2048);
+    stream.bytes.set(row.initial);
+    for (const step of row.steps) {
+      const op = step.operation;
+      let result = null;
+      if (op.kind === "reset") stream.reset();
+      else if (op.kind === "seek") stream.seek(op.position);
+      else if (op.kind === "readByte") result = stream.readByte();
+      else if (op.kind === "writeByte") stream.writeByte(op.value);
+      else if (op.kind === "readBlock") result = [...stream.readBlock(op.size)];
+      else if (op.kind === "writeBlock") stream.writeBlock(op.bytes);
+      else if (op.kind === "checksum") result = stream.checksum();
+      expect({ result, state: { position: stream.position, length: stream.length,
+        checksum: stream.checksum(), bytes: [...stream.bytes.slice(0, 256)] } }).toEqual({ result: step.result, state: step.state });
+    }
+  }
   for (const row of replayBuffer.cases) {
     const buffers = [new NativeReplayBuffer(row.capacity), new NativeReplayBuffer(row.capacity)];
     for (const step of row.steps) {
