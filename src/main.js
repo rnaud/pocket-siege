@@ -1060,8 +1060,7 @@ function stepBombs(dt) {
       }
       const result = stepNativeProjectile(b, {
         height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame,
-        motion,
-    solid: (x, y) => terrain.solid(x, H - y),
+        solid: (x, y) => terrain.solid(x, H - y),
         random: () => matchRandom.logicUint(),
         collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
         updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
@@ -1976,6 +1975,7 @@ function stepRope(w, dt) {
     frame: matchRandom.frame, index: current, earthquake: 0,
     waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
   }, {
+    motion,
     solid: (x, y) => terrain.solid(x, H - y),
     collide: (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H),
     otherType: hit => hit === 1 ? 1 : nativeWormCollisionType(nativeWormState(worms[hit - 2])),
