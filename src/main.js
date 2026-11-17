@@ -1,3 +1,4 @@
+import { nativeTeamRotationReset, nativeSelectNextTeam } from "./armageddon/team-rotation.js";
 import { nativeRetreatCountdown } from "./armageddon/retreat.js";
 import { nativePoisonSettlement } from "./armageddon/poison-settlement.js";
 import { NativeBusyCounter } from "./armageddon/busy-counter.js";
@@ -319,6 +320,7 @@ let mineDudPool = new NativeMineDudPool();
 let nativeRenderOrder = new NativeRenderOrder();
 const nativeCamera = new NativeCameraPriority();
 let nativeCameraFocus = null;
+let nativeTeamRotation = null;
 let nativeCameraFraming = null;
 let pendingWormCamera = [];
 let pendingEnvironmentCamera = null;
@@ -1108,7 +1110,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   for (let i = 0; i < 240; i++)
     for (const w of worms) stepWorm(w, terrain, 1 / 120, gravityScale);
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
-  team = keepSeries ? (seriesRound - 1) % 2 : 0;
+  nativeTeamRotation = nativeTeamRotationReset({ groups: 2,
+    initialGroup: keepSeries ? (seriesRound - 1) % 2 : 0,
+    cursors: Array(6).fill(1), starts: [0, 0] });
+  team = selectNativeMatchTeam();
   round = 1;
   turnCount = [0, 0];
   explosions = 0;
@@ -4608,6 +4613,17 @@ function consumeDamageReaction(reveal = false) {
     queueControllerSpeech(reaction.speech.request);
   }
 }
+function selectNativeMatchTeam() {
+  // Current frontend has two opposing alliances. Retain original per-alliance
+  // cursors and health eligibility instead of toggling the host team index.
+  const selected = nativeSelectNextTeam({ ...nativeTeamRotation, groups: 2,
+    deployment: false, teams: [0, 1].map(id => ({ group: id,
+      unavailable: 0, eliminated: 0,
+      worms: worms.filter(w => w.team === id).map(w => ({ hp: w.hp, state: nativeWormState(w) })),
+    })) });
+  nativeTeamRotation = { group: selected.group, cursors: selected.cursors };
+  return selected.team - 1;
+}
 function nextTurn() {
   if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
   const killer = matchDamageSourceActive ? worms[current] : null;
@@ -4624,7 +4640,9 @@ function nextTurn() {
   matchDamageSourceActive = false;
   if (!advanceNativePoisonSettlement()) return;
   if (!advanceNativeEnvironmentSettlement()) return;
-  team = 1 - team;
+  const nextTeam = selectNativeMatchTeam();
+  if (nextTeam < 0) return endGame();
+  team = nextTeam;
   if (team === 0) {
     round++;
     if (
