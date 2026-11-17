@@ -1,5 +1,6 @@
-import { captureReplayEnvironment } from "./armageddon/replay-environment-adapter.js";
-import { captureReplayActors } from "./armageddon/replay-actor-adapter.js";
+import { captureReplayResources, restoreReplayResources } from "./armageddon/replay-render-adapter.js";
+import { captureReplayEnvironment, restoreReplayEnvironment } from "./armageddon/replay-environment-adapter.js";
+import { captureReplayActors, restoreReplayActors } from "./armageddon/replay-actor-adapter.js";
 import { nativeWindSelection, nativeDefaultWind } from "./armageddon/wind-selection.js";
 import { nativeWormRotation } from "./armageddon/worm-rotation.js";
 import { nativeTeamRotationReset, nativeSelectNextTeam } from "./armageddon/team-rotation.js";
@@ -2783,7 +2784,7 @@ function captureMatchReplayState() {
     return resourceIds.get(value);
   };
   const state = {
-    actors: { worms, projectile, particles, crates, mines, girders, graves, bombs, airstrikes, nativeFlames, hazards, nativeParticles },
+    actors: { worms, projectile, particles, crates, mines, girders, graves, bombs, airstrikes, nativeFlames, hazards, nativeParticles, originalEffects, originalSmoke, originalDebris, waterBubbles },
     turn: { current, team, round, phase, wind, time, shotWait, lastSelectedWorm, mode, weapon, move, angle, power, aiWait,
       explosions, configuredDelays, nativeAnnouncements, pendingTurnStart, pendingPoisonSettlement, pendingEnvironmentSettlement,
       matchDamageSourceActive, nativeMatchStatistics, nativeDamageReaction, reactionOrigin, announcementVolume,
@@ -2802,8 +2803,63 @@ function captureMatchReplayState() {
     camera: { nativeCameraFocus, nativeTeamRotation, nativeCameraFraming: nativeCameraFraming ? { ...nativeCameraFraming } : null, pendingWormCamera, pendingEnvironmentCamera,
       manualCamera, overview, cameraZoom, cameraX, cameraY, cameraSnap, view },
   };
-  return { environment: captureReplayEnvironment(terrain,matchRandom,W,H),
-    actors: captureReplayActors([{id:"match",actor:state}],{resourceKey}), resources };
+  const actors = captureReplayActors([{id:"match",actor:state}],{resourceKey});
+  const presentation = captureReplayResources(resources,resourceKey);
+  return { environment: captureReplayEnvironment(terrain,matchRandom,W,H), actors, resources, presentation, terrain, sound };
+}
+function restoreMatchReplayState(snapshot) {
+  if (snapshot.terrain !== terrain || mapLoading) throw new Error("Replay snapshot belongs to a different map");
+  if (snapshot.sound || sound) throw new Error("Development restore currently requires sound off");
+  const state = restoreReplayActors(snapshot.actors,{resolveResource:id=>snapshot.resources.get(id)}).get("match");
+  // Prepare the saved graph before changing live state. Renderer resources can
+  // have been removed/disposed since capture; Three recreates their GPU data.
+  const currentSnapshot = captureMatchReplayState();
+  const savedResources = new Set(snapshot.resources.values());
+  for (const object of currentSnapshot.resources.values()) {
+    if (savedResources.has(object)) continue;
+    if (object.isObject3D && object.parent === group) dispose(object);
+    else if (object instanceof Element) object.remove();
+  }
+  restoreReplayEnvironment(snapshot.environment,terrain,matchRandom,W,H);
+  restoreReplayResources(snapshot.presentation,snapshot.resources);
+  ({ worms, projectile, particles, crates, mines, girders, graves, bombs, airstrikes, nativeFlames, hazards } = state.actors);
+  nativeParticles.splice(0,nativeParticles.length,...state.actors.nativeParticles);
+  originalEffects.splice(0,originalEffects.length,...state.actors.originalEffects);
+  originalSmoke.splice(0,originalSmoke.length,...state.actors.originalSmoke);
+  originalDebris.splice(0,originalDebris.length,...state.actors.originalDebris);
+  waterBubbles.splice(0,waterBubbles.length,...state.actors.waterBubbles);
+  ({
+    current, team, round, phase, wind, time, shotWait,
+    lastSelectedWorm, mode, weapon, move, angle, power, aiWait,
+    explosions, configuredDelays, nativeAnnouncements, pendingTurnStart, pendingPoisonSettlement, pendingEnvironmentSettlement, matchDamageSourceActive,
+    nativeMatchStatistics, nativeDamageReaction, reactionOrigin, announcementVolume, weaponDelays, ammo, teamWeapon,
+    waterLevel, suddenDeath, suddenDeathType, sdTriggered, poisoned, difficulty, format,
+    seriesWins, seriesRound, breakTimer, nativeFlameCounter, crateDirectionBag, slowMo, weather,
+    modifier, gravityScale, damageMultiplier, automaticUtilityState, blastScale, scheme, stockpile,
+    crateRain, utilityAmmo, utilitiesOpen, specialOpen, activeUtility, targetUtility, homingTarget,
+    shotgunRemaining, pendingFire, rope, jetpack, parachuteArmed, bungeeArmed, turnSeconds,
+    turnTime, retreatSeconds, wormLocked, matchStarted, daily, aiPower, shotFuse,
+    shotBounce, aiMoveTime, aiMoveDirection, aiRetreatTime, aiRetreatDirection, lastAiPlanMs, aiPlan,
+    hitStop, charging, chargeFixed, chargeSource, aimInput, retreat, fuse,
+    bounce, firedPower, shotCount, lastJump, jumpClock, selectionTick, labelMode,
+    lastShot, lastResult, bannerTime, nativeClockProgress, nativeClockTarget, nativeClockPresentation, nativeTeamList,
+    pendingEliminationTeam, nativeTeamHealthMaximum, nativeTeamHealthValues, toggleTeamPanelVisibility, smokeRandom, impactBag, bubbleSeed,
+    nativeWaterRise, nativeNuclearEffect
+  } = state.turn);
+  Object.assign(nativeTeamPanelVisibility,state.turn.nativeTeamPanelVisibility);
+  Object.assign(nativeTeamPanel,state.turn.nativeTeamPanel);
+  Object.assign(mineDudPool,state.controllers.mineDudPool);
+  Object.assign(nativeRenderOrder,state.controllers.renderOrder);
+  Object.assign(nativeCamera,state.controllers.camera);
+  Object.assign(nativeBusy,state.controllers.busy);
+  Object.assign(nativeSoundQueue,state.controllers.soundQueue);
+  ({ nativeCameraFocus, nativeTeamRotation, pendingWormCamera, pendingEnvironmentCamera,
+    manualCamera, overview, cameraZoom, cameraX, cameraY, cameraSnap } = state.camera);
+  nativeCameraFraming = state.camera.nativeCameraFraming ? Object.assign(Object.create(NativeCameraFraming.prototype),state.camera.nativeCameraFraming) : null;
+  Object.assign(view,state.camera.view);
+  accumulator=0; last=performance.now(); uiKey=""; timerKey="";
+  terrainDirty=false; paintTerrain(ctx,terrain,texture);
+  updateSliders(); updateUI(); applyView();
 }
 function startReplay() {
   if (replaying || !lastShot || lastShot.points.length < 2) return;
@@ -7013,6 +7069,8 @@ window.siege = {
 if (import.meta.env.DEV) {
   window.siege.debug = {
     captureReplayState: captureMatchReplayState,
+    restoreReplayState: restoreMatchReplayState,
+    advanceReplayFrames(count=1) { for (let i=0;i<count;i++) step(LOGIC_STEP_SECONDS); },
     knockout(teamIndex = 1) {
       for (const w of worms) {
         if (w.team !== teamIndex) continue;
