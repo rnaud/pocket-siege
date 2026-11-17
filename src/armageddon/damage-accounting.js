@@ -90,3 +90,25 @@ export function nativeRecordMatchDamage(match, victim, source, damage) {
     }
   }
 }
+
+export function createNativeDamageReaction() {
+  return { kills: 0, damage: 0, revengeTeam: 0, friendlyTeam: 0, selfTeam: 0,
+    maxDamage: 0, maxVictimTeam: 0 };
+}
+
+// 004B42B0 runs after004C2A00 for the same reportable damage event.
+export function nativeRecordDamageReaction(state, victim, source, damage) {
+  if (!source?.team || !source.worm) return;
+  if (state.maxVictimTeam === 0 || state.maxDamage < damage) {
+    state.maxDamage = damage;
+    state.maxVictimTeam = victim.team;
+  }
+  if (victim.team === source.lastAttackerTeam && victim.worm === source.lastAttackerWorm)
+    state.revengeTeam = source.team;
+  if (victim.alliance === source.alliance) {
+    if (victim.team === source.team && victim.worm === source.worm) state.selfTeam = source.team;
+    else state.friendlyTeam = source.team;
+  }
+  state.damage = (state.damage + damage) | 0;
+  if (victim.hp === 0) state.kills = (state.kills + 1) | 0;
+}

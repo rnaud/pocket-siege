@@ -56,7 +56,7 @@ import { nativeSceneCollision } from "./armageddon/collision-scene.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
-import { createNativeWormMatchStats, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "./armageddon/damage-accounting.js";
+import { createNativeDamageReaction, nativeRecordDamageReaction, createNativeWormMatchStats, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "./armageddon/damage-accounting.js";
 import { nativeBlastDamage } from "./armageddon/blast-damage.js";
 import {
   nativeDebrisBurst,
@@ -385,6 +385,7 @@ let nativeAnnouncements = createNativeAnnouncements();
 let pendingTurnStart = false;
 let matchDamageSourceActive = false;
 let nativeMatchStatistics = { damage: 0, deaths: 0 };
+let nativeDamageReaction = createNativeDamageReaction();
 let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
@@ -1048,6 +1049,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   announcementPlayback?.stop(); announcementPlayback = null; announcementVolume = 0;
   nativeAnnouncements = createNativeAnnouncements();
   nativeMatchStatistics = { damage: 0, deaths: 0 };
+  nativeDamageReaction = createNativeDamageReaction();
   pendingTurnStart = false;
   matchDamageSourceActive = false;
   setWeapon("rocket");
@@ -1308,6 +1310,7 @@ function beginTurn() {
   }
   pendingTurnStart = false;
   matchDamageSourceActive = false;
+  nativeDamageReaction = createNativeDamageReaction();
   nativeClockTarget = 65536;
   const inventory = weaponDelays[team];
   weaponDelays[team] = advanceNativeDelays(inventory.turns, inventory.delays);
@@ -2577,8 +2580,10 @@ function accountWormDamage(w, damage, options = {}) {
   w.matchStats.hp = accounting.hp;
   if (matchDamageSourceActive)
     for (const event of accounting.events)
-      if (event[3]) nativeRecordMatchDamage(nativeMatchStatistics, w.matchStats,
-        worms[current].matchStats, event[2]);
+      if (event[3]) {
+        nativeRecordMatchDamage(nativeMatchStatistics, w.matchStats, worms[current].matchStats, event[2]);
+        nativeRecordDamageReaction(nativeDamageReaction, w.matchStats, worms[current].matchStats, event[2]);
+      }
   w.hp = accounting.hp;
   w.damageTaken = accounting.total;
   w.nativeHealthDisplay.pending = accounting.displayed;
@@ -6066,6 +6071,7 @@ window.siege = {
       : null,
     lastResult,
     matchStatistics: { ...nativeMatchStatistics },
+    damageReaction: { ...nativeDamageReaction },
     aiPlan: aiPlan
       ? {
           weapon: aiPlan.weapon,

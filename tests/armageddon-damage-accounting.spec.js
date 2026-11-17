@@ -1,11 +1,14 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
-import { nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
+import { nativeRecordDamageReaction, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
 test("health, cumulative/displayed damage and events match original damage routine", { tag: "@logic" }, () => {
   for (const row of fixture.statistics) {
     const match = { ...row.match }, roster = structuredClone(row.roster);
     nativeRecordMatchDamage(match, roster[0], row.source === null ? null : roster[row.source], row.damage);
     expect({ match, roster }).toEqual(row.result);
+    const reaction = { ...row.reactionBefore };
+    nativeRecordDamageReaction(reaction, roster[0], row.source === null ? null : roster[row.source], row.damage);
+    expect(reaction).toEqual(row.reactionAfter);
   }
   expect(fixture.cases).toHaveLength(288);
   for (const row of fixture.presentation)
@@ -61,6 +64,7 @@ test("live native damage totals reveal after settlement and lethal accounting st
     return {before, hp: after.worms.slice(3).map(w => w.hp),
       damageTaken: after.worms.slice(3).map(w => w.damageTaken),
       statisticsBefore: initial.matchStatistics, statistics: after.matchStatistics,
+      reactionBefore: initial.damageReaction, reaction: after.damageReaction,
       attackerBefore: initial.worms[0].matchStats, attacker: after.worms[0].matchStats,
       victims: after.worms.slice(3).map(w => w.matchStats)};
   });
@@ -69,6 +73,11 @@ test("live native damage totals reveal after settlement and lethal accounting st
   const damage = result.before.reduce((sum, hp) => sum + hp, 0);
   expect(result.statistics.damage - result.statisticsBefore.damage).toBe(damage);
   expect(result.statistics.deaths - result.statisticsBefore.deaths).toBe(3);
+  expect(result.reaction.damage - result.reactionBefore.damage).toBe(damage);
+  expect(result.reaction.kills - result.reactionBefore.kills).toBe(3);
+  expect(result.reaction.maxVictimTeam).toBe(2);
+  expect(result.reaction.selfTeam).toBe(1);
+  expect(result.reaction.friendlyTeam).toBe(1);
   expect(result.attacker.enemyDamage - result.attackerBefore.enemyDamage).toBe(damage);
   expect(result.attacker.enemyKills - result.attackerBefore.enemyKills).toBe(3);
   expect(result.attacker.turnKills - result.attackerBefore.turnKills).toBe(3);

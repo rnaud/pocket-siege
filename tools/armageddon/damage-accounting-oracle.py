@@ -105,7 +105,7 @@ statistics=[]
 stat_fields=dict(hp=-0x538,enemyKills=-0x534,enemyDamage=-0x530,allyKills=-0x52c,allyDamage=-0x528,damageReceived=-0x524,turnKills=-0x520,lastAttackerTeam=-0x504,lastAttackerWorm=-0x500)
 stats_base=context+0x1b94
 signed=lambda at:struct.unpack('<i',cpu.mem_read(at,4))[0]
-for relation in ['self','friend','enemy','alliedTeam','absent']:
+for relation in ['self','friend','enemy','alliedTeam','revenge','absent']:
  for hp in [0,1,100]:
   for damage in [1,25,100,-1,0x7fffffff]:
    for initial in [0,5,0x7fffffff]:
@@ -114,11 +114,13 @@ for relation in ['self','friend','enemy','alliedTeam','absent']:
      alliance=1 if relation=='alliedTeam' else team
      row=dict(team=team,worm=worm,alliance=alliance,**{key:initial for key in stat_fields})
      row['hp']=hp if (team,worm)==(1,1) else 100
+     if relation=='revenge' and team==2:row.update(lastAttackerTeam=1,lastAttackerWorm=1)
      roster.append(row)
      write(stats_base+team*0x51c+8,alliance)
+     cpu.mem_write(context+team*3000+0x3cd3,bytes([alliance]))
      at=stats_base+team*0x51c+worm*0x9c
      for key,offset in stat_fields.items():write(at+offset,row[key]&0xffffffff)
-    source={'self':0,'friend':1,'enemy':2,'alliedTeam':2,'absent':None}[relation]
+    source={'self':0,'friend':1,'enemy':2,'alliedTeam':2,'revenge':2,'absent':None}[relation]
     source_team,source_worm=(roster[source]['team'],roster[source]['worm']) if source is not None else (0,0)
     write(stats_base+4,initial);write(stats_base+8,initial)
     sp=stack+0xf000
@@ -130,6 +132,15 @@ for relation in ['self','friend','enemy','alliedTeam','absent']:
     for row in roster:
      at=stats_base+row['team']*0x51c+row['worm']*0x9c
      after.append(dict(row,**{key:signed(at+offset) for key,offset in stat_fields.items()}))
-    statistics.append(dict(match=dict(damage=initial,deaths=initial),roster=roster,source=source,damage=damage,result=dict(match=dict(damage=signed(stats_base+8),deaths=signed(stats_base+4)),roster=after)))
+    reaction_fields=dict(kills=0x1a0,damage=0x1a4,revengeTeam=0x1bc,friendlyTeam=0x1c0,selfTeam=0x1c4,maxDamage=0x1d0,maxVictimTeam=0x1d4)
+    reaction_before={key:initial for key in reaction_fields}
+    for key,offset in reaction_fields.items():write(owner+offset,initial)
+    health=hp;sp=stack+0xf000
+    for i,value in enumerate([stop,1,1,source_team,source_worm,damage & 0xffffffff]):write(sp+i*4,value)
+    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+    cpu.emu_start(0x4b42b0,stop,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Damage reaction recording did not return')
+    reaction_after={key:signed(owner+offset) for key,offset in reaction_fields.items()}
+    statistics.append(dict(reactionBefore=reaction_before,reactionAfter=reaction_after,match=dict(damage=initial,deaths=initial),roster=roster,source=source,damage=damage,result=dict(match=dict(damage=signed(stats_base+8),deaths=signed(stats_base+4)),roster=after)))
 args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')
