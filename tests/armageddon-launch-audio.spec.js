@@ -3,12 +3,14 @@ import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { nativeSoundVolume, nativeSoundPan, nativeSoundFrequency } from "../src/armageddon/sound-mix.js";
 import queueFixture from "./fixtures/armageddon/sound-queue.json" with { type: "json" };
-import { NativeSoundQueue, nativeSoundChannel, NativeSoundHandles } from "../src/armageddon/sound-queue.js";
+import { NativeSoundQueue, nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup } from "../src/armageddon/sound-queue.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json" };
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  for (const c of queueFixture.cleanupCases)
+    expect(nativeWormSoundCleanup(c.state, c.action, c.voice, handle => handle === 11 ? c.actionDone : c.voiceDone)).toEqual(c.result);
   let handles;
   for (const c of queueFixture.handleCases) {
     if (c.reset) handles = new NativeSoundHandles();

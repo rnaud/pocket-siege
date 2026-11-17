@@ -170,5 +170,28 @@ for actions in sequences:
    free=[read(owner+0x928+i*4) for i in range(read(owner+0x9a8))],used=[read(owner+0x9ac+i*4) for i in range(read(owner+0xa2c))]))
  # Mark each sequence start, independent of operation/value repetition.
  handle_cases[-len(actions)]['reset']=True
-args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases,channelCases=channel_cases,mixCases=mix_cases,handleCases=handle_cases),separators=(',',':'))+'\n')
-print(f'Wrote {len(handle_cases)} handle transitions in addition to queue/channel/mixer cases')
+
+# Full worm-tick cleanup block, with backend completion-query/stop interfaces.
+cleanup_state=0;cleanup_done={};cleanup_calls=[]
+state_query=stop+0x800;write(channel_vtable+0x7c,state_query);cpu.mem_write(state_query,b'\xc3')
+cpu.mem_write(0x4edc10,b'\xc2\x04\x00');cpu.mem_write(0x4edc30,b'\xc2\x04\x00')
+def cleanup_hook(cpu,address,size,user):
+ if address==state_query:cpu.reg_write(UC_X86_REG_EAX,cleanup_state)
+ elif address in [0x4edc10,0x4edc30]:
+  handle=read(cpu.reg_read(UC_X86_REG_ESP)+4)
+  cleanup_calls.append(['query' if address==0x4edc10 else 'stop',handle])
+  cpu.reg_write(UC_X86_REG_EAX,cleanup_done.get(handle,0))
+for address in [state_query,0x4edc10,0x4edc30]:cpu.hook_add(UC_HOOK_CODE,cleanup_hook,begin=address,end=address)
+cleanup_cases=[]
+for cleanup_state in range(0x60,0x8a):
+ for action in [0,11]:
+  for voice in [0,22]:
+   for action_done,voice_done in [(0,0),(0,1),(1,0),(1,1)]:
+    cleanup_done={11:action_done,22:voice_done};cleanup_calls=[]
+    write(owner+0x388,action);write(owner+0x38c,voice)
+    cpu.reg_write(UC_X86_REG_ESP,stack+0xf000);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,channel_vtable)
+    cpu.emu_start(0x4ddf28,0x4ddfa6,count=1000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4ddfa6
+    cleanup_cases.append(dict(state=cleanup_state,action=action,voice=voice,actionDone=action_done,voiceDone=voice_done,
+     result=dict(action=read(owner+0x388),voice=read(owner+0x38c),calls=cleanup_calls)))
+args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases,channelCases=channel_cases,mixCases=mix_cases,handleCases=handle_cases,cleanupCases=cleanup_cases),separators=(',',':'))+'\n')
+print(f'Wrote {len(cleanup_cases)} worm sound cleanup cases')

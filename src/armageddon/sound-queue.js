@@ -65,3 +65,15 @@ export class NativeSoundHandles {
     return 1;
   }
 }
+
+// 004DDF28..004DDFA6: per-worm cleanup of+388 action and+38C voice.
+export function nativeWormSoundCleanup(state, action, voice, finished) {
+  const calls = [];
+  const done = handle => { calls.push(["query", handle]); return finished(handle); };
+  const actionState = state >= 0x68 && state <= 0x75 && state !== 0x73;
+  if (action && (!actionState || done(action))) {
+    calls.push(["stop", action]); action = 0;
+  }
+  if (voice && done(voice)) { calls.push(["stop", voice]); voice = 0; }
+  return { action, voice, calls };
+}

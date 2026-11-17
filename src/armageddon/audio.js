@@ -1,6 +1,6 @@
 import soundSlots from "./sound-slots.json";
 import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";
-import { nativeSoundChannel, NativeSoundHandles } from "./sound-queue.js";
+import { nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup } from "./sound-queue.js";
 import speech from "./speech-slots.json";
 
 const sounds = {
@@ -87,7 +87,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
     if (channel >= 0 && channels[channel]?.playback === playback) channels[channel] = null;
   };
   const requested = performance.now();
-  let cancelled = false,
+  let settled = false, cancelled = false,
     activeSource = null, activeGain = null;
   const playback = {
     setVolume(value) {
@@ -95,6 +95,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
       if (activeGain) activeGain.gain.value = nativeAttenuationGain(nativeSoundVolume(Math.round(level * 65536), 65536, 0, false));
     },
     get handle() { return handle; },
+    get finished() { return cancelled || (settled && !activeSource); },
     displace() {
       handles.invalidate(handle);
       cancelled = true;
@@ -158,7 +159,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
       playback.stop();
       contexts.get(context).delete(name);
       if (!wasCancelled) fallback();
-    });
+    }).finally(() => { settled = true; });
   return playback;
 }
 
@@ -172,9 +173,9 @@ export function playNativeWaterSound(context, request) {
 
 // 0055F120 maps native ID 0x23 to WormLanding.wav. Strength comes from
 // 004D7E5C (absolute native vertical velocity / 8).
-export function playNativeLandingSound(context, request) {
-  if (request[0] === 0x23)
-    playOriginalSound(context, "land", () => {}, request[3] / 65536, request[1], request[4]);
+export function playNativeLandingSound(context, request, previous) {
+  if (request[0] === 0x23) return playNativeOwnedSound(context, request, previous);
+  return previous;
 }
 
 export function playNativeRopeContactSound(context, request) {
@@ -242,6 +243,15 @@ export function playNativeOwnedSound(context, request, previous) {
   const entry = soundSlots.slots[request[0]];
   return entry ? playOriginalClip(context, `sounds/${entry.clip}`, () => {},
     request[3] / 65536, false, request[2] / 65536, request[1], request[4], true) : null;
+}
+
+export function cleanupNativeWormAudio(owner, state) {
+  const slots = { 1: "nativeActionPlayback", 2: "nativeHitVoicePlayback" };
+  const result = nativeWormSoundCleanup(state, owner.nativeActionPlayback ? 1 : 0,
+    owner.nativeHitVoicePlayback ? 2 : 0, id => owner[slots[id]].finished);
+  for (const [operation, id] of result.calls) if (operation === "stop") {
+    owner[slots[id]].stop(); owner[slots[id]] = null;
+  }
 }
 
 // 004F9FA0 uses004DD5D0 (+38C speech) and004DD610 (+388 weapon

@@ -202,7 +202,7 @@ import {
   playNativeHitVoice,
   playNativeRecoverySound,
   playNativeLandingSound,
-  playNativeDeathVoice,
+  cleanupNativeWormAudio,
 } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
@@ -4454,6 +4454,15 @@ function stepFrame(dt) {
         !rope.attached &&
         !jetpack.active,
     );
+    let audioState = nativeWormState(w);
+    // Charge/preparation/recoil still use host action controllers.
+    if (audioState === 0x65) {
+      if (w.originalDrill) audioState = 0x6e;
+      else if (w === worms[current] && charging) audioState = 0x68;
+      else if (w.originalPreparation) audioState = 0x69;
+      else if (w.originalRecoil) audioState = 0x6a;
+    }
+    cleanupNativeWormAudio(w, audioState);
     stepOriginalWalking(w);
     w.nativeHealthDisplay = nativeHealthDisplayTick(w.nativeHealthDisplay, w.hp).body;
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
@@ -4498,7 +4507,7 @@ function stepFrame(dt) {
         if (w.originalDeathVoice && sound) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();
-          playNativeDeathVoice(audio, w.originalDeathVoice);
+          queueControllerSpeech(w.originalDeathVoice);
         }
       } else if (!w.drowned) w.dying = Math.max(0, w.dying - dt);
       if (w.dying === 0 && w.deathPending) {
@@ -4620,7 +4629,7 @@ function stepFrame(dt) {
       if (landingSound && sound) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
-        playNativeLandingSound(audio, landingSound);
+        w.nativeHitVoicePlayback = playNativeLandingSound(audio, landingSound, w.nativeHitVoicePlayback);
       } else if (!landingSound) sfx("land");
     }
     if (result.fallDamage) injure(w, result.fallDamage);
