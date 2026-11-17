@@ -12,8 +12,9 @@ test('constrained body ticks match native gravity, water, retries and damping', 
       awake: () => { calls.push(['awake']); return row.awake; },
       refresh: () => calls.push(['refresh']),
       waterChanged: () => calls.push(['water']),
-      skim: () => calls.push(['skim']),
+      skim: body => { calls.push(['skim']); if (row.releaseOnSkim) body.constrained = 0; },
       bounce: (_, hit) => calls.push(['bounce', hit]),
+      freeBounce: (_, hit, side) => calls.push(['freeBounce', hit, side]),
       earthquake: (_, amount) => calls.push(['earthquake', amount]),
     });
     expect({ body, calls }, `native rope tick ${index}`).toEqual(row.output);
