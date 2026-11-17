@@ -1,3 +1,5 @@
+import wormQuery from "./fixtures/armageddon/worm-query.json" with { type: "json" };
+import { nativeWormQuery } from "../src/armageddon/worm-query.js";
 import targetPlacement from "./fixtures/armageddon/target-placement.json" with { type: "json" };
 import { nativeClampPlacementTarget, nativeFindTeleportTarget } from "../src/armageddon/target-placement.js";
 import controllerPointerInput from "./fixtures/armageddon/controller-pointer-input.json" with { type: "json" };
@@ -89,6 +91,31 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for(const c of wormQuery.cases) {
+    const memory=Uint8Array.from({length:0x300},(_,i)=>(i*17+c.seed*31)&255),payload=Uint8Array.from(c.input),calls=[];
+    let position=[...c.position],mode=c.mode,placements=0;
+    const returned=nativeWormQuery(memory,c.event,0x154,payload,{
+      position:()=>{calls.push(["position"]);return [...position];},
+      mode:()=>{calls.push(["mode"]);return mode;},
+      setMode:value=>{calls.push(["setMode",value]);mode=value;},
+      place:(x,y)=>{calls.push(["place",x,y]);position=[x,y];return ++placements===1?c.result:99;},
+      status:()=>{calls.push(["status"]);return c.status;},
+      base:(event,size,output)=>{calls.push(["base",event,size]);new DataView(output.buffer).setInt32(12,123456,true);return c.result;},
+    });
+    expect({returned,calls,output:[...payload],finalPosition:position,finalMode:mode}).toEqual({returned:c.returned,calls:c.calls,output:c.output,finalPosition:c.finalPosition,finalMode:c.finalMode});
+  }
+  for(const c of wormQuery.composed) {
+    const memory=Uint8Array.from({length:0x300},(_,i)=>(i*17+c.seed*31)&255),calls=[];
+    let position=[...c.position],mode=c.mode,placements=0;
+    const host={
+      position:()=>{calls.push(["position"]);return [...position];},
+      mode:()=>{calls.push(["mode"]);return mode;},
+      setMode:value=>{calls.push(["setMode",value]);mode=value;},
+      place:(x,y)=>{calls.push(["place",x,y]);position=[x,y];placements++;return placements%2?Number(Math.floor((placements-1)/2)===c.acceptAt):99;},
+    };
+    const result=nativeFindTeleportTarget(c.x,c.y,c.ceiling,(event,payload)=>nativeWormQuery(memory,event,payload.length,payload,host));
+    expect({calls,accepted:result.accepted,output:[result.x,result.y],finalPosition:position,finalMode:mode}).toEqual({calls:c.calls,accepted:c.accepted,output:c.output,finalPosition:c.finalPosition,finalMode:c.finalMode});
+  }
   for(const c of targetPlacement.bounds) {
     expect(nativeClampPlacementTarget(c.x,c.y,...c.dimensions,c.ceiling)).toEqual(c.output);
   }
