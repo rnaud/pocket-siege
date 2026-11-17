@@ -1,3 +1,5 @@
+import replayControl from "./fixtures/armageddon/replay-control.json" with { type: "json" };
+import { nativeReplayCaptureRequest, nativeReplayInput, nativeReplayPlaybackRequest } from "../src/armageddon/replay-control.js";
 import windMeter from "./fixtures/armageddon/wind-meter.json" with { type: "json" };
 import { nativeWindMeter, nativeWindMeterTick, nativeWindMeterPhase, nativeWindMeterVisibility } from "../src/armageddon/wind-meter.js";
 import windSelection from "./fixtures/armageddon/wind-selection.json" with { type: "json" };
@@ -33,6 +35,9 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayControl.capture) expect(nativeReplayCaptureRequest(row.input)).toEqual(row.result);
+  for (const row of replayControl.inputs) expect(nativeReplayInput(row.input)).toEqual(row.result);
+  for (const row of replayControl.playback) expect(nativeReplayPlaybackRequest(row.input)).toEqual(row.result);
   for (const row of actionBusy.writer) expect(nativeActionBusyWrite(row.input)).toEqual(row.result);
   for (const row of actionBusy.clear) expect(nativeActionBusyClear(row.input)).toEqual(row.result);
   for (const row of actionBusy.gate) expect(nativeActionGate(row.input)).toEqual(row.result);
