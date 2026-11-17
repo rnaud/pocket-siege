@@ -1,3 +1,7 @@
+import flameArt from "./fixtures/armageddon/flame-art.json" with { type: "json" };
+import { nativeFlameArt } from "../src/armageddon/flame-art.js";
+import flameTicks from "./fixtures/armageddon/flame-tick.json" with { type: "json" };
+import { nativeFlameTick } from "../src/armageddon/flame-tick.js";
 import flameHits from "./fixtures/armageddon/flame-hit.json" with { type: "json" };
 import { nativeFlameHit } from "../src/armageddon/flame-hit.js";
 import flameSpread from "./fixtures/armageddon/flame-spread.json" with { type: "json" };
@@ -163,6 +167,30 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  for (const row of flameArt.cases) {
+    const result = nativeFlameArt(row.input);
+    expect(result.body).toEqual(row.output);
+    expect([result.request]).toEqual(row.events);
+  }
+  for (const row of flameTicks.cases) {
+    const events = [];
+    const result = nativeFlameTick(row.input, row.record, row, {
+      busy: () => events.push(['busy']),
+      motion: body => { events.push(['motion']); return { body, result: row.moving }; },
+      hit: body => { events.push(['hit']); return body; },
+      spread: record => { events.push(['spread', [...record]]); record[0] = (record[0] + 65536) | 0; return record; },
+      visualRandom: () => { events.push(['visual']); return 123456; },
+      logicRandom: () => { events.push(['logic']); return 54321; },
+      smoke: request => events.push(['smoke', request]),
+      camera: request => events.push(['camera', ...request]),
+      sound: request => events.push(['sound', ...request]),
+      delete: flag => events.push(['delete', flag]),
+      burn: (...args) => events.push(['burn', ...args]),
+    });
+    expect(result).toEqual({ body: row.output, record: row.outputRecord,
+      deleted: row.events.some(event => event[0] === 'delete') });
+    expect(events).toEqual(row.events);
+  }
   for (const row of flameHits.cases) {
     const events = []; let visualIndex = 0;
     const result = nativeFlameHit(row.input, row.candidates, {
