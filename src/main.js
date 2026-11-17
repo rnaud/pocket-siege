@@ -1,3 +1,12 @@
+import { nativeCrateHit } from "./armageddon/crate-hit.js";
+import { nativeCrateDetonation } from "./armageddon/crate-detonation.js";
+import { nativeCrateContents } from "./armageddon/crate-contents.js";
+import crateProjectileData from "./armageddon/crate-projectile-data.json";
+import { attachNativeProjectileBlock } from "./armageddon/projectile-runtime.js";
+import { nativeFlameBody } from "./armageddon/flame-body.js";
+import { registerNativeFlame } from "./armageddon/flame-spread.js";
+import { stepNativeFlame } from "./armageddon/flame-runtime.js";
+import { nativeFlameArt } from "./armageddon/flame-art.js";
 import { createNativeCrateBody, stepNativeCrateBody } from "./armageddon/crate-runtime.js";
 import { nativeCrateArt } from "./armageddon/crate-state.js";
 import nativeWaterSpriteIds from "./armageddon/water-sprite-ids.json";
@@ -419,6 +428,9 @@ let format = "single",
   bombs = [],
   airstrikes = [],
   fires = [],
+  nativeFlames = Array(200).fill(null),
+  nativeFlameCounter = 0,
+  crateDirectionBag = { pool: [0, 1], used: [] },
   hazards = [],
   slowMo = 0,
   weather = "clear",
@@ -993,6 +1005,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   pendingWormCamera = [];
   for (const f of fires) dispose(f.mesh);
   fires = [];
+  for (const flame of nativeFlames) if (flame) dispose(flame.mesh);
+  nativeFlames.fill(null); nativeFlameCounter = 0;
+  crateDirectionBag = { pool: [0, 1], used: [] };
   for (const h of hazards) dispose(h.mesh);
   hazards = [];
   matchRandom.reset(matchSeed);
@@ -1189,6 +1204,85 @@ function spawnHazards() {
       break;
     }
   }
+}
+function removeNativeFlame(flame) {
+  dispose(flame.mesh);
+  if (nativeFlames[flame.slot] === flame) nativeFlames[flame.slot] = null;
+}
+function spawnNativeFlame(record, owner = -1) {
+  const created = nativeFlameBody(record, matchRandom.frame, nativeFlameCounter,
+    () => matchRandom.logicUint());
+  nativeFlameCounter = created.nextCounter;
+  const art = nativeFlameArt(created.body);
+  const mesh = createOriginalObject(nativeSpriteIds.sprites[art.request[4]].name);
+  const flame = { body: art.body, record: created.record, mesh, owner };
+  registerNativeFlame(nativeFlames, flame, matchRandom.frame, removeNativeFlame);
+  mesh.position.set(created.body.x / 65536, H - created.body.y / 65536, 26);
+  group.add(mesh);
+  return flame;
+}
+function stepNativeFlames() {
+  const camera = []; let busy = false;
+  for (const flame of [...nativeFlames]) {
+    if (!flame || nativeFlames[flame.slot] !== flame) continue;
+    const result = stepNativeFlame(flame.body, flame.record, {
+      frame: matchRandom.frame, water: Math.floor(H - waterLevel),
+      gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
+    }, {
+      collide: (x, y) => terrain.solid(x, H - y),
+      candidates: () => nativeWormHitscanBodies(worms, null, H),
+      hit: (target, event, size, packet) => applyNativeHitPackets([target], [{ body: 0, packet }]),
+      logicRandom: () => matchRandom.logicUint(), visualRandom: () => matchRandom.visualUint(),
+      parent: () => 23, allocate: () => true,
+      flame: (allocation, parent, record) => spawnNativeFlame(record, flame.owner),
+      smoke: request => spawnOriginalSmoke([request]), sound: queueGameSound,
+      camera: request => camera.push(request), busy: () => { busy = true; },
+      delete: () => {},
+      burn: (mask, x, y) => {
+        terrain.craterRim ??= new Uint8Array(W * H);
+        carveNativeToolMask(terrain.data, W, H, toolCuts[mask], x, y, terrain.craterRim);
+        terrainDirty = true;
+      },
+    });
+    flame.body = result.body; flame.record = result.record;
+    if (result.deleted) removeNativeFlame(flame);
+  }
+  return { camera, busy };
+}
+function spawnCrateContentsProjectile(payload, owner) {
+  const p = { kind: "barrel", owner, age: 0, x: payload[2] / 65536,
+    y: H - payload[3] / 65536, vx: payload[4] / 65536 * 50,
+    vy: -payload[5] / 65536 * 50, fuse: payload[10] / 1000,
+    bounce: payload[9] / 100, nativeCrateContents: true };
+  attachNativeProjectileBlock(p, H, crateProjectileData.block, payload);
+  if (nativeProjectilePlacementHit(p, terrain, worms, H)) {
+    const packet = nativeDetonationPacket(p);
+    if (packet) explode(p.x, p.y, p.kind, owner, packet);
+    return;
+  }
+  p.mesh = createNativeProjectileVisual(p.nativeRender);
+  p.mesh.position.set(p.x, p.y, 40); group.add(p.mesh); bombs.push(p);
+}
+function detonateNativeCrate(crate) {
+  // Set before blast dispatch so this crate cannot receive its own chain reaction.
+  crate.nativeBody.destroyed = 1;
+  nativeCrateDetonation({ ...crate.nativeBody,
+    weapon: WEAPON_SLOTS[crate.content] ?? 0,
+  }, [], {
+    parent: category => category, allocate: () => true,
+    blast: packet => explode(crate.x, crate.y, "barrel", crate.hitOwner ?? -1, packet),
+    flame: (allocation, parent, record) => spawnNativeFlame(record, crate.hitOwner ?? -1),
+    sound: queueGameSound,
+    contents: slot => {
+      crateDirectionBag = nativeCrateContents(crate.nativeBody, slot, 0, crateDirectionBag, {
+        random: () => matchRandom.logicUint(), parent: () => 25, allocate: () => true,
+        projectile: (allocation, parent, block, payload) => spawnCrateContentsProjectile(payload, crate.hitOwner ?? -1),
+        sound: queueGameSound,
+      });
+    },
+    // Target/mission crates are not part of the current host spawn pool.
+    broadcast: () => {},
+  });
 }
 function spawnFire(x, y, owner = -1) {
   const mesh = new THREE.Group();
@@ -3762,6 +3856,12 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   let dealt = 0;
   if (nativeStrength !== null) {
     const packet = nativePacket ?? [1, Math.round(x * 65536), Math.round((H - y) * 65536), nativePush, nativeStrength, 0];
+    for (const crate of crates) {
+      if (!crate.nativeBody.destroyed) {
+        crate.nativeBody = nativeCrateHit(crate.nativeBody, [...packet]);
+        if (crate.nativeBody.state === 103) crate.hitOwner = ownerIndex;
+      }
+    }
     for (const mine of mines) {
       if (mine.nativeBody)
         mine.nativeBody = nativeMineBlast(mine.nativeBody, packet).body;
@@ -5272,6 +5372,7 @@ function stepFrame(dt) {
   stepAirstrikes();
   stepBombs(dt);
   stepFires(dt);
+  const flameActivity = stepNativeFlames();
   for (const hazard of hazards) {
     hazard.artAge = (hazard.artAge || 0) + dt;
     updateOriginalObject(hazard.mesh, "oildrum1", hazard.artAge);
@@ -5280,6 +5381,7 @@ function stepFrame(dt) {
   let cratesBusy = false;
   for (const crate of [...crates]) {
     const wasFalling = crate.falling;
+    let detonate = false;
     const collide = (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H);
     const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
     crate.impactPlayback = cleanupNativeContactSound(crate.impactPlayback);
@@ -5309,8 +5411,7 @@ function stepFrame(dt) {
       skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
       camera: request => crateCameraRequests.push(request), busy: () => { cratesBusy = true; },
       delete: () => {},
-      // Host crates do not yet receive native destruction events or target fuses.
-      detonate: () => {},
+      detonate: () => { detonate = true; },
       visualRandom: () => matchRandom.visualUint(),
       bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
     });
@@ -5321,6 +5422,7 @@ function stepFrame(dt) {
     crate.falling = !!nativeBodyAwake(result.body);
     crate.mesh.position.set(crate.x, crate.y, 18);
     if (result.deleted) {
+      if (detonate) detonateNativeCrate(crate);
       dispose(crate.mesh);
       crates.splice(crates.indexOf(crate), 1);
     } else if (wasFalling && !crate.falling) announce("SUPPLY CRATE LANDED");
@@ -5333,7 +5435,7 @@ function stepFrame(dt) {
   });
   if (phase === "settle" || (phase === "aim" && (worms.some(w => w.deathPending) || nativeTeamList.removal || nativeTeamList.order.some(id => teamScores[id] === 0)))) {
     const settled =
-      !cratesBusy && nativeTeamHealthBusyTicks === 0 &&
+      !cratesBusy && !flameActivity.busy && nativeTeamHealthBusyTicks === 0 &&
       !projectile && !pendingFire &&
       bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
       worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&
@@ -5403,7 +5505,7 @@ function stepFrame(dt) {
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
   const wormTracking = pendingWormCamera.length > 0;
-  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || teleportTracking || wormTracking)) {
+  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
       Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
@@ -5415,8 +5517,9 @@ function stepFrame(dt) {
   for (const request of pendingWormCamera) nativeCamera.offer(...request);
   for (const request of mineCameraRequests) nativeCamera.offer(...request);
   for (const request of crateCameraRequests) nativeCamera.offer(...request);
+  for (const request of flameActivity.camera) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || teleportTracking || wormTracking)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
     const aspect = arena.clientWidth / arena.clientHeight;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
@@ -5730,6 +5833,13 @@ function frame(now) {
     const arrowPoint = screen(arrow.x >> 16, H - (arrow.y >> 16));
     updateOriginalSelection(w.label, w.team, selectionTick, active && w.hp > 0 && phase !== "over",
       { x: arrowPoint.x - labelLeft, y: arrowPoint.y - labelTop });
+  }
+  for (const flame of nativeFlames) if (flame) {
+    const art = nativeFlameArt(flame.body);
+    flame.body = art.body;
+    const [, x, y, , sprite, progress] = art.request;
+    updateOriginalObject(flame.mesh, nativeSpriteIds.sprites[sprite].name, 0, progress);
+    flame.mesh.position.set(Math.round(x / 65536), Math.round(H - y / 65536), 26);
   }
   for (const crate of crates) {
     crate.mesh.position.y = Math.round(crate.y);
@@ -6367,6 +6477,10 @@ window.siege = {
       nativeDamage: b.nativeDetonation?.damage ?? null,
       sprite: b.mesh.userData.originalSprite,
       frame: b.mesh.userData.originalFrame,
+    })),
+    nativeFlames: nativeFlames.filter(Boolean).map(flame => ({
+      body: { ...flame.body }, record: [...flame.record],
+      sprite: flame.mesh.userData.originalSprite, frame: flame.mesh.userData.originalFrame,
     })),
     fires: fires.map((f) => ({
       x: Math.round(f.x),
