@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import replaySession from "./fixtures/armageddon/replay-session.json" with { type: "json" };
+import { nativeReplaySessionTick } from "../src/armageddon/replay-session.js";
 import replaySnapshotRestore from "./fixtures/armageddon/replay-snapshot-restore.json" with { type: "json" };
 import { nativeRestoreReplaySnapshot } from "../src/armageddon/replay-restore.js";
 import replayTreeRestore from "./fixtures/armageddon/replay-tree-restore.json" with { type: "json" };
@@ -63,6 +66,31 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replaySession.cases) {
+    const mask = row.mask, seed = mask & 255, calls = [], sceneMemory = new Uint8Array(0x20000), view = new DataView(sceneMemory.buffer);
+    const pattern = (length, multiplier) => Uint8Array.from({ length }, (_, i) => (i * multiplier + seed) & 255);
+    sceneMemory.set(pattern(0x3fbc, 13), 0x7ec); sceneMemory.set(pattern(0x950, 17), 0x1c188); sceneMemory.fill(0xa5, 0x1cad8, 0x1d428);
+    const fields = [0x1d438, 0x1d43c, 0x1d444, 0x1d428, 0x1d42c, 0x1d440];
+    fields.forEach((offset, i) => view.setInt32(offset, (mask >> i) & 1, true));
+    for (const [offset, value] of [[0x1d448,7],[0x1240c,mask & 32 ? 1 : 4],[0x1d430,99],[0x7f0,0x87654321]]) view.setInt32(offset, value, true);
+    const root = { type: 6, registryType: 26, registryIndex: 0, children: [{ type: 13 }, { type: 14 }], memory: new Uint8Array(0x28c) };
+    root.memory.set(pattern(0x5c, 11), 0x3c); root.memory.set(pattern(0x138, 19), 0xd8);
+    const manager = { root, environment: { state: pattern(12,7), all: { entries: [] }, categories: [] }, globalCounter: 1234,
+      captureFrame: 77, checksum: 77, hasSnapshot: 77, playbackFailure: 77, playbackError: 77 };
+    const stream = new NativeReplayStream(65536); stream.bytes.fill(0xcc); stream.seek(13); stream.length = 21;
+    const recording = new NativeReplayBuffer(256); recording.count = 1; recording.readOffset = recording.writeOffset = recording.head = recording.tail = 1;
+    const call = (offset, result) => { calls.push(["device", offset]); return result; };
+    nativeReplaySessionTick(sceneMemory, manager, { stream, recording, playback: { count: (mask >> 6) & 1 },
+      device: { pending: () => call(0x40,(mask>>7)&1), clear: () => call(0x34,0), startRecording: () => call(0x30,(mask>>8)&1), startPlayback: () => call(0x44,(mask>>9)&1), checksum: () => call(0x48,0xfffffff0) },
+      audio: mask & 16 ? { setSpeed: value => calls.push(["audio",value]) } : null });
+    const hash = bytes => createHash("sha256").update(bytes).digest("hex");
+    expect({ fields: [...fields,0x1d448,0x1240c,0x1d430].map(offset => view.getInt32(offset,true)),
+      manager: [manager.captureFrame,manager.checksum,manager.hasSnapshot,manager.playbackFailure,manager.playbackError],
+      globalCounter: manager.globalCounter, recordCount: recording.count,
+      recordReset: [recording.writeOffset,recording.readOffset,recording.tail ?? 0,recording.head ?? 0],
+      position: stream.position, length: stream.length, streamHash: hash(stream.bytes.slice(0,stream.length)),
+      copiedHash: hash(sceneMemory.slice(0x1cad8,0x1d428)), calls }).toEqual(row.result);
+  }
   for (const row of replaySnapshotRestore.cases) {
     const stream = new NativeReplayStream(65536), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks], objects = [...row.input.objects], buffers = [...row.input.buffers];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);

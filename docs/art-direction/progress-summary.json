@@ -1,5 +1,5 @@
 {
-  "focus": "Complete replay capture and playback lifecycle, then connect native snapshots to live game state.",
+  "focus": "Complete native replay playback entry and event dispatch, then connect snapshots to live game state.",
   "note": "The game is playable, but the offline rewrite is not yet equivalent to Worms Armageddon. Verified routines can still be waiting for live integration.",
   "areas": [
     {
@@ -100,9 +100,10 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization and all constructors have executable comparisons. Composed snapshot restoration now verifies context, environment and populated task trees; live integration remains.",
-      "remaining": "Verify resource-heavy actor combinations, complete snapshot capture and session lifecycle, connect rendering/game-state adapters, and implement event playback; replace the overlay with deterministic replay and local saves.",
+      "live": "The current replay is a trajectory overlay. Native controls, buffers, serializers and constructors have executable comparisons. Composed snapshot restoration and capture/session transitions are verified separately; live integration remains.",
+      "remaining": "Complete native playback entry and event dispatch, verify resource-heavy actor combinations, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_replay_capture_session",
         "native_replay_snapshot_restore",
         "native_replay_recursive_tree",
         "native_replay_root_constructor",

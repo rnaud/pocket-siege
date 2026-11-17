@@ -35,6 +35,8 @@ export const nativeReplayTaskTypes = taskTypes;
 // All21 concrete child serializers reachable from004B2230. memory contains
 // the native task record; object references use stable IDs in environment lists.
 export function nativeWriteReplayTask(stream, task, environment) {
+  //00502A50: fresh type14 created by root setup has no saved record.
+  if (task.type === 14) return 1;
   const schema = taskTypes.find(row => row.tag === task.type);
   if (!schema) throw new RangeError(`Unknown native replay task ${task.type}`);
   if (!schema.block) return 1; // Original no-op serializers emit no header.
