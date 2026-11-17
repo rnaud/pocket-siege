@@ -1,5 +1,5 @@
 import nuclearEffect from "./fixtures/armageddon/nuclear-effect.json" with { type: "json" };
-import { nativeNuclearEffectTick } from "../src/armageddon/nuclear-effect.js";
+import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "../src/armageddon/nuclear-effect.js";
 import waterRise from "./fixtures/armageddon/water-rise.json" with { type: "json" };
 import { nativeWaterRiseStart, nativeWaterRiseTick } from "../src/armageddon/water-rise.js";
 import suddenDeath from "./fixtures/armageddon/sudden-death.json" with { type: "json" };
@@ -81,6 +81,11 @@ import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json'
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of nuclearEffect.starts) {
+    let random = row.seed;
+    const result = nativeNuclearEffectStart(row.input, row.duration, () => (random = nextLogicRandom(random, row.frame)));
+    expect({ ...result, random }).toEqual(row.result);
+  }
   for (const row of nuclearEffect.cases)
     expect(nativeNuclearEffectTick(row.input, request => request[0] === 0x10004 ? 301 : 302)).toEqual(row.result);
   for (const row of waterRise.starts)

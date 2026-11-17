@@ -1,3 +1,13 @@
+import messages from './nuclear-announcements.json' with { type: 'json' };
+
+// 004ECFB0 event442: announce before resetting progress/duration; all owned
+// handles, volume, palette fields and busy state survive an effect restart.
+export function nativeNuclearEffectStart(input, duration, nextRandom) {
+  const text = messages[(nextRandom() & 255) % messages.length];
+  return { body: { ...input, progress: 0, duration },
+    calls: [{ operation: 'announcement', message: { text, font: 23 } }] };
+}
+
 // 004EB460. Native progress is signed16.16, advanced at50Hz.
 // Sound handles come from the supplied playback interface, including failures.
 export function nativeNuclearEffectTick(input, play = () => 0) {

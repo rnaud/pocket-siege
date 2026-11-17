@@ -1,6 +1,7 @@
+import { nativeSuddenDeathActivation } from "./armageddon/sudden-death.js";
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
 let nativeWaterRise = null;
-import { nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
+import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
 import { nativeCameraShake, nativeCameraShakeDecay } from "./armageddon/camera-shake.js";
 import { nativePaletteDisplay } from "./armageddon/palette-material.js";
 import { playNativeNuclearLoop } from "./armageddon/audio.js";
@@ -316,6 +317,7 @@ const nativeCamera = new NativeCameraPriority();
 let nativeCameraFocus = null;
 let nativeCameraFraming = null;
 let pendingWormCamera = [];
+let pendingEnvironmentCamera = null;
 const logicRandom = () => matchRandom.logic();
 const visualRandom = () => matchRandom.visual();
 const $ = (s) => document.querySelector(s);
@@ -1026,6 +1028,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeCamera.reset();
   nativeCameraFocus = null;
   nativeCameraFraming = null;
+  pendingEnvironmentCamera = null;
   pendingWormCamera = [];
   for (const flame of nativeFlames) if (flame) dispose(flame.mesh);
   nativeFlames.fill(null); nativeFlameCounter = 0;
@@ -2478,12 +2481,12 @@ function applyPoisonTick() {
   if (hits) $("#status").textContent = "Poison damages infected worms.";
   updateUI();
 }
-function startNativeWaterRise(targetLevel) {
+function startNativeWaterRise(targetLevel, duration = 8) {
   const target = Math.max(0, Math.floor(H - targetLevel));
   if (nativeWaterRise?.progress >= 0 && nativeWaterRise.target === (target << 16)) return;
   nativeWaterRise = nativeWaterRiseStart({ start: 0, target: 0, progress: -1, duration: 8,
     waterY: Math.floor(H - waterLevel), cameraTop: 0, cameraBottom: 0, bottom: 0, busy: 0,
-  }, [Math.floor(H - waterLevel) - target, 8]);
+  }, [Math.floor(H - waterLevel) - target, duration]);
 }
 function stepNativeWaterRise() {
   if (!nativeWaterRise || nativeWaterRise.progress < 0) return;
@@ -2505,9 +2508,11 @@ function stopNativeNuclearAudio() {
   if (nativeNuclearEffect) nativeNuclearEffect.handleA = nativeNuclearEffect.handleB = 0;
 }
 function startNativeNuclearEffect(duration = 8) {
-  // Event442 restarts progress without discarding owned loops or volume.
-  nativeNuclearEffect = { ...(nativeNuclearEffect ?? { volume: 0, target: 0,
-    handleA: 0, handleB: 0, flash: 0, fade: 0, shake: 0, busy: 0 }), progress: 0, duration };
+  const result = nativeNuclearEffectStart(nativeNuclearEffect ?? { volume: 0, target: 0,
+    handleA: 0, handleB: 0, flash: 0, fade: 0, shake: 0, busy: 0 }, duration, () => matchRandom.logicUint());
+  nativeNuclearEffect = result.body;
+  for (const { message } of result.calls)
+    queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 function stepNativeNuclearEffect() {
   if (!nativeNuclearEffect) return;
@@ -2564,19 +2569,28 @@ function applySuddenDeath() {
     return false;
   }
   if (suddenDeathType === "nuke") {
-    // Duration8 comes from native sudden-death event442. Full event routing
-    // and camera-shake consumption remain separate from this display adapter.
-    startNativeNuclearEffect(8);
-    // Host sudden-death trigger supplies the dose until native scheme/event routing.
-    for (const w of worms) w.nativePoison = nativeWormPoisonInfect(
-      { ...w.nativePoison, team: w.matchStats.team, worm: w.matchStats.worm, state: nativeWormState(w) }, 5, {
-        // Native430 rejects this report's zero reportability word, so it
-        // contributes neither damage statistics nor damage reactions.
-        announce: () => {
-          const message = nativePoisonAnnouncement(w.name, () => matchRandom.logicUint());
-          queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
-        },
-      });
+    // The original controller emits these requests in order. Host rules still
+    // supply the rise/dose until the scheme's environmental fields are live.
+    const calls = nativeSuddenDeathActivation({ waterY: Math.floor(H - waterLevel),
+      rise: Math.max(0, Math.floor(waterLevelForRound(round) - waterLevel)), dose: 5 });
+    for (const call of calls) {
+      if (call.operation === "camera") pendingEnvironmentCamera = call.point;
+      else if (call.operation === "sound") queueGameSound(call.request);
+      else if (call.event === 0x3f8) {
+        if (nativeCameraFraming) nativeCameraFraming.suppression = -call.record[0];
+      } else if (call.event === 0x441) startNativeWaterRise(waterLevel + call.record[0], call.record[1]);
+      else if (call.event === 0x442) startNativeNuclearEffect(call.record[0]);
+      else if (call.event === 0x439) {
+        for (const w of worms) w.nativePoison = nativeWormPoisonInfect(
+          { ...w.nativePoison, team: w.matchStats.team, worm: w.matchStats.worm, state: nativeWormState(w) }, call.record[0], {
+            // Original430 rejects the zero-reportability infection record.
+            announce: () => {
+              const message = nativePoisonAnnouncement(w.name, () => matchRandom.logicUint());
+              queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
+            },
+          });
+      }
+    }
     poisoned = worms.some(w => w.nativePoison.amount !== 0);
     updateUI();
     return false;
@@ -5713,11 +5727,16 @@ function stepFrame(dt) {
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
   const wormTracking = pendingWormCamera.length > 0;
-  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
+  const environmentTracking = pendingEnvironmentCamera !== null || nativeNuclearEffect?.progress >= 0;
+  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking || environmentTracking)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
       Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
     );
+  }
+  if (pendingEnvironmentCamera) {
+    nativeCamera.offerSpecial(...pendingEnvironmentCamera);
+    pendingEnvironmentCamera = null;
   }
   for (const tracked of trackedProjectiles) {
     nativeCamera.offer(...nativeProjectileCameraRequest(tracked.nativeBody, [0, W * 65536, -256 * 65536]));
@@ -5728,7 +5747,7 @@ function stepFrame(dt) {
   for (const request of barrelActivity.camera) nativeCamera.offer(...request);
   for (const request of flameActivity.camera) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking || environmentTracking)) {
     const aspect = arena.clientWidth / arena.clientHeight;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
