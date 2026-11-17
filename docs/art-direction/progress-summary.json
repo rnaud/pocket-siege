@@ -100,9 +100,10 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native input, frame, dispatch, session and audio routines now compose into a pipeline verified across consecutive frames. Capture/request sequences, playback startup with snapshot reconstruction, and worm animation/contact reserialization also match the original. A host terrain/palette/random snapshot adapter is implemented; actor/turn adapters and live integration remain.",
+      "live": "The current replay is a trajectory overlay. Native input, frame, dispatch, session and audio routines now compose into a pipeline verified across consecutive frames. Capture/request sequences, playback startup with snapshot reconstruction, and worm animation/contact reserialization also match the original. Host terrain/palette/random snapshots and complete native animation-queue records are implemented; actor/turn adapters and live integration remain.",
       "remaining": "Verify the remaining actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_replay_animation_adapter",
         "replay_host_environment_adapter",
         "native_replay_worm_roundtrip",
         "native_replay_composed_restore",

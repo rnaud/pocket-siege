@@ -51,7 +51,8 @@ export class NativeAnimationPlayer {
   }
   clear() {
     this.current = { id: 0, progress: 0, rate: 0, loop: 0, span: 0 };
-    this.slots = Array(16).fill(null);
+    //004FD2B0 clears the header, retaining inactive ring storage for replay.
+    this.slots ??= Array(16).fill(null);
     this.read = this.write = 0;
   }
   pop() {
@@ -90,6 +91,31 @@ export class NativeAnimationPlayer {
       this.pop();
       if (!delta) return;
     }
+  }
+  //004FD330/004FD370 persist the full348-byte body, including inactive slots.
+  replayState() {
+    const bytes = new Uint8Array(0x15c), view = new DataView(bytes.buffer);
+    const fields = ['id', 'progress', 'rate', 'loop', 'span'];
+    fields.forEach((key, index) => view.setInt32(index * 4, this.current[key], true));
+    view.setInt32(20, this.write, true); view.setInt32(24, this.read, true);
+    this.slots.forEach((slot, index) => {
+      ['progress', 'id', 'rate', 'loop', 'span'].forEach((key, field) =>
+        view.setInt32(28 + index * 20 + field * 4, slot?.[key] ?? 0, true));
+    });
+    return bytes;
+  }
+  restoreReplayState(bytes) {
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength !== 0x15c)
+      throw new RangeError('Invalid native animation replay record');
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const write = view.getInt32(20, true), read = view.getInt32(24, true);
+    if (write < 0 || write > 15 || read < 0 || read > 15)
+      throw new RangeError('Invalid native animation ring cursor');
+    this.current = Object.fromEntries(['id', 'progress', 'rate', 'loop', 'span'].map((key, index) => [key, view.getInt32(index * 4, true)]));
+    this.slots = Array.from({ length: 16 }, (_, index) => Object.fromEntries(
+      ['progress', 'id', 'rate', 'loop', 'span'].map((key, field) => [key, view.getInt32(28 + index * 20 + field * 4, true)])));
+    this.write = write; this.read = read;
+    return this;
   }
   snapshot() {
     const c = this.current;

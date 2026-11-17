@@ -1,3 +1,4 @@
+import replayAnimation from "./fixtures/armageddon/replay-animation.json" with { type: "json" };
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import {
@@ -113,6 +114,16 @@ test("weapon animation selection matches all 71 initialized native records", { t
 });
 
 test("native queue capacity, clearing and controlled progress match original x86", { tag: "@logic" }, () => {
+  for (const row of replayAnimation.cases) {
+    const player = new NativeAnimationPlayer().restoreReplayState(Uint8Array.from(row.bytes));
+    for (const step of row.steps) {
+      if (step.action === 'advance') player.advance();
+      else if (step.action === 'clear') player.clear();
+      expect([...player.replayState()]).toEqual(step.bytes);
+      expect(step.position).toBe(0x160);
+    }
+  }
+
   const player = new NativeAnimationPlayer();
   expect(fixture.operations).toHaveLength(42);
   for (const [index, operation] of fixture.operations.entries()) {
