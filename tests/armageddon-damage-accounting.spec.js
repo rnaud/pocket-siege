@@ -67,6 +67,11 @@ test("live native damage totals reveal after settlement and lethal accounting st
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  // Damage reveal waits for all tasks, including the unrelated initial supply drop.
+  await page.evaluate(() => {
+    window.siege.debug.setCrateKind("grenade");
+    window.siege.debug.collectCrate();
+  });
   await page.evaluate(() => window.siege.debug.stageMeleeTargets());
   await page.evaluate(() => {
     window.siege.debug.hit(0, 6);

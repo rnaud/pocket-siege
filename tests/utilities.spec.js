@@ -1,3 +1,5 @@
+import projectileFire from "./fixtures/armageddon/projectile-fire.json" with { type: "json" };
+import { nativeProjectileFire } from "../src/armageddon/projectile-fire.js";
 import flameEvents from "./fixtures/armageddon/flame-events.json" with { type: "json" };
 import { nativeFlameEvent } from "../src/armageddon/flame-events.js";
 import flameBlasts from "./fixtures/armageddon/flame-blast.json" with { type: "json" };
@@ -218,6 +220,16 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(burns).toBeGreaterThan(0);
     expect(hits).toBeGreaterThan(0);
     expect(pool.filter(Boolean)).toHaveLength(0);
+  }
+  for (const row of projectileFire.cases) {
+    const events = [];
+    nativeProjectileFire(row.input, row.x, row.y, {
+      parent: (category, id) => { events.push(["parent", category, id]); return category; },
+      allocate: size => { events.push(["allocate", size]); return row.accepted; },
+      flame: (allocation, parent, record) => events.push(["flame", parent, record]),
+      sound: request => events.push(["sound", ...request]),
+    });
+    expect(events).toEqual(row.events);
   }
   for (const row of flameEvents.cases) {
     const record = Array(11).fill(0); record[10] = row.input.persistent;

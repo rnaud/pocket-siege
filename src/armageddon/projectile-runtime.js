@@ -196,6 +196,7 @@ export function attachNativeProjectileBlock(p, height, block, nativePayload = nu
     96,
   );
   const words = selected.words;
+  p.nativeFire = { count: block[47], delay: block[48], lifetime: block[49], persistent: block[50] };
   p.nativeDetonation = {
     offset: words[1], push: words[2], damage: words[3], variance: words[4],
     sprite: words[6], secondary: block[45], repeat: payload.repeat,

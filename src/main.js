@@ -1,3 +1,4 @@
+import { nativeProjectileFire } from "./armageddon/projectile-fire.js";
 import { nativeFlameEvent } from "./armageddon/flame-events.js";
 import { nativeFlameBlast } from "./armageddon/flame-blast.js";
 import { nativeCrateHit } from "./armageddon/crate-hit.js";
@@ -1258,8 +1259,7 @@ function spawnCrateContentsProjectile(payload, owner) {
     bounce: payload[9] / 100, nativeCrateContents: true };
   attachNativeProjectileBlock(p, H, crateProjectileData.block, payload);
   if (nativeProjectilePlacementHit(p, terrain, worms, H)) {
-    const packet = nativeDetonationPacket(p);
-    if (packet) explode(p.x, p.y, p.kind, owner, packet);
+    detonateNativeProjectile(p);
     return;
   }
   p.mesh = createNativeProjectileVisual(p.nativeRender);
@@ -1338,8 +1338,7 @@ function stepBombs(dt) {
         bombs.splice(i, 1);
         releaseProjectileMesh(b.mesh);
         if (result.detonate) {
-          const packet = nativeDetonationPacket(b);
-          if (packet) explode(b.x, b.y, b.kind, b.owner, packet);
+          detonateNativeProjectile(b);
         }
       }
       continue;
@@ -3040,8 +3039,7 @@ function stepAirstrikes() {
     }
     for (const missile of result.missiles) {
       if (nativeProjectilePlacementHit(missile,terrain,worms,H)) {
-        const packet=nativeDetonationPacket(missile);
-        if(packet) explode(missile.x,missile.y,missile.kind,missile.owner,packet);
+        detonateNativeProjectile(missile);
         continue;
       }
       missile.mesh=createNativeProjectileVisual(missile.nativeRender);
@@ -3081,8 +3079,7 @@ function spawnPlacedDynamite(release) {
     playNativeProjectileReleaseSound(audio, body.nativeRelease, request => nativeSoundQueue.enqueue(request), w);
   }
   if (nativeProjectilePlacementHit(body, terrain, worms, H)) {
-    const packet = nativeDetonationPacket(body);
-    if (packet) explode(body.x, body.y, body.kind, body.owner, packet);
+    detonateNativeProjectile(body);
   } else {
     body.mesh = createOriginalVisual("dynamite");
     body.mesh.position.set(body.x, body.y, 40);
@@ -3730,12 +3727,31 @@ function fire() {
   }
   updateUI();
 }
-// Preserve queued detonation cues on every path, including placement failures.
-function nativeDetonationPacket(body) {
-  const events = nativeProjectileDetonationEvents(body, () => matchRandom.logicUint());
-  for (const event of events)
+// Dispatch all original detonation events in order, including placement failures.
+function detonateNativeProjectile(p) {
+  const events = nativeProjectileDetonationEvents(p, () => matchRandom.logicUint());
+  for (const event of events) {
     if (event.operation === "sound") queueGameSound(event.request);
-  return events.find(event => event.operation === "blast")?.request;
+    else if (event.operation === "blast")
+      explode(p.x, p.y, p.kind, p.owner, event.request);
+    else if (event.operation === "fire")
+      nativeProjectileFire(p.nativeFire, ...event.request, {
+        parent: category => category, allocate: () => true,
+        flame: (allocation, parent, record) => spawnNativeFlame(record, p.owner),
+        sound: request => queueGameSound(request),
+      });
+    else if (event.operation === "fragments")
+      nativeProjectileChildren(p, H, () => matchRandom.logicUint(), child => {
+        if (nativeProjectilePlacementHit(child, terrain, worms, H)) {
+          detonateNativeProjectile(child);
+          return;
+        }
+        child.mesh = createNativeProjectileVisual(child.nativeRender);
+        child.mesh.position.set(child.x, child.y, 40);
+        group.add(child.mesh);
+        bombs.push(child);
+      });
+  }
 }
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
@@ -3746,24 +3762,10 @@ function explodeProjectile(p) {
     writeRecord(record);
     updateRecordUI();
   }
-  const nativePacket = p.nativeDetonation
-    ? nativeDetonationPacket(p)
-    : null;
-  explode(p.x, p.y, p.kind, p.owner, nativePacket);
-  if (p.nativeDetonation) {
-    nativeProjectileChildren(p, H, () => matchRandom.logicUint(), child => {
-      if (nativeProjectilePlacementHit(child, terrain, worms, H)) {
-        const packet = nativeDetonationPacket(child);
-        if (packet) explode(child.x, child.y, child.kind, child.owner, packet);
-        return;
-      }
-      child.mesh = createNativeProjectileVisual(child.nativeRender);
-      child.mesh.position.set(child.x, child.y, 40);
-      group.add(child.mesh);
-      bombs.push(child);
-    });
-  }
+  if (p.nativeDetonation) detonateNativeProjectile(p);
+  else explode(p.x, p.y, p.kind, p.owner);
 }
+
 function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   const sourceX = x, sourceY = y;
   if (nativePacket) {
@@ -3816,7 +3818,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   for (const fragment of nativePacket ? [] : fragments(kind)) {
     spawnBomb({ x: sourceX, y: sourceY + 8, ...fragment, owner: ownerIndex });
   }
-  if (kind === "napalm") {
+  if (kind === "napalm" && !nativePacket) {
     for (let i = 0; i < 3; i++)
       spawnFire(
         x + (i - 1) * 42 + (logicRandom() - 0.5) * 12,
