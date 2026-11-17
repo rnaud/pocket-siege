@@ -7,6 +7,10 @@ export function captureReplayResources(resources, resourceKey) {
   for (const [id, object] of resources) {
     if (object.isObject3D) {
       for (const child of object.children) resourceKey(child);
+      // userData can link to objects outside the child tree. Discover them
+      // while the Map iterator is live so their transforms and descendants
+      // are captured too. Encode all roots together below to preserve aliases.
+      captureReplayActors([{ id, actor: object.userData }], { resourceKey });
       if (object.geometry && !geometry.has(object.geometry)) geometry.set(object.geometry, object.geometry.clone());
       for (const material of [object.material].flat().filter(Boolean))
         if (!materials.has(material)) materials.set(material, material.clone());

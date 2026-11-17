@@ -1,5 +1,5 @@
 {
-  "focus": "Extend live snapshot restore to audio and broader weapon/effect coverage, then connect automatic capture and native playback.",
+  "focus": "Extend live snapshot restore to audio and remaining weapon/effect interactions, then connect automatic capture and native playback.",
   "note": "The game is playable, but the offline rewrite is not yet equivalent to Worms Armageddon. Verified routines can still be waiting for live integration.",
   "areas": [
     {
@@ -100,7 +100,7 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native input, frame, dispatch, session and audio routines now compose into a pipeline verified across consecutive frames. Capture/request sequences, playback startup with snapshot reconstruction, and worm animation/contact reserialization also match the original. Host terrain/palette/random snapshots, linked actor graphs and complete native animation queues are implemented. A development capture path now reads real actor/turn/controller state without mutating the match. Development-only sound-off restore now reproduces tested rocket simulation sequences; automatic capture, audio restoration and live replay playback remain.",
+      "live": "The current replay is a trajectory overlay. Native input, frame, dispatch, session and audio routines now compose into a pipeline verified across consecutive frames. Capture/request sequences, playback startup with snapshot reconstruction, and worm animation/contact reserialization also match the original. Host terrain/palette/random snapshots, linked actor graphs and complete native animation queues are implemented. A development capture path now reads real actor/turn/controller state without mutating the match. Development-only sound-off restore now reproduces tested rocket, grenade, cluster, banana, napalm, mine, dynamite and shotgun simulation sequences; automatic capture, audio restoration and live replay playback remain.",
       "remaining": "Verify the remaining actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
       "evidence": [
         "replay_live_restore_audit",
