@@ -1,3 +1,5 @@
+import { nextLogicRandom } from "../src/armageddon/numeric.js";
+import { nativePoisonAnnouncement } from "../src/armageddon/announcements.js";
 import poison from "./fixtures/armageddon/worm-poison.json" with { type: "json" };
 import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage, nativeWormPoisonTurnReset } from "../src/armageddon/worm-poison.js";
 import wormPickup from "./fixtures/armageddon/worm-pickup.json" with { type: "json" };
@@ -74,11 +76,14 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
   for (const row of poison.cases) {
-    const body = row.operation === 'infect' ? nativeWormPoisonInfect(row.input, row.added)
-      : row.operation === 'pickup' ? nativeWormPoisonPickup(row.input, row.record)
-      : row.operation === 'reset' ? nativeWormPoisonTurnReset(row.input) : row.input;
+    let random = 17;
     const calls = row.operation === 'tick' ? nativeWormPoisonDamage(row.input, row.hp) : [];
-    expect({ body, calls }).toEqual(row.result);
+    const body = row.operation === 'infect' ? nativeWormPoisonInfect(row.input, row.added, {
+      report: record => calls.push({ operation: 'report', record }),
+      announce: () => calls.push({ operation: 'announcement', message: nativePoisonAnnouncement('ALPHA', () => (random = nextLogicRandom(random, 3))) }),
+    }) : row.operation === 'pickup' ? nativeWormPoisonPickup(row.input, row.record)
+      : row.operation === 'reset' ? nativeWormPoisonTurnReset(row.input) : row.input;
+    expect({ body, calls, random }).toEqual(row.result);
   }
   for (const row of transfer.stat_cases) {
     const keys = ['weaponCrates', 'utilityCrates', 'healthCrates', 'donorCrates'];

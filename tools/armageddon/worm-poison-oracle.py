@@ -34,6 +34,11 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 vt=owner+0x1000;payload=owner+0x2000
 write(owner,vt);write(vt+0x7c,0x4d0ff0)
 fields={'team':0xfc,'worm':0x100,'state':0x50,'latched':0x144,'amount':0x148}
+context=owner+0x20000;cpu.mem_map(context,0x10000);write(owner+0x38,context)
+language=owner+0x5000;write(language,0x5259c8);write(context+0x1c,language)
+cpu.mem_write(owner+0x304,b'ALPHA\0');write(0x5178f4,stop+0x300)
+def string(address):
+ return bytes(cpu.mem_read(address,256)).split(b'\0')[0].decode('cp1252')
 calls=[];hp=0;boundary=0x4db56f
 
 def ret(cleanup,value=0):
@@ -41,20 +46,29 @@ def ret(cleanup,value=0):
  cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value&0xffffffff)
 def hook(cpu,address,size,user):
  if address in [boundary,0x4db56f]:cpu.emu_stop();return
- if address==0x4c2cc0:ret(8,hp)
+ if address==stop+0x300:
+  sp=cpu.reg_read(UC_X86_REG_ESP);text=string(read(sp+8)).replace('%s',string(read(sp+12)))
+  cpu.mem_write(read(sp+4),text.encode('cp1252')+b'\0');ret(0,len(text))
+ elif address==0x4b26a0:
+  sp=cpu.reg_read(UC_X86_REG_ESP);event=read(sp+16);record=read(sp+24)
+  if event==0x430:calls.append({'operation':'report','record':[signed(read(record+i*4)) for i in range(4)]})
+  elif event==0x43d:calls.append({'operation':'announcement','message':{'text':string(read(record+8)),'font':signed(read(record+12))}})
+  else:raise RuntimeError('Unexpected event')
+  ret(24)
+ elif address==0x4c2cc0:ret(8,hp)
  elif address==0x4d8440:
   sp=cpu.reg_read(UC_X86_REG_ESP);calls.append([signed(read(sp+i)) for i in [4,8,12]]);ret(12)
 cpu.hook_add(UC_HOOK_CODE,hook)
 def run(body,entry,end,record):
  global boundary
- boundary=end;calls.clear()
+ boundary=end;calls.clear();write(context+0x1acc,17);write(context+0x7f0,3)
  for key,off in fields.items():write(owner+off,body[key])
  for i,v in enumerate(record):write(payload+i*4,v)
  sp=stack+0xf000
  for reg,value in [(UC_X86_REG_ESP,sp),(UC_X86_REG_EDI,owner),(UC_X86_REG_ESI,vt),(UC_X86_REG_EBX,payload)]:cpu.reg_write(reg,value)
  cpu.emu_start(entry,stop,count=1000)
  if cpu.reg_read(UC_X86_REG_EIP) not in [end,0x4db56f]:raise RuntimeError('Unexpected exit')
- return {'body':{key:signed(read(owner+off)) for key,off in fields.items()},'calls':list(calls)}
+ return {'body':{key:signed(read(owner+off)) for key,off in fields.items()},'calls':list(calls),'random':read(context+0x1acc)}
 cases=[]
 for state in [0x65,0x6f,0x88]:
  for amount in [-1,0,5,2147483647]:
@@ -68,6 +82,6 @@ for state in [0x65,0x6f,0x88]:
      record=[team,7,category]
      cases.append({'operation':'pickup','input':body,'record':record,'result':run(body,0x4da0a7,0x4db56f,record)})
    for amountAdded in [-1,0,5]:
-    cases.append({'operation':'infect','input':body,'added':amountAdded,'result':run(body,0x4db44b,0x4db49d,[amountAdded])})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Original420 latch reset,426 damage decision and3EF cure branches;439 state prefix before report/text. Native state getter executes unchanged; HP lookup and damage interface captured.','cases':cases},separators=(',',':'))+'\n')
+    cases.append({'operation':'infect','input':body,'added':amountAdded,'result':run(body,0x4db44b,0x4db56f,[amountAdded])})
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Original420 latch reset,426 damage decision and3EF cure branches;complete439 with unchanged English language getter and announcement selector. Dispatch and sprintf captured. Native state getter executes unchanged; HP lookup and damage interface captured.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} poison cases')

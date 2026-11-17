@@ -134,6 +134,26 @@
     "Top tools...",
     "Collect or conquer?"
   ],
+  "poisonTable": "00558E78",
+  "poison": [
+    "%s is bug ridden.",
+    "%s feels under the weather.",
+    "%s has a fever.",
+    "%s is a bio-hazard.",
+    "%s is sick.",
+    "%s is stricken.",
+    "%s is poorly.",
+    "%s is ill.",
+    "%s needs medicine.",
+    "%s is feeling a bit dodgy.",
+    "%s has a virus.",
+    "%s needs to see a doctor.",
+    "%s is suffering.",
+    "%s needs medical attention",
+    "%s needs nursing.",
+    "%s has the dreaded lurgie.",
+    "%s is feeling ropey."
+  ],
   "healthDropTable": "00558E50",
   "healthDrop": [
     "Certainly a healthy option...",

@@ -164,3 +164,9 @@ export function nativeKillAnnouncement(stats, name, color, nextRandom) {
   return { text: variants[(nextRandom() & 255) % variants.length].replace("%s", () => name),
     font: color + 17 };
 }
+
+// Worm event439 uses English language+2F4 ->00558E78, font23.
+export function nativePoisonAnnouncement(name, nextRandom) {
+  const variants = elimination.poison;
+  return { text: variants[(nextRandom() & 255) % variants.length].replace('%s', () => name), font: 23 };
+}

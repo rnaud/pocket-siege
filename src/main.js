@@ -27,7 +27,7 @@ import { nativeAutomaticUtilities } from "./armageddon/automatic-utilities.js";
 import { nativePickupCandidate } from "./armageddon/crate-pickup.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativePoisonAnnouncement, nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -2494,7 +2494,14 @@ function applySuddenDeath() {
   if (suddenDeathType === "nuke") {
     // Host sudden-death trigger supplies the dose until native scheme/event routing.
     for (const w of worms) w.nativePoison = nativeWormPoisonInfect(
-      { ...w.nativePoison, state: nativeWormState(w) }, 5);
+      { ...w.nativePoison, team: w.matchStats.team, worm: w.matchStats.worm, state: nativeWormState(w) }, 5, {
+        // Native430 rejects this report's zero reportability word, so it
+        // contributes neither damage statistics nor damage reactions.
+        announce: () => {
+          const message = nativePoisonAnnouncement(w.name, () => matchRandom.logicUint());
+          queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
+        },
+      });
     poisoned = worms.some(w => w.nativePoison.amount !== 0);
     updateUI();
     return false;

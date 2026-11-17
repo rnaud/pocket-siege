@@ -1,7 +1,10 @@
-// 004D97F0 event439 state prefix. Reporting/text follow outside this kernel.
-export function nativeWormPoisonInfect(input, amount) {
+// 004D97F0 event439. Report precedes the localized announcement.
+export function nativeWormPoisonInfect(input, amount, interfaces = {}) {
   if (input.latched || input.state === 0x88) return { ...input };
-  return { ...input, amount: (input.amount + amount) | 0, latched: 1 };
+  const body = { ...input, amount: (input.amount + amount) | 0, latched: 1 };
+  interfaces.report?.([input.team, input.worm, amount, 0]);
+  interfaces.announce?.();
+  return body;
 }
 
 // Event3EF matches team only, not the collecting worm's index.
