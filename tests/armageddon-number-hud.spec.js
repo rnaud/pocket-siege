@@ -50,10 +50,15 @@ test("original timer digits preserve every glyph pixel at integer scale", async 
       ["0 SEC", "0 SEC"],
     ],
   });
+  await expect(page.locator(".turn")).toHaveCSS("bottom", "9px");
   const size = await page.locator("#timer canvas").boundingBox();
   expect(size.width).toBe(33);
   expect(size.height).toBe(32);
   const frame = await page.locator(".turn").boundingBox();
   expect(size.y + size.height).toBeLessThanOrEqual(frame.y + frame.height);
+  expect({width: frame.width, height: frame.height}).toEqual({width: 56, height: 42});
+  const arena = await page.locator("#arena").boundingBox();
+  expect(frame.x - arena.x).toBe(10);
+  expect(arena.y + arena.height - frame.y - frame.height).toBe(9);
   await page.screenshot({ path: info.outputPath("original-timer.png") });
 });

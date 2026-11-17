@@ -1,8 +1,11 @@
-import { nativeTimerFont } from "../src/armageddon/number-hud.js";
+import { nativeTimerFont, nativeClockFrame, nativeClockSlide } from "../src/armageddon/number-hud.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  expect(nativeClockFrame(56, 42, 22, 33)).toEqual(fixture.clockFrame);
+  for (const c of fixture.clockSlideCases)
+    expect(nativeClockSlide(c.progress, c.target)).toBe(c.after);
   for (const c of fixture.timerCases)
     expect(nativeTimerFont(c.milliseconds, c.running)).toBe(c.font);
   for (const c of fixture.listCases) {

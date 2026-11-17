@@ -95,6 +95,8 @@ import { updateOriginalSelection } from "./armageddon/selection-hud.js";
 import {
   loadOriginalNumbers,
   updateOriginalTimer,
+  nativeClockSlide,
+  updateOriginalClockPanel,
 } from "./armageddon/number-hud.js";
 import {
   loadOriginalWindHUD,
@@ -761,6 +763,7 @@ function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
   if (p) p.nativeFusePlayback = null;
 }
+let nativeClockProgress = 0, nativeClockTarget = 0;
 let nativeTeamList = createNativeTeamList();
 let nativeTeamHealthMaximum = 1;
 let nativeTeamHealthBusyTicks = 0;
@@ -800,6 +803,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   uiKey = "";
   timerKey = "";
   selectionTick = 0;
+  nativeClockProgress = nativeClockTarget = 0;
   nativeTeamList = createNativeTeamList();
   nativeTeamHealthMaximum = 1;
   nativeTeamHealthBusyTicks = 0;
@@ -1251,6 +1255,7 @@ function updateRecordUI() {
     surrender.hidden = !matchStarted || phase === "menu" || phase === "over";
 }
 function beginTurn() {
+  nativeClockTarget = 65536;
   const inventory = weaponDelays[team];
   weaponDelays[team] = advanceNativeDelays(inventory.turns, inventory.delays);
   shotgunRemaining = 0;
@@ -3929,6 +3934,7 @@ function revealWormHealth(w) {
   }
 }
 function finishMatch(winner, series) {
+  nativeClockTarget = 0;
   phase = "over";
   cameraSnap = true; manualCamera = null;
   aimHUD.guide.style.display = "none";
@@ -4162,6 +4168,8 @@ function step(dt) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
+  nativeClockProgress = nativeClockSlide(nativeClockProgress, nativeClockTarget);
+  updateOriginalClockPanel(nativeClockProgress, team);
   if (phase === "break") {
     breakTimer = Math.max(0, breakTimer - dt);
     if (breakTimer === 0) {

@@ -37,8 +37,17 @@ calls=[]
 keys=(0,0)
 list_calls=[]
 list_scores=[101,201]
+clock_frame_mode=False
 def hook(cpu,address,size,user):
+ if clock_frame_mode and address==0x4edb70:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  cpu.reg_write(UC_X86_REG_EAX,22 if read(sp+4)==8 else 33)
+  cpu.reg_write(UC_X86_REG_ESP,sp+8);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
  offset=address-stop
+ if clock_frame_mode and offset==0x14:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  write(read(sp+4),56);write(read(sp+8),42)
+  cpu.reg_write(UC_X86_REG_ESP,sp+12);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
  if 0x200 <= offset <= 0x234:
   sp=cpu.reg_read(UC_X86_REG_ESP);obj=cpu.reg_read(UC_X86_REG_ECX)
   method=offset-0x200;row=(obj-owner-0x4000)//0x100
@@ -174,5 +183,21 @@ for milliseconds in [0,1,249,250,251,499,500,749,750,999,1000,4750,4999,5000,500
   cpu.emu_start(0x4b59fb,0x4b5aa5,count=10000)
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4b5aa5:raise RuntimeError('Timer font prefix did not finish')
   timer_cases.append({'milliseconds':milliseconds,'running':running,'font':cpu.reg_read(UC_X86_REG_EBP)})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases},separators=(',',':'))+'\n')
+clock_slide_cases=[]
+for progress in [0,3275,3276,3277,32768,62260,65536]:
+ for target in [0,65536]:
+  write(owner+0x18c,progress);write(owner+0x190,target)
+  cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+  cpu.emu_start(0x4b6727,0x4b6769,count=1000)
+  clock_slide_cases.append({'progress':progress,'target':target,'after':read(owner+0x18c)})
+clock_frame_mode=True
+write(owner+0x38,context);write(owner+0x21c,owner+0x7000)
+write(owner+0x7000,vtable);write(vtable+0x14,stop+0x14)
+cpu.mem_write(context+3000+0x3cd1,b'\x02')
+sp=stack+0xff00;write(sp,stop);write(sp+4,1)
+cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,sp)
+calls=[];cpu.emu_start(0x4b56a0,stop,count=10000)
+if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Clock frame did not finish')
+clock_frame=calls[:]
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

@@ -1,3 +1,5 @@
+import { nativeHUDFrame, paintNativeFrameRequests } from "./hud-frame.js";
+import { fixedMultiply } from "./numeric.js";
 import { loadNativeFont, paintNativeText } from "./font.js";
 
 const fontNames = ["lnumred1", "lnumwht1", "lnumred2", "lnumwht2"];
@@ -44,4 +46,34 @@ export function updateOriginalTimer(value, retreat = false, root = document, mil
   }
   target.querySelector(".original-timer-text").textContent = label;
   paintOriginalNumber(canvas, value, nativeTimerFont(milliseconds, running));
+}
+
+// 004B56A0: clock uses the outer native frame, with a solid black interior.
+export function nativeClockFrame(width, height, black, teamColor) {
+  const calls = nativeHUDFrame(width, height, black, black, teamColor);
+  return [...calls.slice(0, 9), ...calls.slice(-4)];
+}
+// 004B64B0 clock visibility block. Unlike team bars, snap threshold is 0xCCC.
+export function nativeClockSlide(progress, target) {
+  const difference = (target - progress) | 0;
+  const sign = difference >> 31;
+  if (((difference ^ sign) - sign | 0) < 0xccc) return target;
+  return (progress + (progress < target ? 0xccc : -0xccc)) | 0;
+}
+export function updateOriginalClockPanel(progress, team, root = document) {
+  const panel = root.querySelector(".turn");
+  if (!panel) return;
+  let frame = panel.querySelector(".native-clock-frame");
+  if (!frame) {
+    frame = document.createElement("canvas");
+    frame.className = "native-clock-frame";
+    frame.setAttribute("aria-hidden", "true");
+    panel.prepend(frame);
+  }
+  if (frame.dataset.team !== String(team)) {
+    paintNativeFrameRequests(frame, 56, 42, nativeClockFrame(56, 42, "#000000", team ? "#ff8080" : "#80ff80"));
+    frame.dataset.team = String(team);
+  }
+  // 004B5860: center (38, screenHeight - 60 * progress + 30).
+  panel.style.bottom = `${Math.round(fixedMultiply(60 << 16, progress) / 65536) - 51}px`;
 }

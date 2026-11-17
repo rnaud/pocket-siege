@@ -2220,3 +2220,26 @@ body.native-game-hud {
 .native-worm-text[hidden] { display: none; }
 
 .native-game-hud .team[hidden] { display: none; }
+
+.native-game-hud .turn {
+  left: 10px;
+  bottom: 9px;
+  width: 56px;
+  height: 42px;
+  display: block;
+}
+.native-game-hud .turn #round { display: none; }
+.native-clock-frame {
+  position: absolute;
+  inset: 0;
+  width: 56px;
+  height: 42px;
+  image-rendering: pixelated;
+}
+.native-game-hud .turn #timer {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 56px;
+  height: 32px;
+}

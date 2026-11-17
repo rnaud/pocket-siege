@@ -25,17 +25,14 @@ export function nativeHUDFrame(width, height, fill, black, edge) {
   ];
 }
 export function paintNativeHUDFrame(canvas, width, height, fill) {
+  paintNativeFrameRequests(canvas, width, height, nativeHUDFrame(width, height, fill, "#000000", "#9d9d9d"));
+}
+export function paintNativeFrameRequests(canvas, width, height, requests) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  for (const [kind, a, b, c, d, e] of nativeHUDFrame(
-    width,
-    height,
-    fill,
-    "#000000",
-    "#9d9d9d",
-  )) {
+  for (const [kind, a, b, c, d, e] of requests) {
     const color = kind === "rect" ? e : kind === "pixel" ? c : d;
     ctx.fillStyle = color || "#000000";
     if (kind === "rect") ctx.fillRect(a, b, c - a, d - b);
