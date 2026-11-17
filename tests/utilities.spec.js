@@ -1,3 +1,5 @@
+import flameSpread from "./fixtures/armageddon/flame-spread.json" with { type: "json" };
+import { nativeFlameSpread, registerNativeFlame } from "../src/armageddon/flame-spread.js";
 import flameMotion from "./fixtures/armageddon/flame-motion.json" with { type: "json" };
 import { nativeFlameMotion } from "../src/armageddon/flame-motion.js";
 import flameBodies from "./fixtures/armageddon/flame-body.json" with { type: "json" };
@@ -159,6 +161,27 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  for (const row of flameSpread.spread) {
+    const events = []; let probes = 0;
+    const result = nativeFlameSpread(row.record, {
+      parent: (...args) => { events.push(['parent', ...args]); return 23; },
+      random: () => { events.push(['random']); return row.random; },
+      collide: (...args) => { events.push(['probe', ...args]); return probes++ < row.clearance; },
+      allocate: size => { events.push(['allocate', size, row.allocated]); return row.allocated; },
+      flame: (allocation, parent, record) => events.push(['flame', parent, record]),
+    });
+    expect(result).toEqual(row.output);
+    expect(events).toEqual(row.events);
+  }
+  for (const row of flameSpread.pool) {
+    const pool = row.stamps.map((created, index) => index === row.hole ? null : { created, index });
+    const events = [], body = {};
+    expect(registerNativeFlame(pool, body, row.frame,
+      (old, flag) => events.push(['delete', old.index, flag]))).toBe(row.slot);
+    expect(body).toEqual({ slot: row.slot, created: row.created });
+    expect(pool.flatMap((entry, i) => entry === body ? [i] : [])).toEqual(row.ownerSlots);
+    expect(events).toEqual(row.events);
+  }
   for (const row of flameMotion.cases) {
     const events = []; let randomIndex = 0;
     const result = nativeFlameMotion(row.input, {
