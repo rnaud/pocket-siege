@@ -1,3 +1,4 @@
+import { nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
@@ -386,6 +387,7 @@ let pendingTurnStart = false;
 let matchDamageSourceActive = false;
 let nativeMatchStatistics = { damage: 0, deaths: 0 };
 let nativeDamageReaction = createNativeDamageReaction();
+let turnStartShotCount = 0;
 let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
@@ -1310,7 +1312,8 @@ function beginTurn() {
   }
   pendingTurnStart = false;
   matchDamageSourceActive = false;
-  nativeDamageReaction = createNativeDamageReaction();
+  nativeDamageReaction = { ...createNativeDamageReaction(), firstBlood: nativeDamageReaction.firstBlood };
+  turnStartShotCount = shotCount;
   nativeClockTarget = 65536;
   const inventory = weaponDelays[team];
   weaponDelays[team] = advanceNativeDelays(inventory.turns, inventory.delays);
@@ -4083,6 +4086,27 @@ function nextTurn() {
   if (killMessage) {
     queueNativeAnnouncement(nativeAnnouncements, killMessage.text, killMessage.font);
     return;
+  }
+  nativeDamageReaction.shot = Number(shotCount > turnStartShotCount);
+  const reaction = nativeDamageReactionVoice(nativeDamageReaction, {
+    sourceTeam: killer?.matchStats.team ?? 0, sourceWorm: killer?.matchStats.worm ?? 0,
+    turnTeam: team + 1, usedWeapon: shotCount > turnStartShotCount,
+    teamAlive: id => worms.some(w => w.team + 1 === id && w.hp > 0),
+    // Host task/position adapter until the native actor registry is connected.
+    nearbyTeam: id => worms.filter(w => w.hp > 0 && w.team + 1 !== id)
+      .sort((a, b) => (Math.abs(a.x - worms[current].x) + Math.abs(a.y - worms[current].y))
+        - (Math.abs(b.x - worms[current].x) + Math.abs(b.y - worms[current].y)))[0]?.team + 1 || 0,
+    nextRandom: () => matchRandom.logicUint(),
+  });
+  nativeDamageReaction = reaction.state;
+  for (const [field, value] of reaction.statistics) {
+    const stats = killer.matchStats;
+    stats[field] = field.startsWith("max") ? Math.max(stats[field], value) : (stats[field] + value) | 0;
+  }
+  if (reaction.speech && sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeSpeech(audio, reaction.speech.request[0]);
   }
   showNativeTeamPanel(nativeTeamPanel);
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))

@@ -1,7 +1,18 @@
+import { nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
+import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
 import { nativeRecordDamageReaction, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
 test("health, cumulative/displayed damage and events match original damage routine", { tag: "@logic" }, () => {
+  for (const row of fixture.voices) {
+    let random = row.seed;
+    expect(nativeDamageReactionVoice(row.input, {
+      sourceTeam: row.source, sourceWorm: 1, turnTeam: row.turn, usedWeapon: row.used,
+      teamAlive: () => row.alive, nearbyTeam: () => row.nearby,
+      nextRandom: () => (random = nextLogicRandom(random, row.frame)),
+    })).toEqual(row.result);
+    expect(random).toBe(row.random);
+  }
   for (const row of fixture.statistics) {
     const match = { ...row.match }, roster = structuredClone(row.roster);
     nativeRecordMatchDamage(match, roster[0], row.source === null ? null : roster[row.source], row.damage);

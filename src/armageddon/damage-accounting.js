@@ -65,7 +65,7 @@ export function nativeDamageAccounting(body, damage, options = {}) {
 }
 
 export function createNativeWormMatchStats(team, worm, alliance = team, hp = 100) {
-  return { team, worm, alliance, hp, damageReceived: 0, allyDamage: 0, allyKills: 0,
+  return { team, worm, alliance, hp, shots: 0, misses: 0, maxShotKills: 0, maxShotDamage: 0, damageReceived: 0, allyDamage: 0, allyKills: 0,
     enemyDamage: 0, enemyKills: 0, turnKills: 0, lastAttackerTeam: 0, lastAttackerWorm: 0 };
 }
 
@@ -92,7 +92,8 @@ export function nativeRecordMatchDamage(match, victim, source, damage) {
 }
 
 export function createNativeDamageReaction() {
-  return { kills: 0, damage: 0, revengeTeam: 0, friendlyTeam: 0, selfTeam: 0,
+  return { firstBlood: 0, shot: 0, perfectTeam: 0, amazingTeam: 0, excellentTeam: 0, brilliantTeam: 0, fatality: 0,
+    kills: 0, damage: 0, revengeTeam: 0, friendlyTeam: 0, selfTeam: 0,
     maxDamage: 0, maxVictimTeam: 0 };
 }
 

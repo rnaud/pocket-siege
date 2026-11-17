@@ -142,5 +142,39 @@ for relation in ['self','friend','enemy','alliedTeam','revenge','absent']:
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Damage reaction recording did not return')
     reaction_after={key:signed(owner+offset) for key,offset in reaction_fields.items()}
     statistics.append(dict(reactionBefore=reaction_before,reactionAfter=reaction_after,match=dict(damage=initial,deaths=initial),roster=roster,source=source,damage=damage,result=dict(match=dict(damage=signed(stats_base+8),deaths=signed(stats_base+4)),roster=after)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics),separators=(',',':'))+'\n')
+# Full004B43D0: supply only external stats/speech/team-presence/nearby-team boundaries.
+voice_fields=dict(kills=0x1a0,damage=0x1a4,shot=0x1a8,perfectTeam=0x1ac,amazingTeam=0x1b0,excellentTeam=0x1b4,brilliantTeam=0x1b8,revengeTeam=0x1bc,friendlyTeam=0x1c0,selfTeam=0x1c4,fatality=0x1c8,firstBlood=0x1cc,maxDamage=0x1d0,maxVictimTeam=0x1d4)
+voice_stats=[];voice_speech=None;alive=True;nearby=2
+stat_functions={0x4c34a0:'shots',0x4c34e0:'misses',0x4c35a0:'maxShotKills',0x4c35e0:'maxShotDamage'}
+def voice_capture(cpu,address,size,user):
+ global voice_speech
+ sp=cpu.reg_read(UC_X86_REG_ESP);argc=None;result=0
+ if address in stat_functions:
+  argc=3;voice_stats.append([stat_functions[address],signed(sp+12)])
+ elif address==0x4ef1b0:argc=3;result=nearby
+ elif address==0x4c2c40:argc=1;result=int(alive)
+ elif address==0x4edaf0:argc=2;result=read(sp+4)*100+read(sp+8)
+ elif address==0x4edc90:
+  argc=5;encoded=read(sp+4);voice_speech=dict(team=encoded//100,request=[encoded%100,*[signed(sp+i) for i in [8,12,16,20]]])
+ if argc is not None:
+  cpu.reg_write(UC_X86_REG_EAX,result);cpu.reg_write(UC_X86_REG_ESP,sp+4+argc*4);cpu.reg_write(UC_X86_REG_EIP,read(sp))
+cpu.hook_add(UC_HOOK_CODE,voice_capture)
+voices=[]
+scenarios=[{},dict(shot=1),dict(damage=20,maxDamage=20,maxVictimTeam=2),dict(damage=20,firstBlood=1,maxVictimTeam=2),dict(selfTeam=1,damage=20),dict(selfTeam=1,friendlyTeam=1,damage=20),dict(friendlyTeam=1,damage=20,firstBlood=1),dict(revengeTeam=1,damage=20,firstBlood=1),dict(fatality=1,damage=20,firstBlood=1)]
+for field in ['perfectTeam','amazingTeam','excellentTeam','brilliantTeam']:
+ scenarios.append({field:1,'shot':1,'kills':2,'damage':100,'firstBlood':1})
+scenarios.append({field:1 for field in voice_fields})
+for scenario in scenarios:
+ for seed in [0,1,42,0x12345678,0xffffffff]:
+  for alive,nearby,source,used,turn in [(True,2,1,1,1),(False,0,1,0,1),(True,0,0,1,0)]:
+   initial={field:scenario.get(field,0) for field in voice_fields}
+   for field,offset in voice_fields.items():write(owner+offset,initial[field])
+   for offset,value in [(0x130,source),(0x134,1),(0x138,turn),(0x164,used),(0x1e8,0),(0x1ec,0)]:write(owner+offset,value)
+   write(context+0x1acc,seed);write(context+0x7f0,50);write(owner+0x38,context)
+   voice_stats=[];voice_speech=None;sp=stack+0xf000;write(sp,stop)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4b43d0,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Damage reaction voice did not return')
+   voices.append(dict(input=initial,seed=seed,frame=50,alive=alive,nearby=nearby,source=source,used=used,turn=turn,random=read(context+0x1acc),result=dict(state={field:signed(owner+offset) for field,offset in voice_fields.items()},handled=cpu.reg_read(UC_X86_REG_EAX),speech=voice_speech,statistics=voice_stats)))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')
