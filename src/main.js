@@ -1,3 +1,4 @@
+import { nativePoisonSettlement } from "./armageddon/poison-settlement.js";
 import { NativeBusyCounter } from "./armageddon/busy-counter.js";
 import { nativeSettlementPresentation } from "./armageddon/settlement-presentation.js";
 import { nativeSuddenDeathActivation, nativeSuddenDeathHealth } from "./armageddon/sudden-death.js";
@@ -423,6 +424,7 @@ let terrain,
 let configuredDelays = {};
 let nativeAnnouncements = createNativeAnnouncements();
 let pendingTurnStart = false;
+let pendingPoisonSettlement = 0;
 let matchDamageSourceActive = false;
 let nativeMatchStatistics = { damage: 0, deaths: 0 };
 let nativeDamageReaction = createNativeDamageReaction();
@@ -1113,6 +1115,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeMatchStatistics = { damage: 0, deaths: 0 };
   nativeDamageReaction = createNativeDamageReaction();
   pendingTurnStart = false;
+  pendingPoisonSettlement = 0;
   matchDamageSourceActive = false;
   setWeapon("rocket");
   mode = $("#mode").value;
@@ -1545,6 +1548,13 @@ function beginTurn() {
     phase = "settle";
     return;
   }
+  // An activation-stage poison pass must settle before thaw/team setup.
+  if (pendingPoisonSettlement || worms.some(w => w.nativeHealthDisplay.active || w.nativeHealthDisplay.pending)) {
+    pendingTurnStart = true;
+    phase = "settle";
+    if (pendingPoisonSettlement) advanceNativePoisonSettlement();
+    return;
+  }
   pendingTurnStart = false;
   // 004B3210 resets the shared environment before the next team's turn.
   // Preserve the selected browser match modifier as the baseline.
@@ -1576,7 +1586,8 @@ function beginTurn() {
   }
   // Native420 follows team activation and resets every worm infection latch.
   for (const w of worms) w.nativePoison = nativeWormPoisonTurnReset(w.nativePoison);
-  applyPoisonTick();
+  // 004B64B0 schedules426 for settlement after this team finishes.
+  pendingPoisonSettlement = 1;
   const roster = worms.filter((w) => w.team === team);
   if (!roster.some((w) => w.hp > 0)) return endGame();
   let next = turnCount[team] % roster.length;
@@ -2468,16 +2479,26 @@ function surrenderMatch() {
   } else finishMatch(1 - losingTeam, false);
   updateUI();
 }
+function advanceNativePoisonSettlement() {
+  const result = nativePoisonSettlement({ selectedTeam: 0, selectedWorm: 0,
+    mode: 1, poisonPending: pendingPoisonSettlement });
+  pendingPoisonSettlement = result.body.poisonPending;
+  for (const call of result.calls) {
+    if (call.event === 0x400) {
+      for (const flame of nativeFlames) if (flame)
+        flame.body = nativeFlameEvent(flame.body, flame.record, 0x400);
+    } else if (call.event === 0x426) applyPoisonTick();
+  }
+  return result.ready;
+}
 function applyPoisonTick() {
   let hits = 0;
   for (const w of worms) {
     const body = { ...w.nativePoison, state: nativeWormState(w) };
     for (const [damage, force, uncapped] of nativeWormPoisonDamage(body, w.hp)) {
       accountWormDamage(w, damage, { force: !!force, uncapped: !!uncapped });
-      revealWormHealth(w);
-      w.hurt = Math.max(w.hurt, 0.65);
+      // Event426 only accounts damage; the next settlement pass reveals it.
       hits++;
-      if (w.hp === 0) { w.deathPending = true; w.dying = 0.8; }
     }
   }
   if (hits) $("#status").textContent = "Poison damages infected worms.";
@@ -2552,6 +2573,7 @@ function applySuddenDeath() {
   if (sdTriggered) return false;
   sdTriggered = true;
   suddenDeath = true;
+  pendingPoisonSettlement = 1; // Native controller157 also schedules a pass on activation.
   const message = nativeSuddenDeathAnnouncement(() => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
   if (sound) {
@@ -4573,10 +4595,8 @@ function nextTurn() {
   showNativeTeamPanel(nativeTeamPanel);
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
-  // 004B64B0 broadcasts event400 after turn resolution.
-  for (const flame of nativeFlames) if (flame)
-    flame.body = nativeFlameEvent(flame.body, flame.record, 0x400);
   matchDamageSourceActive = false;
+  if (!advanceNativePoisonSettlement()) return;
   team = 1 - team;
   if (team === 0) {
     round++;
@@ -6787,6 +6807,7 @@ window.siege = {
     frozen: worms.map((w) => w.frozen ?? 0),
     waterLevel,
     nativeBusyTicks: nativeBusy.value,
+    pendingPoisonSettlement,
     nativeWaterRise: nativeWaterRise ? { ...nativeWaterRise } : null,
     nativeNuclearEffect: nativeNuclearEffect ? { ...nativeNuclearEffect } : null,
     waterSprite: water.userData.originalSprite,

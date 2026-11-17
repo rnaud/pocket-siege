@@ -1,3 +1,5 @@
+import poisonSettlement from "./fixtures/armageddon/poison-settlement.json" with { type: "json" };
+import { nativePoisonSettlement } from "../src/armageddon/poison-settlement.js";
 import nuclearEffect from "./fixtures/armageddon/nuclear-effect.json" with { type: "json" };
 import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "../src/armageddon/nuclear-effect.js";
 import waterRise from "./fixtures/armageddon/water-rise.json" with { type: "json" };
@@ -79,6 +81,7 @@ import { nativeCollisionBitmapOverlap } from '../src/armageddon/collision-mask.j
 import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json' };
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
+  for (const row of poisonSettlement.cases) expect(nativePoisonSettlement(row.input)).toEqual(row.result);
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
   for (const row of nuclearEffect.starts) {
