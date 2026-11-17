@@ -1,7 +1,7 @@
 import { nativePoisonSettlement } from "./armageddon/poison-settlement.js";
 import { NativeBusyCounter } from "./armageddon/busy-counter.js";
 import { nativeSettlementPresentation } from "./armageddon/settlement-presentation.js";
-import { nativeSuddenDeathActivation, nativeSuddenDeathHealth } from "./armageddon/sudden-death.js";
+import { nativeSuddenDeathActivation, nativeSuddenDeathHealth, nativeSuddenDeathRepeat } from "./armageddon/sudden-death.js";
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
 let nativeWaterRise = null;
 import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
@@ -294,7 +294,7 @@ import {
   SPECIAL_WEAPONS,
   freshAmmo,
   ammoFor,
-  waterLevelForRound,
+  WATER_RISE,
 } from "./weapons.js";
 import { planTurn, planMove, planRetreat } from "./ai.js";
 import { chooseCameraTarget, cameraView, FULL_VIEW } from "./camera.js";
@@ -425,6 +425,7 @@ let configuredDelays = {};
 let nativeAnnouncements = createNativeAnnouncements();
 let pendingTurnStart = false;
 let pendingPoisonSettlement = 0;
+let pendingEnvironmentSettlement = 0;
 let matchDamageSourceActive = false;
 let nativeMatchStatistics = { damage: 0, deaths: 0 };
 let nativeDamageReaction = createNativeDamageReaction();
@@ -1116,6 +1117,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeDamageReaction = createNativeDamageReaction();
   pendingTurnStart = false;
   pendingPoisonSettlement = 0;
+  pendingEnvironmentSettlement = 0;
   matchDamageSourceActive = false;
   setWeapon("rocket");
   mode = $("#mode").value;
@@ -1555,6 +1557,11 @@ function beginTurn() {
     if (pendingPoisonSettlement) advanceNativePoisonSettlement();
     return;
   }
+  if (!advanceNativeEnvironmentSettlement()) {
+    pendingTurnStart = true;
+    phase = "settle";
+    return;
+  }
   pendingTurnStart = false;
   // 004B3210 resets the shared environment before the next team's turn.
   // Preserve the selected browser match modifier as the baseline.
@@ -1588,6 +1595,7 @@ function beginTurn() {
   for (const w of worms) w.nativePoison = nativeWormPoisonTurnReset(w.nativePoison);
   // 004B64B0 schedules426 for settlement after this team finishes.
   pendingPoisonSettlement = 1;
+  pendingEnvironmentSettlement = Number(suddenDeath && ["water", "health", "nuke"].includes(suddenDeathType));
   const roster = worms.filter((w) => w.team === team);
   if (!roster.some((w) => w.hp > 0)) return endGame();
   let next = turnCount[team] % roster.length;
@@ -2491,6 +2499,25 @@ function advanceNativePoisonSettlement() {
   }
   return result.ready;
 }
+function advanceNativeEnvironmentSettlement() {
+  // Browser modes still supply scheme choices; the native stage owns event
+  // order, the one-second transition and one-shot pending-flag consumption.
+  const result = nativeSuddenDeathRepeat({ pending: pendingEnvironmentSettlement,
+    rise: WATER_RISE, dose: suddenDeathType === "nuke" ? 5 : suddenDeathType === "health" ? -1 : 0,
+    nuclear: Number(suddenDeathType === "nuke") });
+  pendingEnvironmentSettlement = result.pending;
+  for (const call of result.calls) {
+    if (call.event === 0x441) startNativeWaterRise(waterLevel + call.record[0], call.record[1]);
+    else if (call.event === 0x423) {
+      for (const w of worms)
+        for (const [damage, force, uncapped] of nativeSuddenDeathHealth(w.hp, call.record[0]))
+          accountWormDamage(w, damage, { force: !!force, uncapped: !!uncapped });
+    }
+    // Native registry refreshes clear cached totals. The host recomputes its
+    // team totals each frame, so no cached values need invalidation here.
+  }
+  return !result.handled;
+}
 function applyPoisonTick() {
   let hits = 0;
   for (const w of worms) {
@@ -2574,6 +2601,7 @@ function applySuddenDeath() {
   sdTriggered = true;
   suddenDeath = true;
   pendingPoisonSettlement = 1; // Native controller157 also schedules a pass on activation.
+  pendingEnvironmentSettlement = Number(suddenDeathType === "water" || suddenDeathType === "health");
   const message = nativeSuddenDeathAnnouncement(() => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
   if (sound) {
@@ -2581,10 +2609,7 @@ function applySuddenDeath() {
     audio.resume();
     nativeSoundQueue.enqueue([94, 8, 65536, 65536, 0]);
   }
-  if (suddenDeathType === "water") {
-    startNativeWaterRise(waterLevelForRound(round));
-    return false;
-  }
+  if (suddenDeathType === "water") return false;
   if (suddenDeathType === "health") {
     for (const w of worms)
       if (w.hp > 0) {
@@ -2600,7 +2625,7 @@ function applySuddenDeath() {
     // The original controller emits these requests in order. Host rules still
     // supply the rise/dose until the scheme's environmental fields are live.
     const calls = nativeSuddenDeathActivation({ waterY: Math.floor(H - waterLevel),
-      rise: Math.max(0, Math.floor(waterLevelForRound(round) - waterLevel)), dose: 5 });
+      rise: WATER_RISE, dose: 5 });
     for (const call of calls) {
       if (call.operation === "camera") pendingEnvironmentCamera = call.point;
       else if (call.operation === "sound") queueGameSound(call.request);
@@ -4597,6 +4622,7 @@ function nextTurn() {
     return endGame();
   matchDamageSourceActive = false;
   if (!advanceNativePoisonSettlement()) return;
+  if (!advanceNativeEnvironmentSettlement()) return;
   team = 1 - team;
   if (team === 0) {
     round++;
@@ -4608,13 +4634,6 @@ function nextTurn() {
     }
     if (!sdTriggered && round >= 6) {
       if (applySuddenDeath()) return;
-    }
-    if (suddenDeath && suddenDeathType === "water") {
-      const nextWater = waterLevelForRound(round);
-      if (nextWater > waterLevel) {
-        startNativeWaterRise(nextWater);
-        announce("THE WATER IS RISING");
-      }
     }
   }
   beginTurn();
@@ -6808,6 +6827,7 @@ window.siege = {
     waterLevel,
     nativeBusyTicks: nativeBusy.value,
     pendingPoisonSettlement,
+    pendingEnvironmentSettlement,
     nativeWaterRise: nativeWaterRise ? { ...nativeWaterRise } : null,
     nativeNuclearEffect: nativeNuclearEffect ? { ...nativeNuclearEffect } : null,
     waterSprite: water.userData.originalSprite,
