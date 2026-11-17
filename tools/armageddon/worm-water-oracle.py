@@ -60,5 +60,36 @@ for initial in [0x65,0x73,0x7b,0x81,0x87,0x88]:
   cpu.emu_start(0x4de7c2,0x4de7e6,count=1000)
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4de7e6:raise RuntimeError('Drowning gate failed')
   drowning.append(dict(body=dict(state=initial,submerged=submerged),target=calls[0]['target'] if calls else None))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004D6720 and004F4FC0. Explicit state getter/entry and queued audio interfaces; captures request order, state and world+12418 flag. Drowning cases execute004DE7C2..004DE7E6 with original+F8 submerged getter and explicit state entry.',cases=cases,drowning=drowning),separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} worm skim callbacks')
+# Original full bubble emitter, with position/state/animation getters and allocation boundaries.
+position,progress=owner+0x2200,owner+0x2300
+write(vt+0x5c,position);write(vt+0xc0,progress)
+def bubble_hook(cpu,address,size,user):
+ if address not in [position,progress,0x4ee930,0x4edfa0]:return
+ sp=cpu.reg_read(UC_X86_REG_ESP);count=0;result=0
+ if address==position:
+  count=2;write(read(sp+4),bubble_input['x']);write(read(sp+8),bubble_input['y'])
+ elif address==progress:result=bubble_input['progress']
+ elif address==0x4ee930:
+  result=random_value;random_reads.append(result)
+ else:
+  count=5;bubble_calls.append(dict(operation='bubble',request=[signed(read(sp+4+i*4)) for i in range(5)]))
+ cpu.reg_write(UC_X86_REG_EAX,result&0xffffffff);cpu.reg_write(UC_X86_REG_ESP,sp+4+count*4);cpu.reg_write(UC_X86_REG_EIP,read(sp))
+cpu.hook_add(UC_HOOK_CODE,bubble_hook)
+bubbles=[]
+for initial in [0x65,0x82,0x83,0x84,0x85,0x87,0x88]:
+ for phase in [0,0xbfff,0xc000,0xffff,0x28000,0x7ffff000,-1]:
+  for frame in [0,1,63,64]:
+   for animation_progress in [0xf332,0xf333]:
+    for facing in [-1,1]:
+     if phase==0x7ffff000 and initial not in [0x85,0x87]:continue
+     random_value=(frame+phase)&0xffffffff
+     bubble_input=dict(state=initial,x=-17*65536,y=250*65536,facing=facing,progress=animation_progress,bubbleProgress=phase)
+     write(owner+0x50,initial);write(owner+0x230,phase);write(owner+0x1b0,facing);write(world+0x7f0,frame)
+     sp=stack+0xff00;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+     bubble_calls=[];random_reads=[]
+     cpu.emu_start(0x4dcd60,stop,count=2000000)
+     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Bubble emitter did not return')
+     output=dict(body={**bubble_input,'bubbleProgress':signed(read(owner+0x230))},calls=bubble_calls)
+     bubbles.append(dict(body=bubble_input,frame=frame,random=random_value,randomReads=len(random_reads),output=output))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004D6720,004F4FC0 and004DE7C2..004DE7E6 water callbacks. Original004DCD60 bubble emitter with explicit getters, visual RNG and allocation capture.',cases=cases,drowning=drowning,bubbles=bubbles),separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} skim, {len(drowning)} drowning gates and {len(bubbles)} bubble cases')

@@ -1,4 +1,5 @@
 import { nativeAxeTick } from "./axe.js";
+import { nativeWormBubbles } from "./worm-water.js";
 import { nativeRecoveryEntry, nativeRecoveryTick } from "./recovery.js";
 import { nativeBodyRotation } from "./motion.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
@@ -671,17 +672,19 @@ export function startOriginalDrowning(worm) {
   player.enqueue(id, animation.metadata);
   worm.originalDrowning = { name, player, bubbleProgress: 0 };
 }
-export function stepOriginalDrowning(worm) {
+export function stepOriginalDrowning(worm, { height = H, random = () => 0, emit = () => {} } = {}) {
   const drowning = worm.originalDrowning;
   if (!drowning) return false;
   drowning.player.advance();
-  // 004DCD60 states 0x85/0x87 accumulate 0x4000 before emitting.
-  drowning.bubbleProgress += 0x4000;
-  if (drowning.bubbleProgress > 0xffff) {
-    drowning.bubbleProgress -= 0x10000;
-    return true;
-  }
-  return false;
+  const result = nativeWormBubbles({
+    state: 0x87, bubbleProgress: drowning.bubbleProgress,
+    x: Math.round((worm.x ?? 0) * 65536),
+    y: Math.round((height - (worm.y ?? 0)) * 65536),
+    facing: worm.facing ?? 1,
+  }, 0, random);
+  drowning.bubbleProgress = result.body.bubbleProgress;
+  for (const call of result.calls) emit(call.request);
+  return result.calls.length > 0;
 }
 
 // Browser constraint angle is adapted to the original downward-positive body angle.

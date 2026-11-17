@@ -4215,13 +4215,12 @@ function step(dt) {
     if (w.dying > 0) {
       if (w.drowned) {
         w.y -= 24 * dt;
-        if (stepOriginalDrowning(w))
-          spawnWaterBubble(
-            w.x + w.facing * 3,
-            w.y + 5,
-            w.facing,
-            (matchRandom.visualUint() & 3) + 1,
-          );
+        stepOriginalDrowning(w, {
+          height: H, random: () => matchRandom.visualUint(),
+          emit: ([x, y, vx, vy, size]) => spawnWaterBubble(
+            x / 65536, H - y / 65536, vx / 0x30000, size,
+          ),
+        });
       }
       if (w.deathPending && !w.drowned) {
         if (!w.originalDeath) startOriginalDeath(w);
