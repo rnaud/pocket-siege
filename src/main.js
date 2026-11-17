@@ -1,3 +1,4 @@
+import { NativeBusyCounter } from "./armageddon/busy-counter.js";
 import { nativeSettlementPresentation } from "./armageddon/settlement-presentation.js";
 import { nativeSuddenDeathActivation, nativeSuddenDeathHealth } from "./armageddon/sudden-death.js";
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
@@ -847,7 +848,7 @@ let nativeTeamList = createNativeTeamList();
 const teamPanelSoundState = { drop: 0, bounce: 0 };
 let pendingEliminationTeam = null;
 let nativeTeamHealthMaximum = 1;
-let nativeTeamHealthBusyTicks = 0;
+const nativeBusy = new NativeBusyCounter();
 let nativeTeamHealthValues = [65536, 65536];
 const nativeTeamPanelVisibility = { minimum: 0, forced: 0 };
 let toggleTeamPanelVisibility = false;
@@ -892,7 +893,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   teamPanelSoundState.drop = teamPanelSoundState.bounce = 0;
   pendingEliminationTeam = null;
   nativeTeamHealthMaximum = 1;
-  nativeTeamHealthBusyTicks = 0;
+  nativeBusy.value = 0;
   nativeTeamHealthValues = [65536, 65536];
   updateHudTeamHealth(nativeTeamHealthValues);
   Object.assign(nativeTeamPanel, { progress: 0, target: 65536, countdown: 0 });
@@ -1539,7 +1540,7 @@ function freezeNativeTeam(targetTeam) {
     dispatchWormEntryAudio(w, [{ operation: "sound", request: [24, 3, 65536, 65536, 0] }]);
 }
 function beginTurn() {
-  if (nativeAnnouncementsPending(nativeAnnouncements) || nativeWaterRise?.progress >= 0 || nativeNuclearEffect?.progress >= 0) {
+  if (nativeBusy.value !== 0 || nativeAnnouncementsPending(nativeAnnouncements) || nativeWaterRise?.progress >= 0 || nativeNuclearEffect?.progress >= 0) {
     pendingTurnStart = true;
     phase = "settle";
     return;
@@ -2488,9 +2489,11 @@ function startNativeWaterRise(targetLevel, duration = 8) {
   nativeWaterRise = nativeWaterRiseStart({ start: 0, target: 0, progress: -1, duration: 8,
     waterY: Math.floor(H - waterLevel), cameraTop: 0, cameraBottom: 0, bottom: 0, busy: 0,
   }, [Math.floor(H - waterLevel) - target, duration]);
+  nativeBusy.wake();
 }
 function stepNativeWaterRise() {
   if (!nativeWaterRise || nativeWaterRise.progress < 0) return;
+  nativeBusy.wake();
   const result = nativeWaterRiseTick(nativeWaterRise);
   nativeWaterRise = result.body;
   for (const call of result.calls) {
@@ -2525,6 +2528,7 @@ function stepNativeNuclearEffect() {
       nativeNuclearEffect[field] = 0;
     }
   }
+  if (nativeNuclearEffect.progress >= 0) nativeBusy.wake();
   const result = nativeNuclearEffectTick(nativeNuclearEffect, request => {
     if (!sound) return 0;
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -4751,6 +4755,7 @@ function stepFrame(dt) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
+  nativeBusy.tick();
   if (phase !== "over" && phase !== "break" && phase !== "menu") updateAutomaticUtilities();
   nativeAnnouncementTick(nativeAnnouncements);
   const announcementAudio = nativeAnnouncementAudioTick(announcementVolume, announcementPlayback ? 17 : 0, nativeAnnouncements.blocking);
@@ -4807,10 +4812,9 @@ function stepFrame(dt) {
   const teamRosters = [0, 1].map(team => worms.filter(w => w.team === team));
   for (const roster of teamRosters)
     nativeTeamHealthMaximum = Math.max(nativeTeamHealthMaximum, roster.reduce((sum, w) => (sum + w.hp) | 0, 0));
-  nativeTeamHealthBusyTicks = Math.max(0, nativeTeamHealthBusyTicks - 1);
   nativeTeamHealthValues = teamRosters.map((roster, index) => {
     const result = nativeTeamHealthTick(nativeTeamHealthValues[index], roster, nativeTeamHealthMaximum);
-    if (result.busy) nativeTeamHealthBusyTicks = 12; // 004B8580 / 004A1A00.
+    if (result.busy) nativeBusy.wake(); // 004B8580 / 004A1A00.
     return result.value;
   });
   updateHudTeamHealth(nativeTeamHealthValues, phase === "over" ? -1 : team, selectionTick);
@@ -5653,13 +5657,14 @@ function stepFrame(dt) {
   }
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
+  if (cratesBusy || barrelActivity.busy || flameActivity.busy) nativeBusy.wake();
   const teamScores = teamRosters.map(roster => {
     const hp = roster.reduce((total, w) => (total + w.hp) | 0, 0);
     return hp === 0 ? 0 : (hp + 1) | 0; // 004B8510.
   });
   if (phase === "settle" || (phase === "aim" && (worms.some(w => w.deathPending) || nativeTeamList.removal || nativeTeamList.order.some(id => teamScores[id] === 0)))) {
     const settled =
-      !cratesBusy && !barrelActivity.busy && !flameActivity.busy && nativeTeamHealthBusyTicks === 0 &&
+      nativeBusy.value === 0 &&
       !projectile && !pendingFire &&
       bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
       worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&
@@ -6781,6 +6786,7 @@ window.siege = {
     bungeeArmed,
     frozen: worms.map((w) => w.frozen ?? 0),
     waterLevel,
+    nativeBusyTicks: nativeBusy.value,
     nativeWaterRise: nativeWaterRise ? { ...nativeWaterRise } : null,
     nativeNuclearEffect: nativeNuclearEffect ? { ...nativeNuclearEffect } : null,
     waterSprite: water.userData.originalSprite,
