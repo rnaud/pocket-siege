@@ -1,3 +1,5 @@
+import windMeter from "./fixtures/armageddon/wind-meter.json" with { type: "json" };
+import { nativeWindMeter, nativeWindMeterTick } from "../src/armageddon/wind-meter.js";
 import windSelection from "./fixtures/armageddon/wind-selection.json" with { type: "json" };
 import { nativeWindSelection } from "../src/armageddon/wind-selection.js";
 import wormRotation from "./fixtures/armageddon/worm-rotation.json" with { type: "json" };
@@ -34,6 +36,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
   for (const row of actionBusy.writer) expect(nativeActionBusyWrite(row.input)).toEqual(row.result);
   for (const row of actionBusy.clear) expect(nativeActionBusyClear(row.input)).toEqual(row.result);
   for (const row of actionBusy.gate) expect(nativeActionGate(row.input)).toEqual(row.result);
+  for (const row of windMeter.ticks) expect(nativeWindMeterTick(row.current, row.target)).toBe(row.result);
+  for (const row of windMeter.cases) expect(nativeWindMeter(row.input)).toEqual(row.calls);
   for (const row of windSelection.cases) {
     let state = row.input.seed;
     const result = nativeWindSelection(row.input, () => (state = nextLogicRandom(state, row.input.frame)));
