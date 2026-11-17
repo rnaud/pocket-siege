@@ -1,3 +1,5 @@
+import paletteBanks from "./fixtures/armageddon/palette-banks.json" with { type: "json" };
+import { NativePaletteBanks, createNativeGamePaletteBanks } from "../src/armageddon/palette-banks.js";
 import gamePalette from "./fixtures/armageddon/game-palette.json" with { type: "json" };
 import { NativeGamePalette } from "../src/armageddon/game-palette.js";
 import environmentPalette from "./fixtures/armageddon/environment-palette.json" with { type: "json" };
@@ -9,6 +11,24 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  const bankState = manager => ({
+    banks: manager.banks.map(palette => palette ? [palette.first, palette.last] : null),
+    available: manager.available,
+    references: manager.references,
+  });
+  for (const sequence of paletteBanks.cases) {
+    const manager = new NativePaletteBanks();
+    for (const { operation: [operation, bank, count], result, ...state } of sequence) {
+      let value = null;
+      if (operation === "references") manager.references[bank] = count;
+      else if (operation === "release") value = manager.release(bank);
+      else value = manager.allocate(bank, count, operation === "fail" ? () => null : undefined);
+      expect(value).toBe(result);
+      expect(bankState(manager)).toEqual(state);
+    }
+  }
+  const banks = createNativeGamePaletteBanks();
+  expect({ ...bankState(banks), blackIndex: banks.get(1).used[0], usedCount: banks.get(1).used.length }).toEqual(paletteBanks.setup);
   for (const row of gamePalette.cases) {
     const palette = new NativeGamePalette(row.first, row.last);
     for (const step of row.steps) expect(palette.add(step.color)).toBe(step.value);
