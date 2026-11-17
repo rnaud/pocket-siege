@@ -1,3 +1,5 @@
+import settlement from "./fixtures/armageddon/settlement-presentation.json" with { type: "json" };
+import { nativeSettlementPresentation } from "../src/armageddon/settlement-presentation.js";
 import paletteBanks from "./fixtures/armageddon/palette-banks.json" with { type: "json" };
 import { NativePaletteBanks, createNativeGamePaletteBanks } from "../src/armageddon/palette-banks.js";
 import gamePalette from "./fixtures/armageddon/game-palette.json" with { type: "json" };
@@ -11,6 +13,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of settlement.cases) expect(nativeSettlementPresentation(row.input)).toEqual(row.result);
   const bankState = manager => ({
     banks: manager.banks.map(palette => palette ? [palette.first, palette.last] : null),
     available: manager.available,

@@ -1,3 +1,4 @@
+import { nativeSettlementPresentation } from "./armageddon/settlement-presentation.js";
 import { nativeSuddenDeathActivation, nativeSuddenDeathHealth } from "./armageddon/sudden-death.js";
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
 let nativeWaterRise = null;
@@ -5667,35 +5668,38 @@ function stepFrame(dt) {
     let healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
     let deathStarted = false;
     if (settled && !healthDisplayBusy) {
-      if (worms.some(w => w.nativeHealthDisplay.pending)) {
-        if (showNativeTeamPanel(nativeTeamPanel)) {
+      const teams = [0, 1].map(team => worms.filter(w => w.team === team));
+      const dispatch = worms.some(w => w.nativeDeathRequest) ? null : nativeNextDeath(
+        teams.map(roster => roster.map(w => ({ hp: w.hp,
+          state: w.deathPending ? nativeWormState(w) : 0x89, x: Math.round(w.x * 65536) | 0 }))));
+      const presentation = nativeSettlementPresentation({
+        health: worms.some(w => w.nativeHealthDisplay.pending),
+        sort: nativeTeamList.swap >= 0 || nativeTeamListNeedsSort(nativeTeamList, teamScores),
+        death: !!dispatch, announcements: nativeAnnouncementsPending(nativeAnnouncements),
+        removal: nativeTeamList.removal || nativeTeamList.order.length && teamScores[nativeTeamList.order.at(-1)] === 0,
+        panelProgress: nativeTeamPanel.progress, panelTarget: nativeTeamPanel.target,
+        // Original shared registry/controller fields are not yet represented
+        // by the host. Presentation actions below use the live host objects.
+        activeTeam: matchDamageSourceActive ? team + 1 : 0,
+        activity: 0, mode: 0, rate: 0, turnFlag: 0, refreshHealth: 0, refreshTeams: 0,
+      });
+      healthDisplayBusy = !presentation.ready;
+      for (const call of presentation.calls) {
+        if (call === 'showPanel') showNativeTeamPanel(nativeTeamPanel);
+        else if (call === 'revealHealth') {
           for (const w of worms) revealWormHealth(w);
           consumeDamageReaction(true);
-        }
-        healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active || w.nativeHealthDisplay.pending);
-      } else if (nativeTeamList.swap >= 0 || nativeTeamListNeedsSort(nativeTeamList, teamScores)) {
-        if (showNativeTeamPanel(nativeTeamPanel)) sortNativeTeamList(nativeTeamList, teamScores);
-        healthDisplayBusy = true;
-      } else if (!worms.some(w => w.nativeDeathRequest)) {
-        const teams = [0, 1].map(team => worms.filter(w => w.team === team));
-        const dispatch = nativeNextDeath(teams.map(roster => roster.map(w => ({
-          hp: w.hp, state: w.deathPending ? nativeWormState(w) : 0x89,
-          x: Math.round(w.x * 65536) | 0,
-        }))));
-        if (dispatch) {
-          showNativeTeamPanel(nativeTeamPanel);
+        } else if (call === 'sortTeams') sortNativeTeamList(nativeTeamList, teamScores);
+        else if (call === 'startDeath') {
           const w = teams[(dispatch.target >> 4) - 1][(dispatch.target & 15) - 1];
           w.nativeDeathRequest = 1;
           deathStarted = true;
-        } else if (nativeTeamList.removal || nativeTeamList.order.length && teamScores[nativeTeamList.order.at(-1)] === 0) {
-          if (showNativeTeamPanel(nativeTeamPanel)) {
-            const alreadyRemoving = nativeTeamList.removal !== 0;
-            if (removeNativeTeamListRow(nativeTeamList, teamScores) && !alreadyRemoving) {
-              teamPanelSoundState.drop = 65536;
-              pendingEliminationTeam = nativeTeamList.order[nativeTeamList.removeIndex];
-            }
+        } else if (call === 'removeTeam') {
+          const alreadyRemoving = nativeTeamList.removal !== 0;
+          if (removeNativeTeamListRow(nativeTeamList, teamScores) && !alreadyRemoving) {
+            teamPanelSoundState.drop = 65536;
+            pendingEliminationTeam = nativeTeamList.order[nativeTeamList.removeIndex];
           }
-          healthDisplayBusy = true;
         }
       }
     }
