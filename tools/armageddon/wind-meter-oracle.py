@@ -72,5 +72,16 @@ for current,target in itertools.product([-2147483648,-65536,-328,-327,-326,-1,0,
  cpu.emu_start(0x4d2b60,stop+1,count=2000)
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('meter tick did not exit')
  ticks.append({'current':current,'target':target,'result':signed(read(owner+0x104))})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004D2F90 with original clamp helper. Surface primitives and final draw captured; dimensions181x17 and palette slots8/9 explicit.','cases':cases,'ticks':ticks},separators=(',',':'))+'\n')
+phases=[]
+for phase,wind,visibility,hidden in itertools.product([0,8191,8192,65535,2147483647,-2147483648],[-2147483648,-65536,-18724,-1,0,1,18724,65536,2147483647],[0,32768,65536],[0,1]):
+ write(owner+0x1750,phase);write(owner+0x104,wind)
+ # Non-bubble frame, low scenery detail: original fade helper still executes.
+ write(owner+0x1748,1);write(owner+0x1754,visibility);write(context+0x1d444,hidden);write(context+0x1b770,0)
+ sp=stack+0xf000
+ for i,value in enumerate([stop,owner,0x3ed,0,0]):write(sp+4*i,value)
+ cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+ cpu.emu_start(0x4d2b60,stop+1,count=2000)
+ if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('meter phase did not exit')
+ phases.append({'phase':phase,'wind':wind,'result':signed(read(owner+0x1750)),'visibility':visibility,'hidden':hidden,'nextVisibility':signed(read(owner+0x1754))})
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004D2F90 with original clamp helper. Surface primitives and final draw captured; dimensions181x17 and palette slots8/9 explicit.','cases':cases,'ticks':ticks,'phases':phases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} wind-meter frames')

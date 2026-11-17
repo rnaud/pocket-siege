@@ -1870,14 +1870,14 @@ body:has(.controls.inventory-open) #announcement {
   visibility: hidden;
 }
 
-/* Original wind strips retain their 96x13 source grid. */
+/* Original181x17 wind surface clips the96x13 source strips without scaling. */
 #wind.original-wind {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
   padding: 3px 0;
-  width: 193px;
+  width: 181px;
   background: transparent;
   color: #ffe4af;
   clip-path: none;
@@ -1889,8 +1889,8 @@ body:has(.controls.inventory-open) #announcement {
   content: none;
 }
 #wind.original-wind canvas {
-  width: 193px;
-  height: 13px;
+  width: 181px;
+  height: 17px;
   image-rendering: pixelated;
 }
 
@@ -2075,13 +2075,18 @@ body.native-game-hud {
 .native-game-hud .turn #turn-label {
   display: none;
 }
+.native-game-hud #wind.original-wind .wind-value {
+  display: none;
+}
 .native-game-hud #wind.original-wind {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
+  padding: 0;
+  gap: 0;
+  right: 9px;
+  bottom: 3px;
   z-index: 6;
   color: #fff;
-  width: 193px;
+  width: 181px;
 }
 .native-game-hud .arena-top {
   top: 10px;

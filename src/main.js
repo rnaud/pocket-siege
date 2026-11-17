@@ -149,7 +149,8 @@ import {
 } from "./armageddon/number-hud.js";
 import {
   loadOriginalWindHUD,
-  updateOriginalWindHUD,
+  tickOriginalWindHUD,
+  resetOriginalWindHUD,
 } from "./armageddon/wind-hud.js";
 import {
   loadOriginalGirders,
@@ -550,7 +551,7 @@ const originalAssets = Promise.all([
   .then(() => {
     updateOriginalHUDIcons();
     mountCurrentMenuArt();
-    updateOriginalWindHUD(wind);
+    tickOriginalWindHUD(wind, false);
     timerKey = "";
     terrainDirty = true;
   })
@@ -1047,6 +1048,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   hazards = [];
   matchRandom.reset(matchSeed);
   wind = 0;
+  resetOriginalWindHUD();
   mineDudPool = new NativeMineDudPool();
   nativeRenderOrder = new NativeRenderOrder();
   smokeRandom = matchSeed >>> 0;
@@ -1663,7 +1665,7 @@ function beginTurn() {
       : team
         ? "CORAL’S MOVE"
         : "MOSS’S MOVE";
-  updateOriginalWindHUD(wind);
+  tickOriginalWindHUD(wind, false);
   $(".location span").textContent = daily
     ? "DAILY ISLAND"
     : ({
@@ -5831,6 +5833,7 @@ function stepFrame(dt) {
     nativeCameraFocus = null;
     nativeCameraFraming = null;
   }
+  tickOriginalWindHUD(wind);
   matchRandom.finishFrame();
 }
 function screen(x, y) {

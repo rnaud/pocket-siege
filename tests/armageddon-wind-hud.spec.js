@@ -22,39 +22,44 @@ test("original wind strips retain source pixels and clip left/right strength wit
       const expected = imageRGBA(image);
       if (!pixels.every((v, i) => v === expected[i])) mismatch++;
     }
+    const root = document.createElement("div");
+    root.innerHTML = '<div id="wind"></div>';
     const cases = [];
-    for (const level of [-10, -5, 0, 5, 10, 20]) {
-      const wind = level / 35 * 2500;
-      updateOriginalWindHUD(wind);
-      const canvas = document.querySelector("#wind canvas");
-      const actual = canvas.getContext("2d").getImageData(0, 0, 193, 13).data;
-      const source = originalWindStrip(wind < 0 ? "windl" : "windr")
-        .getContext("2d")
-        .getImageData(0, 0, 96, 13).data;
-      const width = wind === 0 ? 0 : Math.abs(level) === 5 ? 48 : 96;
-      for (let y = 0; y < 13; y++)
-        for (let x = 0; x < 193; x++) {
-          const filled =
-            wind < 0 ? x >= 96 - width && x < 96 : x >= 97 && x < 97 + width;
-          for (let c = 0; c < 4; c++) {
-            const expected = filled
-              ? source[(y * 96 + (wind < 0 ? x : x - 97)) * 4 + c]
-              : 0;
-            if (actual[(y * 193 + x) * 4 + c] !== expected) mismatch++;
+    // Native181x17 geometry, including asymmetric end caps and center gap.
+    for (const [level, start, width, edge] of [
+      [-10, 14, 75, 14], [-5, 52, 37, 52], [0, 0, 0, 0],
+      [5, 92, 36, 127], [10, 92, 74, 165], [20, 92, 87, 178],
+    ]) {
+      for (let phase = 0; phase < 65536; phase += 8192) {
+        const wind = Math.trunc(level * 65536 / 35) / 65536 * 2500;
+        updateOriginalWindHUD(wind, root, phase);
+        const canvas = root.querySelector("canvas");
+        const actual = canvas.getContext("2d").getImageData(0, 0, 181, 17).data;
+        const source = originalWindStrip(wind < 0 ? "windl" : "windr")
+          .getContext("2d").getImageData(0, 0, 96, 13).data;
+        const offset = level < 0 ? phase / 8192 : (phase / 8192) ^ 7;
+        for (let y = 0; y < 17; y++) for (let x = 0; x < 181; x++) {
+          let expected = x === 90 ? [255,255,255,255] :
+            x >= 2 && x < 179 && y >= 2 && y < 15 ? [0,0,0,255] : [0,0,0,0];
+          if (width && x >= start && x < start + width && y >= 2 && y < 15) {
+            const i = ((y - 2) * 96 + offset + x - start) * 4;
+            expected = [...source.slice(i, i + 4)];
+            if (!expected[3]) expected = [0,0,0,255];
           }
+          if (width && x === edge && (y === 2 || y === (level < 0 ? 15 : 14)))
+            expected = [0,0,0,255];
+          for (let c = 0; c < 4; c++)
+            if (actual[(y * 181 + x) * 4 + c] !== expected[c]) mismatch++;
         }
-      cases.push(+canvas.dataset.filledPixels);
+      }
+      cases.push(+root.querySelector("canvas").dataset.filledPixels);
     }
-    updateOriginalWindHUD(-5 / 35 * 2500);
-    return { mismatch, cases };
+    updateOriginalWindHUD(-5 / 35 * 2500, root);
+    return { mismatch, cases, label: root.querySelector("#wind").getAttribute("aria-label") };
   });
-  expect(result).toEqual({ mismatch: 0, cases: [96, 48, 0, 48, 96, 96] });
-  await expect(page.locator("#wind")).toHaveAttribute(
-    "aria-label",
-    "WIND ← 5.0",
-  );
+  expect(result).toEqual({ mismatch: 0, cases: [75, 37, 0, 36, 74, 87], label: "WIND ← 5.0" });
   const size = await page.locator("#wind canvas").boundingBox();
-  expect(size.width).toBe(193);
-  expect(size.height).toBe(13);
+  expect(size.width).toBe(181);
+  expect(size.height).toBe(17);
   await page.screenshot({ path: info.outputPath("original-wind-meter.png") });
 });

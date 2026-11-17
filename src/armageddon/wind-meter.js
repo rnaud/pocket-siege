@@ -1,3 +1,4 @@
+import { nativeCameraShakeDecay } from "./camera-shake.js";
 // Full004D2F90. Palette8/9 and image1/2 identify original resource slots.
 export function nativeWindMeter({ wind, phase, visibility, width = 181,
   height = 17, viewportWidth, viewportHeight }) {
@@ -29,4 +30,17 @@ export function nativeWindMeterTick(current, target) {
   const delta = (target - current) | 0, sign = delta >> 31;
   if ((((delta ^ sign) - sign) | 0) < 0x147) return target;
   return (current + (current < target ? 0x147 : -0x147)) | 0;
+}
+
+// 004D2B60 event3ED: texture scrolling uses the smoothed wind magnitude.
+export function nativeWindMeterPhase(phase, wind) {
+  const sign = wind >> 31;
+  const magnitude = ((wind ^ sign) - sign) | 0;
+  return (phase + Math.trunc(magnitude / 3) + 0x51e) | 0;
+}
+
+// Same004EDA70 approach helper as camera decay, translated to the HUD target.
+export function nativeWindMeterVisibility(current, hidden = false) {
+  const target = hidden ? 0 : 65536;
+  return (target + nativeCameraShakeDecay((current - target) | 0)) | 0;
 }

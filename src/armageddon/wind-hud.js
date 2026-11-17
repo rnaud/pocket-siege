@@ -1,3 +1,4 @@
+import { nativeWindMeter, nativeWindMeterTick, nativeWindMeterPhase, nativeWindMeterVisibility } from "./wind-meter.js";
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { decodeImage, imageRGBA } from "./image.js";
 const strips = new Map();
@@ -25,7 +26,19 @@ export async function loadOriginalWindHUD() {
   );
 }
 export const originalWindStrip = (name) => strips.get(name);
-export function updateOriginalWindHUD(wind, root = document) {
+let displayedWind = 0, phase = 0, visibility = 0;
+export function resetOriginalWindHUD() { displayedWind = 0; phase = 0; visibility = 0; }
+export function tickOriginalWindHUD(wind, advance = true) {
+  if (advance) {
+    displayedWind = nativeWindMeterTick(displayedWind, Math.round(wind / 2500 * 65536) | 0);
+    phase = nativeWindMeterPhase(phase, displayedWind);
+    visibility = nativeWindMeterVisibility(visibility);
+  }
+  updateOriginalWindHUD(displayedWind / 65536 * 2500, document, phase);
+  const target = document.querySelector("#wind");
+  if (target) target.style.transform = `translateY(${Math.trunc((65536 - visibility) * 32 / 65536)}px)`;
+}
+export function updateOriginalWindHUD(wind, root = document, phase = 0) {
   const target = root.querySelector("#wind");
   if (!target) return;
   const label = `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 2500 * 35).toFixed(1)}`;
@@ -39,32 +52,36 @@ export function updateOriginalWindHUD(wind, root = document) {
     const text = document.createElement("span");
     text.className = "wind-value";
     canvas = document.createElement("canvas");
-    canvas.width = 193;
-    canvas.height = 13;
+    canvas.width = 181;
+    canvas.height = 17;
     canvas.setAttribute("aria-hidden", "true");
     target.replaceChildren(text, canvas);
     target.classList.add("original-wind");
   }
   target.querySelector(".wind-value").textContent = label;
   target.setAttribute("aria-label", label);
-  // Display ten native wind levels across the strip. Physics uses pixels/tick².
-  const count = Math.min(96, Math.round((Math.abs(wind) / (2500 * 10 / 35)) * 96));
+  const calls = nativeWindMeter({ wind: Math.round(wind / 2500 * 65536) | 0,
+    phase, visibility: 65536, viewportWidth: 640, viewportHeight: 480 });
   const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, 193, 13);
+  ctx.clearRect(0, 0, 181, 17);
   ctx.imageSmoothingEnabled = false;
-  if (count) {
-    const sx = wind < 0 ? 96 - count : 0;
-    ctx.drawImage(
-      source,
-      sx,
-      0,
-      count,
-      13,
-      wind < 0 ? 96 - count : 97,
-      0,
-      count,
-      13,
-    );
+  let count = 0;
+  for (const { operation, args } of calls) {
+    const [x, y, a, b] = args;
+    if (operation === "rectangle") {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(x, y, a - x, b - y);
+    } else if (operation === "line") {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x, y, 1, a - y);
+    } else if (operation === "pixel") {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(x, y, 1, 1);
+    } else if (operation === "strip") {
+      count = a;
+      ctx.drawImage(strips.get(args[4] === 1 ? "windl" : "windr"),
+        args[5], args[6], a, b, x, y, a, b);
+    }
   }
   nativeCanvasPaletteDisplay.capture(canvas);
   canvas.dataset.originalSprite = wind < 0 ? "windl" : "windr";
