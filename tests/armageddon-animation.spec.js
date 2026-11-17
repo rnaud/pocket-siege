@@ -1,3 +1,4 @@
+import { captureReplayActors, restoreReplayActors } from "../src/armageddon/replay-actor-adapter.js";
 import replayAnimation from "./fixtures/armageddon/replay-animation.json" with { type: "json" };
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
@@ -114,6 +115,30 @@ test("weapon animation selection matches all 71 initialized native records", { t
 });
 
 test("native queue capacity, clearing and controlled progress match original x86", { tag: "@logic" }, () => {
+  {
+  const mesh = { dispose() {} }, player = new NativeAnimationPlayer();
+  player.enqueue(1, { rate: 25 << 16, loop: 0, span: 1 }, 65000);
+  player.enqueue(2, { rate: 25 << 16, loop: 1, span: 7 });
+  const contacts = new Int32Array([17, 23, 31, 41]);
+  const worm = { hp: 100, mesh, originalPlayer: player, contacts };
+  const projectile = { owner: worm, attached: worm, animation: player, view: new DataView(contacts.buffer, 4, 8) };
+  worm.target = projectile; worm.registry = new Map([[projectile, new Set([worm])]]);
+  const saved = captureReplayActors([{ id: 'worm:0', actor: worm }, { id: 'projectile:0', actor: projectile }], { resourceKey: value => value === mesh ? 'worm:0/mesh' : undefined });
+  const expected = new NativeAnimationPlayer().restoreReplayState(player.replayState()); expected.advance();
+  worm.hp=1; contacts.fill(0); player.clear();
+  const restore = () => restoreReplayActors(saved, { resolveResource: key => key === 'worm:0/mesh' ? mesh : undefined });
+  const restored = restore(), w = restored.get('worm:0'), p = restored.get('projectile:0');
+  expect(w.hp).toBe(100); expect(w.mesh).toBe(mesh); expect(w.target).toBe(p);
+  expect(p.owner).toBe(w); expect(p.attached).toBe(w); expect(p.animation).toBe(w.originalPlayer);
+  expect(w.registry.get(p).has(w)).toBe(true);
+  expect(p.view.buffer).toBe(w.contacts.buffer); expect([...w.contacts]).toEqual([17,23,31,41]);
+  w.originalPlayer.advance(); expect([...w.originalPlayer.replayState()]).toEqual([...expected.replayState()]);
+  w.contacts.fill(0); w.hp=0;
+  expect([...restore().get('worm:0').contacts]).toEqual([17,23,31,41]);
+  expect(() => restoreReplayActors(saved)).toThrow('Missing replay resource');
+  expect(() => captureReplayActors([{id:'worm:0',actor:worm}])).toThrow('Unmapped replay actor resource');
+  }
+
   for (const row of replayAnimation.cases) {
     const player = new NativeAnimationPlayer().restoreReplayState(Uint8Array.from(row.bytes));
     for (const step of row.steps) {
