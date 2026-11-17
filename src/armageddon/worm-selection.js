@@ -1,8 +1,8 @@
 import { nativeSelectDefaultWeapon } from "./default-weapon.js";
 import { nativeEndTargeting } from './target-input.js';
 
-//004E5A50 resets input modes and transfers the selected worm. Actor messages,
-// voice and default-weapon selection remain explicit downstream interfaces.
+//004E5A50 resets input modes and transfers the selected worm. Actor messages
+// and voice remain interfaces; default-weapon selection uses the native port.
 export function nativeSelectControllerWorm(memory,sceneMemory,next,host) {
   const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
   const scene=new DataView(sceneMemory.buffer,sceneMemory.byteOffset,sceneMemory.byteLength);

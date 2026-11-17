@@ -1,8 +1,10 @@
+import { nativeControllerDeactivation } from "./controller-deactivation.js";
 import { nativeSelectWeaponEvent } from './weapon-selection.js';
 
 //004E6810 command branches. Return false for events whose lifecycle handler
 // has not been ported here; a rejected, recognized command is still handled.
 export function nativeControllerCommand(memory,sceneMemory,event,payload,host) {
+  if(nativeControllerDeactivation(memory,sceneMemory,event,payload,host))return true;
   if(event===0x41b) {
     nativeSelectWeaponEvent(memory,sceneMemory,payload,{...host,forward:p=>host.forward(event,p)});
     return true;
