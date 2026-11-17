@@ -1,9 +1,11 @@
-import { nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponUse, nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
+import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponUse, nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
 import { nativeRecordDamageReaction, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
 test("health, cumulative/displayed damage and events match original damage routine", { tag: "@logic" }, () => {
+  for (const row of fixture.skipCases)
+    expect(nativeSkipTurnSpeech(row.active, row.used, () => row.nearby)).toEqual(row.speech);
   for (const row of fixture.nearbyCases)
     expect(nativeNearbyReactionTeam(row.actors, row.excluded, row.x, row.y)).toBe(row.result);
   for (const row of fixture.reactionEvents) {

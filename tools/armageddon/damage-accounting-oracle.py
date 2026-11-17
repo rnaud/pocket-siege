@@ -248,5 +248,26 @@ for values in actor_sets:
    cpu.emu_start(0x4ef1b0,stop,count=10000)
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Nearby reaction team did not return')
    nearby_cases.append(dict(actors=actors,excluded=excluded,x=x,y=y,result=cpu.reg_read(UC_X86_REG_EAX)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,revealVoices=reveal_voices,weaponUse=weapon_use,reactionEvents=reaction_events,nearbyCases=nearby_cases),separators=(',',':'))+'\n')
+nearby_native_mode=False
+skip_calls=[]
+def skip_capture(cpu,address,size,user):
+ if address not in [0x4eebe0,0x4b35f0]:return
+ skip_calls.append('busy' if address==0x4eebe0 else 'endTurn')
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ cpu.reg_write(UC_X86_REG_ESP,sp+4);cpu.reg_write(UC_X86_REG_EIP,read(sp))
+cpu.hook_add(UC_HOOK_CODE,skip_capture)
+skip_cases=[]
+for active in [0,1,2]:
+ for used in [0,1]:
+  for nearby in [0,1,2]:
+   write(owner+0x128,active);write(owner+0x164,used);write(owner+0x148,0)
+   voice_speech=None;skip_calls=[];sp=stack+0xf000
+   for i,v in enumerate([stop,owner,0x410,4,owner+0x6000]):write(sp+i*4,v)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4b4ce0,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Skip event did not return')
+   assert skip_calls==(['busy','endTurn'] if active else [])
+   assert read(owner+0x148)==int(active!=0)
+   skip_cases.append(dict(active=active,used=used,nearby=nearby,speech=voice_speech))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,revealVoices=reveal_voices,weaponUse=weapon_use,reactionEvents=reaction_events,nearbyCases=nearby_cases,skipCases=skip_cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')

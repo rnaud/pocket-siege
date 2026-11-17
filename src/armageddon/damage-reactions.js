@@ -81,3 +81,9 @@ export function nativeNearbyReactionTeam(actors, excludedTeam, x, y) {
   }
   return selected;
 }
+
+// 004B4CE0 event0x410: skip/frozen active worm. No RNG draw.
+export function nativeSkipTurnSpeech(activeTeam, usedWeapon, nearbyTeam) {
+  if (!activeTeam || usedWeapon) return null;
+  return { team: nearbyTeam(activeTeam) || activeTeam, request: [9, 8, 65536, 65536, 0] };
+}

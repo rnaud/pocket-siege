@@ -1,4 +1,4 @@
-import { nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
+import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
@@ -1642,6 +1642,7 @@ function cycleWorm(direction = 1) {
 }
 function skipTurn() {
   if (!canAct()) return;
+  playSkipTurnSpeech();
   cancelCharge();
   stopRope();
   stopJetpack();
@@ -1834,6 +1835,7 @@ function useUtility(kind) {
   }
   if (kind === "freeze") {
     freezeTeam(worms, team);
+    playSkipTurnSpeech();
     sfx("freeze");
     utilityAmmo[team].freeze = spendAmmo(utilityAmmo[team].freeze);
     activeUtility = null;
@@ -4089,6 +4091,22 @@ function endGame() {
   }
   finishMatch(winner, false);
 }
+function nearbyReactionTeam(id) {
+  // The host roster supplies extant worm tasks in registry order.
+  return nativeNearbyReactionTeam(worms
+    .filter(w => w.hp > 0 || w.deathPending || w.dying > 0)
+    .map(w => ({ type: 2, team: w.team + 1,
+      x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 })),
+    id, reactionOrigin.x, reactionOrigin.y);
+}
+function playSkipTurnSpeech() {
+  const speech = nativeSkipTurnSpeech(team + 1, nativeDamageReaction.usedWeapon, nearbyReactionTeam);
+  if (speech && sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeSpeech(audio, speech.request[0]);
+  }
+}
 function consumeDamageReaction(reveal = false) {
   const killer = matchDamageSourceActive ? worms[current] : null;
   const select = reveal ? nativeDamageRevealReaction : nativeDamageReactionVoice;
@@ -4096,12 +4114,7 @@ function consumeDamageReaction(reveal = false) {
     sourceTeam: killer?.matchStats.team ?? 0, sourceWorm: killer?.matchStats.worm ?? 0,
     turnTeam: team + 1, usedWeapon: nativeDamageReaction.usedWeapon,
     teamAlive: id => worms.some(w => w.team + 1 === id && w.hp > 0),
-    // The host roster supplies extant worm tasks in registry order.
-    nearbyTeam: id => nativeNearbyReactionTeam(worms
-      .filter(w => w.hp > 0 || w.deathPending || w.dying > 0)
-      .map(w => ({ type: 2, team: w.team + 1,
-        x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 })),
-      id, reactionOrigin.x, reactionOrigin.y),
+    nearbyTeam: nearbyReactionTeam,
     nextRandom: () => matchRandom.logicUint(),
   });
   nativeDamageReaction = reaction.state;
@@ -4191,6 +4204,7 @@ function startAiTurn() {
   if (displayAmmo(utilityAmmo[1]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
     utilityAmmo[1].freeze = spendAmmo(utilityAmmo[1].freeze);
     freezeTeam(worms, 1);
+    playSkipTurnSpeech();
     sfx("freeze");
     phase = "settle";
     retreat = 0;
