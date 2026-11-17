@@ -1,3 +1,5 @@
+import defaultWeapon from "./fixtures/armageddon/default-weapon.json" with { type: "json" };
+import { nativeFindDefaultWeapon, nativeSelectDefaultWeapon } from "../src/armageddon/default-weapon.js";
 import wormSelection from "./fixtures/armageddon/worm-selection.json" with { type: "json" };
 import { nativeSelectControllerWorm } from "../src/armageddon/worm-selection.js";
 import controllerCommand from "./fixtures/armageddon/controller-command.json" with { type: "json" };
@@ -249,6 +251,21 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of defaultWeapon.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
+    body.setInt32(0x3c,2,true);body.setInt32(0x4c,3,true);body.setInt32(0x44,c.controller,true);body.setInt32(0x40,1,true);body.setInt32(0xf0,-1,true);body.setInt32(0xe8,-1,true);scene.setInt32(0x4730+(2*75+4)*40,c.saved,true);
+    const calls=[],host={
+      wormState:(...args)=>{calls.push(["state",...args]);return c.state;},
+      selectedWeapon:(...args)=>{calls.push(["selected",...args]);return c.selected;},
+      weaponAvailable:(team,slot)=>{calls.push(["available",team,slot]);return c.inventory.includes(slot);},
+      teamFlags:team=>{calls.push(["flags",team]);return c.flags;},
+      weaponDescriptor:slot=>{calls.push(["descriptor",slot]);const d=new Uint8Array(0x200),v=new DataView(d.buffer);for(const [o,value] of Object.entries(c.descriptors[slot]??{}))v.setInt32(Number(o),value,true);return d;},
+      selectionSound:(...args)=>calls.push(["sound",...args]),sendWorm:(...args)=>calls.push(["send",...args.map(v=>v??0)]),
+      setWeaponAmmo:(...args)=>calls.push(["ammo",...args]),selectInventory:(...args)=>calls.push(["inventory",...args]),selectionCommand:(...args)=>calls.push(["command",...args]),
+    };
+    const result=c.routine==="0x4e55d0"?nativeFindDefaultWeapon(memory,sceneMemory,4,host):c.routine==="0x4e54d0"?nativeSelectDefaultWeapon(memory,sceneMemory,4,host):nativeSelectControllerWorm(memory,sceneMemory,4,host);
+    expect(calls).toEqual(c.calls);if(c.result!==null)expect(result).toBe(c.result);
   }
   for(const c of wormSelection.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);

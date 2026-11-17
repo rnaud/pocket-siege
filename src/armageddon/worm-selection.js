@@ -1,3 +1,4 @@
+import { nativeSelectDefaultWeapon } from "./default-weapon.js";
 import { nativeEndTargeting } from './target-input.js';
 
 //004E5A50 resets input modes and transfers the selected worm. Actor messages,
@@ -14,6 +15,7 @@ export function nativeSelectControllerWorm(memory,sceneMemory,next,host) {
     put(0x4c,next);
     host.sendWorm(2,((get(0x3c)<<4)+next)|0,0x41c,0,null);
     host.selectionSound(0x76,8,65536,65536,0);
-    host.selectDefaultWeapon(get(0x4c));
+    if(host.selectDefaultWeapon)host.selectDefaultWeapon(get(0x4c));
+    else nativeSelectDefaultWeapon(memory,sceneMemory,get(0x4c),host);
   } else put(0x4c,next);
 }
