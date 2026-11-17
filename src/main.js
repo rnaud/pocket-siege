@@ -195,7 +195,7 @@ import {
 } from "./armageddon/art.js";
 import {
   playOriginalSound,
-  playNativeSpeech,
+  playNativeFireInputAudio,
   playNativeQueuedSound,
   playNativeOwnedSound,
   playNativeAnnouncementLoop,
@@ -936,6 +936,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   lastJump = { kind: null, time: -1 };
   for (const w of worms) {
     w.nativeHitVoicePlayback?.stop();
+    w.nativeActionPlayback?.stop();
     dispose(w.g);
     w.label.remove();
     w.damageCanvas?.remove();
@@ -2504,8 +2505,7 @@ function startCharge(source) {
       if (sound) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
-        for (const call of input.calls)
-          if (call.operation === "speech") playNativeSpeech(audio, call.request[0]);
+        playNativeFireInputAudio(audio, w, input.calls, request => nativeSoundQueue.enqueue(request));
       }
       if (input.body.state === 0x69) {
         chargeFixed = input.body.power;
@@ -2845,7 +2845,7 @@ function spawnPlacedDynamite(release) {
   if (sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    playNativeProjectileReleaseSound(audio, body.nativeRelease, request => nativeSoundQueue.enqueue(request));
+    playNativeProjectileReleaseSound(audio, body.nativeRelease, request => nativeSoundQueue.enqueue(request), w);
   }
   if (nativeProjectilePlacementHit(body, terrain, worms, H)) {
     const packet = nativeProjectileDetonationEvents(body, () => matchRandom.logicUint())
@@ -3085,7 +3085,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
   if (sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    const playback = playNativeProjectileReleaseSound(audio, release, request => nativeSoundQueue.enqueue(request));
+    const playback = playNativeProjectileReleaseSound(audio, release, request => nativeSoundQueue.enqueue(request), w);
     if (burst && playback) burst.playback = playback;
   }
 }
@@ -3348,7 +3348,7 @@ function fireBat(prepared = false) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
     playNativeProjectileReleaseSound(audio, nativeLaunchAudio(config.record,
-      { loop: 0, burst: 0, ordinal: 1, flag: 0, team: w.team }), request => nativeSoundQueue.enqueue(request));
+      { loop: 0, burst: 0, ordinal: 1, flag: 0, team: w.team }), request => nativeSoundQueue.enqueue(request), w);
   }
   finishAction("Bat swing complete. Retreat!");
 }
@@ -3482,7 +3482,7 @@ function fire() {
     if (sound) {
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
       audio.resume();
-      playNativeProjectileReleaseSound(audio, projectile.nativeRelease, request => nativeSoundQueue.enqueue(request));
+      playNativeProjectileReleaseSound(audio, projectile.nativeRelease, request => nativeSoundQueue.enqueue(request), w);
     }
   } else sfx(kind);
   if (projectile.nativeBody && nativeProjectilePlacementHit(projectile, terrain, worms, H)) {
@@ -4516,6 +4516,7 @@ function stepFrame(dt) {
     w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;
     if (w.hp <= 0 && !w.deathPending && w.dying <= 0) {
       w.nativeHitVoicePlayback?.stop(); w.nativeHitVoicePlayback = null;
+      w.nativeActionPlayback?.stop(); w.nativeActionPlayback = null;
     }
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
     if (w.originalTeleport) {

@@ -244,16 +244,40 @@ export function playNativeOwnedSound(context, request, previous) {
     request[3] / 65536, false, request[2] / 65536, request[1], request[4], true) : null;
 }
 
+// 004F9FA0 uses004DD5D0 (+38C speech) and004DD610 (+388 weapon
+// priming) independently. These slots must not cancel one another.
+export function playNativeFireInputAudio(context, owner, calls, enqueue) {
+  for (const call of calls) {
+    const request = call.request;
+    if (call.operation === "speech") {
+      owner.nativeHitVoicePlayback?.stop();
+      owner.nativeHitVoicePlayback = playNativeSpeech(context, request[0], request[2] / 65536, 3, request[3], true);
+    } else if (call.operation === "localSound") {
+      owner.nativeActionPlayback = playNativeOwnedSound(context,
+        [request[0], 3, ...request.slice(1)], owner.nativeActionPlayback);
+    } else if (call.operation === "sound" || call.operation === "failureSound") {
+      enqueue(request);
+    }
+  }
+}
+
 // Original004FABA9..004FADDB queues one-shots, but004DD610 owns immediate
 // body loops. Voice lookup precedes its queued sound request; it is not itself
 // a playback call. The caller retains the returned loop for stop/interruption.
-export function playNativeProjectileReleaseSound(context, release, enqueue = request => playNativeQueuedSound(context, request)) {
+export function playNativeProjectileReleaseSound(context, release, enqueue = request => playNativeQueuedSound(context, request), owner = null) {
   let loop = null, voiceSlot = null;
   for (const event of release.calls) {
+    if (event.operation === "stopLoop") {
+      owner?.nativeActionPlayback?.stop();
+      if (owner) owner.nativeActionPlayback = null;
+      continue;
+    }
     if (event.operation === "loopSound") {
+      owner?.nativeActionPlayback?.stop();
       const entry = soundSlots.slots[event.request[0] & 65535];
       if (entry) loop = playOriginalClip(context, `sounds/${entry.clip}`, () => {},
         event.request[2] / 65536, Boolean(event.request[0] & 0x10000), event.request[1] / 65536, 3, event.request[3], true);
+      if (owner) owner.nativeActionPlayback = loop;
       continue;
     }
     if (event.operation === "voice") {

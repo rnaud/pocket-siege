@@ -78,16 +78,19 @@ test("browser decodes native projectile release samples without an early holy ch
       return node;
     };
     window.releaseIds = [];
+    window.releaseStops = 0;
+    const owner = { nativeActionPlayback: { stop() { window.releaseStops++; } } };
     for (const kind of ["rocket", "homing", "mortar", "grenade", "cluster", "holy"]) {
       const p = { kind, x: 200, y: 400, vx: 0, vy: 0, fuse: 3, bounce: 0.55 };
       attachNativeProjectile(p, 650);
       window.releaseIds.push(p.nativeRelease.calls.filter(e => e.operation === "sound").map(e => e.request[0]));
-      playNativeProjectileReleaseSound(context, p.nativeRelease, request => queue.enqueue(request));
+      playNativeProjectileReleaseSound(context, p.nativeRelease, request => queue.enqueue(request), owner);
     }
     window.releaseBeforeFlush = window.releasePlayback.length;
     window.releaseQueued = queue.requests.map(request => request[0]);
     queue.flush(request => playNativeQueuedSound(context, request));
   });
+  expect(await page.evaluate(() => window.releaseStops)).toBe(1);
   expect(await page.evaluate(() => window.releaseBeforeFlush)).toBe(0);
   expect(await page.evaluate(() => window.releaseQueued)).toEqual([75, 75, 75, 73, 73, 73]);
   await expect.poll(() => page.evaluate(() => window.releasePlayback.length)).toBe(6);
