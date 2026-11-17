@@ -61,3 +61,11 @@ export function nativeDamageReactionEvent(state, sourceTeam, event, value = 0) {
     else if (value >= 50) state.brilliantTeam = sourceTeam;
   }
 }
+
+// 004B4CE0 event0x42C runs reactions after forwarding health reveal, then
+// closes the first-blood window even if another reaction won or none played.
+export function nativeDamageRevealReaction(input, options) {
+  const { state, speech, statistics } = nativeDamageReactionVoice(input, options);
+  state.firstBlood = 1;
+  return { state, speech, statistics };
+}

@@ -151,6 +151,7 @@ def voice_capture(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP);argc=None;result=0
  if address in stat_functions:
   argc=3;voice_stats.append([stat_functions[address],signed(sp+12)])
+ elif address==0x4ecfb0:argc=4
  elif address==0x4ef1b0:argc=3;result=nearby
  elif address==0x4c2c40:argc=1;result=int(alive)
  elif address==0x4edaf0:argc=2;result=read(sp+4)*100+read(sp+8)
@@ -176,6 +177,18 @@ for scenario in scenarios:
    cpu.emu_start(0x4b43d0,stop,count=10000)
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Damage reaction voice did not return')
    voices.append(dict(input=initial,seed=seed,frame=50,alive=alive,nearby=nearby,source=source,used=used,turn=turn,random=read(context+0x1acc),result=dict(state={field:signed(owner+offset) for field,offset in voice_fields.items()},handled=cpu.reg_read(UC_X86_REG_EAX),speech=voice_speech,statistics=voice_stats)))
+reveal_voices=[]
+for case in voices:
+ initial=case['input'];alive=case['alive'];nearby=case['nearby']
+ for field,offset in voice_fields.items():write(owner+offset,initial[field])
+ for offset,value in [(0x130,case['source']),(0x134,1),(0x138,case['turn']),(0x164,case['used'])]:write(owner+offset,value)
+ write(context+0x1acc,case['seed']);write(context+0x7f0,case['frame']);write(owner+0x38,context)
+ voice_stats=[];voice_speech=None;sp=stack+0xf000
+ for i,value in enumerate([stop,owner,0x42c,0,owner+0x6000]):write(sp+i*4,value)
+ cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+ cpu.emu_start(0x4b4ce0,stop,count=10000)
+ if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Reveal reaction event did not return')
+ reveal_voices.append(dict(case,random=read(context+0x1acc),result=dict(state={field:signed(owner+offset) for field,offset in voice_fields.items()},speech=voice_speech,statistics=voice_stats)))
 weapon_use=[]
 for flag in [0,1,2,-1]:
  for used,shot in [(0,0),(1,0),(0,1),(1,1),(5,7)]:
@@ -201,5 +214,5 @@ for event in [0x405,0x3f3]:
     cpu.emu_start(0x4b4ce0,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Reaction event did not return')
     reaction_events.append(dict(event=event,value=value,source=source,input=before,result={key:read(owner+offset) for key,offset in fields.items()}))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,weaponUse=weapon_use,reactionEvents=reaction_events),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,revealVoices=reveal_voices,weaponUse=weapon_use,reactionEvents=reaction_events),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')

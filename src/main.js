@@ -1,4 +1,4 @@
-import { nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
+import { nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
@@ -4085,16 +4085,10 @@ function endGame() {
   }
   finishMatch(winner, false);
 }
-function nextTurn() {
-  if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
+function consumeDamageReaction(reveal = false) {
   const killer = matchDamageSourceActive ? worms[current] : null;
-  const killMessage = nativeKillAnnouncement(killer?.matchStats, killer?.name,
-    killer?.team ? 0 : 2, () => matchRandom.logicUint());
-  if (killMessage) {
-    queueNativeAnnouncement(nativeAnnouncements, killMessage.text, killMessage.font);
-    return;
-  }
-  const reaction = nativeDamageReactionVoice(nativeDamageReaction, {
+  const select = reveal ? nativeDamageRevealReaction : nativeDamageReactionVoice;
+  const reaction = select(nativeDamageReaction, {
     sourceTeam: killer?.matchStats.team ?? 0, sourceWorm: killer?.matchStats.worm ?? 0,
     turnTeam: team + 1, usedWeapon: nativeDamageReaction.usedWeapon,
     teamAlive: id => worms.some(w => w.team + 1 === id && w.hp > 0),
@@ -4114,6 +4108,17 @@ function nextTurn() {
     audio.resume();
     playNativeSpeech(audio, reaction.speech.request[0]);
   }
+}
+function nextTurn() {
+  if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
+  const killer = matchDamageSourceActive ? worms[current] : null;
+  const killMessage = nativeKillAnnouncement(killer?.matchStats, killer?.name,
+    killer?.team ? 0 : 2, () => matchRandom.logicUint());
+  if (killMessage) {
+    queueNativeAnnouncement(nativeAnnouncements, killMessage.text, killMessage.font);
+    return;
+  }
+  consumeDamageReaction();
   showNativeTeamPanel(nativeTeamPanel);
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
@@ -5033,6 +5038,7 @@ function step(dt) {
       if (worms.some(w => w.nativeHealthDisplay.pending)) {
         if (showNativeTeamPanel(nativeTeamPanel)) {
           for (const w of worms) revealWormHealth(w);
+          consumeDamageReaction(true);
         }
         healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active || w.nativeHealthDisplay.pending);
       } else if (nativeTeamList.swap >= 0 || nativeTeamListNeedsSort(nativeTeamList, teamScores)) {

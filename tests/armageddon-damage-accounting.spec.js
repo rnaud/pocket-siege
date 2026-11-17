@@ -1,4 +1,4 @@
-import { nativeDamageReactionEvent, nativeReactionWeaponUse, nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
+import { nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponUse, nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
@@ -14,9 +14,10 @@ test("health, cumulative/displayed damage and events match original damage routi
     nativeReactionWeaponUse(state, row.flag);
     expect(state).toEqual(row.result);
   }
-  for (const row of fixture.voices) {
+  for (const [rows, select] of [[fixture.voices, nativeDamageReactionVoice], [fixture.revealVoices, nativeDamageRevealReaction]])
+  for (const row of rows) {
     let random = row.seed;
-    expect(nativeDamageReactionVoice(row.input, {
+    expect(select(row.input, {
       sourceTeam: row.source, sourceWorm: 1, turnTeam: row.turn, usedWeapon: row.used,
       teamAlive: () => row.alive, nearbyTeam: () => row.nearby,
       nextRandom: () => (random = nextLogicRandom(random, row.frame)),
@@ -97,8 +98,9 @@ test("live native damage totals reveal after settlement and lethal accounting st
   expect(result.reaction.damage - result.reactionBefore.damage).toBe(damage);
   expect(result.reaction.kills - result.reactionBefore.kills).toBe(3);
   expect(result.reaction.maxVictimTeam).toBe(2);
-  expect(result.reaction.selfTeam).toBe(1);
-  expect(result.reaction.friendlyTeam).toBe(1);
+  expect(result.reaction.selfTeam).toBe(0);
+  expect(result.reaction.friendlyTeam).toBe(0);
+  expect(result.reactionBefore.firstBlood).toBe(1);
   expect(result.attacker.enemyDamage - result.attackerBefore.enemyDamage).toBe(damage);
   expect(result.attacker.enemyKills - result.attackerBefore.enemyKills).toBe(3);
   expect(result.attacker.turnKills - result.attackerBefore.turnKills).toBe(3);
