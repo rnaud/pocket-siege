@@ -6,10 +6,16 @@ import automatic from './fixtures/armageddon/automatic-utilities.json' with { ty
 import { nativeAutomaticUtilities } from '../src/armageddon/automatic-utilities.js';
 import shower from './fixtures/armageddon/crate-shower.json' with { type: 'json' };
 import { nativeCrateShowerTick } from '../src/armageddon/crate-shower.js';
+import crateState from './fixtures/armageddon/crate-state.json' with { type: 'json' };
+import { nativeCrateState, nativeCrateArt } from '../src/armageddon/crate-state.js';
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of crateState.cases) {
+    expect(nativeCrateState(row.input, row.state)).toEqual(row.output);
+    expect(nativeCrateArt(row.input)).toEqual(row.art);
+  }
   for (const row of automatic.cases) {
     const result = nativeAutomaticUtilities(row.input, row.available, row.bits);
     expect(result.body).toEqual(row.output);
