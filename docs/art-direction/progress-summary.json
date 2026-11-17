@@ -100,9 +100,10 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization and environment, base/physics task and worm reconstruction, including contact restoration, are verified separately and await live integration.",
-      "remaining": "Finish remaining actor/task reconstruction, rendering resource adapters, game-state mapping and event playback; replace the overlay with deterministic replay and local saves.",
+      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization and environment, base/physics task, worm and 16 other actor constructors, including contact restoration, are verified separately and await live integration.",
+      "remaining": "Finish four remaining actor constructors, root/controller and recursive snapshot reconstruction, rendering resource adapters, game-state mapping and event playback; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_replay_actor_constructors",
         "native_replay_worm_constructor",
         "native_replay_environment_constructor",
         "native_replay_physics_constructor",

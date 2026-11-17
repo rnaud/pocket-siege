@@ -121,3 +121,63 @@ export function nativeReadWormTask(stream, options) {
   if (view.getInt32(0x13c, true)) options.matchState.activeCount = (options.matchState.activeCount + 1) | 0;
   return task;
 }
+
+// Concrete readers differ from writers: several non-persistent task writers
+// are no-ops, while their constructors still consume saved records.
+const actorReadBlocks = new Map([
+  [7, [0x3c, 0x64]], [8, [0xfc, 0x94]], [9, [0xfc, 0x60]],
+  [13, [0x3c, 0xc04]], [15, [0xfc, 0x168]], [16, [0x3c, 0x24]],
+  [17, [0x3c, 0x1d4]], [21, [0xfc, 0x20]], [22, [0x3c, 0x28]],
+  [23, [0x3c, 0x24]], [24, [0x3c, 0x74]], [25, [0x3c, 0x34]],
+  [26, [0x3c, 0x54]], [27, [0x3c, 0x1c]], [29, [0x3c, 0x28]],
+  [30, [0xfc, 0x14]],
+]);
+
+// Dispatch for recovered concrete constructors. Unsupported constructors are
+// explicit errors until their resource and state restoration is recovered.
+export function nativeReadReplayActor(tag, stream, options) {
+  if (tag === 18) return nativeReadWormTask(stream, options);
+  const block = actorReadBlocks.get(tag);
+  if (!block) throw new Error(`Replay actor constructor ${tag} is not yet ported`);
+  const schema = taskTypes.find(row => row.tag === tag);
+  const memory = options.memory ?? new Uint8Array(schema.size);
+  const task = schema.physics ? nativeReadPhysicsTask(stream, { ...options, memory }) : nativeReadTaskBase(stream, options);
+  const view = new DataView(memory.buffer, memory.byteOffset, memory.byteLength);
+  const get = offset => view.getInt32(offset, true);
+  const put = (offset, value) => view.setInt32(offset, value, true);
+  if (!schema.physics) {
+    stream.readByte(); //004ED9A0
+    for (const [offset, value] of [[0x24, task.registryIndex], [0x28, task.registryType],
+      [0x2c, task.type], [0x34, +task.ownsRegistry], [0x38, options.context]]) put(offset, value);
+  }
+  const increment = offset => {
+    options.contextState.counters[offset] = (options.contextState.counters[offset] + 1) | 0;
+  };
+  // These constructors update the scene before reading their derived block.
+  const counter = { 16: 0x12424, 22: 0x12428, 27: 0x12420 }[tag];
+  if (counter) increment(counter);
+  stream.readByte();
+  memory.set(stream.readBlock(block[1]), block[0]);
+  const text = (offset, font, width) => {
+    const pointer = options.allocateResource(0x138);
+    put(offset, pointer ? options.constructText(pointer, options.renderer, font, width) : 0);
+  };
+  if (tag === 8) {
+    options.contextState.teamSlots[get(0x100)] = task.id;
+    text(0x190, 15, 16);
+  } else if (tag === 15) {
+    put(0x264, 0);
+    text(0x268, 15, 256);
+    text(0x26c, 15, 48);
+    text(0x270, 15, 48);
+    if (get(0x260)) increment(get(0x124) === 3 ? 0x1b8f4 : 0x1b8f0);
+    increment(0x1242c);
+  } else if (tag === 24) {
+    options.contextState.effectSlots[get(0x80)] = task.id;
+    put(0xb0, options.contextState.counters[0x12430] & 255);
+    increment(0x12430);
+    put(0xb4, 0);
+  } else if (tag === 29) text(0x64, 23, 48);
+  task.memory = memory;
+  return task;
+}
