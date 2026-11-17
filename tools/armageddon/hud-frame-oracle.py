@@ -83,5 +83,24 @@ for minimum in [0,3275,3276,3277,32768,62260,65536]:
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Visibility routine did not return')
    visibility_cases.append({'before':{'minimum':minimum,'forced':forced},'keys':keys,
      'after':{'minimum':read(context+0x1b8b4),'forced':read(context+0x1b8b8)}})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases},separators=(',',':'))+'\n')
-print(f'{len(cases)} frames, {len(panel_cases)} panel ticks, {len(visibility_cases)} visibility ticks')
+health_cases=[]
+write(owner+4,1);write(owner+0xc,context)
+store=context+0x1b94+0x51c
+for roster in [[(100,0)]*3,[(90,10)]*3,[(90,0)]*3,[(0,100),(50,50),(100,0)],[(0,0)]*3,[(150,0)]*3,[(32768,0)]]:
+ for maximum in [300,450,600]:
+  for value in [0,655,656,32768,58982,65536]:
+   for surrendered in [0,1]:
+    write(store,len(roster));write(store-12,surrendered)
+    for i,(hp,damage) in enumerate(roster):
+     write(store-0x49c+i*0x9c,hp);write(store-0x4a4+i*0x9c,damage)
+    write(context+0x81c,maximum);write(context+0x1b60,value);write(context+0x800,0)
+    write(stack+0xff00,stop)
+    cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+    cpu.emu_start(0x4b8580,stop,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Health routine did not return')
+    signed=lambda address:struct.unpack('<i',cpu.mem_read(address,4))[0]
+    health_cases.append({'roster':[{'hp':h,'damageTaken':d} for h,d in roster],
+     'maximum':maximum,'value':value,'surrendered':bool(surrendered),
+     'after':{'value':signed(context+0x1b60),'target':signed(context+0x1b78),'busy':read(context+0x800)==12}})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases},separators=(',',':'))+'\n')
+print(f'{len(cases)} frames, {len(panel_cases)} panel ticks, {len(visibility_cases)} visibility ticks, {len(health_cases)} health ticks')

@@ -175,9 +175,7 @@ export function updateHudTeams(worms, activeTeam) {
     const hp = worms
       .filter((w) => w.team === t)
       .reduce((total, w) => total + Math.max(0, w.hp), 0);
-    const health = panel.querySelector(".native-team-health");
-    if (health)
-      paintNativeTeamHealth(health, hp, 300, t ? "#ff8080" : "#80ff80");
+
     panel.setAttribute(
       "aria-label",
       `${t ? "Coral" : "Moss"}: ${hp} health, ${alive} worms alive`,
@@ -188,4 +186,9 @@ export function updateHudTeams(worms, activeTeam) {
 export function updateHudTeamPanel(progress) {
   // 004EC600: center-origin X + 8, bottom minus total row height * visibility.
   document.querySelector(".match-bar").style.setProperty("--team-panel-offset", `${Math.round(32 * progress / 65536)}px`);
+}
+
+export function updateHudTeamHealth(values) {
+  document.querySelectorAll(".native-team-health").forEach((canvas, team) =>
+    paintNativeTeamHealth(canvas, values[team], team ? "#ff8080" : "#80ff80"));
 }

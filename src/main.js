@@ -1,4 +1,4 @@
-import { nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
+import { nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
@@ -199,7 +199,7 @@ import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
-import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel } from "./pixel-hud.js";
+import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel, updateHudTeamHealth } from "./pixel-hud.js";
 import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode } from "./armageddon/worm-label.js";
 import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater } from "./water.js";
@@ -761,6 +761,9 @@ function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
   if (p) p.nativeFusePlayback = null;
 }
+let nativeTeamHealthMaximum = 1;
+let nativeTeamHealthBusyTicks = 0;
+let nativeTeamHealthValues = [65536, 65536];
 const nativeTeamPanelVisibility = { minimum: 0, forced: 0 };
 let toggleTeamPanelVisibility = false;
 const nativeTeamPanel = { progress: 0, target: 65536, countdown: 0 };
@@ -796,6 +799,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   uiKey = "";
   timerKey = "";
   selectionTick = 0;
+  nativeTeamHealthMaximum = 1;
+  nativeTeamHealthBusyTicks = 0;
+  nativeTeamHealthValues = [65536, 65536];
+  updateHudTeamHealth(nativeTeamHealthValues);
   Object.assign(nativeTeamPanel, { progress: 0, target: 65536, countdown: 0 });
   labelMode = 1;
   updateLabelModeButton();
@@ -3914,8 +3921,10 @@ function stepOriginalEffects(dt) {
 function revealWormHealth(w) {
   const result = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp);
   w.nativeHealthDisplay = result.body;
-  for (const call of result.calls)
+  for (const call of result.calls) {
     if (call.operation === "damageText") w.nativeDamageText = call.value;
+    if (call.operation === "clearDamageTotal") w.damageTaken = 0;
+  }
 }
 function finishMatch(winner, series) {
   phase = "over";
@@ -4164,6 +4173,16 @@ function step(dt) {
   nativeTeamPanelVisibilityTick(nativeTeamPanelVisibility, toggleTeamPanelVisibility);
   toggleTeamPanelVisibility = false;
   nativeTeamPanelTick(nativeTeamPanel);
+  const teamRosters = [0, 1].map(team => worms.filter(w => w.team === team));
+  for (const roster of teamRosters)
+    nativeTeamHealthMaximum = Math.max(nativeTeamHealthMaximum, roster.reduce((sum, w) => (sum + w.hp) | 0, 0));
+  nativeTeamHealthBusyTicks = Math.max(0, nativeTeamHealthBusyTicks - 1);
+  nativeTeamHealthValues = teamRosters.map((roster, index) => {
+    const result = nativeTeamHealthTick(nativeTeamHealthValues[index], roster, nativeTeamHealthMaximum);
+    if (result.busy) nativeTeamHealthBusyTicks = 12; // 004B8580 / 004A1A00.
+    return result.value;
+  });
+  updateHudTeamHealth(nativeTeamHealthValues);
   updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress));
   for (const w of worms) w.moving = false;
   jumpClock += dt;
@@ -4844,6 +4863,7 @@ function step(dt) {
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
   if (phase === "settle" || (phase === "aim" && worms.some(w => w.deathPending))) {
     const settled =
+      nativeTeamHealthBusyTicks === 0 &&
       !projectile && !pendingFire &&
       bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
       worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&

@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
-import { nativeHUDFrame, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
+import { nativeHUDFrame, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of fixture.healthCases)
+    expect(nativeTeamHealthTick(c.value, c.roster, c.maximum, c.surrendered)).toEqual(c.after);
   for (const c of fixture.visibilityCases) {
     const state = { ...c.before };
     nativeTeamPanelVisibilityTick(state, c.keys.every(Boolean));
@@ -29,7 +31,7 @@ test("live native team bars update with damage and keep HUD controls usable", as
   await page.evaluate(() => window.siege.debug.hit(1, 10));
   await expect(page.locator(".native-team-health").nth(1)).toHaveAttribute(
     "data-native-health",
-    "90",
+    "100",
   );
   await expect(page.locator("#fire")).toBeEnabled();
   await expect(page.locator("#timer")).toBeInViewport();
@@ -44,4 +46,9 @@ test("live native team bars update with damage and keep HUD controls usable", as
   await expect.poll(offset).toBe("32px");
   await page.keyboard.press("Shift+Delete");
   await expect.poll(offset).toBe("0px");
+  await page.evaluate(() => window.siege.debug.hit(0, 10));
+  // Hitting the active worm resolves damage for both teams; 270/300 truncates
+  // to 58982 in 16.16, then the original 100px draw truncates again to 89.
+  await expect(page.locator(".native-team-health").nth(1)).toHaveAttribute("data-native-health", "89", { timeout: 10000 });
+  await expect.poll(() => page.evaluate(() => window.siege.getState().worms.map(w => w.damageTaken))).toEqual([0, 0, 0, 0, 0, 0]);
 });

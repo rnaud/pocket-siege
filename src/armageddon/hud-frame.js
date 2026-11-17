@@ -43,8 +43,9 @@ export function paintNativeHUDFrame(canvas, width, height, fill) {
     else ctx.fillRect(a, b, 1, 1);
   }
 }
-export function paintNativeTeamHealth(canvas, hp, maxHp, color) {
-  const amount = Math.max(0, Math.min(100, Math.floor((hp * 100) / maxHp)));
+export function paintNativeTeamHealth(canvas, fraction, color) {
+  const amount = Math.imul(fraction, 100) >> 16;
+  if (canvas.dataset.nativeHealth === String(amount)) return;
   // 004B8350 takes the standard font's 16px height; 004B87B0 adds one.
   paintNativeHUDFrame(canvas, amount + 4, 17, color);
   canvas.style.width = `${canvas.width}px`;
@@ -82,4 +83,22 @@ export function nativeTeamPanelVisibilityTick(state, toggle = false) {
     if (target < state.minimum) state.minimum = (state.minimum - 0xccc) | 0;
   }
   if (toggle) state.forced ^= 1;
+}
+
+// 004B8580, including the real 004C2BC0/004C2C00 team-store sums.
+// Damage remains in the bar until event 0x42c clears each worm's damage total.
+export function nativeTeamHealthTick(value, roster, maximum, surrendered = false) {
+  let hp = 0, damage = 0;
+  for (const worm of roster) {
+    hp = (hp + worm.hp) | 0;
+    if (!surrendered) damage = (damage + worm.damageTaken) | 0;
+  }
+  const target = Math.trunc(((hp + damage) << 16) / maximum) | 0;
+  const difference = (target - value) | 0;
+  const sign = difference >> 31;
+  const busy = difference !== 0;
+  if (((difference ^ sign) - sign | 0) > 0x28f)
+    value = (value + (difference < 0 ? -0x28f : 0x28f)) | 0;
+  else value = target;
+  return { value, target, busy };
 }
