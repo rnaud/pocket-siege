@@ -1921,7 +1921,7 @@ function fireRope() {
   if (rope.attached) { releaseRope(); return; }
   const w = worms[current];
   const flight = w.nativeHurtBody?.state === 0x73 ? w.nativeHurtBody : null;
-  const body = flight ? refireNativeRope(flight) : createNativeRopeShot(w, angle, H);
+  const body = flight ? refireNativeRope(flight, queueGameSound) : createNativeRopeShot(w, angle, H, queueGameSound);
   if (!body.ropeFiring) {
     $("#status").textContent = "No rope shots remaining before landing.";
     return;
@@ -1941,7 +1941,6 @@ function fireRope() {
   activeUtility = "rope";
   wormLocked = true;
   utilitiesOpen = false;
-  sfx("ropefire");
   $("#status").textContent = "Rope firing…";
   updateUI();
 }
@@ -1961,7 +1960,7 @@ function stepRopeShot(w) {
   }
   w.x = result.body.x / 65536;
   w.y = H - result.body.y / 65536;
-  if (result.calls.some(call => call.operation === "sound")) sfx("ropeimpact");
+  for (const call of result.calls) if (call.operation === "sound") queueGameSound(call.request);
   if (rope.tip) rope.tip.position.set(result.tip.x, result.tip.y, 31);
   const positions = rope.mesh.geometry.attributes.position;
   positions.setXYZ(0, result.tip.x, result.tip.y, 30);
@@ -2087,6 +2086,7 @@ function stepRope(w, dt) {
     collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
     updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
   }, (x, y, body) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H), events);
+  rope.body.soundHandle = w.nativeHitVoicePlayback ? 1 : 0;
   rope.body = stepNativeRopeSwing(rope.body, {
     left: move < 0, right: move > 0, up: aimInput > 0, down: aimInput < 0,
   }, {
@@ -2097,13 +2097,14 @@ function stepRope(w, dt) {
     solid: (x, y) => terrain.solid(x, H - y),
     collide: (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H),
     otherType: hit => hit === 1 ? 1 : nativeWormCollisionType(nativeWormState(worms[hit - 2])),
-    stopSound: () => rope.contactPlayback?.stop(),
+    stopSound: () => { w.nativeHitVoicePlayback?.stop(); w.nativeHitVoicePlayback = null; },
     sound: (...request) => {
       if (sound) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
-        rope.contactPlayback = playNativeRopeContactSound(audio, request);
+        audio.resume();
+        w.nativeHitVoicePlayback = playNativeRopeContactSound(audio, request);
       }
-      return 1;
+      return w.nativeHitVoicePlayback ? 1 : 0;
     },
   });
   const body = rope.body;
@@ -4278,6 +4279,12 @@ function aiAim() {
   updateSliders();
   $("#status").textContent =
     `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
+}
+function queueGameSound(request) {
+  if (!sound) return 0;
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  audio.resume();
+  return nativeSoundQueue.enqueue(request);
 }
 // Team-bank IDs remain a host adapter: mark English speech with bit 16,
 // matching the existing clock adapter, while retaining all five request words.

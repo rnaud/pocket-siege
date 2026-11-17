@@ -18,13 +18,14 @@ const words = records.schemes.find(s => s.resource_id === 195).weapons[37];
 const record = Object.fromEntries(words.map((v, i) => ['0x' + (0x48 + i * 4).toString(16), v]));
 const fixed = value => Math.round(value * 65536) | 0;
 
-export function refireNativeRope(body) {
+export function refireNativeRope(body, onSound = () => {}) {
   // State73 retains the release angle and remaining shots. Original fire
   // dispatch owns the gate and reset; continuing an active action keeps ammo.
-  return nativeFireInput(body, record, { weaponRecord: () => record }).body;
+  return nativeFireInput(body, record, { weaponRecord: () => record,
+    sound: (_body, _record, { request }) => onSound(request) }).body;
 }
 
-export function createNativeRopeShot(worm, angle, height) {
+export function createNativeRopeShot(worm, angle, height, onSound = () => {}) {
   const radians = angle * Math.PI / 180;
   const positionSum = (fixed(worm.x) + fixed(height - worm.y)) | 0;
   return nativeTraversalFire({
@@ -46,7 +47,8 @@ export function createNativeRopeShot(worm, angle, height) {
     restitutionX: 0x9999, restitutionY: 0, tangent: 0xf5c2,
     maxVx: 0, maxVy: 0, impact: 0, damageScale: 0, voiceCooldown: 0,
     lastFacingFrame: 0, field150: 0, field250: 0,
-  }, record, { weaponRecord: () => record }).body;
+  }, record, { weaponRecord: () => record,
+    sound: (_body, _record, { request }) => onSound(request) }).body;
 }
 
 // Called at the host's fixed50Hz tick. Preserve native segment and velocity
