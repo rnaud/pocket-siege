@@ -122,6 +122,20 @@ export function nativeCollectWeaponInput(memory, queue, host) {
   }
 }
 
+// Full005012C0, the inactive-target branch of005019C0. A left click
+// reselects the current weapon through004E8590, entering its targeting mode.
+export function nativeCollectTargetActivation(memory,queue,host) {
+  const body = new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  const get = offset => body.getInt32(offset,true);
+  if(host.wormBusy(get(0x3c),get(0x4c)) || !get(0x84) || !get(0x64) ||
+    get(0xac) || !(get(0x94) || get(0x98)))return;
+  if(!(host.pointerSample().buttons&1))return;
+  host.pointerResetA();host.pointerResetB();
+  const payload = new Uint8Array(16), view = new DataView(payload.buffer);
+  [get(0x3c),get(0x4c),get(0x64),1].forEach((value,index)=>view.setInt32(index*4,value,true));
+  queue.writeEvent(0x41b,payload);
+}
+
 // 004E5E30/004E5EE0 acquire/release the arsenal's priority-2 pointer owner.
 // Lists contain signed shorts, including the free-list stack and counts.
 function nativeArsenalOwnership(body, scene, open) {

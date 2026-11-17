@@ -1,3 +1,5 @@
+import targetActivation from "./fixtures/armageddon/controller-target-activation.json" with { type: "json" };
+import { nativeCollectTargetActivation } from "../src/armageddon/controller-input.js";
 import { NativeCollisionScene } from "../src/armageddon/collision-scene.js";
 import girderBitmap from "./fixtures/armageddon/girder-bitmap.json" with { type: "json" };
 import { nativeGirderPlacement } from "../src/armageddon/girder-placement.js";
@@ -230,6 +232,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for (const c of targetActivation.cases) {
+    const memory=new Uint8Array(0xb0),body=new DataView(memory.buffer);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    const calls=[],queue=new NativeReplayBuffer(c.capacity);
+    nativeCollectTargetActivation(memory,queue,{
+      wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
+      pointerSample:()=>{calls.push(["pointer"]);return {dx:c.sample[0],dy:c.sample[1],buttons:c.sample[2]};},
+      pointerResetA:()=>calls.push(["resetA"]),pointerResetB:()=>calls.push(["resetB"]),
+    });
+    const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
+    expect({calls,events}).toEqual({calls:c.calls,events:c.events});
   }
   for (const c of controllerWeaponInput.cases) {
     const memory = new Uint8Array(0x110), body = new DataView(memory.buffer);
