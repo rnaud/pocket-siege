@@ -1,0 +1,116 @@
+{
+  "focus": "Reconstruct native replay state, then connect it to live playback.",
+  "note": "The game is playable, but the offline rewrite is not yet equivalent to Worms Armageddon. Verified routines can still be waiting for live integration.",
+  "areas": [
+    {
+      "title": "Worm movement & physics",
+      "live": "Native collision masks, jump flight, hurt motion, drowning and several recovery paths are integrated.",
+      "remaining": "Complete the movement/state lifecycle, ground interactions and collision ordering; compare full movement sequences with the original.",
+      "evidence": [
+        "live_native_worm_mask",
+        "live_hurt_motion_recovery",
+        "composed_jump_flight_adapter"
+      ]
+    },
+    {
+      "title": "Weapons & inventory",
+      "live": "Original weapon data and many projectile, melee, hitscan and placed-weapon routines drive live play.",
+      "remaining": "Finish every weapon state machine, scheme override, special-availability rule, ammo-loading path and utility delay lifecycle.",
+      "evidence": [
+        "live_projectile_adapter",
+        "live_projectile_fire_input",
+        "live_placed_fire"
+      ]
+    },
+    {
+      "title": "Damage & destruction",
+      "live": "Native blast, crater, damage accounting, flames and crate/barrel behavior are substantially integrated.",
+      "remaining": "Complete event ordering and remaining collision/chain-reaction paths, then validate composed sequences against native matches.",
+      "evidence": [
+        "live_original_radial_blast",
+        "live_original_damage_accounting",
+        "composed_flame_runtime"
+      ]
+    },
+    {
+      "title": "Rope & utilities",
+      "live": "Recovered rope launch, swing, release and refire behavior is integrated alongside original utility art and several utility actions.",
+      "remaining": "Finish native control and state transitions for jetpack, parachute, teleport, girders, freeze and other utilities; verify their interactions.",
+      "evidence": [
+        "live_rope_swing",
+        "live_rope_release_and_refire",
+        "live_original_teleport"
+      ]
+    },
+    {
+      "title": "Turns & match rules",
+      "live": "Native team/worm rotation, wind selection, settlement presentation, poison settlement and recurring environment effects are integrated.",
+      "remaining": "Connect the complete native turn controller, action-busy ownership, retreat requests, input gates and scheme rules.",
+      "evidence": [
+        "live_native_team_rotation",
+        "live_native_worm_rotation",
+        "native_turn_start_controller",
+        "native_weapon_completion_retreat_request"
+      ]
+    },
+    {
+      "title": "Maps & terrain",
+      "live": "Original authored maps, terrain objects, collision masks and animated water are available in the game.",
+      "remaining": "Complete native procedural generation, placement constraints, bridges, terrain-theme behavior and terrain history/dirty-region handling.",
+      "evidence": [
+        "live_authored_maps",
+        "authored_map_placement",
+        "live_terrain_object_sprites"
+      ]
+    },
+    {
+      "title": "Sprites, animation & HUD",
+      "live": "Original media, native animation routines and many HUD elements are integrated, including the animated wind meter.",
+      "remaining": "Finish the complete animation state graph, remaining poses and HUD transitions, renderer/task visibility and native scheduling.",
+      "evidence": [
+        "visual_media_import",
+        "animation_player",
+        "native_wind_meter_drawing"
+      ]
+    },
+    {
+      "title": "Sound & speech",
+      "live": "Original samples, speech banks and several native sound queues, loops and event triggers are integrated.",
+      "remaining": "Complete sound ownership, priorities, speech selection and remaining event triggers across all actor states.",
+      "evidence": [
+        "speech_descriptor_mapping",
+        "live_original_death_voice",
+        "live_landing_audio"
+      ]
+    },
+    {
+      "title": "Computer opponents",
+      "live": "A playable computer opponent is present. Its host heuristics are not a complete port of the original AI.",
+      "remaining": "Port native movement planning, trajectory search, weapon selection and difficulty behavior.",
+      "evidence": []
+    },
+    {
+      "title": "Setup, missions & progression",
+      "live": "Local match setup, authored-map selection, schemes and series play are available.",
+      "remaining": "Reproduce native team setup, saved schemes, missions, training and campaign progression.",
+      "evidence": ["embedded_scheme_resources", "scheme_runtime_expansion"]
+    },
+    {
+      "title": "Replays & local saves",
+      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization and parts of reconstruction are verified separately.",
+      "remaining": "Finish concrete task reconstruction, contact/resource restoration, game-state mapping and event playback; replace the overlay with deterministic replay and local saves.",
+      "evidence": [
+        "native_replay_base_reconstruction",
+        "native_replay_physics_restore",
+        "native_replay_child_records",
+        "native_replay_snapshot_stream"
+      ]
+    },
+    {
+      "title": "Determinism & whole-match parity",
+      "live": "A 50 Hz simulation and native random streams underpin many executable-verified routines.",
+      "remaining": "Finish original input queues, dispatch order and random-call ordering; compare representative complete matches with the original executable.",
+      "evidence": ["numeric_primitives", "native_action_busy_and_input_gate"]
+    }
+  ]
+}

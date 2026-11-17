@@ -2248,3 +2248,5 @@ body.native-game-hud {
   width: 56px;
   height: 32px;
 }
+
+.menu-meta .progress-link { color: #c9e886; font: 12px monospace; padding: 10px; text-underline-offset: 3px; }
