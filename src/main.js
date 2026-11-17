@@ -527,6 +527,8 @@ let labelMode = 1;
 let uiKey = "",
   terrainDirty = false,
   timerKey = "";
+// Host replay simulation must never count as a new player achievement.
+let replaySimulation = false;
 let lastShot = null,
   replaying = false,
   replayClock = 0,
@@ -4097,7 +4099,7 @@ function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
   const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);
   const best = recordBest(record, { longest: distance });
-  if (best.longest !== record.longest) {
+  if (!replaySimulation && best.longest !== record.longest) {
     record = best;
     writeRecord(record);
     updateRecordUI();
@@ -4293,7 +4295,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   }
   if (dealt > 0) {
     const best = recordBest(record, { bestHit: dealt });
-    if (best.bestHit !== record.bestHit) {
+    if (!replaySimulation && best.bestHit !== record.bestHit) {
       record = best;
       writeRecord(record);
       updateRecordUI();
@@ -4631,7 +4633,7 @@ function finishMatch(winner, series) {
     }),
     mode,
   };
-  if (mode === "ai" || daily) {
+  if (!replaySimulation && (mode === "ai" || daily)) {
     record = applyMatchResult(record, {
       won: winner === 0,
       ai: mode === "ai",
@@ -7070,7 +7072,12 @@ if (import.meta.env.DEV) {
   window.siege.debug = {
     captureReplayState: captureMatchReplayState,
     restoreReplayState: restoreMatchReplayState,
-    advanceReplayFrames(count=1) { for (let i=0;i<count;i++) step(LOGIC_STEP_SECONDS); },
+    advanceReplayFrames(count=1) {
+      const previous = replaySimulation;
+      replaySimulation = true;
+      try { for (let i=0;i<count;i++) step(LOGIC_STEP_SECONDS); }
+      finally { replaySimulation = previous; }
+    },
     knockout(teamIndex = 1) {
       for (const w of worms) {
         if (w.team !== teamIndex) continue;
