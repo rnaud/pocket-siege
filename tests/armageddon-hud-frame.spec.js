@@ -1,3 +1,5 @@
+import replayTask from "./fixtures/armageddon/replay-task.json" with { type: "json" };
+import { nativeWriteTaskHeader, nativeWriteMatchController, nativeWritePhysicsEnvironment } from "../src/armageddon/replay-task.js";
 import replayStream from "./fixtures/armageddon/replay-stream.json" with { type: "json" };
 import { NativeReplayStream } from "../src/armageddon/replay-stream.js";
 import replayBuffer from "./fixtures/armageddon/replay-buffer.json" with { type: "json" };
@@ -39,6 +41,20 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayTask.cases) {
+    const stream = new NativeReplayStream(2048);
+    stream.bytes.fill(0xa5); stream.seek(row.position); stream.length = row.position;
+    const calls = [], childWriter = (child, target) => {
+      calls.push(row.input.children.indexOf(child));
+      for (const byte of child.bytes) target.writeByte(byte);
+      return child.result;
+    };
+    const result = row.kind === "environment"
+      ? nativeWritePhysicsEnvironment(stream, row.input.environment)
+      : (row.kind === "header" ? nativeWriteTaskHeader : nativeWriteMatchController)(stream, row.input, childWriter);
+    expect({ result, calls, bytes: [...stream.bytes.slice(0, stream.position)], length: stream.length })
+      .toEqual({ result: row.result, calls: row.calls, bytes: row.bytes, length: row.length });
+  }
   for (const row of replayStream.cases) {
     const stream = new NativeReplayStream(2048);
     stream.bytes.set(row.initial);
