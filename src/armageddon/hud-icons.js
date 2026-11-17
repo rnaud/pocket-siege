@@ -35,6 +35,7 @@ export const HUD_ICONS = Object.freeze({
   teleport: "teleport",
   girder: "girder",
   freeze: "freeze",
+  fastwalk: "speed",
 });
 const icons = new Map();
 export async function loadOriginalHUDIcons() {

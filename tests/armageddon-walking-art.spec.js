@@ -2,12 +2,21 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/walking-art.json" with { type: "json" };
 import motion from "./fixtures/armageddon/walking-motion.json" with { type: "json" };
 import controller from "./fixtures/armageddon/walking-controller.json" with { type: "json" };
-import { nativeWalkPosition, nativeWalkingStep } from "../src/armageddon/walking-motion.js";
+import cadence from "./fixtures/armageddon/walking-cadence.json" with { type: "json" };
+import { nativeWalkPosition, nativeWalkingStep, nativeWalkingCadence } from "../src/armageddon/walking-motion.js";
 import {
   nativeWalkingTick,
   nativeWalkingSprite,
 } from "../src/armageddon/walking-art.js";
 test("walking cadence and slope selection match original executable blocks", { tag: "@logic" }, () => {
+  for (const row of cadence.cases) {
+    let steps = 0;
+    const output = nativeWalkingCadence(row.input, row.fast, () => {
+      steps++;
+      return row.stepState;
+    });
+    expect({ output, steps }).toEqual({ output: row.output, steps: row.steps });
+  }
   for (const row of fixture.cases)
     expect(nativeWalkingTick(row.previous)).toEqual({
       progress: row.progress,

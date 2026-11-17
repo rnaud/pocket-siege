@@ -35,6 +35,12 @@ export const UTILITIES = {
     fresh: 1,
     help: "Protect your squad until your next turn",
   },
+  fastwalk: {
+    label: "Fast Walk",
+    icon: "»",
+    fresh: 0,
+    help: "Accelerate to double walking speed for this turn",
+  },
 };
 
 export const UTILITY_KINDS = Object.keys(UTILITIES);

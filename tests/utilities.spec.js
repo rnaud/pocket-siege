@@ -10,9 +10,11 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     "teleport",
     "girder",
     "freeze",
+    "fastwalk",
   ]);
   expect(loadout.rope).toBe(Infinity);
   expect(loadout.jetpack).toBe(1);
   expect(loadout.freeze).toBe(1);
+  expect(loadout.fastwalk).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
 });

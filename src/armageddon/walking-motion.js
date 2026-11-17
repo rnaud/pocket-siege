@@ -21,6 +21,21 @@ export function nativeWalkPosition(x, y, dx, limit, collide) {
 // Original table0056F718: cumulative displacement within a walking cycle.
 const stride = [32768,65536,98304,131072,229376,344064,442368,524288,
   540672,557056,573440,589824,589824,589824,589824];
+
+// 004DD258..004DD2D8. A failed step keeps the unspent accumulator; the
+// actor update resets it to zero once the actor leaves state66 (004DE7E6).
+// Acceleration happens after this tick's movement, including a blocked step.
+export function nativeWalkingCadence(input, fast, step) {
+  let { state, speed, accumulator } = input;
+  accumulator = (accumulator + speed) | 0;
+  while (accumulator & 0xffff0000) {
+    state = step();
+    if (state !== 0x66) break;
+    accumulator = (accumulator - 65536) | 0;
+  }
+  if (fast) speed = Math.max(65536, Math.min(131072, (speed + 0x7ae) | 0));
+  return { state, speed, accumulator };
+}
 // 004DC860. State entry, animation writes, bungee activation and audio are
 // explicit effects; the shared position solver executes against real collision.
 export function nativeWalkingStep(input, direction, sprite, soundHandle, collide) {

@@ -1272,7 +1272,7 @@ function collectCrate(w) {
   const { kind, mesh } = crate;
   let label;
   if (kind === "utility") {
-    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze"];
+    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk"];
     const utility = pool[Math.floor(logicRandom() * pool.length)];
     utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], 1);
     label = `+1 ${UTILITIES[utility].label}`;
@@ -1349,6 +1349,8 @@ function beginTurn() {
   specialOpen = false;
   // Native team event 0x41C broadcasts thaw (0x412) before turn setup.
   for (const w of worms) if (w.team === team) {
+    // 004B3210 clears temporary team modifiers at the next own turn.
+    w.nativeTeamModifiers = (w.nativeTeamModifiers || 0) & 0xffffffe8;
     if (w.hp > 0 && w.frozen > 0)
       dispatchWormEntryAudio(w, [{ operation: "sound", request: [25, 3, 65536, 65536, 0] }]);
     w.frozen = 0;
@@ -1545,6 +1547,7 @@ function updateUI() {
       !canAct() ||
       charging ||
       shotgunRemaining > 0 ||
+      (kind === "fastwalk" && Boolean(worms[current].nativeTeamModifiers & 2)) ||
       (count <= 0 && activeUtility !== kind) ||
       (activeUtility !== null && activeUtility !== kind);
     button.classList.toggle("selected", activeUtility === kind);
@@ -1848,6 +1851,17 @@ function useUtility(kind) {
     utilitiesOpen = false;
     $("#utility-status").textContent =
       "Parachute armed. It deploys automatically on a hard fall.";
+    updateUI();
+    return;
+  }
+  if (kind === "fastwalk") {
+    if (worms[current].nativeTeamModifiers & 2) return;
+    // 004FCF47: utility subtype19 ORs the record's bit into team flags.
+    // Original slot64 uses bit1; movement consumes it in004DD2B0.
+    for (const w of worms) if (w.team === team)
+      w.nativeTeamModifiers = (w.nativeTeamModifiers || 0) | 2;
+    utilityAmmo[team].fastwalk = spendAmmo(utilityAmmo[team].fastwalk);
+    utilitiesOpen = false;
     updateUI();
     return;
   }

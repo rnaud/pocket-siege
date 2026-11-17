@@ -6,7 +6,7 @@ import { islandTop, islandVoid } from "./island-profile.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import collisionShapes from "./armageddon/collision-shapes.json" with { type: "json" };
 import { nativeShapeTerrainOverlap } from "./armageddon/collision-world.js";
-import { nativeWalkingStep } from "./armageddon/walking-motion.js";
+import { nativeWalkingStep, nativeWalkingCadence } from "./armageddon/walking-motion.js";
 export let W = 1200,
   H = 650;
 export function setWorldDimensions(width = 1200, height = 650) {
@@ -197,8 +197,19 @@ export function walkWorm(w, terrain, direction, dt) {
       x, y, soundHandle: w.nativeHitVoicePlayback ? 1 : 0 };
     // The animator's logical strip is20. 004DB780 chooses the displayed
     // uphill/downhill variant separately; it does not change the stride clock.
-    const { body, calls } = nativeWalkingStep(input, w.walkDirection, 0x20, 1,
-      (x, y) => bodyBlocked(terrain, x / 65536, H - y / 65536));
+    let body = input;
+    const calls = [];
+    const cadence = nativeWalkingCadence({ state: input.state,
+      speed: input.state === 0x66 ? input.speed ?? 65536 : 65536,
+      accumulator: input.state === 0x66 ? input.accumulator ?? 0 : 0,
+    }, Boolean(w.nativeTeamModifiers & 2), () => {
+      const result = nativeWalkingStep(body, w.walkDirection, 0x20, 1,
+        (x, y) => bodyBlocked(terrain, x / 65536, H - y / 65536));
+      body = result.body;
+      calls.push(...result.calls);
+      return body.state;
+    });
+    Object.assign(body, cadence);
     w.nativeWalkingBody = body;
     w.nativeWalkingSounds = [...(w.nativeWalkingSounds || []),
       ...calls.filter(call => call.operation === "sound").map(call => call.request)];
