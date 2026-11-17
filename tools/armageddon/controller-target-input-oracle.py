@@ -1,4 +1,4 @@
-"""Execute005019C0 targeting collector with native bounds and replay writes; device, worm query, placement acceptance and teardown are interfaces."""
+"""Execute005019C0 targeting collector with native bounds and replay writes; device, worm query, placement acceptance are interfaces; targeting teardown executes natively."""
 import argparse
 import hashlib
 import json
@@ -57,7 +57,7 @@ def hook(cpu,address,size,user):
 for address in [0x4c32b0,0x4c2d60,0x4c2ee0,0x4edc50,stop+0x100,stop+0x120,stop+0x130,stop+0x140]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 worm=owner+0x7000;shape=owner+0x7100;write(worm,vtable+0x200);write(shape,vtable+0x300)
 write(vtable+8,stop+0x150);write(vtable+12,stop+0x160);write(vtable+0x200+12,stop+0x170);write(vtable+0x300+20,stop+0x180)
-for address,argc in [(stop+0x150,1),(stop+0x160,1),(stop+0x170,3),(stop+0x180,2),(0x4ccf50,2),(0x501700,3),(0x501880,3),(0x4e6380,0)]:cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4))
+for address,argc in [(stop+0x150,1),(stop+0x160,1),(stop+0x170,3),(stop+0x180,2),(0x4ccf50,2),(0x501700,3),(0x501880,3)]:cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4))
 def signed(a):return struct.unpack('<i',cpu.mem_read(a,4))[0]
 def extra(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP)
@@ -92,7 +92,7 @@ def run(fields={},input_keys=[],pointer_sample=[0,0,0],allow=0,accept=1,worm_sta
  events=[];node=read(ring+0x18)
  while node:
   length=read(node);events.append([read(node+8),list(cpu.mem_read(node+12,length-4))]);node=read(node+4)
- cases.append(dict(fields={str(k):v for k,v in fields.items()},keys=keys,sample=sample,busy=busy,state=state,allow=allow,accept=accept,controllers=controllers,owners=owners,keyowners=keyowners,xy=xy,ceiling=ceiling,capacity=capacity,calls=calls,events=events,output=[signed(owner+0xe0),signed(context+0x1247c),signed(context+0x12480)]))
+ cases.append(dict(fields={str(k):v for k,v in fields.items()},keys=keys,sample=sample,busy=busy,state=state,allow=allow,accept=accept,controllers=controllers,owners=owners,keyowners=keyowners,xy=xy,ceiling=ceiling,capacity=capacity,calls=calls,events=events,output=[signed(owner+0xe0),signed(context+0x1247c),signed(context+0x12480)],targetFlags=[signed(owner+o) for o in [0xac,0xbc,0xe8]],ownership=list(cpu.mem_read(context+0x1b778,0x64))))
 for slot in [1,34,36,40]:
  for direction in [0,1]:
   for index in [0,1,17,18]:

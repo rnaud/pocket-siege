@@ -1,5 +1,6 @@
+import targetTeardown from "./fixtures/armageddon/target-teardown.json" with { type: "json" };
 import targetInput from "./fixtures/armageddon/controller-target-input.json" with { type: "json" };
-import { nativeCollectTargetInput } from "../src/armageddon/target-input.js";
+import { nativeCollectTargetInput, nativeEndTargeting } from "../src/armageddon/target-input.js";
 import targetActivation from "./fixtures/armageddon/controller-target-activation.json" with { type: "json" };
 import { nativeCollectTargetActivation } from "../src/armageddon/controller-input.js";
 import { NativeCollisionScene } from "../src/armageddon/collision-scene.js";
@@ -235,6 +236,12 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
   }
+  for(const c of targetTeardown.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);
+    [0xac,0xbc,0xe8].forEach((offset,i)=>body.setInt32(offset,[...c.flags,c.handle][i],true));
+    sceneMemory.set(c.initial,0x1b778);nativeEndTargeting(memory,sceneMemory);
+    expect({body:[0xac,0xbc,0xe8].map(o=>body.getInt32(o,true)),output:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({body:c.body,output:c.output});
+  }
   for(const c of targetInput.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
     for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
@@ -256,10 +263,9 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       teleportTarget:(x,y)=>{calls.push(["teleport",x,y]);return {x,y:(y+65536)|0,accepted:c.accept};},
       sound:(...args)=>calls.push(["sound",...args]),
       wormState:(...args)=>{calls.push(["state",...args]);return c.state;},
-      endTargeting:()=>calls.push(["end"]),
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
-    expect({calls,events,output:[body.getInt32(0xe0,true),scene.getInt32(0x1247c,true),scene.getInt32(0x12480,true)]}).toEqual({calls:c.calls,events:c.events,output:c.output});
+    expect({calls,events,output:[body.getInt32(0xe0,true),scene.getInt32(0x1247c,true),scene.getInt32(0x12480,true)],targetFlags:[0xac,0xbc,0xe8].map(o=>body.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls.filter(call=>call[0]!=="end"),events:c.events,output:c.output,targetFlags:c.targetFlags,ownership:c.ownership});
   }
   for (const c of targetActivation.cases) {
     const memory=new Uint8Array(0xb0),body=new DataView(memory.buffer);

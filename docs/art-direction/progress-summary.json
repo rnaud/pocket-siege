@@ -1,5 +1,5 @@
 {
-  "focus": "Connect the verified native input collectors to browser commands and automatic replay capture/playback, completing targeting teardown and actor integration.",
+  "focus": "Connect the verified native input collectors to browser commands and automatic replay capture/playback, completing actor integration.",
   "note": "The game is playable, but the offline rewrite is not yet equivalent to Worms Armageddon. Verified routines can still be waiting for live integration.",
   "areas": [
     {
@@ -107,9 +107,10 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The public replay remains a trajectory overlay. Native input, frame, dispatch, session, snapshot and audio routines compose into executable-verified pipelines. Development capture reads live actor, controller, terrain, palette and random state without changing the match; sound-enabled restore reproduces tested sequences for eight weapons, restores water/nuclear presentation and preserves player records and mute. Live replay entry uses native audio cleanup. Menu, movement, weapon, arsenal-pointer and targeting collectors now reproduce native command bytes and call ordering; the controller defaults to these collectors. Targeting includes shape/direction cycling, cursor bounds, packed placement coordinates and follow-up actions. These collectors still need browser mapping, targeting teardown and automatic capture/playback integration.",
+      "live": "The public replay remains a trajectory overlay. Native input, frame, dispatch, session, snapshot and audio routines compose into executable-verified pipelines. Development capture reads live actor, controller, terrain, palette and random state without changing the match; sound-enabled restore reproduces tested sequences for eight weapons, restores water/nuclear presentation and preserves player records and mute. Live replay entry uses native audio cleanup. Menu, movement, weapon, arsenal-pointer and targeting collectors now reproduce native command bytes and call ordering; the controller defaults to these collectors. Targeting includes shape/direction cycling, cursor bounds, packed placement coordinates and follow-up actions. Targeting teardown now clears flags and releases pointer ownership through the original routine, verified directly and inside the collector. These collectors still need browser mapping and automatic capture/playback integration.",
       "remaining": "Verify the remaining actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_targeting_teardown",
         "native_target_input_collector",
         "native_target_activation_input",
         "live_native_teleport_placement",

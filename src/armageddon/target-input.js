@@ -1,8 +1,28 @@
 import { nativeCollectTargetActivation } from './controller-input.js';
 import { nativeClampPlacementTarget } from './target-placement.js';
 
-//005019C0. Device input, worm queries, validation and targeting teardown are
-// host interfaces; ownership gates, selection, cursor and command bytes are native.
+//004E6380. Clear target flags even if the pointer owner is absent; only a
+// matched owner returns to the free stack and gets its handle invalidated.
+export function nativeEndTargeting(memory,sceneMemory) {
+  const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  const scene=new DataView(sceneMemory.buffer,sceneMemory.byteOffset,sceneMemory.byteLength);
+  body.setInt32(0xac,0,true);body.setInt32(0xbc,0,true);
+  const owner=body.getInt32(0xe8,true), count=scene.getInt16(0x1b7da,true);
+  if(owner<0 || count<=0)return;
+  let index=0;
+  while(index<count && scene.getInt16(0x1b7ba+index*2,true)!==owner)index++;
+  if(index===count)return;
+  const free=scene.getInt16(0x1b798,true);
+  scene.setInt16(0x1b778+free*2,owner,true);scene.setInt16(0x1b798,free+1,true);
+  for(let i=index;i<count-1;i++) {
+    scene.setInt16(0x1b79a+i*2,scene.getInt16(0x1b79a+(i+1)*2,true),true);
+    scene.setInt16(0x1b7ba+i*2,scene.getInt16(0x1b7ba+(i+1)*2,true),true);
+  }
+  body.setInt32(0xe8,-1,true);scene.setInt16(0x1b7da,count-1,true);
+}
+
+//005019C0. Device input, worm queries and validation are host interfaces;
+// ownership gates, selection, cursor, teardown and command bytes are native.
 export function nativeCollectTargetInput(memory,sceneMemory,queue,host) {
   const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
   const scene=new DataView(sceneMemory.buffer,sceneMemory.byteOffset,sceneMemory.byteLength);
@@ -59,5 +79,6 @@ export function nativeCollectTargetInput(memory,sceneMemory,queue,host) {
   const state=host.wormState(get(0x3c),get(0x4c));
   if(get(0xa4) && [0x67,0x78,0x7b,0x7c,0x7d,100].includes(state)) {
     emit(0x40e,[get(0x3c)]);emit(0x40f,[get(0x3c)]);
-  } else host.endTargeting();
+  } else if(host.endTargeting)host.endTargeting();
+  else nativeEndTargeting(memory,sceneMemory);
 }
