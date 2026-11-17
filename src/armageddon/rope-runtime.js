@@ -13,10 +13,50 @@ import { nativeWormTransitionBody } from './worm-state.js';
 import { nativeRopeAnimation } from './rope-animation.js';
 import { nativeFireInput } from './fire-input.js';
 import { nativeSin, nativeCos } from './trig.js';
+import { nativeAutoBungee, nativeAttachBungee, nativeBungeeTick } from './bungee.js';
 
 const words = records.schemes.find(s => s.resource_id === 195).weapons[37];
 const record = Object.fromEntries(words.map((v, i) => ['0x' + (0x48 + i * 4).toString(16), v]));
 const fixed = value => Math.round(value * 65536) | 0;
+
+// Compose the original automatic check with actual collision placement and
+// segment allocation. Audio, launch bookkeeping and inventory remain caller
+// interfaces, just as they are for the native traversal fire controller.
+export function tryNativeBungee(input, environment, interfaces) {
+  const attempt = (candidate, x, y) => {
+    const result = nativeTryBodyPosition(candidate, x, y,
+      (px, py) => interfaces.collide(candidate, px, py));
+    if (result.result) candidate.sleeping = result.sleeping;
+    return result.result;
+  };
+  let attachment = null;
+  const result = nativeAutoBungee(input, environment.weapon, environment.height, {
+    tryPosition: (candidate, { request }) => attempt(candidate, ...request),
+    activate: candidate => {
+      attachment = nativeAttachBungee(candidate, {
+        ...interfaces,
+        tryPosition: (next, { request }) => attempt(next, ...request),
+        constrain: (next, { request: [x, y] }) => {
+          const constraint = nativeRopeConstraint(next, x, y,
+            (px, py, body) => attempt(body, px, py));
+          Object.assign(next, constraint.body);
+          return constraint.result;
+        },
+        state: (next, { value }) => {
+          const entry = nativeWormTransitionBody(next, value, {}).body;
+          Object.assign(next, entry);
+          if (value === 0x7c) {
+            next.ropeFriction = entry.complexDrag;
+            // State7C entry004F8990 overrides common angle damping.
+            next.angleDamping = 0x75c2;
+          }
+        },
+      });
+      Object.assign(candidate, attachment.body);
+    },
+  });
+  return { ...result, attachment };
+}
 
 export function refireNativeRope(body, onSound = () => {}) {
   // State73 retains the release angle and remaining shots. Original fire
@@ -67,7 +107,7 @@ export function stepNativeRopeSwing(input, controls, environment, interfaces) {
     },
     resize: (body, { length }) => Object.assign(body, nativeRopeLength(body, length, attempt).body),
   }).body;
-  const body = nativeRopeBodyTick(directed, environment, {
+  let body = nativeRopeBodyTick(directed, environment, {
     awake: nativeBodyAwake,
     terrain: interfaces.solid,
     collide: (x, y, body) => interfaces.collide(body, x, y),
@@ -77,8 +117,24 @@ export function stepNativeRopeSwing(input, controls, environment, interfaces) {
     waterChanged: interfaces.motion?.waterChanged,
     freeBounce: interfaces.motion?.bounce,
   });
-  // Original004F8720 resets angle damping each rope animation tick.
-  if (body.constrained) body.angleDamping = nativeRopeAnimation(body.facing, body.angle).friction;
+  if (body.constrained && body.state === 0x7c) {
+    body = nativeBungeeTick(body, {
+      resize: (candidate, { length }) => {
+        const result = nativeRopeLength(candidate, length, attempt);
+        Object.assign(candidate, result.body);
+        return result.result;
+      },
+      progress: (candidate, { value }) => { candidate.bungeeProgress = value; },
+      state: (candidate, { value }) => {
+        const entry = nativeWormTransitionBody({ ...candidate, constraint: candidate.constrained }, value,
+          { schemeByte: environment.friction ?? 96 }).body;
+        Object.assign(candidate, entry, { constrained: entry.constraint });
+      },
+    }).body;
+  } else if (body.constrained) {
+    // Original004F8720 resets angle damping each rope animation tick.
+    body.angleDamping = nativeRopeAnimation(body.facing, body.angle).friction;
+  }
   return body;
 }
 

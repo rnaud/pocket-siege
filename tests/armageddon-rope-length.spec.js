@@ -5,6 +5,7 @@ import bungee from './fixtures/armageddon/bungee-auto.json' with { type: 'json' 
 import attachment from './fixtures/armageddon/bungee-attach.json' with { type: 'json' };
 import spring from './fixtures/armageddon/bungee-tick.json' with { type: 'json' };
 import { nativeAutoBungee, nativeAttachBungee, nativeBungeeTick } from '../src/armageddon/bungee.js';
+import { createNativeRopeShot, tryNativeBungee, stepNativeRopeSwing } from '../src/armageddon/rope-runtime.js';
 
 test('rope resizing matches native segment traversal, collision rejection and velocity scaling', { tag: '@logic' }, () => {
   expect(fixture.cases.map(row => nativeRopeLength(row.body, row.length, () => row.accepted)))
@@ -30,4 +31,24 @@ test('rope resizing matches native segment traversal, collision rejection and ve
   }
   for (const row of spring.cases)
     expect(nativeBungeeTick(row.body, { resize: () => row.accepted })).toEqual(row.output);
+  // Exercise the composition with real segment allocation, movement and
+  // length changes; the executable fixtures above isolate each controller.
+  const input = { ...createNativeRopeShot({ x: 200, y: 500, facing: 1, team: 0 }, 45, 650),
+    state: 0x65, type: 2, minimumDrop: 200, bungeeLength: 0, field1f0: 0 };
+  const interfaces = { collide: () => 0, solid: () => false, otherType: () => 1,
+    voice: () => 777, launchSetup: () => [0, 0, 0, 0] };
+  let body = tryNativeBungee(input, { weapon: { type: 4, subtype: 7 }, height: 650 }, interfaces).body;
+  expect(body.constrained).toBe(1);
+  expect(body.state).toBe(0x7c);
+  expect(body.length).toBe(12 * 65536);
+  const anchor = [body.anchorX, body.anchorY];
+  for (let frame = 0; frame < 100; frame++)
+    body = stepNativeRopeSwing(body, {}, { frame, index: 0, waterY: 1000, gravity: 0x3d70 }, interfaces);
+  expect(body.length).toBeGreaterThan(300 * 65536);
+  expect([body.anchorX, body.anchorY]).toEqual(anchor);
+  expect(Number.isFinite(body.x + body.y + body.vx + body.vy)).toBe(true);
+  body = stepNativeRopeSwing({ ...body, field104: 0 }, {},
+    { frame: 100, index: 0, waterY: 1000, gravity: 0x3d70 }, interfaces);
+  expect(body.state).toBe(0x65);
+  expect(body.constrained).toBe(0);
 });
