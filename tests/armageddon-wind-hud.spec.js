@@ -23,14 +23,15 @@ test("original wind strips retain source pixels and clip left/right strength wit
       if (!pixels.every((v, i) => v === expected[i])) mismatch++;
     }
     const cases = [];
-    for (const wind of [-26, -13, 0, 13, 26, 52]) {
+    for (const level of [-10, -5, 0, 5, 10, 20]) {
+      const wind = level / 35 * 2500;
       updateOriginalWindHUD(wind);
       const canvas = document.querySelector("#wind canvas");
       const actual = canvas.getContext("2d").getImageData(0, 0, 193, 13).data;
       const source = originalWindStrip(wind < 0 ? "windl" : "windr")
         .getContext("2d")
         .getImageData(0, 0, 96, 13).data;
-      const width = wind === 0 ? 0 : Math.abs(wind) === 13 ? 48 : 96;
+      const width = wind === 0 ? 0 : Math.abs(level) === 5 ? 48 : 96;
       for (let y = 0; y < 13; y++)
         for (let x = 0; x < 193; x++) {
           const filled =
@@ -44,13 +45,13 @@ test("original wind strips retain source pixels and clip left/right strength wit
         }
       cases.push(+canvas.dataset.filledPixels);
     }
-    updateOriginalWindHUD(-13);
+    updateOriginalWindHUD(-5 / 35 * 2500);
     return { mismatch, cases };
   });
   expect(result).toEqual({ mismatch: 0, cases: [96, 48, 0, 48, 96, 96] });
   await expect(page.locator("#wind")).toHaveAttribute(
     "aria-label",
-    "WIND ← 2.6",
+    "WIND ← 5.0",
   );
   const size = await page.locator("#wind canvas").boundingBox();
   expect(size.width).toBe(193);

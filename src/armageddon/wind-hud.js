@@ -28,7 +28,7 @@ export const originalWindStrip = (name) => strips.get(name);
 export function updateOriginalWindHUD(wind, root = document) {
   const target = root.querySelector("#wind");
   if (!target) return;
-  const label = `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 5).toFixed(1)}`;
+  const label = `WIND ${wind < 0 ? "←" : "→"} ${Math.abs(wind / 2500 * 35).toFixed(1)}`;
   const source = strips.get(wind < 0 ? "windl" : "windr");
   if (!source) {
     target.textContent = label;
@@ -47,8 +47,8 @@ export function updateOriginalWindHUD(wind, root = document) {
   }
   target.querySelector(".wind-value").textContent = label;
   target.setAttribute("aria-label", label);
-  // Existing host storm range is +/-26. Crop native pixels, never stretch.
-  const count = Math.min(96, Math.round((Math.abs(wind) / 26) * 96));
+  // Display ten native wind levels across the strip. Physics uses pixels/tick².
+  const count = Math.min(96, Math.round((Math.abs(wind) / (2500 * 10 / 35)) * 96));
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, 193, 13);
   ctx.imageSmoothingEnabled = false;

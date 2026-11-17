@@ -1,3 +1,4 @@
+import { nativeWindSelection, nativeDefaultWind } from "./armageddon/wind-selection.js";
 import { nativeWormRotation } from "./armageddon/worm-rotation.js";
 import { nativeTeamRotationReset, nativeSelectNextTeam } from "./armageddon/team-rotation.js";
 import { nativeRetreatCountdown } from "./armageddon/retreat.js";
@@ -1045,6 +1046,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   for (const h of hazards) { h.impactPlayback?.stop(); dispose(h.mesh); }
   hazards = [];
   matchRandom.reset(matchSeed);
+  wind = 0;
   mineDudPool = new NativeMineDudPool();
   nativeRenderOrder = new NativeRenderOrder();
   smokeRandom = matchSeed >>> 0;
@@ -1621,8 +1623,11 @@ function beginTurn() {
   updateAutomaticUtilities();
   nativeClockPresentation.displayed = turnSeconds * 1000;
   nativeClockPresentation.warned = 0;
-  const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
-  wind = (logicRandom() - 0.5) * windMax;
+  const selectedWind = nativeWindSelection({ ...nativeDefaultWind,
+    x: Math.round(active.x * 65536) | 0,
+    previous: Math.round(wind / 2500 * 65536) | 0,
+  }, () => matchRandom.logicUint());
+  wind = selectedWind.wind / 65536 * 2500;
   slowMo = 0;
   angle = team ? 135 : 45;
   active.facing = team ? -1 : 1;
