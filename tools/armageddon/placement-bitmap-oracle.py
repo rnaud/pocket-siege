@@ -40,20 +40,20 @@ def bitmap(obj,address,width,height,bits,pixels,clip):
    if bits==1:
     if value:storage[y*stride+x//8]|=1<<(x%8)
    else:storage[y*stride+x]=value
- for offset,value in [(0,0x526328),(8,address),(12,bits),(16,stride),(20,width),(24,height),(28,clip[0]),(32,clip[1]),(36,clip[2]),(40,clip[3])]:write(obj+offset,value)
+ for offset,value in [(0,0x526328 if bits==1 else 0x5249b0),(8,address),(12,bits),(16,stride),(20,width),(24,height),(28,clip[0]),(32,clip[1]),(36,clip[2]),(40,clip[3])]:write(obj+offset,value)
  cpu.mem_write(address,bytes(storage));return stride
 
 def pixels(address,width,height,stride):
  storage=cpu.mem_read(address,stride*height)
  return [int(bool(storage[y*stride+x//8]&(1<<(x%8)))) for y in range(height) for x in range(width)]
 cases=[]
-for bits in [1]:
+for bits in [1,8]:
  for mode in range(6):
   for x,y in [(-20,0),(-3,-2),(0,0),(1,1),(8,4),(24,12),(31,15),(32,16)]:
    for clip in [[0,0,32,16],[3,2,27,13]]:
     for width,height,sx,sy in [(16,8,0,0),(8,4,3,2),(0,4,0,0)]:
      initial=[int((i*13+i//32)%7<3) for i in range(32*16)]
-     src=[(int((i*3+i//24)%5<2)*(1 if bits==1 else 173)) for i in range(24*12)]
+     src=[(int((i*3+i//24)%5<2)*(1 if bits==1 else (172+(i&1)))) for i in range(24*12)]
      stride=bitmap(destination,dest_data,32,16,1,initial,clip);bitmap(source,source_data,24,12,bits,src,[0,0,24,12])
      sp=stack+0xf000
      for i,v in enumerate([stop,x,y,width,height,source,sx,sy,mode]):write(sp+i*4,v&0xffffffff)

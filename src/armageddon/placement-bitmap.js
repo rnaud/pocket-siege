@@ -1,4 +1,5 @@
-// One-bit placement-surface path of00493380/004933C0, without reflection.
+// One-bit placement surface with one-bit/indexed sources,00493380/004933C0.
+// This path does not apply reflection.
 // Pixels are unpacked here; native storage uses aligned packed one-bit rows.
 export function nativePlacementBitmapBlit(destination,x,y,width,height,source,sx,sy,mode) {
   if(!Number.isInteger(mode) || mode<0 || mode>5)throw new RangeError('Unsupported placement bitmap operation');
