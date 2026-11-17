@@ -1,3 +1,5 @@
+import replayEnvironmentRestore from "./fixtures/armageddon/replay-environment-restore.json" with { type: "json" };
+import { nativeReadPhysicsEnvironment } from "../src/armageddon/replay-restore.js";
 import replayBodyRestore from "./fixtures/armageddon/replay-body-restore.json" with { type: "json" };
 import replayFactory from "./fixtures/armageddon/replay-factory.json" with { type: "json" };
 import replayRestore from "./fixtures/armageddon/replay-restore.json" with { type: "json" };
@@ -49,6 +51,17 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayEnvironmentRestore.cases) {
+    const stream = new NativeReplayStream(64), allocations = [], links = [17];
+    stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
+    const environment = nativeReadPhysicsEnvironment(stream, { context: row.input.context, links,
+      allocate: size => { allocations.push(size); return new Uint8Array(size); } });
+    expect(environment.links).toBe(links);
+    expect(new Set([environment.all, ...environment.categories]).size).toBe(33);
+    expect({ lists: [environment.all, ...environment.categories].map(list => ({ capacity: list.capacity, count: list.entries.length, cursor: list.cursor })),
+      state: [...environment.state], context: environment.context, dirty: environment.dirty,
+      position: stream.position, allocations }).toEqual(row.result);
+  }
   for (const row of replayBodyRestore.cases) {
     const input = row.input, stream = new NativeReplayStream(2048), allocations = [];
     stream.bytes.set(input.bytes); stream.seek(input.position); stream.length = input.bytes.length;

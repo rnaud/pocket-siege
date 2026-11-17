@@ -93,13 +93,17 @@
       "title": "Setup, missions & progression",
       "live": "Local match setup, authored-map selection, schemes and series play are available.",
       "remaining": "Reproduce native team setup, saved schemes, missions, training and campaign progression.",
-      "evidence": ["embedded_scheme_resources", "scheme_runtime_expansion"]
+      "evidence": [
+        "embedded_scheme_resources",
+        "scheme_runtime_expansion"
+      ]
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization and base/physics task reconstruction, including contact restoration, are verified separately and await live integration.",
+      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization and environment and base/physics task reconstruction, including contact restoration, are verified separately and await live integration.",
       "remaining": "Finish concrete actor/task reconstruction, resource restoration, game-state mapping and event playback; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_replay_environment_constructor",
         "native_replay_physics_constructor",
         "native_replay_base_reconstruction",
         "native_replay_physics_restore",
@@ -111,7 +115,10 @@
       "title": "Determinism & whole-match parity",
       "live": "A 50 Hz simulation and native random streams underpin many executable-verified routines.",
       "remaining": "Finish original input queues, dispatch order and random-call ordering; compare representative complete matches with the original executable.",
-      "evidence": ["numeric_primitives", "native_action_busy_and_input_gate"]
+      "evidence": [
+        "numeric_primitives",
+        "native_action_busy_and_input_gate"
+      ]
     }
   ]
 }

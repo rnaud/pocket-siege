@@ -2,7 +2,7 @@
 // or replacing occupied slots. Negative indices use the normal append path.
 export function nativeRestorePhysicsMembership(input) {
   const insert = (list, index) => {
-    const result = { capacity: list.capacity, entries: [...list.entries] };
+    const result = { ...list, entries: [...list.entries] };
     const append = value => {
       if (result.capacity <= result.entries.length) result.capacity *= 2;
       result.entries.push(value);

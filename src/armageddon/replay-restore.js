@@ -39,6 +39,21 @@ export function nativeReadTaskChildren(stream, parent, allocate, construct) {
 }
 
 import { nativeRestorePhysicsMembership } from './replay-physics.js';
+// Full004C8E40, including its 32 calls to004C8D10. Heap storage remains
+// a host interface; list membership uses stable IDs instead of raw pointers.
+export function nativeReadPhysicsEnvironment(stream, { context, links, allocate = size => new Uint8Array(size) }) {
+  const makeList = () => {
+    allocate(0x400);
+    allocate(0x400);
+    return { capacity: 256, entries: [], cursor: 0 };
+  };
+  const all = makeList();
+  const categories = Array.from({ length: 32 }, makeList);
+  stream.readByte(); // Marker0x21 is consumed without validation.
+  const state = stream.readBlock(12);
+  return { all, categories, state, context, links, dirty: 0 };
+}
+
 // Full004F42D0, composed with the base reconstruction above. Contact storage
 // allocation is a host interface; the saved data still uses native byte layout.
 export function nativeReadPhysicsTask(stream, options) {
