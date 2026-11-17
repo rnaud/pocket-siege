@@ -1,9 +1,10 @@
+import girderPlacement from "./fixtures/armageddon/girder-placement.json" with { type: "json" };
 import teleportPlacement from "./fixtures/armageddon/teleport-placement.json" with { type: "json" };
 import { nativeTeleportPlacement } from "../src/armageddon/teleport-placement.js";
 import wormQuery from "./fixtures/armageddon/worm-query.json" with { type: "json" };
 import { nativeWormQuery } from "../src/armageddon/worm-query.js";
 import targetPlacement from "./fixtures/armageddon/target-placement.json" with { type: "json" };
-import { nativeClampPlacementTarget, nativeFindTeleportTarget } from "../src/armageddon/target-placement.js";
+import { nativeClampPlacementTarget, nativeFindTeleportTarget, nativeValidateGirderTarget } from "../src/armageddon/target-placement.js";
 import controllerPointerInput from "./fixtures/armageddon/controller-pointer-input.json" with { type: "json" };
 import controllerWeaponInput from "./fixtures/armageddon/controller-weapon-input.json" with { type: "json" };
 import controllerMovementInput from "./fixtures/armageddon/controller-movement-input.json" with { type: "json" };
@@ -126,6 +127,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     };
     const result=nativeFindTeleportTarget(c.x,c.y,c.ceiling,(event,payload)=>nativeWormQuery(memory,event,payload.length,payload,host));
     expect({calls,accepted:result.accepted,output:[result.x,result.y],finalPosition:position,finalMode:mode}).toEqual({calls:c.calls,accepted:c.accepted,output:c.output,finalPosition:c.finalPosition,finalMode:c.finalMode});
+  }
+  for(const c of girderPlacement.cases) {
+    const memory=new Uint8Array(0x50),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x12000),scene=new DataView(sceneMemory.buffer),calls=[];
+    body.setInt32(0x3c,2,true);body.setInt32(0x4c,3,true);scene.setUint16(0x11d6c,c.distance,true);
+    const result=nativeValidateGirderTarget(memory,sceneMemory,c.x,c.y,"shape",{
+      dimensions:()=>{calls.push(["dimensions"]);return c.dimensions;},
+      lookup:(...args)=>{calls.push(["lookup",...args]);return c.found;},
+      position:()=>{calls.push(["position"]);return c.position;},
+      clear:()=>calls.push(["clear"]),draw:(...args)=>calls.push(["draw",...args]),
+      overlap:(...args)=>{calls.push(["overlap",...args]);return c.hit;},
+    });
+    expect({calls,result}).toEqual({calls:c.calls,result:c.result});
   }
   for(const c of targetPlacement.bounds) {
     expect(nativeClampPlacementTarget(c.x,c.y,...c.dimensions,c.ceiling)).toEqual(c.output);

@@ -32,3 +32,22 @@ export function nativeFindTeleportTarget(x,y,ceiling,query) {
   }
   return {accepted:0,x:x|0,y:y|0};
 }
+
+// Full00501700. Range is measured from the sprite's top-left using Manhattan
+// distance. The two collision layers and sprite overlap operation are ordered.
+export function nativeValidateGirderTarget(memory,sceneMemory,x,y,shape,host) {
+  const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  const scene=new DataView(sceneMemory.buffer,sceneMemory.byteOffset,sceneMemory.byteLength);
+  const [width,height]=host.dimensions(shape);
+  const left=(x-Math.trunc(width/2))|0,top=(y-Math.trunc(height/2))|0;
+  if(left<0 || top<0 || ((left+width)|0)>1920 || ((top+height)|0)>696)return 0;
+  const worm=host.lookup(2,((body.getInt32(0x3c,true)<<4)+body.getInt32(0x4c,true))|0);
+  if(!worm)return 0;
+  const [wx,wy]=host.position(worm),distance=scene.getUint16(0x11d6c,true);
+  const abs=value=>{const sign=value>>31;return ((value^sign)-sign)|0;};
+  if(distance && ((abs((left-(wx>>16))|0)+abs((top-(wy>>16))|0))|0)>distance)return 0;
+  host.clear();
+  host.draw(0,0,0,2,0);
+  host.draw(0,0,0,-3,1);
+  return Number(host.overlap(left,top,width,height,shape,0,0,5)===0);
+}

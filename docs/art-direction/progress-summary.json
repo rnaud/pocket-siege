@@ -14,9 +14,10 @@
     },
     {
       "title": "Weapons & inventory",
-      "live": "Original weapon data and many projectile, melee, hitscan and placed-weapon routines drive live play. Teleport now searches nearby valid positions using the original worm mask and collision registry before its native animation.",
+      "live": "Original weapon data and many projectile, melee, hitscan and placed-weapon routines drive live play. Teleport now searches nearby valid positions using the original worm mask and collision registry before its native animation. Original girder bounds, distance and collision-query ordering are executable-verified but not yet live.",
       "remaining": "Finish every weapon state machine, scheme override, special-availability rule, ammo-loading path and utility delay lifecycle.",
       "evidence": [
+        "native_girder_placement_validation",
         "live_native_teleport_placement",
         "live_projectile_adapter",
         "live_projectile_fire_input",
