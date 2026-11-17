@@ -77,9 +77,13 @@ for (const [weapon, sprite] of [
       .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
       .toBe(true);
     await page.locator("#mode").selectOption("local");
+    await page.locator("#map-layout").selectOption("fern");
     await page.locator("#start").click();
-    // Isolate firing art from spawn slopes and falling/hurt pose transitions.
-    await page.evaluate(() => window.siege.debug.stageMeleeTargets());
+    // Fix landscape and object placement before staging the firing-art fixture.
+    await page.evaluate(async () => {
+      await window.siege.debug.resetSeed(42);
+      window.siege.debug.stageMeleeTargets();
+    });
     await page.locator("#inventory-toggle").click();
 
     await page.locator(`[data-weapon="${weapon}"]`).click();
