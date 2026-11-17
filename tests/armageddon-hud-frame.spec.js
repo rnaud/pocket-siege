@@ -1,3 +1,5 @@
+import wormSelection from "./fixtures/armageddon/worm-selection.json" with { type: "json" };
+import { nativeSelectControllerWorm } from "../src/armageddon/worm-selection.js";
 import controllerCommand from "./fixtures/armageddon/controller-command.json" with { type: "json" };
 import { nativeControllerCommand } from "../src/armageddon/controller-command.js";
 import weaponSelection from "./fixtures/armageddon/weapon-selection.json" with { type: "json" };
@@ -112,6 +114,12 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  const initialPlacementPixels=new Uint8Array(1920*696);
+  for(let i=0;i<initialPlacementPixels.length;i++)initialPlacementPixels[i]=(0xa5>>(i&7))&1;
+  const packPlacement=(pixels,packed)=>{
+    packed.fill(0);
+    for(let i=0;i<pixels.length;i++)if(pixels[i])packed[i>>3]|=1<<(i&7);
+  };
   for(const c of girderBitmap.cases) {
     const memory=new Uint8Array(0x50),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x12000),scene=new DataView(sceneMemory.buffer);
     body.setInt32(0x3c,2,true);body.setInt32(0x4c,3,true);scene.setUint16(0x11d6c,c.distance,true);
@@ -120,9 +128,9 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     registry[1]=[null,{enabled:1,x:100*65536,y:100*65536,mask:mask(32,16,0,0,girderBitmap.terrain)}];
     registry[2]=[null,{enabled:c.enabled,x:140*65536,y:120*65536,mask:mask(8,8,4,4,girderBitmap.actor)}];
     const sprite={width:8,height:4,pixels:Uint8Array.from({length:32},(_,i)=>!c.pattern || ((i%8)+Math.floor(i/8))%3===0?173:0)};
-    const surface={width:1920,height:696,pixels:Uint8Array.from({length:1920*696},(_,i)=>(0xa5>>(i%8))&1)};
+    const surface={width:1920,height:696,pixels:initialPlacementPixels.slice()};
     const result=nativeGirderPlacement(memory,sceneMemory,c.x,c.y,sprite,registry,()=>({x:90*65536,y:90*65536}),surface);
-    const packed=new Uint8Array(surface.pixels.length/8);surface.pixels.forEach((value,i)=>{if(value)packed[i>>3]|=1<<(i&7);});
+    const packed=new Uint8Array(surface.pixels.length/8);packPlacement(surface.pixels,packed);
     expect({result,surfaceHash:createHash("sha256").update(packed).digest("hex")}).toEqual({result:c.result,surfaceHash:c.surfaceHash});
     // Exercise the host adapter against the same native full-bitmap output.
     const terrain = { solid(x,y) {
@@ -135,9 +143,9 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       mask:{width:8,height:8,anchorX:4,anchorY:4,planes:[{points}]}}];
     const originalMask=liveScene.rows[2][1].mask;
     const adapted=liveScene.placementRegistry(1920);
-    surface.pixels.forEach((_,i)=>surface.pixels[i]=(0xa5>>(i%8))&1);
+    surface.pixels.set(initialPlacementPixels);
     const adaptedResult=nativeGirderPlacement(memory,sceneMemory,c.x,c.y,sprite,adapted,()=>({x:90*65536,y:90*65536}),surface);
-    packed.fill(0);surface.pixels.forEach((value,i)=>{if(value)packed[i>>3]|=1<<(i&7);});
+    packPlacement(surface.pixels,packed);
     expect({result:adaptedResult,surfaceHash:createHash("sha256").update(packed).digest("hex")}).toEqual({result:c.result,surfaceHash:c.surfaceHash});
     expect(liveScene.rows[2][1].mask).toBe(originalMask);
     expect(adapted[2][0]).toBeNull();
@@ -241,6 +249,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of wormSelection.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    sceneMemory.set(c.initial,0x1b778);const calls=[];
+    nativeSelectControllerWorm(memory,sceneMemory,c.next,{
+      repeatKey:key=>calls.push(["repeat",key]),
+      sendWorm:(...args)=>calls.push(["send",...args.map(value=>value??0)]),
+      selectionSound:(...args)=>calls.push(["sound",...args]),
+      selectDefaultWeapon:worm=>calls.push(["default",worm]),
+    });
+    expect({calls,body:wormSelection.offsets.map(o=>body.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b8ac)]}).toEqual({calls:c.calls,body:c.body,ownership:c.ownership});
   }
   for(const c of controllerCommand.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);

@@ -53,9 +53,10 @@
     },
     {
       "title": "Turns & match rules",
-      "live": "Native team/worm rotation, wind selection, settlement presentation, poison settlement and recurring environment effects are integrated.",
+      "live": "Native team/worm rotation, wind selection, settlement presentation, poison settlement and recurring environment effects are integrated. Native controller worm-selection reset and ordered actor notifications now match executable fixtures, including input-mode and pointer-ownership cleanup; live controller integration remains.",
       "remaining": "Connect the complete native turn controller, action-busy ownership, retreat requests, input gates and scheme rules.",
       "evidence": [
+        "native_controller_worm_selection",
         "live_native_team_rotation",
         "live_native_worm_rotation",
         "native_turn_start_controller",
