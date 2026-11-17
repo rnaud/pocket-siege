@@ -1,3 +1,5 @@
+import controllerInput from "./fixtures/armageddon/controller-input.json" with { type: "json" };
+import { nativeCollectControllerInput } from "../src/armageddon/controller-input.js";
 import replayWormRoundtrip from "./fixtures/armageddon/replay-worm-roundtrip.json" with { type: "json" };
 import replayPipelineRestore from "./fixtures/armageddon/replay-pipeline-restore.json" with { type: "json" };
 import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture.json" with { type: "json" };
@@ -81,6 +83,20 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of controllerInput.cases) {
+    const memory = new Uint8Array(0x110), sceneMemory = new Uint8Array(0x1d480);
+    const body = new DataView(memory.buffer), scene = new DataView(sceneMemory.buffer);
+    for (const [offset,value] of Object.entries(c.fields)) body.setInt32(Number(offset),value,true);
+    scene.setInt8(0x11d7c,c.active); scene.setInt32(0x1d444,c.replaying,true);
+    scene.setInt16(0x1b8aa,c.controllers.length,true);
+    c.controllers.forEach((value,i)=>scene.setInt16(0x1b88a+i*2,value,true));
+    const calls = [], answers = [...c.stateResults];
+    const host = Object.fromEntries(["menu","pointer","keyboard","weapon","movement"].map(name=>[name,(...args)=>calls.push([name,args])]));
+    host.wormState = (...args) => { calls.push(["wormState",args]); return answers.shift(); };
+    nativeCollectControllerInput(memory,sceneMemory,c.queue,host);
+    expect(calls).toEqual(c.calls);
+  }
+
   for (const row of replayPipelineCapture.cases) {
     const scene = new Uint8Array(0x20000), sceneView = new DataView(scene.buffer);
     const memory = new Uint8Array(0x300), managerView = new DataView(memory.buffer), calls = [];
