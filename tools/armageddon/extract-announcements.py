@@ -1,4 +1,4 @@
-"""Extract WA 3.0.0.0 English team-elimination announcement variants."""
+"""Extract WA 3.0.0.0 English elimination, victory and draw announcement variants."""
 import argparse, hashlib, json, struct
 from pathlib import Path
 parser=argparse.ArgumentParser(description=__doc__)
@@ -15,11 +15,16 @@ def offset(address):
   if rva<=address-base<rva+size:return raw+address-base-rva
  raise ValueError(hex(address))
 # English vtable 005259C8 + 0x28 -> 00495790 -> table 00558A60.
-messages=[];at=offset(0x558a60)
-while True:
- pointer=struct.unpack_from('<I',data,at)[0];at+=4
- if not pointer:break
- start=offset(pointer);end=data.index(b'\0',start)
- messages.append(data[start:end].decode('cp1252'))
-a.output.write_text(json.dumps({'sha256':digest,'table':'00558A60','messages':messages},indent=2)+'\n')
-print(f'Extracted {len(messages)} English elimination variants')
+def messages_at(table):
+ messages=[];at=offset(table)
+ while True:
+  pointer=struct.unpack_from('<I',data,at)[0];at+=4
+  if not pointer:break
+  start=offset(pointer);end=data.index(b'\0',start)
+  messages.append(data[start:end].decode('cp1252'))
+ return messages
+result={'sha256':digest,'table':'00558A60','messages':messages_at(0x558a60),
+ 'victoryTable':'005589A8','victory':messages_at(0x5589a8),
+ 'drawTable':'00558A90','draw':messages_at(0x558a90)}
+a.output.write_text(json.dumps(result,indent=2)+'\n')
+print({key:len(result[key]) for key in ['messages','victory','draw']})

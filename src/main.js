@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -732,6 +732,10 @@ function updateAimHUD() {
 }
 function announce(text) {
   queueNativeAnnouncement(nativeAnnouncements, text, 23);
+}
+function announceMatchResult(winner) {
+  const message = nativeMatchResultAnnouncement(winner ? "CORAL CREW" : "MOSS COMPANY", winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
+  queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 const soundTimes = new Map();
 function sfx(kind) {
@@ -3962,19 +3966,7 @@ function finishMatch(winner, series) {
   phase = "over";
   cameraSnap = true; manualCamera = null;
   aimHUD.guide.style.display = "none";
-  const name =
-    winner === 0
-      ? "MOSS COMPANY"
-      : winner === 1
-        ? "CORAL CREW"
-        : "MUTUAL DESTRUCTION";
-  announce(
-    winner === null
-      ? "MUTUAL DESTRUCTION!"
-      : series
-        ? `${name} WINS THE SERIES!`
-        : `${name} WINS!`,
-  );
+  announceMatchResult(winner);
   // Match result is also retained in the status HUD.
   $("#turn-label").textContent = series ? "SERIES COMPLETE" : "MATCH COMPLETE";
   $("#status").textContent =
@@ -4021,9 +4013,7 @@ function endGame() {
     phase = "break";
     breakTimer = 4.5;
     aimHUD.guide.style.display = "none";
-    announce(
-      `${winner ? "CORAL CREW" : "MOSS COMPANY"} TAKES ROUND ${seriesRound}`,
-    );
+    announceMatchResult(winner);
     $("#turn-label").textContent = "ROUND OVER";
     $("#status").textContent =
       `Series ${seriesWins[0]}–${seriesWins[1]}. Next island incoming…`;
@@ -4036,7 +4026,7 @@ function endGame() {
     phase = "break";
     breakTimer = 4.5;
     aimHUD.guide.style.display = "none";
-    announce("MUTUAL DESTRUCTION — NEXT ISLAND");
+    announceMatchResult(null);
     $("#turn-label").textContent = "ROUND OVER";
     $("#status").textContent =
       `Series ${seriesWins[0]}–${seriesWins[1]}. Next island incoming…`;

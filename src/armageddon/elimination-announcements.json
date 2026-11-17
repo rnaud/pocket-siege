@@ -12,5 +12,26 @@
     "%s is history",
     "It`s too late for %s",
     "Have pity for %s"
+  ],
+  "victoryTable": "005589A8",
+  "victory": [
+    "Well done %s",
+    "Victory for %s!",
+    "%s wins the round!",
+    "%s. Numero Uno!",
+    "Congratulations to %s!"
+  ],
+  "drawTable": "00558A90",
+  "draw": [
+    "Game Drawn",
+    "What a boring outcome - all dead!",
+    "Yawn... A draw.",
+    "Draw! All that, for nothing!",
+    "A draw! You`ll have to do it all again!",
+    "There's no-one left to claim a victory!",
+    "Completely inconclusive!",
+    "A thoroughly dull draw!",
+    "Hope you`ve got the energy for the re-match!",
+    "A draw. How dull."
   ]
 }

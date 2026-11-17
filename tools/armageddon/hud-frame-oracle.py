@@ -373,17 +373,18 @@ for drop in [0,32768,65536]:
 announcement_message_mode=True
 write(0x5178f4,stop+0x304)
 elimination_cases=[]
-for seed in [0,1,42,0x12345678,0xffffffff]:
- for frame in [0,1,50,2000]:
-  for color in [0,2]:
-   name='CORAL CREW' if color==0 else 'MOSS COMPANY'
-   cpu.mem_write(owner+0x9000,name.encode()+b'\0');write(owner+0x38,context)
-   write(context+0x1acc,seed);write(context+0x7f0,frame)
-   sp=stack+0xff00
-   for j,v in enumerate([stop,0x558a60,color+17,owner+0x9000]):write(sp+j*4,v)
-   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
-   announcement_message=None;cpu.emu_start(0x4eeee0,stop,count=10000)
-   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Elimination message selection did not finish')
-   elimination_cases.append({'seed':seed,'frame':frame,'name':name,'color':color,'random':read(context+0x1acc),'message':announcement_message})
+for kind,table in [('elimination',0x558a60),('victory',0x5589a8),('draw',0x558a90)]:
+ for seed in [0,1,42,0x12345678,0xffffffff]:
+  for frame in [0,1,50,2000]:
+   for color in [0,2]:
+    name='CORAL CREW' if color==0 else 'MOSS COMPANY'
+    cpu.mem_write(owner+0x9000,name.encode()+b'\0');write(owner+0x38,context)
+    write(context+0x1acc,seed);write(context+0x7f0,frame)
+    sp=stack+0xff00
+    for j,v in enumerate([stop,table,23 if kind=='draw' else color+17,owner+0x9000]):write(sp+j*4,v)
+    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+    announcement_message=None;cpu.emu_start(0x4eeee0,stop,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Elimination message selection did not finish')
+    elimination_cases.append({'kind':kind,'seed':seed,'frame':frame,'name':name,'color':color,'random':read(context+0x1acc),'message':announcement_message})
 args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

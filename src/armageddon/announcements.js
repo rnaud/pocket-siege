@@ -116,3 +116,11 @@ export function nativeTeamEliminationAnnouncement(name, color, nextRandom) {
   const template = elimination.messages[(nextRandom() & 255) % elimination.messages.length];
   return { text: template.replace("%s", () => name), font: color + 17 };
 }
+
+// 004B4100 uses language slot +0x20 for a surviving team's victory;
+// 004B64B0 uses slot +0x2C and font 23 when no teams survive.
+export function nativeMatchResultAnnouncement(name, color, draw, nextRandom) {
+  const variants = draw ? elimination.draw : elimination.victory;
+  return { text: variants[(nextRandom() & 255) % variants.length].replace("%s", () => name),
+    font: draw ? 23 : color + 17 };
+}
