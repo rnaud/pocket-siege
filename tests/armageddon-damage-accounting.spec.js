@@ -39,11 +39,14 @@ test("live native damage totals reveal after settlement and lethal accounting st
     window.siege.debug.hit(0, 4);
   });
   const labels = page.locator('.native-damage-number:visible');
-  await expect(labels).toHaveCount(3);
-  for (const label of await labels.all()) {
-    await expect(label).toHaveAttribute('aria-label', '10 damage');
-    expect(await label.evaluate(c => c.width > 0 && getComputedStyle(c).animationName === 'none')).toBe(true);
-  }
+  // Read one frame atomically: the native totals expire after 72 simulation ticks.
+  await expect.poll(() => labels.evaluateAll(canvases => canvases.map(c => ({
+    label: c.getAttribute('aria-label'),
+    painted: c.width > 0,
+    animation: getComputedStyle(c).animationName,
+  })))).toEqual(Array.from({ length: 3 }, () => ({
+    label: '10 damage', painted: true, animation: 'none',
+  })));
   await expect(labels).toHaveCount(0);
   const result = await page.evaluate(() => {
     const before = window.siege.getState().worms.slice(3).map(w => w.hp);
