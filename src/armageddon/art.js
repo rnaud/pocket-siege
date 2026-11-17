@@ -1062,13 +1062,13 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (
     (worm.hp > 0 || worm.deathPending) &&
     !worm.frozen &&
-    (worm.knocked ||
+    (worm.originalHurt?.state === 0x73 || worm.knocked ||
       pose === "hurt" ||
       pose === "panic" ||
       (worm.deathPending && !worm.ground))
   ) {
     if (
-      worm.originalHurt?.state === 0x80 ||
+      worm.originalHurt?.state === 0x73 || worm.originalHurt?.state === 0x80 ||
       worm.originalHurt?.state === 0x7f
     ) {
       const hurt = worm.originalHurt;
@@ -1077,7 +1077,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       // 004DDBD0 state 0x80: rolling pose follows the low word of body angle, mirrored
       // by facing.
       const progress =
-        hurt.state === 0x80
+        (hurt.state === 0x73 || hurt.state === 0x80)
           ? Math.imul(
               (worm.nativeFlight?.angle ?? hurt.angle) & 65535,
               worm.facing,

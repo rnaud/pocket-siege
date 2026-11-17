@@ -1,4 +1,4 @@
-import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints } from "./armageddon/rope-runtime.js";
+import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
 import { nativeLaunch } from "./armageddon/launch.js";
 import { nativeFireInput } from "./armageddon/fire-input.js";
@@ -40,6 +40,7 @@ import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRe
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
+  attachNativeRopeReleaseFlight,
   nativeWormContactBody,
   applyNativeWormContact,
 } from "./armageddon/hurt-flight.js";
@@ -1463,7 +1464,7 @@ function canAct() {
     !pendingFire &&
     !rope.firing &&
     !worms[current]?.originalRecovery &&
-    !worms[current]?.nativeHurtBody &&
+    (!worms[current]?.nativeHurtBody || worms[current].nativeHurtBody.state === 0x73) &&
     !(team === 1 && mode === "ai") &&
     !menu.open &&
     !replaying &&
@@ -1734,6 +1735,7 @@ function startJetpack() {
   activeUtility = "jetpack";
   wormLocked = true;
   const w = worms[current];
+  if (w.nativeHurtBody?.state === 0x73) { w.nativeHurtBody = null; w.originalHurt = null; }
   w.originalParachute = null;
   stepOriginalJetpack(w, 0, 0);
   w.ground = false;
@@ -1793,7 +1795,13 @@ function fireRope() {
   if (rope.firing || !canAct() || charging || targetUtility) return;
   if (rope.attached) { releaseRope(); return; }
   const w = worms[current];
-  const body = createNativeRopeShot(w, angle, H);
+  const flight = w.nativeHurtBody?.state === 0x73 ? w.nativeHurtBody : null;
+  const body = flight ? refireNativeRope(flight) : createNativeRopeShot(w, angle, H);
+  if (!body.ropeFiring) {
+    $("#status").textContent = "No rope shots remaining before landing.";
+    return;
+  }
+  if (flight) Object.assign(flight, body);
   rope = { attached: false, firing: true, body, anchor: null, length: 0,
     tip: createOriginalVisual("ropetip"), mesh: makeRopeLine({ x: w.x, y: w.y }, w) };
   if (rope.tip) {
@@ -1814,13 +1822,18 @@ function fireRope() {
 }
 function stepRopeShot(w) {
   if (!rope.firing) return;
-  if (w.hp <= 0 || w.frozen || w.knocked || w.nativeHurtBody || phase !== "aim") {
+  if (w.hp <= 0 || w.frozen || w.knocked || (w.nativeHurtBody && w.nativeHurtBody.state !== 0x73) || phase !== "aim") {
     stopRope(); return;
   }
   const result = stepNativeRopeShot(rope.body, w, H,
     (x, y) => terrain.solid(x, H - y),
     (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H));
   rope.body = result.body;
+  if (w.nativeHurtBody?.state === 0x73) {
+    // The airborne body owns physics while the tip travels.
+    for (const key of ["ropeFiring", "ropeProgress", "ropeRemaining", "ropeAngle", "ropeLength"])
+      w.nativeHurtBody[key] = result.body[key];
+  }
   w.x = result.body.x / 65536;
   w.y = H - result.body.y / 65536;
   if (result.calls.some(call => call.operation === "sound")) sfx("ropeimpact");
@@ -1842,6 +1855,7 @@ function stepRopeShot(w) {
   }
 }
 function attachRope(w, hit, length, body) {
+  w.nativeHurtBody = null; w.originalHurt = null; w.knocked = false;
   rope = {
     attached: true,
     anchor: hit,
@@ -1865,7 +1879,9 @@ function attachRope(w, hit, length, body) {
 }
 function releaseRope() {
   if (!rope.attached) return;
+  const w = worms[current], body = rope.body;
   stopRope();
+  attachNativeRopeReleaseFlight(w, body, H);
   wormLocked = true;
   $("#status").textContent = "Rope released.";
   updateUI();
@@ -3897,13 +3913,7 @@ function nextTurn() {
   beginTurn();
 }
 function jump(kind = "forward") {
-  if (rope.attached) {
-    rope.length = Math.max(
-      34,
-      Math.min(300, rope.length + (kind === "up" ? -45 : 45)),
-    );
-    return;
-  }
+  if (rope.attached) { releaseRope(); return; }
   if (jetpack.active) {
     jetpack.pulse = kind === "backflip" ? -1 : 1;
     jetpack.pulseTime = 0.22;

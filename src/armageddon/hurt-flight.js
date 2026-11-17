@@ -7,6 +7,8 @@ import { nativeWormHurtCollision } from "./hurt-contact.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
 import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
+import { nativeRopeRelease } from "./rope-release.js";
+import { nativeWormTransitionBody } from "./worm-state.js";
 import schemes from "./scheme-runtime-data.json" with { type: "json" };
 const scheme = schemes.schemes.find((s) => s.resource_id === 195);
 const byte = (address) => scheme.bytes[address - schemes.context_offset];
@@ -143,7 +145,7 @@ export function stepNativeHurtFlight(worm, environment, collide) {
           vy: 0,
         };
         const probe = (x, y) => collision(x, y, body);
-        if (![0x7f, 0x80, 0x81].includes(body.state)) {
+        if (![0x73, 0x7f, 0x80, 0x81].includes(body.state)) {
           const response = nativeSimpleBounce(body, other, side, probe);
           Object.assign(body, response.body);
           environment.updateCollisionBody?.(hit, response.other);
@@ -195,7 +197,7 @@ export function stepNativeHurtFlight(worm, environment, collide) {
   if (body.state === 0x7f && !nativeBodyAwake(body)) {
     body.state = 0x76;
     events.push({ operation: "state", target: 0x76, previous: 0x7f });
-  } else if ([0x80, 0x81].includes(body.state) && !nativeBodyAwake(body)) {
+  } else if ([0x73, 0x80, 0x81].includes(body.state) && !nativeBodyAwake(body)) {
     body.state = 0x65;
     events.push({ operation: "state", target: 0x65 });
   }
@@ -207,10 +209,28 @@ export function stepNativeHurtFlight(worm, environment, collide) {
   worm.vy = (-body.vy / 65536) * 50;
   worm.facing = body.facing;
   worm.ground = body.state === 0x76 || body.state === 0x65;
-  worm.knocked = !worm.ground;
+  worm.knocked = body.state !== 0x73 && !worm.ground;
   if (worm.originalHurt) {
     worm.originalHurt.angle = body.angle;
     worm.originalHurt.angularVelocity = body.angularVelocity;
   }
   return { body, events, fallDamage: 0 };
+}
+
+export function attachNativeRopeReleaseFlight(worm, rope, height) {
+  const released = nativeRopeRelease(rope, rope.angle, byte(0x11d40), (body, state) => {
+    const entry = nativeWormTransitionBody({ ...body, constraint: body.constrained }, state,
+      { schemeByte: byte(0x11d40) });
+    Object.assign(body, entry.body, {
+      state, constrained: 0, segments: [], constraintHandle: 0,
+      // State73 clears the animation queue, queues sprite18 and sets angle0.
+      angle: 0,
+    });
+  });
+  worm.originalHurt = { state: 0x73, angle: 0, sprite: 0x12 };
+  const body = attachNativeHurtFlight(worm, height);
+  Object.assign(body, released, { damageScale: released.field15c, facing: worm.facing });
+  worm.ground = false;
+  worm.knocked = false;
+  return body;
 }

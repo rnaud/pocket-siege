@@ -11,11 +11,18 @@ import { nativeRopeContact } from './rope-contact.js';
 import { nativeBodyImpulse } from './jump.js';
 import { nativeWormTransitionBody } from './worm-state.js';
 import { nativeRopeAnimation } from './rope-animation.js';
+import { nativeFireInput } from './fire-input.js';
 import { nativeSin, nativeCos } from './trig.js';
 
 const words = records.schemes.find(s => s.resource_id === 195).weapons[37];
 const record = Object.fromEntries(words.map((v, i) => ['0x' + (0x48 + i * 4).toString(16), v]));
 const fixed = value => Math.round(value * 65536) | 0;
+
+export function refireNativeRope(body) {
+  // State73 retains the release angle and remaining shots. Original fire
+  // dispatch owns the gate and reset; continuing an active action keeps ammo.
+  return nativeFireInput(body, record, { weaponRecord: () => record }).body;
+}
 
 export function createNativeRopeShot(worm, angle, height) {
   const radians = angle * Math.PI / 180;
