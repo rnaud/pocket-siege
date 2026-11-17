@@ -77,3 +77,24 @@ export function nativeWormSoundCleanup(state, action, voice, finished) {
   if (voice && done(voice)) { calls.push(["stop", voice]); voice = 0; }
   return { action, voice, calls };
 }
+
+// 00496EA0, called through audio vtable+2C on replay entry. This is not a
+// blanket reset: query every occupied channel, release only playing buffers
+// with a negative owner index, and leave the native handle pool untouched.
+// Rows are the six words at backend+14+i*18 (flags, owner, slot, rate,
+// volume, buffer). DirectSound status/release are explicit host interfaces.
+export function nativeReplaySoundCleanup(channels, { query, release }) {
+  let count = 0;
+  for (let i = 0; i < 8; i++) {
+    const row = channels[i];
+    if (!row[5]) continue;
+    const { result, flags } = query(row[5]);
+    if (result === 0 && (flags & 1) && (row[1] | 0) < 0) {
+      count++;
+      release(row[5]);
+      row[5] = 0; row[3] = 0; row[4] = 0;
+      row[2] = -1; row[1] = -1;
+    }
+  }
+  return count;
+}
