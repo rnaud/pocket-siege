@@ -4,7 +4,7 @@ import {
   nativeSimpleBounce,
 } from "./motion.js";
 import { nativeWormHurtCollision } from "./hurt-contact.js";
-import { nativeWormReceiver } from "./worm-receiver.js";
+import { nativeContactReceiver } from "./contact-receiver.js";
 import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
 import { nativeWormSkim } from "./worm-water.js";
@@ -225,8 +225,8 @@ export function nativeWormMotionCallbacks(worm, environment, collision, events) 
         },
         probe,
         (incoming, receiver, side) => {
-          if (!receiver.worm) return false;
-          const contact = nativeWormReceiver(receiver, incoming, side, {
+
+          const contact = nativeContactReceiver(receiver, incoming, side, {
             recordAvailable: true, // Worm event7D3 (004DF270) always succeeds.
             marked: incoming.field150 ?? 0,
             matched: environment.contactOwnerMatches?.(worm) ?? false,

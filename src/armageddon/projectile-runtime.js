@@ -11,7 +11,7 @@ import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAni
 import { nativeHomingSteer, nativeHomingSchedule, nativeHomingAvoid } from "./homing.js";
 import { nativeProjectileTimer } from "./projectile-timer.js";
 import { nativeProjectileContact } from "./projectile-contact.js";
-import { nativeWormReceiver } from "./worm-receiver.js";
+import { nativeContactReceiver } from "./contact-receiver.js";
 import { nativeDamageVariation } from "./hitscan-resolution.js";
 import { nativeWaterSound, enqueueNativeSound } from "./water-audio.js";
 import records from "./scheme-weapon-data.json" with { type: "json" };
@@ -377,8 +377,8 @@ export function stepNativeProjectile(
           effectRandom: (amount, variance) => nativeDamageVariation(amount, variance, random),
           probe: (x, y) => collide(x / 65536, height - y / 65536, body),
           respond: (incoming, contactSide) => {
-            if (other.worm) {
-              const received = nativeWormReceiver(other, incoming, contactSide, {});
+            {
+              const received = nativeContactReceiver(other, incoming, contactSide, {});
               Object.assign(incoming, received.incoming);
               Object.assign(other, received.receiver);
               if (received.result) {

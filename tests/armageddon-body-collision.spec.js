@@ -1,3 +1,4 @@
+import { nativeContactReceiver } from "../src/armageddon/contact-receiver.js";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import {
@@ -13,6 +14,17 @@ test("two-body collision reproduces native momentum, damping and early-return or
   expect(fixture.cases).toHaveLength(432);
   for (const v of fixture.cases) {
     const result = nativeBodyCollision(v.receiver, v.incoming, v.side);
+    const mine = nativeContactReceiver({ ...v.receiver, type: 10 }, v.incoming, v.side);
+    expect([mine.receiver.vx, mine.receiver.vy]).toEqual(v.receiver_out);
+    expect([mine.incoming.vx, mine.incoming.vy]).toEqual(v.incoming_out);
+    expect(mine.result).toBe(v.result);
+    for (const type of [11, 12, 17]) {
+      const receiver = { ...v.receiver, type };
+      expect(nativeContactReceiver(receiver, v.incoming, v.side)).toEqual({
+        receiver, incoming: v.incoming, calls: [], result: 0,
+      });
+    }
+
     expect(result, JSON.stringify(v)).toEqual({
       receiver: { vx: v.receiver_out[0], vy: v.receiver_out[1] },
       incoming: { vx: v.incoming_out[0], vy: v.incoming_out[1] },

@@ -3,7 +3,7 @@ import { nativeWormTransitionBody } from "./worm-state.js";
 import { nativeJetpackInput, nativeJetpackVelocity } from "./jetpack.js";
 import { nativeWaterSound } from "./water-audio.js";
 import { nativeWormSkim } from "./worm-water.js";
-import { nativeWormReceiver } from "./worm-receiver.js";
+import { nativeContactReceiver } from "./contact-receiver.js";
 import { nativeFirePunchEntry, nativeFirePunchTick } from "./fire-punch.js";
 import { nativeWormJumpLaunch, nativeBodyImpulse } from "./jump.js";
 import { nativeSimpleBodyTick, nativeBodyAwake, nativeSimpleBounce } from "./motion.js";
@@ -79,10 +79,10 @@ export function stepNativeDrillFlight(worm, environment, collide) {
       const result = nativeWormAirborneCollision(body, other, side, { frame },
         (x,y) => collision(x,y,body),
         (incoming, receiver, side) => {
-          if (!receiver.worm) return false;
+
           // State6E/type3 uses the normal body receiver branch, without
           // the separate airborne stomp or hurt-state voice/attribution path.
-          const response = nativeWormReceiver(receiver, incoming, side, {});
+          const response = nativeContactReceiver(receiver, incoming, side, {});
           Object.assign(incoming, response.incoming);
           Object.assign(receiver, response.receiver);
           return Boolean(response.result);
@@ -262,8 +262,8 @@ export function stepNativeJumpFlight(
           probe,
           (incoming, receiver, side) => {
             if (environment.receive) return environment.receive(incoming, receiver, side, hit);
-            if (!receiver.worm) return false;
-            const response = nativeWormReceiver(receiver, incoming, side, {});
+
+            const response = nativeContactReceiver(receiver, incoming, side, {});
             for (const call of response.calls) events.push({ ...call, receiverHit: hit });
             Object.assign(incoming, response.incoming);
             Object.assign(receiver, response.receiver);

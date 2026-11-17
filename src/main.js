@@ -60,7 +60,7 @@ import { nativeMineRegistration } from "./armageddon/mine-registration.js";
 import { NativeRenderOrder } from "./armageddon/render-order.js";
 import { nativeWaterSound } from "./armageddon/water-audio.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
-import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
+import { nativeContactReceiver } from "./armageddon/contact-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
 import { nativeMineTimer, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
@@ -1217,13 +1217,13 @@ function spawnHazards() {
   }
 }
 function nativeSceneCollision(identity, body, x, y, landscape, actors, height) {
-  return queryNativeScene(identity, body, x, y, landscape, actors, height, hazards);
+  return queryNativeScene(identity, body, x, y, landscape, actors, height, [...mines, ...crates, ...hazards]);
 }
 function nativeProjectileCollision(p, x, y, landscape, actors, height, body) {
-  return queryNativeProjectile(p, x, y, landscape, actors, height, body, hazards);
+  return queryNativeProjectile(p, x, y, landscape, actors, height, body, [...mines, ...crates, ...hazards]);
 }
 function nativeProjectilePlacementHit(p, landscape, actors, height) {
-  return queryNativePlacement(p, landscape, actors, height, hazards);
+  return queryNativePlacement(p, landscape, actors, height, [...mines, ...crates, ...hazards]);
 }
 function nativeContactBody(hit) {
   const object = nativeSceneObject(terrain, hit);
@@ -5047,11 +5047,11 @@ function stepFrame(dt) {
             mine.impactPlayback = playNativeProjectileContactSound(audio, request, mine.impactPlayback);
           },
           receive: side => {
-            if (!other.worm) return 0;
-            const response = nativeWormReceiver(other, body, side, {});
+
+            const response = nativeContactReceiver(other, body, side, {});
             Object.assign(body, response.incoming);
             Object.assign(other, response.receiver);
-            if (response.result) applyNativeWormContact(worms[hit - 2], other);
+            if (response.result) updateNativeContactBody(hit, other);
             return response.result;
           },
           bounce: side => {
@@ -5397,11 +5397,11 @@ function stepFrame(dt) {
       collide,
       other: hit => nativeContactBody(hit),
       receive: (body, other, hit, side) => {
-        if (!other.worm) return 0;
-        const response = nativeWormReceiver(other, body, side, {});
+
+        const response = nativeContactReceiver(other, body, side, {});
         Object.assign(body, response.incoming);
         Object.assign(other, response.receiver);
-        if (response.result) applyNativeWormContact(worms[hit - 2], other);
+        if (response.result) updateNativeContactBody(hit, other);
         return response.result;
       },
       otherUpdated: (hit, body) => { updateNativeContactBody(hit, body); },
@@ -5446,11 +5446,11 @@ function stepFrame(dt) {
       collide,
       other: hit => nativeContactBody(hit),
       receive: (body, other, hit, side) => {
-        if (!other.worm) return 0;
-        const response = nativeWormReceiver(other, body, side, {});
+
+        const response = nativeContactReceiver(other, body, side, {});
         Object.assign(body, response.incoming);
         Object.assign(other, response.receiver);
-        if (response.result) applyNativeWormContact(worms[hit - 2], other);
+        if (response.result) updateNativeContactBody(hit, other);
         return response.result;
       },
       otherUpdated: (hit, body) => { updateNativeContactBody(hit, body); },
