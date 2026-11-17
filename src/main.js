@@ -310,6 +310,7 @@ targetMarker.style.cssText =
 arena.appendChild(targetMarker);
 let manualCamera = null;
 let touchPan = null;
+let mousePanPointer = null;
 let overview = false;
 window.addEventListener("siege-overview", (event) => {
   overview = event.detail;
@@ -5296,6 +5297,23 @@ function frame(now) {
   }
   if (nativeCameraFocus) camTarget = { zoom: 1, cx: nativeCameraFocus.x, cy: nativeCameraFocus.y };
   if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
+  if (mousePanPointer && matchStarted && !menu.open && !overview && !replaying && !touchPan) {
+    const rect = arena.getBoundingClientRect();
+    const x = mousePanPointer.x - rect.left, y = mousePanPointer.y - rect.top;
+    const edge = 48;
+    const speed = (position, size) => position < edge
+      ? -Math.max(0, 1 - position / edge)
+      : position > size - edge ? Math.max(0, 1 - (size - position) / edge) : 0;
+    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+      const dx = speed(x, rect.width), dy = speed(y, rect.height);
+      if (dx || dy) {
+        const next = cameraView(view.x + view.w / 2 + dx * 700 * frameDt * view.w / rect.width,
+          view.y + view.h / 2 - dy * 700 * frameDt * view.h / rect.height,
+          view.zoom, rect.width / rect.height);
+        manualCamera = { cx: next.x + next.w / 2, cy: next.y + next.h / 2, zoom: next.zoom };
+      }
+    }
+  }
   if (manualCamera && !overview) camTarget = manualCamera;
   if (manualCamera || cameraSnap || (nativeCameraFocus && !overview)) {
     cameraZoom = camTarget.zoom;
@@ -5654,21 +5672,24 @@ function pointerAim(e) {
 }
 arena.addEventListener("pointerdown", (e) => {
   if (e.target.closest("button, a, input, select") || menu.open || !matchStarted) return;
-  if (e.pointerType === "touch") {
+  if (e.pointerType === "touch" || e.button === 1) {
     if (touchPan) return;
     e.preventDefault();
     touchPan = { id: e.pointerId, x: e.clientX, y: e.clientY,
       cx: view.x + view.w / 2, cy: view.y + view.h / 2,
-      w: view.w, h: view.h, zoom: view.zoom, dragged: false };
+      w: view.w, h: view.h, zoom: view.zoom, dragged: false, touch: e.pointerType === "touch" };
     arena.setPointerCapture(e.pointerId);
     return;
   }
+  if (e.button !== 0) return;
   if (targetUtility) { handleUtilityTarget(e); return; }
   aiming = true;
   arena.setPointerCapture(e.pointerId);
   pointerAim(e);
 });
 arena.addEventListener("pointermove", (e) => {
+  if (e.pointerType === "mouse") mousePanPointer =
+    e.target.closest("button, a, input, select") ? null : { x: e.clientX, y: e.clientY };
   if (touchPan?.id === e.pointerId) {
     e.preventDefault();
     const dx = e.clientX - touchPan.x, dy = e.clientY - touchPan.y;
@@ -5681,10 +5702,12 @@ arena.addEventListener("pointermove", (e) => {
     manualCamera = { cx: next.x + next.w / 2, cy: next.y + next.h / 2, zoom: next.zoom };
   } else if (aiming) pointerAim(e);
 });
+arena.addEventListener("pointerleave", () => { mousePanPointer = null; });
+window.addEventListener("blur", () => { mousePanPointer = null; });
 for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
   arena.addEventListener(event, e => {
     if (touchPan?.id === e.pointerId) {
-      if (event === "pointerup" && !touchPan.dragged) {
+      if (event === "pointerup" && !touchPan.dragged && touchPan.touch) {
         if (targetUtility) handleUtilityTarget(e);
         else pointerAim(e);
       }
