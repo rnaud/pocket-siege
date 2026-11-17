@@ -144,7 +144,7 @@ for relation in ['self','friend','enemy','alliedTeam','revenge','absent']:
     statistics.append(dict(reactionBefore=reaction_before,reactionAfter=reaction_after,match=dict(damage=initial,deaths=initial),roster=roster,source=source,damage=damage,result=dict(match=dict(damage=signed(stats_base+8),deaths=signed(stats_base+4)),roster=after)))
 # Full004B43D0: supply only external stats/speech/team-presence/nearby-team boundaries.
 voice_fields=dict(kills=0x1a0,damage=0x1a4,shot=0x1a8,perfectTeam=0x1ac,amazingTeam=0x1b0,excellentTeam=0x1b4,brilliantTeam=0x1b8,revengeTeam=0x1bc,friendlyTeam=0x1c0,selfTeam=0x1c4,fatality=0x1c8,firstBlood=0x1cc,maxDamage=0x1d0,maxVictimTeam=0x1d4)
-voice_stats=[];voice_speech=None;alive=True;nearby=2
+voice_stats=[];voice_speech=None;alive=True;nearby=2;nearby_native_mode=False
 stat_functions={0x4c34a0:'shots',0x4c34e0:'misses',0x4c35a0:'maxShotKills',0x4c35e0:'maxShotDamage'}
 def voice_capture(cpu,address,size,user):
  global voice_speech
@@ -152,7 +152,7 @@ def voice_capture(cpu,address,size,user):
  if address in stat_functions:
   argc=3;voice_stats.append([stat_functions[address],signed(sp+12)])
  elif address==0x4ecfb0:argc=4
- elif address==0x4ef1b0:argc=3;result=nearby
+ elif address==0x4ef1b0 and not nearby_native_mode:argc=3;result=nearby
  elif address==0x4c2c40:argc=1;result=int(alive)
  elif address==0x4edaf0:argc=2;result=read(sp+4)*100+read(sp+8)
  elif address==0x4edc90:
@@ -214,5 +214,39 @@ for event in [0x405,0x3f3]:
     cpu.emu_start(0x4b4ce0,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Reaction event did not return')
     reaction_events.append(dict(event=event,value=value,source=source,input=before,result={key:read(owner+offset) for key,offset in fields.items()}))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,revealVoices=reveal_voices,weaponUse=weapon_use,reactionEvents=reaction_events),separators=(',',':'))+'\n')
+nearby_native_mode=True
+registry=owner+0x8000;registry_vtable=owner+0x9000;actor_vtable=owner+0x9100
+write(context+0x7d4,registry);write(registry,registry_vtable)
+for offset,entry in [(0x48,0x500),(0x4c,0x504)]:write(registry_vtable+offset,stop+entry)
+for offset,entry in [(0x50,0x508),(0x0c,0x50c),(0x5c,0x510)]:write(actor_vtable+offset,stop+entry)
+actor_index=0;actors=[]
+def registry_capture(cpu,address,size,user):
+ global actor_index
+ if not stop+0x500<=address<=stop+0x510:return
+ sp=cpu.reg_read(UC_X86_REG_ESP);result=0
+ if address in [stop+0x500,stop+0x504]:
+  argc=2;actor_index=0 if address==stop+0x500 else actor_index+1
+  if actor_index<len(actors):write(read(sp+4),owner+0xa000+actor_index*0x100);result=1
+ else:
+  actor=actors[(cpu.reg_read(UC_X86_REG_ECX)-owner-0xa000)//0x100]
+  if address==stop+0x508:argc=0;result=actor['type']
+  elif address==stop+0x50c:argc=3;write(read(sp+12),actor['team'])
+  else:
+   argc=2;write(read(sp+4),actor['x'] & 0xffffffff);write(read(sp+8),actor['y'] & 0xffffffff)
+ cpu.reg_write(UC_X86_REG_EAX,result);cpu.reg_write(UC_X86_REG_ESP,sp+4+argc*4);cpu.reg_write(UC_X86_REG_EIP,read(sp))
+cpu.hook_add(UC_HOOK_CODE,registry_capture)
+nearby_cases=[]
+actor_sets=[[],[(1,2,0,0)],[(2,1,0,0)],[(2,2,10,0),(2,3,-10,0)],[(2,3,-10,0),(2,2,10,0)],[(2,1,0,0),(1,3,0,0),(2,2,100,10),(2,3,20,20)],[(2,2,-2147483648,0),(2,3,1,1)],[(2,0,0,0),(2,3,5,5)],[(2,2,0x7fffffff,0x7fffffff),(2,3,1,1)]]
+for values in actor_sets:
+ actors=[dict(type=t,team=team,x=x,y=y) for t,team,x,y in values]
+ for i in range(len(actors)):write(owner+0xa000+i*0x100,actor_vtable)
+ for excluded in [0,1,2,3]:
+  for x,y in [(0,0),(25,15),(-2147483648,0),(100<<16,200<<16)]:
+   sp=stack+0xf000
+   for i,v in enumerate([stop,excluded,x & 0xffffffff,y & 0xffffffff]):write(sp+i*4,v)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4ef1b0,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Nearby reaction team did not return')
+   nearby_cases.append(dict(actors=actors,excluded=excluded,x=x,y=y,result=cpu.reg_read(UC_X86_REG_EAX)))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,revealVoices=reveal_voices,weaponUse=weapon_use,reactionEvents=reaction_events,nearbyCases=nearby_cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')

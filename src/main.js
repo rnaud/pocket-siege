@@ -1,4 +1,4 @@
-import { nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
+import { nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
@@ -387,6 +387,7 @@ let pendingTurnStart = false;
 let matchDamageSourceActive = false;
 let nativeMatchStatistics = { damage: 0, deaths: 0 };
 let nativeDamageReaction = createNativeDamageReaction();
+let reactionOrigin = { x: 0, y: 0 };
 let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
@@ -1338,6 +1339,7 @@ function beginTurn() {
   const active = roster[next];
   turnCount[team] = (next + 1) % roster.length;
   current = worms.indexOf(active);
+  reactionOrigin = { x: Math.round(active.x * 65536) | 0, y: Math.round((H - active.y) * 65536) | 0 };
   matchDamageSourceActive = true;
   active.nativePlacedAction = null;
   active.nativeFireInput = null;
@@ -1623,6 +1625,7 @@ function cycleWorm(direction = 1) {
   const index = roster.indexOf(worms[current]);
   const next = roster[(index + direction + roster.length) % roster.length];
   current = worms.indexOf(next);
+  reactionOrigin = { x: Math.round(next.x * 65536) | 0, y: Math.round((H - next.y) * 65536) | 0 };
   cancelCharge();
   power = 0;
   charging = false;
@@ -3522,6 +3525,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   }
   const nativeStrength = nativePacket ? nativePacket[4] : kind === "death" ? 30 : null;
   const nativePush = nativePacket ? nativePacket[3] : 100;
+  if (nativeStrength !== null) reactionOrigin = { x: Math.round(x * 65536) | 0, y: Math.round((H - y) * 65536) | 0 };
   const scale = blastScale;
   const profile =
     kind === "death"
@@ -4092,10 +4096,12 @@ function consumeDamageReaction(reveal = false) {
     sourceTeam: killer?.matchStats.team ?? 0, sourceWorm: killer?.matchStats.worm ?? 0,
     turnTeam: team + 1, usedWeapon: nativeDamageReaction.usedWeapon,
     teamAlive: id => worms.some(w => w.team + 1 === id && w.hp > 0),
-    // Host task/position adapter until the native actor registry is connected.
-    nearbyTeam: id => worms.filter(w => w.hp > 0 && w.team + 1 !== id)
-      .sort((a, b) => (Math.abs(a.x - worms[current].x) + Math.abs(a.y - worms[current].y))
-        - (Math.abs(b.x - worms[current].x) + Math.abs(b.y - worms[current].y)))[0]?.team + 1 || 0,
+    // The host roster supplies extant worm tasks in registry order.
+    nearbyTeam: id => nativeNearbyReactionTeam(worms
+      .filter(w => w.hp > 0 || w.deathPending || w.dying > 0)
+      .map(w => ({ type: 2, team: w.team + 1,
+        x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 })),
+      id, reactionOrigin.x, reactionOrigin.y),
     nextRandom: () => matchRandom.logicUint(),
   });
   nativeDamageReaction = reaction.state;

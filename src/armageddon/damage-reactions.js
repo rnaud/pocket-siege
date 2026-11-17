@@ -69,3 +69,15 @@ export function nativeDamageRevealReaction(input, options) {
   state.firstBlood = 1;
   return { state, speech, statistics };
 }
+
+// 004EF1B0: task registry order, type2 only, different team (not alliance).
+// Signed fixed-point subtraction, absolute values and addition wrap at32 bits.
+export function nativeNearbyReactionTeam(actors, excludedTeam, x, y) {
+  let selected = 0, nearest = 0;
+  for (const actor of actors) {
+    if (actor.type !== 2 || actor.team === excludedTeam) continue;
+    const distance = ((Math.abs((x - actor.x) | 0) | 0) + (Math.abs((y - actor.y) | 0) | 0)) | 0;
+    if (!selected || distance < nearest) { selected = actor.team; nearest = distance; }
+  }
+  return selected;
+}
