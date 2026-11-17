@@ -308,3 +308,29 @@ export function nativeReadReplayTree(stream, options) {
     }));
   return nativeReadReplayRoot(stream, { ...options, readChildren });
 }
+
+// Full004A1D20. Cleanup and allocation remain host interfaces; stream order,
+// copied context range, environment/tree reconstruction and phase are native.
+export function nativeRestoreReplaySnapshot(stream, manager, options) {
+  options.flushTask(manager.root);
+  if (manager.root !== null) options.destroyTask(manager.root, 1);
+  options.flushEnvironment(manager.environment);
+  if (manager.environment !== null) options.destroyEnvironment(manager.environment, 1);
+  stream.seek(0);
+  options.sceneMemory.set(stream.readBlock(0x3fbc), 0x7ec);
+  const scene = new DataView(options.sceneMemory.buffer, options.sceneMemory.byteOffset, options.sceneMemory.byteLength);
+  const environmentStorage = options.allocateObject(0x3c4);
+  manager.environment = environmentStorage === null ? null : {
+    ...nativeReadPhysicsEnvironment(stream, { context: options.context, links: options.links, allocate: options.allocateEnvironmentBuffer }),
+    id: environmentStorage.id,
+  };
+  scene.setUint32(0x7d4, manager.environment?.id ?? 0, true);
+  stream.readByte(); // Outer concrete root tag, consumed even if allocation fails.
+  const rootStorage = options.allocateObject(0x28c);
+  manager.root = rootStorage === null ? null : nativeReadReplayTree(stream, {
+    ...options, id: rootStorage.id, memory: rootStorage.memory ?? new Uint8Array(0x28c),
+    environment: manager.environment,
+  });
+  scene.setInt32(0x12414, 14, true);
+  return manager;
+}

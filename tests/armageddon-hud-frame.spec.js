@@ -1,3 +1,5 @@
+import replaySnapshotRestore from "./fixtures/armageddon/replay-snapshot-restore.json" with { type: "json" };
+import { nativeRestoreReplaySnapshot } from "../src/armageddon/replay-restore.js";
 import replayTreeRestore from "./fixtures/armageddon/replay-tree-restore.json" with { type: "json" };
 import { nativeReadReplayTree } from "../src/armageddon/replay-restore.js";
 import replayRootRestore from "./fixtures/armageddon/replay-root-restore.json" with { type: "json" };
@@ -61,6 +63,32 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replaySnapshotRestore.cases) {
+    const stream = new NativeReplayStream(65536), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks], objects = [...row.input.objects], buffers = [...row.input.buffers];
+    stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
+    const sceneMemory = new Uint8Array(0x20000), scene = new DataView(sceneMemory.buffer);
+    scene.setInt32(0x1b8dc, 320, true); scene.setInt32(0x3a4, 17, true);
+    const manager = { root: { id: 0x2000400 }, environment: { id: 0x2500000 } };
+    nativeRestoreReplaySnapshot(stream, manager, { context: 0x2020000, renderer: 0x7654321, sceneMemory, links: [17],
+      flushTask: task => { calls.push([0x2200200, task.id]); if (row.input.clearRoot) manager.root = null; }, destroyTask: (task, flag) => calls.push([0x2200210, task.id, flag]),
+      flushEnvironment: env => { calls.push([0x2200220, env.id]); if (row.input.clearEnvironment) manager.environment = null; }, destroyEnvironment: (env, flag) => calls.push([0x2200230, env.id, flag]),
+      allocateObject: size => { const request = objects.shift(); expect(size).toBe(request.size); return request.pointer ? { id: request.pointer } : null; },
+      allocateEnvironmentBuffer: size => { expect(size).toBe(buffers.shift()); return new Uint8Array(size); },
+      allocateTask: size => { const request = tasks.shift(); expect(size).toBe(request.size); return { id: request.pointer }; },
+      allocateResource: size => { const request = allocations.shift(); expect(size).toBe(request.size); return request.pointer; },
+      constructText: (...args) => { calls.push([0x4c6610, ...args]); return args[0]; },
+      constructSurface: (...args) => { calls.push([0x492bc0, ...args]); return args[0]; } });
+    const { root: task, environment: env } = manager;
+    const capture = node => ({ id: node.id, type: node.type, parent: node.parent?.id ?? 0, capacity: node.capacity,
+      ownsRegistry: node.ownsRegistry, sharedRegistry: node.registry === task.registry, registryType: node.registryType,
+      registryIndex: node.registryIndex, body: [...node.memory.slice(0x3c)], children: node.children.map(capture) });
+    expect([tasks, allocations, objects, buffers]).toEqual([[], [], [], []]);
+    expect(scene.getUint32(0x7d4, true)).toBe(env?.id ?? 0);
+    expect({ tree: task ? capture(task) : null, registry: task ? task.registry.flatMap((bucket, index) => bucket.map(entry => [index, entry.type, entry.index, entry.task.id])) : [],
+      environment: env ? { id: env.id, all: { capacity: env.all.capacity, entries: env.all.entries },
+        category: { capacity: env.categories[2].capacity, entries: env.categories[2].entries }, state: [...env.state], context: env.context, dirty: env.dirty } : null,
+      contextBytes: [...sceneMemory.slice(0x7ec, 0x47a8)], phase: scene.getInt32(0x12414, true), position: stream.position, calls }).toEqual(row.result);
+  }
   for (const row of replayTreeRestore.cases) {
     const stream = new NativeReplayStream(32768), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
