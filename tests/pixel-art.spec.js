@@ -28,7 +28,7 @@ test("original art stays on an integer pixel grid without bitmap requests", asyn
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await page.waitForTimeout(2200);
-  await expect(page.locator("#announcement")).toHaveCSS("opacity", "0", {
+  await expect(page.locator("#announcement")).toBeHidden({
     timeout: 10000,
   });
   await page.screenshot({
