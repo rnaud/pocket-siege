@@ -1,3 +1,5 @@
+import retreat from "./fixtures/armageddon/retreat.json" with { type: "json" };
+import { nativeRetreatTick } from "../src/armageddon/retreat.js";
 import settlementEntry from "./fixtures/armageddon/settlement-entry.json" with { type: "json" };
 import { nativeSettlementEntry } from "../src/armageddon/settlement-entry.js";
 import busyCounter from "./fixtures/armageddon/busy-counter.json" with { type: "json" };
@@ -17,6 +19,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of retreat.cases) expect(nativeRetreatTick(row.input)).toEqual(row.result);
   for (const row of settlementEntry.cases) expect(nativeSettlementEntry(row.input)).toEqual(row.result);
   for (const row of busyCounter.cases) {
     const counter = new NativeBusyCounter(row.before);

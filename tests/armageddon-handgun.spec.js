@@ -14,8 +14,16 @@ async function start(page) {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
+  // Burst/retreat timing must not depend on a randomly selected authored map.
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  await page.evaluate(async () => { await window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, "handgun", 1); });
+  await page.evaluate(async () => {
+    await window.siege.debug.resetSeed(42);
+    // Supply-drop settlement is independent of the burst interruption check.
+    window.siege.debug.setCrateKind("grenade");
+    window.siege.debug.collectCrate();
+    window.siege.debug.setAmmo(0, "handgun", 1);
+  });
   await page.locator("#inventory-toggle").click();
 
   await page.locator('[data-weapon="handgun"]').click();

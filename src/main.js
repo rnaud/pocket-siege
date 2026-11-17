@@ -1,3 +1,4 @@
+import { nativeRetreatCountdown } from "./armageddon/retreat.js";
 import { nativePoisonSettlement } from "./armageddon/poison-settlement.js";
 import { NativeBusyCounter } from "./armageddon/busy-counter.js";
 import { nativeSettlementPresentation } from "./armageddon/settlement-presentation.js";
@@ -4862,7 +4863,7 @@ function stepFrame(dt) {
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
   if (retreat > 0) {
-    retreat = Math.max(0, retreat - dt);
+    retreat = nativeRetreatCountdown(Math.round(retreat * 1000)) / 1000;
     if (retreat === 0) {
       move = 0;
       updateUI();
