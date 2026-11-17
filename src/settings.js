@@ -1,6 +1,7 @@
 import terrainThemes from "./armageddon/terrain-themes.js";
 import { WEAPON_SLOTS } from "./armageddon/delays.js";
 import { MAP_LAYOUTS } from "./map-generator.js";
+import mapCatalog from "./armageddon/map-catalog.json" with { type: "json" };
 const KEY = "pocket-siege-settings-v1";
 const MODES = ["ai", "local"];
 const DIFFICULTIES = ["rookie", "regular", "veteran"];
@@ -73,7 +74,8 @@ export function readSettings(storage) {
       terrainTheme: terrainThemes.includes(parsed.terrainTheme)
         ? parsed.terrainTheme
         : base.terrainTheme,
-      mapLayout: parsed.mapLayout === "random" || MAP_LAYOUTS.includes(parsed.mapLayout)
+      mapLayout: parsed.mapLayout === "random" || MAP_LAYOUTS.includes(parsed.mapLayout) ||
+        mapCatalog.some(a => /^(image|mission)\//.test(a.id) && `original:${a.id}` === parsed.mapLayout)
         ? parsed.mapLayout
         : base.mapLayout,
       mode: MODES.includes(parsed.mode) ? parsed.mode : base.mode,

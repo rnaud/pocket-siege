@@ -60,7 +60,12 @@ export class OriginalMapTerrain {
 }
 
 export const originalMapCatalog = catalog;
+export const selectableOriginalMaps = catalog.filter(a => /^(image|mission)\//.test(a.id));
+export function randomOriginalMap(seed) {
+  return `original:${selectableOriginalMaps[(seed >>> 0) % selectableOriginalMaps.length].id}`;
+}
 const sourceMaps = new Map();
+export const originalMapLoaded = id => sourceMaps.has(id);
 export async function loadOriginalMap(id) {
   if (!id.startsWith("original:")) return;
   const asset = catalog.find((a) => `original:${a.id}` === id);

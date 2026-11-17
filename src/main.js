@@ -1,4 +1,3 @@
-import { MAP_LAYOUTS } from "./map-generator.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
@@ -106,6 +105,8 @@ import {
 import { originalMapSpawns } from "./armageddon/map-placement.js";
 import {
   originalMapCatalog,
+  randomOriginalMap,
+  originalMapLoaded,
   loadOriginalMap,
   createOriginalMap,
 } from "./armageddon/maps.js";
@@ -757,7 +758,32 @@ function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
   if (p) p.nativeFusePlayback = null;
 }
+let mapLoading = false;
+let preparedRandomSeed = null;
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
+  const matchSeed = seed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
+  preparedRandomSeed = null;
+  const selectedLayout = $("#map-layout").value;
+  const layout = isDaily ? "fern" : selectedLayout === "random"
+    ? randomOriginalMap(matchSeed) : selectedLayout;
+  if (layout.startsWith("original:") && !originalMapLoaded(layout)) {
+    mapLoading = true;
+    $("#start").disabled = true;
+    return loadOriginalMap(layout).then(() => {
+      mapLoading = false;
+      $("#start").disabled = false;
+      return reset({ keepSeries, seed: matchSeed, isDaily });
+    }).catch(error => {
+      mapLoading = false;
+      $("#start").disabled = false;
+      $("#status").textContent = "Map could not load. Please try again.";
+      $("#start").textContent = "MAP COULD NOT LOAD — RETRY";
+      phase = "menu";
+      if (!menu.open) menu.showModal();
+      console.error("Map loading failed", error);
+      return false;
+    });
+  }
   cancelCharge();
   if (pendingFire?.kind === "blowtorch") pendingFire.worm.originalBlowtorch = null;
   stopDrill();
@@ -892,16 +918,12 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   fires = [];
   for (const h of hazards) dispose(h.mesh);
   hazards = [];
-  const matchSeed = seed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   matchRandom.reset(matchSeed);
   mineDudPool = new NativeMineDudPool();
   nativeRenderOrder = new NativeRenderOrder();
   smokeRandom = matchSeed >>> 0;
   impactBag = createImpactBag();
   bubbleSeed = matchSeed >>> 0;
-  const selectedLayout = $("#map-layout").value;
-  const layout = isDaily ? "fern" : selectedLayout === "random"
-    ? MAP_LAYOUTS[(matchSeed >>> 0) % MAP_LAYOUTS.length] : selectedLayout;
   const authored = createOriginalMap(layout);
   const width = authored?.width ?? 1200,
     height = authored?.height ?? 650;
@@ -1471,6 +1493,7 @@ function updateUI() {
 }
 function canAct() {
   return (
+    !mapLoading &&
     phase === "aim" &&
     !pendingFire &&
     !rope.firing &&
@@ -4131,6 +4154,7 @@ function aiAim() {
     `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
 }
 function step(dt) {
+  if (mapLoading) return;
   if (menu.open || document.hidden) { stopBurstSound(); stopProjectileSound(); return; }
   if (replaying) return;
   if (hitStop > 0) {
@@ -5539,13 +5563,18 @@ $("#sound").onclick = () => {
   saveSettings();
   tone(440);
 };
-$("#start").onclick = () => {
+$("#start").onclick = async event => {
+  event.preventDefault();
+  $("#start").textContent = "LET’S MAKE TROUBLE ↗";
   matchStarted = true;
-  reset();
+  try {
+    if (await reset() === false) return;
+    menu.close();
+  } catch (error) { console.error("Map loading failed", error); }
 };
 menu.addEventListener("close", () => {
   matchStarted = true;
-  if (phase === "menu") reset();
+  if (phase === "menu" && !mapLoading) reset();
   updateUI();
 });
 if (coarsePointer) $("#fire small").textContent = "HOLD / RELEASE";
@@ -5635,8 +5664,10 @@ async function prepareDecorations() {
   $("#start").disabled = $("#daily").disabled = true;
   try {
     await originalAssets;
+    if ($("#map-layout").value === "random")
+      preparedRandomSeed = crypto.getRandomValues(new Uint32Array(1))[0];
     await Promise.all([
-      loadOriginalMap($("#map-layout").value),
+      loadOriginalMap($("#map-layout").value === "random" ? randomOriginalMap(preparedRandomSeed) : $("#map-layout").value),
       loadOriginalDecorations($("#terrain-theme").value),
       loadOriginalDecorations("forest"),
     ]);
@@ -5654,7 +5685,10 @@ async function bootCurrentArt() {
     await originalAssets;
     await prepareDecorations();
     if (originalArtError) throw new Error(originalArtError);
-    syncMenuOptions(); updateRecordUI(); reset();
+    const firstMapSeed = preparedRandomSeed;
+    syncMenuOptions(); updateRecordUI(); await reset({ seed: firstMapSeed });
+    // The first match uses the map already loaded behind the setup screen.
+    preparedRandomSeed = firstMapSeed;
     menu.showModal(); resetMenuScroll(); updateUI(); resize(); prewarmShaders();
     last = performance.now();
     requestAnimationFrame(now => {
@@ -6083,7 +6117,7 @@ if (import.meta.env.DEV) {
       updateUI();
     },
     resetSeed(seed = 42) {
-      reset({ seed });
+      return reset({ seed });
     },
     consumeVisualRandom(count = 1) {
       for (let i = 0; i < count; i++) visualRandom();
