@@ -1,3 +1,4 @@
+import { NativeSoundQueue } from "./armageddon/sound-queue.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
@@ -750,7 +751,7 @@ function announceMatchResult(winner) {
     const request = nativeVictorySpeech(worms.filter(w => w.team === winner).map(w => w.matchStats.damageReceived));
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    playNativeSpeech(audio, request[0], request[3] / 65536);
+    queueControllerSpeech(request);
   }
   const message = nativeMatchResultAnnouncement(winner ? "CORAL CREW" : "MOSS COMPANY", winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
@@ -806,6 +807,7 @@ let toggleTeamPanelVisibility = false;
 const nativeTeamPanel = { progress: 0, target: 65536, countdown: 0 };
 let mapLoading = false;
 let preparedRandomSeed = null;
+const nativeSoundQueue = new NativeSoundQueue();
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   preparedRandomSeed = null;
@@ -830,6 +832,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
       return false;
     });
   }
+  nativeSoundQueue.flush(null);
   cancelCharge();
   if (pendingFire?.kind === "blowtorch") pendingFire.worm.originalBlowtorch = null;
   stopDrill();
@@ -1112,7 +1115,7 @@ function spawnCrate(announceDrop = false) {
       if (sound && kind !== "health") {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
-        playNativeCrateDropSound(audio, kind);
+        nativeSoundQueue.enqueue([81, 8, 65536, 65536, 0]);
       }
     }
     return;
@@ -2180,7 +2183,7 @@ function applySuddenDeath() {
   if (sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    playNativeSuddenDeathSound(audio);
+    nativeSoundQueue.enqueue([94, 8, 65536, 65536, 0]);
   }
   if (suddenDeathType === "water") {
     waterLevel = waterLevelForRound(round);
@@ -4104,7 +4107,7 @@ function playSkipTurnSpeech() {
   if (speech && sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    playNativeSpeech(audio, speech.request[0]);
+    queueControllerSpeech(speech.request);
   }
 }
 function consumeDamageReaction(reveal = false) {
@@ -4125,7 +4128,7 @@ function consumeDamageReaction(reveal = false) {
   if (reaction.speech && sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    playNativeSpeech(audio, reaction.speech.request[0]);
+    queueControllerSpeech(reaction.speech.request);
   }
 }
 function nextTurn() {
@@ -4276,7 +4279,26 @@ function aiAim() {
   $("#status").textContent =
     `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
 }
+// Team-bank IDs remain a host adapter: mark English speech with bit 16,
+// matching the existing clock adapter, while retaining all five request words.
+function queueControllerSpeech(request) {
+  return nativeSoundQueue.enqueue([request[0] | 0x10000, ...request.slice(1)]);
+}
+function submitQueuedSound(request) {
+  if (request[0] & 0x10000)
+    playNativeSpeech(audio, request[0] & 65535, request[3] / 65536);
+  else if (request[0] === 81) playNativeCrateDropSound(audio, "weapon");
+  else if (request[0] === 94) playNativeSuddenDeathSound(audio);
+  else if (request[0] === 93) playNativeClockSound(audio, request);
+  else playNativeTeamPanelSound(audio, request);
+}
 function step(dt) {
+  stepFrame(dt);
+  // 004A1A00 submits queued sounds after frame tasks. Immediate per-body
+  // sounds keep their separate playback handles and never enter this queue.
+  nativeSoundQueue.flush(audio ? submitQueuedSound : null, !sound);
+}
+function stepFrame(dt) {
   if (mapLoading) return;
   if (menu.open || document.hidden) {
     stopBurstSound(); stopProjectileSound();
@@ -4328,7 +4350,7 @@ function step(dt) {
   if (sound && panelSounds.length) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    for (const request of panelSounds) playNativeTeamPanelSound(audio, request);
+    for (const request of panelSounds) nativeSoundQueue.enqueue(request);
   }
   if (pendingEliminationTeam !== null) {
     const id = pendingEliminationTeam;
@@ -4402,7 +4424,7 @@ function step(dt) {
   if (sound && clockSounds.length) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    for (const request of clockSounds) playNativeClockSound(audio, request);
+    for (const request of clockSounds) nativeSoundQueue.enqueue(request);
   }
   if (canMove() && move && !rope.attached && !jetpack.active) {
     const w = worms[current];

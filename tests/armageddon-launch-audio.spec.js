@@ -1,8 +1,18 @@
+import queueFixture from "./fixtures/armageddon/sound-queue.json" with { type: "json" };
+import { NativeSoundQueue } from "../src/armageddon/sound-queue.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json" };
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  for (const c of queueFixture.cases) {
+    const queue = new NativeSoundQueue(), calls = [];
+    expect(c.inputs.map(request => queue.enqueue(request))).toEqual(c.accepted);
+    expect(queue.requests).toEqual(c.stored);
+    queue.flush(c.present ? request => calls.push(request) : null, c.disabled);
+    expect(calls).toEqual(c.calls);
+    expect(queue.requests.length).toBe(c.remaining);
+  }
   expect(fixture.cases).toHaveLength(1278);
   for (const [i,c] of fixture.cases.entries())
     expect(nativeLaunchAudio(c.fields,c.body,(_,slot) => 1000+slot), `case ${i}`).toEqual({ calls:c.calls,casing:c.casing });
