@@ -1190,8 +1190,7 @@ function stepBombs(dt) {
         bombs.splice(i, 1);
         releaseProjectileMesh(b.mesh);
         if (result.detonate) {
-          const packet = nativeProjectileDetonationEvents(b, () => matchRandom.logicUint())
-            .find(event => event.operation === "blast")?.request;
+          const packet = nativeDetonationPacket(b);
           if (packet) explode(b.x, b.y, b.kind, b.owner, packet);
         }
       }
@@ -2801,7 +2800,8 @@ function spawnAirstrike(x, y, kind = "airstrike") {
   nativeCameraFraming = new NativeCameraFraming(
     Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
   );
-  sfx("airstrike");
+  // 004DF518: the carrier record supplies one queued cue at priority8.
+  if (strike.sound) queueGameSound([strike.sound, 8, 65536, 65536, 0]);
 }
 function stepAirstrikes() {
   for (let i=airstrikes.length-1; i>=0; i--) {
@@ -2811,8 +2811,7 @@ function stepAirstrikes() {
     }
     for (const missile of result.missiles) {
       if (nativeProjectilePlacementHit(missile,terrain,worms,H)) {
-        const packet=nativeProjectileDetonationEvents(missile,()=>matchRandom.logicUint())
-          .find(event=>event.operation==="blast")?.request;
+        const packet=nativeDetonationPacket(missile);
         if(packet) explode(missile.x,missile.y,missile.kind,missile.owner,packet);
         continue;
       }
@@ -2853,8 +2852,7 @@ function spawnPlacedDynamite(release) {
     playNativeProjectileReleaseSound(audio, body.nativeRelease, request => nativeSoundQueue.enqueue(request), w);
   }
   if (nativeProjectilePlacementHit(body, terrain, worms, H)) {
-    const packet = nativeProjectileDetonationEvents(body, () => matchRandom.logicUint())
-      .find(event => event.operation === "blast")?.request;
+    const packet = nativeDetonationPacket(body);
     if (packet) explode(body.x, body.y, body.kind, body.owner, packet);
   } else {
     body.mesh = createOriginalVisual("dynamite");
@@ -3499,6 +3497,13 @@ function fire() {
   }
   updateUI();
 }
+// Preserve queued detonation cues on every path, including placement failures.
+function nativeDetonationPacket(body) {
+  const events = nativeProjectileDetonationEvents(body, () => matchRandom.logicUint());
+  for (const event of events)
+    if (event.operation === "sound") queueGameSound(event.request);
+  return events.find(event => event.operation === "blast")?.request;
+}
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
   const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);
@@ -3509,15 +3514,13 @@ function explodeProjectile(p) {
     updateRecordUI();
   }
   const nativePacket = p.nativeDetonation
-    ? nativeProjectileDetonationEvents(p, () => matchRandom.logicUint())
-        .find(event => event.operation === "blast")?.request
+    ? nativeDetonationPacket(p)
     : null;
   explode(p.x, p.y, p.kind, p.owner, nativePacket);
   if (p.nativeDetonation) {
     nativeProjectileChildren(p, H, () => matchRandom.logicUint(), child => {
       if (nativeProjectilePlacementHit(child, terrain, worms, H)) {
-        const packet = nativeProjectileDetonationEvents(child, () => matchRandom.logicUint())
-          .find(event => event.operation === "blast")?.request;
+        const packet = nativeDetonationPacket(child);
         if (packet) explode(child.x, child.y, child.kind, child.owner, packet);
         return;
       }
@@ -3776,7 +3779,7 @@ function updateOriginalDebris() {
       () => (smokeRandom = nextVisualRandom(smokeRandom)),
     );
     spawnOriginalSmoke(tick.smoke);
-    if (tick.sounds.length) sfx("sizzle");
+    for (const request of tick.sounds) queueGameSound(request);
     if (!tick.alive) {
       dispose(p.mesh);
       originalDebris.splice(i, 1);
