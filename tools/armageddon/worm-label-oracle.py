@@ -1,4 +1,8 @@
-"""Capture the native worm-label font selection block (004D8C20..004D8C63)."""
+"""Capture native label fonts, full004D8C20 layout and004D8FC0 damage placement.
+
+Text rasterization/render queue and team status are explicit boundaries.
+Original fixed-point arithmetic, mode branches and offsets execute unchanged.
+"""
 import argparse
 import hashlib
 import json
@@ -71,5 +75,32 @@ for active in [0,1]:
     cpu.emu_start(0x4d8fc0,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Damage renderer did not return')
     damage.append(dict(input=render_input,output=result))
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'damage':damage},separators=(',',':'))+'\n')
+# Full004D8C20 label layout with explicit text/raster and team-status boundaries.
+state_getter=owner+0x1200;write(vt+0x7c,state_getter)
+cpu.mem_write(state_getter,b'\xc3');cpu.mem_write(0x4c3180,b'\xc2\x04\x00')
+label_calls=[];line_kind=None
+
+def label_hook(cpu,address,size,user):
+ global line_kind
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ if address==state_getter:cpu.reg_write(UC_X86_REG_EAX,render_input['state'])
+ elif address==0x4c3180:cpu.reg_write(UC_X86_REG_EAX,render_input['teamInactive'])
+ elif address==0x4c67a0:line_kind={owner+0x304:'name',owner+0x315:'team',owner+0x326:'health'}.get(read(sp+4),'ammo')
+ elif address==0x4eed70:label_calls.append(dict(kind=line_kind,**result))
+for address in [state_getter,0x4c3180,0x4c67a0,0x4eed70]:cpu.hook_add(UC_HOOK_CODE,label_hook,begin=address,end=address)
+layouts=[]
+for mode in [0,1,2,3]:
+ for progress in [0,0x8000,0x10000]:
+  for compact in [0,1]:
+   for team_inactive,surrendered in [(0,0),(1,0),(0,1),(1,1)]:
+    for state,ammo,suppress_ammo in [(0x65,0,0),(0x78,3*65536,0),(0x78,3*65536,1)]:
+     render_input=dict(x=-17*65536,y=250*65536,progress=progress,labelMode=mode,compact=compact,teamInactive=team_inactive,surrendered=surrendered,state=state,ammo=ammo,suppressAmmo=suppress_ammo,color=2,rank=3,selected=0,suppressed=0,tick=0)
+     for offset,value in {0x10c:2,0x104:0,0x108:0,0x148:0,0xfc:1,0x158:0,0x368:progress,0x1c8:suppress_ammo,0x234:ammo}.items():write(owner+offset,value)
+     write(context+0x1b8ec,0);write(context+0x1030,3);write(context+0x1b76c,mode);write(context+0x1abc,compact)
+     cpu.mem_write(context+3000+0x3cd2,bytes([surrendered]));label_calls=[];line_kind=None
+     sp=stack+0xff00;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+     cpu.emu_start(0x4d8c20,stop,count=10000)
+     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Label renderer did not return')
+     layouts.append(dict(input=render_input,output=label_calls))
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'damage':damage,'layouts':layouts},separators=(',',':'))+'\n')
 print(f'{len(cases)} native worm label font cases')

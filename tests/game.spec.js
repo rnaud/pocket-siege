@@ -145,25 +145,15 @@ test("original art loads and character labels stay readable", async ({
   await expect(page.locator("#start")).toBeInViewport();
   await page.locator("#start").click();
   await expect(page.locator(".worm-label")).toHaveCount(6);
-  await expect
-    .poll(async () =>
-      page.evaluate(() => {
-        const boxes = [...document.querySelectorAll(".worm-label")].map((e) =>
-          e.getBoundingClientRect(),
-        );
-        return boxes.every((a, i) =>
-          boxes.every(
-            (b, j) =>
-              i === j ||
-              a.right <= b.left ||
-              b.right <= a.left ||
-              a.bottom <= b.top ||
-              b.bottom <= a.top,
-          ),
-        );
-      }),
-    )
-    .toBe(true);
+  const labels = await page.locator('.native-worm-text').evaluateAll(canvases =>
+    canvases.map(canvas => ({ width: canvas.width, height: canvas.height,
+      rendering: getComputedStyle(canvas).imageRendering })));
+  expect(labels).toHaveLength(6);
+  for (const label of labels) {
+    expect(label.width).toBeGreaterThan(0);
+    expect(label.height).toBe(33);
+    expect(label.rendering).toBe('pixelated');
+  }
   await page.screenshot({
     path: `test-results/${info.project.name}-art-battle.png`,
     fullPage: true,
@@ -517,41 +507,31 @@ test("computer skill is selectable and hidden for local play", async ({
   await expect(page.locator("#difficulty-row")).toBeHidden();
 });
 
-test("active worm label and labels avoid the aim reticle", async ({ page }) => {
+test("worm labels retain original world anchors while aiming", async ({ page }) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await expect(page.locator("#aim-reticle")).toBeVisible();
-  await expect(page.locator(".worm-label.active")).toHaveCount(1);
   await expect(page.locator(".worm-label.active")).toContainText("Sprout");
-  expect(await page.evaluate(() => window.siege.getState().activeWorm)).toBe(
-    "Sprout",
-  );
-  await page.waitForTimeout(200);
-  expect(
-    await page.evaluate(() => {
-      const match = document
-        .querySelector("#aim-reticle")
-        .getAttribute("transform")
-        .match(/translate\(([-\d.]+),([-\d.]+)\)/);
-      const x = +match[1],
-        y = +match[2];
-      return [...document.querySelectorAll(".worm-label")].some((element) => {
-        const box = element.getBoundingClientRect();
-        return x > box.left && x < box.right && y > box.top && y < box.bottom;
-      });
-    }),
-  ).toBe(false);
-  // Hard labels never get pushed out of the arena by the reticle.
-  expect(
-    await page.evaluate(() =>
-      [...document.querySelectorAll(".worm-label")].every((element) => {
-        const box = element.getBoundingClientRect(),
-          arena = document.querySelector("#arena").getBoundingClientRect();
-        return box.top >= arena.top - 1 && box.bottom <= arena.bottom + 1;
-      }),
-    ),
-  ).toBe(true);
+  for (const angle of [0, 90, -45]) {
+    await page.locator('#angle').fill(String(angle));
+    await page.locator('#angle').dispatchEvent('input');
+    const anchors = await page.evaluate(() => {
+      const state = window.siege.getState();
+      return [...document.querySelectorAll('.worm-label')].map((label, i) => ({
+        x: +label.dataset.nativeX, y: +label.dataset.nativeTop,
+        bodyX: state.worms[i].x, bodyY: state.world.height - state.worms[i].y,
+        transform: getComputedStyle(label).transform,
+      }));
+    });
+    for (const anchor of anchors) {
+      expect(Math.abs(anchor.x - anchor.bodyX)).toBeLessThanOrEqual(1);
+      expect(anchor.bodyY - anchor.y).toBeGreaterThanOrEqual(41);
+      expect(anchor.bodyY - anchor.y).toBeLessThanOrEqual(43);
+      expect(anchor.transform).toBe('none');
+    }
+  }
 });
 
 test("share metadata and manifest avoid retired bitmap branding", async ({

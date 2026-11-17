@@ -77,6 +77,7 @@ test("live death plays past the old cutoff before its explosion", async ({
       deaths: [],
       maxConcurrent: 0,
       damageVisibleAtFirstDeath: null,
+      pendingLabelVisible: false,
     };
     const sample = () => {
       const probe = window.deathFrameProbe;
@@ -92,6 +93,10 @@ test("live death plays past the old cutoff before its explosion", async ({
       probe.rings ||= window.siege
         .getState()
         .nativeParticles.some((p) => p.sprite === "circle25");
+      const pending = window.siege.getState().worms;
+      for (let i = 3; i < pending.length; i++)
+        if (pending[i].hp === 0 && pending[i].deathPending && pending[i].originalSprite !== 'wdie')
+          probe.pendingLabelVisible ||= getComputedStyle(document.querySelectorAll('.worm-label')[i]).visibility === 'visible';
       const dying = window.siege.getState().worms.slice(3)
         .filter(w => w.deathPending && w.originalSprite === "wdie");
       probe.maxConcurrent = Math.max(probe.maxConcurrent, dying.length);
@@ -123,6 +128,7 @@ test("live death plays past the old cutoff before its explosion", async ({
     .toBe(true);
   const sequence = await page.evaluate(() => window.deathFrameProbe);
   expect(sequence.maxConcurrent).toBe(1);
+  expect(sequence.pendingLabelVisible).toBe(true);
   expect(sequence.damageVisibleAtFirstDeath).toBe(false);
   expect(sequence.deaths).toHaveLength(3);
   expect(sequence.deaths).toEqual([...sequence.deaths].sort((a, b) => a - b));

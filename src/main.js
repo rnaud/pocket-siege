@@ -199,7 +199,7 @@ import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
-import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement } from "./armageddon/worm-label.js";
+import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement } from "./armageddon/worm-label.js";
 import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater } from "./water.js";
 import * as THREE from "three";
@@ -5046,21 +5046,6 @@ function frame(now) {
   updateAimHUD();
   updateHudPower(charging ? power : 0, weapon);
   updateRopeVisual(worms[current]);
-  const aimBox =
-    phase === "aim" && !menu.open && worms[current]?.hp > 0 && lastAim?.reticle
-      ? {
-          x: lastAim.reticle.x,
-          y: lastAim.reticle.y + 10,
-          width: 54,
-          height: 78,
-        }
-      : null;
-  const labelBoxes = aimBox ? [aimBox] : [];
-  // Read every label size before writing positions, so six labels cost one layout pass, not six.
-  for (const w of worms) {
-    w.labelW = w.label.offsetWidth;
-    w.labelH = w.label.offsetHeight;
-  }
   for (const w of worms) {
     const size = w.visualSize || 64;
     const active = w === worms[current];
@@ -5175,7 +5160,14 @@ function frame(now) {
       w.damageCanvas.style.top = `${Math.round(point.y - w.damageCanvas.height / 2)}px`;
       w.damageCanvas.hidden = false;
     } else if (w.damageCanvas) w.damageCanvas.hidden = true;
-    updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick);
+    const labelPlacement = nativeWormLabelPlacement({
+      x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
+      progress: 65536, labelMode: 1, compact: 0, teamInactive: 0, surrendered: 0,
+      state: nativeWormState(w), ammo: 0, suppressAmmo: 0,
+      rank: 0, color: w.team ? 0 : 2, selected: active && phase !== "over",
+      suppressed: 0, tick: selectionTick,
+    });
+    updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick, labelPlacement);
     updateOriginalSelection(
       w.label,
       w.team,
@@ -5184,77 +5176,17 @@ function frame(now) {
     );
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
-    const p = screen(w.x, w.renderY + (original ? 24 : spriteSize * 0.83 - 7));
-    const visible = w.hp > 0 && w.x > view.x + 12 && w.x < view.x + view.w - 12;
-    w.label.style.visibility = visible ? "visible" : "hidden";
+    const p = screen(+w.label.dataset.nativeX, H - +w.label.dataset.nativeTop);
+    const submerged = w.nativeHurtBody?.submerged || w.nativeFlight?.submerged || w.drowned;
+    w.label.style.visibility = w.g.visible && !submerged ? "visible" : "hidden";
     if (active) {
       const charge = $("#worm-charge"),
         cp = screen(w.x, w.renderY - 16);
       charge.style.left = `${Math.round(cp.x)}px`;
       charge.style.top = `${Math.round(cp.y)}px`;
     }
-    if (w.hp > 0) {
-      const width = w.labelW,
-        height = w.labelH;
-      p.x = Math.max(
-        width / 2 + 4,
-        Math.min(arena.clientWidth - width / 2 - 4, p.x),
-      );
-      // Labels are positioned by their bottom edge, so compare centers and half-heights.
-      const topSafe = 64;
-      const anchorX = p.x,
-        anchorY = Math.max(topSafe + height, p.y);
-      const overlaps = (x, y) =>
-        labelBoxes.some(
-          (b) =>
-            Math.abs(b.x - x) < (b.width + width) / 2 + 5 &&
-            Math.abs(b.y - (y - height / 2)) < (b.height + height) / 2 + 5,
-        );
-      p.x = anchorX;
-      p.y = anchorY;
-      let placed = false;
-      // Keep labels above the character: first slide sideways around the aim
-      // marker, then climb, and only use lower rows when the sky is crowded.
-      for (const dy of [
-        0,
-        -height - 6,
-        -2 * (height + 6),
-        height + 6,
-        2 * (height + 6),
-        3 * (height + 6),
-      ]) {
-        for (const dx of [
-          0,
-          -width * 0.4,
-          width * 0.4,
-          -width * 0.8,
-          width * 0.8,
-        ]) {
-          const x = Math.round(
-            Math.max(
-              width / 2 + 4,
-              Math.min(arena.clientWidth - width / 2 - 4, anchorX + dx),
-            ),
-          );
-          const y = Math.round(
-            Math.max(
-              topSafe + height,
-              Math.min(arena.clientHeight - 26, anchorY + dy),
-            ),
-          );
-          if (!overlaps(x, y)) {
-            p.x = x;
-            p.y = y;
-            placed = true;
-            break;
-          }
-        }
-        if (placed) break;
-      }
-      labelBoxes.push({ x: p.x, y: p.y - height / 2, width, height });
-    }
-    w.label.style.left = p.x + "px";
-    w.label.style.top = p.y + "px";
+    w.label.style.left = (Math.round(p.x) - Math.floor(+w.label.dataset.nativeWidth / 2)) + "px";
+    w.label.style.top = Math.round(p.y) + "px";
   }
   if (crate) {
     crate.mesh.position.y = Math.round(crate.y);

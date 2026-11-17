@@ -2029,6 +2029,7 @@ body.native-game-hud {
   image-rendering: pixelated;
 }
 .worm-label.has-native-text {
+  transform: none;
   padding: 0;
   opacity: 1;
   text-shadow: none;

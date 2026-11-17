@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/worm-label.json" with { type: "json" };
-import { nativeWormLabelFont, nativeDamageTextPlacement } from "../src/armageddon/worm-label.js";
+import { nativeWormLabelFont, nativeDamageTextPlacement, nativeWormLabelPlacement } from "../src/armageddon/worm-label.js";
 
 test("worm label font and blink match original executable", { tag: "@logic" }, () => {
+  expect(fixture.layouts).toHaveLength(288);
+  for (const row of fixture.layouts) expect(nativeWormLabelPlacement(row.input)).toEqual(row.output);
   for (const row of fixture.damage)
     expect(nativeDamageTextPlacement(row.input)).toEqual(row.output);
   for (const c of fixture.cases)
@@ -31,6 +33,6 @@ test("live native labels blink and repaint health after damage", async ({
       .locator(".native-worm-text")
       .first()
       .evaluate((c) => c.height),
-  ).toBe(49);
+  ).toBe(33);
   await page.screenshot({ path: info.outputPath("native-worm-labels.png") });
 });

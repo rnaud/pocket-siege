@@ -10,6 +10,26 @@ export function nativeDamageTextPlacement(body) {
     font: (body.color + 9) | 0, order: (Math.imul(body.rank, 4) + 0xd0103) | 0 };
 }
 
+// 004D8C20. Native label modes: team/name/health, name/health, health, hidden.
+export function nativeWormLabelPlacement(body) {
+  const font = nativeWormLabelFont(body.color, body.selected, body.suppressed, body.tick);
+  const order = (Math.imul(body.rank, 4) + 0xd0100) | 0;
+  const lines = [];
+  const add = (kind, y, layer = 0) => lines.push({ kind, x: body.x | 0, y: y | 0, font, order: (order + layer) | 0 });
+  if (body.state === 0x78 && !body.suppressAmmo && body.ammo)
+    add('ammo', body.y - 0x190000);
+  if (body.progress) {
+    const y = (fixedMultiply((body.y + 0x1800000) | 0, body.progress) - 0x1800000) | 0;
+    if (!body.teamInactive && !body.surrendered) {
+      if (body.labelMode < 2) add('name', y - (body.compact ? 0x190000 : 0x2a0000), 1);
+      if (body.labelMode < 1) add('team', y - (body.compact ? 0x290000 : 0x3a0000), 1);
+    }
+    if (body.labelMode < 3 && !body.compact)
+      add('health', y - (body.surrendered && !body.teamInactive ? 0x280000 : 0x190000));
+  }
+  return lines;
+}
+
 export function paintOriginalDamageText(canvas, value, team) {
   if (!fonts) return;
   const key = `${team}:${value}`;
@@ -38,23 +58,24 @@ export async function loadOriginalWormLabels() {
 
 // 004D8C20 uses standard team-color fonts (color+9), switching the selected
 // worm to white every 25 native ticks. Names/team/health are separate lines.
-// Selection and screen anchoring remain supplied by the host game.
-export function updateOriginalWormLabel(label, worm, selected, tick) {
+// Positions come from the original label renderer, with integer render-queue snapping.
+export function updateOriginalWormLabel(label, worm, selected, tick, placement) {
   if (!fonts) return false;
+  label.hidden = placement.length === 0;
+  if (label.hidden) return true;
   const fontId = nativeWormLabelFont(worm.team ? 0 : 2, selected, false, tick);
   const fontIndex = fontId === 15 ? 2 : worm.team;
   const teamName = worm.team ? "CORAL" : "MOSS";
   const displayedHealth = worm.nativeHealthDisplay
     ? Math.max(0, Math.min(9999, worm.nativeHealthDisplay.value >> 16)) : worm.hp;
-  const key = `${fontIndex}:${worm.name}:${worm.hp}:${displayedHealth}:${teamName}`;
+  const text = { team: teamName, name: worm.name, health: String(displayedHealth), ammo: String((worm.nativeLabelAmmo ?? 0) >> 16) };
+  const top = Math.min(...placement.map(line => line.y >> 16));
+  label.dataset.nativeTop = String(top);
+  label.dataset.nativeX = String(placement[0]?.x >> 16);
+  const lines = placement.map(line => [text[line.kind], (line.y >> 16) - top]);
+  const key = `${fontIndex}:${worm.hp}:${JSON.stringify(lines)}`;
   if (label.dataset.nativeLabel === key) return true;
   const font = fonts[fontIndex];
-  // Native offsets are -58 (team), -42 (name), -25 (health).
-  const lines = [
-    [teamName, 0],
-    [worm.name, 16],
-    [String(displayedHealth), 33],
-  ];
   const width = Math.max(
     ...lines.map(([text]) => measureNativeText(font, text).width),
   );
@@ -66,7 +87,8 @@ export function updateOriginalWormLabel(label, worm, selected, tick) {
     label.append(canvas);
   }
   canvas.width = width;
-  canvas.height = 33 + font.height;
+  label.dataset.nativeWidth = String(width);
+  canvas.height = Math.max(...lines.map(([, y]) => y)) + font.height;
   canvas.style.width = `${width}px`;
   canvas.style.height = `${canvas.height}px`;
   const ctx = canvas.getContext("2d");

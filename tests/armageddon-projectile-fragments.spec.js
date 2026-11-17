@@ -35,5 +35,6 @@ test(`live ${kind} children use native secondary sprites, damage and lifecycle`,
   expect(children.every(b => b.nativeDamage === damage && b.sprite === sprite)).toBe(true);
   await expect.poll(() => page.evaluate(() => window.siege.getState().bombs.length), { timeout: 15000 }).toBe(0);
   expect(await page.evaluate(() => window.siege.getState().explosions)).toBeGreaterThan(1);
-  expect(await page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
+  // Fragment removal can leave a drowning or dying worm under native camera tracking.
+  await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus), { timeout: 15000 }).toBeNull();
 });
