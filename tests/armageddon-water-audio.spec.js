@@ -72,6 +72,7 @@ test("browser routes native water requests to decoded original samples and gain"
   const audio = await page.evaluate(() => window.waterAudio);
   expect(audio.every((v) => v.duration > 0)).toBe(true);
   const levels = audio.map((v) => v.gain).sort();
-  expect(levels[0]).toBeCloseTo(0.175);
-  expect(levels[1]).toBeCloseTo(0.35);
+  // Original startup gain: 3/4 scaling, then table0055E2F8 indices24/48.
+  expect(levels[0]).toBeCloseTo(10 ** (-1415 / 2000));
+  expect(levels[1]).toBeCloseTo(10 ** (-415 / 2000));
 });

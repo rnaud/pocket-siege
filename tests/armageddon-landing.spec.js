@@ -250,7 +250,8 @@ test("landing sound uses the original sample and recovered impact strength", asy
   expect(requested).toHaveLength(1);
   const audio = await page.evaluate(() => window.landingAudio);
   expect(audio.every((item) => item.duration > 0)).toBe(true);
-  expect(audio[0].gain).toBeCloseTo(0.0875);
-  expect(audio[1].gain).toBeCloseTo(0.175);
-  expect(audio[2].gain).toBeCloseTo(0.35);
+  // Native startup attenuation table0055E2F8, indices12/24/48.
+  expect(audio[0].gain).toBeCloseTo(10 ** (-2415 / 2000));
+  expect(audio[1].gain).toBeCloseTo(10 ** (-1415 / 2000));
+  expect(audio[2].gain).toBeCloseTo(10 ** (-415 / 2000));
 });

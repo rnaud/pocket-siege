@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 
 const gitFiles = args => execFileSync('git', args, { encoding: 'utf8' }).split('\0').filter(Boolean);
@@ -51,6 +51,15 @@ for (const file of changed) {
     const spec = `tests/armageddon-${basename(file).replace(/\.(json|js)$/, '')}.spec.js`;
     if (existsSync(spec)) related.add(spec);
   }
+}
+// Imports evaluated inside page.evaluate run in the browser and are absent
+// from Playwright's Node dependency graph. Include their existing specs too.
+const changedBrowserModules = new Set(changed.filter(file => file.startsWith('src/')).map(file => `/${file}`));
+for (const name of readdirSync('tests')) {
+  if (!name.endsWith('.spec.js')) continue;
+  const file = `tests/${name}`;
+  const imports = readFileSync(file, 'utf8').matchAll(/import\(\s*["']([^"']+)["']/g);
+  if ([...imports].some(match => changedBrowserModules.has(match[1]))) related.add(file);
 }
 const files = [...related].sort();
 const commands = files.length ? [
