@@ -144,6 +144,12 @@ export function attachNativeProjectile(p, height) {
     { length: 94 },
     (_, i) => record["0x" + ((p.nativeBlockOffset ?? 0x74) + i * 4).toString(16)],
   );
+  return attachNativeProjectileBlock(p, height, block);
+}
+
+// Shared004E1830 constructor adapter for an explicit native projectile block.
+// Contents effects supply the original11-word payload without weapon release.
+export function attachNativeProjectileBlock(p, height, block, nativePayload = null) {
   const payload = {
     owner: p.owner ?? 0,
     x: fixed(p.x),
@@ -154,14 +160,20 @@ export function attachNativeProjectile(p, height) {
     timer: Math.round(p.fuse * 1000),
     bounce: Math.round(p.bounce * 100),
   };
+  if (nativePayload) Object.assign(payload, {
+    owner: nativePayload[0], x: nativePayload[2], y: nativePayload[3],
+    vx: nativePayload[4], vy: nativePayload[5], repeat: nativePayload[8],
+    bounce: nativePayload[9], timer: nativePayload[10],
+  });
   const selected = nativeProjectileSelection(block, payload);
   p.nativePlacementFlags = selected.config.flags | 2;
   p.nativeFragmentConfig = {
     count: block[47], speed: block[48], variance: block[49],
     direction: block[50], spread: block[51], mode: block[75],
   };
-  p.nativePayload = [payload.owner, 0, payload.x, payload.y, payload.vx, payload.vy,
-    0, 0, payload.repeat, payload.bounce, payload.timer];
+  p.nativePayload = nativePayload ? [...nativePayload] :
+    [payload.owner, 0, payload.x, payload.y, payload.vx, payload.vy,
+      0, 0, payload.repeat, payload.bounce, payload.timer];
   p.nativeTrail = { fields: selected.words.slice(8, 12), progress: 0 };
   p.nativeBody = nativeProjectileBody(
     {

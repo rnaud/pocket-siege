@@ -69,6 +69,11 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  // This test checks Freeze turn progression, independently of supply-drop settling.
+  await page.evaluate(() => {
+    window.siege.debug.setCrateKind("grenade");
+    window.siege.debug.collectCrate();
+  });
   await page.locator("#sound").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="freeze"]').click();

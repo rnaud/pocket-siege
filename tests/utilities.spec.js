@@ -1,3 +1,6 @@
+import crateProjectile from "../src/armageddon/crate-projectile-data.json" with { type: "json" };
+import schemeWeapons from "../src/armageddon/scheme-weapon-data.json" with { type: "json" };
+import { attachNativeProjectileBlock } from "../src/armageddon/projectile-runtime.js";
 import { stepNativeFlame } from "../src/armageddon/flame-runtime.js";
 import flameArt from "./fixtures/armageddon/flame-art.json" with { type: "json" };
 import { nativeFlameArt } from "../src/armageddon/flame-art.js";
@@ -290,6 +293,10 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result).toEqual({ body: row.output, record: row.copied, nextCounter: row.nextCounter });
     expect(randomIndex).toBe(2);
   }
+  const sheepBlock = schemeWeapons.schemes.find(s => s.resource_id === 195).weapons[23].slice(11, 105);
+  // The copied crate block precedes the later sheep scheme offset override.
+  sheepBlock[25] = 0; sheepBlock[3] = 126; sheepBlock[4] = 0;
+  expect(crateProjectile.block).toEqual(sheepBlock);
   for (const row of crateContents.cases) {
     const events = [];
     const result = nativeCrateContents({ x: 123456, y: -765432 }, row.weapon,
@@ -302,6 +309,21 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       });
     expect(events).toEqual(row.events);
     expect(result).toEqual({ pool: row.outputPool, used: row.outputUsed });
+    const creation = row.events.find(event => event[0] === 'projectile');
+    if (creation) {
+      const payload = creation[3], projectile = {};
+      expect(attachNativeProjectileBlock(projectile, 800, crateProjectile.block, payload)).toBe(true);
+      expect(projectile.nativePayload).toEqual(payload);
+      expect(projectile.nativeBody.x).toBe(payload[2]);
+      expect(projectile.nativeBody.y).toBe(payload[3]);
+      expect(projectile.nativeBody.vx).toBe(payload[4]);
+      expect(projectile.nativeBody.vy).toBe(payload[5]);
+      expect(projectile.nativeBody.mode).toBe(3);
+      expect(projectile.nativeBody.facing).toBe(payload[4] < 0 ? -1 : 1);
+      expect(projectile.nativeDetonation.damage).toBe(75);
+      expect(projectile.nativeTimer.remaining).toBe(20000);
+      expect(projectile.nativeRelease).toBeUndefined();
+    }
   }
   for (const row of crateHits.cases) {
     const packet = [...row.packet];
