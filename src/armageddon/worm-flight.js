@@ -122,6 +122,13 @@ export function attachNativeFirePunchFlight(worm, { height, friction = 96 }, pow
 
 // 004D7730 enters7D with dragCCCC and weapon39+70 wind sensitivity.
 const parachuteWind = records.schemes.find(s => s.resource_id === 195).weapons[39][10];
+export function attachNativeFallingFlight(worm, { height, friction = 96 }) {
+  const previous = { ...nativeAirborneBody(worm, height, friction), state: 0x65, type: 2, complex: 1 };
+  const entry = nativeWormTransitionBody(previous, 0x7e, {});
+  worm.nativeFlight = { ...entry.body, state: 0x7e };
+  worm.ground = false;
+}
+
 export function attachNativeJetpackFlight(worm, { height, friction = 96 }) {
   const previous = worm.nativeFlight ?? {
     ...nativeAirborneBody(worm, height, friction), state: 0x65, type: 2, complex: 1,
@@ -149,11 +156,15 @@ export function stepNativeJetpackFlight(worm, environment, collide) {
 }
 
 export function attachNativeParachuteFlight(worm, { height, friction = 96, windPercent = parachuteWind }) {
-  const previous = worm.nativeFlight ?? {
+  const previous = worm.nativeFlight ?? worm.nativeHurtBody ?? {
     ...nativeAirborneBody(worm, height, friction), state: 0x7e, type: 3, complex: 1,
   };
   const entry = nativeWormTransitionBody(previous, 0x7d, { weapon70: windPercent });
   worm.nativeFlight = { ...entry.body, state: 0x7d };
+  worm.nativeHurtBody = null;
+  worm.originalHurt = null;
+  worm.knocked = false;
+  worm.hurt = 0;
   worm.ground = false;
 }
 

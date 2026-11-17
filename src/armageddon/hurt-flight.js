@@ -70,6 +70,19 @@ export function attachNativeHurtFlight(worm, height) {
   return body;
 }
 
+// 004DE81E..004DE858 supplies scheme fall damage before entering state80.
+// Keep the moving body's exact position/velocity when handing it to hurt flight.
+export function attachNativeFastFall(worm, height) {
+  const previous = {
+    ...createNativeWormBody(worm, height, nativeWormState(worm), 0),
+    ...(worm.nativeHurtBody ?? worm.nativeFlight),
+  };
+  const entry = nativeWormTransitionBody(previous, 0x80, {});
+  worm.nativeHurtBody = { ...entry.body, state: 0x80, angle: 0, damageScale: byte(0x11d40) };
+  worm.nativeFlight = null;
+  return worm.nativeHurtBody;
+}
+
 function createNativeWormBody(worm, height, state, angle) {
   const x = fixed(worm.x),
     y = fixed(height - worm.y);

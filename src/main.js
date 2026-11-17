@@ -16,7 +16,7 @@ import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
-import { attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
+import { attachNativeFallingFlight, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
@@ -46,6 +46,7 @@ import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRe
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse, updateNativeProjectileAudio, cleanupNativeContactSound } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
+  attachNativeFastFall,
   attachNativeDrowningFlight,
   stepNativeDrowningFlight,
   nativeWormMotionCallbacks,
@@ -4622,13 +4623,22 @@ function stepFrame(dt) {
     } else if (w === worms[current] && rope.attached) {
       stepRope(w, dt);
     } else {
-      if (w === worms[current] && parachuteArmed && !w.ground && !w.originalHurt && !w.knocked && w.vy <= -400) {
+      if (!w.frozen && !w.originalHurt && !w.knocked && !w.nativeFlight &&
+          (!w.ground || !bodyBlocked(terrain, w.x, w.y - 1)))
+        attachNativeFallingFlight(w, { height: H });
+      const fallState = nativeWormState(w);
+      const fastFall = !w.frozen && [0x79, 0x7e, 0x7f].includes(fallState) && w.vy <= -400;
+      if (w === worms[current] && parachuteArmed && !w.ground && fastFall) {
         parachuteArmed = false;
         utilityAmmo[team].parachute = spendAmmo(utilityAmmo[team].parachute);
         attachNativeParachuteFlight(w, { height: H });
         startOriginalParachute(w);
         $("#status").textContent = `${w.name}'s parachute deploys.`;
         updateUI();
+      }
+      if (fastFall && !w.originalParachute) {
+        attachNativeFastFall(w, H);
+        startOriginalHurt(w, 0x80);
       }
       if (w.originalHurt && !w.frozen) {
         result = stepNativeHurtFlight(
