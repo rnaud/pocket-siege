@@ -1,3 +1,5 @@
+import replayPhysics from "./fixtures/armageddon/replay-physics.json" with { type: "json" };
+import { nativeRestorePhysicsMembership } from "../src/armageddon/replay-physics.js";
 import replayChildren from "./fixtures/armageddon/replay-children.json" with { type: "json" };
 import { nativeWriteReplayTask, nativeReplayTaskTypes } from "../src/armageddon/replay-task.js";
 import replayTask from "./fixtures/armageddon/replay-task.json" with { type: "json" };
@@ -43,6 +45,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayPhysics.cases) expect(nativeRestorePhysicsMembership(row.input)).toEqual(row.result);
   for (const row of replayChildren.cases) {
     const schema = nativeReplayTaskTypes.find(type => type.tag === row.tag);
     const memory = Uint8Array.from({ length: schema.size }, (_, i) => (i * 13 + row.tag * 7 + row.position) & 255);
