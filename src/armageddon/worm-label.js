@@ -1,4 +1,28 @@
 import { loadNativeFont, measureNativeText, rasterNativeText } from "./font.js";
+import { fixedMultiply } from './numeric.js';
+
+// Original004D8FC0: the damage text rises55 pixels during the first half
+// of its native lifetime, then holds; all offsets are signed16.16.
+export function nativeDamageTextPlacement(body) {
+  if (!body.active) return null;
+  const progress = Math.min(fixedMultiply(body.progress, 0x20000), 0x10000);
+  return { x: body.x, y: (body.y - 0x2a0000 - Math.imul(progress, 55)) | 0,
+    font: (body.color + 9) | 0, order: (Math.imul(body.rank, 4) + 0xd0103) | 0 };
+}
+
+export function paintOriginalDamageText(canvas, value, team) {
+  if (!fonts) return;
+  const key = `${team}:${value}`;
+  if (canvas.dataset.nativeDamage === key) return;
+  const image = rasterNativeText(fonts[team], String(value));
+  canvas.width = image.width;
+  canvas.height = image.height;
+  canvas.style.width = `${image.width}px`;
+  canvas.style.height = `${image.height}px`;
+  canvas.getContext('2d').putImageData(new ImageData(image.pixels, image.width, image.height), 0, 0);
+  canvas.dataset.nativeDamage = key;
+  canvas.setAttribute('aria-label', `${value} damage`);
+}
 
 let fonts;
 export function nativeWormLabelFont(color, selected, suppressed, tick) {

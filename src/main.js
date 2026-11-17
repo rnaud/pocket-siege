@@ -198,7 +198,7 @@ import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
-import { loadOriginalWormLabels, updateOriginalWormLabel } from "./armageddon/worm-label.js";
+import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement } from "./armageddon/worm-label.js";
 import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater } from "./water.js";
 import * as THREE from "three";
@@ -880,6 +880,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     w.nativeHitVoicePlayback?.stop();
     dispose(w.g);
     w.label.remove();
+    w.damageCanvas?.remove();
   }
   stopProjectileSound();
   if (projectile) releaseProjectileMesh(projectile.mesh);
@@ -2071,9 +2072,8 @@ function applyPoisonTick() {
   for (const w of worms) {
     if (w.hp <= 0 || w.frozen > 0) continue;
     accountWormDamage(w, 5);
-    w.nativeHealthDisplay = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp).body;
+    revealWormHealth(w);
     w.hurt = Math.max(w.hurt, 0.65);
-    damageLabel(w, 5);
     hits++;
     if (w.hp === 0) {
       w.deathPending = true;
@@ -2097,7 +2097,7 @@ function applySuddenDeath() {
     for (const w of worms)
       if (w.hp > 0) {
         accountWormDamage(w, w.hp - 1);
-        w.nativeHealthDisplay = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp).body;
+        revealWormHealth(w);
         w.hurt = Math.max(w.hurt, 0.5);
       }
     announce("SUDDEN DEATH — EVERY WORM HAS 1 HP");
@@ -2505,9 +2505,7 @@ function injure(w, damage, direction = 0, native = false) {
     sfx("frozenhit");
     return;
   }
-  const previousHp = w.hp;
   accountWormDamage(w, damage);
-  const actualDamage = previousHp - w.hp;
   if (!native) {
     w.originalHurt = null;
     w.nativeHurtBody = null;
@@ -2521,7 +2519,6 @@ function injure(w, damage, direction = 0, native = false) {
     w.deathPending = true;
     slowMo = Math.max(slowMo, 0.7);
   }
-  damageLabel(w, actualDamage, direction);
   if (w === worms[current]) {
     shotgunRemaining = 0;
     cancelCharge();
@@ -3902,31 +3899,11 @@ function stepOriginalEffects(dt) {
     } else effect.mesh.material.map = originalVisual(effect.name, index).map;
   }
 }
-function damageLabel(w, n, direction = 0) {
-  const now = performance.now();
-  if (
-    typeof n === "number" &&
-    w.damageNotice?.el.isConnected &&
-    now < w.damageNotice.until
-  ) {
-    w.damageNotice.total += n;
-    w.damageNotice.until = now + 220;
-    w.damageNotice.el.textContent = `${direction < 0 ? "←" : direction > 0 ? "→" : ""}−${w.damageNotice.total}`;
-    return;
-  }
-  const p = screen(w.x, w.y + 30),
-    el = document.createElement("span");
-  el.className = "damage-number";
-  if (typeof n === "number")
-    w.damageNotice = { el, total: n, until: now + 220 };
-  el.textContent =
-    typeof n === "number"
-      ? `${direction < 0 ? "←" : direction > 0 ? "→" : ""}−${n}`
-      : n;
-  el.style.left = p.x + "px";
-  el.style.top = p.y + "px";
-  $("#damage").appendChild(el);
-  setTimeout(() => el.remove(), 1300);
+function revealWormHealth(w) {
+  const result = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp);
+  w.nativeHealthDisplay = result.body;
+  for (const call of result.calls)
+    if (call.operation === "damageText") w.nativeDamageText = call.value;
 }
 function finishMatch(winner, series) {
   phase = "over";
@@ -4427,7 +4404,6 @@ function step(dt) {
       slowMo = Math.max(slowMo, 0.5);
 
       tone(150, 0.3);
-      damageLabel(w, "SPLASH");
       if (w === worms[current]) {
         cancelCharge();
         retreat = 0;
@@ -4853,7 +4829,7 @@ function step(dt) {
           (w.hp <= 0 || (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)),
       );
     if (settled) for (const w of worms)
-      w.nativeHealthDisplay = nativeHealthDisplayReveal(w.nativeHealthDisplay, w.hp).body;
+      revealWormHealth(w);
     const healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
     shotWait = settled && !healthDisplayBusy ? shotWait + dt : 0;
     if (shotWait > 0.7) nextTurn();
@@ -5159,6 +5135,22 @@ function frame(now) {
       1,
     );
     w.rig.pivot.visible = false;
+    const damagePlacement = nativeDamageTextPlacement({
+      ...w.nativeHealthDisplay, x: Math.round(w.x * 65536),
+      y: Math.round((H - w.y) * 65536), color: w.team ? 0 : 2, rank: 0,
+    });
+    if (damagePlacement && w.nativeDamageText !== undefined) {
+      if (!w.damageCanvas) {
+        w.damageCanvas = document.createElement("canvas");
+        w.damageCanvas.className = "native-damage-number";
+        $("#damage").append(w.damageCanvas);
+      }
+      paintOriginalDamageText(w.damageCanvas, w.nativeDamageText, w.team);
+      const point = screen(damagePlacement.x / 65536, H - damagePlacement.y / 65536);
+      w.damageCanvas.style.left = `${Math.round(point.x - w.damageCanvas.width / 2)}px`;
+      w.damageCanvas.style.top = `${Math.round(point.y - w.damageCanvas.height / 2)}px`;
+      w.damageCanvas.hidden = false;
+    } else if (w.damageCanvas) w.damageCanvas.hidden = true;
     updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick);
     updateOriginalSelection(
       w.label,

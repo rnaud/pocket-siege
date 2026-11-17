@@ -450,15 +450,6 @@ select {
   font-size: 11px;
   color: #a8bbc6;
 }
-.damage-number {
-  position: absolute;
-  color: #fff;
-  font:
-    bold 24px "Barlow Condensed",
-    sans-serif;
-  animation: rise 1.2s forwards;
-  pointer-events: none;
-}
 @keyframes rise {
   to {
     transform: translateY(-55px);
@@ -1019,15 +1010,6 @@ dialog h1 {
 .worm-label.hurt {
   border-color: #fff2c8;
   background: #8e3b2fee;
-}
-.damage-number {
-  z-index: 6;
-  background: #512c28dd;
-  border: 1px solid #ffdb9b;
-  padding: 2px 7px;
-  border-radius: 5px;
-  color: #fff0c5;
-  text-shadow: 0 2px 0 #692e20;
 }
 #turn-banner {
   position: absolute;
@@ -2095,12 +2077,6 @@ input:focus-visible,
 select:focus-visible {
   outline-color: var(--coral);
 }
-.damage-number {
-  color: var(--paper-light);
-  text-shadow:
-    0 2px 0 var(--ink),
-    0 3px 8px #0007;
-}
 .pickup-number {
   color: var(--lime);
   text-shadow: 0 2px 0 var(--ink);
@@ -2751,3 +2727,11 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
   #menu#menu .frontend-panels { min-height: 0; overflow: auto; padding: 3px 4px 4px 0; }
   #menu#menu .frontend-footer { flex: none; }
 }
+
+.native-damage-number {
+  position: absolute;
+  z-index: 6;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.native-damage-number[hidden] { display: none; }

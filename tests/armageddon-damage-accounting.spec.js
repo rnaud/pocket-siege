@@ -27,30 +27,30 @@ test("health, cumulative/displayed damage and events match original damage routi
   }
 });
 
-test("live lethal hit labels count health actually lost", async ({ page }) => {
+test("live native damage totals reveal after settlement and lethal accounting stays capped", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.stageMeleeTargets());
+  await page.evaluate(() => {
+    window.siege.debug.hit(0, 6);
+    window.siege.debug.hit(0, 4);
+  });
+  const labels = page.locator('.native-damage-number:visible');
+  await expect(labels).toHaveCount(3);
+  for (const label of await labels.all()) {
+    await expect(label).toHaveAttribute('aria-label', '10 damage');
+    expect(await label.evaluate(c => c.width > 0 && getComputedStyle(c).animationName === 'none')).toBe(true);
+  }
+  await expect(labels).toHaveCount(0);
   const result = await page.evaluate(() => {
-    const before = window.siege
-      .getState()
-      .worms.slice(3)
-      .map((w) => w.hp);
+    const before = window.siege.getState().worms.slice(3).map(w => w.hp);
     window.siege.debug.hit(1, 200);
-    return {
-      before,
-      damageTaken: window.siege.getState().worms.slice(3).map(w => w.damageTaken),
-      hp: window.siege
-        .getState()
-        .worms.slice(3)
-        .map((w) => w.hp),
-      labels: [...document.querySelectorAll(".damage-number")].map(
-        (el) => el.textContent,
-      ),
-    };
+    return {before, hp: window.siege.getState().worms.slice(3).map(w => w.hp),
+      damageTaken: window.siege.getState().worms.slice(3).map(w => w.damageTaken)};
   });
   expect(result.hp).toEqual([0, 0, 0]);
   expect(result.damageTaken).toEqual(result.before);
-  expect(result.labels).toEqual(result.before.map((hp) => `→−${hp}`));
 });
