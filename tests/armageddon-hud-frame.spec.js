@@ -56,17 +56,21 @@ import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" }
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
   for (const row of replayActorRestore.cases) {
-    const stream = new NativeReplayStream(8192), calls = [], allocations = [...row.input.allocations];
+    const stream = new NativeReplayStream(8192), calls = [], sounds = [], allocations = [...row.input.allocations];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
     const schema = nativeReplayTaskTypes.find(schema => schema.tag === row.input.tag);
     const environment = { all: { capacity: 256, entries: [] }, categories: { 2: { capacity: 256, entries: [] } }, links: [17] };
     const contextState = { counters: Object.fromEntries([0x12420, 0x12424, 0x12428, 0x1242c, 0x12430, 0x1b8f0, 0x1b8f4].map(offset => [offset, 0x7fffffff])), teamSlots: [0,0,0,0], effectSlots: [0,0,0,0] };
     const task = nativeReadReplayActor(row.input.tag, stream, { id: 0x2000000, context: 0x2020000, renderer: 0x7654321, environment, contextState,
+      palette: { 7: 0x12345678, 8: 0x87654321 },
+      constructPortrait: (...args) => { calls.push([0x500170, ...args]); return args[0]; },
+      constructFrame: (...args) => { calls.push([0x4ffed0, ...args]); return args[0]; },
+      audio: { suppressed: row.input.audioSuppressed, play: row.input.audioPresent ? (...args) => { sounds.push(args); return 0x654321; } : undefined },
       memory: new Uint8Array(schema.size).fill(0xa5), readChildren: (_, reader) => reader.readByte(),
       allocateResource: size => { const request = allocations.shift(); expect(size).toBe(request.size); return request.pointer; },
       constructText: (...args) => { calls.push([0x4c6610, ...args]); return args[0]; } });
     expect(allocations).toEqual([]);
-    expect({ body: [...task.memory.slice(0x3c)], position: stream.position, calls, ...contextState }).toEqual(row.result);
+    expect({ body: [...task.memory.slice(0x3c)], position: stream.position, calls, sounds, ...contextState }).toEqual(row.result);
   }
   for (const row of replayWormRestore.cases) {
     const stream = new NativeReplayStream(2048), calls = [], allocations = [...row.input.allocations];

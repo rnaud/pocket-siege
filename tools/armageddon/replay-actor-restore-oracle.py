@@ -38,7 +38,7 @@ cpu.mem_map(context,0x20000);cpu.mem_map(environment,0x10000)
 write(stream+4,buffer);write(stream+0x14,context);write(context+0x7d4,environment);write(context+8,0x7654321)
 write(environment,environment+0x1000);write(environment+0x1034,0x4c8f80);write(environment+0x3c0,environment+0x2000)
 write(environment+0x2000+0x3a4,17)
-heap=owner+0x6000;resourceAllocations=[];calls=[];fail=-1
+heap=owner+0x6000;resourceAllocations=[];calls=[];sounds=[];fail=-1
 
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value)
@@ -48,30 +48,36 @@ def hook(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP)
  if address in [0x4924d0,0x492550]:
   size=read(sp+(8 if address==0x4924d0 else 4));pointer=heap
-  resource=address==0x492550 and size in [0x164,0x138,0x34]
+  resource=address==0x492550 and size in [0x164,0x138,0x34,0x170,0x3c]
   if resource and len(resourceAllocations)==fail:pointer=0
   else:
    heap+=(size+15)&~15;cpu.mem_write(pointer,bytes(size))
   if resource:resourceAllocations.append({'size':size,'pointer':pointer})
   ret(pointer)
+ elif address==stop+0x100:
+  sounds.append([read(sp+4+i*4) for i in range(5)]);ret(0x654321,20)
  elif address==0x492510:ret()
- elif address in [0x4c6610,0x4fd5a0]:
-  count=3 if address==0x4c6610 else 4
+ elif address in [0x4c6610,0x4fd5a0,0x500170,0x4ffed0]:
+  count={0x4c6610:3,0x4fd5a0:4,0x500170:2,0x4ffed0:8}[address]
   pointer=cpu.reg_read(UC_X86_REG_ECX)
   calls.append([address,pointer]+[read(sp+4+i*4) for i in range(count)])
   ret(pointer,count*4)
 cpu.hook_add(UC_HOOK_CODE,hook)
 cases=[]
 schemas=json.loads(Path('src/armageddon/replay-task-types.json').read_text())
-tags=[7,8,9,13,15,16,17,21,22,23,24,25,26,27,29,30]
+tags=[7,8,9,10,11,13,15,16,17,21,22,23,24,25,26,27,29,30]
 extraBlocks={13:(0x3c,0xc04),16:(0x3c,0x24),22:(0x3c,0x28),27:(0x3c,0x1c),29:(0x3c,0x28)}
 counters=[0x12420,0x12424,0x12428,0x1242c,0x12430,0x1b8f0,0x1b8f4]
-for tag,position,seed,fail in itertools.product(tags,[0,1,3],[0,1,3],[-1,0,1,2]):
+combinations=itertools.product(tags,[0,1,3],[0,1,3],[-1,0,1,2])
+for tag,position,seed,fail,audioMode in (row+(mode,) for row in combinations for mode in (range(4) if row[0]==11 else [0])):
  schema=next(row for row in schemas if row['tag']==tag)
- heap=owner+0x6000;resourceAllocations.clear();calls.clear()
+ heap=owner+0x6000;resourceAllocations.clear();calls.clear();sounds.clear()
  cpu.mem_write(owner,bytes([0xa5])*schema['size'])
  for offset,storage in [(0x18,environment+0x3000),(0x34+2*0x1c,environment+0x3400)]:
   write(environment+offset+4,256);write(environment+offset+12,0);write(environment+offset+16,storage);write(environment+offset+20,storage+0x100)
+ write(context+0x1d448,int(audioMode>=2));write(context+0xc,environment+0x4000 if audioMode%2 else 0)
+ write(environment+0x4000,environment+0x4100);write(environment+0x4110,stop+0x100)
+ write(context+0x12434+7*4,0x12345678);write(context+0x12434+8*4,0x87654321)
  for offset in counters:write(context+offset,0x7fffffff)
  for i in range(4):write(context+0x450+i*4,0);write(context+0x4b0+i*4,0)
  payload=bytearray([0xcc]*position+[1,tag,21,3,0,2])
@@ -85,14 +91,14 @@ for tag,position,seed,fail in itertools.product(tags,[0,1,3],[0,1,3],[-1,0,1,2])
  while len(payload)%4:payload.append(255)
  start,length=extraBlocks.get(tag,schema['block'])
  derived=bytearray((i*11+seed)&255 for i in range(length))
- fields={8:[(0x100,seed)],15:[(0x124,seed),(0x260,seed)],24:[(0x80,seed)]}.get(tag,[])
+ fields={11:[(0x31c,seed),(0x138,0x7fffffff),(0x13c,seed),(0x140,0x7fffffff),(0x144,seed)],8:[(0x100,seed)],15:[(0x124,seed),(0x260,seed)],24:[(0x80,seed)]}.get(tag,[])
  for offset,number in fields:struct.pack_into('<I',derived,offset-start,number)
  payload.extend(derived)
  cpu.mem_write(buffer,bytes(payload));write(stream+0x10,position);write(stream+0xc,len(payload))
  sp=stack+0xf000;write(sp,stop);write(sp+4,0);write(sp+8,stream);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
  cpu.emu_start(int(schema['constructor'],16),stop+1,count=100000)
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('actor constructor did not exit')
- result={'body':list(cpu.mem_read(owner+0x3c,schema['size']-0x3c)),'position':read(stream+0x10),'calls':list(calls),'counters':{str(offset):signed(read(context+offset)) for offset in counters},'teamSlots':[read(context+0x450+i*4) for i in range(4)],'effectSlots':[read(context+0x4b0+i*4) for i in range(4)]}
- cases.append({'input':{'tag':tag,'position':position,'bytes':list(payload),'allocations':list(resourceAllocations)},'result':result})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full16 concrete constructors including original base/physics/registry/membership and resource setup004DFFA0. Only heap and rendering constructors substituted. Full derived bytes, context counters/slots, stream cursor and resource requests captured.','cases':cases},separators=(',',':'))+'\n')
+ result={'body':list(cpu.mem_read(owner+0x3c,schema['size']-0x3c)),'position':read(stream+0x10),'calls':list(calls),'sounds':list(sounds),'counters':{str(offset):signed(read(context+offset)) for offset in counters},'teamSlots':[read(context+0x450+i*4) for i in range(4)],'effectSlots':[read(context+0x4b0+i*4) for i in range(4)]}
+ cases.append({'input':{'tag':tag,'audioSuppressed':audioMode>=2,'audioPresent':bool(audioMode%2),'position':position,'bytes':list(payload),'allocations':list(resourceAllocations)},'result':result})
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full18 concrete constructors including original base/physics/registry/membership, resource setup004DFFA0/004E2050/004E5380 and audio routing004EDB90. Only heap, rendering constructors and sound device call substituted. Full derived bytes, context counters/slots, stream cursor and resource requests captured.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} actor restores')
