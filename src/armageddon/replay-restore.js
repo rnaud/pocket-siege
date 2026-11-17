@@ -1,3 +1,4 @@
+import { NativeReplayBuffer } from './replay-buffer.js';
 // Full004B1DE0's base task reconstruction. The outer factory has already
 // consumed the concrete type tag. Derived constructors read their own records.
 export function nativeReadTaskBase(stream, { id, parent = null, readChildren }) {
@@ -130,7 +131,7 @@ const actorReadBlocks = new Map([
   [17, [0x3c, 0x1d4]], [21, [0xfc, 0x20]], [22, [0x3c, 0x28]],
   [23, [0x3c, 0x24]], [24, [0x3c, 0x74]], [25, [0x3c, 0x34]],
   [26, [0x3c, 0x54]], [27, [0x3c, 0x1c]], [29, [0x3c, 0x28]],
-  [30, [0xfc, 0x14]],
+  [30, [0xfc, 0x14]], [31, [0xd4, 0x2ce8]],
 ]);
 
 // Dispatch for recovered concrete constructors. Unsupported constructors are
@@ -149,6 +150,13 @@ export function nativeReadReplayActor(tag, stream, options) {
     stream.readByte(); //004ED9A0
     for (const [offset, value] of [[0x24, task.registryIndex], [0x28, task.registryType],
       [0x2c, task.type], [0x34, +task.ownsRegistry], [0x38, options.context]]) put(offset, value);
+  }
+  if (tag === 31) {
+    //004F0BE0 initializes terrain-task state before the saved terrain block.
+    put(0x3c, 0x12345678);
+    put(0x40, 0);
+    put(0xc4, 0);
+    put(0xd0, 65536);
   }
   const increment = offset => {
     options.contextState.counters[offset] = (options.contextState.counters[offset] + 1) | 0;
@@ -201,6 +209,23 @@ export function nativeReadReplayActor(tag, stream, options) {
     increment(0x12430);
     put(0xb4, 0);
   } else if (tag === 29) text(0x64, 23, 48);
+  else if (tag === 31) {
+    put(0x2dc8, 0);
+    const queue = options.allocateResource(8);
+    put(0x2dc4, queue);
+    task.terrainQueue = null;
+    if (queue) {
+      const pointer = options.allocateResource(32);
+      task.terrainQueue = { pointer: queue, ring: pointer ? {
+        pointer, dataPointer: options.allocateResource(256), buffer: new NativeReplayBuffer(256),
+      } : null };
+    }
+    const table = options.allocateResource(16);
+    put(0x2dcc, table);
+    task.terrainTable = table ? { pointer: table, capacity: 71,
+      dataPointer: options.allocateResource(568), count: 0, bytes: new Uint8Array(568) } : null;
+    put(0x2dd0, 0);
+  }
   task.memory = memory;
   return task;
 }

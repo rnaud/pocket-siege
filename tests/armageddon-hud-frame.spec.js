@@ -1,3 +1,4 @@
+import replayTerrainRestore from "./fixtures/armageddon/replay-terrain-restore.json" with { type: "json" };
 import replayActorRestore from "./fixtures/armageddon/replay-actor-restore.json" with { type: "json" };
 import { nativeReadReplayActor } from "../src/armageddon/replay-restore.js";
 import replayWormRestore from "./fixtures/armageddon/replay-worm-restore.json" with { type: "json" };
@@ -55,6 +56,23 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayTerrainRestore.cases) {
+    const stream = new NativeReplayStream(16384), allocations = [...row.input.allocations];
+    stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
+    const task = nativeReadReplayActor(31, stream, { id: 9, context: 0x2020000,
+      memory: new Uint8Array(0x2dd4).fill(0xa5), readChildren: (_, reader) => reader.readByte(),
+      allocateResource: size => { const request = allocations.shift(); expect(size).toBe(request.size); return request.pointer; } });
+    const ring = task.terrainQueue?.ring, buffer = ring?.buffer;
+    expect(allocations).toEqual([]);
+    expect({ body: [...task.memory.slice(0x3c)], position: stream.position,
+      queue: task.terrainQueue ? { pointer: task.terrainQueue.pointer, ring: ring ? {
+        pointer: ring.pointer, dataPointer: ring.dataPointer, capacity: buffer.capacity,
+        count: buffer.count, writeOffset: buffer.writeOffset, readOffset: buffer.readOffset,
+        head: buffer.head === null ? 0 : buffer.head, tail: buffer.tail === null ? 0 : buffer.tail, bytes: [...buffer.bytes],
+      } : null } : null,
+      table: task.terrainTable ? { ...task.terrainTable, bytes: [...task.terrainTable.bytes] } : null,
+    }).toEqual(row.result);
+  }
   for (const row of replayActorRestore.cases) {
     const stream = new NativeReplayStream(8192), calls = [], sounds = [], allocations = [...row.input.allocations];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
