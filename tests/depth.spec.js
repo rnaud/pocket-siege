@@ -46,7 +46,11 @@ test("AI retreats toward cover without walking off a cliff", { tag: "@logic" }, 
   const route = planRetreat({ terrain, me, worms: [me, enemy], danger: enemy });
   expect(route?.direction).toBe(-1);
   const alone = planRetreat({ terrain, me, danger: { x: 100, y: 310 } });
-  expect((alone?.time ?? 0) * 42).toBeLessThan(40);
+  const destination = { ...me };
+  if (alone) walkWorm(destination, terrain, alone.direction, alone.time);
+  expect(destination.ground).toBe(true);
+  expect(terrain.solid(destination.x, destination.y - 12)).toBe(true);
+  expect(Math.abs(destination.x - me.x)).toBeLessThan(40);
 });
 
 test("rock cover attenuates blasts and AI penalizes friendly damage", { tag: "@logic" }, () => {

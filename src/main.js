@@ -4497,6 +4497,15 @@ function stepFrame(dt) {
     cleanupNativeWormAudio(w, audioState);
     w.nativeContactPlayback = cleanupNativeContactSound(w.nativeContactPlayback);
     stepOriginalWalking(w);
+    if (w.nativeWalkingSounds?.length) {
+      if (sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        for (const request of w.nativeWalkingSounds)
+          w.nativeHitVoicePlayback = playNativeOwnedSound(audio, request, w.nativeHitVoicePlayback);
+      }
+      w.nativeWalkingSounds = [];
+    }
     w.nativeHealthDisplay = nativeHealthDisplayTick(w.nativeHealthDisplay, w.hp).body;
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
     w.landing = Math.max(0, (w.landing || 0) - dt);

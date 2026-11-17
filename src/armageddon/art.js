@@ -843,13 +843,16 @@ export function stepOriginalWalking(worm) {
     worm.hurt > 0.35
   ) {
     worm.originalWalking = null;
+    worm.nativeWalkingBody = null;
+    worm.nativeWalkingTime = 0;
     return;
   }
   const facing = worm.walkDirection || worm.facing;
   let state = worm.originalWalking;
   if (!state || state.facing !== facing) state = { progress: 0, facing };
-  Object.assign(state, nativeWalkingTick(state.progress));
-  // Host movement supplies slope until the native walking body is ported.
+  Object.assign(state, worm.nativeWalkingBody
+    ? { progress: worm.nativeWalkingBody.progress, cycle: worm.nativeWalkingBody.cycle }
+    : nativeWalkingTick(state.progress));
   state.sprite = nativeWalkingSprite(-Math.sign(worm.walkRise || 0));
   worm.originalWalking = state;
 }

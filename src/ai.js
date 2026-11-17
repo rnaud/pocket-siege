@@ -389,14 +389,12 @@ export function planMove({
   if (crate && crateDistance < 150 && crateDistance > 30) {
     const direction = Math.sign(crate.x - me.x) || 1,
       probe = { ...me, vx: 0, vy: 0, knocked: false, ground: true };
-    const steps = Math.min(120, Math.ceil((crateDistance - 24) / (42 * STEP)));
-    for (let i = 0; i < steps; i++) {
+    for (let i = 1; i <= Math.floor(2.5 / STEP); i++) {
       walkWorm(probe, terrain, direction, STEP);
       if (!probe.ground || probe.y - 10 <= waterLevel + 15) return null;
+      if (Math.abs(probe.x - crate.x) <= 24)
+        return { direction, time: i * STEP };
     }
-    const reached = Math.abs(probe.x - crate.x) < 34;
-    if (reached && probe.y - 10 > waterLevel + 15)
-      return { direction, time: Math.min(2.5, (crateDistance - 24) / 42) };
   }
   const direction = me.x < W / 2 ? 1 : -1;
   const probe = { ...me, vx: 0, vy: 0, knocked: false, ground: true };

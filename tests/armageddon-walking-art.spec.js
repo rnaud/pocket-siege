@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/walking-art.json" with { type: "json" };
 import motion from "./fixtures/armageddon/walking-motion.json" with { type: "json" };
-import { nativeWalkPosition } from "../src/armageddon/walking-motion.js";
+import controller from "./fixtures/armageddon/walking-controller.json" with { type: "json" };
+import { nativeWalkPosition, nativeWalkingStep } from "../src/armageddon/walking-motion.js";
 import {
   nativeWalkingTick,
   nativeWalkingSprite,
@@ -19,6 +20,16 @@ test("walking cadence and slope selection match original executable blocks", { t
     const output = nativeWalkPosition(...row.input, (x, y) => {
       queries.push([x, y]);
       return row.pattern[(queries.length - 1) % row.pattern.length];
+    });
+    expect({ output, queries }).toEqual({ output: row.output, queries: row.queries });
+  }
+  for (const row of controller.cases) {
+    const queries = [];
+    const output = nativeWalkingStep(row.input, row.direction, row.sprite, 99, (x, y) => {
+      queries.push([x, y]);
+      const floor = 0x210000 - (row.scene === "slope" ? Math.floor((x - 0x400000) / 0x20000) * 65536 : 0);
+      return row.scene === "cliff" ? x < 0x440000 && y >= floor :
+        y >= floor || (row.scene === "wall" && x >= 0x440000);
     });
     expect({ output, queries }).toEqual({ output: row.output, queries: row.queries });
   }
