@@ -231,3 +231,68 @@ export function nativeReadReplayActor(tag, stream, options) {
   task.memory = memory;
   return task;
 }
+
+// Full004B2D40/004EADB0 and their setup helpers. Resource constructors are
+// host interfaces; generated tasks, registry links and scene pools are native.
+export function nativeReadReplayRoot(stream, options) {
+  const task = nativeReadTaskBase(stream, { ...options, parent: null });
+  const memory = options.memory ?? new Uint8Array(0x28c);
+  const view = new DataView(memory.buffer, memory.byteOffset, memory.byteLength);
+  const put = (offset, value) => view.setInt32(offset, value, true);
+  for (const [offset, value] of [[0x24, task.registryIndex], [0x28, task.registryType],
+    [0x2c, task.type], [0x34, 1], [0x38, options.context]]) put(offset, value);
+  stream.readByte(); //004ED9A0 marker2
+  stream.readByte(); //004EADB0 marker5
+  memory.set(stream.readBlock(0x5c), 0x3c);
+  for (const [size, type, registryType] of [[0xc40, 13, 26], [0x640, 14, 19]]) {
+    const id = options.allocateResource(size);
+    if (!id) continue;
+    const child = { id, parent: task, ownsRegistry: false, capacity: 16, children: [],
+      type, registryType, registryIndex: 0, registry: task.registry, memory: new Uint8Array(size) };
+    const childView = new DataView(child.memory.buffer);
+    for (const [offset, value] of [[4, task.id], [0x28, registryType], [0x2c, type], [0x38, options.context]]) childView.setInt32(offset, value, true);
+    if (task.capacity <= task.children.length) task.capacity *= 2;
+    task.children.push(child);
+    task.registry[registryType].unshift({ type: registryType, index: 0, task: child });
+  }
+  const text = (offset, font, width) => {
+    const pointer = options.allocateResource(0x138);
+    put(offset, pointer ? options.constructText(pointer, options.renderer, font, width) : 0);
+  };
+  const scene = new DataView(options.sceneMemory.buffer, options.sceneMemory.byteOffset, options.sceneMemory.byteLength);
+  //Pop a signed16 free ID, then insert it into the priority-ordered live list.
+  const claim = (base, priority) => {
+    const count = scene.getInt16(base + 0x20, true);
+    if (!count) return -1;
+    scene.setInt16(base + 0x20, count - 1, true);
+    const index = scene.getInt16(base + 0x20, true);
+    const value = scene.getInt16(base + index * 2, true);
+    const length = scene.getInt16(base + 0x62, true);
+    let slot = 0;
+    while (slot < length && scene.getInt16(base + 0x22 + slot * 2, true) >= priority + 1) slot++;
+    for (let i = length; i > slot; i--) {
+      scene.setInt16(base + 0x22 + i * 2, scene.getInt16(base + 0x22 + (i - 1) * 2, true), true);
+      scene.setInt16(base + 0x42 + i * 2, scene.getInt16(base + 0x42 + (i - 1) * 2, true), true);
+    }
+    scene.setInt16(base + 0x22 + slot * 2, priority, true);
+    scene.setInt16(base + 0x42 + slot * 2, value, true);
+    scene.setInt16(base + 0x62, length + 1, true);
+    return value;
+  };
+  text(0xd0, 23, scene.getInt32(0x1b8dc, true));
+  text(0xd4, 28, 128);
+  for (let offset = 0x98; offset <= 0xc8; offset += 4) put(offset, 0);
+  put(0xcc, claim(0x1b778, 0));
+  stream.readByte(); //004B2D40 marker6
+  memory.set(stream.readBlock(0x138), 0xd8);
+  const surface = options.allocateResource(0x2c);
+  if (surface) options.constructSurface(surface, 56, 42, 8);
+  put(0x21c, surface);
+  text(0x210, 25, 64);
+  text(0x214, 15, 64);
+  text(0x218, 15, 80);
+  put(0x284, claim(0x1b848, 1));
+  put(0x288, 0);
+  task.memory = memory;
+  return task;
+}
