@@ -239,3 +239,9 @@ export function playNativeTeamPanelSound(context, request) {
   if (clip) return playOriginalClip(context, `sounds/${clip}.wav`, () => {}, request[3] / 65536);
   return null;
 }
+
+// 004B64B0 requests ID94, priority8, unity pitch/gain at sudden-death onset.
+// Descriptor 0055F358 maps ID94 to SuddenDeath.wav.
+export function playNativeSuddenDeathSound(context) {
+  return playOriginalClip(context, "sounds/suddendeath.wav", () => {}, 1);
+}

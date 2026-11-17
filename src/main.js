@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -195,6 +195,7 @@ import {
 import {
   playOriginalSound,
   playNativeSpeech,
+  playNativeSuddenDeathSound,
   playNativeClockSound,
   playNativeAnnouncementLoop,
   playNativeTeamPanelSound,
@@ -2138,10 +2139,16 @@ function applySuddenDeath() {
   if (sdTriggered) return false;
   sdTriggered = true;
   suddenDeath = true;
+  const message = nativeSuddenDeathAnnouncement(() => matchRandom.logicUint());
+  queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
+  if (sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeSuddenDeathSound(audio);
+  }
   if (suddenDeathType === "water") {
     waterLevel = waterLevelForRound(round);
     water.userData.setLevel?.(waterLevel);
-    announce("SUDDEN DEATH — THE WATER RISES");
     return false;
   }
   if (suddenDeathType === "health") {
@@ -2151,13 +2158,11 @@ function applySuddenDeath() {
         revealWormHealth(w);
         w.hurt = Math.max(w.hurt, 0.5);
       }
-    announce("SUDDEN DEATH — EVERY WORM HAS 1 HP");
     updateUI();
     return false;
   }
   if (suddenDeathType === "nuke") {
     poisoned = true;
-    announce("SUDDEN DEATH — NUCLEAR POISON");
     updateUI();
     return false;
   }
@@ -2165,11 +2170,6 @@ function applySuddenDeath() {
     worms.filter((w) => w.team === t).reduce((sum, w) => sum + w.hp, 0),
   );
   const winner = totals[0] === totals[1] ? null : totals[0] > totals[1] ? 0 : 1;
-  announce(
-    winner === null
-      ? "SUDDEN DEATH — DEAD HEAT"
-      : `SUDDEN DEATH — ${winner === 0 ? "MOSS COMPANY" : "CORAL CREW"} LEADS`,
-  );
   for (const w of worms)
     if (winner !== null && w.team !== winner) {
       w.hp = 0;

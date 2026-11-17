@@ -124,3 +124,9 @@ export function nativeMatchResultAnnouncement(name, color, draw, nextRandom) {
   return { text: variants[(nextRandom() & 255) % variants.length].replace("%s", () => name),
     font: draw ? 23 : color + 17 };
 }
+
+// 004B64B0: language slot +0x34, medium white font, one logic RNG draw.
+export function nativeSuddenDeathAnnouncement(nextRandom) {
+  const variants = elimination.suddenDeath;
+  return { text: variants[(nextRandom() & 255) % variants.length], font: 23 };
+}

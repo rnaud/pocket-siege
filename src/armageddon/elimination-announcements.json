@@ -33,5 +33,14 @@
     "A thoroughly dull draw!",
     "Hope you`ve got the energy for the re-match!",
     "A draw. How dull."
+  ],
+  "suddenDeathTable": "00558AF0",
+  "suddenDeath": [
+    "SUDDEN DEATH MODE ON!",
+    "Make `em pay! SUDDEN DEATH!",
+    "It`s time for... SUDDEN DEATH!",
+    "Time out! SUDDEN DEATH ENGAGED!",
+    "Careful out there, it`s SUDDEN DEATH!",
+    "Tactics out of the window, it`s SUDDEN DEATH!"
   ]
 }
