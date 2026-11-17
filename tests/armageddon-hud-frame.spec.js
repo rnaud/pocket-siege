@@ -1,6 +1,7 @@
+import targetEntry from "./fixtures/armageddon/target-entry.json" with { type: "json" };
 import targetTeardown from "./fixtures/armageddon/target-teardown.json" with { type: "json" };
 import targetInput from "./fixtures/armageddon/controller-target-input.json" with { type: "json" };
-import { nativeCollectTargetInput, nativeEndTargeting } from "../src/armageddon/target-input.js";
+import { nativeCollectTargetInput, nativeEndTargeting, nativeBeginTargeting } from "../src/armageddon/target-input.js";
 import targetActivation from "./fixtures/armageddon/controller-target-activation.json" with { type: "json" };
 import { nativeCollectTargetActivation } from "../src/armageddon/controller-input.js";
 import { NativeCollisionScene } from "../src/armageddon/collision-scene.js";
@@ -235,6 +236,20 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of targetEntry.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    sceneMemory.set(c.initial,0x1b778);scene.setInt8(0x11d7c,c.active);scene.setInt32(0x804,696,true);
+    [0x1247c,0x12480].forEach((o,i)=>scene.setInt32(o,c.xy[i],true));
+    const calls=[];
+    nativeBeginTargeting(memory,sceneMemory,{
+      wormState:(...args)=>{calls.push(["state",...args]);return c.state;},
+      lookup:(...args)=>{calls.push(["lookup",...args]);return 1;},
+      wormQuery:(_,event,size)=>{calls.push(["query",event,size]);const p=new Uint8Array(size),v=new DataView(p.buffer);c.position.forEach((value,i)=>v.setInt32(i*4,value,true));return p;},
+      cameraMode:mode=>calls.push(["mode",mode]),cameraTarget:(...args)=>calls.push(["target",...args]),
+    });
+    expect({calls,body:targetEntry.offsets.map(o=>body.getInt32(o,true)),target:[0x1247c,0x12480].map(o=>scene.getInt32(o,true)),output:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,body:c.body,target:c.target,output:c.output});
   }
   for(const c of targetTeardown.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);

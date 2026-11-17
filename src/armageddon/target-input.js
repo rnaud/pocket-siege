@@ -1,6 +1,35 @@
 import { nativeCollectTargetActivation } from './controller-input.js';
 import { nativeClampPlacementTarget } from './target-placement.js';
 
+//004E6420 initializes the cursor and claims priority-2 pointer ownership.
+export function nativeBeginTargeting(memory,sceneMemory,host) {
+  const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  const scene=new DataView(sceneMemory.buffer,sceneMemory.byteOffset,sceneMemory.byteLength);
+  const get=o=>body.getInt32(o,true),put=(o,v)=>body.setInt32(o,v,true);
+  const read=o=>scene.getInt32(o,true),write=(o,v)=>scene.setInt32(o,v,true);
+  if(host.wormState(get(0x3c),get(0x4c))===100) {
+    write(0x12480,Math.min(read(0x12480),(read(0x804)-24)<<16));
+    host.cameraMode(14);host.cameraTarget(read(0x1247c),read(0x12480));
+  } else {
+    const worm=host.lookup(2,((get(0x3c)<<4)+get(0x4c))|0);
+    const p=host.wormQuery(worm,0x7d0,0x154),v=new DataView(p.buffer,p.byteOffset,p.byteLength);
+    write(0x1247c,v.getInt32(0,true));write(0x12480,(v.getInt32(4,true)-0x200000)|0);
+  }
+  put(0xb4,get(0x98)?get(0xdc)<<13:0xa000);put(0xb0,get(0x98)?get(0xdc)<<13:0);
+  if(scene.getInt8(0x11d7c)!==get(0x44)){put(0xbc,1);return;}
+  put(0xac,1);if(get(0xe8)>=0)return;
+  const free=scene.getInt16(0x1b798,true);if(!free){put(0xe8,-1);return;}
+  scene.setInt16(0x1b798,free-1,true);
+  const handle=scene.getInt16(0x1b778+(free-1)*2,true),count=scene.getInt16(0x1b7da,true);
+  let index=0;while(index<count && scene.getInt16(0x1b79a+index*2,true)>=3)index++;
+  for(let i=count;i>index;i--) {
+    scene.setInt16(0x1b79a+i*2,scene.getInt16(0x1b79a+(i-1)*2,true),true);
+    scene.setInt16(0x1b7ba+i*2,scene.getInt16(0x1b7ba+(i-1)*2,true),true);
+  }
+  scene.setInt16(0x1b79a+index*2,2,true);scene.setInt16(0x1b7ba+index*2,handle,true);
+  scene.setInt16(0x1b7da,count+1,true);put(0xe8,handle);
+}
+
 //004E6380. Clear target flags even if the pointer owner is absent; only a
 // matched owner returns to the free stack and gets its handle invalidated.
 export function nativeEndTargeting(memory,sceneMemory) {
