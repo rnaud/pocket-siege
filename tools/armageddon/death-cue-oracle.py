@@ -82,5 +82,39 @@ for speed in [-655360,0,655360]:
    if cpu.reg_read(UC_X86_REG_EIP)!=0x4d8189:raise RuntimeError('Death entry did not reach state tail')
    body={key:struct.unpack('<i',cpu.mem_read(owner+offset,4))[0] for key,offset in fields.items()}
    entries.append(dict(input=initial,result=dict(body=body,calls=entry_calls)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004DE582–004DE5F6 / 004DE6A5',method='Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink.',cases=cases,entries=entries),indent=2)+'\n')
+# Execute the complete controller selector, with a supplied team store and
+# actual worm position-query/virtual getter. Capture only the outbound event.
+actors=0x2400000;cpu.mem_map(actors,0x10000)
+for address,cleanup in [(0x4c2b10,4),(0x4c2cc0,8),(0x4c2d60,8),(0x4ccf50,8),(0x4b26a0,24)]:
+ cpu.mem_write(address,b'\xc2'+struct.pack('<H',cleanup))
+def selection_hook(cpu,address,size,user):
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ if address==0x4c2b10:
+  cpu.reg_write(UC_X86_REG_EAX,len(teams[read(sp+4)-1]))
+ elif address in [0x4c2cc0,0x4c2d60]:
+  body=teams[read(sp+4)-1][read(sp+8)-1]
+  cpu.reg_write(UC_X86_REG_EAX,body['hp' if address==0x4c2cc0 else 'state']&0xffffffff)
+ elif address==0x4ccf50:
+  target=read(sp+8);cpu.reg_write(UC_X86_REG_EAX,actors+target*0x400)
+ elif address==0x4b26a0:
+  selection.append(dict(type=read(sp+8),target=read(sp+12),event=read(sp+16),size=read(sp+20)))
+for address in [0x4c2b10,0x4c2cc0,0x4c2d60,0x4ccf50,0x4b26a0]:
+ cpu.hook_add(UC_HOOK_CODE,selection_hook,begin=address,end=address)
+selections=[]
+profiles=[[],[[]]]
+for hp_mask in range(16):
+ for retired in range(4):
+  for xs in [[300,-100,100,0],[10,10,10,10],[-2147483648,2147483647,-1,1]]:
+   bodies=[dict(hp=1 if hp_mask&(1<<i) else 0,state=0x89 if i==retired else 0x65,x=xs[i]) for i in range(4)]
+   profiles.append([bodies[:2],bodies[2:]])
+for teams in profiles:
+ write(owner+0x80,len(teams));selection=[]
+ for ti,team in enumerate(teams,1):
+  for wi,body in enumerate(team,1):
+   actor=actors+(ti*16+wi)*0x400;write(actor,0x526de0);write(actor+0x90,body['x']&0xffffffff);write(actor+0x94,0)
+ sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+ cpu.emu_start(0x4ec060,stop,count=10000)
+ if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Selector did not return')
+ selections.append(dict(teams=teams,result=selection[0] if selection else None))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004DE582–004DE5F6 / 004DE6A5;004D8030;004EC060',method='Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink. Selection executes full004EC060 with team-store boundaries, real004DF270 position query and004D0F50 getter, and captured event dispatch.',cases=cases,entries=entries,selections=selections),indent=2)+'\n')
 print(f'Captured {len(cases)} death cue cases')

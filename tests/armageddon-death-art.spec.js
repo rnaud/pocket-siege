@@ -74,6 +74,9 @@ test("live death plays past the old cutoff before its explosion", async ({
       debris: 0,
       rings: false,
       active: true,
+      deaths: [],
+      maxConcurrent: 0,
+      damageVisibleAtFirstDeath: null,
     };
     const sample = () => {
       const probe = window.deathFrameProbe;
@@ -89,9 +92,15 @@ test("live death plays past the old cutoff before its explosion", async ({
       probe.rings ||= window.siege
         .getState()
         .nativeParticles.some((p) => p.sprite === "circle25");
-      for (const worm of window.siege.getState().worms.slice(3)) {
-        if (worm.deathPending && worm.originalSprite === "wdie")
-          probe.max = Math.max(probe.max, worm.originalFrame);
+      const dying = window.siege.getState().worms.slice(3)
+        .filter(w => w.deathPending && w.originalSprite === "wdie");
+      probe.maxConcurrent = Math.max(probe.maxConcurrent, dying.length);
+      for (const worm of dying) {
+        if (probe.damageVisibleAtFirstDeath === null)
+          probe.damageVisibleAtFirstDeath = [...document.querySelectorAll('.native-damage-number')]
+            .some(canvas => !canvas.hidden);
+        if (!probe.deaths.includes(worm.x)) probe.deaths.push(worm.x);
+        probe.max = Math.max(probe.max, worm.originalFrame);
       }
       requestAnimationFrame(sample);
     };
@@ -109,8 +118,14 @@ test("live death plays past the old cutoff before its explosion", async ({
           .worms.slice(3)
           .every((w) => !w.deathPending),
       ),
+      { timeout: 15000 }, // Three sequential native death strips plus damage reveals.
     )
     .toBe(true);
+  const sequence = await page.evaluate(() => window.deathFrameProbe);
+  expect(sequence.maxConcurrent).toBe(1);
+  expect(sequence.damageVisibleAtFirstDeath).toBe(false);
+  expect(sequence.deaths).toHaveLength(3);
+  expect(sequence.deaths).toEqual([...sequence.deaths].sort((a, b) => a - b));
   expect(
     await page.evaluate(() => window.siege.getState().explosions),
   ).toBeGreaterThanOrEqual(3);

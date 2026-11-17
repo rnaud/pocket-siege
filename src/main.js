@@ -1,3 +1,4 @@
+import { nativeNextDeath } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
@@ -4415,9 +4416,6 @@ function step(dt) {
         }
       }
       updateUI();
-    } else if (w.deathPending && w.ground && Math.abs(w.vx) < 2) {
-      startOriginalDeath(w);
-      w.dying = 1;
     }
   }
   for (let i = graves.length - 1; i >= 0; i--) {
@@ -4815,25 +4813,39 @@ function step(dt) {
       announce("SUPPLY CRATE LANDED");
     }
   }
-  if (phase === "settle") {
+  // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
+  // Host physics still supplies the busy predicate until the full task scheduler is ported.
+  if (phase === "settle" || (phase === "aim" && worms.some(w => w.deathPending))) {
     const settled =
-      !projectile &&
-      bombs.length === 0 &&
-      airstrikes.length === 0 &&
-      retreat <= 0 &&
-      worms.every(
-        (w) =>
-          !w.deathPending &&
-          !w.originalTeleport &&
-          !w.originalJetpack &&
-          w.dying <= 0 &&
-          (w.hp <= 0 || (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)),
-      );
-    if (settled) for (const w of worms)
-      revealWormHealth(w);
-    const healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
-    shotWait = settled && !healthDisplayBusy ? shotWait + dt : 0;
-    if (shotWait > 0.7) nextTurn();
+      !projectile && !pendingFire &&
+      bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
+      worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&
+        ((w.hp <= 0 && !w.deathPending) ||
+          (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)));
+    let healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
+    let deathStarted = false;
+    if (settled && !healthDisplayBusy) {
+      if (worms.some(w => w.nativeHealthDisplay.pending)) {
+        for (const w of worms) revealWormHealth(w);
+        healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
+      } else {
+        const teams = [0, 1].map(team => worms.filter(w => w.team === team));
+        const dispatch = nativeNextDeath(teams.map(roster => roster.map(w => ({
+          hp: w.hp, state: w.deathPending ? nativeWormState(w) : 0x89,
+          x: Math.round(w.x * 65536) | 0,
+        }))));
+        if (dispatch) {
+          const w = teams[(dispatch.target >> 4) - 1][(dispatch.target & 15) - 1];
+          startOriginalDeath(w);
+          w.dying = 1;
+          deathStarted = true;
+        }
+      }
+    }
+    if (phase === "settle") {
+      shotWait = settled && !healthDisplayBusy && !deathStarted ? shotWait + dt : 0;
+      if (shotWait > 0.7) nextTurn();
+    }
   }
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];

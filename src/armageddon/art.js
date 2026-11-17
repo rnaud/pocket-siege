@@ -1264,10 +1264,8 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     name = spriteIds.sprites[weaponSprites[weapon]].name;
     equipped = true;
   }
-  if (worm.hp <= 0) {
-    name = "wdie";
-    equipped = false;
-  }
+  // Zero HP waits for the controller's death dispatch; only originalDeath
+  // selects wdie above. Damage reveal and other deaths may still be in progress.
   const frozen = worm.frozen > 0 && worm.hp > 0;
   const key = frozen ? "frozen" : name;
   let player = worm.originalPlayer;

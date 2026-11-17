@@ -1,7 +1,7 @@
 {
   "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
-  "block": "004DE582\u2013004DE5F6 / 004DE6A5",
-  "method": "Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink.",
+  "block": "004DE582\u2013004DE5F6 / 004DE6A5;004D8030;004EC060",
+  "method": "Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink. Selection executes full004EC060 with team-store boundaries, real004DF270 position query and004D0F50 getter, and captured event dispatch.",
   "cases": [
     {
       "sprite": 10,
@@ -3220,6 +3220,6426 @@
           }
         ]
       }
+    }
+  ],
+  "selections": [
+    {
+      "teams": [],
+      "result": null
+    },
+    {
+      "teams": [
+        []
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 34,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 33,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 18,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 0,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": {
+        "type": 2,
+        "target": 17,
+        "event": 1064,
+        "size": 292
+      }
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 137,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 300
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -100
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 100
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 0
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 10
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 10
+          }
+        ]
+      ],
+      "result": null
+    },
+    {
+      "teams": [
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -2147483648
+          },
+          {
+            "hp": 1,
+            "state": 101,
+            "x": 2147483647
+          }
+        ],
+        [
+          {
+            "hp": 1,
+            "state": 101,
+            "x": -1
+          },
+          {
+            "hp": 1,
+            "state": 137,
+            "x": 1
+          }
+        ]
+      ],
+      "result": null
     }
   ]
 }

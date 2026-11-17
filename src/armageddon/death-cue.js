@@ -1,3 +1,17 @@
+// 004EC060: scan team/worm order, dispatch death to the leftmost zero-HP body.
+// Retired state0x89 is excluded; equal coordinates retain the first candidate.
+export function nativeNextDeath(teams) {
+  let selected = null;
+  for (let team = 0; team < teams.length; team++)
+    for (let worm = 0; worm < teams[team].length; worm++) {
+      const body = teams[team][worm];
+      if (body.hp !== 0 || body.state === 0x89) continue;
+      if (!selected || (body.x | 0) < selected.x)
+        selected = { x: body.x | 0, target: ((team + 1) * 16 + worm + 1) | 0 };
+    }
+  return selected ? { type: 2, target: selected.target, event: 0x428, size: 0x124 } : null;
+}
+
 // 004D8030..004D806F, after common state preparation.
 export function nativeDeathEntry(input) {
   return { body: { ...input, spoken: 0, vx: 0, vy: 0, angularVelocity: 0, suspended: 1 },
