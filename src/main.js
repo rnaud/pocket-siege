@@ -1,3 +1,4 @@
+import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage } from "./armageddon/worm-poison.js";
 import { nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
 import { nativeBarrelBody } from "./armageddon/barrel-body.js";
@@ -654,6 +655,7 @@ function createWorm(t, i, x, spawnY = null) {
     hp: 100,
     nativePickupFlag: 0,
     nativePickupState: 0x65,
+    nativePoison: { amount: 0, latched: 0 },
     nativeHealthDisplay: { value: 100 << 16, target: 100 << 16, progress: 0, active: 0, pending: 0 },
     x,
     y,
@@ -1479,6 +1481,10 @@ function collectCrate(w, crate = crates[0]) {
   dispose(mesh);
   crates.splice(crates.indexOf(crate), 1);
   dispatchWormEntryAudio(w, nativeCratePickupAudio(crate.nativeBody.kind, w.team + 1, (_team, slot) => slot));
+  // Pickup event3EF is broadcast: health cures the entire collecting team.
+  for (const target of worms) target.nativePoison = nativeWormPoisonPickup(
+    { ...target.nativePoison, team: target.team }, [w.team, worms.indexOf(w), nativePickupCategory(crate.nativeBody.kind)]);
+  poisoned = worms.some(target => target.nativePoison.amount !== 0);
   nativeRecordPickup(w.matchStats, nativePickupCategory(crate.nativeBody.kind));
   w.matchStats.hp = w.hp;
   updateUI();
@@ -2443,20 +2449,18 @@ function surrenderMatch() {
   updateUI();
 }
 function applyPoisonTick() {
-  if (!poisoned) return;
   let hits = 0;
   for (const w of worms) {
-    if (w.hp <= 0 || w.frozen > 0) continue;
-    accountWormDamage(w, 5);
-    revealWormHealth(w);
-    w.hurt = Math.max(w.hurt, 0.65);
-    hits++;
-    if (w.hp === 0) {
-      w.deathPending = true;
-      w.dying = 0.8;
+    const body = { ...w.nativePoison, state: nativeWormState(w) };
+    for (const [damage, force, uncapped] of nativeWormPoisonDamage(body, w.hp)) {
+      accountWormDamage(w, damage, { force: !!force, uncapped: !!uncapped });
+      revealWormHealth(w);
+      w.hurt = Math.max(w.hurt, 0.65);
+      hits++;
+      if (w.hp === 0) { w.deathPending = true; w.dying = 0.8; }
     }
   }
-  if (hits) $("#status").textContent = "Nuclear poison: every worm loses 5 HP.";
+  if (hits) $("#status").textContent = "Poison damages infected worms.";
   updateUI();
 }
 function applySuddenDeath() {
@@ -2486,7 +2490,10 @@ function applySuddenDeath() {
     return false;
   }
   if (suddenDeathType === "nuke") {
-    poisoned = true;
+    // Host sudden-death trigger supplies the dose until native scheme/event routing.
+    for (const w of worms) w.nativePoison = nativeWormPoisonInfect(
+      { ...w.nativePoison, state: nativeWormState(w) }, 5);
+    poisoned = worms.some(w => w.nativePoison.amount !== 0);
     updateUI();
     return false;
   }
@@ -6694,12 +6701,14 @@ window.siege = {
         moving,
         deathPending,
         nativeHurtBody,
+        nativePoison,
         originalRecovery,
       }) => ({
         name,
         hp,
         damageTaken,
         matchStats: { ...matchStats, hp },
+        nativePoison: { ...nativePoison },
         x,
         y,
         vx,
