@@ -187,8 +187,13 @@ export function stepNativeJumpFlight(
       awake: nativeBodyAwake,
       collide: collision,
       skim: body => {
-        const result = nativeWormSkim(body);
-        Object.assign(body, result.body, { type: 3, complex: 1 });
+        const result = nativeWormSkim(body, {
+          state: (current, next) => {
+            const transition = nativeWormTransitionBody(current, next, {});
+            Object.assign(current, transition.body);
+          },
+        });
+        Object.assign(body, result.body);
         for (const call of result.calls) events.push({ ...call,
           operation: call.operation === "sound" ? "waterSound" : call.operation });
       },

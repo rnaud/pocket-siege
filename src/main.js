@@ -1791,6 +1791,7 @@ function handleUtilityTarget(e) {
       return;
     }
     utilityAmmo[team].teleport = spendAmmo(utilityAmmo[team].teleport);
+    w.nativeFlight = null;
     w.vx = w.vy = 0;
     startOriginalTeleport(w, x, y);
     queueWormCamera(w);
@@ -1881,6 +1882,7 @@ function startJetpack() {
   wormLocked = true;
   const w = worms[current];
   if (w.nativeHurtBody?.state === 0x73) { w.nativeHurtBody = null; w.originalHurt = null; }
+  w.nativeFlight = null;
   w.originalParachute = null;
   stepOriginalJetpack(w, 0, 0);
   w.ground = false;
@@ -1999,6 +2001,7 @@ function stepRopeShot(w) {
   }
 }
 function attachRope(w, hit, length, body) {
+  w.nativeFlight = null;
   w.nativeHurtBody = null; w.originalHurt = null; w.knocked = false;
   rope = {
     attached: true,
