@@ -1,5 +1,6 @@
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
 import { nativeLaunch } from "./armageddon/launch.js";
+import { nativeFireInput } from "./armageddon/fire-input.js";
 import { nativeTryBodyPosition } from "./armageddon/motion.js";
 import { startOriginalBlowtorch, finishOriginalBlowtorch } from "./armageddon/art.js";
 import { nativeDrillEntry, nativeDrillTick } from "./armageddon/drill.js";
@@ -1222,6 +1223,7 @@ function beginTurn() {
   turnCount[team] = (next + 1) % roster.length;
   current = worms.indexOf(active);
   active.nativePlacedAction = null;
+  active.nativeFireInput = null;
   phase = "aim";
   cameraSnap = true;
   wormLocked = false;
@@ -2168,8 +2170,9 @@ function updateSliders() {
     drill: "DRILL",
     blowtorch: "BLOWTORCH",
     homing: homingTarget ? null : "SET TARGET",
-    pigeon: homingTarget ? null : "SET TARGET",
-    magic: homingTarget ? null : "SET TARGET",
+    pigeon: homingTarget ? "FIRE PIGEON" : "SET TARGET",
+    magic: homingTarget ? "FIRE MAGIC BULLET" : "SET TARGET",
+    mortar: "FIRE MORTAR",
     bat: "SWING BAT",
     airstrike: "CALL AIRSTRIKE",
     postal: "CALL POSTAL STRIKE",
@@ -2249,6 +2252,34 @@ function startCharge(source) {
   if (WEAPONS[weapon]?.special === "airstrike") {
     beginAirstrikeTargeting();
     return;
+  }
+  const w = worms[current];
+  if (WEAPON_SLOTS[weapon] !== undefined) {
+    const record = nativeHitscanWeapon(weapon).record;
+    if (record["0x68"] === 1) {
+      const input = nativeFireInput({
+        ...w.nativeFireInput, state: 0x67, weapon: WEAPON_SLOTS[weapon],
+        enabled: 1, team: w.team, worm: current,
+        shots: w.nativeFireInput?.shots ?? 0,
+      }, record, { blocked: () => 0, random: () => matchRandom.logicUint(),
+        voice: (_body, _record, { request }) => request[1] });
+      w.nativeFireInput = input.body;
+      if (sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        for (const call of input.calls)
+          if (call.operation === "speech") playNativeSpeech(audio, call.request[0]);
+      }
+      if (input.body.state === 0x69) {
+        chargeFixed = input.body.power;
+        power = chargeFixed / 65536 * 100;
+        chargeSource = source;
+        fire();
+        chargeSource = null;
+        updateSliders();
+        return;
+      }
+    }
   }
   charging = true;
   chargeFixed = 0;

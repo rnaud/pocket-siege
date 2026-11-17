@@ -29,6 +29,13 @@ import {
   nativeBodyAwake,
 } from "./motion.js";
 const fixed = (value) => Math.round(value * 65536) | 0;
+// Fire input004F9FA0 bypasses charging for mode3 records with fixed power.
+// Apply the same value to trajectory planning and AI/direct release callers.
+function releasePower(record, power) {
+  return record['0x68'] === 1 && record['0x70'] === 3 && record['0x78']
+    ? Math.trunc((record['0x78'] << 16) / 100) | 0
+    : fixed(Math.max(0, Math.min(100, power)) / 100);
+}
 const kinds = new Set([
   "rocket",
   "homing",
@@ -70,7 +77,7 @@ export function nativeProjectileLaunch(kind, angle, power) {
     record,
     nativeCos(turn),
     -nativeSin(turn),
-    fixed(Math.max(0, Math.min(100, power)) / 100),
+    releasePower(record, power),
   );
   return { vx: (vx / 65536) * 50, vy: (-vy / 65536) * 50 };
 }
@@ -118,7 +125,7 @@ export function nativeProjectileLaunchGeometry(kind, worm, angle, power, height,
   // 004F9C30 selects placed-weapon power independently of the charge slider.
   const charge = record["0x68"] === 2
     ? nativePlacedPower(record)
-    : fixed(Math.max(0, Math.min(100, power)) / 100);
+    : releasePower(record, power);
   const [vx, vy] = nativeLaunchVelocity(record, origin.vx, origin.vy,
     charge, nativeWormState(worm), fixed(-(worm.vy ?? 0) / 50));
   return { x: origin.x / 65536, y: height - origin.y / 65536,
