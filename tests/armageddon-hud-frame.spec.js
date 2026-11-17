@@ -1,3 +1,5 @@
+import gamePalette from "./fixtures/armageddon/game-palette.json" with { type: "json" };
+import { NativeGamePalette } from "../src/armageddon/game-palette.js";
 import environmentPalette from "./fixtures/armageddon/environment-palette.json" with { type: "json" };
 import { nativeEnvironmentPalette } from "../src/armageddon/environment-palette.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
@@ -7,6 +9,16 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of gamePalette.cases) {
+    const palette = new NativeGamePalette(row.first, row.last);
+    for (const step of row.steps) expect(palette.add(step.color)).toBe(step.value);
+    for (const read of row.reads) expect(palette.read(read.index)).toEqual(read.color);
+    const entries = [];
+    for (let entry; (entry = palette.next());) entries.push(entry);
+    expect(entries).toEqual(row.entries);
+    expect(palette.free).toEqual(row.free);
+    expect(palette.dirty).toBe(row.dirty);
+  }
   for (const row of environmentPalette.cases) {
     const sources = environmentPalette.ranges.map(([first, last]) => ({ first, last, colors: environmentPalette.colors }));
     const previous = { palettes: sources.map(() => environmentPalette.colors.map(() => [0, 0, 0])),
