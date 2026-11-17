@@ -68,9 +68,11 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  // This test checks Freeze turn progression, independently of supply-drop settling.
-  await page.evaluate(() => {
+  // Fix terrain/object placement so random settling does not time the Freeze check.
+  await page.evaluate(async () => {
+    await window.siege.debug.resetSeed(42);
     window.siege.debug.setCrateKind("grenade");
     window.siege.debug.collectCrate();
   });

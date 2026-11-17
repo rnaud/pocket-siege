@@ -1212,9 +1212,11 @@ function spawnHazards() {
       if (crates.some(crate => Math.abs(crate.x - x) < 55)) continue;
       if (hazards.some((h) => Math.abs(h.x - x) < 70)) continue;
       const mesh = createOriginalObject("oildrum1", -14);
-      mesh.position.set(x, ground + 14, 17);
       group.add(mesh);
-      const hazard = { x, y: ground + 14, mesh, nativeOrderId: nativeRenderOrder.allocate() };
+      // 004D0D30 only places a collision-free initial body. The native mask
+      // extends beyond the old14px visual offset, which could leave the body
+      // at its constructor default(0,-1024). Settle from clear air instead.
+      const hazard = { x, y: H + 32, mesh, nativeOrderId: nativeRenderOrder.allocate() };
       hazard.nativeBody = nativeBarrelBody(Math.round(x * 65536),
         Math.round((H - hazard.y) * 65536), 1, Math.floor(H - waterLevel), 96,
         (px, py, body) => nativeSceneCollision(hazard, body, px / 65536, H - py / 65536, terrain, worms, H));
