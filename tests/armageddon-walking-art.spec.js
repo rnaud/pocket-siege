@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/walking-art.json" with { type: "json" };
+import motion from "./fixtures/armageddon/walking-motion.json" with { type: "json" };
+import { nativeWalkPosition } from "../src/armageddon/walking-motion.js";
 import {
   nativeWalkingTick,
   nativeWalkingSprite,
@@ -12,6 +14,14 @@ test("walking cadence and slope selection match original executable blocks", { t
     });
   for (const row of fixture.slopes)
     expect(nativeWalkingSprite(row.slope)).toBe(row.sprite);
+  for (const row of motion.cases) {
+    const queries = [];
+    const output = nativeWalkPosition(...row.input, (x, y) => {
+      queries.push([x, y]);
+      return row.pattern[(queries.length - 1) % row.pattern.length];
+    });
+    expect({ output, queries }).toEqual({ output: row.output, queries: row.queries });
+  }
 });
 test("original walking strips preserve pixels, follow slopes and stop/reset with movement", async ({
   page,

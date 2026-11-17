@@ -6,6 +6,7 @@ import { islandTop, islandVoid } from "./island-profile.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import collisionShapes from "./armageddon/collision-shapes.json" with { type: "json" };
 import { nativeShapeTerrainOverlap } from "./armageddon/collision-world.js";
+import { nativeWalkPosition } from "./armageddon/walking-motion.js";
 export let W = 1200,
   H = 650;
 export function setWorldDimensions(width = 1200, height = 650) {
@@ -188,20 +189,17 @@ export function walkWorm(w, terrain, direction, dt) {
   const steps = Math.max(1, Math.ceil(42 * dt));
   let moved = false;
   for (let step = 0; step < steps; step++) {
-    const x = w.x + (Math.sign(direction) * 42 * dt) / steps;
-    let found = false;
-    for (let rise = 0; rise <= 6; rise++) {
-      if (bodyBlocked(terrain, x, w.y + rise)) continue;
-      let y = w.y + rise;
-      for (let drop = 0; drop < 6 && !bodyBlocked(terrain, x, y - 1); drop++)
-        y--;
-      w.x = x;
-      w.y = y;
-      w.ground = bodyBlocked(terrain, x, y - 1);
-      found = moved = true;
-      break;
-    }
-    if (!found || !w.ground) break;
+    // Cadence still uses the host's speed; position/slope attempts now use
+    // native004F4D80 and its eight-pixel search, without snapping down a cliff.
+    const attempt = nativeWalkPosition(Math.round(w.x * 65536), Math.round((H - w.y) * 65536),
+      Math.round(Math.sign(direction) * 42 * dt / steps * 65536), 8,
+      (x, y) => bodyBlocked(terrain, x / 65536, H - y / 65536));
+    if (!attempt.result) break;
+    w.x = attempt.x / 65536;
+    w.y = H - attempt.y / 65536;
+    w.ground = attempt.result === 1;
+    moved = true;
+    if (!w.ground) break;
   }
   w.walkRise = w.y - startY;
   return moved;
