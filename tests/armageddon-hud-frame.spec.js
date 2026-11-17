@@ -1,3 +1,4 @@
+import replayPipelineRestore from "./fixtures/armageddon/replay-pipeline-restore.json" with { type: "json" };
 import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture.json" with { type: "json" };
 import replayPipeline from "./fixtures/armageddon/replay-pipeline.json" with { type: "json" };
 import { createNativeReplayPipeline } from "../src/armageddon/replay-pipeline.js";
@@ -257,13 +258,16 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       position: stream.position, length: stream.length, streamHash: hash(stream.bytes.slice(0,stream.length)),
       copiedHash: hash(sceneMemory.slice(0x1cad8,0x1d428)), calls }).toEqual(row.result);
   }
-  for (const row of replaySnapshotRestore.cases) {
+  for (const row of [...replaySnapshotRestore.cases, ...replayPipelineRestore.cases.map(row => ({
+    input: { ...replaySnapshotRestore.cases[row.baseCase].input, entry: true, sound: row.sound },
+    result: { ...replaySnapshotRestore.cases[row.baseCase].result, entry: row.entry, calls: row.calls },
+  }))]) {
     const stream = new NativeReplayStream(65536), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks], objects = [...row.input.objects], buffers = [...row.input.buffers];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
     const sceneMemory = new Uint8Array(0x20000), scene = new DataView(sceneMemory.buffer);
     scene.setInt32(0x1b8dc, 320, true); scene.setInt32(0x3a4, 17, true);
-    const manager = { root: { id: 0x2000400 }, environment: { id: 0x2500000 } };
-    nativeRestoreReplaySnapshot(stream, manager, { context: 0x2020000, renderer: 0x7654321, sceneMemory, links: [17],
+    let manager = { root: { id: 0x2000400 }, environment: { id: 0x2500000 } };
+    const restoreOptions = { context: 0x2020000, renderer: 0x7654321, sceneMemory, links: [17],
       flushTask: task => { calls.push([0x2200200, task.id]); if (row.input.clearRoot) manager.root = null; }, destroyTask: (task, flag) => calls.push([0x2200210, task.id, flag]),
       flushEnvironment: env => { calls.push([0x2200220, env.id]); if (row.input.clearEnvironment) manager.environment = null; }, destroyEnvironment: (env, flag) => calls.push([0x2200230, env.id, flag]),
       allocateObject: size => { const request = objects.shift(); expect(size).toBe(request.size); return request.pointer ? { id: request.pointer } : null; },
@@ -271,7 +275,19 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       allocateTask: size => { const request = tasks.shift(); expect(size).toBe(request.size); return { id: request.pointer }; },
       allocateResource: size => { const request = allocations.shift(); expect(size).toBe(request.size); return request.pointer; },
       constructText: (...args) => { calls.push([0x4c6610, ...args]); return args[0]; },
-      constructSurface: (...args) => { calls.push([0x492bc0, ...args]); return args[0]; } });
+      constructSurface: (...args) => { calls.push([0x492bc0, ...args]); return args[0]; } };
+    if (row.input.entry) {
+      scene.setInt32(0x12488,61604,true); scene.setInt32(0x7f0,12345678,true); scene.setInt32(0x1d434,99,true);
+      sceneMemory.fill(0xa5,0x1c188,0x1c188+0x950);
+      for (let i=0;i<0x950;i++) sceneMemory[0x1cad8+i]=(i*17+31)&255;
+      const memory=new Uint8Array(0x300), view=new DataView(memory.buffer);
+      view.setInt32(0x26c,1,true); view.setInt32(0x270,-1,true);
+      const pipeline=createNativeReplayPipeline({sceneMemory,managerMemory:memory,stream,root:manager.root,environment:manager.environment,host:{
+        restore:restoreOptions, device:{readyForPlayback:()=>{calls.push(["ready"]);return 1;}},
+        audio:row.input.sound ? {reset:()=>calls.push(["audioReset"])} : null,
+      }});
+      manager=pipeline.manager; pipeline.tick();
+    } else nativeRestoreReplaySnapshot(stream,manager,restoreOptions);
     const { root: task, environment: env } = manager;
     const capture = node => ({ id: node.id, type: node.type, parent: node.parent?.id ?? 0, capacity: node.capacity,
       ownsRegistry: node.ownsRegistry, sharedRegistry: node.registry === task.registry, registryType: node.registryType,
@@ -281,7 +297,10 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     expect({ tree: task ? capture(task) : null, registry: task ? task.registry.flatMap((bucket, index) => bucket.map(entry => [index, entry.type, entry.index, entry.task.id])) : [],
       environment: env ? { id: env.id, all: { capacity: env.all.capacity, entries: env.all.entries },
         category: { capacity: env.categories[2].capacity, entries: env.categories[2].entries }, state: [...env.state], context: env.context, dirty: env.dirty } : null,
-      contextBytes: [...sceneMemory.slice(0x7ec, 0x47a8)], phase: scene.getInt32(0x12414, true), position: stream.position, calls }).toEqual(row.result);
+      contextBytes: [...sceneMemory.slice(0x7ec, 0x47a8)], phase: scene.getInt32(0x12414, true), position: stream.position, calls,
+      ...(row.input.entry ? { entry: { fields: [0x12488,0x7f0,0x1d434,0x1d444].map(offset=>scene.getInt32(offset,true)),
+        manager: [manager.playbackError,manager.playbackFailure], copiedHash: createHash('sha256').update(sceneMemory.slice(0x1c188,0x1c188+0x950)).digest('hex') } } : {}),
+    }).toEqual(row.result);
   }
   for (const row of replayTreeRestore.cases) {
     const stream = new NativeReplayStream(32768), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks];
