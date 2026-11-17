@@ -620,7 +620,12 @@ test("best-of-three, storm weather and a supply crate start together", async ({
       () => document.querySelector("#weather-layer").className,
     ),
   ).toBe("storm");
-  expect(Math.abs(state.wind)).toBeLessThanOrEqual(26);
+  // Weather is visual; native default wind selects levels -10..10 in
+  // signed 16.16, then the physics adapter converts to engine units.
+  const nativeWindLevels = Array.from({ length: 21 }, (_, index) =>
+    Math.trunc(((index - 10) * 65536) / 35) / 65536 * 2500,
+  );
+  expect(nativeWindLevels).toContain(state.wind);
 });
 
 test("daily island starts a seeded clear-weather solo match", async ({
