@@ -2868,11 +2868,7 @@ function applyNativeAreaRequest(targets, request) {
 }
 function applyNativeHitPackets(targets, dispatches) {
     for (const dispatch of dispatches) {
-      if (dispatch.sound?.[0] === 0x61) sfx("batimpact");
-      if (dispatch.sound?.[0] === 0x21) sfx("axeimpact");
-      if (dispatch.sound?.[0] === 0x37) sfx("sizzle");
-      if (dispatch.sound?.[0] === 0x55) sfx("drillimpact");
-      if (dispatch.sound?.[0] === 0x65) sfx("firepunchimpact");
+      if (dispatch.sound) queueGameSound(dispatch.sound);
       if (dispatch.effect) spawnNativeParticleRequest(dispatch.effect);
       if (!dispatch.packet) continue;
       const mine = targets[dispatch.body].mine;
@@ -3131,7 +3127,12 @@ function fireDragonBall(prepared = false) {
   lastShot = {kind:"dragonball", shooter:w.name, points:[{x:projectile.x,y:projectile.y}], impact:null};
   phase = "flight"; retreat = retreatSeconds; shotWait = 0;
   move = aimInput = 0; charging = false; chargeSource = null;
-  sfx("dragonball");
+  const release = nativeLaunchAudio(config.record, { loop: 0, burst: 0, ordinal: 0, flag: 0, team });
+  if (sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeProjectileReleaseSound(audio, release, queueGameSound, w);
+  }
   $("#status").textContent = "Dragon Ball away. Retreat!";
   updateUI();
 }
@@ -3146,7 +3147,7 @@ function stepDragonBall() {
         const hit = nativeDragonBallHit(body, targets);
         for (const call of hit.calls) {
           if (call.operation === "damage") applyNativeHitPackets(targets,[{body:call.receiver,packet:call.request}]);
-          if (call.operation === "sound") sfx("dragonballimpact");
+          if (call.operation === "sound") queueGameSound(call.request);
         }
         return hit.hit;
       },
@@ -4856,7 +4857,12 @@ function stepFrame(dt) {
       if (!w.originalRecoil) { pendingFire = null; finishAction("Fire punch complete. Retreat!"); }
     } else if (pending.stage === "axe") {
       for (const call of stepOriginalAxe(w, nativeHitscanWeapon("axe").record["0x70"], H)) {
-        if (call.operation === "sound") sfx("axerelease");
+        if (call.operation === "sound" && sound) {
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          w.nativeActionPlayback = playNativeOwnedSound(audio,
+            [call.request[0], 3, ...call.request.slice(1)], w.nativeActionPlayback);
+        }
         if (call.operation === "area") {
           const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a,b) => a.type-b.type);
           applyNativeAreaRequest(targets, call.request);
