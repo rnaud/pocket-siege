@@ -12,7 +12,7 @@ export function nativeFlameBody(record, frame, counter, random) {
       x: record[0], y: record[1], vx: record[2], vy: record[3],
       smokeProgress: 0, jitterX: 0, jitterY: 0, burnProgress: 0,
       hitDelay: 0, initial: 1, contact: 0, enabled: 1, created: frame,
-      identity: counter & 255, reserved: 0,
+      identity: counter & 255, direction: 0,
     },
     record: record.slice(0, 11),
     nextCounter: (counter + 1) | 0,

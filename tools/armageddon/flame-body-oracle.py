@@ -32,7 +32,7 @@ def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 def signed(v):return v if v<0x80000000 else v-0x100000000
 
 context=0x3000000;cpu.mem_map(context,0x20000)
-fields={'age':0x3c,'strength':0x40,'progress':0x44,'decay':0x48,'x':0x4c,'y':0x50,'vx':0x54,'vy':0x58,'smokeProgress':0x5c,'jitterX':0x60,'jitterY':0x64,'burnProgress':0x68,'hitDelay':0x6c,'initial':0x70,'contact':0x74,'enabled':0x78,'created':0x7c,'identity':0xb0,'reserved':0xb4}
+fields={'age':0x3c,'strength':0x40,'progress':0x44,'decay':0x48,'x':0x4c,'y':0x50,'vx':0x54,'vy':0x58,'smokeProgress':0x5c,'jitterX':0x60,'jitterY':0x64,'burnProgress':0x68,'hitDelay':0x6c,'initial':0x70,'contact':0x74,'enabled':0x78,'created':0x7c,'identity':0xb0,'direction':0xb4}
 def ret(value,cleanup):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_EAX,value&0xffffffff);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target)
 def hook(cpu,address,size,user):

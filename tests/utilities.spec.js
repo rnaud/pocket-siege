@@ -1,3 +1,4 @@
+import { stepNativeFlame } from "../src/armageddon/flame-runtime.js";
 import flameArt from "./fixtures/armageddon/flame-art.json" with { type: "json" };
 import { nativeFlameArt } from "../src/armageddon/flame-art.js";
 import flameTicks from "./fixtures/armageddon/flame-tick.json" with { type: "json" };
@@ -167,6 +168,50 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  {
+    const pool = Array(200).fill(null);
+    let counter = 0, frame = 0, created = 0, burns = 0, hits = 0;
+    const random = () => 32768;
+    const spawn = record => {
+      const result = nativeFlameBody(record, frame, counter, random);
+      counter = result.nextCounter;
+      const actor = { body: result.body, record: result.record };
+      registerNativeFlame(pool, actor, frame, old => { pool[old.slot] = null; });
+      created++;
+    };
+    spawn([0, 0, 524288, -524288, 0, 4, 1, 3000, 100, 5, 0]);
+    const target = { type: 2, x: 30 * 65536, y: 19 * 65536 };
+    for (; frame < 2000 && pool.some(Boolean); frame++) {
+      for (const actor of [...pool]) {
+        if (!actor || pool[actor.slot] !== actor) continue;
+        const tick = stepNativeFlame(actor.body, actor.record,
+          { frame, gravity: 0x3d70, wind: 0, water: 100 }, {
+            collide: (x, y) => y >= 20,
+            candidates: () => [target],
+            logicRandom: random, visualRandom: random,
+            parent: () => 23, allocate: () => true,
+            flame: (allocation, parent, record) => spawn(record),
+            hit: (victim, event, size, packet) => {
+              expect(victim).toBe(target); expect(event).toBe(0x433);
+              expect(packet[5]).toBe(1); hits++;
+            },
+            burn: () => burns++, busy: () => {}, camera: () => {},
+            smoke: () => {}, sound: () => {}, delete: () => {},
+          });
+        actor.body = tick.body; actor.record = tick.record;
+        if (tick.deleted) pool[actor.slot] = null;
+        else {
+          const art = nativeFlameArt(actor.body);
+          actor.body = art.body;
+          expect(Number.isFinite(art.request[5])).toBe(true);
+        }
+      }
+    }
+    expect(created).toBeGreaterThan(1);
+    expect(burns).toBeGreaterThan(0);
+    expect(hits).toBeGreaterThan(0);
+    expect(pool.filter(Boolean)).toHaveLength(0);
+  }
   for (const row of flameArt.cases) {
     const result = nativeFlameArt(row.input);
     expect(result.body).toEqual(row.output);
