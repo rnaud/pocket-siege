@@ -236,6 +236,14 @@ export function playNativeQueuedSound(context, request) {
     request[3] / 65536, false, request[2] / 65536, request[1], request[4]) : null;
 }
 
+// 004DD5D0 stops the worm's previous sound at+38C before retaining a new one.
+export function playNativeOwnedSound(context, request, previous) {
+  previous?.stop();
+  const entry = soundSlots.slots[request[0]];
+  return entry ? playOriginalClip(context, `sounds/${entry.clip}`, () => {},
+    request[3] / 65536, false, request[2] / 65536, request[1], request[4], true) : null;
+}
+
 // Original004FABA9..004FADDB queues one-shots, but004DD610 owns immediate
 // body loops. Voice lookup precedes its queued sound request; it is not itself
 // a playback call. The caller retains the returned loop for stop/interruption.

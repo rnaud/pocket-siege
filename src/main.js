@@ -197,6 +197,7 @@ import {
   playOriginalSound,
   playNativeSpeech,
   playNativeQueuedSound,
+  playNativeOwnedSound,
   playNativeAnnouncementLoop,
   playNativeHitVoice,
   playNativeRecoverySound,
@@ -2933,16 +2934,19 @@ function applyNativeHitPackets(targets, dispatches) {
       }
     }
 }
+function dispatchPreparationAudio(worm, calls = []) {
+  if (!sound || !calls.length) return;
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  audio.resume();
+  for (const call of calls) {
+    if (call.operation === "queuedSound") nativeSoundQueue.enqueue(call.request);
+    else if (call.operation === "ownedSound")
+      worm.nativeHitVoicePlayback = playNativeOwnedSound(audio, call.request, worm.nativeHitVoicePlayback);
+  }
+}
 function beginWeaponPreparation(worm, kind, aim) {
   if (!startOriginalPreparation(worm, kind, aim)) return false;
-  if (sound && worm.originalPreparation.sounds.length) {
-    audio ??= new (window.AudioContext || window.webkitAudioContext)();
-    audio.resume();
-    // Fire Punch/Dragon Ball emit speech slots10/15. Tick-time shotgun
-    // reload remains a separate sound-effect event.
-    for (const slot of worm.originalPreparation.sounds)
-      playNativeSpeech(audio, slot);
-  }
+  dispatchPreparationAudio(worm, worm.originalPreparation.audioCalls);
   return true;
 }
 
@@ -4859,7 +4863,7 @@ function stepFrame(dt) {
       }
     } else {
       const result = stepOriginalPreparation(w);
-      if (result?.sounds.includes(0x51)) sfx("shotgunreload");
+      if (result) dispatchPreparationAudio(w, result.audioCalls);
       if (result?.released) {
         pendingFire = null;
         angle = pending.angle;

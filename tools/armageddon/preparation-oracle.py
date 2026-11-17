@@ -54,7 +54,7 @@ for address,code in [(setprogress,b'\xc2\x04\x00'),(getstate,b'\xc2\x08\x00'),(g
     (0x4edaf0,b'\x8b\x44\x24\x08\x05\xe8\x03\x00\x00\xc2\x08\x00'),
     (0x4faf90,b'\xc2\x14\x00'),(0x4fa840,b'\xc2\x10\x00')]: cpu.mem_write(address,code)
 cpu.mem_write(0x4ee960,b'\xc3')
-sounds=[];targets=[];released=[]
+sounds=[];audio_calls=[];targets=[];released=[]
 current_sprite=progress=0
 def observe_extra(cpu,address,size,unused):
     sp=cpu.reg_read(UC_X86_REG_ESP)
@@ -62,17 +62,21 @@ def observe_extra(cpu,address,size,unused):
     if address==setprogress: calls.append({'operation':'setProgress','progress':read(sp+4)})
     if address==getstate: write(read(sp+4),current_sprite);write(read(sp+8),progress)
     if address==transition: targets.append(read(sp+4))
-    if address in [0x4edc90,0x4dd5d0]: sounds.append(read(sp+4))
+    if address in [0x4edc90,0x4dd5d0]:
+        sounds.append(read(sp+4))
+        request=list(struct.unpack('<5i' if address==0x4edc90 else '<4i',cpu.mem_read(sp+4,20 if address==0x4edc90 else 16)))
+        if address==0x4dd5d0:request.insert(1,3)
+        audio_calls.append(dict(operation='queuedSound' if address==0x4edc90 else 'ownedSound',request=request))
     if address==0x4fa840: released.append(True)
 for address in [0x4ee960,setprogress,getstate,transition,0x4edc90,0x4dd5d0,0x4fa840]: cpu.hook_add(UC_HOOK_CODE,observe_extra,begin=address,end=address)
 fields=json.loads((Path(__file__).resolve().parents[2]/'src/armageddon/weapon-art-fields.json').read_text())
 def invoke(address,arguments):
-    calls.clear();sounds.clear();targets.clear();released.clear()
+    calls.clear();sounds.clear();audio_calls.clear();targets.clear();released.clear()
     cpu.mem_write(stack+0xff00,struct.pack('<I',stop)+b''.join(struct.pack('<I',v&0xffffffff) for v in arguments))
     cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
     cpu.emu_start(address,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop: raise RuntimeError(f'Did not return {address:x}')
-def result(): return {'calls':list(calls),'sounds':list(sounds),'delay':struct.unpack('<i',cpu.mem_read(owner+0x2b8,4))[0],
+def result(): return {'calls':list(calls),'sounds':list(sounds),'audioCalls':list(audio_calls),'delay':struct.unpack('<i',cpu.mem_read(owner+0x2b8,4))[0],
     'cue':read(owner+0x2cc),'control':read(owner+0x27c),'burst':read(owner+0x2ac),'released':bool(released),'targets':list(targets)}
 vectors=[];ticks=[]
 selector=json.loads((Path(__file__).resolve().parents[2]/'tests/fixtures/armageddon/weapon-art.json').read_text())

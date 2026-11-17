@@ -8,7 +8,7 @@ export function nativePreparation(
   { random = 0, voice = (slot) => slot, control = 0, cue = 0 } = {},
 ) {
   const calls = [],
-    sounds = [];
+    sounds = [], audioCalls = [];
   const queue = (sprite_id, value = 0) =>
     calls.push({ operation: "queue", sprite_id, progress: value >>> 0 });
   const sprite = nativeWeaponAnimation(record);
@@ -29,7 +29,9 @@ export function nativePreparation(
     }
   } else if (record["0x68"] === 3) {
     queue(0x17f);
-    sounds.push(voice(random & 0x10000 ? 0x18 : 0x2a));
+    const id = voice(random & 0x10000 ? 0x18 : 0x2a);
+    sounds.push(id);
+    audioCalls.push({ operation: "queuedSound", request: [id, random & 0x10000 ? 5 : 3, 65536, 65536, 0] });
   } else if (record["0x68"] === 4) {
     const entry = {
       1: [0x1ad, 10],
@@ -43,12 +45,16 @@ export function nativePreparation(
       if ([4, 5, 23].includes(record["0x6c"])) control = 0;
       calls.push({ operation: "clear" });
       queue(entry[0]);
-      sounds.push(entry[1] < 0 ? -entry[1] : voice(entry[1]));
+      const id = entry[1] < 0 ? -entry[1] : voice(entry[1]);
+      sounds.push(id);
+      audioCalls.push({ operation: record["0x6c"] === 23 ? "ownedSound" : "queuedSound",
+        request: [id, 3, 65536, 65536, 0] });
     } else if (record["0x6c"] === 9) queue(0x173);
   }
   return {
     calls,
     sounds,
+    audioCalls,
     delay,
     cue,
     control,
@@ -64,10 +70,11 @@ export function nativePreparationTick(record, state, currentState = 0x69) {
   const { sprite, progress } = state;
   let { delay, cue, control, burst } = state;
   const calls = [],
-    sounds = [];
+    sounds = [], audioCalls = [];
   const result = (released = false) => ({
     calls,
     sounds,
+    audioCalls,
     delay,
     cue,
     control,
@@ -78,6 +85,7 @@ export function nativePreparationTick(record, state, currentState = 0x69) {
   if (record["0x68"] === 1) {
     if (cue) {
       sounds.push(0x51);
+      audioCalls.push({ operation: "queuedSound", request: [0x51, 3, 65536, 65536, 0] });
       cue = 0;
     }
     if (record["0x6c"] === 5 && sprite === 0x1fd) {

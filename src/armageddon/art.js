@@ -609,6 +609,7 @@ export function startOriginalPreparation(worm, weapon, angle) {
     record,
     player.current.id,
     aimProgress(angle),
+    { voice: slot => slot | 0x10000 },
   );
   applyAnimationCalls(player, state.calls);
   worm.originalPreparation = { record, ...state };
