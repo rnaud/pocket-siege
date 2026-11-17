@@ -55,8 +55,15 @@ export const UTILITIES = {
 
 export const UTILITY_KINDS = Object.keys(UTILITIES);
 
+// Native slots67/69 activate from inventory during team updates, not clicks.
+export const AUTOMATIC_UTILITIES = {
+  doubledamage: { label: "Double Damage", slot: 67 },
+  doubletime: { label: "Double Time", slot: 69 },
+};
+
 export function freshUtilities() {
   return Object.fromEntries(
-    UTILITY_KINDS.map((kind) => [kind, UTILITIES[kind].fresh]),
+    [...UTILITY_KINDS.map((kind) => [kind, UTILITIES[kind].fresh]),
+      ...Object.keys(AUTOMATIC_UTILITIES).map((kind) => [kind, 0])],
   );
 }

@@ -544,8 +544,8 @@
     {
       "slot": 67,
       "native_name": "DamageX2",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "doubledamage",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 19
     },
@@ -560,8 +560,8 @@
     {
       "slot": 69,
       "native_name": "DoubleTime",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "doubletime",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 19
     },

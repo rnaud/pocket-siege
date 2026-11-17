@@ -1,5 +1,6 @@
 import { NativeSoundQueue } from "./armageddon/sound-queue.js";
 import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
+import { nativeAutomaticUtilities } from "./armageddon/automatic-utilities.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
@@ -272,7 +273,7 @@ import {
 } from "./progress.js";
 import { nextSeriesWins, seriesWinner } from "./series.js";
 import { applyPickup, PICKUP_KINDS } from "./pickups.js";
-import { UTILITIES, UTILITY_KINDS, freshUtilities } from "./utilities.js";
+import { UTILITIES, UTILITY_KINDS, AUTOMATIC_UTILITIES, freshUtilities } from "./utilities.js";
 import { SCHEMES } from "./schemes.js";
 import { modifierSettings } from "./modifiers.js";
 import { readSettings, writeSettings } from "./settings.js";
@@ -419,6 +420,8 @@ let format = "single",
   weather = "clear",
   modifier = "standard",
   gravityScale = 1,
+  damageMultiplier = 1,
+  automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 },
   blastScale = 1,
   scheme = "classic",
   stockpile = false,
@@ -914,6 +917,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     createWeaponDelays(isDaily ? {} : configuredDelays),
   );
   utilityAmmo = carriedUtilities ?? [freshUtilities(), freshUtilities()];
+  damageMultiplier = 1;
+  automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 };
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
   suddenDeath = false;
@@ -1275,10 +1280,10 @@ function collectCrate(w) {
   const { kind, mesh } = crate;
   let label;
   if (kind === "utility") {
-    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk", "bungee", "lowgravity"];
+    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk", "bungee", "lowgravity", ...Object.keys(AUTOMATIC_UTILITIES)];
     const utility = pool[Math.floor(logicRandom() * pool.length)];
     utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], 1);
-    label = `+1 ${UTILITIES[utility].label}`;
+    label = `+1 ${(UTILITIES[utility] || AUTOMATIC_UTILITIES[utility]).label}`;
   } else if (kind === "special") {
     const special =
       SPECIAL_WEAPONS[Math.floor(logicRandom() * SPECIAL_WEAPONS.length)];
@@ -1339,6 +1344,8 @@ function beginTurn() {
   // 004B3210 resets the shared environment before the next team's turn.
   // Preserve the selected browser match modifier as the baseline.
   gravityScale = modifierSettings(modifier).gravityScale;
+  damageMultiplier = 1;
+  automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 };
   matchDamageSourceActive = false;
   nativeDamageReaction = { ...createNativeDamageReaction(), firstBlood: nativeDamageReaction.firstBlood };
   nativeClockTarget = 65536;
@@ -1378,6 +1385,7 @@ function beginTurn() {
   cameraSnap = true; manualCamera = null;
   wormLocked = false;
   time = turnSeconds;
+  updateAutomaticUtilities();
   nativeClockPresentation.displayed = turnSeconds * 1000;
   nativeClockPresentation.warned = 0;
   const windMax = weather === "storm" ? 52 : weather === "rain" ? 36 : 28;
@@ -2672,7 +2680,7 @@ function accountWormDamage(w, damage, options = {}) {
       state: nativeWormState(w),
     },
     damage,
-    options,
+    { multiplier: damageMultiplier, ...options },
   );
   // 004B4CE0 event0x430 -> 004C2A00: only attributed, reportable damage
   // enters match statistics. The host turn adapter supplies source presence.
@@ -4390,6 +4398,21 @@ function queueControllerSpeech(request) {
 function submitQueuedSound(request) {
   playNativeQueuedSound(audio, request);
 }
+function updateAutomaticUtilities() {
+  const loadout = utilityAmmo[team];
+  if (!worms[current] || (!loadout.doubledamage && !loadout.doubletime)) return;
+  const result = nativeAutomaticUtilities({
+    ...automaticUtilityState, team: team + 1,
+    time: Math.round(time * 1000), flags: worms[current].nativeTeamModifiers || 0,
+  }, [loadout.doubledamage, 0, loadout.doubletime, 0]);
+  automaticUtilityState = result.body;
+  time = result.body.time / 1000;
+  for (const w of worms) if (w.team === team) w.nativeTeamModifiers = result.body.flags;
+  for (const [kind, utility] of Object.entries(AUTOMATIC_UTILITIES))
+    if (result.cleared.includes(utility.slot)) loadout[kind] = 0;
+  damageMultiplier = nativeTeamEnvironment({ damageMultiplier, gravityPercent: 100 }, result.body.flags).damageMultiplier;
+}
+
 function step(dt) {
   stepFrame(dt);
   // 004A1A00 submits queued sounds after frame tasks. Immediate per-body
@@ -4408,6 +4431,7 @@ function stepFrame(dt) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
+  if (phase !== "over" && phase !== "break" && phase !== "menu") updateAutomaticUtilities();
   nativeAnnouncementTick(nativeAnnouncements);
   const announcementAudio = nativeAnnouncementAudioTick(announcementVolume, announcementPlayback ? 17 : 0, nativeAnnouncements.blocking);
   announcementVolume = announcementAudio.volume;
