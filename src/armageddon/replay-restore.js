@@ -88,3 +88,36 @@ export function nativeReadPhysicsTask(stream, options) {
   task.memory = memory;
   return task;
 }
+
+// Full004D6240 with004FD330 animation reconstruction and004D64F0 setup.
+// Rendering constructors and allocation are explicit host interfaces.
+export function nativeReadWormTask(stream, options) {
+  const memory = options.memory ?? new Uint8Array(0x390);
+  const task = nativeReadPhysicsTask(stream, { ...options, memory });
+  const view = new DataView(memory.buffer, memory.byteOffset, memory.byteLength);
+  const put = (offset, value) => view.setInt32(offset, value, true);
+  stream.readByte();
+  memory.set(stream.readBlock(0x23c), 0xfc);
+  const animationPointer = options.allocateResource(0x164);
+  put(0x350, animationPointer);
+  task.animation = new Uint8Array(0);
+  task.animationRenderer = animationPointer ? options.renderer : null;
+  if (animationPointer) {
+    stream.readByte();
+    task.animation = stream.readBlock(0x15c);
+  }
+  const team = view.getInt32(0x170, true);
+  put(0x354, team ? options.context + 0x125bc + Math.imul(team, 0x208) : 0);
+  for (let i = 0; i < 6; i++) {
+    const pointer = options.allocateResource(0x138);
+    put(0x338 + i * 4, pointer ? options.constructText(pointer, options.renderer, 15, i < 3 ? 256 : 48) : 0);
+  }
+  const panel = options.allocateResource(0x34);
+  put(0x358, panel ? options.constructPanel(panel, 2, 2, 30, 30) : 0);
+  for (const offset of [0x35c, 0x360, 0x364, 0x370, 0x374, 0x380, 0x384, 0x38c, 0x388]) put(offset, 0);
+  put(0x36c, 65536);
+  put(0x368, 65536);
+  put(0x37c, options.matchState.presentationValue);
+  if (view.getInt32(0x13c, true)) options.matchState.activeCount = (options.matchState.activeCount + 1) | 0;
+  return task;
+}

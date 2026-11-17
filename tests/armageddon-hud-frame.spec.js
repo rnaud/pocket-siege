@@ -1,3 +1,5 @@
+import replayWormRestore from "./fixtures/armageddon/replay-worm-restore.json" with { type: "json" };
+import { nativeReadWormTask } from "../src/armageddon/replay-restore.js";
 import replayEnvironmentRestore from "./fixtures/armageddon/replay-environment-restore.json" with { type: "json" };
 import { nativeReadPhysicsEnvironment } from "../src/armageddon/replay-restore.js";
 import replayBodyRestore from "./fixtures/armageddon/replay-body-restore.json" with { type: "json" };
@@ -51,6 +53,20 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayWormRestore.cases) {
+    const stream = new NativeReplayStream(2048), calls = [], allocations = [...row.input.allocations];
+    stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
+    const environment = { all: { capacity: 256, entries: [] }, categories: { 2: { capacity: 256, entries: [] } }, links: [17] };
+    const matchState = { activeCount: 0x7fffffff, presentationValue: 0x87654321 };
+    const task = nativeReadWormTask(stream, { id: 9, context: 0x2020000, renderer: 0x7654321, environment, matchState,
+      memory: new Uint8Array(0x390).fill(0xa5), readChildren: (_, reader) => reader.readByte(),
+      allocateResource: size => { const request = allocations.shift(); expect(size).toBe(request.size); return request.pointer; },
+      constructText: (...args) => { calls.push([0x4c6610, ...args]); return args[0]; },
+      constructPanel: (...args) => { calls.push([0x4fd5a0, ...args]); return args[0]; } });
+    expect(allocations).toEqual([]);
+    expect({ animationRenderer: task.animationRenderer, body: [...task.memory.slice(0x3c)], animation: [...task.animation], position: stream.position, calls,
+      activeCount: matchState.activeCount }).toEqual(row.result);
+  }
   for (const row of replayEnvironmentRestore.cases) {
     const stream = new NativeReplayStream(64), allocations = [], links = [17];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
