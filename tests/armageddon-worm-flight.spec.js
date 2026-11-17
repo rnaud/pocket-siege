@@ -92,6 +92,37 @@ test("native flight hits ceilings and walls without tunneling", { tag: "@logic" 
   }
   expect(reflected).toBe(true);
   expect(right.ground).toBe(true);
+
+  // A type2 receiver above the jumper follows the native body/stomp branch,
+  // not the terrain ceiling voice branch. Publish its changed category before
+  // the sweep probes again, and do not consume a ceiling random draw.
+  const incoming = worm();
+  attachNativeJumpFlight(incoming, environment, 0, 1);
+  let receiver = { worm: true, type: 2, state: 0x65, x: 40 * 65536,
+    y: 600 * 65536, vx: 0, vy: 0, mass: 65536, tangent: 0 };
+  let bodyDraws = 0;
+  const bodyEvents = [];
+  for (let frame = 0; frame < 10; frame++) {
+    const result = stepNativeJumpFlight(incoming, {
+      ...environment, frame,
+      random: () => { bodyDraws++; return 0; },
+      collisionBody: () => receiver,
+      updateCollisionBody: (hit, body) => {
+        expect(hit).toBe(2);
+        receiver = { ...body, type: body.state === 0x80 ? 3 : 2 };
+      },
+    }, (x, y, body) => {
+      expect(body.shape).toBe(3);
+      return y >= 30 && receiver.type === 2 ? 2 : 0;
+    });
+    bodyEvents.push(...result.events);
+  }
+  expect(bodyDraws).toBe(0);
+  expect(receiver.state).toBe(0x80);
+  expect(receiver.vy).not.toBe(0);
+  expect(bodyEvents.filter(event => event.receiverHit === 2)).toEqual([
+    { operation: "state", target: 0x80, receiverHit: 2 },
+  ]);
 });
 
 test("Fire Punch rises with native forces and exits directly to recoil on ground contact", { tag: "@logic" }, async () => {

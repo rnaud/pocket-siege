@@ -17,6 +17,7 @@ function nativeAirborneBody(worm, height, friction) {
     vx: fixed(worm.vx / 50),
     vy: fixed(-worm.vy / 50),
     mass: 65536,
+    shape: 3,
     angularVelocity: 0,
     angle: 0,
     radius: 0x100000,
@@ -140,18 +141,19 @@ export function attachNativeJumpFlight(
 
 export function stepNativeJumpFlight(
   worm,
-  { height, waterLevel, gravityScale = 1, frame = 0, random = () => 0 },
+  environment,
   collide,
 ) {
+  const { height, waterLevel, gravityScale = 1, frame = 0, random = () => 0 } = environment;
   if (!worm.nativeFlight) throw new Error("Native airborne flight is not attached");
   const events = [];
   let landingSpeed = 0;
-  const collision = (x, y) => collide(x / 65536, height - y / 65536);
+  const collision = (x, y, body) => collide(x / 65536, height - y / 65536, body);
   const body = nativeSimpleBodyTick(
     worm.nativeFlight,
     {
       frame,
-      index: 0,
+      index: environment.index ?? 0,
       waterY: Math.floor(height - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale),
       wind: 0,
@@ -163,21 +165,31 @@ export function stepNativeJumpFlight(
       waterChanged: (body) =>
         events.push({ operation: "water", submerged: body.submerged }),
       bounce: (body, hit, side) => {
-        // This adapter currently accepts terrain hits only (type 1). Worm/crate
-        // receiver callbacks and contact masks must be supplied by a later host.
+        const other = environment.collisionBody?.(hit) ?? { type: 1, vx: 0, vy: 0 };
+        const probe = (x, y) => collision(x, y, body);
         const result = nativeWormAirborneCollision(
           body,
-          { type: 1, vx: 0, vy: 0 },
+          other,
           side,
           {
             frame,
-            random: side === 1 ? random() : 0,
+            get random() { return random(); },
             voiceId: 0,
             soundHandle: 0,
           },
-          collision,
+          probe,
+          (incoming, receiver, side) => {
+            if (environment.receive) return environment.receive(incoming, receiver, side, hit);
+            if (!receiver.worm) return false;
+            const response = nativeWormReceiver(receiver, incoming, side, {});
+            for (const call of response.calls) events.push({ ...call, receiverHit: hit });
+            Object.assign(incoming, response.incoming);
+            Object.assign(receiver, response.receiver);
+            return Boolean(response.result);
+          },
         );
         Object.assign(body, result.body);
+        environment.updateCollisionBody?.(hit, result.other);
         for (const event of result.calls) {
           if (event.operation === "state" && event.target === 0x7a) {
             landingSpeed = Math.max(0, (event.velocity[1] / 65536) * 50);
