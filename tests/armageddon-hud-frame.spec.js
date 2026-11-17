@@ -1,3 +1,4 @@
+import controllerActivation from "./fixtures/armageddon/controller-activation.json" with { type: "json" };
 import controllerDeactivation from "./fixtures/armageddon/controller-deactivation.json" with { type: "json" };
 import defaultWeapon from "./fixtures/armageddon/default-weapon.json" with { type: "json" };
 import { nativeFindDefaultWeapon, nativeSelectDefaultWeapon } from "../src/armageddon/default-weapon.js";
@@ -252,6 +253,22 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerActivation.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    sceneMemory.set(c.initial,0x1b778);scene.setInt8(0x11d7c,c.active);scene.setUint8(0x11d6a,c.duration);
+    const payload=new Uint8Array(4);new DataView(payload.buffer).setInt32(0,c.team,true);const calls=[];
+    expect(nativeControllerCommand(memory,sceneMemory,0x41c,payload,{
+      forward:(event,p)=>calls.push(["forward",event,[...p]]),
+      sendWorm:(type,id,event,p)=>calls.push(["send",type,id,event,[...p]]),sendTask:(type,id,event)=>calls.push(["send",type,id,event,[]]),
+      matchMode:mode=>{calls.push(["mode",mode]);return c.mode;},selfEvent:(event,size)=>calls.push(["self",event,size]),
+      advanceWeaponDelays:()=>calls.push(["delays"]),repeatKey:key=>calls.push(["repeat",key]),
+      selectDefaultWeapon:worm=>calls.push(["default",worm]),
+      teamSound:(...args)=>{calls.push(["teamSound",...args]);return 77;},sound:(...args)=>calls.push(["sound",...args]),
+      allocateAI:size=>{calls.push(["allocate",size]);return c.allocation?1:0;},constructAI:(_, ...args)=>calls.push(["construct",...args]),
+    })).toBe(true);
+    expect({calls,body:controllerActivation.offsets.map(o=>body.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b8ac)]}).toEqual({calls:c.calls,body:c.body,ownership:c.ownership});
   }
   for(const c of controllerDeactivation.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
