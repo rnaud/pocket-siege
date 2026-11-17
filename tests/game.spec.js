@@ -73,8 +73,10 @@ test("computer takes its turn and returns control", async ({ page }) => {
   await expect
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  await setAim(page, "90");
+  // Exercise AI handoff without firing vertically back onto our own squad.
+  await setAim(page, "-60");
   await chargeShot(page);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
@@ -940,7 +942,14 @@ test("worm selection, turn pace and skip change the turn economy", async ({
   await page.locator("#mode").selectOption("local");
   await page.selectOption("#turn-time", "60");
   await page.selectOption("#retreat-time", "8");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  // Turn-control checks exclude unrelated supply-drop settlement.
+  await page.evaluate(async () => {
+    await window.siege.debug.resetSeed(42);
+    window.siege.debug.setCrateKind("grenade");
+    window.siege.debug.collectCrate();
+  });
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.turnSeconds).toBe(60);
   expect(state.retreatSeconds).toBe(8);
@@ -1084,7 +1093,14 @@ test("parachute and freeze utilities resolve their effects", async ({
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  // Turn-control checks exclude unrelated supply-drop settlement.
+  await page.evaluate(async () => {
+    await window.siege.debug.resetSeed(42);
+    window.siege.debug.setCrateKind("grenade");
+    window.siege.debug.collectCrate();
+  });
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="parachute"]').click();
   expect(
