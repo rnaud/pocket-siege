@@ -1,3 +1,5 @@
+import collisionDraw from "./fixtures/armageddon/collision-draw.json" with { type: "json" };
+import { nativeDrawCollisionRegistry } from "../src/armageddon/collision-registry.js";
 import girderPlacement from "./fixtures/armageddon/girder-placement.json" with { type: "json" };
 import teleportPlacement from "./fixtures/armageddon/teleport-placement.json" with { type: "json" };
 import { nativeTeleportPlacement } from "../src/armageddon/teleport-placement.js";
@@ -94,6 +96,15 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for(const c of collisionDraw.cases) {
+    const bodies=new Map(c.bodies.map(body=>[body.id,{...body,mask:body.id}]));
+    const registry=c.registry.map(row=>row.map(id=>bodies.get(id)??null)),calls=[];
+    nativeDrawCollisionRegistry(registry,"surface",c.dx,c.dy,bodies.get(c.excluded),c.flags,c.mode,{
+      bounds:mask=>calls.push(["bounds",mask]),
+      draw:(mask,surface,x,y,mode)=>{expect(surface).toBe("surface");calls.push(["draw",mask,x,y,mode]);},
+    });
+    expect(calls).toEqual(c.calls);
+  }
   for(const c of teleportPlacement.cases) {
     const memory=new Uint8Array(0x300),view=new DataView(memory.buffer),calls=[];let attempts=0;
     for(const [offset,value] of Object.entries(c.fields))view.setInt32(Number(offset),value,true);

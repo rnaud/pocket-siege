@@ -74,3 +74,19 @@ export class NativeCollisionRegistry {
     return null;
   }
 }
+
+// Full004C9500, manager virtual+30. Raster operations remain explicit mask
+// interfaces. Native calls bounds even though its four outputs are unused.
+export function nativeDrawCollisionRegistry(registry,surface,dx,dy,excluded,flags,mode,host) {
+  for(let type=0;type<32;type++) {
+    if(!(flags&(1<<type)))continue;
+    const row=registry[type] ?? [];
+    for(let i=0;i<row.length;i++) {
+      const body=row[i];
+      if(!body || !body.enabled || body===excluded)continue;
+      const mask=body.mask;
+      host.bounds(mask);
+      host.draw(mask,surface,((body.x>>16)+(dx>>16))|0,((body.y>>16)+(dy>>16))|0,mode);
+    }
+  }
+}
