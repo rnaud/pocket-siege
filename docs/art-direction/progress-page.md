@@ -8,3 +8,11 @@
 - Verified routines are not counted as completed gameplay features. Do not infer percentage completion from function, test, or commit counts. Online play remains excluded.
 
 The progress page has a separate Vite entry and does not load the game, original media, or physics bundle.
+
+## Every release
+
+Before pushing main, review the public summary against the changes being released. For parity advances or scope changes, update the canonical evidence tracker and the affected public areas together, including the current focus and evidence references where needed. Describe separately what is verified and what is integrated into live play. Housekeeping and test-only releases can leave still-accurate parity summaries unchanged.
+
+Run `npm run build` after changing progress data to validate references and generate the page. Use descriptive commit subjects: each deployment automatically refreshes the changelog from its own checkout. The deployment must succeed before those updates appear at `https://rnaud.github.io/pocket-siege/progress.html`.
+
+The root `AGENTS.md` records this ongoing release requirement for future repository work. Readable parity summaries require review; they are not inferred automatically from commits.
