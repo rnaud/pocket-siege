@@ -1,4 +1,4 @@
-import { nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
+import { nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
@@ -58,7 +58,7 @@ import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
 import { createNativeDamageReaction, nativeRecordDamageReaction, createNativeWormMatchStats, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "./armageddon/damage-accounting.js";
-import { nativeBlastDamage } from "./armageddon/blast-damage.js";
+import { nativeBlastQuality, nativeBlastDamage } from "./armageddon/blast-damage.js";
 import {
   nativeDebrisBurst,
   nativeDebrisBody,
@@ -3637,6 +3637,11 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
         w.knocked = true;
         w.ground = false;
       }
+    if (native) {
+      const quality = nativeBlastQuality(native.damage, nativeStrength, nativePacket?.[5] ?? 0);
+      if (quality !== null) nativeDamageReactionEvent(nativeDamageReaction,
+        matchDamageSourceActive ? worms[current].team + 1 : 0, 0x405, quality);
+    }
     let receivedDamage = native?.damage;
     if (native) {
       const response = nativeBlastResponse(
@@ -4432,7 +4437,11 @@ function step(dt) {
           height: H, waterLevel, gravityScale, frame: matchRandom.frame,
         }) ? 1 : 0;
         if (w.dying) queueWormCamera(w);
-        else announceWormDeath(w);
+        else {
+          nativeDamageReactionEvent(nativeDamageReaction,
+            matchDamageSourceActive ? worms[current].team + 1 : 0, 0x3f3);
+          announceWormDeath(w);
+        }
         stepOriginalDrowning(w, {
           height: H, random: () => matchRandom.visualUint(),
           emit: ([x, y, vx, vy, size]) => spawnWaterBubble(

@@ -1,9 +1,14 @@
-import { nativeReactionWeaponUse, nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
+import { nativeDamageReactionEvent, nativeReactionWeaponUse, nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
 import { nativeRecordDamageReaction, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
 test("health, cumulative/displayed damage and events match original damage routine", { tag: "@logic" }, () => {
+  for (const row of fixture.reactionEvents) {
+    const state = { ...row.input };
+    nativeDamageReactionEvent(state, row.source, row.event, row.value);
+    expect(state).toEqual(row.result);
+  }
   for (const row of fixture.weaponUse) {
     const state = { ...row.input };
     nativeReactionWeaponUse(state, row.flag);

@@ -46,3 +46,9 @@ export function nativeBlastDamage(body, x, y, push, damage, extentFactor = 1) {
   }
   return { damage: strength, impulses };
 }
+
+// 004F4410 emits event0x405 only when blast packet+0x14 requests a report.
+// Reporting packets have a nonzero strength (the executable divides by it).
+export function nativeBlastQuality(damage, strength, report) {
+  return report ? Math.trunc(Math.imul(damage, 100) / strength) | 0 : null;
+}

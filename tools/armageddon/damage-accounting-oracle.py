@@ -186,5 +186,20 @@ for flag in [0,1,2,-1]:
   cpu.emu_start(0x4b53b4,0x4b53c5,count=100)
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4b53c5:raise RuntimeError('Shot flag block did not finish')
   weapon_use.append(dict(flag=flag,input=dict(usedWeapon=used,shot=shot),result=dict(usedWeapon=read(owner+0x164),shot=read(owner+0x1a8))))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,weaponUse=weapon_use),separators=(',',':'))+'\n')
+reaction_events=[]
+for event in [0x405,0x3f3]:
+ for value in [-1,0,49,50,64,65,79,80,99,100,101,0x7fffffff]:
+  for source in [0,1,6]:
+   for initial in [0,2]:
+    fields=dict(perfectTeam=0x1ac,amazingTeam=0x1b0,excellentTeam=0x1b4,brilliantTeam=0x1b8,fatality=0x1c8)
+    before={key:initial for key in fields}
+    for key,offset in fields.items():write(owner+offset,initial)
+    write(owner+0x130,source);write(owner+0x6000,value & 0xffffffff)
+    sp=stack+0xf000
+    for i,v in enumerate([stop,owner,event,0x124,owner+0x6000]):write(sp+i*4,v)
+    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+    cpu.emu_start(0x4b4ce0,stop,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Reaction event did not return')
+    reaction_events.append(dict(event=event,value=value,source=source,input=before,result={key:read(owner+offset) for key,offset in fields.items()}))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004D8440',method='Original damage accounting; supplied health/cumulative damage storage, state getter, captured event0x430. Presentation executes004DCEF0 and reveal prefix004DAFB9..004DB035 with health store and text sink supplied.',cases=cases,presentation=presentation,reveals=reveals,statistics=statistics,voices=voices,weaponUse=weapon_use,reactionEvents=reaction_events),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} damage accounting cases')

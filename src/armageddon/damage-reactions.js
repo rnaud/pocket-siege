@@ -49,3 +49,15 @@ export function nativeDamageReactionVoice(input, options) {
   for (const field of transient) state[field] = 0;
   return { state, handled, speech, statistics };
 }
+
+// 004B4CE0 event0x405 (blast quality) and0x3F3 (worm exits playfield).
+export function nativeDamageReactionEvent(state, sourceTeam, event, value = 0) {
+  if (!sourceTeam) return;
+  if (event === 0x3f3) state.fatality = 1;
+  else if (event === 0x405) {
+    if (value >= 100) state.perfectTeam = sourceTeam;
+    else if (value >= 80) state.amazingTeam = sourceTeam;
+    else if (value >= 65) state.excellentTeam = sourceTeam;
+    else if (value >= 50) state.brilliantTeam = sourceTeam;
+  }
+}

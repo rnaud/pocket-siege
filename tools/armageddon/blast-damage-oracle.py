@@ -59,5 +59,24 @@ for x,y in [(0,0),(1,0),(10<<16,0),(0,-10<<16),(20<<16,20<<16),(63<<16,0),(64<<1
      if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Blast did not return')
      result=cpu.reg_read(UC_X86_REG_EAX);result=result if result<0x80000000 else result-0x100000000
      cases.append(dict(x=x,y=y,damage=damage,push=push,factor=factor,scale=scale,result=result,impulses=requests))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004F4560',method='Original radial falloff, vector normalization, integer square root and fixed arithmetic; captured virtual body impulse.',cases=cases),separators=(',',':'))+'\n')
+quality_cases=[];quality=None
+cpu.mem_write(0x4b26a0,b'\xc2\x18\x00')
+def capture_quality(cpu,address,size,user):
+ global quality
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ quality=struct.unpack('<i',cpu.mem_read(read(sp+24),4))[0]
+cpu.hook_add(UC_HOOK_CODE,capture_quality,begin=0x4b26a0,end=0x4b26a0)
+for x in [0,1<<16,20<<16,63<<16,100<<16,300<<16]:
+ for strength in [1,30,100]:
+  for report in [0,1]:
+   write(owner+0x90,x);write(owner+0x94,0);write(owner+0xd8,65536);write(context+0x814,1);write(owner+0xe0,0)
+   packet=owner+0x5000
+   for i,value in enumerate([1,0,0,100,strength,report]):write(packet+i*4,value)
+   sp=stack+0xf000
+   for i,value in enumerate([stop,owner,0x404,0x124,packet]):write(sp+i*4,value)
+   quality=None;requests=[];cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4f4410,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Blast quality event did not return')
+   quality_cases.append(dict(damage=read(owner+0xe0),strength=strength,report=report,quality=quality))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004F4560',method='Original radial falloff, vector normalization, integer square root and fixed arithmetic; captured virtual body impulse.',cases=cases,qualityCases=quality_cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} radial blast cases')
