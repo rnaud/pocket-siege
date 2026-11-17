@@ -9,6 +9,8 @@ import { nativeRopeInput } from './rope-input.js';
 import { nativeRopeLength } from './rope-length.js';
 import { nativeRopeContact } from './rope-contact.js';
 import { nativeBodyImpulse } from './jump.js';
+import { nativeWormTransitionBody } from './worm-state.js';
+import { nativeRopeAnimation } from './rope-animation.js';
 import { nativeSin, nativeCos } from './trig.js';
 
 const words = records.schemes.find(s => s.resource_id === 195).weapons[37];
@@ -26,7 +28,7 @@ export function createNativeRopeShot(worm, angle, height) {
     constrained: 0, ropeActive: 0, ropeFiring: 0, ropeRemaining: 0,
     shots: 0, shotLimit: 1, field2a4: 1, field2a8: 1,
     team: worm.team, worm: worm.id ?? 0,
-    // Base004F4000 and worm004D5A40 numeric setup; normal rope mode.
+    // Base004F4000 and worm004D5A40 numeric setup; attachment applies scheme mode.
     suspended: 0, mass: 65536, gravityScale: 65536,
     ropeFriction: 0xfeb8, ropeBounce: 0x9999, angleDamping: 0x3ae1,
     waterDrag: Math.trunc((Math.trunc(positionSum / 256) & 65535) / 20) + 0xc000,
@@ -51,13 +53,16 @@ export function stepNativeRopeSwing(input, controls, environment, interfaces) {
     },
     resize: (body, { length }) => Object.assign(body, nativeRopeLength(body, length, attempt).body),
   }).body;
-  return nativeRopeBodyTick(directed, environment, {
+  const body = nativeRopeBodyTick(directed, environment, {
     awake: nativeBodyAwake,
     terrain: interfaces.solid,
     collide: (x, y, body) => interfaces.collide(body, x, y),
     bounce: (body, hit) => Object.assign(body, nativeRopeContact(body,
       interfaces.otherType(hit), interfaces)),
   });
+  // Original004F8720 resets angle damping each rope animation tick.
+  body.angleDamping = nativeRopeAnimation(body.facing, body.angle).friction;
+  return body;
 }
 
 export function nativeRopePoints(body, height) {
@@ -83,6 +88,14 @@ export function stepNativeRopeShot(input, worm, height, solid, collide) {
     return placement.result;
   };
   const result = nativeRopeShotTick(body, {
+    state: (candidate, { value }) => {
+      const entry = nativeWormTransitionBody(candidate, value, {
+        ropeMode: (record['0x70'] >>> 16) & 255,
+      }).body;
+      candidate.ropeFriction = entry.complexDrag;
+      candidate.angleDamping = entry.field08c;
+      candidate.field2ec = entry.field2ec;
+    },
     ray: (_body, { request }) => nativeHitscanTerrain(...request, solid),
     tryPosition: (candidate, { request: [x, y] }) => attempt(candidate, x, y),
     attach: (candidate, { request: [x, y] }) => {
