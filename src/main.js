@@ -1106,6 +1106,7 @@ function crateSnapshot(crate) {
     sprite: crate.mesh.userData.originalSprite,
     frame: crate.mesh.userData.originalFrame,
     content: crate.content,
+    quantity: crate.quantity,
   };
 }
 function chooseCrateContent(kind) {
@@ -1131,6 +1132,7 @@ function spawnCrate(announceDrop = false) {
     group.add(mesh);
     const crate = {
       content: chooseCrateContent(kind),
+      quantity: kind === "health" ? 25 : 1,
       x,
       y: H + 34,
       targetY,
@@ -1297,21 +1299,21 @@ function stepFires(dt) {
 }
 function collectCrate(w, crate = crates[0]) {
   if (!crate || !crates.includes(crate)) return;
-  const { kind, mesh } = crate;
+  const { kind, mesh, quantity } = crate;
   let label;
   if (kind === "utility") {
     const utility = crate.content;
-    utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], 1);
-    label = `+1 ${(UTILITIES[utility] || AUTOMATIC_UTILITIES[utility]).label}`;
+    utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], quantity);
+    label = `+${quantity} ${(UTILITIES[utility] || AUTOMATIC_UTILITIES[utility]).label}`;
   } else if (kind === "special") {
     const special = crate.content;
-    ammo[w.team][special] = addAmmo(ammo[w.team][special], 1);
-    label = `+1 ${WEAPONS[special].label}`;
+    ammo[w.team][special] = addAmmo(ammo[w.team][special], quantity);
+    label = `+${quantity} ${WEAPONS[special].label}`;
   } else {
-    const result = applyPickup(kind, w.hp, ammo[w.team]);
+    const result = applyPickup(kind, w.hp, ammo[w.team], quantity);
     w.hp = result.hp;
     ammo[w.team] = result.loadout;
-    label = kind === "health" ? "+25 HP" : `+1 ${WEAPONS[kind].label}`;
+    label = kind === "health" ? `+${quantity} HP` : `+${quantity} ${WEAPONS[kind].label}`;
   }
   pickupLabel(w, label);
   $("#status").textContent = `${w.name} grabs a supply crate: ${label}.`;
@@ -6583,7 +6585,11 @@ if (import.meta.env.DEV) {
       for (let i = 0; i < count; i++) visualRandom();
     },
     setCrateKind(kind = "special") {
-      if (crates[0]) { crates[0].kind = kind; crates[0].content = chooseCrateContent(kind); }
+      if (crates[0]) {
+        crates[0].kind = kind;
+        crates[0].content = chooseCrateContent(kind);
+        crates[0].quantity = kind === "health" ? 25 : 1;
+      }
     },
     releaseRope() {
       releaseRope();

@@ -87,13 +87,15 @@ test("series wins reach a two-win target and ignore invalid winners", { tag: "@l
   expect(nextSeriesWins([0, 0], null)).toEqual([0, 0]);
 });
 
-test("pickups heal with a cap and add limited ammo without mutating the loadout", { tag: "@logic" }, () => {
+test("pickups add native health and ammo quantities without mutating the loadout", { tag: "@logic" }, () => {
   const loadout = { grenade: 2, mortar: 2, sticky: 2 };
   expect(applyPickup("health", 50, loadout)).toEqual({
     hp: 75,
     loadout,
   });
-  expect(applyPickup("health", 90, loadout).hp).toBe(100);
+  expect(applyPickup("health", 90, loadout).hp).toBe(115);
+  expect(applyPickup("health", 90, loadout, 50).hp).toBe(140);
+  expect(applyPickup("mortar", 90, { mortar: 2 }, 4).loadout.mortar).toBe(6);
   const ammo = applyPickup("grenade", 50, loadout);
   expect(ammo.loadout.grenade).toBe(3);
   expect(loadout.grenade).toBe(2);

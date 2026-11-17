@@ -18,10 +18,24 @@ import { nativeCrateContact } from '../src/armageddon/crate-contact.js';
 import { nativeCrateEvent } from '../src/armageddon/crate-events.js';
 import pickup from './fixtures/armageddon/crate-pickup.json' with { type: 'json' };
 import { nativePickupCandidate } from '../src/armageddon/crate-pickup.js';
+import transfer from './fixtures/armageddon/crate-transfer.json' with { type: 'json' };
+import { nativeCrateTransfer } from '../src/armageddon/crate-transfer.js';
+import { addNativeAmmo } from '../src/armageddon/inventory.js';
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of transfer.cases) {
+    const stocks = { 1: [...row.recipient], 2: [...row.donor] };
+    let hp = row.hp;
+    nativeCrateTransfer(row.record, 1, 1, {
+      addAmmo: (team, slot, amount) => { stocks[team][slot] = addNativeAmmo(stocks[team][slot], amount); },
+      setAmmo: (team, slot, value) => { stocks[team][slot] = value; },
+      health: () => hp,
+      setHealth: (team, worm, value) => { hp = value; },
+    });
+    expect({ hp, recipient: stocks[1], donor: stocks[2] }).toEqual(row.output);
+  }
   for (const row of pickup.cases) {
     const queries = [], actor = { ...row.actor, type: 11 };
     const candidates = row.candidates.map(c => c.self ? actor : { ...c });
