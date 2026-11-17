@@ -1,3 +1,4 @@
+import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
 import { nativeLaunch } from "./armageddon/launch.js";
@@ -40,6 +41,7 @@ import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRe
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
+  nativeWormMotionCallbacks,
   attachNativeRopeReleaseFlight,
   nativeWormContactBody,
   applyNativeWormContact,
@@ -1053,7 +1055,8 @@ function stepBombs(dt) {
       }
       const result = stepNativeProjectile(b, {
         height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame,
-        solid: (x, y) => terrain.solid(x, H - y),
+        motion,
+    solid: (x, y) => terrain.solid(x, H - y),
         random: () => matchRandom.logicUint(),
         collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
         updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
@@ -1890,8 +1893,78 @@ function toggleRope() {
   if (rope.attached) releaseRope();
   else fireRope();
 }
+function dispatchNativeWormMotionEvents(w, result) {
+  for (const call of result.events) {
+    if (call.receiverHit >= 2) {
+      const target = worms[call.receiverHit - 2];
+      if (call.operation === "state") {
+        startOriginalHurt(target, call.target);
+        target.ground = false;
+        target.knocked = true;
+        target.hurt = Math.max(target.hurt, 1.4);
+      }
+      if (call.operation === "voice" && sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        target.nativeHitVoicePlayback = playNativeHitVoice(audio,
+          { index: call.slot }, target.nativeHitVoicePlayback);
+      }
+      continue;
+    }
+    if (call.operation === "waterSound" && sound) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      playNativeWaterSound(audio, call.request);
+    }
+    if (call.operation === "health") injure(w, call.request[0], 0, true);
+    if (call.operation === "particle")
+      spawnNativeParticleRequest(call.request);
+    if (call.operation === "voice" && sound) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      w.nativeHitVoicePlayback = playNativeHitVoice(
+        audio,
+        { index: call.slot },
+        w.nativeHitVoicePlayback,
+      );
+    }
+    if (call.operation === "state") {
+      if (call.target === 0x76) {
+        const calls = startOriginalRecovery(
+          w,
+          call.previous,
+          result.body.maxVy,
+          result.body.field250,
+          () => matchRandom.logicUint(),
+        );
+        for (const event of calls)
+          if (event.operation === "sound" && sound) {
+            audio ??= new (
+              window.AudioContext || window.webkitAudioContext
+            )();
+            w.nativeHitVoicePlayback = playNativeRecoverySound(
+              audio,
+              event.request,
+              w.nativeHitVoicePlayback,
+            );
+          }
+        w.nativeHurtBody = null;
+        w.hurt = 0;
+        w.knocked = false;
+      } else if (call.target === 0x65) {
+        w.originalHurt = null;
+        w.nativeHurtBody = null;
+        w.hurt = 0;
+        w.knocked = false;
+      } else startOriginalHurt(w, call.target);
+    }
+  }
+}
 function stepRope(w, dt) {
   if (!rope.attached || w !== worms[current]) return;
+  const events = [];
+  const motion = nativeWormMotionCallbacks(w, {
+    frame: matchRandom.frame, random: () => matchRandom.logicUint(),
+    collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+    updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+  }, (x, y, body) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H), events);
   rope.body = stepNativeRopeSwing(rope.body, {
     left: move < 0, right: move > 0, up: aimInput > 0, down: aimInput < 0,
   }, {
@@ -1918,6 +1991,12 @@ function stepRope(w, dt) {
   w.ground = false;
   w.moving = Boolean(move);
   w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
+  if (!body.constrained) {
+    stopRope();
+    w.nativeHurtBody = body;
+    w.knocked = true;
+  }
+  dispatchNativeWormMotionEvents(w, { body, events });
 }
 function updateRopeVisual(w) {
   if (!rope.mesh || !rope.attached) return;
@@ -4246,64 +4325,7 @@ function step(dt) {
           (x, y, body) =>
             nativeSceneCollision(w, body, x, y, terrain, worms, H),
         );
-        for (const call of result.events) {
-          if (call.receiverHit >= 2) {
-            const target = worms[call.receiverHit - 2];
-            if (call.operation === "state") {
-              startOriginalHurt(target, call.target);
-              target.ground = false;
-              target.knocked = true;
-              target.hurt = Math.max(target.hurt, 1.4);
-            }
-            if (call.operation === "voice" && sound) {
-              audio ??= new (window.AudioContext || window.webkitAudioContext)();
-              target.nativeHitVoicePlayback = playNativeHitVoice(audio,
-                { index: call.slot }, target.nativeHitVoicePlayback);
-            }
-            continue;
-          }
-          if (call.operation === "health") injure(w, call.request[0], 0, true);
-          if (call.operation === "particle")
-            spawnNativeParticleRequest(call.request);
-          if (call.operation === "voice" && sound) {
-            audio ??= new (window.AudioContext || window.webkitAudioContext)();
-            w.nativeHitVoicePlayback = playNativeHitVoice(
-              audio,
-              { index: call.slot },
-              w.nativeHitVoicePlayback,
-            );
-          }
-          if (call.operation === "state") {
-            if (call.target === 0x76) {
-              const calls = startOriginalRecovery(
-                w,
-                call.previous,
-                result.body.maxVy,
-                result.body.field250,
-                () => matchRandom.logicUint(),
-              );
-              for (const event of calls)
-                if (event.operation === "sound" && sound) {
-                  audio ??= new (
-                    window.AudioContext || window.webkitAudioContext
-                  )();
-                  w.nativeHitVoicePlayback = playNativeRecoverySound(
-                    audio,
-                    event.request,
-                    w.nativeHitVoicePlayback,
-                  );
-                }
-              w.nativeHurtBody = null;
-              w.hurt = 0;
-              w.knocked = false;
-            } else if (call.target === 0x65) {
-              w.originalHurt = null;
-              w.nativeHurtBody = null;
-              w.hurt = 0;
-              w.knocked = false;
-            } else startOriginalHurt(w, call.target);
-          }
-        }
+        dispatchNativeWormMotionEvents(w, result);
       } else result = stepWorm(w, terrain, dt, gravityScale);
       if (w.originalParachute) w.vy = Math.max(w.vy, -70);
     }
@@ -4331,7 +4353,9 @@ function step(dt) {
     )
       jump(w.jumpQueued.kind);
     if (w.jumpQueued && jumpClock > w.jumpQueued.until) w.jumpQueued = null;
-    if (w.y - 10 < waterLevel || w.x < -30 || w.x > W + 30) {
+    const nativeWaterBody = w.nativeRopeBody ?? w.nativeHurtBody;
+    const drowning = nativeWaterBody ? nativeWormDrowningState(nativeWaterBody) === 0x87 : w.y - 10 < waterLevel;
+    if (drowning || w.x < -30 || w.x > W + 30) {
       w.hp = 0;
       w.deathPending = false;
       w.originalParachute = null;

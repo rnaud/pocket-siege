@@ -41,6 +41,11 @@ export function createNativeRopeShot(worm, angle, height) {
     waterDrag: Math.trunc((Math.trunc(positionSum / 256) & 65535) / 20) + 0xc000,
     skimScale: 0x20000, submerged: 0, contact: 0, moving: 0,
     angularVelocity: 0, field154: 0, field2ec: 0, soundHandle: 0,
+    // Free-body fields remain valid if a water callback releases the rope.
+    radius: 0x100000, complex: 1, drag: 65536, windScale: 0,
+    restitutionX: 0x9999, restitutionY: 0, tangent: 0xf5c2,
+    maxVx: 0, maxVy: 0, impact: 0, damageScale: 0, voiceCooldown: 0,
+    lastFacingFrame: 0, field150: 0, field250: 0,
   }, record, { weaponRecord: () => record }).body;
 }
 
@@ -66,9 +71,12 @@ export function stepNativeRopeSwing(input, controls, environment, interfaces) {
     collide: (x, y, body) => interfaces.collide(body, x, y),
     bounce: (body, hit) => Object.assign(body, nativeRopeContact(body,
       interfaces.otherType(hit), interfaces)),
+    skim: interfaces.motion?.skim,
+    waterChanged: interfaces.motion?.waterChanged,
+    freeBounce: interfaces.motion?.bounce,
   });
   // Original004F8720 resets angle damping each rope animation tick.
-  body.angleDamping = nativeRopeAnimation(body.facing, body.angle).friction;
+  if (body.constrained) body.angleDamping = nativeRopeAnimation(body.facing, body.angle).friction;
   return body;
 }
 

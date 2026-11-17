@@ -78,10 +78,21 @@ for (const [weapon, sprite] of [
       .toBe(true);
     await page.locator("#mode").selectOption("local");
     await page.locator("#start").click();
+    // Isolate firing art from spawn slopes and falling/hurt pose transitions.
+    await page.evaluate(() => window.siege.debug.stageMeleeTargets());
     await page.locator("#inventory-toggle").click();
 
     await page.locator(`[data-weapon="${weapon}"]`).click();
     const shooter = await page.evaluate(() => window.siege.getState().current);
+    await expect.poll(() => page.evaluate(shooter => {
+      const worm = window.siege.getState().worms[shooter];
+      return worm.ground && worm.y < 258;
+    }, shooter)).toBe(true);
+    if (weapon === "shotgun") await page.locator("#angle").evaluate(el => {
+      // Fire into clear sky so a nearby impact cannot replace recoil with hurt.
+      el.value = "90";
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     await page.evaluate(({ shooter, sprite }) => {
       window.recoilObserved = false;
       const deadline = performance.now() + 10000;

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import struct
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
-from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_EBP
+from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_EBP, UC_X86_REG_ESI, UC_X86_REG_EDI
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
@@ -51,5 +51,14 @@ for initial in [0,0x65,0x70,0x73,0x78,0x79,0x7b,0x7c,0x7d,0x7e,0x7f,0x80,0x81,0x
   cpu.emu_start(0x4d6720,stop,count=1000)
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Skim failed to return')
   cases.append(dict(body=dict(state=initial),worldSkim=flag,output=dict(body=dict(state=read(owner+0x50)),calls=calls,worldSkim=read(world+0x12418))))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004D6720 and004F4FC0. Explicit state getter/entry and queued audio interfaces; captures request order, state and world+12418 flag.',cases=cases),separators=(',',':'))+'\n')
+drowning=[]
+write(vt+0xf8,0x4d1220)
+for initial in [0x65,0x73,0x7b,0x81,0x87,0x88]:
+ for submerged in [0,1,-1]:
+  write(owner+0x50,initial);write(owner+0xbc,submerged)
+  sp=stack+0xff00;cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,vt);cpu.reg_write(UC_X86_REG_EBX,state);calls=[]
+  cpu.emu_start(0x4de7c2,0x4de7e6,count=1000)
+  if cpu.reg_read(UC_X86_REG_EIP)!=0x4de7e6:raise RuntimeError('Drowning gate failed')
+  drowning.append(dict(body=dict(state=initial,submerged=submerged),target=calls[0]['target'] if calls else None))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004D6720 and004F4FC0. Explicit state getter/entry and queued audio interfaces; captures request order, state and world+12418 flag. Drowning cases execute004DE7C2..004DE7E6 with original+F8 submerged getter and explicit state entry.',cases=cases,drowning=drowning),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} worm skim callbacks')

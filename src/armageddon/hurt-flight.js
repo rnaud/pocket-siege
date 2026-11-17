@@ -7,6 +7,8 @@ import { nativeWormHurtCollision } from "./hurt-contact.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
 import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
 import { nativeHurtEntry } from "./hurt-entry.js";
+import { nativeWormSkim } from "./worm-water.js";
+import { nativeWaterSound } from "./water-audio.js";
 import { nativeRopeRelease } from "./rope-release.js";
 import { nativeWormTransitionBody } from "./worm-state.js";
 import schemes from "./scheme-runtime-data.json" with { type: "json" };
@@ -112,6 +114,93 @@ export function attachNativeHurtFlight(worm, height) {
   return body;
 }
 
+// Shared callbacks for released flight and the free part of a rope-skim tick.
+export function nativeWormMotionCallbacks(worm, environment, collision, events) {
+  const { frame, random = () => 0 } = environment;
+  return {
+    awake: nativeBodyAwake,
+    collide: collision,
+    waterChanged: body => {
+      const request = nativeWaterSound(body).sound;
+      if (request) events.push({ operation: "waterSound", request });
+    },
+    skim: body => {
+      const previous = body.state;
+      const result = nativeWormSkim(body, {
+        state: (candidate, state) => {
+          const entry = nativeWormTransitionBody({ ...candidate, constraint: candidate.constrained }, state,
+            { schemeByte: byte(0x11d40) });
+          Object.assign(candidate, entry.body, {
+            state, constrained: 0, segments: [], constraintHandle: 0,
+            damageScale: entry.body.field15c ?? candidate.damageScale,
+          });
+        },
+      });
+      Object.assign(body, result.body);
+      // Expose the new category before any remaining sweep queries this tick.
+      if (worm.nativeRopeBody) worm.nativeRopeBody = body;
+      worm.nativeHurtBody = body;
+      for (const call of result.calls) events.push({ ...call,
+        operation: call.operation === "sound" ? "waterSound" : call.operation, previous });
+      environment.onSkim?.(result.worldSkim);
+    },
+    bounce: (body, hit, side) => {
+      const other = environment.collisionBody?.(hit) ?? {
+        type: 1,
+        vx: 0,
+        vy: 0,
+      };
+      const probe = (x, y) => collision(x, y, body);
+      if (![0x73, 0x7f, 0x80, 0x81].includes(body.state)) {
+        const response = nativeSimpleBounce(body, other, side, probe);
+        Object.assign(body, response.body);
+        environment.updateCollisionBody?.(hit, response.other);
+        return;
+      }
+      const previous = body.state;
+      const response = nativeWormHurtCollision(
+        body,
+        other,
+        side,
+        {
+          frame,
+          get random() {
+            return random();
+          },
+          voiceId: 0,
+          soundHandle: 0,
+          factor: 1,
+          bloodMode: 0,
+        },
+        probe,
+        (incoming, receiver, side) => {
+          if (!receiver.worm) return false;
+          const contact = nativeWormReceiver(receiver, incoming, side, {
+            recordAvailable: true, // Worm event7D3 (004DF270) always succeeds.
+            marked: incoming.field150 ?? 0,
+            matched: environment.contactOwnerMatches?.(worm) ?? false,
+            scale: byte(0x11d6e),
+            get random() { return random(); },
+            voiceId: 0, soundHandle: 0,
+          });
+          for (const call of contact.calls)
+            events.push({ ...call, receiverHit: hit });
+          Object.assign(incoming, contact.incoming);
+          Object.assign(receiver, contact.receiver);
+          return Boolean(contact.result);
+        },
+      );
+      Object.assign(body, response.body);
+      environment.updateCollisionBody?.(hit, response.other);
+      for (const call of response.calls) {
+        if (call.operation === "state" && call.target === 0x80)
+          body.angle = 0;
+        events.push({ ...call, previous });
+      }
+    },
+  };
+}
+
 export function stepNativeHurtFlight(worm, environment, collide) {
   const {
     height,
@@ -135,64 +224,7 @@ export function stepNativeHurtFlight(worm, environment, collide) {
       gravity: Math.round(0x3d70 * gravityScale),
       wind: 0,
     },
-    {
-      awake: nativeBodyAwake,
-      collide: collision,
-      bounce: (body, hit, side) => {
-        const other = environment.collisionBody?.(hit) ?? {
-          type: 1,
-          vx: 0,
-          vy: 0,
-        };
-        const probe = (x, y) => collision(x, y, body);
-        if (![0x73, 0x7f, 0x80, 0x81].includes(body.state)) {
-          const response = nativeSimpleBounce(body, other, side, probe);
-          Object.assign(body, response.body);
-          environment.updateCollisionBody?.(hit, response.other);
-          return;
-        }
-        const previous = body.state;
-        const response = nativeWormHurtCollision(
-          body,
-          other,
-          side,
-          {
-            frame,
-            get random() {
-              return random();
-            },
-            voiceId: 0,
-            soundHandle: 0,
-            factor: 1,
-            bloodMode: 0,
-          },
-          probe,
-          (incoming, receiver, side) => {
-            if (!receiver.worm) return false;
-            const contact = nativeWormReceiver(receiver, incoming, side, {
-              recordAvailable: true, // Worm event7D3 (004DF270) always succeeds.
-              marked: incoming.field150 ?? 0,
-              matched: environment.contactOwnerMatches?.(worm) ?? false,
-              scale: byte(0x11d6e),
-              get random() { return random(); },
-              voiceId: 0, soundHandle: 0,
-            });
-            for (const call of contact.calls)
-              events.push({ ...call, receiverHit: hit });
-            Object.assign(incoming, contact.incoming);
-            Object.assign(receiver, contact.receiver);
-            return Boolean(contact.result);
-          },
-        );
-        Object.assign(body, response.body);
-        environment.updateCollisionBody?.(hit, response.other);
-        for (const call of response.calls) {
-          if (call.operation === "state" && call.target === 0x80)
-            body.angle = 0;
-          events.push({ ...call, previous });
-        }
-      },
-    },
+    nativeWormMotionCallbacks(worm, environment, collision, events),
   );
   if (body.state === 0x7f && !nativeBodyAwake(body)) {
     body.state = 0x76;
