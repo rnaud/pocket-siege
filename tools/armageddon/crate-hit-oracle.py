@@ -50,5 +50,18 @@ for distance in [0,1,50,103,104,105,300]:
      cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner);cpu.emu_start(0x4e0f20,stop,count=20000)
      if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Crate hit did not return')
      cases.append({'input':body,'packet':packet,'extentFactor':extentFactor,'output':{key:signed(read(owner+off)) for key,off in fields.items()},'report':read(payload+20)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0F20 event404','method':'Original crate event, base blast calculation, fixed-point normalization/impulse, accumulated damage getter and crate state setter execute unchanged without hooks.','cases':cases},separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} crate blast cases')
+direct_cases=[]
+for event in [0x433,0x444]:
+ for state in [0,100,101,102,103,104]:
+  for damage in [0,1,50,-1,2147483647]:
+   body=dict(x=12345,y=-67890,vx=12345,vy=-23456,angularVelocity=34567,mass=65536,suspended=1,impulseScale=65536,accumulated=19,state=state,drag=0xe8f5,progress=7654)
+   for key,off in fields.items():write(owner+off,body[key])
+   packet=[1,0,0,65536,-65536,damage];payload=owner+0x2000
+   for i,value in enumerate(packet):write(payload+4*i,value)
+   sp=stack+0xf000;write(sp,stop)
+   for i,value in enumerate([0,event,0x18,payload]):write(sp+4+4*i,value)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner);cpu.emu_start(0x4e0f20,stop,count=20000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Crate direct hit did not return')
+   direct_cases.append(dict(input=body,event=event,packet=packet,output={key:signed(read(owner+off)) for key,off in fields.items()},packet_out=[signed(read(payload+i*4)) for i in range(6)]))
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0F20 event404','method':'Original crate event, base blast calculation, fixed-point normalization/impulse, accumulated damage getter and crate state setter execute unchanged without hooks.','cases':cases,'direct_cases':direct_cases},separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} blast and {len(direct_cases)} direct crate cases')

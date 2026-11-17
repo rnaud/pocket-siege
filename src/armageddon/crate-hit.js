@@ -17,3 +17,9 @@ export function nativeCrateHit(input, packet, extentFactor = 1) {
   if (accumulated) body = nativeCrateState(body, 103);
   return body;
 }
+
+// 004E0F20 events433/444 enter detonation state unconditionally, including
+// zero-damage hits and submerged crates; the incoming packet is untouched.
+export function nativeCrateDirectHit(input) {
+  return nativeCrateState(input, 103);
+}

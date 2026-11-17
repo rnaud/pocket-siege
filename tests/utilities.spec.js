@@ -35,7 +35,7 @@ import { nativeFlameBody } from "../src/armageddon/flame-body.js";
 import crateContents from "./fixtures/armageddon/crate-contents.json" with { type: "json" };
 import { nativeCrateContents } from "../src/armageddon/crate-contents.js";
 import crateHits from "./fixtures/armageddon/crate-hit.json" with { type: "json" };
-import { nativeCrateHit } from "../src/armageddon/crate-hit.js";
+import { nativeCrateHit, nativeCrateDirectHit } from "../src/armageddon/crate-hit.js";
 import detonation from "./fixtures/armageddon/crate-detonation.json" with { type: "json" };
 import { nativeCrateDetonation } from "../src/armageddon/crate-detonation.js";
 import { test, expect } from "@playwright/test";
@@ -411,6 +411,10 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       expect(projectile.nativeTimer.remaining).toBe(20000);
       expect(projectile.nativeRelease).toBeUndefined();
     }
+  }
+  for (const row of crateHits.direct_cases) {
+    expect(nativeCrateDirectHit(row.input)).toEqual(row.output);
+    expect(row.packet_out).toEqual(row.packet);
   }
   for (const row of crateHits.cases) {
     const packet = [...row.packet];
