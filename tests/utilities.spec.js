@@ -1,3 +1,7 @@
+import barrelHits from "./fixtures/armageddon/barrel-hit.json" with { type: "json" };
+import { nativeBarrelHit } from "../src/armageddon/barrel-hit.js";
+import barrelDetonation from "./fixtures/armageddon/barrel-detonation.json" with { type: "json" };
+import { nativeBarrelDetonation } from "../src/armageddon/barrel-detonation.js";
 import projectileFire from "./fixtures/armageddon/projectile-fire.json" with { type: "json" };
 import { nativeProjectileFire } from "../src/armageddon/projectile-fire.js";
 import flameEvents from "./fixtures/armageddon/flame-events.json" with { type: "json" };
@@ -220,6 +224,23 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(burns).toBeGreaterThan(0);
     expect(hits).toBeGreaterThan(0);
     expect(pool.filter(Boolean)).toHaveLength(0);
+  }
+  for (const row of barrelHits.cases) {
+    const packet = [...row.packet];
+    expect(nativeBarrelHit(row.input, row.event, packet)).toEqual(row.output);
+    expect(packet[5]).toBe(row.report);
+  }
+  for (const row of barrelDetonation.cases) {
+    const events = []; let ordinal = 0;
+    nativeBarrelDetonation(row.x, row.y, {
+      parent: (category, id) => { events.push(["parent", category, id]); return category; },
+      blast: packet => events.push(["blast", ...packet]),
+      allocate: size => { const accepted = (row.allocationMask >> ordinal++) & 1;
+        events.push(["allocate", size, accepted]); return accepted; },
+      flame: (allocation, parent, record) => events.push(["flame", parent, record]),
+      sound: packet => events.push(["sound", ...packet]),
+    });
+    expect(events).toEqual(row.events);
   }
   for (const row of projectileFire.cases) {
     const events = [];
