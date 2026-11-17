@@ -76,9 +76,9 @@ def observe(cpu,address,size,user):
         cpu.reg_write(UC_X86_REG_EAX,environment['soundHandle'])
 cpu.hook_add(UC_HOOK_CODE,observe)
 cpu.mem_write(0x4d8440,b'\xc2\x0c\x00');cpu.mem_write(0x4ee7f0,b'\xc2\x30\x00')
-fields.update(maxVx=0x254,maxVy=0x258,impact=0x224,damageScale=0x15c,field250=0x250,voiceCooldown=0x1a0)
+fields.update(maxVx=0x254,maxVy=0x258,impact=0x224,damageScale=0x15c,field250=0x250,voiceCooldown=0x1a0,field150=0x150)
 full=True;pattern=[0];cases=[]
-for state in [0x7f,0x80,0x81]:
+for state in [0x73,0x7f,0x80,0x81]:
  for side in [1,2,3,4]:
   for other_type in [1,2]:
    for vx,vy in [(0,0),(10000,0x70000),(10000,0x80000),(10000,0xc0000),(-0x60000,0xc0000),(0x60000,-0xc0000),(0,0x80001),(0,0x7ffff),(0x50000,0),(-0x50000,0),(0x4ffff,0),(0,0x70001)]:
@@ -97,5 +97,5 @@ for state in [0x7f,0x80,0x81]:
      result={name:struct.unpack('<i',cpu.mem_read(owner+off,4))[0] for name,off in fields.items()}
      other_out=dict(type=other_type,vx=struct.unpack('<i',cpu.mem_read(incoming+0x9c,4))[0],vy=struct.unpack('<i',cpu.mem_read(incoming+0xa0,4))[0])
      cases.append(dict(input=body,other=other,side=side,environment=environment,queries=queries,result=dict(body=result,calls=calls,fallback=fallback,other=other_out)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original hurt receiver, getters/setters, fallback and bounce; state entry, health, particles, voice and collision predicate supplied as interfaces.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original released-rope state73 and hurt receiver, getters/setters, fallback and bounce; state entry, health, particles, voice and collision predicate supplied as interfaces.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} hurt callbacks')

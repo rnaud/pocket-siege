@@ -1,7 +1,7 @@
 import { nativeSimpleBounce } from "./motion.js";
 const abs = (v) => ((v ^ (v >> 31)) - (v >> 31)) | 0;
 
-// 004D6E30 hurt states 7f/80/81. State entry, health, audio and particles
+// 004D6E30 hurt states7f/80/81 and released-rope state73. State entry, health, audio and particles
 // are emitted calls. Collision response executes the recovered base bounce.
 export function nativeWormHurtCollision(
   input,
@@ -11,7 +11,7 @@ export function nativeWormHurtCollision(
   collide,
   respond = () => false,
 ) {
-  if (![0x7f, 0x80, 0x81].includes(input.state))
+  if (![0x73, 0x7f, 0x80, 0x81].includes(input.state))
     throw new RangeError("Unsupported hurt state");
   const body = { ...input, field264: 0, field268: 0, field26c: 0 },
     other = { ...otherInput },
@@ -21,6 +21,10 @@ export function nativeWormHurtCollision(
     calls.push({ operation: "state", target, velocity: [body.vx, body.vy] });
   };
   const speed = (abs(body.vx) + abs(body.vy)) | 0;
+  if (body.state === 0x73) {
+    setState(0x80);
+    body.field150 = 1;
+  }
   body.maxVx = Math.max(body.maxVx, abs(body.vx));
   body.maxVy = Math.max(body.maxVy, abs(body.vy));
   body.impact = Math.min(65536, (body.impact + Math.trunc(abs(speed) / 6)) | 0);
