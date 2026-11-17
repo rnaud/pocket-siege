@@ -145,5 +145,142 @@
     "Red cross, worm happy.",
     "Energy boost!",
     "Very tempting..."
-  ]
+  ],
+  "killsTable": "00558D0C",
+  "kills": {
+    "1": [
+      "%s makes it count",
+      "%s hands out some punishment",
+      "%s adds a notch",
+      "%s plays it cool",
+      "%s wastes no time, only worms",
+      "%s wastes one",
+      "%s shows no remorse",
+      "Watch out, %s is about",
+      "%s does the damage",
+      "%s turns the heat up",
+      "%s deals death",
+      "%s insists it's personal",
+      "%s marks the spot",
+      "%s tests the water",
+      "%s takes one out",
+      "Easy as pie for %s",
+      "%s picks one off",
+      "%s makes a judgement"
+    ],
+    "2": [
+      "%s scores a double kill!",
+      "Twice as nice for %s",
+      "%s uses the old one-two",
+      "Double dose from %s",
+      "Nice pair from %s",
+      "%s pockets a twin-pack",
+      "%s gets 2 for the price of 1",
+      "%s Doubles up",
+      "Twinkill combo for %s",
+      "Nice combo by %s",
+      "Two notch combo by %s"
+    ],
+    "3": [
+      "%s scores a 3 kill combo!",
+      "Easy as 1-2-3 for %s",
+      "Three and easy does it, %s",
+      "3 for the price of 1!",
+      "Nice threesome by %s",
+      "%s wastes 3!",
+      "%s cuts a 3-pack",
+      "%s cuts loose with a 3-way split!",
+      "3-fall for %s!"
+    ],
+    "4": [
+      "%s grabs an amazing 4-kill combo!",
+      "4-Combo by %s!",
+      "1-2-3-4 Kills by %s!",
+      "%s has a blast & pockets 4!",
+      "Did you see that? 4 Kills!"
+    ],
+    "5": [
+      "%s grabs an amazing 5-kill combo!",
+      "5-Combo by %s!",
+      "FIVE Kills by %s!",
+      "%s has a blast and gets 5!",
+      "5!! Don`t mess with %s!",
+      "5 Kills, did you see that?"
+    ],
+    "6": [
+      "%s, like a six machine!",
+      "Super 6-Salvo by %s!",
+      "Can you believe it! 6 Kills by %s!",
+      "%s has a blast and gets 6!",
+      "6!! Don`t mess with %s!",
+      "6 Kills, did you see that?",
+      "%s grabs a 6-pack!",
+      "%s has six on the brain!"
+    ],
+    "7": [
+      "Lucky 7 for %s",
+      "Super 7-Salvo by %s!",
+      "Can you believe it! 7 Kills by %s!",
+      "%s has a blast and gets 7!",
+      "7th heaven for %s",
+      "7 Kills, did you see that?"
+    ],
+    "8": [
+      "Incredible 8 kill combo!",
+      "Super 8-Salvo by %s!",
+      "Can you believe it! 8 Kills by %s!",
+      "%s has a blast and does 8!",
+      "8 Amazing Kills, did you see that?",
+      "%s grabs 8!"
+    ],
+    "9": [
+      "Incredible 9 kill combo!",
+      "Super 9-Salvo by %s!",
+      "Can you believe it! 9 Kills by %s!",
+      "%s has a blast and does 9!",
+      "9 Amazing Kills, did you see that?",
+      "%s grabs 9!",
+      "The cat is wasted! 9 lives gone!",
+      "Amazing 9 kill salvo!"
+    ],
+    "10": [
+      "10 times the fun for %s",
+      "%s gets a top 10 hit!",
+      "Can you believe it! 10 Kills by %s!",
+      "%s grabs a 10pack!"
+    ],
+    "11": [
+      "Incredible 11 kill combo!",
+      "Super 11-Salvo by %s!",
+      "Can you believe it! 11 Kills by %s!",
+      "%s has a blast and does 11!",
+      "11 Amazing Kills, did you see that?",
+      "%s grabs 11!"
+    ],
+    "12": [
+      "Stunning-12-kill-combo by %s!!",
+      "Super 12-Salvo by %s!",
+      "Can you believe it! 12 Kills by %s!",
+      "12 Amazing Kills, did you see that?"
+    ],
+    "13": [
+      "A baker's dozen for %s!!",
+      "Unlucky for some! 13 kills for %s!",
+      "13 Amazing Kills, did you see that?"
+    ],
+    "14": [
+      "Max 14 super-kill-combo by %s!!",
+      "Super 14-Salvo by %s!",
+      "Can you believe it! 14 Kills by %s!",
+      "That's got to be a record! 14 Kills!",
+      "14 Amazing Kills, %s has to be hornswoggling!"
+    ],
+    "15": [
+      "Max 15 super-kill-combo by %s!!",
+      "Super 15-Salvo by %s!",
+      "Can you believe it! 15 Kills by %s!",
+      "That's got to be a record! 15 Kills!",
+      "15 Amazing Kills, %s has to be hornswoggling!"
+    ]
+  }
 }

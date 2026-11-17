@@ -31,6 +31,7 @@ result={'sha256':digest,'table':'00558A60','messages':messages_at(0x558a60),
  'drowningTable':'00558AC0','drowning':messages_at(0x558ac0),
  'weaponDropTable':'005588F8','weaponDrop':messages_at(0x5588f8),
  'utilityDropTable':'00558E20','utilityDrop':messages_at(0x558e20),
- 'healthDropTable':'00558E50','healthDrop':messages_at(0x558e50)}
+ 'healthDropTable':'00558E50','healthDrop':messages_at(0x558e50),
+ 'killsTable':'00558D0C','kills':{str(count):messages_at(struct.unpack_from('<I',data,offset(0x558d0c+count*4))[0]) for count in range(1,16)}}
 a.output.write_text(json.dumps(result,indent=2)+'\n')
 print({key:len(result[key]) for key in ['messages','victory','draw','suddenDeath','death','drowning','weaponDrop','utilityDrop','healthDrop']})

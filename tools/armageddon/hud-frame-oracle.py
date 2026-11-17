@@ -416,5 +416,23 @@ for drowned,table,start,end in [(False,0x5589c0,0x4de639,0x4de68e),(True,0x558ac
     announcement_message=None;cpu.emu_start(start,end,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=end:raise RuntimeError('Worm removal announcement did not finish')
     worm_death_cases.append({'drowned':drowned,'seed':seed,'frame':frame,'name':name,'color':color,'random':read(context+0x1acc),'message':announcement_message})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases,'victorySpeechCases':victory_speech_cases,'wormDeathCases':worm_death_cases},separators=(',',':'))+'\n')
+# Full004B5CA0 includes source gate, consuming counter read, language lookup,
+# count cap and actual004EEEE0 RNG/format/event emission.
+kill_cases=[]
+language=owner+0x8000;write(language,0x5259c8);write(context+0x1c,language)
+for kills in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,30]:
+ for seed in [0,42,0xffffffff]:
+  for active in [False,True]:
+   for color in [0,2]:
+    name='Fern' if color==2 else 'Coral';frame=50
+    stats=context+0x1b94+0x51c+0x9c
+    write(stats-0x520,kills);cpu.mem_write(stats-0x51c,name.encode()+b'\0')
+    write(owner+0x130,int(active));write(owner+0x134,1);write(owner+0x38,context)
+    cpu.mem_write(context+3000+0x3cd1,bytes([color]));write(context+0x1acc,seed);write(context+0x7f0,frame)
+    sp=stack+0xf000;write(sp,stop)
+    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+    announcement_message=None;cpu.emu_start(0x4b5ca0,stop,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Kill announcement did not return')
+    kill_cases.append({'kills':kills,'seed':seed,'frame':frame,'active':active,'name':name,'color':color,'random':read(context+0x1acc),'remaining':read(stats-0x520),'message':announcement_message})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases,'victorySpeechCases':victory_speech_cases,'wormDeathCases':worm_death_cases,'killCases':kill_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

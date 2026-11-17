@@ -152,3 +152,15 @@ export function nativeCrateDropAnnouncement(kind, nextRandom) {
     : kind === "utility" ? elimination.utilityDrop : elimination.weaponDrop;
   return { text: variants[(nextRandom() & 255) % variants.length], font: 23 };
 }
+
+// 004B5CA0 consumes004C2B80's per-worm kill counter before turn advancement.
+// A missing damage source does not touch counters or consume randomness.
+export function nativeKillAnnouncement(stats, name, color, nextRandom) {
+  if (!stats) return null;
+  const kills = stats.turnKills;
+  stats.turnKills = 0;
+  if (!kills) return null;
+  const variants = elimination.kills[Math.min(15, kills)];
+  return { text: variants[(nextRandom() & 255) % variants.length].replace("%s", () => name),
+    font: color + 17 };
+}
