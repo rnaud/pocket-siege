@@ -1,3 +1,5 @@
+import replayFrameState from "./fixtures/armageddon/replay-frame-state.json" with { type: "json" };
+import { nativeAdvanceReplayFrameState, nativeAdvanceInputFrameState, nativeReplayFrameAudio } from "../src/armageddon/replay-frame-state.js";
 import replayFrame from "./fixtures/armageddon/replay-frame.json" with { type: "json" };
 import { nativeReplayFrame } from "../src/armageddon/replay-frame.js";
 import replayEntry from "./fixtures/armageddon/replay-entry.json" with { type: "json" };
@@ -72,6 +74,20 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayFrameState.cases) {
+    const memory = new Uint8Array(0x300), view = new DataView(memory.buffer), scene = new Uint8Array(0x20000), calls = [];
+    replayFrameState.fields.forEach((offset, index) => view.setInt32(offset, row.initial[index], true));
+    scene[0x11e45] = row.volume;
+    if (row.routine === '0x49e750') nativeAdvanceReplayFrameState(memory);
+    else if (row.routine === '0x49e580') nativeAdvanceInputFrameState(memory, {
+      dispatchRoot: (event, bytes) => calls.push(['root', event, bytes.length, 0]), renderFrame: () => calls.push('render'),
+    });
+    else nativeReplayFrameAudio(memory, scene, {
+      audio: { setVolume: value => calls.push(['audio', value]) },
+      music: row.music ? { setVolume: value => calls.push(['music', value]) } : null,
+    });
+    expect({ fields: replayFrameState.fields.map(offset => view.getInt32(offset, true)), calls }).toEqual(row.result);
+  }
   for (const { mask, limit, result } of replayFrame.cases) {
     const scene = new Uint8Array(0x20000), view = new DataView(scene.buffer), calls = [];
     view.setInt32(0x1d444, mask & 1, true);
