@@ -1,3 +1,4 @@
+import { nativeSoundVolume, nativeSoundPan, nativeSoundFrequency } from "../src/armageddon/sound-mix.js";
 import queueFixture from "./fixtures/armageddon/sound-queue.json" with { type: "json" };
 import { NativeSoundQueue, nativeSoundChannel } from "../src/armageddon/sound-queue.js";
 import { test, expect } from "@playwright/test";
@@ -5,6 +6,14 @@ import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  for (const c of queueFixture.mixCases) {
+    expect(c.calls).toEqual([
+      ["position", 0], ["frequency", nativeSoundFrequency(c.frequency, c.pitch, c.speed)],
+      ["volume", nativeSoundVolume(c.volume, c.master, c.flags)],
+      ["pan", nativeSoundPan(c.pan)], ["play", 0, 0, Number(Boolean(c.flags & 0x10000))],
+    ]);
+    expect(c.updates).toEqual([["volume", nativeSoundVolume(c.volume, c.master, c.flags, false)]]);
+  }
   for (const c of queueFixture.channelCases) {
     const channels = c.priorities.map(priority => priority === null ? null : { priority });
     expect(nativeSoundChannel(channels, c.incoming)).toBe(c.result);

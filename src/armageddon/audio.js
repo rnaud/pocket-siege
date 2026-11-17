@@ -1,3 +1,4 @@
+import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";
 import { nativeSoundChannel } from "./sound-queue.js";
 import speech from "./speech-slots.json";
 
@@ -39,13 +40,13 @@ const contexts = new WeakMap();
 // Eight-channel selection is native. Web Audio completion currently releases
 // channels directly; the original 32-handle pool and its cleanup pass remain.
 const playbackChannels = new WeakMap();
-export function playOriginalSound(context, kind, fallback, level = 1, priority = 3) {
+export function playOriginalSound(context, kind, fallback, level = 1, priority = 3, pan = 0) {
   const name = sounds[kind];
   if (!name) {
     fallback();
     return;
   }
-  playOriginalClip(context, `sounds/${name}.wav`, fallback, level, false, 1, priority);
+  playOriginalClip(context, `sounds/${name}.wav`, fallback, level, false, 1, priority, pan);
 }
 export function preloadOriginalSound(context, kind) {
   const name = sounds[kind];
@@ -71,7 +72,7 @@ function loadOriginalClip(context, name) {
     );
   return cache.get(name);
 }
-function playOriginalClip(context, name, fallback, level, loop = false, rate = 1, priority = 3) {
+function playOriginalClip(context, name, fallback, level, loop = false, rate = 1, priority = 3, pan = 0) {
   let channels = playbackChannels.get(context);
   if (!channels) {
     channels = Array(8).fill(null);
@@ -87,7 +88,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
   const playback = {
     setVolume(value) {
       level = value;
-      if (activeGain) activeGain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
+      if (activeGain) activeGain.gain.value = nativeAttenuationGain(nativeSoundVolume(Math.round(level * 65536), 65536, 0, false));
     },
     stop() {
       cancelled = true;
@@ -112,14 +113,31 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
       source.buffer = buffer;
       source.loop = loop;
       if (rate !== 1) source.playbackRate.value = rate;
-      gain.gain.value = 0.35 * Math.max(0, Math.min(1, level));
+      gain.gain.value = nativeAttenuationGain(nativeSoundVolume(Math.round(level * 65536)));
       source.connect(gain);
-      gain.connect(context.destination);
+      const panNodes = [];
+      if (pan) {
+        // DirectSound balance attenuates one channel; it is not the equal-power
+        // crossfeed used by StereoPannerNode. Explicit stereo duplicates mono.
+        gain.channelCount = 2;
+        gain.channelCountMode = "explicit";
+        const split = context.createChannelSplitter(2), merge = context.createChannelMerger(2);
+        const left = context.createGain(), right = context.createGain();
+        const balance = nativeSoundPan(pan);
+        left.gain.value = nativeAttenuationGain(-Math.max(0, balance));
+        right.gain.value = nativeAttenuationGain(Math.min(0, balance));
+        gain.connect(split);
+        split.connect(left, 0); split.connect(right, 1);
+        left.connect(merge, 0, 0); right.connect(merge, 0, 1);
+        merge.connect(context.destination);
+        panNodes.push(split, left, right, merge);
+      } else gain.connect(context.destination);
       source.onended = () => {
         activeSource = null;
         releaseChannel();
         source.disconnect();
         gain.disconnect();
+        for (const node of panNodes) node.disconnect();
       };
       source.start();
     })
@@ -131,38 +149,38 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
   return playback;
 }
 
-// Native IDs verified at descriptors 0055F258 / 0055F260. Browser gain is a
-// host adapter; spatial mixing and backend attenuation remain.
+// Native IDs verified at descriptors 0055F258 / 0055F260.
+// Spatial position routing remains a host adapter.
 export function playNativeWaterSound(context, request) {
   const kind =
     request[0] === 0x39 ? "splash" : request[0] === 0x3a ? "splish" : null;
-  if (kind) playOriginalSound(context, kind, () => {}, request[3] / 65536, request[1]);
+  if (kind) playOriginalSound(context, kind, () => {}, request[3] / 65536, request[1], request[4]);
 }
 
 // 0055F120 maps native ID 0x23 to WormLanding.wav. Strength comes from
-// 004D7E5C (absolute native vertical velocity / 8); gain remains a host adapter.
+// 004D7E5C (absolute native vertical velocity / 8).
 export function playNativeLandingSound(context, request) {
   if (request[0] === 0x23)
-    playOriginalSound(context, "land", () => {}, request[3] / 65536, request[1]);
+    playOriginalSound(context, "land", () => {}, request[3] / 65536, request[1], request[4]);
 }
 
 export function playNativeRopeContactSound(context, request) {
   if (request[0] === 35)
-    return playOriginalClip(context, 'sounds/wormlanding.wav', () => {}, request[3] / 65536);
+    return playOriginalClip(context, 'sounds/wormlanding.wav', () => {}, request[3] / 65536, false, request[2] / 65536, request[1], request[4]);
   return null;
 }
 
 // Original table 0055F460 consists of explicit ID/filename pairs, not ordinal
 // slots: Oops/Orders/Ouch precede IDs38..40 in the table. English remains the
 // host default until team speech selection lands.
-export function playNativeSpeech(context, slot, level = 1, priority = 3) {
+export function playNativeSpeech(context, slot, level = 1, priority = 3, pan = 0) {
   const entry = speech.slots[slot];
-  return entry ? playOriginalClip(context, `voices/english/${entry.clip}`, () => {}, level, false, 1, priority) : null;
+  return entry ? playOriginalClip(context, `voices/english/${entry.clip}`, () => {}, level, false, 1, priority, pan) : null;
 }
 
 export function playNativeDeathVoice(context, request) {
   if (request[0] === 6 || request[0] === 33)
-    return playNativeSpeech(context, request[0], request[3] / 65536, request[1]);
+    return playNativeSpeech(context, request[0], request[3] / 65536, request[1], request[4]);
 }
 
 export function playNativeHitVoice(context, request, previousPlayback) {
@@ -181,7 +199,7 @@ export function playNativeRecoverySound(context, request, previousPlayback) {
     context,
     `sounds/${name}.wav`,
     () => {},
-    request[3] / 65536, false, request[2] / 65536, request[1],
+    request[3] / 65536, false, request[2] / 65536, request[1], request[4],
   );
 }
 
@@ -192,7 +210,7 @@ export function playNativeProjectileContactSound(context, request, previous) {
   const name = request[0] === 105 ? "holygrenadeimpact" : request[0] === 113 ? "grenadeimpact" : request[0] === 107 ? "mineimpact" : null;
   if (!name) return previous;
   previous?.stop?.();
-  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[2] / 65536);
+  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[2] / 65536, false, request[1] / 65536, 3, request[3]);
 }
 
 // Original descriptors 0055F2B0/0055F2C0 map release IDs 73/75.
@@ -215,7 +233,7 @@ export function playNativeProjectileReleaseSound(context, release) {
     if (event.operation !== "sound") continue;
     const name = { 73: "throwrelease", 75: "rocketrelease", 82: "handgunfire", 96: "baseballbatrelease" }[event.request[0]];
     if (name)
-      playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536, false, event.request[2] / 65536, event.request[1]);
+      playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536, false, event.request[2] / 65536, event.request[1], event.request[4]);
   }
   return loop;
 }
@@ -232,7 +250,7 @@ export function playNativeProjectileFuse(context, sound) {
 export function playNativeMineSound(context, request) {
   const name = {88:"minearm",89:"minetick",90:"minedud"}[request[0]];
   if (!name) return null;
-  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[3] / 65536, false, request[2] / 65536, request[1]);
+  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[3] / 65536, false, request[2] / 65536, request[1], request[4]);
 }
 
 // Descriptor0055F308 maps native84 to Drill.wav (85 at0055F310 is impact).
@@ -243,9 +261,9 @@ export function playNativeDrillLoop(context) {
 
 // Original descriptor {93, TimerTick.wav}; speech slot 22 is Hurry.wav.
 export function playNativeClockSound(context, request) {
-  if (request[0] === 0x10016) return playNativeSpeech(context, 22, request[3] / 65536, request[1]);
+  if (request[0] === 0x10016) return playNativeSpeech(context, 22, request[3] / 65536, request[1], request[4]);
   if (request[0] === 0x5d)
-    return playOriginalClip(context, "sounds/timertick.wav", () => {}, request[3] / 65536, false, request[2] / 65536, request[1]);
+    return playOriginalClip(context, "sounds/timertick.wav", () => {}, request[3] / 65536, false, request[2] / 65536, request[1], request[4]);
   return null;
 }
 
@@ -256,7 +274,7 @@ export function playNativeAnnouncementLoop(context, volume) {
 
 export function playNativeTeamPanelSound(context, request) {
   const clip = request[0] === 0x7a ? "teamdrop" : request[0] === 0x7b ? "teambounce" : null;
-  if (clip) return playOriginalClip(context, `sounds/${clip}.wav`, () => {}, request[3] / 65536, false, request[2] / 65536, request[1]);
+  if (clip) return playOriginalClip(context, `sounds/${clip}.wav`, () => {}, request[3] / 65536, false, request[2] / 65536, request[1], request[4]);
   return null;
 }
 

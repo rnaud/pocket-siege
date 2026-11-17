@@ -96,5 +96,41 @@ for priorities in layouts:
    result=cpu.reg_read(UC_X86_REG_EAX);result=result if result<0x80000000 else result-0x100000000
    channel_cases.append(dict(priorities=priorities,incoming=incoming,tracked=tracked,result=result,calls=channel_calls,
     occupied=[bool(read(owner+0x28+i*24)) for i in range(8)],handles=[read(owner+0x8a8+i*4) for i in range(8)]))
-args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases,channelCases=channel_cases),separators=(',',':'))+'\n')
-print(f'Wrote {len(cases)} queue and {len(channel_cases)} channel cases')
+
+# Original mixer block, after successful sample duplication. DirectSound calls
+# are captured; clamp, fixed-point multiply and table lookup execute unchanged.
+table=list(struct.unpack('<65h',cpu.mem_read(0x55e2f8,130)))
+Path('src/armageddon/sound-attenuation.json').write_text(json.dumps(table)+'\n')
+mix_vtable=owner+0x5000;mix_buffer=owner+0x6000
+write(mix_buffer,mix_vtable)
+mix_methods={0x34:('position',2),0x44:('frequency',2),0x3c:('volume',2),0x40:('pan',2),0x30:('play',4)}
+for offset,(_,argc) in mix_methods.items():
+ address=stop+0x400+offset;write(mix_vtable+offset,address);cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4))
+mix_calls=[]
+def capture_mix(cpu,address,size,user):
+ offset=address-stop-0x400
+ if offset in mix_methods:
+  name,argc=mix_methods[offset];sp=cpu.reg_read(UC_X86_REG_ESP)
+  mix_calls.append([name,*struct.unpack('<'+'i'*(argc-1),cpu.mem_read(sp+8,(argc-1)*4))])
+cpu.hook_add(UC_HOOK_CODE,capture_mix,begin=stop+0x430,end=stop+0x444)
+mix_cases=[]
+levels=[-1,0,1,1023,1024,32768,65535,65536,65537]+[i*1024 for i in range(65)]
+for flags in [0,0x10000,0x20000,0x30000]:
+ for master in [0,32768,65536]:
+  for i,volume in enumerate(levels):
+   pan=[-99999,-65536,-32768,-1024,0,1024,32768,65536,99999][i%9]
+   pitch=[32768,65536,98304][i%3];frequency=[11025,22050,44100][i%3];speed=1+i%2
+   sp=stack+0xe000;write(owner+0x28,mix_buffer);write(owner+0x8a4,master);write(owner+0xa34,speed)
+   for offset,value in [(0x10,1|flags),(0x14,int(bool(flags&0x10000))),(0x18,frequency),(0x24,3),(0x28,pitch),(0x2c,volume),(0x30,pan)]:write(sp+offset,value&0xffffffff)
+   mix_calls=[];cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,0)
+   cpu.emu_start(0x496a1c,0x496b27,count=10000)
+   assert cpu.reg_read(UC_X86_REG_EIP)==0x496b27
+   calls=mix_calls[:]
+   # Update the same retained channel via actual handle API: no initial 3/4.
+   write(owner+0x8a8,0);write(sp,stop);write(sp+4,1);write(sp+8,volume&0xffffffff)
+   mix_calls=[];cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x496d80,stop,count=10000)
+   assert cpu.reg_read(UC_X86_REG_EIP)==stop
+   mix_cases.append(dict(flags=flags,master=master,volume=volume,pan=pan,pitch=pitch,frequency=frequency,speed=speed,calls=calls,updates=mix_calls))
+args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases,channelCases=channel_cases,mixCases=mix_cases),separators=(',',':'))+'\n')
+print(f'Wrote {len(cases)} queue, {len(channel_cases)} channel, {len(mix_cases)} mixer cases')

@@ -127,7 +127,10 @@ test("live death plays past the old cutoff before its explosion", async ({
     )
     .toBe(true);
   await expect(page.locator(".team-coral")).toBeHidden({ timeout: 5000 });
-  await expect.poll(() => page.evaluate(() => window.siege.getState().phase)).toBe("over");
+  // Native death, elimination and kill announcements drain before match end.
+  // CI captured the completed match just after the former five-second poll.
+  await expect.poll(() => page.evaluate(() => window.siege.getState().phase),
+    { timeout: 10000, intervals: [100] }).toBe("over");
   const sequence = await page.evaluate(() => window.deathFrameProbe);
   expect(sequence.maxConcurrent).toBe(1);
   expect(sequence.pendingLabelVisible).toBe(true);
