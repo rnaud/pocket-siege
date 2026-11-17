@@ -1062,6 +1062,15 @@ test("field kit teleport and girder target the battlefield", async ({
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="girder"]').click();
   box = await page.locator("#arena").boundingBox();
+  state = await page.evaluate(() => window.siege.getState());
+  const beforeGirder = state, active = state.worms[state.current], camera = state.camera;
+  await page.mouse.click(box.x + (active.x-camera.x)/camera.w*box.width,
+    box.y + (1-(active.y-camera.y)/camera.h)*box.height);
+  state = await page.evaluate(() => window.siege.getState());
+  expect(state.girders).toHaveLength(0);
+  expect(state.utilities.girder).toBe(beforeGirder.utilities.girder);
+  expect(state.terrainPixels).toBe(beforeGirder.terrainPixels);
+  expect(state.phase).toBe("aim");
   await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.3);
   state = await page.evaluate(() => window.siege.getState());
   expect(state.girders).toHaveLength(1);

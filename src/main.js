@@ -159,8 +159,11 @@ import {
 } from "./armageddon/wind-hud.js";
 import {
   loadOriginalGirders,
+  originalGirder,
   stampOriginalGirder,
 } from "./armageddon/girders.js";
+import { nativeSceneGirderPlacement } from "./armageddon/girder-placement.js";
+import { nativeClampPlacementTarget } from "./armageddon/target-placement.js";
 import { originalMapSpawns } from "./armageddon/map-placement.js";
 import {
   originalMapCatalog,
@@ -2078,12 +2081,19 @@ function handleUtilityTarget(e) {
     return;
   }
   if (targetUtility === "girder") {
-    if (Math.hypot(x - w.x, y - w.y) > 260) {
-      $("#status").textContent = "Girder out of range. Move closer.";
+    const sprite = originalGirder("grds4");
+    if (!sprite) return;
+    const target = nativeClampPlacementTarget(Math.round(x*65536),Math.round((H-y)*65536),
+      sprite.width,sprite.height,0);
+    const px = target[0]>>16, py = target[1]>>16;
+    if (!nativeSceneGirderPlacement(terrain,worms,[...mines,...crates,...hazards],
+      W,H,w,px,py,sprite)) {
+      $("#status").textContent = "Girder blocked or out of range. Choose an empty spot closer to your worm.";
       return;
     }
+    // Convert the validated native bitmap row to the same host terrain row.
+    if (!addGirder(px, H-1-py, 0, 64)) return;
     utilityAmmo[team].girder = spendAmmo(utilityAmmo[team].girder);
-    addGirder(x, y, 0, 64);
     finishUtilityTurn("Girder placed. Turn over.");
   }
 }
