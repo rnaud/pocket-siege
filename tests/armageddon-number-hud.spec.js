@@ -51,9 +51,16 @@ test("original timer digits preserve every glyph pixel at integer scale", async 
     ],
   });
   await expect(page.locator(".turn")).toHaveCSS("bottom", "9px");
-  const size = await page.locator("#timer canvas").boundingBox();
-  expect(size.width).toBe(33);
-  expect(size.height).toBe(32);
+  // Digits may advance while the font checks run. Read both sizes in one
+  // browser task: native glyph widths vary (45 is 33px; 44 is 34px).
+  const size = await page.locator("#timer canvas").evaluate(canvas => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+      nativeWidth: canvas.width, nativeHeight: canvas.height };
+  });
+  expect(size.width).toBe(size.nativeWidth);
+  expect(size.height).toBe(size.nativeHeight);
+  expect(size.nativeHeight).toBe(32);
   const frame = await page.locator(".turn").boundingBox();
   expect(size.y + size.height).toBeLessThanOrEqual(frame.y + frame.height);
   expect({width: frame.width, height: frame.height}).toEqual({width: 56, height: 42});
