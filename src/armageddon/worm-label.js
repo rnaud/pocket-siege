@@ -10,6 +10,21 @@ export function nativeDamageTextPlacement(body) {
     font: (body.color + 9) | 0, order: (Math.imul(body.rank, 4) + 0xd0103) | 0 };
 }
 
+// 004D86F0. Selection sprite centers remain independent of label detail.
+export function nativeSelectionPlacement(body) {
+  if (!body.progress) return null;
+  return { x: body.x | 0,
+    y: (fixedMultiply((body.y + 0x1800000) | 0, body.progress) - 0x1d00000) | 0,
+    sprite: ((body.color | 0) + (body.alternate ? 0x316 : 0x310)) | 0,
+    progress: Math.trunc((body.tick << 16) / 50), order: 0x30000 };
+}
+
+// 0049FDAA..0049FDD7: the Delete key advances detail and wraps after hidden.
+export function nextNativeLabelMode(mode) {
+  const next = (mode + 1) | 0;
+  return next < 0 || next > 3 ? 0 : next;
+}
+
 // 004D8C20. Native label modes: team/name/health, name/health, health, hidden.
 export function nativeWormLabelPlacement(body) {
   const font = nativeWormLabelFont(body.color, body.selected, body.suppressed, body.tick);
@@ -59,10 +74,17 @@ export async function loadOriginalWormLabels() {
 // 004D8C20 uses standard team-color fonts (color+9), switching the selected
 // worm to white every 25 native ticks. Names/team/health are separate lines.
 // Positions come from the original label renderer, with integer render-queue snapping.
-export function updateOriginalWormLabel(label, worm, selected, tick, placement) {
+export function updateOriginalWormLabel(label, worm, selected, tick, placement, origin) {
   if (!fonts) return false;
-  label.hidden = placement.length === 0;
-  if (label.hidden) return true;
+  label.setAttribute('aria-label', `${worm.name}, ${worm.team ? 'CORAL' : 'MOSS'}, ${worm.hp} health`);
+  const existingCanvas = label.querySelector('.native-worm-text');
+  if (existingCanvas) existingCanvas.hidden = placement.length === 0;
+  if (!placement.length) {
+    label.dataset.nativeTop = String(origin.y >> 16);
+    label.dataset.nativeX = String(origin.x >> 16);
+    label.dataset.nativeWidth = '0';
+    return true;
+  }
   const fontId = nativeWormLabelFont(worm.team ? 0 : 2, selected, false, tick);
   const fontIndex = fontId === 15 ? 2 : worm.team;
   const teamName = worm.team ? "CORAL" : "MOSS";
@@ -74,7 +96,10 @@ export function updateOriginalWormLabel(label, worm, selected, tick, placement) 
   label.dataset.nativeX = String(placement[0]?.x >> 16);
   const lines = placement.map(line => [text[line.kind], (line.y >> 16) - top]);
   const key = `${fontIndex}:${worm.hp}:${JSON.stringify(lines)}`;
-  if (label.dataset.nativeLabel === key) return true;
+  if (label.dataset.nativeLabel === key) {
+    label.dataset.nativeWidth = String(existingCanvas.width);
+    return true;
+  }
   const font = fonts[fontIndex];
   const width = Math.max(
     ...lines.map(([text]) => measureNativeText(font, text).width),

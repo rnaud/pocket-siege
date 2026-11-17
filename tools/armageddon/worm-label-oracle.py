@@ -102,5 +102,23 @@ for mode in [0,1,2,3]:
      cpu.emu_start(0x4d8c20,stop,count=10000)
      if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Label renderer did not return')
      layouts.append(dict(input=render_input,output=label_calls))
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'damage':damage,'layouts':layouts},separators=(',',':'))+'\n')
+# Complete native selection-arrow renderer004D86F0.
+cpu.mem_write(0x4eedf0,b'\xc2\x18\x00')
+def arrow_hook(cpu,address,size,user):
+ global arrow_output
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ arrow_output=dict(order=read(sp+4),x=signed(read(sp+8)),y=signed(read(sp+12)),sprite=read(sp+20),progress=signed(read(sp+24)))
+cpu.hook_add(UC_HOOK_CODE,arrow_hook,begin=0x4eedf0,end=0x4eedf0)
+arrows=[]
+for progress in [0,0x8000,0x10000]:
+ for color in [0,2]:
+  for alternate in [0,1]:
+   for tick in [0,25,49]:
+    render_input=dict(x=-17*65536,y=250*65536,progress=progress,color=color,alternate=alternate,tick=tick)
+    write(owner+0x360,progress);write(owner+0x10c,color);write(context+0x810,alternate);write(context+0x1b8ec,tick);arrow_output=None
+    sp=stack+0xff00;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+    cpu.emu_start(0x4d86f0,stop,count=10000)
+    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Arrow renderer did not return')
+    arrows.append(dict(input=render_input,output=arrow_output))
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'damage':damage,'layouts':layouts,'arrows':arrows},separators=(',',':'))+'\n')
 print(f'{len(cases)} native worm label font cases')

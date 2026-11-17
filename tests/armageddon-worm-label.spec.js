@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/worm-label.json" with { type: "json" };
-import { nativeWormLabelFont, nativeDamageTextPlacement, nativeWormLabelPlacement } from "../src/armageddon/worm-label.js";
+import { nativeWormLabelFont, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement } from "../src/armageddon/worm-label.js";
 
 test("worm label font and blink match original executable", { tag: "@logic" }, () => {
+  expect(fixture.arrows).toHaveLength(36);
+  for (const row of fixture.arrows) expect(nativeSelectionPlacement(row.input)).toEqual(row.output);
   expect(fixture.layouts).toHaveLength(288);
   for (const row of fixture.layouts) expect(nativeWormLabelPlacement(row.input)).toEqual(row.output);
   for (const row of fixture.damage)
@@ -35,4 +37,20 @@ test("live native labels blink and repaint health after damage", async ({
       .evaluate((c) => c.height),
   ).toBe(33);
   await page.screenshot({ path: info.outputPath("native-worm-labels.png") });
+  const arrow = page.locator('.worm-label.active .original-selection');
+  const origin = await arrow.boundingBox();
+  await page.keyboard.press('Delete'); // Name/health -> health only.
+  await expect.poll(() => page.locator('.native-worm-text').first().evaluate(c => c.height)).toBe(16);
+  await page.keyboard.press('Delete'); // Hidden labels must not hide selection.
+  await expect(page.locator('.native-worm-text:visible')).toHaveCount(0);
+  await expect(arrow).toBeVisible();
+  const hidden = await arrow.boundingBox();
+  expect(Math.abs(hidden.x - origin.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(hidden.y - origin.y)).toBeLessThanOrEqual(1);
+  await page.locator('#label-detail').click(); // Touch-accessible control -> full detail.
+  await expect.poll(() => page.locator('.native-worm-text').first().evaluate(c => c.height)).toBe(49);
+  await expect(page.locator('.native-worm-text:visible')).toHaveCount(6);
+  await page.keyboard.press('Delete');
+  await expect.poll(() => page.locator('.native-worm-text').first().evaluate(c => c.height)).toBe(33);
+
 });

@@ -199,7 +199,7 @@ import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams } from "./pixel-hud.js";
-import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement } from "./armageddon/worm-label.js";
+import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode } from "./armageddon/worm-label.js";
 import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater } from "./water.js";
 import * as THREE from "three";
@@ -447,6 +447,7 @@ let charging = false,
   lastJump = { kind: null, time: -1 },
   jumpClock = 0;
 let selectionTick = 0;
+let labelMode = 1;
 let uiKey = "",
   terrainDirty = false,
   timerKey = "";
@@ -791,6 +792,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   uiKey = "";
   timerKey = "";
   selectionTick = 0;
+  labelMode = 1;
+  updateLabelModeButton();
   if (!keepSeries) {
     seriesWins = [0, 0];
     seriesRound = 1;
@@ -5162,18 +5165,14 @@ function frame(now) {
     } else if (w.damageCanvas) w.damageCanvas.hidden = true;
     const labelPlacement = nativeWormLabelPlacement({
       x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
-      progress: 65536, labelMode: 1, compact: 0, teamInactive: 0, surrendered: 0,
+      progress: 65536, labelMode, compact: 0, teamInactive: 0, surrendered: 0,
       state: nativeWormState(w), ammo: 0, suppressAmmo: 0,
       rank: 0, color: w.team ? 0 : 2, selected: active && phase !== "over",
       suppressed: 0, tick: selectionTick,
     });
-    updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick, labelPlacement);
-    updateOriginalSelection(
-      w.label,
-      w.team,
-      selectionTick,
-      active && w.hp > 0 && phase !== "over",
-    );
+    updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick, labelPlacement, {
+      x: Math.round(w.x * 65536), y: Math.round((H - w.y - 42) * 65536),
+    });
     w.label.classList.toggle("hurt", w.hurt > 0);
     w.shadow.visible = w.ground && w.hp > 0;
     const p = screen(+w.label.dataset.nativeX, H - +w.label.dataset.nativeTop);
@@ -5185,8 +5184,16 @@ function frame(now) {
       charge.style.left = `${Math.round(cp.x)}px`;
       charge.style.top = `${Math.round(cp.y)}px`;
     }
-    w.label.style.left = (Math.round(p.x) - Math.floor(+w.label.dataset.nativeWidth / 2)) + "px";
-    w.label.style.top = Math.round(p.y) + "px";
+    const labelLeft = Math.round(p.x) - Math.floor(+w.label.dataset.nativeWidth / 2);
+    const labelTop = Math.round(p.y);
+    w.label.style.left = labelLeft + "px";
+    w.label.style.top = labelTop + "px";
+    const arrow = nativeSelectionPlacement({ x: Math.round(w.x * 65536),
+      y: Math.round((H - w.y) * 65536), progress: 65536,
+      color: w.team ? 0 : 2, alternate: false, tick: selectionTick });
+    const arrowPoint = screen(arrow.x >> 16, H - (arrow.y >> 16));
+    updateOriginalSelection(w.label, w.team, selectionTick, active && w.hp > 0 && phase !== "over",
+      { x: arrowPoint.x - labelLeft, y: arrowPoint.y - labelTop });
   }
   if (crate) {
     crate.mesh.position.y = Math.round(crate.y);
@@ -5364,8 +5371,23 @@ for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
     }
     aiming = false;
   });
+function updateLabelModeButton() {
+  const detail = ['team, name and health', 'name and health', 'health only', 'hidden'][labelMode];
+  $('#label-detail').setAttribute('aria-label', `Worm labels: ${detail}. Cycle label detail`);
+  $('#label-detail').title = `Worm labels: ${detail} (Delete)`;
+}
+function cycleLabelMode() {
+  labelMode = nextNativeLabelMode(labelMode);
+  updateLabelModeButton();
+}
+$('#label-detail').onclick = cycleLabelMode;
 window.addEventListener("keydown", (e) => {
   if (menu.open) return;
+  if (e.key === 'Delete' && !e.shiftKey) {
+    e.preventDefault();
+    if (!e.repeat) cycleLabelMode();
+    return;
+  }
   const controlled = [
     "ArrowLeft",
     "ArrowRight",
