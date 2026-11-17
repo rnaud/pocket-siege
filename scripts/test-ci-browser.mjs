@@ -6,6 +6,8 @@ const config = process.env.CI_PLAYWRIGHT_CONFIG ? [`--config=${process.env.CI_PL
 const base = process.env.CI_BASE_SHA;
 const plan = process.argv.includes('--plan');
 const smoke = [
+  'play a full destructive turn with responsive controls',
+  'computer takes its turn and returns control',
   'original art loads and character labels stay readable',
   'equipped weapons display their original native sprites',
   'slow loading shows only the loading screen',
@@ -21,8 +23,10 @@ if (!full) {
     if (!base || /^0+$/.test(base)) throw new Error('No comparison revision');
     execFileSync('git', ['rev-parse', '--verify', `${base}^{commit}`], { stdio: 'pipe' });
     files = execFileSync('git', ['diff', '--name-only', '-z', base, 'HEAD'], { encoding: 'utf8' }).split('\0').filter(Boolean);
-    // These changes affect the entire application or how tests are selected.
-    if (files.some(file => /^(?:package(?:-lock)?\.json$|playwright.*config\.|vite.*config\.|\.github\/workflows\/|scripts\/test-ci-browser\.mjs$|src\/main\.js$|public\/|index\.html$|armageddon\.html$)/.test(file))) {
+    // Main entry edits always get gameplay smoke (including destruction and AI).
+    // Reserve full regression for changes to assets, dependencies or the harness;
+    // the monolithic entry changes on nearly every gameplay release.
+    if (files.some(file => /^(?:package(?:-lock)?\.json$|playwright.*config\.|vite.*config\.|\.github\/workflows\/|scripts\/test-ci-browser\.mjs$|public\/|index\.html$|armageddon\.html$)/.test(file))) {
       full = true; reason = 'Application entry, assets, dependencies or CI configuration changed';
     }
   } catch {

@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: '23 6 * * 1'
   workflow_dispatch:
     inputs:
       full_browser:
@@ -53,7 +55,7 @@ jobs:
       - run: node scripts/test-ci-browser.mjs
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          FULL_BROWSER: ${{ inputs.full_browser == true }}
+          FULL_BROWSER: ${{ github.event_name == 'schedule' || inputs.full_browser == true }}
           CI_SHARD: ${{ matrix.shard }}/2
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/results.json
       - uses: actions/upload-artifact@v4
@@ -64,7 +66,7 @@ jobs:
           retention-days: 7
   deploy:
     needs: [logic, test]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
