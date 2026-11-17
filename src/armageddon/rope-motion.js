@@ -9,7 +9,7 @@ export function nativeRopeMotion(input, remaining, interfaces = {}) {
   const done = (hit = 0) => ({ body, remaining, hit, calls });
   const invoke = (operation, request) => {
     calls.push({ operation, request });
-    return interfaces[operation]?.(...request) ?? 0;
+    return interfaces[operation]?.(...request, body) ?? 0;
   };
   let x = body.anchorX, y = body.anchorY, angle = 0;
   for (let i = 0; i < body.segmentCount; i++) {
