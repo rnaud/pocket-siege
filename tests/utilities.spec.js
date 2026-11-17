@@ -16,10 +16,23 @@ import crateContact from './fixtures/armageddon/crate-contact.json' with { type:
 import crateEvents from './fixtures/armageddon/crate-events.json' with { type: 'json' };
 import { nativeCrateContact } from '../src/armageddon/crate-contact.js';
 import { nativeCrateEvent } from '../src/armageddon/crate-events.js';
+import pickup from './fixtures/armageddon/crate-pickup.json' with { type: 'json' };
+import { nativePickupCandidate } from '../src/armageddon/crate-pickup.js';
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of pickup.cases) {
+    const queries = [], actor = { ...row.actor, type: 11 };
+    const candidates = row.candidates.map(c => c.self ? actor : { ...c });
+    const result = nativePickupCandidate(actor, candidates, row.radius, candidate => {
+      const index = candidates.indexOf(candidate);
+      queries.push(index);
+      return row.candidates[index].query ? { kind: row.candidates[index].kind } : null;
+    });
+    expect(result ? candidates.indexOf(result) : -1).toBe(row.selected);
+    expect(queries).toEqual(row.queries);
+  }
   for (const row of crateEvents.cases)
     expect(nativeCrateEvent(row.input, row.event)).toEqual(row.output);
   for (const row of crateContact.cases) {

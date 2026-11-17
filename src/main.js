@@ -1,6 +1,7 @@
 import { NativeSoundQueue } from "./armageddon/sound-queue.js";
 import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
 import { nativeAutomaticUtilities } from "./armageddon/automatic-utilities.js";
+import { nativePickupCandidate } from "./armageddon/crate-pickup.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
@@ -4878,14 +4879,16 @@ function stepFrame(dt) {
         );
     }
   }
-  for (const crate of [...crates]) {
-    const collector = worms.find(
-      (w) =>
-        !crate.falling &&
-        w.hp > 0 &&
-        Math.hypot(w.x - crate.x, w.y + 20 - crate.y) < 30,
-    );
-    if (collector) collectCrate(collector, crate);
+  for (const w of worms) if (w.hp > 0 && crates.length) {
+    const actor = { x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 };
+    const candidates = crates.map(crate => ({
+      crate, type: 11, x: Math.round(crate.x * 65536) | 0,
+      y: Math.round((H - crate.y) * 65536) | 0,
+    }));
+    const candidate = nativePickupCandidate(actor, candidates, 32 * 65536, ({ crate }) => ({
+      kind: crate.kind === "health" ? 2 : crate.kind === "utility" ? 4 : 1,
+    }));
+    if (candidate) collectCrate(w, candidate.crate);
   }
   const mineCameraRequests = [];
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
