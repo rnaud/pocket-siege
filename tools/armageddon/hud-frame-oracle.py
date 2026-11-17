@@ -40,7 +40,23 @@ list_scores=[101,201]
 clock_frame_mode=False
 clock_presentation_mode=False
 clock_countdown_mode=False
+announcement_draw_mode=False
+announcement_draw=None
 def hook(cpu,address,size,user):
+ global announcement_draw
+ if announcement_draw_mode and address==0x4edb70:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  cpu.reg_write(UC_X86_REG_EAX,read(sp+4));cpu.reg_write(UC_X86_REG_ESP,sp+8);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
+ if announcement_draw_mode and address==0x4c67a0:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  announcement_draw={'text':bytes(cpu.mem_read(read(sp+4),80)).split(b'\0')[0].decode(),'font':read(sp+8),'coverage':read(sp+28)}
+  write(read(sp+20),50);write(read(sp+24),17)
+  cpu.reg_write(UC_X86_REG_EAX,owner+0x9000);cpu.reg_write(UC_X86_REG_ESP,sp+32);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
+ if announcement_draw_mode and address==0x4eed30:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  announcement_draw['x']=struct.unpack('<i',cpu.mem_read(sp+8,4))[0]
+  announcement_draw['y']=struct.unpack('<i',cpu.mem_read(sp+12,4))[0]
+  cpu.reg_write(UC_X86_REG_ESP,sp+40);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
  if address==stop+0x300: # External CRT strncpy; native queue logic runs unchanged.
   sp=cpu.reg_read(UC_X86_REG_ESP);dest,source,length=[read(sp+i) for i in [4,8,12]]
   value=bytes(cpu.mem_read(source,length)).split(b'\0')[0][:length]
@@ -286,5 +302,30 @@ for width,height,stride in [(7,3,7),(17,5,20),(32,16,32)]:
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement dissolve did not finish')
    mask=[value for row in range(height) for value in cpu.mem_read(buffer+row*stride,width)]
    announcement_mask_cases.append({'length':width*height,'seed':seed,'coverage':coverage,'mask':mask})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases},separators=(',',':'))+'\n')
+announcement_frame_cases=[]
+for width,height in [(0,16),(50,16),(226,24),(300,32)]:
+ write(owner+0xc,owner+0x7000);write(owner+0x7000,vtable)
+ write(owner+0x8000,width);write(owner+0x8004,height)
+ sp=stack+0xff00;write(sp+0x24,7)
+ cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EBX,owner)
+ cpu.reg_write(UC_X86_REG_ESI,owner+0x8000);cpu.reg_write(UC_X86_REG_EBP,owner+0x8004)
+ calls=[];cpu.emu_start(0x4c6894,0x4c698c,count=10000)
+ if cpu.reg_read(UC_X86_REG_EIP)!=0x4c698c:raise RuntimeError('Announcement border did not finish')
+ announcement_frame_cases.append({'width':width,'height':height,'calls':calls[:]})
+announcement_draw_mode=True
+announcement_draw_cases=[]
+for height in [480,696]:
+ for playback in [0,32768,65536]:
+  for stage,coverage,team_only,visible in [(0,65536,0,1),(1,0,0,1),(1,19660,0,1),(2,65536,0,1),(2,65536,1,0),(2,65536,1,1)]:
+   write(owner+0x38,context);write(owner+0x9c,playback)
+   write(context+0x1b8e0,height);write(context+0x1c18c,0)
+   write(context+0x1c190,stage);write(context+0x1c198,coverage)
+   write(context+0x1c19c,2);write(context+0x1c1a4,team_only);write(context+0x1c168,visible)
+   write(context+0x1c1a8,23);cpu.mem_write(context+0x1c1ac,b'READY\0')
+   sp=stack+0xff00;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   announcement_draw=None;cpu.emu_start(0x4ec930,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement draw did not finish')
+   result=announcement_draw if announcement_draw and 'x' in announcement_draw else None
+   announcement_draw_cases.append({'height':height,'playback':playback,'stage':stage,'coverage':coverage,'teamOnly':team_only,'visible':visible,'after':result})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

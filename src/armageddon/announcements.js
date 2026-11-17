@@ -58,3 +58,24 @@ export function nativeAnnouncementMask(length, seed, coverage) {
   }
   return mask;
 }
+
+// 004C6894..004C698C: border drawn after the text at x=4.
+export function nativeAnnouncementFrame(textWidth, textHeight, color) {
+  const right = textWidth + 6, bottom = textHeight;
+  return [
+    ["horizontal", 1, right, 0, color], ["horizontal", 1, right, bottom, color],
+    ["vertical", 0, 1, bottom, color], ["vertical", right, 1, bottom, color],
+    ["pixel", 1, 1, color], ["pixel", right - 1, 1, color],
+    ["pixel", 1, bottom - 1, color], ["pixel", right - 1, bottom - 1, color],
+    ["pixel", 0, 0, 0], ["pixel", right, 0, 0],
+    ["pixel", 0, bottom, 0], ["pixel", right, bottom, 0],
+  ];
+}
+
+// 004EC930: visibility and center coordinates in the native screen space.
+export function nativeAnnouncementDraw(state, screenHeight, playback = 0, teamVisible = true) {
+  const entry = state.entries[state.read];
+  if (!state.stage || !state.scale || !entry || (entry.teamOnly && !teamVisible)) return null;
+  return { text: entry.text, font: entry.font, coverage: state.scale,
+    x: 0, y: (Math.imul(playback, 10) - Math.trunc((screenHeight << 16) / 2) + 0x100000) | 0 };
+}

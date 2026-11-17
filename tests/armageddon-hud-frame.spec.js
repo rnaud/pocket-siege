@@ -1,9 +1,14 @@
-import { nativeAnnouncementMask, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "../src/armageddon/announcements.js";
+import { nativeAnnouncementDraw, nativeAnnouncementFrame, nativeAnnouncementMask, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "../src/armageddon/announcements.js";
 import { nativeTurnClockTick, nativeClockPresentationTick, nativeTimerFont, nativeClockFrame, nativeClockSlide } from "../src/armageddon/number-hud.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of fixture.announcementDrawCases)
+    expect(nativeAnnouncementDraw({ read: 0, stage: c.stage, scale: c.coverage,
+      entries: [{ text: "READY", font: 23, teamOnly: c.teamOnly }] }, c.height, c.playback, c.visible)).toEqual(c.after);
+  for (const c of fixture.announcementFrameCases)
+    expect(nativeAnnouncementFrame(c.width, c.height, 7)).toEqual(c.calls);
   for (const c of fixture.announcementMaskCases)
     expect([...nativeAnnouncementMask(c.length, c.seed, c.coverage)]).toEqual(c.mask);
   for (const c of fixture.announcementQueueCases) {

@@ -1,5 +1,5 @@
 import { loadNativeFont, rasterNativeText } from "./font.js";
-import { nativeAnnouncementMask } from "./announcements.js";
+import { nativeAnnouncementDraw, nativeAnnouncementFrame, nativeAnnouncementMask } from "./announcements.js";
 
 const fontNames = { 15: "stdwht1", 23: "medwht1", 28: "digiwht" };
 const fonts = new Map();
@@ -7,10 +7,12 @@ const renderers = new WeakMap();
 export async function loadNativeAnnouncementArt() {
   await Promise.all(Object.entries(fontNames).map(async ([id, name]) => fonts.set(Number(id), await loadNativeFont(name))));
 }
-export function updateNativeAnnouncement(state, target) {
+export function updateNativeAnnouncement(state, target, { playback = 0, teamVisible = true } = {}) {
   const entry = state.entries[state.read];
-  target.hidden = !state.stage || state.scale <= 0 || !entry;
-  if (target.hidden || !fonts.has(entry.font)) return;
+  const height = target.parentElement.clientHeight;
+  const draw = nativeAnnouncementDraw(state, height, playback, teamVisible);
+  target.hidden = !draw || draw.coverage <= 0 || !fonts.has(draw.font);
+  if (target.hidden) return;
   let cache = renderers.get(target);
   if (!cache || cache.entry !== entry) {
     const glyphs = rasterNativeText(fonts.get(entry.font), entry.text);
@@ -28,23 +30,22 @@ export function updateNativeAnnouncement(state, target) {
         if (glyphs.pixels[source + 3]) pixels.set(glyphs.pixels.subarray(source, source + 4), offset);
       }
     }
-    // Border is drawn after glyphs, including four inset corner pixels.
-    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-      const outerCorner = (x === 0 || x === width - 1) && (y === 0 || y === height - 1);
-      const insetCorner = (x === 1 || x === width - 2) && (y === 1 || y === height - 2);
-      if (outerCorner) pixels.fill(0, (y * width + x) * 4, (y * width + x + 1) * 4);
-      else if (insetCorner || x === 0 || x === width - 1 || y === 0 || y === height - 1)
-        pixels.set([255,255,255,255], (y * width + x) * 4);
+    const put = (x, y, color) => pixels.set(color ? [255,255,255,255] : [0,0,0,0], (y * width + x) * 4);
+    for (const [kind, a, b, c, d] of nativeAnnouncementFrame(glyphs.width, glyphs.height, 1)) {
+      if (kind === "horizontal") for (let x = a; x <= b; x++) put(x, c, d);
+      else if (kind === "vertical") for (let y = b; y <= c; y++) put(a, y, d);
+      else put(a, b, c);
     }
     const canvas = document.createElement("canvas");
     canvas.width = width; canvas.height = height;
     canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
     canvas.setAttribute("aria-hidden", "true");
     target.replaceChildren(canvas); target.setAttribute("aria-label", entry.text);
-    target.style.top = `${16 - Math.trunc(height / 2)}px`;
+
     cache = { entry, canvas, pixels, width, height, seed: 0, coverage: -1 };
     renderers.set(target, cache);
   }
+  target.style.top = `${Math.trunc(draw.y / 65536 + height / 2) - Math.trunc(cache.height / 2)}px`;
   if (cache.coverage === state.scale) return;
   const pixels = cache.pixels.slice();
   const mask = nativeAnnouncementMask(cache.width * cache.height, cache.seed, state.scale);
