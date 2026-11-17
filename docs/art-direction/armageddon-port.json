@@ -275,5 +275,6 @@
   "scope_exclusions": {
     "online_play": "Explicitly excluded by user on 2026-11-17: multiplayer networking, matchmaking, online lobbies and network synchronization. Local play, AI, local replays and saves remain in scope."
   },
-  "flame_blast_response": "004D4B80 flame blast response matches 315 original executable cases with unchanged normalization. Live native explosions dispatch to existing flames: Manhattan reach, strength recovery, radial velocity and airborne reset. Full task ordering, event3FD terrain disable and event400 persistent strength loss remain incomplete."
+  "flame_blast_response": "004D4B80 flame blast response matches 315 original executable cases with unchanged normalization. Live native explosions dispatch to existing flames: Manhattan reach, strength recovery, radial velocity and airborne reset. Full task ordering, event3FD terrain disable and event400 persistent strength loss remain incomplete.",
+  "flame_lifecycle_events": "004D4590 events3FD and400 match 108 original executable cases including signed overflow and unrelated-event controls. Event400 is dispatched at the host nextTurn boundary after announcements and victory checks; persistent flames lose0x1999 strength, with deletion deferred to the next native tick. Event3FD disables terrain burns but its global native caller routing is not yet integrated. Full controller/task ordering remains incomplete."
 }

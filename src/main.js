@@ -1,3 +1,4 @@
+import { nativeFlameEvent } from "./armageddon/flame-events.js";
 import { nativeFlameBlast } from "./armageddon/flame-blast.js";
 import { nativeCrateHit } from "./armageddon/crate-hit.js";
 import { nativeCrateDetonation } from "./armageddon/crate-detonation.js";
@@ -4393,6 +4394,9 @@ function nextTurn() {
   showNativeTeamPanel(nativeTeamPanel);
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
+  // 004B64B0 broadcasts event400 after turn resolution.
+  for (const flame of nativeFlames) if (flame)
+    flame.body = nativeFlameEvent(flame.body, flame.record, 0x400);
   matchDamageSourceActive = false;
   team = 1 - team;
   if (team === 0) {
