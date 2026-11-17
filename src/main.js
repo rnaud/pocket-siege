@@ -1,3 +1,5 @@
+import { captureReplayEnvironment } from "./armageddon/replay-environment-adapter.js";
+import { captureReplayActors } from "./armageddon/replay-actor-adapter.js";
 import { nativeWindSelection, nativeDefaultWind } from "./armageddon/wind-selection.js";
 import { nativeWormRotation } from "./armageddon/worm-rotation.js";
 import { nativeTeamRotationReset, nativeSelectNextTeam } from "./armageddon/team-rotation.js";
@@ -2765,6 +2767,43 @@ async function shareResultCard() {
   link.download = "pocket-siege-result.png";
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+// Capture backing state without changing the running match. Installation and
+// audio/resource reconstruction are separate from this development audit hook.
+function captureMatchReplayState() {
+  if (!terrain || mapLoading) throw new Error("Replay capture requires a loaded map");
+  const resources = new Map(), resourceIds = new WeakMap();
+  const resourceKey = value => {
+    const isPlayback = typeof value.stop === "function" && typeof value.displace === "function" && typeof value.setVolume === "function";
+    if (!(value.isObject3D || value.isMaterial || value.isTexture || value instanceof Element || isPlayback)) return undefined;
+    if (!resourceIds.has(value)) {
+      const id = `resource:${resources.size}`;
+      resourceIds.set(value,id); resources.set(id,value);
+    }
+    return resourceIds.get(value);
+  };
+  const state = {
+    actors: { worms, projectile, particles, crates, mines, girders, graves, bombs, airstrikes, nativeFlames, hazards, nativeParticles },
+    turn: { current, team, round, phase, wind, time, shotWait, lastSelectedWorm, mode, weapon, move, angle, power, aiWait,
+      explosions, configuredDelays, nativeAnnouncements, pendingTurnStart, pendingPoisonSettlement, pendingEnvironmentSettlement,
+      matchDamageSourceActive, nativeMatchStatistics, nativeDamageReaction, reactionOrigin, announcementVolume,
+      weaponDelays, ammo, teamWeapon, waterLevel, suddenDeath, suddenDeathType, sdTriggered, poisoned, difficulty,
+      format, seriesWins, seriesRound, breakTimer, nativeFlameCounter, crateDirectionBag, slowMo, weather, modifier,
+      gravityScale, damageMultiplier, automaticUtilityState, blastScale, scheme, stockpile, crateRain, utilityAmmo,
+      utilitiesOpen, specialOpen, activeUtility, targetUtility, homingTarget, shotgunRemaining, pendingFire, rope, jetpack,
+      parachuteArmed, bungeeArmed, turnSeconds, turnTime, retreatSeconds, wormLocked, matchStarted, daily,
+      aiPower, shotFuse, shotBounce, aiMoveTime, aiMoveDirection, aiRetreatTime, aiRetreatDirection, lastAiPlanMs, aiPlan, hitStop,
+      charging, chargeFixed, chargeSource, aimInput, retreat, fuse, bounce, firedPower, shotCount, lastJump, jumpClock,
+      selectionTick, labelMode, lastShot, lastResult, bannerTime, nativeClockProgress, nativeClockTarget, nativeClockPresentation,
+      nativeTeamList, pendingEliminationTeam, nativeTeamHealthMaximum, nativeTeamHealthValues, nativeTeamPanelVisibility,
+      toggleTeamPanelVisibility, nativeTeamPanel, smokeRandom, impactBag, bubbleSeed, nativeWaterRise, nativeNuclearEffect },
+    controllers: { mineDudPool: { ...mineDudPool }, renderOrder: { ...nativeRenderOrder }, camera: { ...nativeCamera },
+      busy: { ...nativeBusy }, soundQueue: { ...nativeSoundQueue } },
+    camera: { nativeCameraFocus, nativeTeamRotation, nativeCameraFraming: nativeCameraFraming ? { ...nativeCameraFraming } : null, pendingWormCamera, pendingEnvironmentCamera,
+      manualCamera, overview, cameraZoom, cameraX, cameraY, cameraSnap, view },
+  };
+  return { environment: captureReplayEnvironment(terrain,matchRandom,W,H),
+    actors: captureReplayActors([{id:"match",actor:state}],{resourceKey}), resources };
 }
 function startReplay() {
   if (replaying || !lastShot || lastShot.points.length < 2) return;
@@ -6973,6 +7012,7 @@ window.siege = {
 // Dev-only hooks let the layout/series tests finish rounds without a long match.
 if (import.meta.env.DEV) {
   window.siege.debug = {
+    captureReplayState: captureMatchReplayState,
     knockout(teamIndex = 1) {
       for (const w of worms) {
         if (w.team !== teamIndex) continue;
