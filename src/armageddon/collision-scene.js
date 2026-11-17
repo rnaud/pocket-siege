@@ -5,6 +5,20 @@ import { NativeCollisionRegistry } from "./collision-registry.js";
 
 const fixed = (value) => Math.round(value * 65536) | 0;
 const scenes = new WeakMap();
+const placementMasks = new WeakMap();
+
+function placementMask(mask) {
+  let result = placementMasks.get(mask);
+  if (!result) {
+    const pixels = new Uint8Array(mask.width * mask.height);
+    for (const [x, y] of mask.planes[0].points) pixels[y * mask.width + x] = 1;
+    result = { width: mask.width, height: mask.height,
+      anchorX: mask.anchorX, anchorY: mask.anchorY,
+      bitmap: { width: mask.width, height: mask.height, pixels } };
+    placementMasks.set(mask, result);
+  }
+  return result;
+}
 
 // Bridge live bodies to the original type-ordered registry.
 // Negative IDs identify non-worm bodies; terrain/worm IDs retain their host mapping.
@@ -135,6 +149,21 @@ export class NativeCollisionScene {
         actor.flags,
       )?.id ?? 0
     );
+  }
+
+  // Snapshot the same ordered bodies used by movement into primary bitmaps
+  // for004C9500. Rebuild terrain each request: craters and water mutate it.
+  // Host terrain rows point upward; native masks and sprites point downward.
+  placementRegistry(width) {
+    const height = this.height, pixels = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++)
+      for (let x = 0; x < width; x++)
+        pixels[y * width + x] = Number(this.terrain.solid(x, height - 1 - y));
+    const terrainMask = { width, height, anchorX: 0, anchorY: 0,
+      bitmap: { width, height, pixels } };
+    return this.rows.map((row, type) => row.map(body => body && ({
+      ...body, mask: type === 1 ? terrainMask : placementMask(body.mask),
+    })));
   }
 }
 

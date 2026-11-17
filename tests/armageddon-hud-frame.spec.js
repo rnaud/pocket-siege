@@ -1,3 +1,4 @@
+import { NativeCollisionScene } from "../src/armageddon/collision-scene.js";
 import girderBitmap from "./fixtures/armageddon/girder-bitmap.json" with { type: "json" };
 import { nativeGirderPlacement } from "../src/armageddon/girder-placement.js";
 import placementBitmap from "./fixtures/armageddon/placement-bitmap.json" with { type: "json" };
@@ -112,6 +113,28 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const result=nativeGirderPlacement(memory,sceneMemory,c.x,c.y,sprite,registry,()=>({x:90*65536,y:90*65536}),surface);
     const packed=new Uint8Array(surface.pixels.length/8);surface.pixels.forEach((value,i)=>{if(value)packed[i>>3]|=1<<(i&7);});
     expect({result,surfaceHash:createHash("sha256").update(packed).digest("hex")}).toEqual({result:c.result,surfaceHash:c.surfaceHash});
+    // Exercise the host adapter against the same native full-bitmap output.
+    const terrain = { solid(x,y) {
+      const sx=x-100,sy=696-1-y-100;
+      return sx>=0 && sx<32 && sy>=0 && sy<16 && !!girderBitmap.terrain[sy*32+sx];
+    } };
+    const liveScene=new NativeCollisionScene(terrain,696);
+    const points=girderBitmap.actor.flatMap((value,i)=>value?[[i%8,Math.floor(i/8)]]:[]);
+    liveScene.rows[2]=[null,{enabled:c.enabled,x:140*65536,y:120*65536,
+      mask:{width:8,height:8,anchorX:4,anchorY:4,planes:[{points}]}}];
+    const originalMask=liveScene.rows[2][1].mask;
+    const adapted=liveScene.placementRegistry(1920);
+    surface.pixels.forEach((_,i)=>surface.pixels[i]=(0xa5>>(i%8))&1);
+    const adaptedResult=nativeGirderPlacement(memory,sceneMemory,c.x,c.y,sprite,adapted,()=>({x:90*65536,y:90*65536}),surface);
+    packed.fill(0);surface.pixels.forEach((value,i)=>{if(value)packed[i>>3]|=1<<(i&7);});
+    expect({result:adaptedResult,surfaceHash:createHash("sha256").update(packed).digest("hex")}).toEqual({result:c.result,surfaceHash:c.surfaceHash});
+    expect(liveScene.rows[2][1].mask).toBe(originalMask);
+    expect(adapted[2][0]).toBeNull();
+    if(c===girderBitmap.cases[0]) {
+      terrain.solid=()=>false;
+      expect(liveScene.placementRegistry(1920)[1][0].mask.bitmap.pixels.some(Boolean)).toBe(false);
+      expect(adapted[1][0].mask.bitmap.pixels.some(Boolean)).toBe(true);
+    }
   }
   for(const c of placementBitmap.cases) {
     const destination={width:32,height:16,clip:c.clip,pixels:Uint8Array.from(c.initial)};
