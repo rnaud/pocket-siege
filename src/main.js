@@ -613,6 +613,7 @@ function createWorm(t, i, x, spawnY = null) {
     dying: 0,
     hitDirection: 1,
     hits: 0,
+    damageTaken: 0,
     shadow,
     facing: t ? -1 : 1,
     label,
@@ -2450,14 +2451,7 @@ function adjustAim(direction, dt) {
   angle = facing > 0 ? next : 180 - next;
   updateSliders();
 }
-function injure(w, damage, direction = 0, native = false) {
-  // Frozen state 0x88 bypasses weapon damage in events 0x404/0x433.
-  if (w.hp <= 0 || damage <= 0) return;
-  if (w.frozen > 0) {
-    sfx("frozenhit");
-    return;
-  }
-  const previousHp = w.hp;
+function accountWormDamage(w, damage, options = {}) {
   const accounting = nativeDamageAccounting(
     {
       hp: w.hp,
@@ -2467,12 +2461,24 @@ function injure(w, damage, direction = 0, native = false) {
       resetActive: false,
       team: w.team,
       worm: worms.indexOf(w),
-      state: 0x65,
+      state: nativeWormState(w),
     },
     damage,
+    options,
   );
   w.hp = accounting.hp;
   w.damageTaken = accounting.total;
+  return accounting;
+}
+function injure(w, damage, direction = 0, native = false) {
+  // Frozen state 0x88 bypasses weapon damage in events 0x404/0x433.
+  if (w.hp <= 0 || damage <= 0) return;
+  if (w.frozen > 0) {
+    sfx("frozenhit");
+    return;
+  }
+  const previousHp = w.hp;
+  accountWormDamage(w, damage);
   const actualDamage = previousHp - w.hp;
   if (!native) {
     w.originalHurt = null;
@@ -4378,7 +4384,9 @@ function step(dt) {
     if (drowning || w.x < -30 || w.x > W + 30) {
       attachNativeDrowningFlight(w, H);
       if (w === worms[current] && rope.attached) stopRope();
-      w.hp = 0;
+      // Original004D811B..004D8147 consumes remaining health through
+      // 004D8440 with force=1 and multiplier=1, including frozen worms.
+      accountWormDamage(w, w.hp, { force: true });
       w.deathPending = false;
       w.originalParachute = null;
       w.drowned = true;
@@ -5886,6 +5894,7 @@ window.siege = {
       ({
         name,
         hp,
+        damageTaken,
         x,
         y,
         vx,
@@ -5905,6 +5914,7 @@ window.siege = {
       }) => ({
         name,
         hp,
+        damageTaken,
         x,
         y,
         vx,

@@ -21,6 +21,7 @@ for (const frozen of [false, true])
     await page.goto("/");
     await page.locator("#mode").selectOption("local");
     await page.locator("#start").click();
+    const before = await page.evaluate(() => window.siege.getState().worms[0]);
     await page.evaluate(
       (frozen) => window.siege.debug.submergeWorm(0, frozen),
       frozen,
@@ -37,6 +38,7 @@ for (const frozen of [false, true])
       .toBeGreaterThan(0);
     const state = await page.evaluate(() => window.siege.getState());
     expect(state.worms[0].hp).toBe(0);
+    expect(state.worms[0].damageTaken).toBe(before.damageTaken + before.hp);
     expect(state.nativeCameraFocus).not.toBeNull();
     expect(
       state.waterBubbles.every((b) => /^water\/bubble[1-4]$/.test(b.sprite)),

@@ -36,6 +36,7 @@ test("live lethal hit labels count health actually lost", async ({ page }) => {
     window.siege.debug.hit(1, 200);
     return {
       before,
+      damageTaken: window.siege.getState().worms.slice(3).map(w => w.damageTaken),
       hp: window.siege
         .getState()
         .worms.slice(3)
@@ -46,5 +47,6 @@ test("live lethal hit labels count health actually lost", async ({ page }) => {
     };
   });
   expect(result.hp).toEqual([0, 0, 0]);
+  expect(result.damageTaken).toEqual(result.before);
   expect(result.labels).toEqual(result.before.map((hp) => `→−${hp}`));
 });
