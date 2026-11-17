@@ -18,7 +18,10 @@ export function nativeCollectControllerInput(memory, sceneMemory, queue, host) {
   let index = 0;
   while (index < count && scene.getInt16(0x1b88a + index * 2,true) !== controller) index++;
   if (index >= count || index !== 0) return;
-  if (get(0x84) && host.wormState(get(0x3c),get(0x4c)) !== 100) host.weapon(queue);
+  if (get(0x84) && host.wormState(get(0x3c),get(0x4c)) !== 100) {
+    if (host.weapon) host.weapon(queue);
+    else nativeCollectWeaponInput(memory,queue,host);
+  }
   if (!get(0xac) && host.wormState(get(0x3c),get(0x4c)) !== 100) {
     if (host.movement) host.movement(queue);
     else nativeCollectMovementInput(memory,queue,host);
@@ -77,4 +80,43 @@ export function nativeCollectMovementInput(memory, queue, host) {
     if (host.key(key)) emit(event);
   }
   if (!host.wormBusy(get(0x3c),get(0x4c)) && host.key(0x1a)) { emit(0x42b);host.consume(0x1a); }
+}
+
+// Full00502550 and004E8590. Weapon selection queues a command; it does not
+// change the equipped slot while the remaining category keys are collected.
+export function nativeCollectWeaponInput(memory, queue, host) {
+  const body = new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  const get = offset => body.getInt32(offset,true);
+  if (get(0x50) || host.wormBusy(get(0x3c),get(0x4c)) || get(0x74) || get(0x78)) return;
+  const emit = (event,words) => {
+    const payload = new Uint8Array(words.length*4), view = new DataView(payload.buffer);
+    words.forEach((word,index)=>view.setInt32(index*4,word,true));
+    queue.writeEvent(event,payload);
+  };
+  for (let category=1;category<=12;category++) {
+    const key = category+13;
+    if (!host.key(key)) continue;
+    host.consume(key);
+    const slots = [];
+    for (let slot=1;slot<71;slot++) {
+      if (host.weaponAvailable(get(0x3c),slot) && host.weaponCategory(slot) === category) slots.push(slot);
+    }
+    if (!slots.length) continue;
+    const selected = slots[(slots.indexOf(get(0x64))+1)%slots.length];
+    emit(0x41b,[get(0x3c),get(0x4c),selected,1]);
+  }
+  const mode = get(0x8c) ? 0x417 : get(0xa0) ? 0x418 : 0;
+  if (mode) {
+    const team = get(0x3c), worm = get(0x4c);
+    for (let i=0;i<5;i++) {
+      if (host.key(i+5)) { emit(mode,[team,worm,i+(mode===0x418?1:0)]);host.consume(i+5); }
+    }
+  }
+  if (!get(0x90)) return;
+  const team = get(0x3c), worm = get(0x4c);
+  if (host.key(0x1f) || host.key(0x20)) {
+    emit(0x419,[team,worm,0]);host.consume(0x1f);host.consume(0x20);
+  } else if (host.key(0x21) || host.key(0x1e)) {
+    emit(0x419,[team,worm,1]);host.consume(0x21);host.consume(0x1e);
+  }
 }
