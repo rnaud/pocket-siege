@@ -1,5 +1,6 @@
+import controllerCommand from "./fixtures/armageddon/controller-command.json" with { type: "json" };
+import { nativeControllerCommand } from "../src/armageddon/controller-command.js";
 import weaponSelection from "./fixtures/armageddon/weapon-selection.json" with { type: "json" };
-import { nativeSelectWeaponEvent } from "../src/armageddon/weapon-selection.js";
 import weaponInputFlags from "./fixtures/armageddon/weapon-input-flags.json" with { type: "json" };
 import { nativeWeaponInputFlags, nativeApplyWeaponInputFlags, nativeWeaponInputOffsets } from "../src/armageddon/weapon-input-flags.js";
 import targetEntry from "./fixtures/armageddon/target-entry.json" with { type: "json" };
@@ -241,6 +242,21 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
   }
+  for(const c of controllerCommand.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    const calls=[];
+    expect(nativeControllerCommand(memory,sceneMemory,c.event,Uint8Array.from(c.payload),{
+      wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
+      resetTeam:team=>calls.push(["reset",team]),
+      teamVisible:team=>{calls.push(["visible",team]);return c.visible;},
+      teamFlags:team=>{calls.push(["flags",team]);return c.flags;},
+      targetEffect:(...args)=>calls.push(["effect",...args]),
+      sendWorm:(type,id,event,p)=>calls.push(["send",type,id,event,[...p]]),
+      forward:(event,p)=>calls.push(["forward",event,[...p]]),
+    })).toBe(true);
+    expect({calls,body:controllerCommand.offsets.map(o=>body.getInt32(o,true)),target:[0x1247c,0x12480].map(o=>scene.getInt32(o,true))}).toEqual({calls:c.calls,body:c.body,target:c.target});
+  }
   for(const c of weaponSelection.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
     for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
@@ -250,7 +266,7 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     for(const [offset,value] of Object.entries(c.descriptor))descriptorView.setInt32(Number(offset),value,true);
     const payload=new Uint8Array(16),command=new DataView(payload.buffer);c.words.forEach((value,i)=>command.setInt32(i*4,value,true));
     const calls=[];
-    nativeSelectWeaponEvent(memory,sceneMemory,payload,{
+    nativeControllerCommand(memory,sceneMemory,0x41b,payload,{
       wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
       weaponAvailable:(...args)=>{calls.push(["available",...args]);return c.available;},
       lookup:(...args)=>{calls.push(["lookup",...args]);return 1;},
@@ -260,7 +276,7 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       wormState:(...args)=>{calls.push(["state",...args]);return c.state;},
       cameraMode:mode=>calls.push(["mode",mode]),cameraTarget:(...args)=>calls.push(["target",...args]),
       targetShape:()=>{calls.push(["shape"]);return {width:33,height:17};},
-      forward:p=>calls.push(["forward",0x41b,p.length,[...p]]),
+      forward:(event,p)=>calls.push(["forward",event,p.length,[...p]]),
     });
     expect({calls,body:weaponSelection.offsets.map(o=>body.getInt32(o,true)),target:[0x1247c,0x12480].map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,body:c.body,target:c.target,ownership:c.ownership});
   }
