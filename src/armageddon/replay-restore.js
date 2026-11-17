@@ -296,3 +296,15 @@ export function nativeReadReplayRoot(stream, options) {
   task.memory = memory;
   return task;
 }
+
+// Compose the native recursive factory with concrete readers and the root.
+// allocateTask supplies stable task IDs and optional zeroed backing memory.
+export function nativeReadReplayTree(stream, options) {
+  const readChildren = (parent, reader) => nativeReadTaskChildren(reader, parent,
+    size => options.allocateTask(size),
+    (schema, storage, parent, reader) => nativeReadReplayActor(schema.tag, reader, {
+      ...options, id: storage.id, memory: storage.memory ?? new Uint8Array(schema.size),
+      parent, readChildren,
+    }));
+  return nativeReadReplayRoot(stream, { ...options, readChildren });
+}

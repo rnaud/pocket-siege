@@ -1,3 +1,5 @@
+import replayTreeRestore from "./fixtures/armageddon/replay-tree-restore.json" with { type: "json" };
+import { nativeReadReplayTree } from "../src/armageddon/replay-restore.js";
 import replayRootRestore from "./fixtures/armageddon/replay-root-restore.json" with { type: "json" };
 import { nativeReadReplayRoot } from "../src/armageddon/replay-restore.js";
 import replayPresentationRestore from "./fixtures/armageddon/replay-presentation-restore.json" with { type: "json" };
@@ -59,6 +61,24 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayTreeRestore.cases) {
+    const stream = new NativeReplayStream(32768), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks];
+    stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
+    const sceneMemory = new Uint8Array(0x20000); new DataView(sceneMemory.buffer).setInt32(0x1b8dc, 320, true);
+    const environment = { all: { capacity: 256, entries: [] }, categories: { 2: { capacity: 256, entries: [] } }, links: [17] };
+    const task = nativeReadReplayTree(stream, { id: 0x2000000, context: 0x2020000, renderer: 0x7654321, sceneMemory, environment,
+      memory: new Uint8Array(0x28c).fill(0xa5),
+      allocateTask: size => { const request = tasks.shift(); expect(size).toBe(request.size); return { id: request.pointer }; },
+      allocateResource: size => { const request = allocations.shift(); expect(size).toBe(request.size); return request.pointer; },
+      constructText: (...args) => { calls.push([0x4c6610, ...args]); return args[0]; },
+      constructSurface: (...args) => { calls.push([0x492bc0, ...args]); return args[0]; } });
+    const capture = node => ({ id: node.id, type: node.type, parent: node.parent?.id ?? 0, capacity: node.capacity,
+      ownsRegistry: node.ownsRegistry, sharedRegistry: node.registry === task.registry, registryType: node.registryType,
+      registryIndex: node.registryIndex, body: [...node.memory.slice(0x3c)], children: node.children.map(capture) });
+    expect(tasks).toEqual([]); expect(allocations).toEqual([]);
+    expect({ tree: capture(task), registry: task.registry.flatMap((bucket, index) => bucket.map(entry => [index, entry.type, entry.index, entry.task.id])),
+      all: environment.all, category: environment.categories[2], position: stream.position, calls }).toEqual(row.result);
+  }
   for (const row of replayRootRestore.cases) {
     const stream = new NativeReplayStream(2048), calls = [], allocations = [...row.input.allocations];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);

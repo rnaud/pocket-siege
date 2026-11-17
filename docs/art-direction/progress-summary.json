@@ -100,9 +100,10 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization, environment, root/controller and all 21 child constructors have executable comparisons; these await full snapshot and live integration.",
-      "remaining": "Compose and verify populated recursive snapshots, rendering resource adapters, game-state mapping and event playback; replace the overlay with deterministic replay and local saves.",
+      "live": "The current replay is a trajectory overlay. Native replay controls, buffers, serialization, environment, root/controller and all 21 child constructors have executable comparisons. Populated mixed task trees are also verified; full snapshot and live integration remain.",
+      "remaining": "Verify complete context/environment snapshots and resource-heavy actor combinations, connect rendering and game-state adapters, and implement event playback; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_replay_recursive_tree",
         "native_replay_root_constructor",
         "native_replay_presentation_constructor",
         "native_replay_terrain_constructor",

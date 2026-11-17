@@ -34,6 +34,8 @@ test("play a full destructive turn with responsive controls", async ({
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#mode").selectOption("local");
+  // This fixed shot needs a fixed terrain fixture; the default picks an original map.
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await expect(page.locator("#menu")).not.toBeVisible();
   await expect(page.locator("#fire")).toBeEnabled();
