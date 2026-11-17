@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
 
@@ -32,6 +33,7 @@ export function updateOriginalCrosshair(canvas, team, angle, sight = null) {
   }
   ctx.drawImage(frame.map.image, 0, 0);
   ctx.restore();
+  nativeCanvasPaletteDisplay.capture(canvas);
   canvas.dataset.frameKey = key;
   canvas.dataset.originalSprite = name;
   canvas.dataset.frame = index;

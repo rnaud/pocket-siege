@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { loadNativeFont, measureNativeText, rasterNativeText } from "./font.js";
 import { fixedMultiply } from './numeric.js';
 
@@ -55,6 +56,7 @@ export function paintOriginalDamageText(canvas, value, team) {
   canvas.style.width = `${image.width}px`;
   canvas.style.height = `${image.height}px`;
   canvas.getContext('2d').putImageData(new ImageData(image.pixels, image.width, image.height), 0, 0);
+  nativeCanvasPaletteDisplay.capture(canvas);
   canvas.dataset.nativeDamage = key;
   canvas.setAttribute('aria-label', `${value} damage`);
 }
@@ -126,6 +128,7 @@ export function updateOriginalWormLabel(label, worm, selected, tick, placement, 
         y,
       );
   }
+  nativeCanvasPaletteDisplay.capture(canvas);
   label.classList.add("has-native-text");
   label.dataset.nativeLabel = key;
   label.dataset.nativeFont = ["stdgrn1", "stdred1", "stdwht1"][fontIndex];

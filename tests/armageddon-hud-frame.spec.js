@@ -136,6 +136,50 @@ test("live native team bars update with damage and keep HUD controls usable", as
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  // Exercise actual Canvas pixels against the executable palette captures,
+  // including repeated updates and restoration of cached source artwork.
+  const palettePixels = await page.evaluate(async () => {
+    const { NativeCanvasPaletteDisplay } = await import('/src/armageddon/canvas-palette.js');
+    const fixture = await (await fetch('/tests/fixtures/armageddon/environment-palette.json')).json();
+    const display = new NativeCanvasPaletteDisplay();
+    const canvases = fixture.ranges.map(([first, last], bank) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = last - first + 2;
+      canvas.height = 1;
+      const pixels = new Uint8ClampedArray(canvas.width * 4);
+      for (let i = first; i <= last; i++) pixels.set([...fixture.colors[i], 255], (i - first) * 4);
+      canvas.getContext('2d').putImageData(new ImageData(pixels, canvas.width, 1), 0, 0);
+      display.capture(canvas, bank + 1);
+      return canvas;
+    });
+    let checked = 0;
+    for (const row of fixture.cases.filter(row => !row.unchanged)) {
+      display.update(row.input);
+      display.update(row.input);
+      for (let bank = 0; bank < 3; bank++) {
+        const canvas = canvases[bank], [first, last] = fixture.ranges[bank];
+        const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, 1).data;
+        for (let i = first; i <= last; i++) {
+          const actual = [...pixels.slice((i - first) * 4, (i - first + 1) * 4)];
+          const expected = [...row.palettes[bank][i], 255];
+          if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`Palette mismatch ${bank}/${i}`);
+          checked++;
+        }
+        if (pixels[pixels.length - 1] !== 0) throw new Error('Transparency changed');
+      }
+    }
+    display.update();
+    for (let bank = 0; bank < 3; bank++) {
+      const [first, last] = fixture.ranges[bank];
+      const pixels = canvases[bank].getContext('2d').getImageData(0, 0, last - first + 1, 1).data;
+      for (let i = first; i <= last; i++)
+        if (JSON.stringify([...pixels.slice((i - first) * 4, (i - first + 1) * 4)]) !== JSON.stringify([...fixture.colors[i], 255]))
+          throw new Error('Source artwork did not restore');
+    }
+    return checked;
+  });
+  expect(palettePixels).toBe(576);
+
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await expect(page.locator(".native-team-health").first()).toHaveAttribute(

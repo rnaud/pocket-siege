@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 // Display adapter for004A27B0/004ADFC0. Evaluate the native integer RGB
 // operations after Three's output conversion, before alpha compositing.
 // Only uniforms change: cached sprite canvases/textures retain source pixels.
@@ -13,6 +14,7 @@ export class NativePaletteDisplay {
     this.flash.value = clamp(flash);
     this.fade.value = clamp(fade);
     this.dark.value = clamp(Math.max(dark, extra));
+    nativeCanvasPaletteDisplay.update({ flash, fade, dark, extra });
   }
   bind(material, bank) {
     let state = this.materials.get(material);

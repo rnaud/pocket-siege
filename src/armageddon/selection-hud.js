@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
 
@@ -40,6 +41,7 @@ export function updateOriginalSelection(label, team, tick, visible, offset = nul
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(frame.map.image, 0, 0);
+  nativeCanvasPaletteDisplay.capture(canvas);
   canvas.dataset.originalSprite = name;
   canvas.dataset.frame = index;
 }

@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import names from "./hud-icon-names.json";
 import { decodeImage, imageRGBA } from "./image.js";
 
@@ -92,6 +93,7 @@ export function updateOriginalHUDIcons(root = document) {
     canvas.width = source.width;
     canvas.height = source.height;
     canvas.getContext("2d").drawImage(source, 0, 0);
+    nativeCanvasPaletteDisplay.capture(canvas);
     canvas.dataset.originalIcon = key;
   }
 }

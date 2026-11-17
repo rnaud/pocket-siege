@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { nativeSpritePaletteMap } from "./sprite.js";
 
 // 004B04B0 also allocates opaque black for source index0.
@@ -124,6 +125,7 @@ export function paintNativeText(canvas, font, text, scale = 2) {
         0,
         0,
       );
+  nativeCanvasPaletteDisplay.capture(canvas);
   canvas.style.width = `${canvas.width * scale}px`;
   canvas.style.height = `${canvas.height * scale}px`;
 }

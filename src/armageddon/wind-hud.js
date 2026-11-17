@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { decodeImage, imageRGBA } from "./image.js";
 const strips = new Map();
 // 004CB380 loads windl.img and windr.img as the original wind meter strips.
@@ -65,6 +66,7 @@ export function updateOriginalWindHUD(wind, root = document) {
       13,
     );
   }
+  nativeCanvasPaletteDisplay.capture(canvas);
   canvas.dataset.originalSprite = wind < 0 ? "windl" : "windr";
   canvas.dataset.filledPixels = count;
 }

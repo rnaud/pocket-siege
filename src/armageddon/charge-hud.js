@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { nativeChargeBlobs } from "./charge-art.js";
 import { nativeSpriteFrame } from "./animation.js";
 import { originalVisual } from "./art.js";
@@ -35,6 +36,7 @@ export function updateOriginalCharge(
     geometry.dx,
     geometry.dy,
   );
+  let left = width, top = height, right = 0, bottom = 0;
   for (const request of requests) {
     const frame = originalVisual(
       "blob",
@@ -44,12 +46,14 @@ export function updateOriginalCharge(
     const point = native
       ? native.project(request.x, request.y)
       : { x: request.x >> 16, y: request.y >> 16 };
-    ctx.drawImage(
-      frame.map.image,
-      Math.round(point.x) - 32,
-      Math.round(point.y) - 32,
-    );
+    const x = Math.round(point.x) - 32, y = Math.round(point.y) - 32;
+    ctx.drawImage(frame.map.image, x, y);
+    left = Math.min(left, Math.max(0, x));
+    top = Math.min(top, Math.max(0, y));
+    right = Math.max(right, Math.min(width, x + frame.map.image.width));
+    bottom = Math.max(bottom, Math.min(height, y + frame.map.image.height));
   }
+  nativeCanvasPaletteDisplay.capture(canvas, 1, [left, top, Math.max(0, right - left), Math.max(0, bottom - top)]);
   canvas.dataset.blobCount = requests.length;
   if (originalVisual("blob")) canvas.dataset.originalSprite = "blob";
 }

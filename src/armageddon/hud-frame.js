@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { fixedMultiply } from "./numeric.js";
 import { nativeSin } from "./trig.js";
 // 004B8660: original team/panel frame draw requests. Rectangle endpoints
@@ -41,6 +42,7 @@ export function paintNativeFrameRequests(canvas, width, height, requests) {
     else if (color === 0) ctx.clearRect(a, b, 1, 1);
     else ctx.fillRect(a, b, 1, 1);
   }
+  nativeCanvasPaletteDisplay.capture(canvas);
 }
 export function paintNativeTeamHealth(canvas, fraction, color) {
   const amount = Math.imul(fraction, 100) >> 16;

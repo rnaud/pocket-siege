@@ -1,3 +1,4 @@
+import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { loadNativeFont, rasterNativeText } from "./font.js";
 import { nativeAnnouncementDraw, nativeAnnouncementFrame, nativeAnnouncementMask } from "./announcements.js";
 
@@ -51,6 +52,7 @@ export function updateNativeAnnouncement(state, target, { playback = 0, teamVisi
   const mask = nativeAnnouncementMask(cache.width * cache.height, cache.seed, state.scale);
   for (let i = 0; i < mask.length; i++) if (!mask[i]) pixels.fill(0, i * 4, i * 4 + 4);
   cache.canvas.getContext("2d").putImageData(new ImageData(pixels, cache.width, cache.height), 0, 0);
+  nativeCanvasPaletteDisplay.capture(cache.canvas);
   if (state.scale < 65536) cache.seed = (Math.imul(cache.seed, 0x19660d) + 0x3c6ef35f) | 0;
   cache.coverage = state.scale;
 }
