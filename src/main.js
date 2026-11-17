@@ -150,6 +150,7 @@ import {
 import {
   loadOriginalWindHUD,
   tickOriginalWindHUD,
+  tickOriginalWindPresentation,
   resetOriginalWindHUD,
 } from "./armageddon/wind-hud.js";
 import {
@@ -4805,6 +4806,8 @@ function updateAutomaticUtilities() {
 
 function step(dt) {
   stepFrame(dt);
+  if (!mapLoading && !menu.open && !document.hidden)
+    tickOriginalWindPresentation(replaying);
   // 004A1A00 submits queued sounds after frame tasks. Immediate per-body
   // sounds keep their separate playback handles and never enter this queue.
   nativeSoundQueue.flush(audio ? submitQueuedSound : null, !sound);
@@ -4822,6 +4825,7 @@ function stepFrame(dt) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
+  tickOriginalWindHUD(wind);
   nativeBusy.tick();
   if (phase !== "over" && phase !== "break" && phase !== "menu") updateAutomaticUtilities();
   nativeAnnouncementTick(nativeAnnouncements);
@@ -5833,7 +5837,6 @@ function stepFrame(dt) {
     nativeCameraFocus = null;
     nativeCameraFraming = null;
   }
-  tickOriginalWindHUD(wind);
   matchRandom.finishFrame();
 }
 function screen(x, y) {

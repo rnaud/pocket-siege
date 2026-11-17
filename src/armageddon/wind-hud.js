@@ -28,12 +28,18 @@ export async function loadOriginalWindHUD() {
 export const originalWindStrip = (name) => strips.get(name);
 let displayedWind = 0, phase = 0, visibility = 0;
 export function resetOriginalWindHUD() { displayedWind = 0; phase = 0; visibility = 0; }
+// 3EA changes simulation wind; 3ED keeps presenting during native replay.
 export function tickOriginalWindHUD(wind, advance = true) {
-  if (advance) {
+  if (advance)
     displayedWind = nativeWindMeterTick(displayedWind, Math.round(wind / 2500 * 65536) | 0);
-    phase = nativeWindMeterPhase(phase, displayedWind);
-    visibility = nativeWindMeterVisibility(visibility);
-  }
+  else renderOriginalWindHUD();
+}
+export function tickOriginalWindPresentation(replaying = false) {
+  phase = nativeWindMeterPhase(phase, displayedWind);
+  visibility = nativeWindMeterVisibility(visibility, replaying);
+  renderOriginalWindHUD();
+}
+function renderOriginalWindHUD() {
   updateOriginalWindHUD(displayedWind / 65536 * 2500, document, phase);
   const target = document.querySelector("#wind");
   if (target) target.style.transform = `translateY(${Math.trunc((65536 - visibility) * 32 / 65536)}px)`;
