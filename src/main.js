@@ -1,6 +1,7 @@
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
 let nativeWaterRise = null;
 import { nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
+import { nativeCameraShake, nativeCameraShakeDecay } from "./armageddon/camera-shake.js";
 import { nativePaletteDisplay } from "./armageddon/palette-material.js";
 import { playNativeNuclearLoop } from "./armageddon/audio.js";
 let nativeNuclearEffect = null;
@@ -414,8 +415,7 @@ let terrain,
   audio,
   last = performance.now(),
   accumulator = 0,
-  explosions = 0,
-  shakeUntil = 0;
+  explosions = 0;
 let configuredDelays = {};
 let nativeAnnouncements = createNativeAnnouncements();
 let pendingTurnStart = false;
@@ -1102,7 +1102,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   team = keepSeries ? (seriesRound - 1) % 2 : 0;
   round = 1;
   turnCount = [0, 0];
-  ((explosions = 0), (shakeUntil = 0));
+  explosions = 0;
   announcementPlayback?.stop(); announcementPlayback = null; announcementVolume = 0;
   nativeAnnouncements = createNativeAnnouncements();
   nativeMatchStatistics = { damage: 0, deaths: 0 };
@@ -2511,6 +2511,7 @@ function startNativeNuclearEffect(duration = 8) {
 }
 function stepNativeNuclearEffect() {
   if (!nativeNuclearEffect) return;
+  nativeNuclearEffect.shake = nativeCameraShakeDecay(nativeNuclearEffect.shake);
   if (!sound) stopNativeNuclearAudio();
   for (const [handle, field] of [[1, "handleA"], [2, "handleB"]]) {
     if (nuclearPlaybacks.get(handle)?.finished) {
@@ -3972,7 +3973,6 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   } else terrain.carve(x, y, radius);
   terrainDirty = true;
   explosions++;
-  shakeUntil = performance.now() + 350;
   hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
   spawnExplosionArt(x, y, nativeStrength ?? Math.round(maxDamage));
   sfx("explosion");
@@ -6095,9 +6095,16 @@ function frame(now) {
     m.position.x = (i * 127 + now * 0.007) % W;
     m.position.y = 150 + ((i * 73) % 450) + Math.sin(now * 0.0007 + i) * 12;
   });
-  const shake = reducedMotion ? 0 : Math.max(0, shakeUntil - now) / 350;
-  camera.position.x = shake * Math.sin(now * 0.09) * 5;
-  camera.position.y = shake * Math.cos(now * 0.07) * 4;
+  camera.position.x = 0;
+  camera.position.y = 0;
+  if (!reducedMotion && nativeNuclearEffect?.shake) {
+    const base = [Math.round((view.x + view.w / 2) * 65536),
+      Math.round((H - view.y - view.h / 2) * 65536), 0];
+    const shaken = nativeCameraShake(base, matchRandom.frame, [nativeNuclearEffect.shake, 0]);
+    // 004C5250 rounds the native camera to world pixels for projection.
+    camera.position.x += ((shaken[0] + 0x8000) >> 16) - ((base[0] + 0x8000) >> 16);
+    camera.position.y -= ((shaken[1] + 0x8000) >> 16) - ((base[1] + 0x8000) >> 16);
+  }
   if (terrainDirty) {
     terrainDirty = false;
     paintTerrain(ctx, terrain, texture);

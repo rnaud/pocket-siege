@@ -1,10 +1,21 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/camera-framing.json" with { type: "json" };
+import shake from "./fixtures/armageddon/camera-shake.json" with { type: "json" };
+import { nativeCameraShake, nativeCameraShakeDecay } from "../src/armageddon/camera-shake.js";
 import {
   nativeCameraFrame,
   nativeCameraEase,
 } from "../src/armageddon/camera-framing.js";
 test("camera fitting and world limits match original projection routines", { tag: "@logic" }, () => {
+  for (const row of shake.cases)
+    expect(nativeCameraShake(row.camera, row.frame, row.amplitudes)).toEqual(row.after);
+  for (const row of shake.decay) {
+    let value = row.initial;
+    for (const expected of row.steps) {
+      value = nativeCameraShakeDecay(value);
+      expect(value).toBe(expected);
+    }
+  }
   expect(fixture.cases).toHaveLength(168);
   for (const [i, c] of fixture.cases.entries())
     expect(
