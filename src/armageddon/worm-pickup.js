@@ -17,3 +17,8 @@ export function nativeWormPickupTick(input, query) {
   if ((!body.field104 && body.state === 0x65) || body.field188) body.field154 = 0;
   return body;
 }
+
+// 004D7730 state-entry latch clearing, shared by native body and host adapter.
+export function nativeWormPickupTransition(flag, active, next) {
+  return !active && ![0x6f, 0x77, 0x79, 0x7a, 0x7e].includes(next) ? 0 : flag;
+}

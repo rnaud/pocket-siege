@@ -1,3 +1,4 @@
+import { nativeWormPickupTransition } from "./worm-pickup.js";
 // Common body preparation in 004D7730, ending at 004D7A65 before the
 // state-specific animation/action entry. Unknown worm fields retain offsets.
 // Exit handlers and external sound/manager effects are returned for dispatch;
@@ -79,8 +80,7 @@ export function nativeWormTransitionBody(input, next, environment) {
   }
   if (next !== 0x76) body.field250 = 0;
   if ([0x84, 0x85, 0x87].includes(next)) body.field140 = 1;
-  if (![0x6f, 0x77, 0x79, 0x7a, 0x7e].includes(next) && !body.field104)
-    body.field154 = 0;
+  body.field154 = nativeWormPickupTransition(body.field154, body.field104, next);
   return { body, calls };
 }
 

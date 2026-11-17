@@ -56,9 +56,15 @@ test("homing selects a fixed world target through the current camera", async ({
   );
   const arena = page.locator("#arena");
   const box = await arena.boundingBox();
-  const camera = await page.evaluate(() => window.siege.getState().camera);
+  // Native object tracking can move the camera between browser round-trips.
+  // Capture the view used by the actual pointer event, before its handler runs.
+  await arena.evaluate(el => el.addEventListener("pointerdown", () => {
+    window.targetClickCamera = window.siege.getState().camera;
+  }, { capture: true, once: true }));
   await page.mouse.click(box.x + box.width * 0.6, box.y + box.height * 0.4);
-  const state = await page.evaluate(() => window.siege.getState());
+  const { state, camera } = await page.evaluate(() => ({
+    state: window.siege.getState(), camera: window.targetClickCamera,
+  }));
   expect(state.homingTarget.x).toBeCloseTo(camera.x + camera.w * 0.6, -1);
   expect(state.homingTarget.y).toBeCloseTo(camera.y + camera.h * 0.6, -1);
   const marker = page.locator('canvas[aria-label="Homing target"]');

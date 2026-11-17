@@ -1,3 +1,4 @@
+import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
 import { nativeBarrelBody } from "./armageddon/barrel-body.js";
 import { stepNativeBarrelBody } from "./armageddon/barrel-runtime.js";
 import { nativeBarrelArt } from "./armageddon/barrel-art.js";
@@ -650,6 +651,8 @@ function createWorm(t, i, x, spawnY = null) {
     team: t,
     name: names[t][i],
     hp: 100,
+    nativePickupFlag: 0,
+    nativePickupState: 0x65,
     nativeHealthDisplay: { value: 100 << 16, target: 100 << 16, progress: 0, active: 0, pending: 0 },
     x,
     y,
@@ -1421,6 +1424,37 @@ function stepBombs(dt) {
     }
   }
 }
+function markNativePickupAction(w = worms[current]) {
+  if (!w) return;
+  w.nativePickupFlag = nativeWormPickupEvent({
+    team: w.team, worm: worms.indexOf(w), field154: w.nativePickupFlag ?? 0,
+  }, [w.team, worms.indexOf(w)]).field154;
+}
+function queryNativeWormPickup(w) {
+  const actor = { x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 };
+  const candidates = crates.map(crate => ({ crate, type: crate.nativeBody.type,
+    x: crate.nativeBody.x, y: crate.nativeBody.y }));
+  const candidate = nativePickupCandidate(actor, candidates, 0x200000,
+    ({ crate }) => ({ kind: crate.nativeBody.kind }));
+  if (!candidate) return 0;
+  const kind = candidate.crate.nativeBody.kind;
+  collectCrate(w, candidate.crate);
+  return kind;
+}
+function stepNativeWormPickup(w) {
+  const state = nativeWormState(w);
+  // Host turn ownership adapts native field104 until controller events41C/41D
+  // are integrated. Pending health display is native damage field188.
+  const active = Number(w === worms[current] && phase !== "over" && w.hp > 0);
+  let flag = w.nativePickupFlag ?? 0;
+  if (w.nativePickupState !== state)
+    flag = nativeWormPickupTransition(flag, active, state);
+  const body = nativeWormPickupTick({ state, field104: active, field154: flag,
+    field188: w.nativeHealthDisplay.pending, team: w.team, worm: worms.indexOf(w),
+  }, () => queryNativeWormPickup(w));
+  w.nativePickupFlag = body.field154;
+  w.nativePickupState = state;
+}
 function collectCrate(w, crate = crates[0]) {
   if (!crate || !crates.includes(crate)) return;
   const { kind, mesh, quantity } = crate;
@@ -2003,6 +2037,7 @@ function useUtility(kind) {
     updateUI();
     return;
   }
+  markNativePickupAction();
   if (kind === "rope") {
     toggleRope();
     return;
@@ -2700,6 +2735,7 @@ function startCharge(source) {
     jetpack.active
   )
     return;
+  markNativePickupAction();
   manualCamera = null;
   wormLocked = true;
   if (WEAPONS[weapon]?.special === "homing" && !homingTarget) {
@@ -2796,6 +2832,7 @@ function turnFacing(direction) {
 function setMove(direction) {
   if (targetUtility) return;
   if (canMove()) {
+    markNativePickupAction();
     hideNativeTeamPanelAfterInput(nativeTeamPanel);
     wormLocked = true;
     move = direction;
@@ -2804,6 +2841,7 @@ function setMove(direction) {
 }
 function adjustAim(direction, dt) {
   if (!canAct() || charging) return;
+  markNativePickupAction();
   hideNativeTeamPanelAfterInput(nativeTeamPanel);
   const facing = worms[current].facing,
     elevation = facing > 0 ? angle : 180 - angle;
@@ -3623,6 +3661,7 @@ function beginAirstrikeTargeting() {
 function fire() {
   if (phase !== "aim" || targetUtility || rope.attached || jetpack.active)
     return;
+  markNativePickupAction();
   wormLocked = true;
   const w = worms[current],
     kind = weapon,
@@ -4455,6 +4494,7 @@ function jump(kind = "forward") {
     return;
   }
   if (!canMove()) return;
+  markNativePickupAction(w);
   wormLocked = true;
   if (!w.ground) {
     if (w.vy < 0) w.jumpQueued = { kind, until: jumpClock + 0.12 };
@@ -4692,8 +4732,10 @@ function stepFrame(dt) {
       if (aiMoveTime > 0) {
         aiMoveTime = Math.max(0, aiMoveTime - dt);
         const w = worms[current];
-        if (w.ground && !w.knocked)
+        if (w.ground && !w.knocked) {
+          markNativePickupAction(w);
           w.moving = walkWorm(w, terrain, aiMoveDirection, dt);
+        }
         if (aiMoveTime === 0) aiAim();
       } else {
         aiWait -= dt;
@@ -4712,6 +4754,7 @@ function stepFrame(dt) {
   }
   if (canMove() && move && !rope.attached && !jetpack.active && !worms[current].originalParachute) {
     const w = worms[current];
+    markNativePickupAction(w);
     w.moving = walkWorm(w, terrain, move, dt);
   }
   if (
@@ -4724,6 +4767,7 @@ function stepFrame(dt) {
     aiRetreatTime = Math.max(0, aiRetreatTime - dt);
     const w = worms[current];
     if (w.ground && !w.knocked) {
+      if (aiRetreatDirection) markNativePickupAction(w);
       w.moving =
         aiRetreatDirection !== 0 &&
         walkWorm(w, terrain, aiRetreatDirection, dt);
@@ -5019,17 +5063,7 @@ function stepFrame(dt) {
         );
     }
   }
-  for (const w of worms) if (w.hp > 0 && crates.length) {
-    const actor = { x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 };
-    const candidates = crates.map(crate => ({
-      crate, type: 11, x: Math.round(crate.x * 65536) | 0,
-      y: Math.round((H - crate.y) * 65536) | 0,
-    }));
-    const candidate = nativePickupCandidate(actor, candidates, 32 * 65536, ({ crate }) => ({
-      kind: crate.kind === "health" ? 2 : crate.kind === "utility" ? 4 : 1,
-    }));
-    if (candidate) collectCrate(w, candidate.crate);
-  }
+  for (const w of worms) if (w.hp > 0) stepNativeWormPickup(w);
   const mineCameraRequests = [];
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
     const mine = mines[i];
@@ -5983,6 +6017,7 @@ function setWeapon(kind) {
 }
 $("#angle").addEventListener("input", (e) => {
   if (!canAct() || charging) return;
+  markNativePickupAction();
   angle = +e.target.value;
   worms[current].facing = Math.cos((angle * Math.PI) / 180) < 0 ? -1 : 1;
   updateSliders();
@@ -6016,10 +6051,10 @@ for (const button of document.querySelectorAll("[data-utility]"))
 $("#jump").onclick = () => jump("forward");
 $("#backflip").onclick = () => jump("backflip");
 $("#fuse").onchange = (e) => {
-  if (canAct() && !charging) fuse = +e.target.value;
+  if (canAct() && !charging) { markNativePickupAction(); fuse = +e.target.value; }
 };
 $("#bounce").onchange = (e) => {
-  if (canAct() && !charging) bounce = +e.target.value;
+  if (canAct() && !charging) { markNativePickupAction(); bounce = +e.target.value; }
 };
 document.querySelectorAll("[data-weapon]").forEach(
   (b) =>
@@ -6040,6 +6075,7 @@ let aiming = false;
 function pointerAim(e) {
   if (!canAct() || charging || targetUtility || rope.attached || jetpack.active)
     return;
+  markNativePickupAction();
   const rect = arena.getBoundingClientRect(),
     x = view.x + ((e.clientX - rect.left) / rect.width) * view.w,
     y = view.y + (1 - (e.clientY - rect.top) / rect.height) * view.h,
