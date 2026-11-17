@@ -121,6 +121,7 @@ import {
 } from "./armageddon/terrain-decoration.js";
 import {
   nativeProjectileLaunchGeometry,
+  nativePlacedWeaponAction,
   createNativeAirstrike,
   stepNativeAirstrike,
   nativeProjectileCollision,
@@ -1220,6 +1221,7 @@ function beginTurn() {
   const active = roster[next];
   turnCount[team] = (next + 1) % roster.length;
   current = worms.indexOf(active);
+  active.nativePlacedAction = null;
   phase = "aim";
   cameraSnap = true;
   wormLocked = false;
@@ -2360,9 +2362,12 @@ function placeMine() {
     setWeapon("rocket");
     return;
   }
+  nativePlacedWeaponAction("mine", worms[current], H, spawnPlacedMine,
+    () => finishAction("Mine planted. Retreat!"));
+}
+function spawnPlacedMine(release) {
   const w = worms[current],
     mesh = createOriginalObject("mineoff", 4);
-  const release = nativeProjectileLaunchGeometry("mine", w, angle, 0, H, () => matchRandom.logicUint());
   const mine = {
     ...release,
     owner: current,
@@ -2404,12 +2409,7 @@ function placeMine() {
   chargeSource = null;
   w.recoil = 0.15;
   startOriginalRecoil(w, "mine", angle, matchRandom.frame);
-  phase = "settle";
-  retreat = retreatSeconds;
-  shotWait = 0;
-  move = 0;
   shotCount++;
-  $("#status").textContent = "Mine planted. Retreat!";
   tone(420, 0.1, "square");
   updateSliders();
   updateUI();
@@ -2531,13 +2531,17 @@ function stepAirstrikes() {
 
 function placeDynamite() {
   if (!canAct() || (availableAmmo(ammo[team], "dynamite") ?? 0) <= 0) return;
+  nativePlacedWeaponAction("dynamite", worms[current], H, spawnPlacedDynamite,
+    () => finishAction("Dynamite dropped. Five-second fuse — retreat!"));
+}
+function spawnPlacedDynamite(release) {
   const w = worms[current];
   spendSpecial("dynamite");
   w.recoil = 0.2;
   startOriginalRecoil(w, "dynamite", angle, matchRandom.frame);
   shotCount++;
   const body = {
-    ...nativeProjectileLaunchGeometry("dynamite", w, angle, 0, H, () => matchRandom.logicUint()),
+    ...release,
     fuse: 5, bounce: 0.3, owner: current, kind: "dynamite", age: 0,
   };
   attachNativeProjectile(body, H);
@@ -2556,7 +2560,6 @@ function placeDynamite() {
     group.add(body.mesh);
     bombs.push(body);
   }
-  finishAction("Dynamite dropped. Five-second fuse — retreat!");
 }
 function applyNativeAreaRequest(targets, request) {
   applyNativeHitPackets(targets, nativeAreaDamage(targets, request));

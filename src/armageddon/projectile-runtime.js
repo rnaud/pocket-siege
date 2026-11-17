@@ -1,6 +1,6 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
 import { nativeLaunch } from "./launch.js";
-import { nativePlacedPower } from "./placed-fire.js";
+import { nativePlacedFire, nativePlacedPower } from "./placed-fire.js";
 import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileFragments } from "./projectile-fragments.js";
 import { nativeProjectilePlacement } from "./projectile-placement.js";
@@ -73,6 +73,36 @@ export function nativeProjectileLaunch(kind, angle, power) {
     fixed(Math.max(0, Math.min(100, power)) / 100),
   );
   return { vx: (vx / 65536) * 50, vy: (-vy / 65536) * 50 };
+}
+
+// Host adapter for the original placed-action lifecycle. Native callbacks
+// own release ordering/power and decide when the host may enter retreat.
+export function nativePlacedWeaponAction(kind, worm, height, spawn, finish) {
+  const record = weaponRecord(kind);
+  if (!record || record['0x68'] !== 2) return null;
+  const action = nativePlacedFire({
+    ...worm.nativePlacedAction,
+    weapon: WEAPON_SLOTS[kind], enabled: 1,
+    shots: worm.nativePlacedAction?.shots ?? 0,
+    field2d8: 1,
+  }, record, {
+    launchSetup: () => {
+      const origin = nativeLaunch(record, {
+        x: fixed(worm.x), y: fixed(height - worm.y), angle: 0,
+        facing: worm.facing ?? 1,
+      });
+      return [origin.x, origin.y, origin.vx, origin.vy];
+    },
+    launch: (body, currentRecord, { request: [x, y, dx, dy] }) => {
+      const [vx, vy] = nativeLaunchVelocity(currentRecord, dx, dy, body.power,
+        nativeWormState(worm), fixed(-(worm.vy ?? 0) / 50));
+      spawn({ x: x / 65536, y: height - y / 65536,
+        vx: vx / 65536 * 50, vy: -vy / 65536 * 50 });
+    },
+    finish: () => finish(),
+  });
+  worm.nativePlacedAction = action.body;
+  return action;
 }
 
 export function nativeProjectileLaunchGeometry(kind, worm, angle, power, height, random = () => 0, preview = false) {
