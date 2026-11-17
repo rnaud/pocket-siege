@@ -14,3 +14,18 @@ export class NativeSoundQueue {
     this.requests.length = 0;
   }
 }
+
+// 004967E0: first vacant channel, otherwise the last lowest-priority channel.
+// The backend stops/releases an occupied selection and invalidates its handle.
+export function nativeSoundChannel(channels, priority) {
+  let selected = -1, lowest = 0;
+  for (let i = 0; i < 8; i++) {
+    if (!channels[i]) return i;
+    const candidate = channels[i].priority | 0;
+    if (selected < 0 || candidate <= lowest) {
+      selected = i;
+      lowest = candidate;
+    }
+  }
+  return lowest <= (priority | 0) ? selected : -1;
+}

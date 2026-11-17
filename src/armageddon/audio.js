@@ -1,3 +1,4 @@
+import { nativeSoundChannel } from "./sound-queue.js";
 import speech from "./speech-slots.json";
 
 const sounds = {
@@ -35,13 +36,16 @@ const sounds = {
   airstrike: "airstrike",
 };
 const contexts = new WeakMap();
-export function playOriginalSound(context, kind, fallback, level = 1) {
+// Eight-channel selection is native. Web Audio completion currently releases
+// channels directly; the original 32-handle pool and its cleanup pass remain.
+const playbackChannels = new WeakMap();
+export function playOriginalSound(context, kind, fallback, level = 1, priority = 3) {
   const name = sounds[kind];
   if (!name) {
     fallback();
     return;
   }
-  playOriginalClip(context, `sounds/${name}.wav`, fallback, level);
+  playOriginalClip(context, `sounds/${name}.wav`, fallback, level, false, 1, priority);
 }
 export function preloadOriginalSound(context, kind) {
   const name = sounds[kind];
@@ -67,7 +71,16 @@ function loadOriginalClip(context, name) {
     );
   return cache.get(name);
 }
-function playOriginalClip(context, name, fallback, level, loop = false, rate = 1) {
+function playOriginalClip(context, name, fallback, level, loop = false, rate = 1, priority = 3) {
+  let channels = playbackChannels.get(context);
+  if (!channels) {
+    channels = Array(8).fill(null);
+    playbackChannels.set(context, channels);
+  }
+  let channel = -1;
+  const releaseChannel = () => {
+    if (channel >= 0 && channels[channel]?.playback === playback) channels[channel] = null;
+  };
   const requested = performance.now();
   let cancelled = false,
     activeSource = null, activeGain = null;
@@ -78,6 +91,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
     },
     stop() {
       cancelled = true;
+      releaseChannel();
       if (activeSource) {
         activeSource.stop();
         activeSource = null;
@@ -87,6 +101,10 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
   loadOriginalClip(context, name)
     .then((buffer) => {
       if (cancelled || performance.now() - requested > 500) return;
+      channel = nativeSoundChannel(channels, priority);
+      if (channel < 0) return;
+      channels[channel]?.playback.stop();
+      channels[channel] = { priority, playback };
       const source = context.createBufferSource(),
         gain = context.createGain();
       activeSource = source;
@@ -99,12 +117,14 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
       gain.connect(context.destination);
       source.onended = () => {
         activeSource = null;
+        releaseChannel();
         source.disconnect();
         gain.disconnect();
       };
       source.start();
     })
     .catch(() => {
+      releaseChannel();
       contexts.get(context).delete(name);
       if (!cancelled) fallback();
     });
@@ -112,18 +132,18 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
 }
 
 // Native IDs verified at descriptors 0055F258 / 0055F260. Browser gain is a
-// host adapter; native priority, spatial mixing and backend attenuation remain.
+// host adapter; spatial mixing and backend attenuation remain.
 export function playNativeWaterSound(context, request) {
   const kind =
     request[0] === 0x39 ? "splash" : request[0] === 0x3a ? "splish" : null;
-  if (kind) playOriginalSound(context, kind, () => {}, request[3] / 65536);
+  if (kind) playOriginalSound(context, kind, () => {}, request[3] / 65536, request[1]);
 }
 
 // 0055F120 maps native ID 0x23 to WormLanding.wav. Strength comes from
 // 004D7E5C (absolute native vertical velocity / 8); gain remains a host adapter.
 export function playNativeLandingSound(context, request) {
   if (request[0] === 0x23)
-    playOriginalSound(context, "land", () => {}, request[3] / 65536);
+    playOriginalSound(context, "land", () => {}, request[3] / 65536, request[1]);
 }
 
 export function playNativeRopeContactSound(context, request) {
@@ -134,20 +154,20 @@ export function playNativeRopeContactSound(context, request) {
 
 // Original table 0055F460 consists of explicit ID/filename pairs, not ordinal
 // slots: Oops/Orders/Ouch precede IDs38..40 in the table. English remains the
-// host default until team speech selection and native priority arbitration land.
-export function playNativeSpeech(context, slot, level = 1) {
+// host default until team speech selection lands.
+export function playNativeSpeech(context, slot, level = 1, priority = 3) {
   const entry = speech.slots[slot];
-  return entry ? playOriginalClip(context, `voices/english/${entry.clip}`, () => {}, level) : null;
+  return entry ? playOriginalClip(context, `voices/english/${entry.clip}`, () => {}, level, false, 1, priority) : null;
 }
 
 export function playNativeDeathVoice(context, request) {
   if (request[0] === 6 || request[0] === 33)
-    return playNativeSpeech(context, request[0], request[3] / 65536);
+    return playNativeSpeech(context, request[0], request[3] / 65536, request[1]);
 }
 
 export function playNativeHitVoice(context, request, previousPlayback) {
   previousPlayback?.stop();
-  return playNativeSpeech(context, request.index);
+  return playNativeSpeech(context, request.index, 1, 3);
 }
 
 // Descriptors 0055F1C8..0055F1F0 (Twang1..6), 0055F220 (WormPop).
@@ -161,7 +181,7 @@ export function playNativeRecoverySound(context, request, previousPlayback) {
     context,
     `sounds/${name}.wav`,
     () => {},
-    request[3] / 65536,
+    request[3] / 65536, false, request[2] / 65536, request[1],
   );
 }
 
@@ -195,7 +215,7 @@ export function playNativeProjectileReleaseSound(context, release) {
     if (event.operation !== "sound") continue;
     const name = { 73: "throwrelease", 75: "rocketrelease", 82: "handgunfire", 96: "baseballbatrelease" }[event.request[0]];
     if (name)
-      playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536);
+      playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536, false, event.request[2] / 65536, event.request[1]);
   }
   return loop;
 }
@@ -212,7 +232,7 @@ export function playNativeProjectileFuse(context, sound) {
 export function playNativeMineSound(context, request) {
   const name = {88:"minearm",89:"minetick",90:"minedud"}[request[0]];
   if (!name) return null;
-  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[3] / 65536);
+  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[3] / 65536, false, request[2] / 65536, request[1]);
 }
 
 // Descriptor0055F308 maps native84 to Drill.wav (85 at0055F310 is impact).
@@ -223,32 +243,32 @@ export function playNativeDrillLoop(context) {
 
 // Original descriptor {93, TimerTick.wav}; speech slot 22 is Hurry.wav.
 export function playNativeClockSound(context, request) {
-  if (request[0] === 0x10016) return playNativeSpeech(context, 22, request[3] / 65536);
+  if (request[0] === 0x10016) return playNativeSpeech(context, 22, request[3] / 65536, request[1]);
   if (request[0] === 0x5d)
-    return playOriginalClip(context, "sounds/timertick.wav", () => {}, request[3] / 65536, false, request[2] / 65536);
+    return playOriginalClip(context, "sounds/timertick.wav", () => {}, request[3] / 65536, false, request[2] / 65536, request[1]);
   return null;
 }
 
 // Sound descriptor ID 1 is Morse.wav; 0x10000 requests looping.
 export function playNativeAnnouncementLoop(context, volume) {
-  return playOriginalClip(context, "sounds/morse.wav", () => {}, volume / 65536, true);
+  return playOriginalClip(context, "sounds/morse.wav", () => {}, volume / 65536, true, 1, 9);
 }
 
 export function playNativeTeamPanelSound(context, request) {
   const clip = request[0] === 0x7a ? "teamdrop" : request[0] === 0x7b ? "teambounce" : null;
-  if (clip) return playOriginalClip(context, `sounds/${clip}.wav`, () => {}, request[3] / 65536);
+  if (clip) return playOriginalClip(context, `sounds/${clip}.wav`, () => {}, request[3] / 65536, false, request[2] / 65536, request[1]);
   return null;
 }
 
 // 004B64B0 requests ID94, priority8, unity pitch/gain at sudden-death onset.
 // Descriptor 0055F358 maps ID94 to SuddenDeath.wav.
 export function playNativeSuddenDeathSound(context) {
-  return playOriginalClip(context, "sounds/suddendeath.wav", () => {}, 1);
+  return playOriginalClip(context, "sounds/suddendeath.wav", () => {}, 1, false, 1, 8);
 }
 
 // 004B7D00: weapon/utility drops request ID81 at priority8, unity pitch/gain;
 // health drops skip it. Descriptor 0055F2F0 identifies ShotgunReload.wav.
 export function playNativeCrateDropSound(context, kind) {
   if (kind === "health") return null;
-  return playOriginalClip(context, "sounds/shotgunreload.wav", () => {}, 1);
+  return playOriginalClip(context, "sounds/shotgunreload.wav", () => {}, 1, false, 1, 8);
 }

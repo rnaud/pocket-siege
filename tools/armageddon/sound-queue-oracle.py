@@ -65,5 +65,36 @@ for count in [0,1,15,16,17,32]:
    cpu.emu_start(0x4a1c22,0x4a1cbb,count=10000)
    assert cpu.reg_read(UC_X86_REG_EIP)==0x4a1cbb
    cases.append(dict(inputs=inputs,accepted=accepted,stored=stored,disabled=disabled,present=present,calls=calls,remaining=read(context+0x1cad4)))
-args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases),indent=2)+'\n')
-print(f'Wrote {len(cases)} sound queue cases')
+
+# Full 004967E0, with DirectSound Stop/Release calls captured at the boundary.
+stop_buffer,release_buffer=stop+0x200,stop+0x204
+cpu.mem_write(stop_buffer,b'\xc2\x04\x00');cpu.mem_write(release_buffer,b'\xc2\x04\x00')
+channel_vtable=owner+0x3000
+write(channel_vtable+0x48,stop_buffer);write(channel_vtable+8,release_buffer)
+channel_calls=[]
+def capture_channel(cpu,address,size,user):
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ channel_calls.append(['stop' if address==stop_buffer else 'release',(read(sp+4)-(owner+0x4000))//0x100])
+cpu.hook_add(UC_HOOK_CODE,capture_channel,begin=stop_buffer,end=release_buffer)
+channel_cases=[]
+layouts=[[None]*8,[3]*8,[8]*8,[1,2,3,4,5,6,7,8],[8,7,6,5,4,3,2,1],[3,1,3,1,3,1,3,1],[-1,0,-1,0,-1,0,-1,0],[2147483647]*8]
+layouts += [[3 if j!=i else None for j in range(8)] for i in range(8)]
+for priorities in layouts:
+ for incoming in [-2147483648,-1,0,1,3,8,2147483647]:
+  for tracked in [False,True]:
+   for i,priority in enumerate(priorities):
+    buffer=owner+0x4000+i*0x100;write(buffer,channel_vtable)
+    write(owner+0x28+i*24,buffer if priority is not None else 0)
+    write(owner+0x1c+i*24,(priority or 0)&0xffffffff)
+    write(owner+0x18+i*24,i if tracked else 0xffffffff)
+    write(owner+0x8a8+i*4,i)
+   channel_calls=[];sp=stack+0xf000
+   write(sp,stop);write(sp+4,incoming&0xffffffff)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4967e0,stop,count=10000)
+   assert cpu.reg_read(UC_X86_REG_EIP)==stop
+   result=cpu.reg_read(UC_X86_REG_EAX);result=result if result<0x80000000 else result-0x100000000
+   channel_cases.append(dict(priorities=priorities,incoming=incoming,tracked=tracked,result=result,calls=channel_calls,
+    occupied=[bool(read(owner+0x28+i*24)) for i in range(8)],handles=[read(owner+0x8a8+i*4) for i in range(8)]))
+args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases,channelCases=channel_cases),separators=(',',':'))+'\n')
+print(f'Wrote {len(cases)} queue and {len(channel_cases)} channel cases')

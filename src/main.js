@@ -4286,7 +4286,7 @@ function queueControllerSpeech(request) {
 }
 function submitQueuedSound(request) {
   if (request[0] & 0x10000)
-    playNativeSpeech(audio, request[0] & 65535, request[3] / 65536);
+    playNativeSpeech(audio, request[0] & 65535, request[3] / 65536, request[1]);
   else if (request[0] === 81) playNativeCrateDropSound(audio, "weapon");
   else if (request[0] === 94) playNativeSuddenDeathSound(audio);
   else if (request[0] === 93) playNativeClockSound(audio, request);
