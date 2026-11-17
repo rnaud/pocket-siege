@@ -78,7 +78,9 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
   await page.waitForTimeout(500);
   if (kind === "magic") await page.evaluate(() => {
     const pauseDuringFlight = () => {
-      if (window.siege.getState().projectile?.kind === "magic" && window.projectileLoops.length)
+      const state = window.siege.getState();
+      if (state.projectile?.kind === "magic" && state.projectile.nativeGuidance?.initialized &&
+          state.nativeParticles.some(p => p.sprite === "mexhaust") && window.projectileLoops.length)
         document.querySelector("#help").click();
       else requestAnimationFrame(pauseDuringFlight);
     };
@@ -90,6 +92,10 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
   expect(state.projectile.sprite).toMatch(sprite);
   expect(state.projectile.target).toEqual(target);
   expect(state.ammo[0][kind]).toBe(0);
+  // Check flight state before resuming magic: slow CI round-trips can otherwise
+  // miss it between audio restart and the projectile reaching its target.
+  await expect.poll(() => page.evaluate(() => window.siege.getState().projectile?.nativeGuidance?.initialized)).toBe(1);
+  await expect.poll(() => page.evaluate(name => window.siege.getState().nativeParticles.some(p => p.sprite === name), trail)).toBe(true);
   if (kind === "magic") {
     await expect.poll(() => page.evaluate(() => window.projectileLoops.length)).toBe(1);
     await expect(page.locator("#menu")).toBeVisible();
@@ -100,8 +106,6 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
     await page.keyboard.press("Escape");
     await expect.poll(() => page.evaluate(() => window.projectileLoops.length)).toBe(2);
   }
-  await expect.poll(() => page.evaluate(() => window.siege.getState().projectile?.nativeGuidance?.initialized)).toBe(1);
-  await expect.poll(() => page.evaluate(name => window.siege.getState().nativeParticles.some(p => p.sprite === name), trail)).toBe(true);
   await expect.poll(() => page.evaluate(() => window.siege.getState().projectile), { timeout: 15000 }).toBeNull();
   if (kind === "magic") expect(await page.evaluate(() => window.projectileLoops)).toEqual([{ stopped: true }, { stopped: true }]);
 });
