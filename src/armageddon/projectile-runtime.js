@@ -1,5 +1,6 @@
 import { nativeLaunchAudio } from "./launch-audio.js";
 import { nativeLaunch } from "./launch.js";
+import { nativePlacedPower } from "./placed-fire.js";
 import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileFragments } from "./projectile-fragments.js";
 import { nativeProjectilePlacement } from "./projectile-placement.js";
@@ -84,10 +85,9 @@ export function nativeProjectileLaunchGeometry(kind, worm, angle, power, height,
     x: fixed(worm.x), y: fixed(height - worm.y), angle: aim,
     facing: record["0x68"] === 2 ? (worm.facing ?? 1) : Math.cos(radians) < 0 ? -1 : 1, preview, random,
   });
-  // 004F9FA0 type2 selects fixed release power from record+78 (mode2),
-  // or0xCCC for modes1/3. It does not use the host charge slider.
+  // 004F9C30 selects placed-weapon power independently of the charge slider.
   const charge = record["0x68"] === 2
-    ? record["0x70"] === 2 ? Math.trunc((record["0x78"] << 16) / 100) : 0xccc
+    ? nativePlacedPower(record)
     : fixed(Math.max(0, Math.min(100, power)) / 100);
   const [vx, vy] = nativeLaunchVelocity(record, origin.vx, origin.vy,
     charge, nativeWormState(worm), fixed(-(worm.vy ?? 0) / 50));
