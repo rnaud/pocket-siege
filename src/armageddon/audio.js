@@ -356,6 +356,15 @@ export function playNativeProjectileFuse(context, sound) {
   return playOriginalClip(context, `sounds/${entry.clip}`, () => {}, 1, Boolean(sound & 0x10000), 1, 4, 0, true);
 }
 
+// Snapshot constructor11 clears secondary/contact ownership and starts the
+// record's initial sound anew; it does not retain an old playback handle.
+export function restoreNativeProjectileAudio(context, projectile) {
+  projectile.nativeContactPlayback = null;
+  projectile.nativeSecondaryPlayback = null;
+  projectile.nativeFusePlayback = context && projectile.nativeFuseSound
+    ? playNativeProjectileFuse(context, projectile.nativeFuseSound) : null;
+}
+
 // 004E4B39 owns fuse(+3D8) and secondary-phase(+3D4) independently.
 export function updateNativeProjectileAudio(context, projectile) {
   projectile.nativeContactPlayback = cleanupNativeContactSound(projectile.nativeContactPlayback);

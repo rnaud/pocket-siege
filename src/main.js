@@ -256,6 +256,7 @@ import {
   playNativeLandingSound,
   cleanupNativeWormAudio,
   cleanupOriginalReplayAudio,
+  restoreNativeProjectileAudio,
 } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
@@ -2774,11 +2775,14 @@ async function shareResultCard() {
 }
 // Capture backing state without changing the running match. Installation and
 // audio/resource reconstruction are separate from this development audit hook.
+function isReplayAudioResource(value) {
+  return value && typeof value.stop === "function" && typeof value.displace === "function" && typeof value.setVolume === "function";
+}
 function captureMatchReplayState() {
   if (!terrain || mapLoading) throw new Error("Replay capture requires a loaded map");
   const resources = new Map(), resourceIds = new WeakMap();
   const resourceKey = value => {
-    const isPlayback = typeof value.stop === "function" && typeof value.displace === "function" && typeof value.setVolume === "function";
+    const isPlayback = isReplayAudioResource(value);
     if (!(value.isObject3D || value.isMaterial || value.isTexture || value instanceof Element || isPlayback)) return undefined;
     if (!resourceIds.has(value)) {
       const id = `resource:${resources.size}`;
@@ -2814,11 +2818,16 @@ function captureMatchReplayState() {
 }
 function restoreMatchReplayState(snapshot) {
   if (snapshot.terrain !== terrain || mapLoading) throw new Error("Replay snapshot belongs to a different map");
-  if (snapshot.sound || sound) throw new Error("Development restore currently requires sound off");
-  const state = restoreReplayActors(snapshot.actors,{resolveResource:id=>snapshot.resources.get(id)}).get("match");
+  // Native constructors clear transient audio owners; saved WebAudio handles
+  // can refer to stopped/displaced sources and must never be reinstalled.
+  const resources = new Map([...snapshot.resources].map(([id,value]) => [id,isReplayAudioResource(value) ? null : value]));
+  const state = restoreReplayActors(snapshot.actors,{resolveResource:id=>resources.get(id)}).get("match");
   // Prepare the saved graph before changing live state. Renderer resources can
   // have been removed/disposed since capture; Three recreates their GPU data.
   const currentSnapshot = captureMatchReplayState();
+  for (const value of currentSnapshot.resources.values()) if (isReplayAudioResource(value)) value.stop();
+  announcementPlayback?.stop(); announcementPlayback = null;
+  stopNativeNuclearAudio();
   const savedResources = new Set(snapshot.resources.values());
   for (const object of currentSnapshot.resources.values()) {
     if (savedResources.has(object)) continue;
@@ -2826,7 +2835,7 @@ function restoreMatchReplayState(snapshot) {
     else if (object instanceof Element) object.remove();
   }
   restoreReplayEnvironment(snapshot.environment,terrain,matchRandom,W,H);
-  restoreReplayResources(snapshot.presentation,snapshot.resources);
+  restoreReplayResources(snapshot.presentation,resources);
   ({ worms, projectile, particles, crates, mines, girders, graves, bombs, airstrikes, nativeFlames, hazards } = state.actors);
   nativeParticles.splice(0,nativeParticles.length,...state.actors.nativeParticles);
   originalEffects.splice(0,originalEffects.length,...state.actors.originalEffects);
@@ -2862,6 +2871,16 @@ function restoreMatchReplayState(snapshot) {
     manualCamera, overview, cameraZoom, cameraX, cameraY, cameraSnap } = state.camera);
   nativeCameraFraming = state.camera.nativeCameraFraming ? Object.assign(Object.create(NativeCameraFraming.prototype),state.camera.nativeCameraFraming) : null;
   Object.assign(view,state.camera.view);
+  // Root constructor clears nuclear loop ownership; its next tick rebuilds
+  // those loops at the restored volume. Worm/contact voices remain cleared.
+  if (nativeNuclearEffect) nativeNuclearEffect.handleA = nativeNuclearEffect.handleB = 0;
+  const restoredProjectiles = [projectile,...bombs].filter(p => p?.nativeBody);
+  if (sound && restoredProjectiles.some(p => p.nativeFuseSound)) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+  }
+  for (const p of restoredProjectiles) restoreNativeProjectileAudio(sound ? audio : null,p);
+  if (audio) cleanupOriginalReplayAudio(audio);
   accumulator=0; last=performance.now(); uiKey=""; timerKey="";
   nativePaletteDisplay.update(state.display.palette);
   water.userData.setLevel(waterLevel);
