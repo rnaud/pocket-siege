@@ -47,7 +47,7 @@ def hook(cpu,address,size,user):
  elif address==0x492550:
   accepted=(allocationMask>>allocationIndex)&1;allocationIndex+=1
   events.append(['allocate',read(sp+4),accepted]);ret(owner+0x5000 if accepted else 0,0)
- elif address==0x4d3c50:events.append(['debris',read(sp+4),words(read(sp+8),11)]);ret(owner+0x5000,8)
+ elif address==0x4d3c50:events.append(['flame',read(sp+4),words(read(sp+8),11)]);ret(owner+0x5000,8)
  elif address==0x4edc90:events.append(['sound']+words(sp+4,5));ret(0,20)
  elif address==0x4e02e0:events.append(['contents']+words(sp+4,2));ret(0,8)
  elif address==0x4b26a0:
@@ -69,5 +69,5 @@ for kind in [1,2,3,4,5]:
       events=[];allocationIndex=0;cpu.emu_start(0x4e0580,stop,count=20000)
       if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Detonation did not return')
       cases.append({'input':body,'inventory':inventory,'allocationMask':allocationMask,'events':events,'destroyed':read(owner+0xfc),'missionStatus':read(context+0x1b90)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0580','method':'Original full detonation routine and position getter. Parent lookup, allocation, blast, debris construction, sound, secondary contents and mission broadcast are captured interfaces. Includes allocation failures; broadcast records only its two initialized coordinate words.','cases':cases},separators=(',',':'))+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004E0580','method':'Original full detonation routine and position getter. Parent lookup, allocation, blast, flame construction, sound, secondary contents and mission broadcast are captured interfaces. Includes allocation failures; broadcast records only its two initialized coordinate words.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} crate detonation cases')

@@ -1,3 +1,7 @@
+import flameMotion from "./fixtures/armageddon/flame-motion.json" with { type: "json" };
+import { nativeFlameMotion } from "../src/armageddon/flame-motion.js";
+import flameBodies from "./fixtures/armageddon/flame-body.json" with { type: "json" };
+import { nativeFlameBody } from "../src/armageddon/flame-body.js";
 import crateContents from "./fixtures/armageddon/crate-contents.json" with { type: "json" };
 import { nativeCrateContents } from "../src/armageddon/crate-contents.js";
 import crateHits from "./fixtures/armageddon/crate-hit.json" with { type: "json" };
@@ -155,6 +159,27 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  for (const row of flameMotion.cases) {
+    const events = []; let randomIndex = 0;
+    const result = nativeFlameMotion(row.input, {
+      collide: (x, y) => { events.push(['probe', x, y]); return Number({
+        clear: false, solid: true, floor: y >= 1, wall: x >= 2, ceiling: y <= -2,
+      }[row.terrain]); },
+      busy: () => events.push(['busy']),
+      wind: () => { events.push(['wind']); return row.wind; },
+      gravity: () => { events.push(['gravity']); return row.gravity; },
+      random: () => { events.push(['random']); return row.randoms[randomIndex++]; },
+    });
+    expect(result).toEqual({ body: row.output, result: row.result });
+    expect(events).toEqual(row.events);
+  }
+  for (const row of flameBodies.cases) {
+    let randomIndex = 0;
+    const result = nativeFlameBody(row.record, row.frame, row.counter,
+      () => row.randoms[randomIndex++]);
+    expect(result).toEqual({ body: row.output, record: row.copied, nextCounter: row.nextCounter });
+    expect(randomIndex).toBe(2);
+  }
   for (const row of crateContents.cases) {
     const events = [];
     const result = nativeCrateContents({ x: 123456, y: -765432 }, row.weapon,
@@ -183,7 +208,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
         const accepted = (row.allocationMask >> allocationIndex++) & 1;
         events.push(['allocate', size, accepted]); return accepted;
       },
-      debris: (allocation, parent, record) => events.push(['debris', parent, record]),
+      flame: (allocation, parent, record) => events.push(['flame', parent, record]),
       sound: request => events.push(['sound', ...request]),
       contents: (...args) => events.push(['contents', ...args]),
       broadcast: (...args) => events.push(['broadcast', ...args]),

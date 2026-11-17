@@ -1,6 +1,6 @@
 // 004E0580. Effect constructors and task lookup retain explicit interfaces.
 export function nativeCrateDetonation(input, inventory, interfaces) {
-  const debrisParent = interfaces.parent(23, 0);
+  const flameParent = interfaces.parent(23, 0);
   const projectileParent = interfaces.parent(25, 0);
   const body = { ...input, destroyed: 1 };
   const missionStatus = body.variant && body.kind !== 3 ? 4 : 0;
@@ -14,7 +14,7 @@ export function nativeCrateDetonation(input, inventory, interfaces) {
   for (const [vx, vy] of [[-0x80000, -0x80000], [0x80000, -0x80000],
     [-0x80000, 0x80000], [0x80000, 0x80000]]) {
     const allocation = interfaces.allocate(0xb8);
-    if (allocation) interfaces.debris(allocation, debrisParent,
+    if (allocation) interfaces.flame(allocation, flameParent,
       [body.x, body.y, vx, vy, 0, 4, 1, 3000, 100, 5, 0]);
   }
   sound(59);
