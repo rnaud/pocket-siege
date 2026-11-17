@@ -2,8 +2,13 @@ import { nativeAnnouncementAudioTick, nativeAnnouncementsPending, nativeAnnounce
 import { nativeTurnClockTick, nativeClockPresentationTick, nativeTimerFont, nativeClockFrame, nativeClockSlide } from "../src/armageddon/number-hud.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
-import { nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
+import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of fixture.teamSoundCases) {
+    const state = { ...c.before };
+    expect(nativeTeamPanelSounds(state)).toEqual(c.calls);
+    expect(state).toEqual(c.after);
+  }
   for (const c of fixture.announcementAudioCases)
     expect(nativeAnnouncementAudioTick(c.volume, c.handle, c.long)).toEqual(c.after);
   for (const c of fixture.announcementDrawCases)

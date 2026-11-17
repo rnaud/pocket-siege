@@ -1,6 +1,6 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
-import { createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
+import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
@@ -197,6 +197,7 @@ import {
   playNativeSpeech,
   playNativeClockSound,
   playNativeAnnouncementLoop,
+  playNativeTeamPanelSound,
   playNativeHitVoice,
   playNativeRecoverySound,
   playNativeWaterSound,
@@ -773,6 +774,7 @@ function stopProjectileSound(p = projectile) {
 let nativeClockProgress = 0, nativeClockTarget = 0;
 let nativeClockPresentation = { displayed: 45000, warned: 0, lastSecond: 0, phase: 0 };
 let nativeTeamList = createNativeTeamList();
+const teamPanelSoundState = { drop: 0, bounce: 0 };
 let nativeTeamHealthMaximum = 1;
 let nativeTeamHealthBusyTicks = 0;
 let nativeTeamHealthValues = [65536, 65536];
@@ -814,6 +816,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeClockProgress = nativeClockTarget = 0;
   nativeClockPresentation.phase = 0;
   nativeTeamList = createNativeTeamList();
+  teamPanelSoundState.drop = teamPanelSoundState.bounce = 0;
   nativeTeamHealthMaximum = 1;
   nativeTeamHealthBusyTicks = 0;
   nativeTeamHealthValues = [65536, 65536];
@@ -4220,7 +4223,13 @@ function step(dt) {
   nativeTeamPanelVisibilityTick(nativeTeamPanelVisibility, toggleTeamPanelVisibility);
   toggleTeamPanelVisibility = false;
   nativeTeamPanelTick(nativeTeamPanel);
-  nativeTeamListTick(nativeTeamList);
+  for (const strength of nativeTeamListTick(nativeTeamList)) teamPanelSoundState.bounce = strength << 2;
+  const panelSounds = nativeTeamPanelSounds(teamPanelSoundState);
+  if (sound && panelSounds.length) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    for (const request of panelSounds) playNativeTeamPanelSound(audio, request);
+  }
   const teamRosters = [0, 1].map(team => worms.filter(w => w.team === team));
   for (const roster of teamRosters)
     nativeTeamHealthMaximum = Math.max(nativeTeamHealthMaximum, roster.reduce((sum, w) => (sum + w.hp) | 0, 0));
@@ -4954,7 +4963,11 @@ function step(dt) {
           w.nativeDeathRequest = 1;
           deathStarted = true;
         } else if (nativeTeamList.removal || nativeTeamList.order.length && teamScores[nativeTeamList.order.at(-1)] === 0) {
-          if (showNativeTeamPanel(nativeTeamPanel)) removeNativeTeamListRow(nativeTeamList, teamScores);
+          if (showNativeTeamPanel(nativeTeamPanel)) {
+            const alreadyRemoving = nativeTeamList.removal !== 0;
+            if (removeNativeTeamListRow(nativeTeamList, teamScores) && !alreadyRemoving)
+              teamPanelSoundState.drop = 65536;
+          }
           healthDisplayBusy = true;
         }
       }

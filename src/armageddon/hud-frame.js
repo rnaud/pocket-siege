@@ -188,3 +188,13 @@ export function nativeTeamListRows(list) {
     return [{ id, x, y }];
   });
 }
+
+// 004B8A90 / 004B8AB0 supply these volumes; 004EC50D..004EC567 queues
+// each sound once and clears the pending request, even if audio is disabled.
+export function nativeTeamPanelSounds(state) {
+  const calls = [];
+  if (state.drop) calls.push([0x7a, 8, 65536, state.drop, 0]);
+  if (state.bounce) calls.push([0x7b, 8, 65536, state.bounce, 0]);
+  state.drop = state.bounce = 0;
+  return calls;
+}

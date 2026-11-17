@@ -233,3 +233,9 @@ export function playNativeClockSound(context, request) {
 export function playNativeAnnouncementLoop(context, volume) {
   return playOriginalClip(context, "sounds/morse.wav", () => {}, volume / 65536, true);
 }
+
+export function playNativeTeamPanelSound(context, request) {
+  const clip = request[0] === 0x7a ? "teamdrop" : request[0] === 0x7b ? "teambounce" : null;
+  if (clip) return playOriginalClip(context, `sounds/${clip}.wav`, () => {}, request[3] / 65536);
+  return null;
+}

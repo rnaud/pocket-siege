@@ -348,5 +348,15 @@ for volume in [0,1,457,458,459,6553,65536,70000]:
    announcement_audio_calls=[];cpu.emu_start(0x4eb800,stop,count=10000)
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement audio did not finish')
    announcement_audio_cases.append({'volume':volume,'handle':handle,'long':long_message,'after':{'volume':read(context+0x12468),'handle':read(owner+0xac),'calls':announcement_audio_calls[:]}})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases},separators=(',',':'))+'\n')
+announcement_audio_mode=False
+team_sound_cases=[]
+for drop in [0,32768,65536]:
+ for bounce in [0,2620,32768,65536,131072]:
+  write(owner+0x38,context);write(context+0x1c140,drop);write(context+0x1c144,bounce);write(context+0x1cad4,0)
+  cpu.reg_write(UC_X86_REG_ESP,stack+0xff00);cpu.reg_write(UC_X86_REG_ESI,owner)
+  cpu.emu_start(0x4ec50d,0x4ec567,count=10000)
+  if cpu.reg_read(UC_X86_REG_EIP)!=0x4ec567:raise RuntimeError('Team sound block did not finish')
+  calls=[list(struct.unpack('<5i',cpu.mem_read(context+0x1c994+j*20,20))) for j in range(read(context+0x1cad4))]
+  team_sound_cases.append({'before':{'drop':drop,'bounce':bounce},'after':{'drop':read(context+0x1c140),'bounce':read(context+0x1c144)},'calls':calls})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')
