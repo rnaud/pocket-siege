@@ -20,7 +20,7 @@ export function nativeWormState(worm) {
   if (worm.drowned) return 0x87;
   if (worm.originalDeath) return 0x84;
   if (worm.frozen) return 0x88;
-  if (worm.nativeRopeBody?.constrained) return 0x7b;
+  if (worm.nativeRopeBody?.constrained) return worm.nativeRopeBody.state;
   if (worm.originalBlowtorch) return 0x71;
   if (worm.originalFirePunch) return 0x6c;
   if (worm.originalAxe) return 0x72;

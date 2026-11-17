@@ -1,4 +1,8 @@
 export const UTILITIES = {
+  bungee: {
+    label: "Bungee", icon: "⌁", fresh: 1,
+    help: "Arm before walking off a ledge; jump or R releases",
+  },
   rope: {
     label: "Ninja Rope",
     icon: "⌁",

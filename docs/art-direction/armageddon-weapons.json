@@ -312,8 +312,8 @@
     {
       "slot": 38,
       "native_name": "Bungee",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "bungee",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 7
     },
@@ -520,8 +520,8 @@
     {
       "slot": 64,
       "native_name": "FastWalk",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "fastwalk",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 19
     },

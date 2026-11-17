@@ -5,7 +5,7 @@ import { nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnn
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
-import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
+import { createNativeRopeShot, createNativeBungeeBody, tryNativeBungee, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
 import { nativeLaunch } from "./armageddon/launch.js";
 import { nativeFireInput } from "./armageddon/fire-input.js";
@@ -439,6 +439,7 @@ let format = "single",
     pulseTime: 0,
   },
   parachuteArmed = false,
+  bungeeArmed = false,
   turnSeconds = 45,
   turnTime = 45,
   retreatSeconds = 3,
@@ -900,6 +901,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   activeUtility = null;
   targetUtility = null;
   parachuteArmed = false;
+  bungeeArmed = false;
   stopRope();
   stopJetpack();
   $("#replay").disabled = true;
@@ -1272,7 +1274,7 @@ function collectCrate(w) {
   const { kind, mesh } = crate;
   let label;
   if (kind === "utility") {
-    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk"];
+    const pool = ["jetpack", "parachute", "teleport", "girder", "freeze", "fastwalk", "bungee"];
     const utility = pool[Math.floor(logicRandom() * pool.length)];
     utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], 1);
     label = `+1 ${UTILITIES[utility].label}`;
@@ -1345,6 +1347,7 @@ function beginTurn() {
   targetUtility = null;
   activeUtility = null;
   parachuteArmed = false;
+  bungeeArmed = false;
   utilitiesOpen = false;
   specialOpen = false;
   // Native team event 0x41C broadcasts thaw (0x412) before turn setup.
@@ -1454,7 +1457,7 @@ function updateUI() {
   const loadout = ammo[team] ?? {};
   // Recovery can finish without changing HP or knocked state. Refresh controls
   // whenever action eligibility changes, including native hurt/recovery gates.
-  const key = `${canAct()}|${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${Object.values(utilityAmmo[team] ?? {}).join(",")}|${worms[current]?.nativeTeamModifiers || 0}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  const key = `${canAct()}|${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${bungeeArmed}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${Object.values(utilityAmmo[team] ?? {}).join(",")}|${worms[current]?.nativeTeamModifiers || 0}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   updateHudTeams(worms, team);
@@ -1594,9 +1597,11 @@ function updateUI() {
           ? "Click or tap an empty spot to teleport."
           : "Click or tap to place a girder.";
     else if (rope.attached)
-      utilityStatus.textContent = `Rope out: ${Math.round(rope.length)} px · ↑↓ length · ←→ swing · R release`;
+      utilityStatus.textContent = `${rope.body.state === 0x7c ? "Bungee" : "Rope"}: ${Math.round(rope.length)} px · ↑↓ length · ←→ swing · R release`;
     else if (jetpack.active)
       utilityStatus.textContent = `Jet pack fuel ${Math.ceil(jetpack.fuel)} · arrows move · R stops`;
+    else if (bungeeArmed)
+      utilityStatus.textContent = "Bungee armed. Walk off a ledge; jump or R releases.";
     else if (parachuteArmed)
       utilityStatus.textContent =
         "Parachute armed. It will deploy on a hard fall.";
@@ -1675,6 +1680,7 @@ function skipTurn() {
   stopRope();
   stopJetpack();
   parachuteArmed = false;
+  bungeeArmed = false;
   targetUtility = null;
   activeUtility = null;
   wormLocked = true;
@@ -1700,7 +1706,7 @@ function stopRope() {
     rope.mesh.material.dispose();
   }
   rope = { attached: false, anchor: null, length: 0, mesh: null };
-  if (activeUtility === "rope") activeUtility = null;
+  if (activeUtility === "rope" || activeUtility === "bungee") activeUtility = null;
 }
 function stopJetpack() {
   for (const w of worms) {
@@ -1818,6 +1824,12 @@ function handleUtilityTarget(e) {
 }
 function useUtility(kind) {
   if (!canAct() || charging || shotgunRemaining) return;
+  if (kind !== "bungee") bungeeArmed = false;
+  if (kind === "bungee" && rope.attached && rope.body.state === 0x7c) {
+    releaseRope();
+    closeUtilities();
+    return;
+  }
   if (kind === "jetpack" && jetpack.active) {
     stopJetpack();
     closeUtilities();
@@ -1845,7 +1857,15 @@ function useUtility(kind) {
     updateUI();
     return;
   }
+  if (kind === "bungee") {
+    if (rope.attached) releaseRope();
+    else { bungeeArmed = true; parachuteArmed = false; }
+    utilitiesOpen = false;
+    updateUI();
+    return;
+  }
   if (kind === "parachute") {
+    bungeeArmed = false;
     parachuteArmed = true;
     activeUtility = null;
     utilitiesOpen = false;
@@ -2023,12 +2043,38 @@ function attachRope(w, hit, length, body) {
   updateRopeVisual(w);
   w.ground = false;
   w.originalParachute = null;
-  activeUtility = "rope";
+  activeUtility = body.state === 0x7c ? "bungee" : "rope";
   wormLocked = true;
   utilitiesOpen = false;
   $("#status").textContent =
-    "Rope attached. Left/right swing; up/down shorten; R release.";
+    body.state === 0x7c ? "Bungee attached. Arrows swing and stretch; jump or R releases." :
+      "Rope attached. Left/right swing; up/down shorten; R release.";
   updateUI();
+}
+function tryBungee(w) {
+  if (displayAmmo(utilityAmmo[team].bungee ?? 0) <= 0) return;
+  const input = createNativeBungeeBody(w, H, Math.round(0x3d70 * gravityScale));
+  const result = tryNativeBungee(input, { weapon: { type: 4, subtype: 7 }, height: H }, {
+    collide: (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H),
+    voice: (_body, { request }) => request[1],
+    sound: (_body, { request }) => {
+      if (sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        queueControllerSpeech(request);
+      }
+    },
+    launchSetup: body => nativeLaunch({ '0x68': 4, '0x6c': 7 },
+      { x: body.x, y: body.y, angle: body.aim, facing: body.facing }),
+    // Utility subtype7 creates no projectile; the constraint already exists.
+    finish: () => { utilityAmmo[team].bungee = spendAmmo(utilityAmmo[team].bungee); },
+  });
+  if (!result.body.constrained) return;
+  const body = result.body;
+  bungeeArmed = false;
+  w.x = body.x / 65536; w.y = H - body.y / 65536;
+  attachRope(w, { x: body.anchorX / 65536, y: H - body.anchorY / 65536 }, body.length / 65536, body);
+  $("#status").textContent = "Bungee attached. Arrows swing and stretch; jump or R releases.";
 }
 function releaseRope() {
   if (!rope.attached) return;
@@ -2150,8 +2196,8 @@ function stepRope(w, dt) {
   w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
   if (!body.constrained) {
     stopRope();
-    w.nativeHurtBody = body;
-    w.knocked = true;
+    if (body.state === 0x65) attachNativeFallingFlight(w, { height: H });
+    else { w.nativeHurtBody = body; w.knocked = true; }
   }
   dispatchNativeWormMotionEvents(w, { body, events });
 }
@@ -4428,6 +4474,7 @@ function stepFrame(dt) {
       stopRope();
       stopJetpack();
       parachuteArmed = false;
+      bungeeArmed = false;
       phase = "settle";
       shotWait = 0;
       move = 0;
@@ -4484,6 +4531,10 @@ function stepFrame(dt) {
         aiRetreatDirection !== 0 &&
         walkWorm(w, terrain, aiRetreatDirection, dt);
     }
+  }
+  if (bungeeArmed && !rope.attached && !jetpack.active) {
+    const w = worms[current];
+    if (!w.ground && w.nativeWalkingBody && !w.knocked && !w.frozen) tryBungee(w);
   }
   if (rope.firing) stepRopeShot(worms[current]);
   for (const w of worms) {
@@ -4640,6 +4691,7 @@ function stepFrame(dt) {
       continue;
     }
     if (w === worms[current] && jetpack.active && (w.originalHurt || w.knocked || w.frozen || !w.nativeFlight)) stopJetpack();
+    if (w === worms[current] && rope.attached && (w.originalHurt || w.knocked || w.frozen)) stopRope();
     let result = { fallDamage: 0 };
     if (w === worms[current] && jetpack.active) {
       stepJetpack(w, dt);
@@ -4653,6 +4705,7 @@ function stepFrame(dt) {
       const fastFall = !w.frozen && [0x79, 0x7e, 0x7f].includes(fallState) && w.vy <= -400;
       if (w === worms[current] && parachuteArmed && !w.ground && fastFall) {
         parachuteArmed = false;
+        bungeeArmed = false;
         utilityAmmo[team].parachute = spendAmmo(utilityAmmo[team].parachute);
         attachNativeParachuteFlight(w, { height: H });
         startOriginalParachute(w);
@@ -6261,6 +6314,7 @@ window.siege = {
       fuel: Math.round(jetpack.fuel * 10) / 10,
     },
     parachuteArmed,
+    bungeeArmed,
     frozen: worms.map((w) => w.frozen ?? 0),
     waterLevel,
     waterSprite: water.userData.originalSprite,

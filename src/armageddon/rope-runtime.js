@@ -65,10 +65,10 @@ export function refireNativeRope(body, onSound = () => {}) {
     sound: (_body, _record, { request }) => onSound(request) }).body;
 }
 
-export function createNativeRopeShot(worm, angle, height, onSound = () => {}) {
+function createNativeTraversalBody(worm, angle, height) {
   const radians = angle * Math.PI / 180;
   const positionSum = (fixed(worm.x) + fixed(height - worm.y)) | 0;
-  return nativeTraversalFire({
+  return {
     state: 0x70, weapon: 37, enabled: 1, facing: worm.facing ?? 1,
     aim: Math.round((Math.asin(Math.sin(radians)) / Math.PI + 0.5) * 65536),
     x: fixed(worm.x), y: fixed(height - worm.y), vx: 0, vy: 0,
@@ -87,8 +87,25 @@ export function createNativeRopeShot(worm, angle, height, onSound = () => {}) {
     restitutionX: 0x9999, restitutionY: 0, tangent: 0xf5c2,
     maxVx: 0, maxVy: 0, impact: 0, damageScale: 0, voiceCooldown: 0,
     lastFacingFrame: 0, field150: 0, field250: 0,
-  }, record, { weaponRecord: () => record,
-    sound: (_body, _record, { request }) => onSound(request) }).body;
+  };
+}
+
+export function createNativeRopeShot(worm, angle, height, onSound = () => {}) {
+  return nativeTraversalFire(createNativeTraversalBody(worm, angle, height), record,
+    { weaponRecord: () => record, sound: (_body, _record, { request }) => onSound(request) }).body;
+}
+
+export function createNativeBungeeBody(worm, height, gravity) {
+  // 004D5A40 computes the distance needed to reach eight pixels/tick.
+  let distance = 0, velocity = 0;
+  while (velocity + gravity < 0x80000) {
+    distance = (distance + velocity) | 0;
+    velocity = (velocity + gravity) | 0;
+  }
+  return { ...createNativeTraversalBody(worm, 90, height), state: 0x65,
+    type: 2, weapon: 38, minimumDrop: distance >> 16, bungeeLength: 0,
+    field1f0: 0, bungeeProgress: 0,
+    vx: fixed((worm.vx || 0) / 50), vy: fixed(-(worm.vy || 0) / 50) };
 }
 
 // Called at the host's fixed50Hz tick. Preserve native segment and velocity

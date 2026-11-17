@@ -4,6 +4,7 @@ import { UTILITIES, UTILITY_KINDS, freshUtilities } from "../src/utilities.js";
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   const loadout = freshUtilities();
   expect(UTILITY_KINDS).toEqual([
+    "bungee",
     "rope",
     "jetpack",
     "parachute",

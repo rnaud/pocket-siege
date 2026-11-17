@@ -30,6 +30,7 @@ export const HUD_ICONS = Object.freeze({
   magic: "bullet",
   holy: "hgrenade",
   rope: "rope",
+  bungee: "bungee",
   jetpack: "jetpack",
   parachute: "parachut",
   teleport: "teleport",

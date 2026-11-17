@@ -52,5 +52,19 @@ for angle in [-2147483648,-65537,-32768,-1,0,1,0x1999,0x199a,0x4000,0x8000,0xe66
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4db56f:raise RuntimeError('Release branch failed')
   out=dict(state=signed(read(owner+0x158)),field15c=read(owner+0x15c),ropeAngle=read(owner+0x278),angle=signed(read(owner+0x98)))
   cases.append(dict(body=body,schemeByte=scheme,output=dict(body=out,calls=calls)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004DA552..004DA59F event40C state7B branch, real native clamp. Entry registers and saved-angle stack slot supplied. State callback changes angle to test saved-angle ordering; full dispatch and state teardown are not executed.',cases=cases),separators=(',',':'))+'\n')
+# Adjacent state7C release runs the real body impulse before state entry.
+write(vt+0x118,0x4f4cb0)
+fields={'state':0x158,'field15c':0x15c,'ropeAngle':0x278,'angle':0x98,'field1f0':0x1f0,'vx':0x9c,'vy':0xa0,'angularVelocity':0xa4,'mass':0x58,'suspended':0x54}
+for velocity in [-0x40000,-1,0,1,0x40000]:
+ for mass in [32768,65536,131072]:
+  for suspended in [0,1]:
+   body=dict(state=0x7c,field15c=999,ropeAngle=123,angle=456,field1f0=velocity,vx=123456,vy=-654321,angularVelocity=789,mass=mass,suspended=suspended)
+   for key,offset in fields.items():write(owner+offset,body[key])
+   scheme=40;cpu.mem_write(context+0x11d40,bytes([scheme]))
+   sp=stack+0xf000;cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,vt);calls=[]
+   cpu.emu_start(0x4da59f,0x4db56f,count=1000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=0x4db56f:raise RuntimeError('Bungee release branch failed')
+   out={key:signed(read(owner+offset)) for key,offset in fields.items()}
+   cases.append(dict(body=body,schemeByte=scheme,output=dict(body=out,calls=calls)))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004DA552..004DA5CE event40C state7B/7C branches, real native clamp and body impulse. Entry registers and saved-angle stack slot supplied. State callback changes angle to test saved-angle ordering; full dispatch and state teardown are not executed.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} release cases')

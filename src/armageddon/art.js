@@ -163,6 +163,7 @@ const names = [
     "wparalnk",
     "wteldsv",
     "wbatrope",
+    "wbungee",
     "ropecuff",
     "ropetip",
     "wjetfly1",
@@ -731,7 +732,9 @@ export function stepOriginalDrowning(worm, { height = H, random = () => 0, emit 
 
 // Browser constraint angle is adapted to the original downward-positive body angle.
 export function setOriginalRope(worm, angle) {
-  worm.originalRope = nativeRopeAnimation(worm.facing, angle);
+  worm.originalRope = worm.nativeRopeBody?.state === 0x7c
+    ? { progress: worm.nativeRopeBody.bungeeProgress || 0 }
+    : nativeRopeAnimation(worm.facing, angle);
   worm.originalJump = null;
   worm.originalLanding = null;
   worm.originalParachute = null;
@@ -1002,7 +1005,8 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     };
   }
   if (worm.originalRope && worm.hp > 0 && !worm.frozen && !worm.knocked) {
-    const animation = animations.get("wbatrope");
+    const name = worm.nativeRopeBody?.state === 0x7c ? "wbungee" : "wbatrope";
+    const animation = animations.get(name);
     if (animation) {
       const index = nativeSpriteFrame(
         animation.sprite.frames.length,
@@ -1010,8 +1014,8 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
         worm.originalRope.progress,
       );
       return {
-        map: texture("wbatrope", index),
-        name: "wbatrope",
+        map: texture(name, index),
+        name,
         index,
         aimed: false,
         equipped: false,
