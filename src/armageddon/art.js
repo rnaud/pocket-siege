@@ -1027,7 +1027,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     };
   }
 
-  if (worm.originalRecovery?.player.current.id && !worm.frozen && worm.hp > 0) {
+  if (worm.originalRecovery?.player.current.id && !worm.frozen && (worm.hp > 0 || worm.deathPending)) {
     const current = worm.originalRecovery.player.current;
     const name = spriteIds.sprites[current.id].name;
     const sprite = animations.get(name).sprite;

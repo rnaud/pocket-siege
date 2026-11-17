@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/death-cue.json" with { type: "json" };
-import { nativeDeathCue, nativeDeathEntry, nativeNextDeath } from "../src/armageddon/death-cue.js";
+import { nativeDeathCue, nativeDeathEntry, nativeNextDeath, nativeRequestedDeathState } from "../src/armageddon/death-cue.js";
 test("death voice threshold, random consumption and completion match original x86", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(216);
+  expect(fixture.requests).toHaveLength(192);
+  for (const row of fixture.requests) expect(nativeRequestedDeathState(row.request, row.state, row.body)).toBe(row.result);
   expect(fixture.selections).toHaveLength(194);
   for (const row of fixture.selections) expect(nativeNextDeath(row.teams)).toEqual(row.result);
   for (const row of fixture.entries) expect(nativeDeathEntry(row.input)).toEqual(row.result);

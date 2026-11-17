@@ -1,4 +1,4 @@
-import { nativeNextDeath } from "./armageddon/death-cue.js";
+import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
@@ -3517,7 +3517,8 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
     }
   }
   for (const w of worms) {
-    if (w.hp <= 0) continue;
+    // A zero-HP worm is still a physical task until its death dispatch completes.
+    if (w.hp <= 0 && !w.deathPending) continue;
     const nativeState = nativeWormState(w);
     if (nativeStrength !== null && [0x84, 0x85, 0x87, 0x6d, 0x75].includes(nativeState)) continue;
     const native =
@@ -4238,6 +4239,16 @@ function step(dt) {
     stepOriginalParachute(w);
     w.hurt = Math.max(0, w.hurt - dt);
     w.recoil = Math.max(0, w.recoil - dt);
+    if (w.nativeDeathRequest && !w.drowned && !w.originalDeath) {
+      const body = w.nativeHurtBody ?? w.nativeFlight ?? {
+        vx: Math.round(w.vx * 65536 / 50), vy: Math.round(-w.vy * 65536 / 50),
+      };
+      if (nativeRequestedDeathState(w.nativeDeathRequest, nativeWormState(w), body) === 0x84) {
+        startOriginalDeath(w);
+        w.dying = 1;
+        w.nativeDeathRequest = 0;
+      }
+    }
     if (w.dying > 0) {
       if (w.drowned) {
         w.dying = stepNativeDrowningFlight(w, {
@@ -4399,6 +4410,7 @@ function step(dt) {
       w.deathPending = false;
       w.originalParachute = null;
       w.drowned = true;
+      w.nativeDeathRequest = 0;
       queueWormCamera(w, 9);
       w.dying = 1;
       startOriginalDrowning(w);
@@ -4828,7 +4840,7 @@ function step(dt) {
       if (worms.some(w => w.nativeHealthDisplay.pending)) {
         for (const w of worms) revealWormHealth(w);
         healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
-      } else {
+      } else if (!worms.some(w => w.nativeDeathRequest)) {
         const teams = [0, 1].map(team => worms.filter(w => w.team === team));
         const dispatch = nativeNextDeath(teams.map(roster => roster.map(w => ({
           hp: w.hp, state: w.deathPending ? nativeWormState(w) : 0x89,
@@ -4836,14 +4848,13 @@ function step(dt) {
         }))));
         if (dispatch) {
           const w = teams[(dispatch.target >> 4) - 1][(dispatch.target & 15) - 1];
-          startOriginalDeath(w);
-          w.dying = 1;
+          w.nativeDeathRequest = 1;
           deathStarted = true;
         }
       }
     }
     if (phase === "settle") {
-      shotWait = settled && !healthDisplayBusy && !deathStarted ? shotWait + dt : 0;
+      shotWait = settled && !healthDisplayBusy && !deathStarted && !worms.some(w => w.nativeDeathRequest) ? shotWait + dt : 0;
       if (shotWait > 0.7) nextTurn();
     }
   }

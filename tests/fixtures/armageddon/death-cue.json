@@ -1,7 +1,7 @@
 {
   "executable_sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
   "block": "004DE582\u2013004DE5F6 / 004DE6A5;004D8030;004EC060",
-  "method": "Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink. Selection executes full004EC060 with team-store boundaries, real004DF270 position query and004D0F50 getter, and captured event dispatch.",
+  "method": "Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink. Selection executes full004EC060 with team-store boundaries, real004DF270 position query and004D0F50 getter, and captured event dispatch. Request gate004DE3E7 runs real awake/state getters and stops at state mutation or skip.",
   "cases": [
     {
       "sprite": 10,
@@ -9639,6 +9639,2312 @@
           }
         ]
       ],
+      "result": null
+    }
+  ],
+  "requests": [
+    {
+      "request": 0,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 101,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 118,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 128,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 129,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 130,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 132,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 136,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 137,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 0,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 132
+    },
+    {
+      "request": 1,
+      "state": 101,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 118,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 128,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 129,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 133
+    },
+    {
+      "request": 1,
+      "state": 130,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 132,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 132
+    },
+    {
+      "request": 1,
+      "state": 136,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 137,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 134
+    },
+    {
+      "request": 2,
+      "state": 101,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 118,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 128,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 129,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 133
+    },
+    {
+      "request": 2,
+      "state": 130,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 132,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 134
+    },
+    {
+      "request": 2,
+      "state": 136,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 137,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": 2,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 132
+    },
+    {
+      "request": -1,
+      "state": 101,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 101,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 118,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 118,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 128,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 128,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 129,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 129,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 133
+    },
+    {
+      "request": -1,
+      "state": 130,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 130,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 132,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 132,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": 132
+    },
+    {
+      "request": -1,
+      "state": 136,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 136,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 137,
+      "body": {
+        "vx": -1,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": -1,
+        "submerged": 0,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": -1,
+        "contact": 0,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": -1,
+        "moving": 0
+      },
+      "result": null
+    },
+    {
+      "request": -1,
+      "state": 137,
+      "body": {
+        "vx": 0,
+        "vy": 0,
+        "submerged": 0,
+        "contact": 0,
+        "moving": -1
+      },
       "result": null
     }
   ]

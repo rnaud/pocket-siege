@@ -1,3 +1,14 @@
+import { nativeBodyAwake } from './motion.js';
+
+// 004DE3E7..004DE43E / 004DE4B6: dispatch records a request; the worm
+// consumes it only in a resting idle/frozen/water state, after recovery.
+export function nativeRequestedDeathState(request, state, body) {
+  if (!request || nativeBodyAwake(body)) return null;
+  if (state === 0x82) return 0x85;
+  if (state === 0x65 || state === 0x88) return request === 2 ? 0x86 : 0x84;
+  return null;
+}
+
 // 004EC060: scan team/worm order, dispatch death to the leftmost zero-HP body.
 // Retired state0x89 is excluded; equal coordinates retain the first candidate.
 export function nativeNextDeath(teams) {

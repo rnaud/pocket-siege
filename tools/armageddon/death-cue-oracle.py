@@ -116,5 +116,23 @@ for teams in profiles:
  cpu.emu_start(0x4ec060,stop,count=10000)
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Selector did not return')
  selections.append(dict(teams=teams,result=selection[0] if selection else None))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004DE582–004DE5F6 / 004DE6A5;004D8030;004EC060',method='Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink. Selection executes full004EC060 with team-store boundaries, real004DF270 position query and004D0F50 getter, and captured event dispatch.',cases=cases,entries=entries,selections=selections),indent=2)+'\n')
+# Actual request gate and awake/state virtual getters, stopped before state mutation.
+requests=[];requested_state=None
+def request_hook(cpu,address,size,user):
+ global requested_state
+ if address in [0x4de43e,0x4de4b6]:requested_state=read(cpu.reg_read(UC_X86_REG_ESP))
+ cpu.emu_stop()
+for address in [0x4de43e,0x4de4b6,0x4de53d]:cpu.hook_add(UC_HOOK_CODE,request_hook,begin=address,end=address)
+for request in [0,1,2,-1]:
+ for native_state in [0x65,0x76,0x80,0x81,0x82,0x84,0x88,0x89]:
+  for awake_field in [None,'vx','vy','submerged','contact','moving']:
+   body=dict(vx=0,vy=0,submerged=0,contact=0,moving=0)
+   if awake_field:body[awake_field]=-1
+   for key,offset in dict(vx=0x9c,vy=0xa0,submerged=0xbc,contact=0xc0,moving=0xc4).items():write(owner+offset,body[key]&0xffffffff)
+   write(owner+0x294,request&0xffffffff);write(owner+0x50,native_state);requested_state=None
+   cpu.reg_write(UC_X86_REG_ESP,stack+0xf000);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,0x526de0)
+   cpu.emu_start(0x4de3e7,stop,count=1000)
+   if cpu.reg_read(UC_X86_REG_EIP) not in [0x4de43e,0x4de4b6,0x4de53d]:raise RuntimeError('Request gate failed')
+   requests.append(dict(request=request,state=native_state,body=body,result=requested_state))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,block='004DE582–004DE5F6 / 004DE6A5;004D8030;004EC060',method='Original trigger/choice/completion instructions; supplied RNG, original team sound lookup, captured playback request. Stop before explosion or state return. Death entry executes004D8030..004D806F with real body setters and an explicit animation sink. Selection executes full004EC060 with team-store boundaries, real004DF270 position query and004D0F50 getter, and captured event dispatch. Request gate004DE3E7 runs real awake/state getters and stops at state mutation or skip.',cases=cases,entries=entries,selections=selections,requests=requests),indent=2)+'\n')
 print(f'Captured {len(cases)} death cue cases')
