@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-async function start(page) {
+async function start(page, map) {
   await page.goto("/");
   await expect
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
@@ -8,20 +8,24 @@ async function start(page) {
     await page.evaluate(() => window.siege.getState().originalArtError),
   ).toBeNull();
   await page.locator("#mode").selectOption("local");
+  if (map) await page.locator("#map-layout").selectOption(map);
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
 }
 test("original crates descend by parachute and switch to ground idle art", async ({
   page,
 }) => {
-  await start(page);
+  await start(page, "fern");
   const initial = await page.evaluate(() => window.siege.getState());
-  expect(initial.crate.sprite).toMatch(/^[muw]crate2$/);
+  expect(initial.crate.sprite).toMatch(/^[muw]crate0$/);
+  expect(initial.crate.nativeBody.state).toBe(100);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().crate?.sprite))
+    .toMatch(/^[muw]crate2$/);
   expect(initial.hazards.length).toBeGreaterThan(0);
   expect(initial.hazards.every((h) => h.sprite === "oildrum1")).toBe(true);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().crate?.sprite), {
-      timeout: 5000,
+      timeout: 15000,
     })
     .toMatch(/^[muw]crate1$/);
   await page.screenshot({ path: "test-results/original-world-objects.png" });

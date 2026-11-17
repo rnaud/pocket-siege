@@ -1,3 +1,6 @@
+import { createNativeCrateBody, stepNativeCrateBody } from "./armageddon/crate-runtime.js";
+import { nativeCrateArt } from "./armageddon/crate-state.js";
+import nativeWaterSpriteIds from "./armageddon/water-sprite-ids.json";
 import { NativeSoundQueue } from "./armageddon/sound-queue.js";
 import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
 import { nativeAutomaticUtilities } from "./armageddon/automatic-utilities.js";
@@ -1093,9 +1096,12 @@ function updateSeriesHUD() {
 function applyWeather() {
   $("#weather-layer").className = weather === "clear" ? "" : weather;
 }
-function crateSprite(kind, falling) {
+function nativeCrateKind(kind) {
+  return kind === "health" ? 2 : kind === "utility" ? 4 : 1;
+}
+function crateOpeningSprite(kind) {
   const prefix = kind === "health" ? "m" : kind === "utility" ? "u" : "w";
-  return `${prefix}crate${falling ? 2 : 1}`;
+  return `${prefix}crate0`;
 }
 function crateSnapshot(crate) {
   return {
@@ -1107,6 +1113,7 @@ function crateSnapshot(crate) {
     frame: crate.mesh.userData.originalFrame,
     content: crate.content,
     quantity: crate.quantity,
+    nativeBody: { ...crate.nativeBody },
   };
 }
 function chooseCrateContent(kind) {
@@ -1117,6 +1124,12 @@ function chooseCrateContent(kind) {
   if (kind === "special") return SPECIAL_WEAPONS[Math.floor(logicRandom() * SPECIAL_WEAPONS.length)];
   return kind;
 }
+function queueCrateSound(request) {
+  if (!sound || !request) return;
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  audio.resume();
+  nativeSoundQueue.enqueue(request);
+}
 function spawnCrate(announceDrop = false) {
   if (!terrain) return;
   for (let tries = 0; tries < 40; tries++) {
@@ -1126,8 +1139,7 @@ function spawnCrate(announceDrop = false) {
     if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
     const kind = PICKUP_KINDS[Math.floor(logicRandom() * PICKUP_KINDS.length)],
       mesh =
-        createOriginalObject(crateSprite(kind, true), -10),
-      targetY = ground + 10;
+        createOriginalObject(crateOpeningSprite(kind), -10);
     mesh.position.set(x, H + 34, 18);
     group.add(mesh);
     const crate = {
@@ -1135,14 +1147,18 @@ function spawnCrate(announceDrop = false) {
       quantity: kind === "health" ? 25 : 1,
       x,
       y: H + 34,
-      targetY,
       kind,
       mesh,
-      bob: visualRandom() * Math.PI * 2,
       falling: true,
-      artAge: 0,
       vy: 0,
     };
+    crate.nativeBody = createNativeCrateBody({
+      kind: nativeCrateKind(kind), x: Math.round(x * 65536), y: -34 * 65536,
+    }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), NATIVE_MINE_FRICTION, {
+      shape: (body, shape) => { body.shape = shape; },
+      collide: (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H),
+      sound: queueCrateSound,
+    });
     crates.push(crate);
     if (announceDrop) {
       const message = nativeCrateDropAnnouncement(kind, () => matchRandom.logicUint());
@@ -5256,22 +5272,58 @@ function stepFrame(dt) {
   stepAirstrikes();
   stepBombs(dt);
   stepFires(dt);
-  for (const crate of crates) crate.artAge = (crate.artAge || 0) + dt;
   for (const hazard of hazards) {
     hazard.artAge = (hazard.artAge || 0) + dt;
     updateOriginalObject(hazard.mesh, "oildrum1", hazard.artAge);
   }
-  for (const crate of crates) if (crate.falling) {
-    crate.vy -= 220 * dt;
-    crate.y += crate.vy * dt;
+  const crateCameraRequests = [];
+  let cratesBusy = false;
+  for (const crate of [...crates]) {
+    const wasFalling = crate.falling;
+    const collide = (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H);
+    const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
+    crate.impactPlayback = cleanupNativeContactSound(crate.impactPlayback);
+    const result = stepNativeCrateBody(crate.nativeBody, {
+      frame: matchRandom.frame, index: crates.indexOf(crate),
+      bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
+      waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
+      wind: Math.round(wind / 2500 * 65536),
+    }, {
+      collide,
+      other: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+      receive: (body, other, hit, side) => {
+        if (!other.worm) return 0;
+        const response = nativeWormReceiver(other, body, side, {});
+        Object.assign(body, response.incoming);
+        Object.assign(other, response.receiver);
+        if (response.result) applyNativeWormContact(worms[hit - 2], other);
+        return response.result;
+      },
+      otherUpdated: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+      impactSound: request => {
+        if (!sound) return;
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        crate.impactPlayback = playNativeProjectileContactSound(audio, request, crate.impactPlayback);
+      },
+      skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
+      camera: request => crateCameraRequests.push(request), busy: () => { cratesBusy = true; },
+      delete: () => {},
+      // Host crates do not yet receive native destruction events or target fuses.
+      detonate: () => {},
+      visualRandom: () => matchRandom.visualUint(),
+      bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
+    });
+    crate.nativeBody = result.body;
+    crate.x = result.body.x / 65536;
+    crate.y = H - result.body.y / 65536;
+    crate.vy = -result.body.vy / 65536 * 50;
+    crate.falling = !!nativeBodyAwake(result.body);
     crate.mesh.position.set(crate.x, crate.y, 18);
-    if (crate.y <= crate.targetY) {
-      crate.y = crate.targetY;
-      crate.falling = false;
-      crate.artAge = 0;
-      crate.vy = 0;
-      announce("SUPPLY CRATE LANDED");
-    }
+    if (result.deleted) {
+      dispose(crate.mesh);
+      crates.splice(crates.indexOf(crate), 1);
+    } else if (wasFalling && !crate.falling) announce("SUPPLY CRATE LANDED");
   }
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
@@ -5281,7 +5333,7 @@ function stepFrame(dt) {
   });
   if (phase === "settle" || (phase === "aim" && (worms.some(w => w.deathPending) || nativeTeamList.removal || nativeTeamList.order.some(id => teamScores[id] === 0)))) {
     const settled =
-      nativeTeamHealthBusyTicks === 0 &&
+      !cratesBusy && nativeTeamHealthBusyTicks === 0 &&
       !projectile && !pendingFire &&
       bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
       worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&
@@ -5351,7 +5403,7 @@ function stepFrame(dt) {
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
   const wormTracking = pendingWormCamera.length > 0;
-  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || teleportTracking || wormTracking)) {
+  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || teleportTracking || wormTracking)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
       Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
@@ -5362,8 +5414,9 @@ function stepFrame(dt) {
   }
   for (const request of pendingWormCamera) nativeCamera.offer(...request);
   for (const request of mineCameraRequests) nativeCamera.offer(...request);
+  for (const request of crateCameraRequests) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || teleportTracking || wormTracking)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || teleportTracking || wormTracking)) {
     const aspect = arena.clientWidth / arena.clientHeight;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
@@ -5680,11 +5733,11 @@ function frame(now) {
   }
   for (const crate of crates) {
     crate.mesh.position.y = Math.round(crate.y);
-    updateOriginalObject(
-      crate.mesh,
-      crateSprite(crate.kind, crate.falling),
-      crate.artAge || 0,
-    );
+    const art = nativeCrateArt(crate.nativeBody);
+    const name = nativeWaterSpriteIds.sprites[art.sprite]
+      ? `water/${nativeWaterSpriteIds.sprites[art.sprite].name}`
+      : nativeSpriteIds.sprites[art.sprite].name;
+    updateOriginalObject(crate.mesh, name, 0, art.progress);
     if (crate.mesh.userData.beacon)
       crate.mesh.userData.beacon.rotation.y = now * 0.002;
   }
@@ -6587,6 +6640,7 @@ if (import.meta.env.DEV) {
     setCrateKind(kind = "special") {
       if (crates[0]) {
         crates[0].kind = kind;
+        crates[0].nativeBody.kind = nativeCrateKind(kind);
         crates[0].content = chooseCrateContent(kind);
         crates[0].quantity = kind === "health" ? 25 : 1;
       }
