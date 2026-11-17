@@ -1,3 +1,4 @@
+import replayWormRoundtrip from "./fixtures/armageddon/replay-worm-roundtrip.json" with { type: "json" };
 import replayPipelineRestore from "./fixtures/armageddon/replay-pipeline-restore.json" with { type: "json" };
 import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture.json" with { type: "json" };
 import replayPipeline from "./fixtures/armageddon/replay-pipeline.json" with { type: "json" };
@@ -385,6 +386,26 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       constructText: (...args) => { calls.push([0x4c6610, ...args]); return args[0]; } });
     expect(allocations).toEqual([]);
     expect({ body: [...task.memory.slice(0x3c)], position: stream.position, calls, sounds, ...contextState }).toEqual(row.result);
+  }
+  for (const row of replayWormRoundtrip.cases) {
+    const stream = new NativeReplayStream(2048), calls = [], allocations = [...row.input.allocations];
+    stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
+    const environment = { all: { capacity: 256, entries: [] }, categories: { 2: { capacity: 256, entries: [] } }, links: [17] };
+    const matchState = { activeCount: 0x7fffffff, presentationValue: 0x87654321 };
+    const task = nativeReadWormTask(stream, { id: 9, context: 0x2020000, renderer: 0x7654321, environment, matchState,
+      memory: new Uint8Array(0x390).fill(0xa5), readChildren: (_, reader) => reader.readByte(),
+      allocateContacts: size => ({ pointer: row.input.contactPointer, bytes: new Uint8Array(size) }),
+      allocateResource: size => { const request = allocations.shift(); expect(size).toBe(request.size); return request.pointer; },
+      constructText: (...args) => { calls.push([0x4c6610, ...args]); return args[0]; },
+      constructPanel: (...args) => { calls.push([0x4fd5a0, ...args]); return args[0]; } });
+    expect(allocations).toEqual([]);
+    const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+    const restoredHash = hash(task.memory.slice(0x3c)), restorePosition = stream.position;
+    const output = new NativeReplayStream(65536); output.bytes.fill(0xcc); output.seek(row.input.position); output.length=row.input.position;
+    nativeWriteReplayTask(output,task,{all:environment.all.entries,categories:{2:environment.categories[2].entries}});
+    expect({ restoredHash, restorePosition, position:output.position, length:output.length,
+      writtenHash:hash(output.bytes.slice(0,output.length)), bodyHash:hash(task.memory.slice(0x3c)), calls, activeCount:matchState.activeCount,
+    }).toEqual(row.result);
   }
   for (const row of replayWormRestore.cases) {
     const stream = new NativeReplayStream(2048), calls = [], allocations = [...row.input.allocations];
