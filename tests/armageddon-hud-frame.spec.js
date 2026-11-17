@@ -1,3 +1,5 @@
+import replayEntry from "./fixtures/armageddon/replay-entry.json" with { type: "json" };
+import { nativeReplayEntry } from "../src/armageddon/replay-entry.js";
 import replayDispatch from "./fixtures/armageddon/replay-dispatch.json" with { type: "json" };
 import { nativeDispatchReplayEvents } from "../src/armageddon/replay-dispatch.js";
 import { createHash } from "node:crypto";
@@ -68,6 +70,23 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayEntry.cases) {
+    const scene = new Uint8Array(0x20000), view = new DataView(scene.buffer);
+    const put = (offset, value) => view.setInt32(offset, value, true);
+    scene.fill(0xa5, 0x1c188, 0x1c188 + 0x950);
+    for (let i = 0; i < 0x950; i++) scene[0x1cad8 + i] = (i * 17 + 31) & 255;
+    for (const [offset, value] of [[0x12488, row.fade], [0x7f0, 0x87654321], [0x1d434, 99], [0x1d444, 0]]) put(offset, value);
+    const manager = { playbackError: row.phase, playbackFailure: row.request }, calls = [];
+    const continued = nativeReplayEntry(scene, manager, {
+      device: { readyForPlayback: () => { calls.push('ready'); return row.ready; } },
+      restoreSnapshot: () => { calls.push(['restore', view.getInt32(0x1d434, true)]); put(0x7f0, 42); },
+      audio: row.sound ? { reset: () => calls.push('audio') } : null,
+    });
+    expect({ continued, fields: [0x12488, 0x7f0, 0x1d434, 0x1d444].map(offset => view.getInt32(offset, true)),
+      manager: [manager.playbackError, manager.playbackFailure],
+      copiedHash: createHash('sha256').update(scene.slice(0x1c188, 0x1c188 + 0x950)).digest('hex'), calls,
+    }).toEqual(row.result);
+  }
   for (const row of replayDispatch.cases) {
     const input = row.input, calls = [], sceneMemory = new Uint8Array(0x20000), view = new DataView(sceneMemory.buffer);
     for (const [offset,value] of [[0x1ab8,1],[0x800,-1],[0x7f0,0x7fffffff],[0x1d43c,input.recording],[0x1d444,input.replaying],[0x1d448,input.slow],[0x1240c,4],[0x1cad4,input.audioCount]]) view.setInt32(offset,value,true);
