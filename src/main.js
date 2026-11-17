@@ -16,7 +16,7 @@ import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
-import { attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
+import { attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
@@ -176,6 +176,8 @@ import {
   startOriginalLanding,
   stepOriginalLanding,
   startOriginalJump,
+  startOriginalJumpPreparation,
+  stepOriginalJumpPreparation,
   stepOriginalJump,
   startOriginalParachute,
   startOriginalTeleport,
@@ -1509,7 +1511,8 @@ function updateUI() {
     .forEach((b) => (b.disabled = !canAct() || charging));
   document
     .querySelectorAll("[data-move],#jump,#backflip")
-    .forEach((b) => (b.disabled = !canMove()));
+    .forEach((b) => (b.disabled = !canMove() &&
+      !(b.id === "jump" && worms[current]?.originalJumpPreparation && !menu.open && !replaying)));
   const select = $("#select-worm"),
     skip = $("#skip");
   if (select) {
@@ -1601,6 +1604,7 @@ function canAct() {
     phase === "aim" &&
     !pendingFire &&
     !rope.firing &&
+    !worms[current]?.originalJumpPreparation &&
     !worms[current]?.originalRecovery &&
     (!worms[current]?.nativeHurtBody || worms[current].nativeHurtBody.state === 0x73) &&
     !(team === 1 && mode === "ai") &&
@@ -1617,6 +1621,7 @@ function canMove() {
     !replaying &&
     worms[current]?.hp > 0 &&
     !worms[current]?.knocked &&
+    !worms[current]?.originalJumpPreparation &&
     !worms[current]?.originalRecovery &&
     !worms[current]?.nativeHurtBody
   );
@@ -4200,31 +4205,26 @@ function jump(kind = "forward") {
     jetpack.pulseTime = 0.22;
     return;
   }
-  if (!canMove()) return;
-  wormLocked = true;
   const w = worms[current];
   const double = lastJump.kind === kind && jumpClock - lastJump.time < 0.28;
-  if (!w.ground && !double && !(w.groundGrace > 0)) {
+  const backflip = kind === "backflip" || (kind === "up" && double);
+  const direction = kind === "forward" ? (double ? -1 : 1) : 0;
+  if (w.originalJumpPreparation && double && !menu.open && !replaying) {
+    Object.assign(w.originalJumpPreparation, { direction, backflip });
+    lastJump = { kind: null, time: jumpClock };
+    return;
+  }
+  if (!canMove()) return;
+  wormLocked = true;
+  if (!w.ground) {
     if (w.vy < 0) w.jumpQueued = { kind, until: jumpClock + 0.12 };
     return;
   }
-  w.groundGrace = 0;
   w.jumpQueued = null;
-  if (kind === "backflip" || (kind === "up" && double)) {
-    w.vy = 190;
-    w.vx = -w.facing * 50;
-  } else if (kind === "up") {
-    w.vy = 155;
-    w.vx = 0;
-  } else {
-    w.vy = 140;
-    w.vx = w.facing * (double ? -65 : 65);
-  }
-  w.ground = false;
-  startOriginalJump(w, kind === "backflip" || (kind === "up" && double),
-    kind === "forward" ? (double ? -1 : 1) : 0,
-    calls => dispatchWormEntryAudio(w, calls));
-  lastJump = { kind: double ? null : kind, time: jumpClock };
+  move = 0;
+  startOriginalJumpPreparation(w, direction, backflip);
+  lastJump = { kind, time: jumpClock };
+
 }
 function startAiTurn() {
   const w = worms[current];
@@ -4501,6 +4501,12 @@ function stepFrame(dt) {
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
     w.landing = Math.max(0, (w.landing || 0) - dt);
     stepOriginalLanding(w);
+    const jumpLaunch = stepOriginalJumpPreparation(w);
+    if (jumpLaunch) {
+      attachNativeJumpFlight(w, { height: H }, jumpLaunch.direction, jumpLaunch.backflip);
+      startOriginalJump(w, jumpLaunch.backflip, jumpLaunch.direction,
+        calls => dispatchWormEntryAudio(w, calls));
+    }
     stepOriginalJump(w);
     stepOriginalParachute(w);
     w.hurt = Math.max(0, w.hurt - dt);
@@ -4649,7 +4655,19 @@ function stepFrame(dt) {
             nativeSceneCollision(w, body, x, y, terrain, worms, H),
         );
         dispatchNativeWormMotionEvents(w, result);
-      } else result = stepWorm(w, terrain, dt, gravityScale);
+      } else if (w.nativeFlight && !w.frozen && !w.originalParachute) {
+        result = stepNativeJumpFlight(w, {
+          height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: worms.indexOf(w),
+          random: () => matchRandom.logicUint(),
+          collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+          updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+        }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
+        dispatchNativeWormMotionEvents(w, { ...result,
+          events: result.events.filter(call => call.target !== 0x7a) });
+      } else {
+        if (w.frozen || w.originalParachute) w.nativeFlight = null;
+        result = stepWorm(w, terrain, dt, gravityScale);
+      }
       if (w.originalParachute) w.vy = Math.max(w.vy, -70);
     }
     if (result.landed && w.ground && !w.landing) {
@@ -4676,7 +4694,7 @@ function stepFrame(dt) {
     )
       jump(w.jumpQueued.kind);
     if (w.jumpQueued && jumpClock > w.jumpQueued.until) w.jumpQueued = null;
-    const nativeWaterBody = w.nativeRopeBody ?? w.nativeHurtBody;
+    const nativeWaterBody = w.nativeRopeBody ?? w.nativeHurtBody ?? w.nativeFlight;
     const drowning = nativeWaterBody ? nativeWormDrowningState(nativeWaterBody) === 0x87 : w.y - 10 < waterLevel;
     if (drowning || w.x < -30 || w.x > W + 30) {
       attachNativeDrowningFlight(w, H);

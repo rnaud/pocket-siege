@@ -398,8 +398,33 @@ function applyAnimationCalls(player, calls) {
   }
 }
 
-// Browser jump adapter: launch velocities and preparation remain browser-owned.
-// This starts the native airborne entry once launch has actually occurred.
+// State77 queues sprite13 and launches only after its native progress gate.
+export function startOriginalJumpPreparation(worm, direction, backflip) {
+  const name = spriteIds.sprites[0x13].name;
+  if (!animations.has(name)) return false;
+  const player = new NativeAnimationPlayer();
+  player.enqueue(0x13, animations.get(name).metadata);
+  worm.originalJumpPreparation = { player, direction, backflip };
+  worm.originalLanding = null;
+  return true;
+}
+export function stepOriginalJumpPreparation(worm) {
+  const pending = worm.originalJumpPreparation;
+  if (!pending) return null;
+  if (worm.hp <= 0 || worm.frozen || worm.knocked || worm.hurt > 0.35 ||
+      worm.originalPreparation || worm.originalRecoil) {
+    worm.originalJumpPreparation = null;
+    return null;
+  }
+  if ((pending.player.current.progress & 0xffff0000) >= 65536) {
+    worm.originalJumpPreparation = null;
+    return { direction: pending.direction, backflip: pending.backflip };
+  }
+  pending.player.advance();
+  return null;
+}
+
+// State79 airborne entry after the preparation impulse.
 export function startOriginalJump(worm, backflip = false, direction = 0, onEntry = () => {}) {
   const result = nativeWormJumpLandingEntry(
     {
@@ -829,6 +854,7 @@ export function startOriginalDeath(worm) {
     else player.enqueue(call.sprite_id, animation.metadata, call.progress);
   }
   worm.originalDeath = player;
+  worm.originalJumpPreparation = null;
   worm.originalDeathSpoken = entry.body.spoken;
   worm.originalDeathVoice = null;
   worm.originalJump = worm.originalLanding = worm.originalRecoil = worm.originalAxe = worm.originalFirePunch = null;
@@ -856,6 +882,7 @@ export function startOriginalHurt(worm, state) {
     worm.nativeHurtBody?.angle ?? worm.nativeFlight?.angle ?? 0,
   );
   if (!entry) return;
+  worm.originalJumpPreparation = null;
   worm.originalAxe = null;
   worm.originalFirePunch = null;
   worm.originalHurt = {
@@ -1047,14 +1074,15 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     };
   }
 
-  const jumping = worm.originalJump;
+  const preparingJump = worm.originalJumpPreparation;
+  const jumping = preparingJump?.player ?? worm.originalJump;
   if (
     jumping &&
     worm.hp > 0 &&
     !worm.frozen &&
     !worm.knocked &&
     !(worm.hurt > 0.35) &&
-    !worm.ground &&
+    (preparingJump || !worm.ground) &&
     !worm.originalPreparation &&
     !worm.originalRecoil && !worm.originalAxe && !worm.originalFirePunch && !worm.originalDrill && !worm.originalBlowtorch
   ) {

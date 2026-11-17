@@ -1,7 +1,9 @@
+import { nativeWaterSound } from "./water-audio.js";
+import { nativeWormSkim } from "./worm-water.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
 import { nativeFirePunchEntry, nativeFirePunchTick } from "./fire-punch.js";
 import { nativeWormJumpLaunch, nativeBodyImpulse } from "./jump.js";
-import { nativeSimpleBodyTick, nativeBodyAwake } from "./motion.js";
+import { nativeSimpleBodyTick, nativeBodyAwake, nativeSimpleBounce } from "./motion.js";
 import { nativeWormAirborneCollision } from "./worm-contact.js";
 const fixed = (value) => Math.round(value * 65536) | 0;
 
@@ -161,12 +163,25 @@ export function stepNativeJumpFlight(
     {
       awake: nativeBodyAwake,
       collide: collision,
-      skim: () => events.push({ operation: "skim" }),
-      waterChanged: (body) =>
-        events.push({ operation: "water", submerged: body.submerged }),
+      skim: body => {
+        const result = nativeWormSkim(body);
+        Object.assign(body, result.body, { type: 3, complex: 1 });
+        for (const call of result.calls) events.push({ ...call,
+          operation: call.operation === "sound" ? "waterSound" : call.operation });
+      },
+      waterChanged: body => {
+        const request = nativeWaterSound(body).sound;
+        if (request) events.push({ operation: "waterSound", request });
+      },
       bounce: (body, hit, side) => {
         const other = environment.collisionBody?.(hit) ?? { type: 1, vx: 0, vy: 0 };
         const probe = (x, y) => collision(x, y, body);
+        if (![0x6c, 0x6e, 0x79, 0x7d, 0x7e].includes(body.state)) {
+          const response = nativeSimpleBounce(body, other, side, probe);
+          Object.assign(body, response.body);
+          environment.updateCollisionBody?.(hit, response.other);
+          return;
+        }
         const result = nativeWormAirborneCollision(
           body,
           other,
@@ -216,7 +231,7 @@ export function stepNativeJumpFlight(
   worm.ground = landed;
   // The host resumes its grounded state once the landing event is delivered.
   if (landed) worm.nativeFlight = null;
-  return { landed, landingSpeed, events };
+  return { landed, landingSpeed, events, body };
 }
 
 // Physics precedes the state6C tick. Landing remains in6C until its awake

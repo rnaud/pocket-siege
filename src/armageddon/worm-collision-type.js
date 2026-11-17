@@ -24,6 +24,7 @@ export function nativeWormState(worm) {
   if (worm.originalBlowtorch) return 0x71;
   if (worm.originalFirePunch) return 0x6c;
   if (worm.originalAxe) return 0x72;
+  if (worm.originalJumpPreparation && !worm.originalHurt && !worm.nativeHurtBody && !worm.knocked) return 0x77;
   return worm.nativeHurtBody?.state ?? worm.nativeFlight?.state ??
     worm.originalHurt?.state ?? (worm.originalRecovery ? 0x76 :
     worm.originalParachute ? 0x7d : worm.originalJump ? 0x79 : 0x65);
