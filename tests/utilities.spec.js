@@ -1,5 +1,5 @@
 import wormPickup from "./fixtures/armageddon/worm-pickup.json" with { type: "json" };
-import { nativeWormPickupEvent, nativeWormPickupQuery, nativeWormPickupTick } from "../src/armageddon/worm-pickup.js";
+import { nativeWormPickupEvent, nativeWormPickupQuery, nativeWormPickupTick, nativeWormPickupContact } from "../src/armageddon/worm-pickup.js";
 import barrelArt from "./fixtures/armageddon/barrel-art.json" with { type: "json" };
 import { nativeBarrelArt } from "../src/armageddon/barrel-art.js";
 import barrelContacts from "./fixtures/armageddon/barrel-contact.json" with { type: "json" };
@@ -413,6 +413,12 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       expect(projectile.nativeTimer.remaining).toBe(20000);
       expect(projectile.nativeRelease).toBeUndefined();
     }
+  }
+  for (const row of wormPickup.contacts) {
+    const calls = [];
+    const intercept = nativeWormPickupContact(row.input, row.otherType,
+      (...args) => { calls.push(args); return row.query_result; });
+    expect({ calls, intercept }).toEqual({ calls: row.calls, intercept: row.intercept });
   }
   for (const row of wormPickup.cases) {
     const calls = [];

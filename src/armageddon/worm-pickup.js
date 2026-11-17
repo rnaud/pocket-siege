@@ -22,3 +22,10 @@ export function nativeWormPickupTick(input, query) {
 export function nativeWormPickupTransition(flag, active, next) {
   return !active && ![0x6f, 0x77, 0x79, 0x7a, 0x7e].includes(next) ? 0 : flag;
 }
+
+// 004D6E30 prefix: frozen contacts bypass pickup. Success skips all bounce,
+// landing/hurt effects and bookkeeping in the rest of the contact callback.
+export function nativeWormPickupContact(body, otherType, query) {
+  if (body.state === 0x88 || (otherType !== 11 && otherType !== 12)) return false;
+  return Boolean(nativeWormPickupQuery(body, query));
+}

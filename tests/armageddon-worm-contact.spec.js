@@ -7,7 +7,7 @@ const fixture = JSON.parse(
   ),
 );
 test("airborne contact matches native landing, ceiling and position-attempt decisions", { tag: "@logic" }, () => {
-  expect(fixture.cases).toHaveLength(4320);
+  expect(fixture.cases).toHaveLength(7200);
   for (const v of fixture.cases) {
     const queries = [];
     const result = nativeWormAirborneContact(
@@ -29,7 +29,7 @@ test("airborne contact matches native landing, ceiling and position-attempt deci
 
 import { nativeWormAirborneCollision } from "../src/armageddon/worm-contact.js";
 test("complete airborne callback matches receiver dispatch, bounce and facing update", { tag: "@logic" }, () => {
-  expect(fixture.complete_callbacks).toHaveLength(8640);
+  expect(fixture.complete_callbacks).toHaveLength(14400);
   for (const v of fixture.complete_callbacks) {
     const queries = [];
     const result = nativeWormAirborneCollision(

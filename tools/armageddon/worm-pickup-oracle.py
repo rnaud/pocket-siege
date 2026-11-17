@@ -34,9 +34,9 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 vt=owner+0x1000;query=stop+0x100;payload=owner+0x2000
 write(owner,vt);write(vt+0x4c,query);write(vt+0x7c,0x4d0ff0)
 fields={'team':0xfc,'worm':0x100,'field104':0x104,'field154':0x154,'field188':0x188,'state':0x50}
-calls=[];boundary=stop;query_result=0
+calls=[];boundary=stop;query_result=0;contact_mode=False
 def hook(cpu,address,size,user):
- if address==boundary:
+ if address==boundary or (contact_mode and address in [0x4d6e45,0x4d6ef6,0x4d7432]):
   cpu.emu_stop();return
  if address==query:
   sp=cpu.reg_read(UC_X86_REG_ESP)
@@ -73,5 +73,22 @@ for flag in [0,1,-1]:
   result=run(body,0x4ddab0,stop)
   result['value']=signed(cpu.reg_read(UC_X86_REG_EAX))
   queries.append(dict(input=body,query_result=query_result,result=result))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004DE0E4..004DE12E tick gate/clear,004DB0C6..004DB56F event42F and complete004DDAB0 wrapper. Native state getter unchanged; pickup query is an explicit captured interface. Other task tick effects are outside the captured slice.',cases=cases,events=events,queries=queries),separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} ticks, {len(events)} events and {len(queries)} query gates')
+contacts=[];contact_mode=True
+other=owner+0x3000;other_vt=owner+0x4000
+write(other,other_vt);write(other_vt+0x50,0x4d0ef0)
+for state in [0x65,0x6e,0x73,0x78,0x79,0x80,0x88]:
+ for kind in [1,2,10,11,12,17]:
+  for flag in [0,1,-1]:
+   for query_result in [0,1,5]:
+    body=dict(team=2,worm=3,field104=1,field154=flag,field188=0,state=state)
+    for key,off in fields.items():write(owner+off,body[key])
+    write(other+0x3c,kind)
+    calls=[];boundary=stop;sp=stack+0xf000
+    for i,value in enumerate([stop,other,1]):write(sp+i*4,value)
+    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+    cpu.emu_start(0x4d6e30,stop,count=10000)
+    end=cpu.reg_read(UC_X86_REG_EIP)
+    if end not in [0x4d6e45,0x4d6ef6,0x4d7432]:raise RuntimeError('Unexpected contact prefix exit')
+    contacts.append(dict(input=body,otherType=kind,query_result=query_result,calls=calls.copy(),intercept=end==0x4d7432))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004DE0E4..004DE12E tick gate/clear,004DB0C6..004DB56F event42F and complete004DDAB0 wrapper. Native state getter unchanged; pickup query is an explicit captured interface. Other task tick effects are outside the captured slice.',cases=cases,events=events,queries=queries,contacts=contacts),separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} ticks, {len(events)} events, {len(queries)} query gates and {len(contacts)} contacts')

@@ -1,3 +1,4 @@
+import { nativeWormPickupContact } from "./worm-pickup.js";
 import {
   nativeSimpleBodyTick,
   nativeBodyAwake,
@@ -201,6 +202,8 @@ export function nativeWormMotionCallbacks(worm, environment, collision, events) 
         vx: 0,
         vy: 0,
       };
+      if (nativeWormPickupContact({ ...body, field154: worm.nativePickupFlag ?? body.field154 },
+          other.type, () => environment.pickup?.(body) ?? 0)) return;
       const probe = (x, y) => collision(x, y, body);
       if (![0x73, 0x7f, 0x80, 0x81].includes(body.state)) {
         const response = nativeSimpleBounce(body, other, side, probe);

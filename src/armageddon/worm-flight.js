@@ -1,3 +1,4 @@
+import { nativeWormPickupContact } from "./worm-pickup.js";
 import records from "./scheme-weapon-data.json" with { type: "json" };
 import { nativeWormTransitionBody } from "./worm-state.js";
 import { nativeJetpackInput, nativeJetpackVelocity } from "./jetpack.js";
@@ -76,6 +77,8 @@ export function stepNativeDrillFlight(worm, environment, collide) {
     awake: nativeBodyAwake, collide: collision,
     bounce: (body, hit, side) => {
       const other = environment.collisionBody?.(hit) ?? { type:1, vx:0, vy:0 };
+      if (nativeWormPickupContact({ ...body, field154: worm.nativePickupFlag ?? body.field154 },
+          other.type, () => environment.pickup?.(body) ?? 0)) return;
       const result = nativeWormAirborneCollision(body, other, side, { frame },
         (x,y) => collision(x,y,body),
         (incoming, receiver, side) => {
@@ -241,6 +244,8 @@ export function stepNativeJumpFlight(
       },
       bounce: (body, hit, side) => {
         const other = environment.collisionBody?.(hit) ?? { type: 1, vx: 0, vy: 0 };
+        if (nativeWormPickupContact({ ...body, field154: worm.nativePickupFlag ?? body.field154 },
+            other.type, () => environment.pickup?.(body) ?? 0)) return;
         const probe = (x, y) => collision(x, y, body);
         if (![0x6c, 0x6e, 0x78, 0x79, 0x7d, 0x7e].includes(body.state)) {
           const response = nativeSimpleBounce(body, other, side, probe);

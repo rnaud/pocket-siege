@@ -1430,8 +1430,8 @@ function markNativePickupAction(w = worms[current]) {
     team: w.team, worm: worms.indexOf(w), field154: w.nativePickupFlag ?? 0,
   }, [w.team, worms.indexOf(w)]).field154;
 }
-function queryNativeWormPickup(w) {
-  const actor = { x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 };
+function queryNativeWormPickup(w, body) {
+  const actor = body ?? { x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 };
   const candidates = crates.map(crate => ({ crate, type: crate.nativeBody.type,
     x: crate.nativeBody.x, y: crate.nativeBody.y }));
   const candidate = nativePickupCandidate(actor, candidates, 0x200000,
@@ -2138,6 +2138,7 @@ function stepJetpack(w, dt) {
   const result = stepNativeJetpackFlight(w, {
     height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: current,
     horizontal: move, vertical: thrust,
+    pickup: body => queryNativeWormPickup(w, body),
     collisionBody: hit => nativeContactBody(hit),
     updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
   }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
@@ -2361,10 +2362,12 @@ function stepRope(w, dt) {
   const events = [];
   const motion = nativeWormMotionCallbacks(w, {
     frame: matchRandom.frame, random: () => matchRandom.logicUint(),
+    pickup: body => queryNativeWormPickup(w, body),
     collisionBody: hit => nativeContactBody(hit),
     updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
   }, (x, y, body) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H), events);
   rope.body.soundHandle = w.nativeHitVoicePlayback ? 1 : 0;
+  rope.body.field154 = w.nativePickupFlag ?? 0;
   rope.body = stepNativeRopeSwing(rope.body, {
     left: move < 0, right: move > 0, up: aimInput > 0, down: aimInput < 0,
   }, {
@@ -2375,6 +2378,7 @@ function stepRope(w, dt) {
     solid: (x, y) => terrain.solid(x, H - y),
     collide: (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H),
     otherType: hit => nativeContactBody(hit).type,
+    pickup: body => queryNativeWormPickup(w, body),
     stopSound: () => { w.nativeHitVoicePlayback?.stop(); w.nativeHitVoicePlayback = null; },
     sound: (...request) => {
       if (sound) {
@@ -4893,6 +4897,7 @@ function stepFrame(dt) {
       stepNativeDrillFlight(w, {
         height:H, waterLevel, gravityScale, frame:matchRandom.frame,
         index:worms.indexOf(w),
+        pickup: body => queryNativeWormPickup(w, body),
         collisionBody: hit => nativeContactBody(hit),
         updateCollisionBody: (hit,body) => { updateNativeContactBody(hit, body); },
       }, (x,y,body)=>nativeSceneCollision(w,body,x,y,terrain,worms,H));
@@ -4967,7 +4972,8 @@ function stepFrame(dt) {
             frame: matchRandom.frame,
             index: worms.indexOf(w),
             random: () => matchRandom.logicUint(),
-            collisionBody: (hit) =>
+            pickup: body => queryNativeWormPickup(w, body),
+        collisionBody: (hit) =>
               nativeContactBody(hit),
             updateCollisionBody: (hit, body) => {
               updateNativeContactBody(hit, body);
@@ -4983,7 +4989,8 @@ function stepFrame(dt) {
           height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: worms.indexOf(w),
           horizontal: w === worms[current] ? move : 0, vertical: w === worms[current] ? aimInput : 0,
           random: () => matchRandom.logicUint(),
-          collisionBody: hit => nativeContactBody(hit),
+          pickup: body => queryNativeWormPickup(w, body),
+        collisionBody: hit => nativeContactBody(hit),
           updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
         }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
         dispatchNativeWormMotionEvents(w, { ...result,

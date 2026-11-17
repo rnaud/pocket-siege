@@ -3,7 +3,7 @@ import { nativeTryBodyPosition, nativeSimpleBounce } from "./motion.js";
 // Ordinary-contact branch of004D6E30 for airborne6c/79/7d/7e, drill6e and jetpack78.
 // Stops at the fallback dispatch boundary (004D7357). The caller must apply
 // state-entry effects and, when requested, the remaining collision dispatch.
-// Incoming crate types 0x0b/0x0c have a separate collection path.
+// The caller handles the crate-pickup interception before this fallback path.
 export function nativeWormAirborneContact(
   input,
   otherType,
@@ -12,8 +12,7 @@ export function nativeWormAirborneContact(
   collide,
 ) {
   if (
-    ![0x6c, 0x6e, 0x78, 0x79, 0x7d, 0x7e].includes(input.state) ||
-    [0x0b, 0x0c].includes(otherType)
+    ![0x6c, 0x6e, 0x78, 0x79, 0x7d, 0x7e].includes(input.state)
   )
     throw new RangeError("Unsupported worm contact branch");
   const body = { ...input, field264: 0, field268: 0, field26c: 0 };

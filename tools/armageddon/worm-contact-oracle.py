@@ -4,7 +4,7 @@ Real body getters/setters and position attempt 004D1260 run. Collision manager,
 RNG/voice/audio, and state entry are explicit interfaces. Decision cases stop
 at fallback 004D7357 or early return. Complete cases execute original fallback
 dispatch and bounce, with an explicit receiver handled/declined interface.
-Crate/frozen/hurt branches are excluded.
+Crate cases use a cleared pickup latch, exercising the ordinary fallback. Frozen/hurt branches are excluded.
 """
 import argparse
 import hashlib
@@ -78,7 +78,7 @@ cpu.hook_add(UC_HOOK_CODE,observe)
 cases=[];complete=[]
 for state in [0x6c,0x6e,0x78,0x79,0x7d,0x7e]:
     for side in [0,1,2,3,4,99]:
-        for other_type in [1,2,15]:
+        for other_type in [1,2,11,12,15]:
             for vy in [-65537,-65536,-65535,0,200000]:
                 for pattern in [[0,0],[0,7],[7,0],[7,7]]:
                     for profile in range(2):
