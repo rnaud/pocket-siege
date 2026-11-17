@@ -1,3 +1,5 @@
+import placementBitmap from "./fixtures/armageddon/placement-bitmap.json" with { type: "json" };
+import { nativePlacementBitmapBlit } from "../src/armageddon/placement-bitmap.js";
 import collisionDraw from "./fixtures/armageddon/collision-draw.json" with { type: "json" };
 import { nativeDrawCollisionRegistry } from "../src/armageddon/collision-registry.js";
 import girderPlacement from "./fixtures/armageddon/girder-placement.json" with { type: "json" };
@@ -96,6 +98,12 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for(const c of placementBitmap.cases) {
+    const destination={width:32,height:16,clip:c.clip,pixels:Uint8Array.from(c.initial)};
+    const source={width:24,height:12,pixels:Uint8Array.from(c.source)};
+    const result=nativePlacementBitmapBlit(destination,c.x,c.y,c.width,c.height,source,c.sx,c.sy,c.mode);
+    expect({result,output:[...destination.pixels]}).toEqual({result:c.result,output:c.output});
+  }
   for(const c of collisionDraw.cases) {
     const bodies=new Map(c.bodies.map(body=>[body.id,{...body,mask:body.id}]));
     const registry=c.registry.map(row=>row.map(id=>bodies.get(id)??null)),calls=[];
