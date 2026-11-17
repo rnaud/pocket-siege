@@ -1,3 +1,4 @@
+import { nativeTeleportPlacement } from "./armageddon/teleport-placement.js";
 import { captureReplayResources, restoreReplayResources } from "./armageddon/replay-render-adapter.js";
 import { captureReplayEnvironment, restoreReplayEnvironment } from "./armageddon/replay-environment-adapter.js";
 import { captureReplayActors, restoreReplayActors } from "./armageddon/replay-actor-adapter.js";
@@ -2056,20 +2057,22 @@ function handleUtilityTarget(e) {
     return;
   }
   if (targetUtility === "teleport") {
-    const blocked =
-      terrain.solid(x, y) ||
-      terrain.solid(x - 10, y - 8) ||
-      terrain.solid(x + 10, y - 8) ||
-      terrain.solid(x, y + 8) ||
-      y < waterLevel + 12;
-    if (blocked) {
+    const memory = new Uint8Array(0x194), placement = new DataView(memory.buffer);
+    // 004D5A40 supplies the placement mask at190. Current authored maps use
+    // open sky; the native ceiling flag will follow the future map adapter.
+    for (const [offset,value] of [[0x40,w.nativeFlight?.flags ?? 0x420cc6],
+      [0x90,Math.round(w.x*65536)],[0x94,Math.round((H-w.y)*65536)],
+      [0xb8,w.nativeFlight?.sleeping ?? 0],[0x190,0x21cce]]) placement.setInt32(offset,value,true);
+    const target = nativeTeleportPlacement(memory,Math.round(x*65536),Math.round((H-y)*65536),0,
+      (body,px,py)=>nativeSceneCollision(w,body,px/65536,H-py/65536,terrain,worms,H));
+    if (!target.accepted) {
       $("#status").textContent = "Teleport blocked. Choose an empty spot.";
       return;
     }
     utilityAmmo[team].teleport = spendAmmo(utilityAmmo[team].teleport);
     w.nativeFlight = null;
     w.vx = w.vy = 0;
-    startOriginalTeleport(w, x, y);
+    startOriginalTeleport(w, target.x/65536, H-target.y/65536);
     queueWormCamera(w);
     finishUtilityTurn("Teleporting. Turn ends after arrival.");
     return;

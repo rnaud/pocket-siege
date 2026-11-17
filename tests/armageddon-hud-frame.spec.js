@@ -1,3 +1,5 @@
+import teleportPlacement from "./fixtures/armageddon/teleport-placement.json" with { type: "json" };
+import { nativeTeleportPlacement } from "../src/armageddon/teleport-placement.js";
 import wormQuery from "./fixtures/armageddon/worm-query.json" with { type: "json" };
 import { nativeWormQuery } from "../src/armageddon/worm-query.js";
 import targetPlacement from "./fixtures/armageddon/target-placement.json" with { type: "json" };
@@ -91,6 +93,15 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for(const c of teleportPlacement.cases) {
+    const memory=new Uint8Array(0x300),view=new DataView(memory.buffer),calls=[];let attempts=0;
+    for(const [offset,value] of Object.entries(c.fields))view.setInt32(Number(offset),value,true);
+    const result=nativeTeleportPlacement(memory,c.x,c.y,c.ceiling,(body,x,y)=>{
+      calls.push([body.flags,x,y,body.x,body.y,body.sleeping]);
+      return body.flags===2?c.restoreBlocked:Number(attempts++!==c.acceptAt);
+    });
+    expect({calls,accepted:result.accepted,output:[result.x,result.y],final:Object.keys(c.fields).map(o=>view.getInt32(Number(o),true))}).toEqual({calls:c.calls,accepted:c.accepted,output:c.output,final:c.final});
+  }
   for(const c of wormQuery.cases) {
     const memory=Uint8Array.from({length:0x300},(_,i)=>(i*17+c.seed*31)&255),payload=Uint8Array.from(c.input),calls=[];
     let position=[...c.position],mode=c.mode,placements=0;
