@@ -1,6 +1,7 @@
+import replayBodyRestore from "./fixtures/armageddon/replay-body-restore.json" with { type: "json" };
 import replayFactory from "./fixtures/armageddon/replay-factory.json" with { type: "json" };
 import replayRestore from "./fixtures/armageddon/replay-restore.json" with { type: "json" };
-import { nativeReadTaskBase, nativeReadTaskChildren } from "../src/armageddon/replay-restore.js";
+import { nativeReadTaskBase, nativeReadTaskChildren, nativeReadPhysicsTask } from "../src/armageddon/replay-restore.js";
 import replayPhysics from "./fixtures/armageddon/replay-physics.json" with { type: "json" };
 import { nativeRestorePhysicsMembership } from "../src/armageddon/replay-physics.js";
 import replayChildren from "./fixtures/armageddon/replay-children.json" with { type: "json" };
@@ -48,6 +49,18 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayBodyRestore.cases) {
+    const input = row.input, stream = new NativeReplayStream(2048), allocations = [];
+    stream.bytes.set(input.bytes); stream.seek(input.position); stream.length = input.bytes.length;
+    const environment = { all: structuredClone(input.layout), categories: { 2: structuredClone(input.layout) }, links: input.links, dirty: 77 };
+    const task = nativeReadPhysicsTask(stream, { id: 9, context: 0x2020000, environment,
+      readChildren: (_, reader) => reader.readByte() === 0 ? 1 : 0,
+      allocateContacts: size => { allocations.push(size); return { pointer: input.contactPointer, bytes: new Uint8Array(size) }; } });
+    expect({ body: [...task.memory.slice(0x3c, 0xfc)], position: stream.position,
+      contacts: [...task.physicsPoints], allocations, all: environment.all,
+      category: environment.categories[2], dirty: environment.dirty,
+      type: task.type, registryType: task.registryType, registryIndex: task.registryIndex }).toEqual(row.result);
+  }
   for (const row of replayFactory.cases) {
     const stream = new NativeReplayStream(256), calls = [], parent = {};
     stream.bytes.set(row.input.bytes); stream.length = row.input.bytes.length;

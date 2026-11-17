@@ -37,3 +37,39 @@ export function nativeReadTaskChildren(stream, parent, allocate, construct) {
     if (handle !== null) construct(schema, handle, parent, stream);
   }
 }
+
+import { nativeRestorePhysicsMembership } from './replay-physics.js';
+// Full004F42D0, composed with the base reconstruction above. Contact storage
+// allocation is a host interface; the saved data still uses native byte layout.
+export function nativeReadPhysicsTask(stream, options) {
+  const task = nativeReadTaskBase(stream, options);
+  const memory = options.memory ?? new Uint8Array(0xfc);
+  const view = new DataView(memory.buffer, memory.byteOffset, memory.byteLength);
+  for (const [offset, value] of [[0x24, task.registryIndex], [0x28, task.registryType],
+    [0x2c, task.type], [0x34, +task.ownsRegistry], [0x38, options.context]])
+    view.setInt32(offset, value, true);
+  stream.readByte(); // Derived task marker2 (004ED9A0).
+  stream.readByte(); // Physics marker3.
+  memory.set(stream.readBlock(0xb0), 0x3c);
+  for (const offset of [0xec, 0xf0, 0xf4, 0xf8]) view.setInt32(offset, 0, true);
+  const environment = options.environment, category = view.getInt32(0x3c, true);
+  const restored = nativeRestorePhysicsMembership({ id: task.id,
+    all: environment.all, category: environment.categories[category],
+    allIndex: view.getInt32(0xe8, true), categoryIndex: view.getInt32(0xe4, true),
+    links: environment.links, linkIndex: view.getInt32(0x44, true) });
+  environment.all = restored.all;
+  environment.categories[category] = restored.category;
+  environment.dirty = restored.dirty;
+  view.setUint32(0xf0, restored.link, true);
+  task.physicsPoints = new Uint8Array(0);
+  if (view.getInt32(0xc8, true)) {
+    const storage = options.allocateContacts(0x200);
+    view.setUint32(0xf8, storage.pointer, true);
+    storage.bytes.set(stream.readBlock(view.getInt32(0xdc, true) << 3));
+    task.physicsPoints = storage.bytes;
+  }
+  view.setInt32(0xe4, -1, true);
+  view.setInt32(0xe8, -1, true);
+  task.memory = memory;
+  return task;
+}
