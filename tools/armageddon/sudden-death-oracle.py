@@ -33,11 +33,17 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 
 context=owner+0x20000;cpu.mem_map(context,0x20000);write(owner+0x38,context)
 calls=[]
+repeat_mode=False
 def ret(cleanup):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target)
 def hook(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP)
- if address==0x4b26a0:
+ if repeat_mode and address in [0x4b7391,0x4b7771,0x4b7386]:cpu.emu_stop();return
+ if repeat_mode and address==0x4ecfb0:
+  payload=read(sp+16);calls.append({'operation':'event','event':read(sp+8),'record':[signed(read(payload))]});ret(16)
+ elif repeat_mode and address in [0x4c30f0,0x4c30d0]:
+  calls.append({'operation':'refresh','entry':f'{address:08X}'});ret(0)
+ elif address==0x4b26a0:
   event=read(sp+16);payload=read(sp+24);count=2 if event==0x441 else 1
   calls.append({'operation':'event','event':event,'record':[signed(read(payload+i*4)) for i in range(count)]});ret(24)
  elif address==0x4eeb70:
@@ -55,5 +61,16 @@ for waterY in [0,300,696,32768,-1]:
    cpu.emu_start(0x4b61e0,stop,count=1000)
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Activation did not return')
    cases.append({'input':{'waterY':waterY,'rise':rise,'dose':dose},'calls':list(calls)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004B61E0','method':'Full activation routine executes unchanged. Event dispatcher, camera request and queued sound interfaces captured. Only initialized receiver-consumed payload words are compared.','cases':cases},separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} activation cases')
+repeats=[];repeat_mode=True
+for pending in [-1,0,1,2]:
+ for rise in [0,20,255]:
+  for dose in [-32768,-1,0,5,32767]:
+   for nuclear in [0,1]:
+    write(owner+0x158,pending);cpu.mem_write(context+0x11d58,bytes([rise]));cpu.mem_write(context+0x11d5a,struct.pack('<H',dose&65535));cpu.mem_write(context+0x11d5e,bytes([nuclear]))
+    calls.clear();cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xf000)
+    cpu.emu_start(0x4b72e1,stop,count=1000)
+    end=cpu.reg_read(UC_X86_REG_EIP)
+    if end not in [0x4b7391,0x4b7771,0x4b7386]:raise RuntimeError('Repeat did not exit')
+    repeats.append({'input':{'pending':pending,'rise':rise,'dose':dose,'nuclear':nuclear},'result':{'pending':signed(read(owner+0x158)),'handled':end!=0x4b7391,'calls':list(calls)}})
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004B61E0 and004B72E1..004B7386','method':'Full activation routine executes unchanged. Event dispatcher, camera request and queued sound interfaces captured. Only initialized receiver-consumed payload words are compared.','cases':cases,'repeats':repeats},separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} activation cases and {len(repeats)} repeat-stage cases')

@@ -1,4 +1,4 @@
-import { nativeSuddenDeathActivation } from "./armageddon/sudden-death.js";
+import { nativeSuddenDeathActivation, nativeSuddenDeathHealth } from "./armageddon/sudden-death.js";
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
 let nativeWaterRise = null;
 import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
@@ -2561,7 +2561,8 @@ function applySuddenDeath() {
   if (suddenDeathType === "health") {
     for (const w of worms)
       if (w.hp > 0) {
-        accountWormDamage(w, w.hp - 1);
+        for (const [damage, force, uncapped] of nativeSuddenDeathHealth(w.hp, -1))
+          accountWormDamage(w, damage, { force: !!force, uncapped: !!uncapped });
         revealWormHealth(w);
         w.hurt = Math.max(w.hurt, 0.5);
       }

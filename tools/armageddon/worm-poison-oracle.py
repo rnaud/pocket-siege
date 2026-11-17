@@ -83,5 +83,12 @@ for state in [0x65,0x6f,0x88]:
      cases.append({'operation':'pickup','input':body,'record':record,'result':run(body,0x4da0a7,0x4db56f,record)})
    for amountAdded in [-1,0,5]:
     cases.append({'operation':'infect','input':body,'added':amountAdded,'result':run(body,0x4db44b,0x4db56f,[amountAdded])})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Original420 latch reset,426 damage decision and3EF cure branches;complete439 with unchanged English language getter and announcement selector. Dispatch and sprintf captured. Native state getter executes unchanged; HP lookup and damage interface captured.','cases':cases},separators=(',',':'))+'\n')
-print(f'Captured {len(cases)} poison cases')
+# Complete event423 health adjustment, including signed-overflow boundaries.
+health_cases=[]
+for state in [0x65,0x88]:
+ for hp in [-2147483648,-1,0,1,3,100,2147483647]:
+  for amount in [-2147483648,-5,-1,0,1,5,2147483647]:
+   body=dict(team=2,worm=3,state=state,amount=5,latched=1)
+   health_cases.append({'input':body,'hp':hp,'amount':amount,'result':run(body,0x4dadec,0x4db56f,[amount])})
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Original420 latch reset,426 damage decision and3EF cure branches;complete439 with unchanged English language getter and announcement selector. Dispatch and sprintf captured. Native state getter executes unchanged; HP lookup and damage interface captured.','cases':cases,'health_cases':health_cases},separators=(',',':'))+'\n')
+print(f'Captured {len(cases)} poison cases and {len(health_cases)} health adjustments')

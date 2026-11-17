@@ -3,7 +3,7 @@ import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "../src/armage
 import waterRise from "./fixtures/armageddon/water-rise.json" with { type: "json" };
 import { nativeWaterRiseStart, nativeWaterRiseTick } from "../src/armageddon/water-rise.js";
 import suddenDeath from "./fixtures/armageddon/sudden-death.json" with { type: "json" };
-import { nativeSuddenDeathActivation } from "../src/armageddon/sudden-death.js";
+import { nativeSuddenDeathActivation, nativeSuddenDeathHealth, nativeSuddenDeathRepeat } from "../src/armageddon/sudden-death.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { nativePoisonAnnouncement } from "../src/armageddon/announcements.js";
 import poison from "./fixtures/armageddon/worm-poison.json" with { type: "json" };
@@ -94,6 +94,10 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(nativeWaterRiseTick(row.input)).toEqual(row.result);
   for (const row of suddenDeath.cases)
     expect(nativeSuddenDeathActivation(row.input)).toEqual(row.calls);
+  for (const row of suddenDeath.repeats)
+    expect(nativeSuddenDeathRepeat(row.input)).toEqual(row.result);
+  for (const row of poison.health_cases)
+    expect({ body: row.input, calls: nativeSuddenDeathHealth(row.hp, row.amount), random: 17 }).toEqual(row.result);
   for (const row of poison.cases) {
     let random = 17;
     const calls = row.operation === 'tick' ? nativeWormPoisonDamage(row.input, row.hp) : [];
