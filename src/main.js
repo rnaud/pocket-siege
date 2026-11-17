@@ -1,3 +1,8 @@
+import { nativeBarrelBody } from "./armageddon/barrel-body.js";
+import { stepNativeBarrelBody } from "./armageddon/barrel-runtime.js";
+import { nativeBarrelArt } from "./armageddon/barrel-art.js";
+import { nativeBarrelHit } from "./armageddon/barrel-hit.js";
+import { nativeBarrelDetonation } from "./armageddon/barrel-detonation.js";
 import { nativeProjectileFire } from "./armageddon/projectile-fire.js";
 import { nativeFlameEvent } from "./armageddon/flame-events.js";
 import { nativeFlameBlast } from "./armageddon/flame-blast.js";
@@ -1008,7 +1013,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   for (const flame of nativeFlames) if (flame) dispose(flame.mesh);
   nativeFlames.fill(null); nativeFlameCounter = 0;
   crateDirectionBag = { pool: [0, 1], used: [] };
-  for (const h of hazards) dispose(h.mesh);
+  for (const h of hazards) { h.impactPlayback?.stop(); dispose(h.mesh); }
   hazards = [];
   matchRandom.reset(matchSeed);
   mineDudPool = new NativeMineDudPool();
@@ -1200,10 +1205,28 @@ function spawnHazards() {
       const mesh = createOriginalObject("oildrum1", -14);
       mesh.position.set(x, ground + 14, 17);
       group.add(mesh);
-      hazards.push({ x, y: ground + 14, mesh });
+      const hazard = { x, y: ground + 14, mesh, nativeOrderId: nativeRenderOrder.allocate() };
+      hazard.nativeBody = nativeBarrelBody(Math.round(x * 65536),
+        Math.round((H - hazard.y) * 65536), 1, Math.floor(H - waterLevel), 96,
+        (px, py, body) => nativeSceneCollision(hazard, body, px / 65536, H - py / 65536, terrain, worms, H));
+      hazard.x = hazard.nativeBody.x / 65536; hazard.y = H - hazard.nativeBody.y / 65536;
+      mesh.position.set(hazard.x, hazard.y, 17);
+      hazards.push(hazard);
       break;
     }
   }
+}
+function nativeBarrelHitBodies() {
+  return hazards.map(barrel => ({ x: barrel.nativeBody.x, y: barrel.nativeBody.y,
+    type: 17, self: false, blocked: !!nativeBodyAwake(barrel.nativeBody), barrel }));
+}
+function detonateNativeBarrel(barrel) {
+  nativeBarrelDetonation(barrel.nativeBody.x, barrel.nativeBody.y, {
+    parent: category => category, allocate: () => true,
+    blast: packet => explode(barrel.x, barrel.y, "barrel", barrel.hitOwner ?? -1, packet),
+    flame: (allocation, parent, record) => spawnNativeFlame(record, barrel.hitOwner ?? -1),
+    sound: queueGameSound,
+  });
 }
 function removeNativeFlame(flame) {
   dispose(flame.mesh);
@@ -1230,8 +1253,8 @@ function stepNativeFlames() {
       gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
     }, {
       collide: (x, y) => terrain.solid(x, H - y),
-      candidates: () => nativeWormHitscanBodies(worms, null, H),
-      hit: (target, event, size, packet) => applyNativeHitPackets([target], [{ body: 0, packet }]),
+      candidates: () => [...nativeWormHitscanBodies(worms, null, H), ...nativeBarrelHitBodies()].sort((a, b) => a.type - b.type),
+      hit: (target, event, size, packet) => applyNativeHitPackets([target], [{ body: 0, packet }], flame.owner),
       logicRandom: () => matchRandom.logicUint(), visualRandom: () => matchRandom.visualUint(),
       parent: () => 23, allocate: () => true,
       flame: (allocation, parent, record) => spawnNativeFlame(record, flame.owner),
@@ -3053,11 +3076,17 @@ function spawnPlacedDynamite(release) {
 function applyNativeAreaRequest(targets, request) {
   applyNativeHitPackets(targets, nativeAreaDamage(targets, request));
 }
-function applyNativeHitPackets(targets, dispatches) {
+function applyNativeHitPackets(targets, dispatches, owner = current) {
     for (const dispatch of dispatches) {
       if (dispatch.sound) queueGameSound(dispatch.sound);
       if (dispatch.effect) spawnNativeParticleRequest(dispatch.effect);
       if (!dispatch.packet) continue;
+      const barrel = targets[dispatch.body].barrel;
+      if (barrel) {
+        barrel.nativeBody = nativeBarrelHit(barrel.nativeBody, 0x433, dispatch.packet);
+        barrel.hitOwner = owner;
+        continue;
+      }
       const mine = targets[dispatch.body].mine;
       if (mine) {
         mine.nativeBody = nativeMineHit(mine.nativeBody, dispatch.packet);
@@ -3193,7 +3222,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     rayConfig.spread,
     () => matchRandom.logicUint(),
   )[0];
-  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a, b) => a.type - b.type);
+  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines), ...nativeBarrelHitBodies()].sort((a, b) => a.type - b.type);
   const bodyHit = nativeHitscanBody(
     targets,
     ray[2] >> 16,
@@ -3290,7 +3319,7 @@ function dispatchFirePunchCalls(w, calls) {
     } else if (call.operation === "particle") spawnNativeParticleRequest(call.request);
     else if (call.operation === "camera") queueWormCamera(w);
     else if (call.operation === "area") {
-      const targets = [...nativeWormHitscanBodies(worms,w,H), ...nativeMineHitBodies(mines)].sort((a,b)=>a.type-b.type);
+      const targets = [...nativeWormHitscanBodies(worms,w,H), ...nativeMineHitBodies(mines), ...nativeBarrelHitBodies()].sort((a,b)=>a.type-b.type);
       applyNativeAreaRequest(targets,call.request);
     }
   }
@@ -3329,7 +3358,7 @@ function fireDragonBall(prepared = false) {
 }
 function stepDragonBall() {
   const p = projectile;
-  const targets = [...nativeWormHitscanBodies(worms, worms[p.owner], H), ...nativeMineHitBodies(mines)]
+  const targets = [...nativeWormHitscanBodies(worms, worms[p.owner], H), ...nativeMineHitBodies(mines), ...nativeBarrelHitBodies()]
     .sort((a,b) => a.type - b.type);
   const result = nativeDragonBallEvent(p.nativeDragonBall, 0x3ea,
     {left:0,right:W*65536}, {
@@ -3511,7 +3540,7 @@ function fireProd(prepared = false) {
     return;
   }
   const config = nativeHitscanWeapon("prod");
-  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a,b) => a.type - b.type);
+  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines), ...nativeBarrelHitBodies()].sort((a,b) => a.type - b.type);
   applyNativeAreaRequest(targets, nativeProdRequest(config.record,
     Math.round(w.x * 65536), Math.round((H - w.y) * 65536), w.facing));
   spendSpecial("prod");
@@ -3534,7 +3563,7 @@ function fireBat(prepared = false) {
   }
   const config = nativeHitscanWeapon("bat");
   const launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint());
-  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a,b) => a.type - b.type);
+  const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines), ...nativeBarrelHitBodies()].sort((a,b) => a.type - b.type);
   applyNativeAreaRequest(targets, nativeBatRequest(config.record,
     launch.x, launch.y, launch.vx, launch.vy, w.facing));
   spendSpecial("bat");
@@ -3781,13 +3810,11 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   for (const fragment of nativePacket ? [] : fragments(kind)) {
     spawnBomb({ x: sourceX, y: sourceY + 8, ...fragment, owner: ownerIndex });
   }
-  const chained = hazards.filter(
-    (h) => Math.hypot(h.x - x, h.y - y) < radius + 18,
-  );
-  for (const h of chained) {
-    hazards.splice(hazards.indexOf(h), 1);
-    dispose(h.mesh);
-    explode(h.x, h.y, "barrel", ownerIndex);
+  for (const barrel of hazards) {
+    const packet = nativePacket ? [...nativePacket] : [1, Math.round(x * 65536),
+      Math.round((H - y) * 65536), nativePush, Math.round(maxDamage), 0];
+    barrel.nativeBody = nativeBarrelHit(barrel.nativeBody, 0x404, packet);
+    if (barrel.nativeBody.state) barrel.hitOwner = ownerIndex;
   }
   for (let i = 0; i < 46; i++) {
     const a = visualRandom() * Math.PI * 2,
@@ -5127,7 +5154,7 @@ function stepFrame(dt) {
             [call.request[0], 3, ...call.request.slice(1)], w.nativeActionPlayback);
         }
         if (call.operation === "area") {
-          const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines)].sort((a,b) => a.type-b.type);
+          const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines), ...nativeBarrelHitBodies()].sort((a,b) => a.type-b.type);
           applyNativeAreaRequest(targets, call.request);
         }
         if (call.operation === "state") {
@@ -5336,9 +5363,52 @@ function stepFrame(dt) {
   stepAirstrikes();
   stepBombs(dt);
   const flameActivity = stepNativeFlames();
-  for (const hazard of hazards) {
-    hazard.artAge = (hazard.artAge || 0) + dt;
-    updateOriginalObject(hazard.mesh, "oildrum1", hazard.artAge);
+  const barrelActivity = { camera: [], busy: false };
+  for (const barrel of [...hazards]) {
+    let detonate = false;
+    const collide = (x, y, body) => nativeSceneCollision(barrel, body, x / 65536, H - y / 65536, terrain, worms, H);
+    const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
+    barrel.impactPlayback = cleanupNativeContactSound(barrel.impactPlayback);
+    const result = stepNativeBarrelBody(barrel.nativeBody, {
+      frame: matchRandom.frame, index: hazards.indexOf(barrel),
+      bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
+      waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
+      wind: Math.round(wind / 2500 * 65536),
+    }, {
+      collide,
+      other: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+      receive: (body, other, hit, side) => {
+        if (!other.worm) return 0;
+        const response = nativeWormReceiver(other, body, side, {});
+        Object.assign(body, response.incoming);
+        Object.assign(other, response.receiver);
+        if (response.result) applyNativeWormContact(worms[hit - 2], other);
+        return response.result;
+      },
+      otherUpdated: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+      impactSound: request => {
+        if (!sound) return;
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        barrel.impactPlayback = playNativeProjectileContactSound(audio, request, barrel.impactPlayback);
+      },
+      skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
+      camera: request => barrelActivity.camera.push(request), busy: () => { barrelActivity.busy = true; },
+      promote: () => nativeRenderOrder.promote(barrel.nativeOrderId),
+      delete: () => {},
+      detonate: () => { detonate = true; },
+      visualRandom: () => matchRandom.visualUint(),
+      bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
+    });
+    barrel.nativeBody = result.body;
+    barrel.x = result.body.x / 65536; barrel.y = H - result.body.y / 65536;
+    if (result.deleted) {
+      hazards.splice(hazards.indexOf(barrel), 1);
+      nativeRenderOrder.release(barrel.nativeOrderId);
+      barrel.impactPlayback?.stop();
+      dispose(barrel.mesh);
+      if (detonate) detonateNativeBarrel(barrel);
+    }
   }
   const crateCameraRequests = [];
   let cratesBusy = false;
@@ -5398,7 +5468,7 @@ function stepFrame(dt) {
   });
   if (phase === "settle" || (phase === "aim" && (worms.some(w => w.deathPending) || nativeTeamList.removal || nativeTeamList.order.some(id => teamScores[id] === 0)))) {
     const settled =
-      !cratesBusy && !flameActivity.busy && nativeTeamHealthBusyTicks === 0 &&
+      !cratesBusy && !barrelActivity.busy && !flameActivity.busy && nativeTeamHealthBusyTicks === 0 &&
       !projectile && !pendingFire &&
       bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
       worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&
@@ -5468,7 +5538,7 @@ function stepFrame(dt) {
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
   const wormTracking = pendingWormCamera.length > 0;
-  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
+  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
       Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
@@ -5480,9 +5550,10 @@ function stepFrame(dt) {
   for (const request of pendingWormCamera) nativeCamera.offer(...request);
   for (const request of mineCameraRequests) nativeCamera.offer(...request);
   for (const request of crateCameraRequests) nativeCamera.offer(...request);
+  for (const request of barrelActivity.camera) nativeCamera.offer(...request);
   for (const request of flameActivity.camera) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking)) {
     const aspect = arena.clientWidth / arena.clientHeight;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
@@ -5803,6 +5874,14 @@ function frame(now) {
     const [, x, y, , sprite, progress] = art.request;
     updateOriginalObject(flame.mesh, nativeSpriteIds.sprites[sprite].name, 0, progress);
     flame.mesh.position.set(Math.round(x / 65536), Math.round(H - y / 65536), 26);
+  }
+  for (const barrel of hazards) {
+    const [, x, y, , sprite, progress] = nativeBarrelArt(barrel.nativeBody, selectionTick,
+      nativeRenderOrder.orders[barrel.nativeOrderId]);
+    const name = nativeWaterSpriteIds.sprites[sprite]
+      ? `water/${nativeWaterSpriteIds.sprites[sprite].name}` : nativeSpriteIds.sprites[sprite].name;
+    updateOriginalObject(barrel.mesh, name, 0, progress);
+    barrel.mesh.position.set(Math.round(x / 65536), Math.round(H - y / 65536), 17);
   }
   for (const crate of crates) {
     crate.mesh.position.y = Math.round(crate.y);
@@ -6446,6 +6525,7 @@ window.siege = {
       sprite: flame.mesh.userData.originalSprite, frame: flame.mesh.userData.originalFrame,
     })),
     hazards: hazards.map((h) => ({
+      nativeBody: { ...h.nativeBody },
       x: Math.round(h.x),
       y: Math.round(h.y),
       sprite: h.mesh.userData.originalSprite,

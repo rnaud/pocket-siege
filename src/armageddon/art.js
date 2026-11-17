@@ -106,7 +106,7 @@ const names = [
     "ucrate2",
     "mineoff",
     "mineon",
-    "oildrum1",
+    "oildrum1", "oildrum2", "oildrum3", "oildrum4",
     "flame1",
     ...Array.from({ length: 10 }, (_, i) => spriteIds.sprites[0x2f9 + i].name),
     spriteIds.sprites[626].name,

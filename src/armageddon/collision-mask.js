@@ -6,6 +6,7 @@ export const ORIGINAL_MASK_REGIONS = {
   4: [46, 36, 65, 54, 55, 45],
   5: [0, 32, 24, 61, 12, 51],
   6: [0, 0, 1, 1, 0, 0],
+  9: [485, 7, 505, 38, 495, 22],
 };
 
 // 004CBE20: half-open crop, source index != 0 is solid. Anchors are relative

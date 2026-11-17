@@ -59,7 +59,7 @@ def observe(cpu,address,size,user):
   if value:planes[obj]['points'].append([x,y])
 for address in [0x492550,0x492bc0,getter,pixel]:cpu.hook_add(UC_HOOK_CODE,observe,begin=address,end=address)
 cases=[]
-for shape,params in [(2,[45,7,52,12,48,9]),(3,[13,10,22,26,17,19]),(4,[46,36,65,54,55,45]),(5,[0,32,24,61,12,51]),(6,[0,0,1,1,0,0])]:
+for shape,params in [(2,[45,7,52,12,48,9]),(3,[13,10,22,26,17,19]),(4,[46,36,65,54,55,45]),(5,[0,32,24,61,12,51]),(6,[0,0,1,1,0,0]),(9,[485,7,505,38,495,22])]:
  heap=owner+0x4000;planes={};queries=[]
  sp=stack+0xf000
  for i,value in enumerate([stop,*params,source_object]):write(sp+4*i,value)

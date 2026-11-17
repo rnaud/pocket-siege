@@ -1,3 +1,7 @@
+import barrelArt from "./fixtures/armageddon/barrel-art.json" with { type: "json" };
+import { nativeBarrelArt } from "../src/armageddon/barrel-art.js";
+import barrelContacts from "./fixtures/armageddon/barrel-contact.json" with { type: "json" };
+import { nativeBarrelContact } from "../src/armageddon/barrel-contact.js";
 import barrelBodies from "./fixtures/armageddon/barrel-body.json" with { type: "json" };
 import { nativeBarrelBody } from "../src/armageddon/barrel-body.js";
 import barrelTicks from "./fixtures/armageddon/barrel-tick.json" with { type: "json" };
@@ -228,6 +232,17 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(burns).toBeGreaterThan(0);
     expect(hits).toBeGreaterThan(0);
     expect(pool.filter(Boolean)).toHaveLength(0);
+  }
+  for (const row of barrelArt.cases)
+    expect(nativeBarrelArt(row.body, row.frame, row.rank)).toEqual(row.request);
+  for (const row of barrelContacts.cases) {
+    const calls = [];
+    nativeBarrelContact(row, row.side, row.suppress, {
+      sound: request => calls.push({ operation: "sound", request }),
+      receive: side => { calls.push({ operation: "receive", side }); return row.accepted; },
+      bounce: side => calls.push({ operation: "bounce", side }),
+    });
+    expect(calls).toEqual(row.calls);
   }
   for (const row of barrelBodies.cases) {
     const queries = [];
