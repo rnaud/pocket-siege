@@ -250,10 +250,10 @@ export function nativeProjectileDetonationEvents(p, random) {
   return nativeProjectileDetonation(p.nativeDetonation, p.nativeBody.x, p.nativeBody.y, random);
 }
 
-export function nativeProjectilePlacementHit(p, terrain, worms, height) {
+export function nativeProjectilePlacementHit(p, terrain, worms, height, objects = []) {
   const result = nativeProjectilePlacement({ ...p.nativeBody, flags: p.nativePlacementFlags },
     p.nativeBody.x, p.nativeBody.y, (body, x, y) =>
-      nativeSceneCollision(p, body, x / 65536, height - y / 65536, terrain, worms, height));
+      nativeSceneCollision(p, body, x / 65536, height - y / 65536, terrain, worms, height, objects));
   p.nativePlacementHit = result.hit;
   return result.hit;
 }
@@ -317,8 +317,9 @@ export function nativeProjectileCollision(
   worms,
   height,
   body = p.nativeBody,
+  objects = [],
 ) {
-  return nativeSceneCollision(p, body, x, y, terrain, worms, height);
+  return nativeSceneCollision(p, body, x, y, terrain, worms, height, objects);
 }
 export function stepNativeProjectile(
   p,

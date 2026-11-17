@@ -6,8 +6,8 @@ import { NativeCollisionRegistry } from "./collision-registry.js";
 const fixed = (value) => Math.round(value * 65536) | 0;
 const scenes = new WeakMap();
 
-// Bridge the host terrain/worm list to the original type-ordered registry.
-// Other native body categories and their lifetime rules remain to be ported.
+// Bridge live bodies to the original type-ordered registry.
+// Negative IDs identify non-worm bodies; terrain/worm IDs retain their host mapping.
 export class NativeCollisionScene {
   constructor(terrain, height) {
     this.height = height;
@@ -15,6 +15,8 @@ export class NativeCollisionScene {
     this.actors = new WeakMap();
     this.worms = [];
     this.wormBodies = [];
+    this.objects = new Map();
+    this.nextObjectId = -1;
     this.rows = Array.from({ length: 32 }, () => []);
     const terrainMask = {};
     this.rows[1].push({
@@ -78,10 +80,41 @@ export class NativeCollisionScene {
     });
   }
 
+  syncObjects(objects) {
+    const live = new Set(objects);
+    for (const [identity, actor] of this.objects) {
+      if (live.has(identity) && identity.nativeBody) continue;
+      const row = this.rows[actor.type];
+      row[row.indexOf(actor)] = null;
+      this.objects.delete(identity);
+      this.manager.cache = null;
+    }
+    for (const identity of objects) {
+      const body = identity.nativeBody;
+      if (!body) continue;
+      let actor = this.objects.get(identity);
+      if (!actor) {
+        actor = { id: this.nextObjectId--, type: -1, overlap: 0 };
+        this.objects.set(identity, actor);
+      }
+      if (actor.type !== body.type) {
+        if (actor.type >= 0) {
+          const row = this.rows[actor.type];
+          row[row.indexOf(actor)] = null;
+        }
+        const row = this.rows[body.type], free = row.indexOf(null);
+        if (free < 0) row.push(actor); else row[free] = actor;
+        this.manager.cache = null;
+      }
+      Object.assign(actor, { type: body.type, x: body.x, y: body.y,
+        shape: body.shape, mask: shapes.shapes[body.shape], enabled: body.enabled });
+    }
+  }
+
   query(identity, body, x, y) {
     const wormIndex = this.worms.indexOf(identity);
     let actor =
-      wormIndex >= 0 ? this.wormBodies[wormIndex] : this.actors.get(identity);
+      wormIndex >= 0 ? this.wormBodies[wormIndex] : this.objects.get(identity) ?? this.actors.get(identity);
     if (!actor) {
       actor = {};
       this.actors.set(identity, actor);
@@ -113,6 +146,7 @@ export function nativeSceneCollision(
   terrain,
   worms,
   height,
+  objects = [],
 ) {
   let scene = scenes.get(terrain);
   if (!scene || scene.height !== height) {
@@ -120,5 +154,13 @@ export function nativeSceneCollision(
     scenes.set(terrain, scene);
   }
   scene.syncWorms(worms);
+  scene.syncObjects(objects);
   return scene.query(identity, body, x, y);
+}
+
+export function nativeSceneObject(terrain, id) {
+  const scene = scenes.get(terrain);
+  if (scene) for (const [identity, actor] of scene.objects)
+    if (actor.id === id) return identity;
+  return null;
 }

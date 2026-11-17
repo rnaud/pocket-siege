@@ -77,7 +77,7 @@ import {
   nativeWormContactBody,
   applyNativeWormContact,
 } from "./armageddon/hurt-flight.js";
-import { nativeSceneCollision } from "./armageddon/collision-scene.js";
+import { nativeSceneCollision as queryNativeScene, nativeSceneObject } from "./armageddon/collision-scene.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
@@ -167,12 +167,12 @@ import {
   nativePlacedWeaponAction,
   createNativeAirstrike,
   stepNativeAirstrike,
-  nativeProjectileCollision,
+  nativeProjectileCollision as queryNativeProjectile,
   attachNativeProjectile,
   stepNativeProjectile,
   nativeProjectileDetonationEvents,
   nativeProjectileChildren,
-  nativeProjectilePlacementHit,
+  nativeProjectilePlacementHit as queryNativePlacement,
 } from "./armageddon/projectile-runtime.js";
 import { nativeWormState, nativeWormCollisionType } from "./armageddon/worm-collision-type.js";
 import { nativeChargeTick } from "./armageddon/power.js";
@@ -1216,6 +1216,27 @@ function spawnHazards() {
     }
   }
 }
+function nativeSceneCollision(identity, body, x, y, landscape, actors, height) {
+  return queryNativeScene(identity, body, x, y, landscape, actors, height, hazards);
+}
+function nativeProjectileCollision(p, x, y, landscape, actors, height, body) {
+  return queryNativeProjectile(p, x, y, landscape, actors, height, body, hazards);
+}
+function nativeProjectilePlacementHit(p, landscape, actors, height) {
+  return queryNativePlacement(p, landscape, actors, height, hazards);
+}
+function nativeContactBody(hit) {
+  const object = nativeSceneObject(terrain, hit);
+  if (object) return { ...object.nativeBody };
+  return hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 };
+}
+function updateNativeContactBody(hit, body) {
+  const object = nativeSceneObject(terrain, hit);
+  if (object) Object.assign(object.nativeBody, { vx: body.vx, vy: body.vy });
+  else if (hit >= 2) applyNativeWormContact(worms[hit - 2], body);
+}
+
+
 function nativeBarrelHitBodies() {
   return hazards.map(barrel => ({ x: barrel.nativeBody.x, y: barrel.nativeBody.y,
     type: 17, self: false, blocked: !!nativeBodyAwake(barrel.nativeBody), barrel }));
@@ -1319,8 +1340,8 @@ function stepBombs(dt) {
         height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame,
         solid: (x, y) => terrain.solid(x, H - y),
         random: () => matchRandom.logicUint(),
-        collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
-        updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+        collisionBody: hit => nativeContactBody(hit),
+        updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
       }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
       b.age += dt;
       updateNativeProjectileAudio(sound ? audio : null, b);
@@ -2076,8 +2097,8 @@ function stepJetpack(w, dt) {
   const result = stepNativeJetpackFlight(w, {
     height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: current,
     horizontal: move, vertical: thrust,
-    collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
-    updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+    collisionBody: hit => nativeContactBody(hit),
+    updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
   }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
   dispatchNativeWormMotionEvents(w, result);
   if (result.body.state !== 0x78) { stopJetpack(); return; }
@@ -2299,8 +2320,8 @@ function stepRope(w, dt) {
   const events = [];
   const motion = nativeWormMotionCallbacks(w, {
     frame: matchRandom.frame, random: () => matchRandom.logicUint(),
-    collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
-    updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+    collisionBody: hit => nativeContactBody(hit),
+    updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
   }, (x, y, body) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H), events);
   rope.body.soundHandle = w.nativeHitVoicePlayback ? 1 : 0;
   rope.body = stepNativeRopeSwing(rope.body, {
@@ -2312,7 +2333,7 @@ function stepRope(w, dt) {
     motion,
     solid: (x, y) => terrain.solid(x, H - y),
     collide: (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H),
-    otherType: hit => hit === 1 ? 1 : nativeWormCollisionType(nativeWormState(worms[hit - 2])),
+    otherType: hit => nativeContactBody(hit).type,
     stopSound: () => { w.nativeHitVoicePlayback?.stop(); w.nativeHitVoicePlayback = null; },
     sound: (...request) => {
       if (sound) {
@@ -4816,8 +4837,8 @@ function stepFrame(dt) {
       stepNativeDrillFlight(w, {
         height:H, waterLevel, gravityScale, frame:matchRandom.frame,
         index:worms.indexOf(w),
-        collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit-2],H) : {type:1,vx:0,vy:0},
-        updateCollisionBody: (hit,body) => { if (hit >= 2) applyNativeWormContact(worms[hit-2],body); },
+        collisionBody: hit => nativeContactBody(hit),
+        updateCollisionBody: (hit,body) => { updateNativeContactBody(hit, body); },
       }, (x,y,body)=>nativeSceneCollision(w,body,x,y,terrain,worms,H));
       continue;
     }
@@ -4891,11 +4912,9 @@ function stepFrame(dt) {
             index: worms.indexOf(w),
             random: () => matchRandom.logicUint(),
             collisionBody: (hit) =>
-              hit >= 2
-                ? nativeWormContactBody(worms[hit - 2], H)
-                : { type: 1, vx: 0, vy: 0 },
+              nativeContactBody(hit),
             updateCollisionBody: (hit, body) => {
-              if (hit >= 2) applyNativeWormContact(worms[hit - 2], body);
+              updateNativeContactBody(hit, body);
             },
           },
           (x, y, body) =>
@@ -4908,8 +4927,8 @@ function stepFrame(dt) {
           height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: worms.indexOf(w),
           horizontal: w === worms[current] ? move : 0, vertical: w === worms[current] ? aimInput : 0,
           random: () => matchRandom.logicUint(),
-          collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
-          updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+          collisionBody: hit => nativeContactBody(hit),
+          updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
         }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
         dispatchNativeWormMotionEvents(w, { ...result,
           events: result.events.filter(call => call.target !== 0x7a) });
@@ -5019,7 +5038,7 @@ function stepFrame(dt) {
       skim: body => waterSound(body, true),
       waterChanged: body => waterSound(body, false),
       bounce: (body, hit, side) => {
-        const other = hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : {type: 1, vx: 0, vy: 0};
+        const other = nativeContactBody(hit);
         nativeMineContact(body, mine.nativeTimer, side, 0, {
           sound: request => {
             if (!sound) return;
@@ -5038,7 +5057,7 @@ function stepFrame(dt) {
           bounce: side => {
             const response = nativeSimpleBounce(body, other, side, (x, y) => collide(x, y, body));
             Object.assign(body, response.body);
-            if (hit >= 2) applyNativeWormContact(worms[hit - 2], {...other, ...response.other});
+            updateNativeContactBody(hit, {...other, ...response.other});
           },
         });
       },
@@ -5226,9 +5245,9 @@ function stepFrame(dt) {
             gravityScale,
             frame: matchRandom.frame,
             random: () => matchRandom.logicUint(),
-            collisionBody: (hit) => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+            collisionBody: (hit) => nativeContactBody(hit),
             updateCollisionBody: (hit, body) => {
-              if (hit >= 2) applyNativeWormContact(worms[hit - 2], body);
+              updateNativeContactBody(hit, body);
             },
           },
           (x, y, body) => {
@@ -5376,7 +5395,7 @@ function stepFrame(dt) {
       wind: Math.round(wind / 2500 * 65536),
     }, {
       collide,
-      other: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+      other: hit => nativeContactBody(hit),
       receive: (body, other, hit, side) => {
         if (!other.worm) return 0;
         const response = nativeWormReceiver(other, body, side, {});
@@ -5385,7 +5404,7 @@ function stepFrame(dt) {
         if (response.result) applyNativeWormContact(worms[hit - 2], other);
         return response.result;
       },
-      otherUpdated: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+      otherUpdated: (hit, body) => { updateNativeContactBody(hit, body); },
       impactSound: request => {
         if (!sound) return;
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -5425,7 +5444,7 @@ function stepFrame(dt) {
       wind: Math.round(wind / 2500 * 65536),
     }, {
       collide,
-      other: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+      other: hit => nativeContactBody(hit),
       receive: (body, other, hit, side) => {
         if (!other.worm) return 0;
         const response = nativeWormReceiver(other, body, side, {});
@@ -5434,7 +5453,7 @@ function stepFrame(dt) {
         if (response.result) applyNativeWormContact(worms[hit - 2], other);
         return response.result;
       },
-      otherUpdated: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+      otherUpdated: (hit, body) => { updateNativeContactBody(hit, body); },
       impactSound: request => {
         if (!sound) return;
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
