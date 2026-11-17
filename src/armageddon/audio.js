@@ -302,12 +302,12 @@ export function playNativeProjectileReleaseSound(context, release, enqueue = req
   return loop;
 }
 
-// 004E2050 starts record+31C. Descriptors0055F238/0055F278 map
-// ID62 MagicBullet.wav and ID66 Fuse.wav.
+// 004E2050 starts record+31C as a tracked sound at priority4.
+// The descriptor ID and loop flag come directly from the weapon record.
 export function playNativeProjectileFuse(context, sound) {
-  const name = { 62: "magicbullet", 66: "fuse" }[sound & 65535];
-  if (!name) return null;
-  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, 1, Boolean(sound & 0x10000), 1, 3, 0, true);
+  const entry = soundSlots.slots[sound & 65535];
+  if (!sound || !entry) return null;
+  return playOriginalClip(context, `sounds/${entry.clip}`, () => {}, 1, Boolean(sound & 0x10000), 1, 4, 0, true);
 }
 
 // Executable descriptors0055F328/330/338: MineArm, MineTick, MineDud.

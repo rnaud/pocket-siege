@@ -1177,9 +1177,11 @@ function stepBombs(dt) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
         for (const request of result.sounds) nativeSoundQueue.enqueue(request);
-        for (const event of result.events)
-          if (event.operation === "sound" && !event.timer)
-            b.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, b.nativeContactPlayback);
+        for (const event of result.events) {
+          if (event.operation !== "sound") continue;
+          if (event.timer) nativeSoundQueue.enqueue(event.request);
+          else b.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, b.nativeContactPlayback);
+        }
       }
       if (result.removed || result.detonate) {
         stopProjectileSound(b);
@@ -4943,17 +4945,17 @@ function stepFrame(dt) {
         if (sound) for (const event of nativeContact.events) {
           if (event.operation !== "sound") continue;
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
-          if (event.timer) {
-            if (event.request[0] === 104) playOriginalSound(audio, "holy", () => {}, event.request[3] / 65536);
-          } else p.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, p.nativeContactPlayback);
+          audio.resume();
+          if (event.timer) nativeSoundQueue.enqueue(event.request);
+          else p.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, p.nativeContactPlayback);
         }
       } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
     }
     p.age += dt;
     emitProjectileTrail(p);
     if (
-      WEAPONS[p.kind].timed &&
-      (p.nativeTimer ? p.nativeTimer.remaining > 0 && p.nativeTimer.remaining < 1500 : p.fuse - p.age < 1.5) &&
+      !p.nativeBody && WEAPONS[p.kind].timed &&
+      p.fuse - p.age < 1.5 &&
       Math.floor(p.age * 4) !== Math.floor((p.age - dt) * 4)
     )
       sfx("fuse");
@@ -5037,7 +5039,10 @@ function stepFrame(dt) {
       p.mesh.rotation.z =
         p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
 
-    if (!p.nativeTimer?.loopSound) stopProjectileSound(p);
+    if (!p.nativeTimer?.loopSound) {
+      p.nativeFusePlayback?.stop();
+      p.nativeFusePlayback = null;
+    }
     if (
       boom ||
       (p.nativeBody ? p.nativeRemoved : (
