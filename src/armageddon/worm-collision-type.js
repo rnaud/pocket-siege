@@ -18,6 +18,7 @@ export function nativeWormCollisionType(state) {
 // controllers still need their complete native state-entry adapters.
 export function nativeWormState(worm) {
   if (worm.frozen) return 0x88;
+  if (worm.nativeRopeBody?.constrained) return 0x7b;
   if (worm.originalBlowtorch) return 0x71;
   if (worm.originalFirePunch) return 0x6c;
   if (worm.originalAxe) return 0x72;

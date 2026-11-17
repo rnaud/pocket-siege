@@ -1,4 +1,4 @@
-import { createNativeRopeShot, stepNativeRopeShot } from "./armageddon/rope-runtime.js";
+import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints } from "./armageddon/rope-runtime.js";
 import { nativeBlowtorchEntry, nativeBlowtorchTick, nativeBlowtorchExit } from "./armageddon/blowtorch.js";
 import { nativeLaunch } from "./armageddon/launch.js";
 import { nativeFireInput } from "./armageddon/fire-input.js";
@@ -6,7 +6,7 @@ import { nativeTryBodyPosition } from "./armageddon/motion.js";
 import { startOriginalBlowtorch, finishOriginalBlowtorch } from "./armageddon/art.js";
 import { nativeDrillEntry, nativeDrillTick } from "./armageddon/drill.js";
 import { startOriginalDrill } from "./armageddon/art.js";
-import { playNativeDrillLoop } from "./armageddon/audio.js";
+import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
@@ -1536,7 +1536,7 @@ function skipTurn() {
   updateUI();
 }
 function stopRope() {
-  for (const w of worms) w.originalRope = null;
+  for (const w of worms) { w.originalRope = null; w.nativeRopeBody = null; }
   if (rope.tip) dispose(rope.tip);
   if (rope.cuff) {
     group.remove(rope.cuff);
@@ -1848,7 +1848,9 @@ function attachRope(w, hit, length, body) {
     length, body,
     mesh: null,
   };
+  w.nativeRopeBody = body;
   rope.mesh = makeRopeLine(hit, w);
+  rope.mesh.geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(65 * 3), 3));
   rope.cuff = createOriginalVisual("ropecuff");
   if (rope.cuff) group.add(rope.cuff);
   updateRopeVisual(w);
@@ -1874,51 +1876,36 @@ function toggleRope() {
 }
 function stepRope(w, dt) {
   if (!rope.attached || w !== worms[current]) return;
-  const a = rope.anchor;
-  if (aimInput)
-    rope.length = Math.max(34, Math.min(rope.body?.ropeLength ?? 300, rope.length - aimInput * 95 * dt));
-  let dx = w.x - a.x,
-    dy = w.y - a.y,
-    len = Math.hypot(dx, dy) || 1;
-  const tx = -dy / len,
-    ty = dx / len;
-  w.vx += tx * move * 240 * dt;
-  w.vy += ty * move * 240 * dt;
-  w.vy -= GRAVITY * gravityScale * 0.9 * dt;
-  w.vx *= 0.998;
-  w.vy *= 0.998;
-  const px = w.x,
-    py = w.y;
-  w.x += w.vx * dt;
-  w.y += w.vy * dt;
-  dx = w.x - a.x;
-  dy = w.y - a.y;
-  len = Math.hypot(dx, dy) || 1;
-  const nx = dx / len,
-    ny = dy / len;
-  if (len > rope.length) {
-    w.x = a.x + nx * rope.length;
-    w.y = a.y + ny * rope.length;
-    const radial = Math.max(0, w.vx * nx + w.vy * ny);
-    w.vx -= radial * nx;
-    w.vy -= radial * ny;
-  }
+  rope.body = stepNativeRopeSwing(rope.body, {
+    left: move < 0, right: move > 0, up: aimInput > 0, down: aimInput < 0,
+  }, {
+    frame: matchRandom.frame, index: current, earthquake: 0,
+    waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
+  }, {
+    solid: (x, y) => terrain.solid(x, H - y),
+    collide: (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H),
+    otherType: hit => hit === 1 ? 1 : nativeWormCollisionType(nativeWormState(worms[hit - 2])),
+    stopSound: () => rope.contactPlayback?.stop(),
+    sound: (...request) => {
+      if (sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        rope.contactPlayback = playNativeRopeContactSound(audio, request);
+      }
+      return 1;
+    },
+  });
+  const body = rope.body;
+  w.nativeRopeBody = body;
+  w.x = body.x / 65536; w.y = H - body.y / 65536;
+  w.vx = body.vx / 65536 * 50; w.vy = -body.vy / 65536 * 50;
+  rope.length = body.length / 65536;
   w.ground = false;
   w.moving = Boolean(move);
   w.facing = move < 0 ? -1 : move > 0 ? 1 : w.facing;
-  if (!clearBodyPath(terrain, px, py, w.x, w.y)) {
-    w.x = px;
-    w.y = py;
-    w.vx = 0;
-    w.vy = 0;
-  }
 }
 function updateRopeVisual(w) {
   if (!rope.mesh || !rope.attached) return;
-  const bodyAngle = Math.round(
-    (Math.atan2(rope.anchor.y - (w.y), w.x - rope.anchor.x) * 0x10000) /
-      (Math.PI * 2),
-  );
+  const bodyAngle = rope.body.angle;
   setOriginalRope(w, bodyAngle);
   if (rope.cuff) {
     const art = originalVisual("ropecuff");
@@ -1928,8 +1915,9 @@ function updateRopeVisual(w) {
     rope.cuff.position.set(rope.anchor.x, rope.anchor.y, 31);
   }
   const pos = rope.mesh.geometry.attributes.position;
-  pos.setXYZ(0, rope.anchor.x, rope.anchor.y, 30);
-  pos.setXYZ(1, w.x, w.y, 30);
+  const points = nativeRopePoints(rope.body, H);
+  points.forEach(([x, y], i) => pos.setXYZ(i, x, y, 30));
+  rope.mesh.geometry.setDrawRange(0, points.length);
   pos.needsUpdate = true;
 }
 function surrenderMatch() {

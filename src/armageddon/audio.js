@@ -125,6 +125,12 @@ export function playNativeLandingSound(context, request) {
     playOriginalSound(context, "land", () => {}, request[3] / 65536);
 }
 
+export function playNativeRopeContactSound(context, request) {
+  if (request[0] === 35)
+    return playOriginalClip(context, 'sounds/wormlanding.wav', () => {}, request[3] / 65536);
+  return null;
+}
+
 // Original table 0055F460 consists of explicit ID/filename pairs, not ordinal
 // slots: Oops/Orders/Ouch precede IDs38..40 in the table. English remains the
 // host default until team speech selection and native priority arbitration land.
