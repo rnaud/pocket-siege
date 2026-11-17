@@ -255,6 +255,7 @@ import {
   playNativeRecoverySound,
   playNativeLandingSound,
   cleanupNativeWormAudio,
+  cleanupOriginalReplayAudio,
 } from "./armageddon/audio.js";
 import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
@@ -2866,6 +2867,7 @@ function restoreMatchReplayState(snapshot) {
 function startReplay() {
   if (replaying || !lastShot || lastShot.points.length < 2) return;
   replaying = true;
+  if (audio) cleanupOriginalReplayAudio(audio);
   cameraSnap = true; manualCamera = null;
   const full = cameraView(W / 2, H / 2, 1);
   Object.assign(view, full);

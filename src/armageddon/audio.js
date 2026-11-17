@@ -1,7 +1,7 @@
 import { nativeProjectileSoundTick } from "./projectile-timer.js";
 import soundSlots from "./sound-slots.json";
 import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";
-import { nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup } from "./sound-queue.js";
+import { nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup, nativeReplaySoundCleanup } from "./sound-queue.js";
 import speech from "./speech-slots.json";
 
 const sounds = {
@@ -43,6 +43,22 @@ const contexts = new WeakMap();
 // until the body/UI owner stops them, including after channel displacement.
 const playbackChannels = new WeakMap();
 const playbackHandles = new WeakMap();
+const pendingPlaybacks = new WeakMap();
+
+export function cleanupOriginalReplayAudio(context) {
+  const channels = playbackChannels.get(context);
+  if (!channels) return 0;
+  // Native sample loading is synchronous. Cancel host-only pending unowned
+  // requests too, so an old effect cannot start after replay entry.
+  for (const [playback, tracked] of pendingPlaybacks.get(context))
+    if (!tracked) playback.stop();
+  const entries = channels.map(channel => channel?.playback ?? null);
+  const rows = entries.map((playback, i) => [0, playback?.handle ? playback.handle - 1 : -1, 0, 0, 0, playback ? i + 1 : 0]);
+  return nativeReplaySoundCleanup(rows, {
+    query: index => ({ result: 0, flags: entries[index - 1].finished ? 0 : 1 }),
+    release: index => entries[index - 1].displace(),
+  });
+}
 export function playOriginalSound(context, kind, fallback, level = 1, priority = 3, pan = 0) {
   const name = sounds[kind];
   if (!name) {
@@ -81,6 +97,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
     channels = Array(8).fill(null);
     playbackChannels.set(context, channels);
     playbackHandles.set(context, new NativeSoundHandles());
+    pendingPlaybacks.set(context, new Map());
   }
   const handles = playbackHandles.get(context);
   let channel = -1, handle = 0;
@@ -111,6 +128,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
       playback.displace();
     },
   };
+  pendingPlaybacks.get(context).set(playback, tracked);
   loadOriginalClip(context, name)
     .then((buffer) => {
       if (cancelled || performance.now() - requested > 500) return;
@@ -160,7 +178,7 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
       playback.stop();
       contexts.get(context).delete(name);
       if (!wasCancelled) fallback();
-    }).finally(() => { settled = true; });
+    }).finally(() => { settled = true; pendingPlaybacks.get(context).delete(playback); });
   return playback;
 }
 
