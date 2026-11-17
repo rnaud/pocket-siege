@@ -8,6 +8,8 @@ import shower from './fixtures/armageddon/crate-shower.json' with { type: 'json'
 import { nativeCrateShowerTick } from '../src/armageddon/crate-shower.js';
 import crateState from './fixtures/armageddon/crate-state.json' with { type: 'json' };
 import { nativeCrateState, nativeCrateArt } from '../src/armageddon/crate-state.js';
+import crateBody from './fixtures/armageddon/crate-body.json' with { type: 'json' };
+import { nativeCratePlacement } from '../src/armageddon/crate-body.js';
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
@@ -15,6 +17,25 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   for (const row of crateState.cases) {
     expect(nativeCrateState(row.input, row.state)).toEqual(row.output);
     expect(nativeCrateArt(row.input)).toEqual(row.art);
+  }
+  for (const row of crateBody.cases) {
+    const events = [];
+    let queries = 0;
+    const result = nativeCratePlacement(row.before, row, row.mode, row.bottom, {
+      shape: (body, shape) => { events.push(['shape', shape]); body.shape = shape; },
+      collide: (x, y, body) => {
+        events.push(['probe', x, y, body.flags]);
+        const hit = body.flags === 2 ? queries < row.reject : y >= 3 * 65536;
+        queries++;
+        return hit;
+      },
+      sound: request => events.push(['sound', ...request]),
+      effect: request => events.push(['effect', ...request]),
+      remove: body => events.push(['remove', body.type]),
+      register: body => events.push(['register', body.type]),
+    });
+    expect(result).toEqual(row.after);
+    expect(events).toEqual(row.events);
   }
   for (const row of automatic.cases) {
     const result = nativeAutomaticUtilities(row.input, row.available, row.bits);
