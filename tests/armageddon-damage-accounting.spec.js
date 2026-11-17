@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
-import { nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
+import { nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
 test("health, cumulative/displayed damage and events match original damage routine", { tag: "@logic" }, () => {
+  for (const row of fixture.statistics) {
+    const match = { ...row.match }, roster = structuredClone(row.roster);
+    nativeRecordMatchDamage(match, roster[0], row.source === null ? null : roster[row.source], row.damage);
+    expect({ match, roster }).toEqual(row.result);
+  }
   expect(fixture.cases).toHaveLength(288);
   for (const row of fixture.presentation)
     expect(nativeHealthDisplayTick(row.input, row.hp)).toEqual(row.result);
@@ -49,11 +54,23 @@ test("live native damage totals reveal after settlement and lethal accounting st
   })));
   await expect(labels).toHaveCount(0);
   const result = await page.evaluate(() => {
-    const before = window.siege.getState().worms.slice(3).map(w => w.hp);
+    const initial = window.siege.getState();
+    const before = initial.worms.slice(3).map(w => w.hp);
     window.siege.debug.hit(1, 200);
-    return {before, hp: window.siege.getState().worms.slice(3).map(w => w.hp),
-      damageTaken: window.siege.getState().worms.slice(3).map(w => w.damageTaken)};
+    const after = window.siege.getState();
+    return {before, hp: after.worms.slice(3).map(w => w.hp),
+      damageTaken: after.worms.slice(3).map(w => w.damageTaken),
+      statisticsBefore: initial.matchStatistics, statistics: after.matchStatistics,
+      attackerBefore: initial.worms[0].matchStats, attacker: after.worms[0].matchStats,
+      victims: after.worms.slice(3).map(w => w.matchStats)};
   });
   expect(result.hp).toEqual([0, 0, 0]);
   expect(result.damageTaken).toEqual(result.before);
+  const damage = result.before.reduce((sum, hp) => sum + hp, 0);
+  expect(result.statistics.damage - result.statisticsBefore.damage).toBe(damage);
+  expect(result.statistics.deaths - result.statisticsBefore.deaths).toBe(3);
+  expect(result.attacker.enemyDamage - result.attackerBefore.enemyDamage).toBe(damage);
+  expect(result.attacker.enemyKills - result.attackerBefore.enemyKills).toBe(3);
+  expect(result.attacker.turnKills - result.attackerBefore.turnKills).toBe(3);
+  expect(result.victims.map(w => [w.lastAttackerTeam, w.lastAttackerWorm])).toEqual([[1, 1], [1, 1], [1, 1]]);
 });

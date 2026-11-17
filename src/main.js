@@ -56,7 +56,7 @@ import { nativeSceneCollision } from "./armageddon/collision-scene.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
-import { nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "./armageddon/damage-accounting.js";
+import { createNativeWormMatchStats, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "./armageddon/damage-accounting.js";
 import { nativeBlastDamage } from "./armageddon/blast-damage.js";
 import {
   nativeDebrisBurst,
@@ -384,6 +384,7 @@ let configuredDelays = {};
 let nativeAnnouncements = createNativeAnnouncements();
 let pendingTurnStart = false;
 let matchDamageSourceActive = false;
+let nativeMatchStatistics = { damage: 0, deaths: 0 };
 let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
@@ -634,7 +635,7 @@ function createWorm(t, i, x, spawnY = null) {
     hitDirection: 1,
     hits: 0,
     damageTaken: 0,
-    matchDamageTaken: 0,
+    matchStats: createNativeWormMatchStats(t + 1, i + 1),
     shadow,
     facing: t ? -1 : 1,
     label,
@@ -743,7 +744,7 @@ function announceWormDeath(worm) {
 }
 function announceMatchResult(winner) {
   if (winner !== null && sound) {
-    const request = nativeVictorySpeech(worms.filter(w => w.team === winner).map(w => w.matchDamageTaken));
+    const request = nativeVictorySpeech(worms.filter(w => w.team === winner).map(w => w.matchStats.damageReceived));
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
     playNativeSpeech(audio, request[0], request[3] / 65536);
@@ -1046,6 +1047,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   ((explosions = 0), (shakeUntil = 0));
   announcementPlayback?.stop(); announcementPlayback = null; announcementVolume = 0;
   nativeAnnouncements = createNativeAnnouncements();
+  nativeMatchStatistics = { damage: 0, deaths: 0 };
   pendingTurnStart = false;
   matchDamageSourceActive = false;
   setWeapon("rocket");
@@ -2572,9 +2574,11 @@ function accountWormDamage(w, damage, options = {}) {
   );
   // 004B4CE0 event0x430 -> 004C2A00: only attributed, reportable damage
   // enters match statistics. The host turn adapter supplies source presence.
+  w.matchStats.hp = accounting.hp;
   if (matchDamageSourceActive)
     for (const event of accounting.events)
-      if (event[3]) w.matchDamageTaken = (w.matchDamageTaken + event[2]) | 0;
+      if (event[3]) nativeRecordMatchDamage(nativeMatchStatistics, w.matchStats,
+        worms[current].matchStats, event[2]);
   w.hp = accounting.hp;
   w.damageTaken = accounting.total;
   w.nativeHealthDisplay.pending = accounting.displayed;
@@ -6054,6 +6058,7 @@ window.siege = {
       ? { points: lastShot.points.length, impact: lastShot.impact, frame: lastShot.frame }
       : null,
     lastResult,
+    matchStatistics: { ...nativeMatchStatistics },
     aiPlan: aiPlan
       ? {
           weapon: aiPlan.weapon,
@@ -6069,6 +6074,7 @@ window.siege = {
         name,
         hp,
         damageTaken,
+        matchStats,
         x,
         y,
         vx,
@@ -6089,6 +6095,7 @@ window.siege = {
         name,
         hp,
         damageTaken,
+        matchStats: { ...matchStats, hp },
         x,
         y,
         vx,

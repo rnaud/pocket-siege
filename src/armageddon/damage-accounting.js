@@ -63,3 +63,30 @@ export function nativeDamageAccounting(body, damage, options = {}) {
   }
   return next;
 }
+
+export function createNativeWormMatchStats(team, worm, alliance = team, hp = 100) {
+  return { team, worm, alliance, hp, damageReceived: 0, allyDamage: 0, allyKills: 0,
+    enemyDamage: 0, enemyKills: 0, turnKills: 0, lastAttackerTeam: 0, lastAttackerWorm: 0 };
+}
+
+// 004C2A00. The event0x430 receiver checks source presence and reportability
+// before calling this routine. Victim HP is the already-updated native health.
+// Source and victim may be the same object (self damage).
+export function nativeRecordMatchDamage(match, victim, source, damage) {
+  match.damage = (match.damage + damage) | 0;
+  victim.damageReceived = (victim.damageReceived + damage) | 0;
+  if (victim.hp === 0) match.deaths = (match.deaths + 1) | 0;
+  if (!source?.team || !source.worm) return;
+  if (victim.alliance === source.alliance) {
+    source.allyDamage = (source.allyDamage + damage) | 0;
+    if (victim.hp === 0) source.allyKills = (source.allyKills + 1) | 0;
+  } else {
+    victim.lastAttackerTeam = source.team;
+    victim.lastAttackerWorm = source.worm;
+    source.enemyDamage = (source.enemyDamage + damage) | 0;
+    if (victim.hp === 0) {
+      source.enemyKills = (source.enemyKills + 1) | 0;
+      source.turnKills = (source.turnKills + 1) | 0;
+    }
+  }
+}
