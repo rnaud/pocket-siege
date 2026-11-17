@@ -1,3 +1,4 @@
+import replayPresentationRestore from "./fixtures/armageddon/replay-presentation-restore.json" with { type: "json" };
 import replayTerrainRestore from "./fixtures/armageddon/replay-terrain-restore.json" with { type: "json" };
 import replayActorRestore from "./fixtures/armageddon/replay-actor-restore.json" with { type: "json" };
 import { nativeReadReplayActor } from "../src/armageddon/replay-restore.js";
@@ -56,6 +57,19 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayPresentationRestore.cases) {
+    const stream = new NativeReplayStream(2048), calls = [], input = row.input;
+    stream.bytes.set(input.bytes); stream.seek(input.position);
+    const environment = { all: { capacity: 256, entries: [] }, categories: { 2: { capacity: 256, entries: [] } }, links: [17] };
+    const task = nativeReadReplayActor(28, stream, { id: 9, context: 0x2020000, environment,
+      memory: new Uint8Array(0x175c).fill(0xa5), readChildren: (_, reader) => reader.readByte(),
+      presentation: { palette: { 8: 8, 9: 9 },
+        paletteSource: { height: input.pixels.length, readPixel: (x, y) => { calls.push(["sample", x, y]); return input.pixels[y]; } },
+        weather: { lowDetail: input.detail, left: input.limits[0], right: input.limits[1], height: input.limits[2] },
+        surface: { width: input.dimensions[0], height: input.dimensions[1], draw: (...args) => calls.push(args) },
+      } });
+    expect({ body: [...task.memory.slice(0x3c)], position: stream.position, calls }).toEqual(row.result);
+  }
   for (const row of replayTerrainRestore.cases) {
     const stream = new NativeReplayStream(16384), allocations = [...row.input.allocations];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);

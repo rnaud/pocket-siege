@@ -1,3 +1,4 @@
+import { nativeInitializeReplayPresentation } from './replay-presentation-restore.js';
 import { NativeReplayBuffer } from './replay-buffer.js';
 // Full004B1DE0's base task reconstruction. The outer factory has already
 // consumed the concrete type tag. Derived constructors read their own records.
@@ -131,15 +132,15 @@ const actorReadBlocks = new Map([
   [17, [0x3c, 0x1d4]], [21, [0xfc, 0x20]], [22, [0x3c, 0x28]],
   [23, [0x3c, 0x24]], [24, [0x3c, 0x74]], [25, [0x3c, 0x34]],
   [26, [0x3c, 0x54]], [27, [0x3c, 0x1c]], [29, [0x3c, 0x28]],
-  [30, [0xfc, 0x14]], [31, [0xd4, 0x2ce8]],
+  [28, [0xfc, 0x10]], [30, [0xfc, 0x14]], [31, [0xd4, 0x2ce8]],
 ]);
 
-// Dispatch for recovered concrete constructors. Unsupported constructors are
-// explicit errors until their resource and state restoration is recovered.
+// Dispatch for all21 concrete child constructors in004B2230. The factory
+// handles unknown stream tags before reaching this constructor dispatch.
 export function nativeReadReplayActor(tag, stream, options) {
   if (tag === 18) return nativeReadWormTask(stream, options);
   const block = actorReadBlocks.get(tag);
-  if (!block) throw new Error(`Replay actor constructor ${tag} is not yet ported`);
+  if (!block) throw new Error(`Unknown replay actor constructor ${tag}`);
   const schema = taskTypes.find(row => row.tag === tag);
   const memory = options.memory ?? new Uint8Array(schema.size);
   const task = schema.physics ? nativeReadPhysicsTask(stream, { ...options, memory }) : nativeReadTaskBase(stream, options);
@@ -208,7 +209,8 @@ export function nativeReadReplayActor(tag, stream, options) {
     put(0xb0, options.contextState.counters[0x12430] & 255);
     increment(0x12430);
     put(0xb4, 0);
-  } else if (tag === 29) text(0x64, 23, 48);
+  } else if (tag === 28) nativeInitializeReplayPresentation(memory, options.presentation);
+  else if (tag === 29) text(0x64, 23, 48);
   else if (tag === 31) {
     put(0x2dc8, 0);
     const queue = options.allocateResource(8);
