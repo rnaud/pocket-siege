@@ -57,10 +57,10 @@ export function createWater(width, level) {
   let currentLevel = level,
     lastFrame = -1,
     lastHeight = -1;
-  mesh.userData.update = (time) => {
+  mesh.userData.update = (time, restoredFrame = null) => {
     if (!waterArt) return;
     const { sprite, frames, color } = waterArt;
-    const frame = Math.floor(Math.max(0, time) * 25) % frames.length;
+    const frame = restoredFrame ?? Math.floor(Math.max(0, time) * 25) % frames.length;
     const crest = Math.floor(sprite.height / 2);
     const height = Math.max(1, Math.ceil(currentLevel) + crest);
     if (lastFrame === frame && lastHeight === height) return;

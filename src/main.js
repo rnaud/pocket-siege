@@ -2787,6 +2787,8 @@ function captureMatchReplayState() {
     return resourceIds.get(value);
   };
   const state = {
+    display: { palette: { flash: nativePaletteDisplay.flash.value, fade: nativePaletteDisplay.fade.value,
+      dark: nativePaletteDisplay.dark.value }, waterFrame: water.userData.originalFrame ?? 0 },
     actors: { worms, projectile, particles, crates, mines, girders, graves, bombs, airstrikes, nativeFlames, hazards, nativeParticles, originalEffects, originalSmoke, originalDebris, waterBubbles },
     turn: { current, team, round, phase, wind, time, shotWait, lastSelectedWorm, mode, weapon, move, angle, power, aiWait,
       explosions, configuredDelays, nativeAnnouncements, pendingTurnStart, pendingPoisonSettlement, pendingEnvironmentSettlement,
@@ -2861,6 +2863,9 @@ function restoreMatchReplayState(snapshot) {
   nativeCameraFraming = state.camera.nativeCameraFraming ? Object.assign(Object.create(NativeCameraFraming.prototype),state.camera.nativeCameraFraming) : null;
   Object.assign(view,state.camera.view);
   accumulator=0; last=performance.now(); uiKey=""; timerKey="";
+  nativePaletteDisplay.update(state.display.palette);
+  water.userData.setLevel(waterLevel);
+  water.userData.update(0, state.display.waterFrame);
   terrainDirty=false; paintTerrain(ctx,terrain,texture);
   updateSliders(); updateUI(); applyView();
 }
