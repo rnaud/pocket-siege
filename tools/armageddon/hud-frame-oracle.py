@@ -34,8 +34,15 @@ vtable=owner+0x1000;write(owner,vtable)
 methods={0x34:('horizontal',4),0x38:('vertical',4),0x3c:('rect',5),0x58:('pixel',3)}
 for offset in methods:write(vtable+offset,stop+offset)
 calls=[]
+keys=(0,0)
 def hook(cpu,address,size,user):
  offset=address-stop
+ if offset in [0x100,0x104]:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  key=read(sp+4)
+  cpu.reg_write(UC_X86_REG_EAX,keys[0] if key==0x27 else keys[1])
+  cpu.reg_write(UC_X86_REG_ESP,sp+8);cpu.reg_write(UC_X86_REG_EIP,read(sp))
+  return
  if offset not in methods:return
  name,n=methods[offset];sp=cpu.reg_read(UC_X86_REG_ESP)
  calls.append([name,*[read(sp+4+i*4) for i in range(n)]])
@@ -59,5 +66,22 @@ for progress in [0,3276,6553,6554,32768,62260,65536]:
    if cpu.reg_read(UC_X86_REG_EIP)!=0x4ec4ff:raise RuntimeError('Panel prefix did not finish')
    panel_cases.append({'before':{'progress':progress,'target':target,'countdown':countdown},
      'after':dict(zip(['progress','target','countdown'],[read(owner+o) for o in [0x74,0x78,0x7c]]))})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases},separators=(',',':'))+'\n')
-print(f'{len(cases)} frames, {len(panel_cases)} panel ticks')
+visibility_cases=[]
+context=0x2300000
+cpu.mem_map(context,0x20000)
+write(owner+0x38,context)
+keyboard=owner+0x2000;keyboard_vtable=owner+0x2100
+write(context+4,keyboard);write(keyboard,keyboard_vtable)
+write(keyboard_vtable+4,stop+0x100);write(keyboard_vtable+8,stop+0x104)
+for minimum in [0,3275,3276,3277,32768,62260,65536]:
+ for forced in [0,1]:
+  for keys in [(0,0),(1,0),(0,1),(1,1)]:
+   write(context+0x1b8b4,minimum);write(context+0x1b8b8,forced)
+   write(stack+0xff00,stop)
+   cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+   cpu.emu_start(0x4ec350,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Visibility routine did not return')
+   visibility_cases.append({'before':{'minimum':minimum,'forced':forced},'keys':keys,
+     'after':{'minimum':read(context+0x1b8b4),'forced':read(context+0x1b8b8)}})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases},separators=(',',':'))+'\n')
+print(f'{len(cases)} frames, {len(panel_cases)} panel ticks, {len(visibility_cases)} visibility ticks')

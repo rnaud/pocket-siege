@@ -1,4 +1,4 @@
-import { nativeTeamPanelTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
+import { nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
@@ -761,6 +761,8 @@ function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
   if (p) p.nativeFusePlayback = null;
 }
+const nativeTeamPanelVisibility = { minimum: 0, forced: 0 };
+let toggleTeamPanelVisibility = false;
 const nativeTeamPanel = { progress: 0, target: 65536, countdown: 0 };
 let mapLoading = false;
 let preparedRandomSeed = null;
@@ -4159,8 +4161,10 @@ function step(dt) {
   }
   nativeCamera.beginFrame();
   selectionTick = (selectionTick + 1) | 0;
+  nativeTeamPanelVisibilityTick(nativeTeamPanelVisibility, toggleTeamPanelVisibility);
+  toggleTeamPanelVisibility = false;
   nativeTeamPanelTick(nativeTeamPanel);
-  updateHudTeamPanel(nativeTeamPanel.progress);
+  updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress));
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -5394,6 +5398,11 @@ function cycleLabelMode() {
 $('#label-detail').onclick = cycleLabelMode;
 window.addEventListener("keydown", (e) => {
   if (menu.open) return;
+  if (e.key === 'Delete' && e.shiftKey) {
+    e.preventDefault();
+    if (!e.repeat) toggleTeamPanelVisibility = !toggleTeamPanelVisibility;
+    return;
+  }
   if (e.key === 'Delete' && !e.shiftKey) {
     e.preventDefault();
     if (!e.repeat) cycleLabelMode();

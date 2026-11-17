@@ -70,3 +70,16 @@ export function showNativeTeamPanel(panel) {
 export function hideNativeTeamPanelAfterInput(panel) {
   if (panel.countdown === 0) panel.countdown = 50;
 }
+
+// 004EC350: animate the minimum visibility, then consume Shift+Delete.
+export function nativeTeamPanelVisibilityTick(state, toggle = false) {
+  const target = state.forced ? 65536 : 0;
+  const difference = (target - state.minimum) | 0;
+  const sign = difference >> 31;
+  if (((difference ^ sign) - sign | 0) < 0xccd) state.minimum = target;
+  else {
+    if (state.minimum < target) state.minimum = (state.minimum + 0xccc) | 0;
+    if (target < state.minimum) state.minimum = (state.minimum - 0xccc) | 0;
+  }
+  if (toggle) state.forced ^= 1;
+}

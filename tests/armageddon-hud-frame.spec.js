@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
-import { nativeHUDFrame, nativeTeamPanelTick } from "../src/armageddon/hud-frame.js";
+import { nativeHUDFrame, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of fixture.visibilityCases) {
+    const state = { ...c.before };
+    nativeTeamPanelVisibilityTick(state, c.keys.every(Boolean));
+    expect(state).toEqual(c.after);
+  }
   for (const c of fixture.panelCases) {
     const panel = { ...c.before };
     nativeTeamPanelTick(panel);
@@ -32,4 +37,11 @@ test("live native team bars update with damage and keep HUD controls usable", as
   await expect.poll(() => page.locator(".match-bar").evaluate(el => el.style.getPropertyValue("--team-panel-offset"))).toBe("32px");
   await expect(page.locator(".native-team-health").first()).toHaveCSS("height", "17px");
   await page.screenshot({ path: info.outputPath("native-hud.png") });
+  await page.keyboard.press("ArrowRight");
+  const offset = () => page.locator(".match-bar").evaluate(el => el.style.getPropertyValue("--team-panel-offset"));
+  await expect.poll(offset).toBe("0px");
+  await page.keyboard.press("Shift+Delete");
+  await expect.poll(offset).toBe("32px");
+  await page.keyboard.press("Shift+Delete");
+  await expect.poll(offset).toBe("0px");
 });
