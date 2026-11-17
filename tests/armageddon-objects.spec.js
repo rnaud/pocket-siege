@@ -39,11 +39,10 @@ test("cluster fragments and fire use original art in live gameplay", async ({
   expect(fragments).toHaveLength(5);
   expect(fragments.every((b) => b.sprite === "clustlet")).toBe(true);
   await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "napalm"));
-  const fires = await page.evaluate(() => window.siege.getState().fires);
-  expect(fires).toHaveLength(3);
-  expect(
-    fires.every((f) => f.sprites.join(",") === "flame1,flame1,flame1"),
-  ).toBe(true);
+  const flames = await page.evaluate(() => window.siege.getState().nativeFlames);
+  expect(flames).toHaveLength(1);
+  expect(flames[0].sprite).toMatch(/^petrol-?[1-6]$/);
+  expect(flames[0].record.slice(7)).toEqual([4000, 100, 20, 1]);
 });
 test("native object strips preserve ping-pong playback and feet when changing canvas size", async ({
   page,

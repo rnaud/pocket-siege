@@ -75,6 +75,11 @@ test("delay survives worm selection and unlocks on the next own turn", async ({
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#start").click();
+  // Isolate turn-delay progression from the randomly placed supply drop.
+  await page.evaluate(() => {
+    window.siege.debug.setCrateKind("grenade");
+    window.siege.debug.collectCrate();
+  });
   await page.locator("#inventory-toggle").click();
   const rocket = page.locator('[data-weapon="rocket"]');
   await expect(rocket).toBeDisabled();

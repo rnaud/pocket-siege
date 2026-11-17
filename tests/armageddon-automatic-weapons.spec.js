@@ -45,6 +45,11 @@ for (const [kind, total, spread, mode] of [["uzi", 10, 15, 5], ["minigun", 20, 2
   });
   test(`${kind} cancels remaining bullets and loop after damage`, async ({ page }) => {
     await start(page, kind);
+    // Cancellation/turn progression is independent of the initial supply drop.
+    await page.evaluate(() => {
+      window.siege.debug.setCrateKind("grenade");
+      window.siege.debug.collectCrate();
+    });
     await page.evaluate(() => {
       const interrupt = () => {
         if (window.siege.getState().shotCount >= 1) window.siege.debug.hit(0, 1);

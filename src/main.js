@@ -430,7 +430,6 @@ let format = "single",
   graves = [],
   bombs = [],
   airstrikes = [],
-  fires = [],
   nativeFlames = Array(200).fill(null),
   nativeFlameCounter = 0,
   crateDirectionBag = { pool: [0, 1], used: [] },
@@ -1006,8 +1005,6 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeCameraFocus = null;
   nativeCameraFraming = null;
   pendingWormCamera = [];
-  for (const f of fires) dispose(f.mesh);
-  fires = [];
   for (const flame of nativeFlames) if (flame) dispose(flame.mesh);
   nativeFlames.fill(null); nativeFlameCounter = 0;
   crateDirectionBag = { pool: [0, 1], used: [] };
@@ -1286,18 +1283,6 @@ function detonateNativeCrate(crate) {
     broadcast: () => {},
   });
 }
-function spawnFire(x, y, owner = -1) {
-  const mesh = new THREE.Group();
-  for (let i = 0; i < 3; i++) {
-    const flame = createOriginalObject("flame1");
-    if (!flame) continue;
-    flame.position.x = (i - 1) * 18;
-    mesh.add(flame);
-  }
-  mesh.position.set(Math.round(x), Math.round(y), 26);
-  group.add(mesh);
-  fires.push({ x, y, owner, mesh, life: 5.5, tick: 0 });
-}
 function stepBombs(dt) {
   for (let i = bombs.length - 1; i >= 0; i--) {
     const b = bombs[i];
@@ -1383,28 +1368,6 @@ function stepBombs(dt) {
       bombs.splice(i, 1);
       dispose(b.mesh);
       explode(b.x, b.y, b.kind, b.owner);
-    }
-  }
-}
-function stepFires(dt) {
-  for (let i = fires.length - 1; i >= 0; i--) {
-    const f = fires[i];
-    f.life -= dt;
-    f.tick -= dt;
-    if (f.tick <= 0) {
-      f.tick = 0.55;
-      for (const w of worms) {
-        if (w.hp <= 0) continue;
-        if (Math.abs(w.x - f.x) < 38 && Math.abs(w.y + 18 - f.y) < 45)
-          injure(w, 4, 0);
-      }
-    }
-    f.mesh.children.forEach((flame, i) =>
-      updateOriginalObject(flame, "flame1", 5.5 - f.life + i * 0.17),
-    );
-    if (f.life <= 0) {
-      dispose(f.mesh);
-      fires.splice(i, 1);
     }
   }
 }
@@ -3818,14 +3781,6 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   for (const fragment of nativePacket ? [] : fragments(kind)) {
     spawnBomb({ x: sourceX, y: sourceY + 8, ...fragment, owner: ownerIndex });
   }
-  if (kind === "napalm" && !nativePacket) {
-    for (let i = 0; i < 3; i++)
-      spawnFire(
-        x + (i - 1) * 42 + (logicRandom() - 0.5) * 12,
-        y - 10,
-        ownerIndex,
-      );
-  }
   const chained = hazards.filter(
     (h) => Math.hypot(h.x - x, h.y - y) < radius + 18,
   );
@@ -5380,7 +5335,6 @@ function stepFrame(dt) {
   }
   stepAirstrikes();
   stepBombs(dt);
-  stepFires(dt);
   const flameActivity = stepNativeFlames();
   for (const hazard of hazards) {
     hazard.artAge = (hazard.artAge || 0) + dt;
@@ -6491,12 +6445,6 @@ window.siege = {
       body: { ...flame.body }, record: [...flame.record],
       sprite: flame.mesh.userData.originalSprite, frame: flame.mesh.userData.originalFrame,
     })),
-    fires: fires.map((f) => ({
-      x: Math.round(f.x),
-      y: Math.round(f.y),
-      life: Math.round(f.life * 10) / 10,
-      sprites: f.mesh.children.map((flame) => flame.userData.originalSprite),
-    })),
     hazards: hazards.map((h) => ({
       x: Math.round(h.x),
       y: Math.round(h.y),
@@ -6737,6 +6685,12 @@ if (import.meta.env.DEV) {
       w.ground = false;
     },
     explodeAt(x = 600, y = 350, kind = "cluster") {
+      if (kind === "napalm") {
+        const p = { x, y, vx: 0, vy: 0, kind, owner: 0, fuse: 3, bounce: 0 };
+        attachNativeProjectile(p, H);
+        detonateNativeProjectile(p);
+        return;
+      }
       explode(x, y, kind, 0);
     },
     submergeMine(index = 0) {

@@ -46,6 +46,7 @@ const kinds = new Set([
   "cluster",
   "banana",
   "holy",
+  "napalm",
   "dynamite",
   "mine",
   "airstrike",

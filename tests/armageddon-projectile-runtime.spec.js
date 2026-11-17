@@ -35,6 +35,11 @@ test("live adapter uses native launch units, force defaults, and weapon wind coe
   expect(rocket.vx).toBe(1200);
   expect(nativeProjectileLaunch("rocket", 0, 0).vx).toBe(0);
   expect(nativeProjectileLaunch("sticky", 0, 100)).toBeNull();
+  const petrol = projectile("napalm", { fuse: 1 });
+  expect(petrol.nativeDetonation).toMatchObject({ sprite: 664, damage: 15, push: 75, secondary: 2 });
+  expect(petrol.nativeFire).toEqual({ count: 40, delay: 100, lifetime: 4000, persistent: 1 });
+  expect(petrol.nativeTimer.remaining).toBe(9000);
+
   stepNativeProjectile(rocket, { ...environment, wind: 50 }, () => 0);
   stepNativeProjectile(
     grenade,

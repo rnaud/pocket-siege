@@ -83,7 +83,7 @@ test("homing selects a fixed world target through the current camera", async ({
 });
 
 for (const kind of ["cluster", "napalm", "holy"]) {
-  test(`${kind} launches and detonates ${kind === "holy" ? "after its native fuse and resting delay" : "at its selected fuse"}`, async ({
+  test(`${kind} launches and detonates ${kind === "holy" ? "after its native fuse and resting delay" : kind === "napalm" ? "on native impact" : "at its selected fuse"}`, async ({
     page,
   }) => {
     await page.goto("/");
@@ -97,7 +97,7 @@ for (const kind of ["cluster", "napalm", "holy"]) {
     await page.locator("#inventory-toggle").click();
 
     await page.locator(`[data-weapon="${kind}"]`).click();
-    await page.locator("#fuse").selectOption("1");
+    if (kind !== "napalm") await page.locator("#fuse").selectOption("1");
     await page.locator("#angle").fill("90");
     await page.locator("#angle").dispatchEvent("input");
     await page.locator("#fire").dispatchEvent("pointerdown", { pointerId: 1 });
@@ -115,7 +115,7 @@ for (const kind of ["cluster", "napalm", "holy"]) {
         page.evaluate(() => window.siege.getState().lastShot?.impact?.kind),
         // Holy uses a fixed native3s fuse plus1.8s after rest. Wall time also
         // includes landing and slower simulation delivery on CI browsers.
-        { timeout: kind === "holy" ? 15000 : 5000 },
+        { timeout: kind === "holy" || kind === "napalm" ? 15000 : 5000 },
       )
       .toBe(kind);
     expect(

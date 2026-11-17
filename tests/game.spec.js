@@ -1202,7 +1202,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   expect(state.bombs.length).toBe(5);
 });
 
-test("cluster bomblets and napalm fires resolve their effects", async ({
+test("cluster bomblets and native petrol flames resolve their effects", async ({
   page,
 }) => {
   await page.goto("/");
@@ -1225,7 +1225,8 @@ test("cluster bomblets and napalm fires resolve their effects", async ({
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "napalm"));
   state = await page.evaluate(() => window.siege.getState());
-  expect(state.fires.length).toBe(3);
+  expect(state.nativeFlames).toHaveLength(1);
+  expect(state.nativeFlames[0].record.slice(7)).toEqual([4000, 100, 20, 1]);
   expect(state.ammo[0].napalm).toBe(2);
 });
 
