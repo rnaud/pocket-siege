@@ -43,7 +43,7 @@ import { nativeMineTimer, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
-import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse, updateNativeProjectileAudio } from "./armageddon/audio.js";
+import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse, updateNativeProjectileAudio, cleanupNativeContactSound } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
   attachNativeDrowningFlight,
@@ -938,6 +938,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   for (const w of worms) {
     w.nativeHitVoicePlayback?.stop();
     w.nativeActionPlayback?.stop();
+    w.nativeContactPlayback?.stop();
     dispose(w.g);
     w.label.remove();
     w.damageCanvas?.remove();
@@ -2907,7 +2908,11 @@ function applyNativeHitPackets(targets, dispatches) {
           victim.knocked = true;
           victim.ground = false;
         }
-        if (call.sound) sfx("frozenhit");
+        if (call.sound && sound) {
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          victim.nativeContactPlayback = playNativeProjectileContactSound(audio, call.sound, victim.nativeContactPlayback);
+        }
         if (call.voice) {
           victim.nativeHitVoiceFrame = call.voice.frame;
           if (sound) {
@@ -4479,6 +4484,7 @@ function stepFrame(dt) {
       else if (pendingFire?.worm === w && pendingFire.stage === "burst") audioState = 0x6b;
     }
     cleanupNativeWormAudio(w, audioState);
+    w.nativeContactPlayback = cleanupNativeContactSound(w.nativeContactPlayback);
     stepOriginalWalking(w);
     w.nativeHealthDisplay = nativeHealthDisplayTick(w.nativeHealthDisplay, w.hp).body;
     w.groundGrace = w.ground ? 0.08 : Math.max(0, (w.groundGrace || 0) - dt);
@@ -4542,6 +4548,7 @@ function stepFrame(dt) {
     if (w.hp <= 0 && !w.deathPending && w.dying <= 0) {
       w.nativeHitVoicePlayback?.stop(); w.nativeHitVoicePlayback = null;
       w.nativeActionPlayback?.stop(); w.nativeActionPlayback = null;
+      w.nativeContactPlayback?.stop(); w.nativeContactPlayback = null;
     }
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
     if (w.originalTeleport) {
@@ -4724,6 +4731,7 @@ function stepFrame(dt) {
       nativeSoundQueue.enqueue(request);
     };
     const collide = (x, y, body) => nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
+    mine.impactPlayback = cleanupNativeContactSound(mine.impactPlayback);
     mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
       frame: matchRandom.frame, index: i, waterY: Math.floor(H - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),

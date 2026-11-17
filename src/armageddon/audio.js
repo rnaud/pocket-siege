@@ -218,14 +218,20 @@ export function playNativeRecoverySound(context, request, previousPlayback) {
   );
 }
 
-// Executable descriptors0055F3B8/0055F3F8: IDs105/113. Original004F4260
-// stops the previous per-body clip before playing the next impact request.
+// 004F4260: all physical bodies own impact audio at+F4, independently
+// of worm speech/weapon handles. Replacement stops the prior clip first.
 export function playNativeProjectileContactSound(context, request, previous) {
-  // MineImpact.wav is ID107 at descriptor0055F3D0.
-  const name = request[0] === 105 ? "holygrenadeimpact" : request[0] === 113 ? "grenadeimpact" : request[0] === 107 ? "mineimpact" : null;
-  if (!name) return previous;
   previous?.stop?.();
-  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[2] / 65536, false, request[1] / 65536, 0, request[3], true);
+  const entry = soundSlots.slots[request[0] & 65535];
+  if (!entry) return null;
+  return playOriginalClip(context, `sounds/${entry.clip}`, () => {}, request[2] / 65536,
+    Boolean(request[0] & 0x10000), request[1] / 65536, 0, request[3], true);
+}
+
+// Base-body event3EA at004F4410 releases a completed +F4 handle.
+export function cleanupNativeContactSound(playback) {
+  if (playback?.finished) { playback.stop(); return null; }
+  return playback;
 }
 
 // 004A7570 loads explicit ID/filename descriptors at0055F080. The high
@@ -313,6 +319,7 @@ export function playNativeProjectileFuse(context, sound) {
 
 // 004E4B39 owns fuse(+3D8) and secondary-phase(+3D4) independently.
 export function updateNativeProjectileAudio(context, projectile) {
+  projectile.nativeContactPlayback = cleanupNativeContactSound(projectile.nativeContactPlayback);
   const slots = { 1: "nativeFusePlayback", 2: "nativeSecondaryPlayback" };
   const result = nativeProjectileSoundTick({
     fuse: projectile.nativeFusePlayback ? 1 : 0,
