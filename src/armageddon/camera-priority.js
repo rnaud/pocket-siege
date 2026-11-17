@@ -13,6 +13,13 @@ export class NativeCameraPriority {
     this.groups = Array.from({ length: 14 }, () => [0, 0, 0, 0, 0]);
     this.special = null;
   }
+  // 004EEA10 changes the priority cap and clears request counts, while
+  // preserving the ordinary hold timer and the stored rectangle coordinates.
+  setPriority(cap) {
+    this.cap = cap;
+    for (const group of this.groups) group[0] = 0;
+    this.special = null;
+  }
   // 004EEB70 replaces the special rectangle on every request.
   offerSpecial(x, y) {
     this.special = [x, y, x, y];

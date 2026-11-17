@@ -47,5 +47,12 @@ for cap in [-1,5,7,13,14]:
     out=owner+0x2000;cpu.mem_write(out,b'\0'*16);run(0x4eeaa0,[out,out+4,out+8,out+12]);found=cpu.reg_read(UC_X86_REG_EAX)
     groups=[[signed(read(context+0x124a4+i*20+j*4)) for j in range(5)] for i in range(14)]
     cases.append(dict(cap=cap,lastFrame=100,frame=100+elapsed,disabled=disabled,requests=requests,groups=groups,outputCap=signed(read(context+0x12414)),outputFrame=read(context+0x12410),bounds=[signed(read(out+j*4)) for j in range(4)] if found else None))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004EE990 and004EEAA0 executed unchanged, including disabled accumulation and50-frame priority timeout.',cases=cases),separators=(',',':'))+'\n')
+resets=[]
+for cap in [-1,0,9,13,14]:
+ cpu.mem_write(context+0x124a4,b'\0'*(14*20));write(context+0x1ac8,0)
+ for request in [[1,100,200],[9,-300,400],[13,500,-600]]:run(0x4ee990,request)
+ write(context+0x12490,1);write(context+0x12410,123)
+ run(0x4eea10,[cap])
+ resets.append(dict(cap=cap,groups=[[signed(read(context+0x124a4+i*20+j*4)) for j in range(5)] for i in range(14)],lastFrame=read(context+0x12410),special=read(context+0x12490),outputCap=signed(read(context+0x12414))))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004EE990 and004EEAA0 executed unchanged, plus004EEA10 priority reset, including disabled accumulation and50-frame priority timeout.',cases=cases,resets=resets),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} camera priority cases')

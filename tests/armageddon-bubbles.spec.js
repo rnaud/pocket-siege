@@ -37,6 +37,7 @@ for (const frozen of [false, true])
       .toBeGreaterThan(0);
     const state = await page.evaluate(() => window.siege.getState());
     expect(state.worms[0].hp).toBe(0);
+    expect(state.nativeCameraFocus).not.toBeNull();
     expect(
       state.waterBubbles.every((b) => /^water\/bubble[1-4]$/.test(b.sprite)),
     ).toBe(true);

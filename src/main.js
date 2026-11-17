@@ -2624,8 +2624,18 @@ function spawnBomb({
     age: 0,
   });
 }
-// Original teleport entry and relocation both dispatch004D6760.
-function queueWormCamera(w) {
+// Original teleport relocation and drowning updates dispatch004D6760.
+function queueWormCamera(w, priority = null) {
+  if (priority !== null) {
+    if (!nativeCameraFraming) {
+      nativeCamera.reset();
+      nativeCameraFraming = new NativeCameraFraming(
+        Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
+      );
+    }
+    nativeCamera.setPriority(priority);
+    pendingWormCamera = [];
+  }
   const request = nativeWormCameraRequest({
     x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
     active: w === worms[current] ? 1 : 0, state: nativeWormState(w),
@@ -4219,6 +4229,7 @@ function step(dt) {
         w.dying = stepNativeDrowningFlight(w, {
           height: H, waterLevel, gravityScale, frame: matchRandom.frame,
         }) ? 1 : 0;
+        if (w.dying) queueWormCamera(w);
         stepOriginalDrowning(w, {
           height: H, random: () => matchRandom.visualUint(),
           emit: ([x, y, vx, vy, size]) => spawnWaterBubble(
@@ -4371,6 +4382,7 @@ function step(dt) {
       w.deathPending = false;
       w.originalParachute = null;
       w.drowned = true;
+      queueWormCamera(w, 9);
       w.dying = 1;
       startOriginalDrowning(w);
       w.hurt = 0.65;
@@ -4828,7 +4840,8 @@ function step(dt) {
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
-  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || teleportTracking || pendingWormCamera.length)) {
+  const wormTracking = pendingWormCamera.length > 0;
+  if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || teleportTracking || wormTracking)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
       Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
@@ -4840,7 +4853,7 @@ function step(dt) {
   for (const request of pendingWormCamera) nativeCamera.offer(...request);
   for (const request of mineCameraRequests) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || teleportTracking)) {
+  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || teleportTracking || wormTracking)) {
     const aspect = arena.clientWidth / arena.clientHeight;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);

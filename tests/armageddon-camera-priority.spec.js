@@ -13,4 +13,15 @@ test("camera bounds, disabled accumulation and priority hold match original rout
     expect(camera.cap).toBe(c.outputCap);
     expect(camera.lastFrame).toBe(c.outputFrame);
   }
+  for (const row of fixture.resets) {
+    const camera = new NativeCameraPriority();
+    camera.lastFrame = 123;
+    for (const request of [[1,100,200],[9,-300,400],[13,500,-600]]) camera.offer(...request);
+    camera.offerSpecial(77,88);
+    camera.setPriority(row.cap);
+    expect(camera.groups).toEqual(row.groups);
+    expect(camera.cap).toBe(row.outputCap);
+    expect(camera.lastFrame).toBe(row.lastFrame);
+    expect(Number(camera.special !== null)).toBe(row.special);
+  }
 });
