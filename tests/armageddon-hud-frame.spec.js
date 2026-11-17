@@ -1,3 +1,5 @@
+import targetInput from "./fixtures/armageddon/controller-target-input.json" with { type: "json" };
+import { nativeCollectTargetInput } from "../src/armageddon/target-input.js";
 import targetActivation from "./fixtures/armageddon/controller-target-activation.json" with { type: "json" };
 import { nativeCollectTargetActivation } from "../src/armageddon/controller-input.js";
 import { NativeCollisionScene } from "../src/armageddon/collision-scene.js";
@@ -232,6 +234,32 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of targetInput.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    for(const [start,count,values] of [[0x1b822,0x1b842,c.controllers],[0x1b7ba,0x1b7da,c.owners],[0x1b88a,0x1b8aa,c.keyowners]]) {
+      scene.setInt16(count,values.length,true);values.forEach((value,i)=>scene.setInt16(start+i*2,value,true));
+    }
+    for(const [offset,value] of [[0x1247c,c.xy[0]],[0x12480,c.xy[1]],[0x1b8cc,0],[0x1b8d0,1920*65536],[0x804,696],[0x1b8ac,c.ceiling]])scene.setInt32(offset,value,true);
+    const calls=[],queue=new NativeReplayBuffer(c.capacity);
+    nativeCollectTargetInput(memory,sceneMemory,queue,{
+      wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
+      lookup:(...args)=>{calls.push(["lookup",...args]);return 1;},
+      wormQuery:(_,event,size)=>{calls.push(["query",event,size]);const p=new Uint8Array(size),v=new DataView(p.buffer);v.setInt32(0x14,c.allow,true);v.setInt32(0x18,c.allow,true);return p;},
+      key:key=>{calls.push(["key",key]);return c.keys.includes(key);},
+      repeatKey:key=>calls.push(["repeat",key]),consume:key=>calls.push(["consume",key]),
+      pointerSample:()=>{calls.push(["pointer"]);return {dx:c.sample[0],dy:c.sample[1],buttons:c.sample[2]};},
+      pointerResetA:()=>calls.push(["resetA"]),pointerResetB:()=>calls.push(["resetB"]),
+      targetShape:()=>{calls.push(["shape"]);return {width:33,height:17};},
+      girderTarget:(x,y)=>{calls.push(["girder",x,y]);return c.accept;},
+      teleportTarget:(x,y)=>{calls.push(["teleport",x,y]);return {x,y:(y+65536)|0,accepted:c.accept};},
+      sound:(...args)=>calls.push(["sound",...args]),
+      wormState:(...args)=>{calls.push(["state",...args]);return c.state;},
+      endTargeting:()=>calls.push(["end"]),
+    });
+    const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
+    expect({calls,events,output:[body.getInt32(0xe0,true),scene.getInt32(0x1247c,true),scene.getInt32(0x12480,true)]}).toEqual({calls:c.calls,events:c.events,output:c.output});
   }
   for (const c of targetActivation.cases) {
     const memory=new Uint8Array(0xb0),body=new DataView(memory.buffer);

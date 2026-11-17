@@ -1,3 +1,5 @@
+import { nativeCollectTargetInput } from './target-input.js';
+
 // Full005010E0, reached by controller event3EC. Collectors own their event
 // payloads; this routine preserves the native gates, order and repeated queries.
 export function nativeCollectControllerInput(memory, sceneMemory, queue, host) {
@@ -12,7 +14,8 @@ export function nativeCollectControllerInput(memory, sceneMemory, queue, host) {
   if (get(0x48) || get(0x74)) return;
   if (host.pointer) host.pointer(queue);
   else nativeCollectPointerInput(memory,sceneMemory,queue,host);
-  host.keyboard(queue);
+  if(host.keyboard)host.keyboard(queue);
+  else nativeCollectTargetInput(memory,sceneMemory,queue,host);
   const controller = get(0xf0);
   if (controller < 0) return;
   const count = scene.getInt16(0x1b8aa,true);
