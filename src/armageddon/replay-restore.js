@@ -1,3 +1,4 @@
+import { nativeBodyStartSound } from './body-sound.js';
 import { nativeInitializeReplayPresentation } from './replay-presentation-restore.js';
 import { NativeReplayBuffer } from './replay-buffer.js';
 // Full004B1DE0's base task reconstruction. The outer factory has already
@@ -190,9 +191,9 @@ export function nativeReadReplayActor(tag, stream, options) {
     put(0x3d8, 0);
     put(0x3d4, 0);
     if (get(0x31c)) {
-      //004EDB90 suppresses sound during reconstruction mode, before checking
-      //whether an audio device exists.
-      const sound = options.audio.suppressed ? -1 : options.audio.play?.(get(0x31c), 4, 65536, 65536, 0) ?? 0;
+      const sound = nativeBodyStartSound(options.audio.suppressed,
+        options.audio.play ? { start: (...request) => options.audio.play(...request) } : null,
+        [get(0x31c), 4, 65536, 65536, 0]);
       put(0x3d8, sound);
     }
     const sum = (get(0x138) + get(0x13c)) | 0;

@@ -1,3 +1,5 @@
+import bodySoundFixture from "./fixtures/armageddon/body-sound.json" with { type: "json" };
+import { nativeBodyStartSound, nativeBodySoundFinished, nativeBodyStopSound } from "../src/armageddon/body-sound.js";
 import soundSlots from "../src/armageddon/sound-slots.json" with { type: "json" };
 import fs from "node:fs";
 import { createHash } from "node:crypto";
@@ -11,6 +13,13 @@ import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  for (const c of bodySoundFixture.cases) {
+    const calls = [];
+    const backend = c.present ? Object.fromEntries(["start","finished","stop"].map(name => [name, (...args) => { calls.push([name,args]); return c.backendResult; }])) : null;
+    const result = c.operation === "start" ? nativeBodyStartSound(c.suppressed,backend,c.request)
+      : c.operation === "finished" ? nativeBodySoundFinished(backend,c.request[0]) : nativeBodyStopSound(backend,c.request[0]);
+    expect({result,calls}).toEqual({result:c.result,calls:c.calls});
+  }
   for (const c of completionFixture.cases) {
     const handles = new NativeSoundHandles(), calls = [];
     handles.channels.fill(c.channel);
