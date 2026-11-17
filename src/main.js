@@ -4223,7 +4223,14 @@ function step(dt) {
   nativeTeamPanelVisibilityTick(nativeTeamPanelVisibility, toggleTeamPanelVisibility);
   toggleTeamPanelVisibility = false;
   nativeTeamPanelTick(nativeTeamPanel);
+  const teamWasRemoving = nativeTeamList.removal !== 0;
   for (const strength of nativeTeamListTick(nativeTeamList)) teamPanelSoundState.bounce = strength << 2;
+  if (teamWasRemoving && !nativeTeamList.removal && phase === "aim" &&
+      [0, 1].some(id => !worms.some(w => w.team === id && w.hp > 0))) {
+    cancelCharge(); stopRope(); stopJetpack();
+    phase = "settle"; shotWait = 0; move = 0; aimInput = 0;
+    updateUI();
+  }
   const panelSounds = nativeTeamPanelSounds(teamPanelSoundState);
   if (sound && panelSounds.length) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -4932,7 +4939,7 @@ function step(dt) {
     const hp = roster.reduce((total, w) => (total + w.hp) | 0, 0);
     return hp === 0 ? 0 : (hp + 1) | 0; // 004B8510.
   });
-  if (phase === "settle" || (phase === "aim" && (worms.some(w => w.deathPending) || nativeTeamList.removal))) {
+  if (phase === "settle" || (phase === "aim" && (worms.some(w => w.deathPending) || nativeTeamList.removal || nativeTeamList.order.some(id => teamScores[id] === 0)))) {
     const settled =
       nativeTeamHealthBusyTicks === 0 &&
       !projectile && !pendingFire &&

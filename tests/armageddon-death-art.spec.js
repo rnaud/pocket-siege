@@ -127,6 +127,7 @@ test("live death plays past the old cutoff before its explosion", async ({
     )
     .toBe(true);
   await expect(page.locator(".team-coral")).toBeHidden({ timeout: 5000 });
+  await expect.poll(() => page.evaluate(() => window.siege.getState().phase)).toBe("over");
   const sequence = await page.evaluate(() => window.deathFrameProbe);
   expect(sequence.maxConcurrent).toBe(1);
   expect(sequence.pendingLabelVisible).toBe(true);
