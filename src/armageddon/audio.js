@@ -228,3 +228,8 @@ export function playNativeClockSound(context, request) {
     return playOriginalClip(context, "sounds/timertick.wav", () => {}, request[3] / 65536, false, request[2] / 65536);
   return null;
 }
+
+// Sound descriptor ID 1 is Morse.wav; 0x10000 requests looping.
+export function playNativeAnnouncementLoop(context, volume) {
+  return playOriginalClip(context, "sounds/morse.wav", () => {}, volume / 65536, true);
+}

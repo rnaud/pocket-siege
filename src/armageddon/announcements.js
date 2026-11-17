@@ -1,7 +1,8 @@
+import { fixedMultiply } from "./numeric.js";
 // Native 20-slot announcement ring (004EC6A0) and 50Hz controller (004ECA40).
 // The historical `scale` field is pixel coverage, not geometric size.
-// Native team visibility inputs and the long-message sound envelope remain
-// host adapters. `blocking` preserves the field name used by the oracle;
+// Native team visibility inputs remain a host adapter.
+// `blocking` preserves the field name used by the oracle;
 // 004EB800 consumes it for audio, while any pending queue delays turn flow.
 export function createNativeAnnouncements() {
   return { read: 0, write: 0, stage: 0, elapsed: 0, scale: 0, blocking: 0,
@@ -85,4 +86,25 @@ export function nativeAnnouncementDraw(state, screenHeight, playback = 0, teamVi
 // 004ECA20; 004B64B0 checks this before advancing the turn controller.
 export function nativeAnnouncementsPending(state) {
   return state.read !== state.write;
+}
+
+// 004EB800 and 004EDA70; handle allocation is supplied by the audio backend.
+export function nativeAnnouncementAudioTick(volume, handle, longMessage, startedHandle = 17) {
+  const target = longMessage ? 65536 : 0;
+  if (volume < target) volume = target;
+  else {
+    const difference = (target - volume) | 0;
+    const increment = Math.max(0x1ca, Math.abs(fixedMultiply(difference, 0x1999)));
+    volume = increment < Math.abs(difference)
+      ? (volume + (volume <= target ? increment : -increment)) | 0 : target;
+  }
+  const calls = [];
+  if (volume) {
+    if (!handle) { calls.push(["play", 0x10001, 9, 65536, volume, 0]); handle = startedHandle; }
+    else calls.push(["volume", handle, volume]);
+  } else {
+    if (handle) calls.push(["stop", handle]);
+    handle = 0;
+  }
+  return { volume, handle, calls };
 }

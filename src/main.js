@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -196,6 +196,7 @@ import {
   playOriginalSound,
   playNativeSpeech,
   playNativeClockSound,
+  playNativeAnnouncementLoop,
   playNativeHitVoice,
   playNativeRecoverySound,
   playNativeWaterSound,
@@ -379,6 +380,7 @@ let terrain,
 let configuredDelays = {};
 let nativeAnnouncements = createNativeAnnouncements();
 let pendingTurnStart = false;
+let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
   ammoFor(loadout, kind, weaponDelays[team]);
@@ -1019,6 +1021,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   round = 1;
   turnCount = [0, 0];
   ((explosions = 0), (shakeUntil = 0));
+  announcementPlayback?.stop(); announcementPlayback = null; announcementVolume = 0;
   nativeAnnouncements = createNativeAnnouncements();
   pendingTurnStart = false;
   setWeapon("rocket");
@@ -4179,13 +4182,28 @@ function aiAim() {
 }
 function step(dt) {
   if (mapLoading) return;
-  if (menu.open || document.hidden) { stopBurstSound(); stopProjectileSound(); return; }
+  if (menu.open || document.hidden) {
+    stopBurstSound(); stopProjectileSound();
+    announcementPlayback?.stop(); announcementPlayback = null;
+    return;
+  }
   if (replaying) return;
   if (hitStop > 0) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
   nativeAnnouncementTick(nativeAnnouncements);
+  const announcementAudio = nativeAnnouncementAudioTick(announcementVolume, announcementPlayback ? 17 : 0, nativeAnnouncements.blocking);
+  announcementVolume = announcementAudio.volume;
+  if (!sound) { announcementPlayback?.stop(); announcementPlayback = null; }
+  else for (const [operation, , , , volume] of announcementAudio.calls) {
+    if (operation === "play") {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      announcementPlayback = playNativeAnnouncementLoop(audio, volume);
+    } else if (operation === "volume") announcementPlayback?.setVolume(announcementVolume / 65536);
+    else { announcementPlayback?.stop(); announcementPlayback = null; }
+  }
   if (pendingTurnStart && !nativeAnnouncementsPending(nativeAnnouncements)) beginTurn();
   nativeClockProgress = nativeClockSlide(nativeClockProgress, nativeClockTarget);
   updateOriginalClockPanel(nativeClockProgress, team);

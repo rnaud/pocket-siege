@@ -41,9 +41,16 @@ clock_frame_mode=False
 clock_presentation_mode=False
 clock_countdown_mode=False
 announcement_draw_mode=False
+announcement_audio_mode=False
+announcement_audio_calls=[]
 announcement_draw=None
 def hook(cpu,address,size,user):
  global announcement_draw
+ if announcement_audio_mode and address in [0x4edb90,0x4edbe0,0x4edc30]:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  name,count={0x4edb90:('play',5),0x4edbe0:('volume',2),0x4edc30:('stop',1)}[address]
+  announcement_audio_calls.append([name,*[struct.unpack('<i',cpu.mem_read(sp+4+i*4,4))[0] for i in range(count)]])
+  cpu.reg_write(UC_X86_REG_EAX,17);cpu.reg_write(UC_X86_REG_ESP,sp+4+count*4);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
  if announcement_draw_mode and address==0x4edb70:
   sp=cpu.reg_read(UC_X86_REG_ESP)
   cpu.reg_write(UC_X86_REG_EAX,read(sp+4));cpu.reg_write(UC_X86_REG_ESP,sp+8);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
@@ -330,5 +337,16 @@ for height in [480,696]:
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement draw did not finish')
    result=announcement_draw if announcement_draw and 'x' in announcement_draw else None
    announcement_draw_cases.append({'height':height,'playback':playback,'stage':stage,'coverage':coverage,'teamOnly':team_only,'visible':visible,'after':result})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases},separators=(',',':'))+'\n')
+announcement_draw_mode=False
+announcement_audio_mode=True
+announcement_audio_cases=[]
+for volume in [0,1,457,458,459,6553,65536,70000]:
+ for handle in [0,17]:
+  for long_message in [0,1]:
+   write(owner+0x38,context);write(owner+0x94,long_message);write(owner+0xac,handle);write(context+0x12468,volume)
+   sp=stack+0xff00;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   announcement_audio_calls=[];cpu.emu_start(0x4eb800,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement audio did not finish')
+   announcement_audio_cases.append({'volume':volume,'handle':handle,'long':long_message,'after':{'volume':read(context+0x12468),'handle':read(owner+0xac),'calls':announcement_audio_calls[:]}})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')
