@@ -1,3 +1,5 @@
+import crateContents from "./fixtures/armageddon/crate-contents.json" with { type: "json" };
+import { nativeCrateContents } from "../src/armageddon/crate-contents.js";
 import crateHits from "./fixtures/armageddon/crate-hit.json" with { type: "json" };
 import { nativeCrateHit } from "../src/armageddon/crate-hit.js";
 import detonation from "./fixtures/armageddon/crate-detonation.json" with { type: "json" };
@@ -153,6 +155,19 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+  for (const row of crateContents.cases) {
+    const events = [];
+    const result = nativeCrateContents({ x: 123456, y: -765432 }, row.weapon,
+      row.allContents, row, {
+        random: () => { events.push(['random']); return row.random; },
+        parent: (...args) => { events.push(['parent', ...args]); return 25; },
+        allocate: size => { events.push(['allocate', size, row.allocated]); return row.allocated; },
+        projectile: (allocation, ...args) => events.push(['projectile', ...args]),
+        sound: request => events.push(['sound', ...request]),
+      });
+    expect(events).toEqual(row.events);
+    expect(result).toEqual({ pool: row.outputPool, used: row.outputUsed });
+  }
   for (const row of crateHits.cases) {
     const packet = [...row.packet];
     expect(nativeCrateHit(row.input, packet, row.extentFactor)).toEqual(row.output);
