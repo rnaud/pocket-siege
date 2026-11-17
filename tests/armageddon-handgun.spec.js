@@ -49,9 +49,15 @@ test("handgun fires six timed bullets for one ammo and then retreats", async ({ 
 
 test("damage interrupts a spent handgun burst without firing remaining bullets", async ({ page }) => {
   await start(page);
+  await page.evaluate(() => {
+    // Interrupt on the first rendered shot, without a remote polling round trip.
+    const interrupt = () => {
+      if (window.siege.getState().shotCount >= 1) window.siege.debug.hit(0, 1);
+      else requestAnimationFrame(interrupt);
+    };
+    requestAnimationFrame(interrupt);
+  });
   await page.locator("#fire").click();
-  await expect.poll(() => page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
-  await page.evaluate(() => window.siege.debug.hit(0, 1));
   await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
   await expect.poll(() => page.evaluate(() => window.siege.getState().team)).toBe(1);
   await page.waitForTimeout(800);
