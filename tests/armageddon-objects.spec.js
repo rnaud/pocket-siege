@@ -38,8 +38,10 @@ test("cluster fragments and fire use original art in live gameplay", async ({
   const fragments = await page.evaluate(() => window.siege.getState().bombs);
   expect(fragments).toHaveLength(5);
   expect(fragments.every((b) => b.sprite === "clustlet")).toBe(true);
-  await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "napalm"));
-  const flames = await page.evaluate(() => window.siege.getState().nativeFlames);
+  const flames = await page.evaluate(() => {
+    window.siege.debug.explodeAt(600, 350, "napalm");
+    return window.siege.getState().nativeFlames;
+  });
   expect(flames).toHaveLength(1);
   expect(flames[0].sprite).toMatch(/^petrol-?[1-6]$/);
   expect(flames[0].record.slice(7)).toEqual([4000, 100, 20, 1]);

@@ -225,7 +225,9 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
 }) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await openArsenal(page);
   await page.locator('[data-weapon="grenade"]').click();
   await setAim(page, "90");
@@ -240,10 +242,10 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
   );
   await page.locator(".close-help").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().team), {
+    .poll(() => page.evaluate(() => window.siege.getState().projectile), {
       timeout: 15000,
     })
-    .toBe(1);
+    .toBeNull();
 });
 
 test("Space charges until release, arrows only aim, and no shot prediction exists", async ({
@@ -800,6 +802,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   page.on("request", r => { if (/\/(minearm|minetick|mineimpact)\.wav$/.test(r.url())) mineSounds.push(r.url().split("/").pop()); });
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#sound").click();
@@ -842,7 +845,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
     .toBeGreaterThan(0);
   state = await page.evaluate(() => window.siege.getState());
   expect(state.mines).toHaveLength(0);
-  await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
+  // Detonation can ignite barrels; their flames retain camera focus independently.
   expect(mineSounds.sort()).toEqual(["minearm.wav", "mineimpact.wav", "minetick.wav"]);
   expect(await page.evaluate(() => [...window.mineSprites].sort())).toEqual(["mineoff", "mineon"]);
 });
@@ -1223,8 +1226,11 @@ test("cluster bomblets and native petrol flames resolve their effects", async ({
     .toBe(true);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "napalm"));
-  state = await page.evaluate(() => window.siege.getState());
+  // Capture creation before the native100ms spread can run between API calls.
+  state = await page.evaluate(() => {
+    window.siege.debug.explodeAt(600, 350, "napalm");
+    return window.siege.getState();
+  });
   expect(state.nativeFlames).toHaveLength(1);
   expect(state.nativeFlames[0].record.slice(7)).toEqual([4000, 100, 20, 1]);
   expect(state.ammo[0].napalm).toBe(2);

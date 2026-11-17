@@ -57,6 +57,8 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
+  // Flight/audio assertions require a fixed landscape, independent of random map selection.
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
