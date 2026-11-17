@@ -30,3 +30,16 @@ export function nativeCratePickupAudio(kind, team, resolveVoice) {
     { operation: 'sound', request: [resolveVoice(team, 7), 3, 65536, 65536, 0] },
   ];
 }
+
+// Transfer branches004F596C..004F5B49 normalize weapon AND utility to1.
+// The completion dispatcher returns this category, not the queried crate kind.
+export function nativePickupCategory(kind) {
+  return kind === 1 || kind === 4 ? 1 : kind === 2 || kind === 5 ? kind : 0;
+}
+
+// 004F5B9D..004F5C18 calls the four004C33A0..004C3460 counters.
+// Category4 is supported by the dispatcher but normalized to1 by transfer.
+export function nativeRecordPickup(stats, category) {
+  const field = { 1: 'weaponCrates', 2: 'healthCrates', 4: 'utilityCrates', 5: 'donorCrates' }[category];
+  if (field) stats[field] = (stats[field] + 1) | 0;
+}

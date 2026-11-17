@@ -1,4 +1,4 @@
-import { nativeCratePickupAudio } from "./armageddon/crate-transfer.js";
+import { nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
 import { nativeBarrelBody } from "./armageddon/barrel-body.js";
 import { stepNativeBarrelBody } from "./armageddon/barrel-runtime.js";
@@ -1440,7 +1440,7 @@ function queryNativeWormPickup(w, body) {
   if (!candidate) return 0;
   const kind = candidate.crate.nativeBody.kind;
   collectCrate(w, candidate.crate);
-  return kind;
+  return nativePickupCategory(kind);
 }
 function stepNativeWormPickup(w) {
   const state = nativeWormState(w);
@@ -1479,6 +1479,8 @@ function collectCrate(w, crate = crates[0]) {
   dispose(mesh);
   crates.splice(crates.indexOf(crate), 1);
   dispatchWormEntryAudio(w, nativeCratePickupAudio(crate.nativeBody.kind, w.team + 1, (_team, slot) => slot));
+  nativeRecordPickup(w.matchStats, nativePickupCategory(crate.nativeBody.kind));
+  w.matchStats.hp = w.hp;
   updateUI();
 }
 function pickupLabel(w, text) {

@@ -65,7 +65,7 @@ export function nativeDamageAccounting(body, damage, options = {}) {
 }
 
 export function createNativeWormMatchStats(team, worm, alliance = team, hp = 100) {
-  return { team, worm, alliance, hp, shots: 0, misses: 0, maxShotKills: 0, maxShotDamage: 0, damageReceived: 0, allyDamage: 0, allyKills: 0,
+  return { team, worm, alliance, hp, weaponCrates: 0, utilityCrates: 0, healthCrates: 0, donorCrates: 0, shots: 0, misses: 0, maxShotKills: 0, maxShotDamage: 0, damageReceived: 0, allyDamage: 0, allyKills: 0,
     enemyDamage: 0, enemyKills: 0, turnKills: 0, lastAttackerTeam: 0, lastAttackerWorm: 0 };
 }
 

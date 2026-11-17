@@ -71,7 +71,18 @@ for kind in [0,1,2,3,4,5]:
      cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,1)
      cpu.emu_start(0x4f596c,0x4f5b49,count=20000)
      if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5b49:raise RuntimeError('Transfer did not finish')
-     cases.append({'record':record,'hp':hp,'recipient':recipient,'donor':donor,'output':{'hp':signed(read(hpaddr)),'recipient':[signed(read(ammo(1,i))) for i in range(71)],'donor':[signed(read(ammo(2,i))) for i in range(71)]}})
+     cases.append({'record':record,'hp':hp,'recipient':recipient,'donor':donor,'category':read(sp+0x30),'output':{'hp':signed(read(hpaddr)),'recipient':[signed(read(ammo(1,i))) for i in range(71)],'donor':[signed(read(ammo(2,i))) for i in range(71)]}})
+stat_cases=[]
+for category in [0,1,2,3,4,5]:
+ for team,worm in [(1,1),(2,4),(6,8)]:
+  for count in [0,7,2147483647,-1]:
+   addresses=[inventory+team*0x51c+worm*0x9c+offset for offset in [-0x57c,-0x578,-0x574,-0x570]]
+   for address in addresses:write(address,count)
+   sp=stack+0xf000;write(sp+0x30,category);write(sp+0x3a8,worm)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,team)
+   cpu.emu_start(0x4f5b9d,0x4f5c18,count=1000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5c18:raise RuntimeError('Statistics did not finish')
+   stat_cases.append({'category':category,'team':team,'worm':worm,'count':count,'output':[signed(read(address)) for address in addresses]})
 audio_cases=[]
 for kind in [0,1,2,3,4,5]:
  for team in [1,2,6]:
@@ -81,5 +92,5 @@ for kind in [0,1,2,3,4,5]:
   cpu.emu_start(0x4f5b57,0x4f5b82,count=1000)
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5b82:raise RuntimeError('Audio did not finish')
   audio_cases.append({'kind':kind,'team':team,'calls':list(sound_calls)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F596C..004F5B49','method':'Original pickup transfer branches, ammo add/set, health get/set and weapon lookup execute unchanged. Text formatting and notification interfaces omitted. Recipient team1/worm1; donor may alias recipient.','cases':cases,'audio_cases':audio_cases},separators=(',',':'))+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F596C..004F5B49','method':'Original pickup transfer branches, ammo add/set, health get/set and weapon lookup execute unchanged. Text formatting and notification interfaces omitted. Recipient team1/worm1; donor may alias recipient.','cases':cases,'audio_entry':'004F5B57..004F5B82 plus004DD5D0; team voice resolution and playback captured','audio_cases':audio_cases,'statistics_entry':'004F5B9D..004F5C18 with original004C33A0/004C33E0/004C3420/004C3460 executed unchanged','stat_cases':stat_cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} pickup transfers')
