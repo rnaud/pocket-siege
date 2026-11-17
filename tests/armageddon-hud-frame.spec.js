@@ -1,3 +1,5 @@
+import replayBuffer from "./fixtures/armageddon/replay-buffer.json" with { type: "json" };
+import { NativeReplayBuffer } from "../src/armageddon/replay-buffer.js";
 import replayControl from "./fixtures/armageddon/replay-control.json" with { type: "json" };
 import { nativeReplayCaptureRequest, nativeReplayInput, nativeReplayPlaybackRequest } from "../src/armageddon/replay-control.js";
 import windMeter from "./fixtures/armageddon/wind-meter.json" with { type: "json" };
@@ -35,6 +37,25 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayBuffer.cases) {
+    const buffers = [new NativeReplayBuffer(row.capacity), new NativeReplayBuffer(row.capacity)];
+    for (const step of row.steps) {
+      const op = step.operation, index = op.queue ?? 0, buffer = buffers[index];
+      let result = null;
+      if (op.kind === "push") result = buffer.push(op.payload);
+      else if (op.kind === "pop") result = buffer.pop();
+      else if (op.kind === "clear") buffer.clear();
+      else if (op.kind === "contains") result = buffer.contains(op.offset);
+      else if (op.kind === "copy") result = buffer.copyFrom(buffers[1 - index]);
+      else if (op.kind === "writeEvent") result = buffer.writeEvent(op.event, op.payload);
+      else if (op.kind === "readEvent") result = buffer.readEvent();
+      else if (op.kind === "peek") {
+        const peek = buffer.peek();
+        result = peek ? { offset: peek.offset, payload: [...peek.bytes] } : null;
+      }
+      expect({ result, buffers: buffers.map(buffer => buffer.snapshot()) }).toEqual({ result: step.result, buffers: step.buffers });
+    }
+  }
   for (const row of replayControl.capture) expect(nativeReplayCaptureRequest(row.input)).toEqual(row.result);
   for (const row of replayControl.inputs) expect(nativeReplayInput(row.input)).toEqual(row.result);
   for (const row of replayControl.playback) expect(nativeReplayPlaybackRequest(row.input)).toEqual(row.result);
