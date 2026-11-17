@@ -1,6 +1,6 @@
 import { nativeTryBodyPosition, nativeSimpleBounce } from "./motion.js";
 
-// Ordinary-contact branch of004D6E30 for airborne6c/79/7d/7e and drill6e.
+// Ordinary-contact branch of004D6E30 for airborne6c/79/7d/7e, drill6e and jetpack78.
 // Stops at the fallback dispatch boundary (004D7357). The caller must apply
 // state-entry effects and, when requested, the remaining collision dispatch.
 // Incoming crate types 0x0b/0x0c have a separate collection path.
@@ -12,12 +12,21 @@ export function nativeWormAirborneContact(
   collide,
 ) {
   if (
-    ![0x6c, 0x6e, 0x79, 0x7d, 0x7e].includes(input.state) ||
+    ![0x6c, 0x6e, 0x78, 0x79, 0x7d, 0x7e].includes(input.state) ||
     [0x0b, 0x0c].includes(otherType)
   )
     throw new RangeError("Unsupported worm contact branch");
   const body = { ...input, field264: 0, field268: 0, field26c: 0 };
   const calls = [];
+  // Jetpack contact plays the owned landing sample, then dispatches the
+  // receiver and normal bounce without entering jump landing state7A.
+  if (body.state === 0x78) {
+    if (body.soundHandle) calls.push({ operation: "stopSound", handle: body.soundHandle });
+    const speed = (Math.abs(body.vx) + Math.abs(body.vy)) | 0;
+    calls.push({ operation: "sound", request: [35, 3, 65536, Math.trunc(speed / 10), 0] });
+    body.soundHandle = environment.soundHandle;
+    return { body, calls, fallback: true };
+  }
   // Drill state6E goes directly to receiver dispatch/bounce, without jump
   // landing, ceiling voices, or vertical position-attempt branches.
   if (body.state === 0x6e) return { body, calls, fallback: true };

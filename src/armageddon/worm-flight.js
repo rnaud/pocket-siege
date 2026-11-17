@@ -1,5 +1,6 @@
 import records from "./scheme-weapon-data.json" with { type: "json" };
 import { nativeWormTransitionBody } from "./worm-state.js";
+import { nativeJetpackInput, nativeJetpackVelocity } from "./jetpack.js";
 import { nativeWaterSound } from "./water-audio.js";
 import { nativeWormSkim } from "./worm-water.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
@@ -121,6 +122,32 @@ export function attachNativeFirePunchFlight(worm, { height, friction = 96 }, pow
 
 // 004D7730 enters7D with dragCCCC and weapon39+70 wind sensitivity.
 const parachuteWind = records.schemes.find(s => s.resource_id === 195).weapons[39][10];
+export function attachNativeJetpackFlight(worm, { height, friction = 96 }) {
+  const previous = worm.nativeFlight ?? {
+    ...nativeAirborneBody(worm, height, friction), state: 0x65, type: 2, complex: 1,
+  };
+  const entry = nativeWormTransitionBody(previous, 0x78, {});
+  worm.nativeFlight = { ...entry.body, state: 0x78 };
+  worm.ground = false;
+}
+
+export function releaseNativeJetpackFlight(worm) {
+  if (worm.nativeFlight?.state !== 0x78) return;
+  // The host resumes airborne movement after leaving jetpack control.
+  const entry = nativeWormTransitionBody(worm.nativeFlight, 0x7e, {});
+  worm.nativeFlight = { ...entry.body, state: 0x7e };
+}
+
+export function stepNativeJetpackFlight(worm, environment, collide) {
+  const body = worm.nativeFlight;
+  const input = nativeJetpackInput({ facing: body.facing, side: 0, down: 0 },
+    { left: environment.horizontal < 0, right: environment.horizontal > 0, up: environment.vertical > 0 },
+    Math.round(0x3d70 * (environment.gravityScale ?? 1)));
+  const { result, ...velocity } = nativeBodyImpulse(body, ...input.impulse);
+  Object.assign(body, velocity, nativeJetpackVelocity(velocity.vx, velocity.vy), { facing: input.facing });
+  return stepNativeJumpFlight(worm, environment, collide);
+}
+
 export function attachNativeParachuteFlight(worm, { height, friction = 96, windPercent = parachuteWind }) {
   const previous = worm.nativeFlight ?? {
     ...nativeAirborneBody(worm, height, friction), state: 0x7e, type: 3, complex: 1,
@@ -204,12 +231,13 @@ export function stepNativeJumpFlight(
       bounce: (body, hit, side) => {
         const other = environment.collisionBody?.(hit) ?? { type: 1, vx: 0, vy: 0 };
         const probe = (x, y) => collision(x, y, body);
-        if (![0x6c, 0x6e, 0x79, 0x7d, 0x7e].includes(body.state)) {
+        if (![0x6c, 0x6e, 0x78, 0x79, 0x7d, 0x7e].includes(body.state)) {
           const response = nativeSimpleBounce(body, other, side, probe);
           Object.assign(body, response.body);
           environment.updateCollisionBody?.(hit, response.other);
           return;
         }
+        const previous = body.state;
         const result = nativeWormAirborneCollision(
           body,
           other,
@@ -242,7 +270,8 @@ export function stepNativeJumpFlight(
             body.type = 2;
             body.drag = 65536;
           }
-          events.push(event);
+          events.push(previous === 0x78 && event.operation === "sound"
+            ? { ...event, operation: "jetpackContactSound" } : event);
         }
       },
     },

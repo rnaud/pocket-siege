@@ -16,7 +16,7 @@ import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
-import { attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
+import { attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
@@ -67,7 +67,7 @@ import {
 import { carveNativeCrater } from "./armageddon/crater-mask.js";
 import { nativeAreaDamage } from "./armageddon/area-damage.js";
 import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
-import { nativeJetpackInitialFuel, nativeJetpackInput, nativeJetpackVelocity } from "./armageddon/jetpack.js";
+import { nativeJetpackInitialFuel } from "./armageddon/jetpack.js";
 import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
 import { nativeHitscanBody, nativeWormHitscanBodies } from "./armageddon/hitscan-body.js";
@@ -222,7 +222,6 @@ import "./pixel-hud.css";
 import {
   Terrain,
   setWorldDimensions,
-  clearBodyPath,
   blastExposure,
   W,
   H,
@@ -1699,7 +1698,10 @@ function stopRope() {
   if (activeUtility === "rope") activeUtility = null;
 }
 function stopJetpack() {
-  for (const w of worms) stopOriginalJetpack(w);
+  for (const w of worms) {
+    releaseNativeJetpackFlight(w);
+    stopOriginalJetpack(w);
+  }
   jetpack = {
     active: false,
     fuel: nativeJetpackInitialFuel / 65536,
@@ -1883,12 +1885,9 @@ function startJetpack() {
   wormLocked = true;
   const w = worms[current];
   if (w.nativeHurtBody?.state === 0x73) { w.nativeHurtBody = null; w.originalHurt = null; }
-  w.nativeFlight = null;
+  attachNativeJetpackFlight(w, { height: H });
   w.originalParachute = null;
   stepOriginalJetpack(w, 0, 0);
-  w.ground = false;
-  w.vx = 0;
-  w.vy = 0;
   utilitiesOpen = false;
   $("#status").textContent =
     "Jet pack on. Up thrusts; left/right steer; R stops.";
@@ -1901,27 +1900,15 @@ function stepJetpack(w, dt) {
   }
   const thrust =
     aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0);
-  const gravity = Math.round(0x3d70 * gravityScale);
-  const input = nativeJetpackInput({ facing: w.facing, side: 0, down: 0 },
-    { left: move < 0, right: move > 0, up: thrust > 0 }, gravity);
-  applyNativeWeaponImpulse(w, input.impulse[0], input.impulse[1]);
-  const velocity = nativeJetpackVelocity(Math.round(w.vx / 50 * 65536),
-    Math.round(-w.vy / 50 * 65536));
-  w.vx = velocity.vx / 65536 * 50;
-  w.vy = -(velocity.vy + gravity) / 65536 * 50;
-  const px = w.x,
-    py = w.y;
-  w.x = Math.max(12, Math.min(W - 12, w.x + w.vx * dt));
-  w.y = Math.max(12, Math.min(H, w.y + w.vy * dt));
-  if (!clearBodyPath(terrain, px, py, w.x, w.y)) {
-    w.x = px;
-    w.y = py;
-    w.vx = 0;
-    w.vy = 0;
-  }
-  w.ground = false;
+  const result = stepNativeJetpackFlight(w, {
+    height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: current,
+    horizontal: move, vertical: thrust,
+    collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
+    updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
+  }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
+  dispatchNativeWormMotionEvents(w, result);
+  if (result.body.state !== 0x78) { stopJetpack(); return; }
   w.moving = Boolean(move);
-  w.facing = input.facing;
   const jetpackState = stepOriginalJetpack(w, move, thrust);
   jetpack.fuel = jetpackState.fuel / 65536;
   if (jetpackState.target === 0x65) stopJetpack();
@@ -2056,6 +2043,10 @@ function dispatchNativeWormMotionEvents(w, result) {
           { index: call.slot }, target.nativeHitVoicePlayback);
       }
       continue;
+    }
+    if (call.operation === "jetpackContactSound" && sound) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      w.nativeHitVoicePlayback = playNativeOwnedSound(audio, call.request, w.nativeHitVoicePlayback);
     }
     if (call.operation === "waterSound" && sound) {
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -4623,6 +4614,7 @@ function stepFrame(dt) {
       }
       continue;
     }
+    if (w === worms[current] && jetpack.active && (w.originalHurt || w.knocked || w.frozen || !w.nativeFlight)) stopJetpack();
     let result = { fallDamage: 0 };
     if (w === worms[current] && jetpack.active) {
       stepJetpack(w, dt);
