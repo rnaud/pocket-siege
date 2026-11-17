@@ -198,6 +198,7 @@ import {
   playNativeFireInputAudio,
   playNativeQueuedSound,
   playNativeOwnedSound,
+  playNativeWormEntryAudio,
   playNativeAnnouncementLoop,
   playNativeHitVoice,
   playNativeRecoverySound,
@@ -1310,6 +1311,17 @@ function updateRecordUI() {
   if (surrender)
     surrender.hidden = !matchStarted || phase === "menu" || phase === "over";
 }
+function dispatchWormEntryAudio(worm, calls) {
+  if (!sound) return;
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  audio.resume();
+  playNativeWormEntryAudio(audio, worm, calls);
+}
+function freezeNativeTeam(targetTeam) {
+  freezeTeam(worms, targetTeam);
+  for (const w of worms) if (w.team === targetTeam && w.hp > 0)
+    dispatchWormEntryAudio(w, [{ operation: "sound", request: [24, 3, 65536, 65536, 0] }]);
+}
 function beginTurn() {
   if (nativeAnnouncementsPending(nativeAnnouncements)) {
     pendingTurnStart = true;
@@ -1332,11 +1344,11 @@ function beginTurn() {
   utilitiesOpen = false;
   specialOpen = false;
   // Native team event 0x41C broadcasts thaw (0x412) before turn setup.
-  const thawing = worms.some(
-    (w) => w.team === team && w.hp > 0 && w.frozen > 0,
-  );
-  for (const w of worms) if (w.team === team) w.frozen = 0;
-  if (thawing) sfx("unfreeze");
+  for (const w of worms) if (w.team === team) {
+    if (w.hp > 0 && w.frozen > 0)
+      dispatchWormEntryAudio(w, [{ operation: "sound", request: [25, 3, 65536, 65536, 0] }]);
+    w.frozen = 0;
+  }
   applyPoisonTick();
   const roster = worms.filter((w) => w.team === team);
   if (!roster.some((w) => w.hp > 0)) return endGame();
@@ -1840,9 +1852,8 @@ function useUtility(kind) {
     return;
   }
   if (kind === "freeze") {
-    freezeTeam(worms, team);
+    freezeNativeTeam(team);
     playSkipTurnSpeech();
-    sfx("freeze");
     utilityAmmo[team].freeze = spendAmmo(utilityAmmo[team].freeze);
     activeUtility = null;
     finishUtilityTurn(
@@ -4210,9 +4221,10 @@ function jump(kind = "forward") {
     w.vx = w.facing * (double ? -65 : 65);
   }
   w.ground = false;
-  startOriginalJump(w, kind === "backflip" || (kind === "up" && double));
+  startOriginalJump(w, kind === "backflip" || (kind === "up" && double),
+    kind === "forward" ? (double ? -1 : 1) : 0,
+    calls => dispatchWormEntryAudio(w, calls));
   lastJump = { kind: double ? null : kind, time: jumpClock };
-  sfx("jump");
 }
 function startAiTurn() {
   const w = worms[current];
@@ -4220,9 +4232,8 @@ function startAiTurn() {
   const playerAlive = worms.filter((t) => t.team === 0 && t.hp > 0).length;
   if (displayAmmo(utilityAmmo[1]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
     utilityAmmo[1].freeze = spendAmmo(utilityAmmo[1].freeze);
-    freezeTeam(worms, 1);
+    freezeNativeTeam(1);
     playSkipTurnSpeech();
-    sfx("freeze");
     phase = "settle";
     retreat = 0;
     shotWait = 0;

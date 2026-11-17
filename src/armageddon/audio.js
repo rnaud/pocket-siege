@@ -252,6 +252,24 @@ export function playNativeOwnedSound(context, request, previous) {
     request[3] / 65536, false, request[2] / 65536, request[1], request[4], true) : null;
 }
 
+// 004D7730 entry owns speech/effects at+38C. Voice resolution is not a
+// second playback: the following sound request uses the resolved sample.
+export function playNativeWormEntryAudio(context, owner, calls) {
+  let voiceSlot = null;
+  for (const call of calls) {
+    if (call.operation === "voice") voiceSlot = call.slot;
+    else if (call.operation === "sound") {
+      const request = call.request;
+      if (voiceSlot !== null) {
+        owner.nativeHitVoicePlayback?.stop();
+        owner.nativeHitVoicePlayback = playNativeSpeech(context, voiceSlot,
+          request[3] / 65536, request[1], request[4], true);
+        voiceSlot = null;
+      } else owner.nativeHitVoicePlayback = playNativeOwnedSound(context, request, owner.nativeHitVoicePlayback);
+    }
+  }
+}
+
 export function cleanupNativeWormAudio(owner, state) {
   const slots = { 1: "nativeActionPlayback", 2: "nativeHitVoicePlayback" };
   const result = nativeWormSoundCleanup(state, owner.nativeActionPlayback ? 1 : 0,

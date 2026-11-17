@@ -400,12 +400,12 @@ function applyAnimationCalls(player, calls) {
 
 // Browser jump adapter: launch velocities and preparation remain browser-owned.
 // This starts the native airborne entry once launch has actually occurred.
-export function startOriginalJump(worm, backflip = false) {
+export function startOriginalJump(worm, backflip = false, direction = 0, onEntry = () => {}) {
   const result = nativeWormJumpLandingEntry(
     {
       state: 0x77,
       team: worm.team,
-      field2b0: 0,
+      field2b0: direction,
       field2b4: backflip ? 1 : 0,
       soundHandle: 0,
     },
@@ -427,6 +427,7 @@ export function startOriginalJump(worm, backflip = false) {
   applyAnimationCalls(player, calls);
   worm.originalJump = player;
   worm.originalLanding = null;
+  onEntry(result.calls);
   return true;
 }
 
