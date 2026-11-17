@@ -1,3 +1,5 @@
+import replayInput from "./fixtures/armageddon/replay-input.json" with { type: "json" };
+import { nativeCollectReplayInput } from "../src/armageddon/replay-input.js";
 import replayFrameState from "./fixtures/armageddon/replay-frame-state.json" with { type: "json" };
 import { nativeAdvanceReplayFrameState, nativeAdvanceInputFrameState, nativeReplayFrameAudio } from "../src/armageddon/replay-frame-state.js";
 import replayFrame from "./fixtures/armageddon/replay-frame.json" with { type: "json" };
@@ -74,6 +76,22 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayInput.cases) {
+    const queue = new NativeReplayBuffer(row.capacity), calls = [];
+    if (row.fill !== null) queue.writeEvent(0x499, new Uint8Array(row.fill).fill(7));
+    const manager = { hasSnapshot: row.flags & 1, pendingInputEvent: row.flags & 2, inputMode: row.mode,
+      captureFrame: 0x87654321, checksum: 0xfedcba98 };
+    nativeCollectReplayInput(manager, queue, {
+      collectRoot: (target, event, size) => calls.push(['root', event, size, target === queue]),
+      collectDevice: target => calls.push(['device', target === queue]),
+    });
+    const snapshot = queue.snapshot();
+    const events = snapshot.records.map(record => {
+      const bytes = Uint8Array.from(record.payload);
+      return [new DataView(bytes.buffer).getUint32(0, true), [...bytes.slice(4)]];
+    });
+    expect({ calls, events, flags: [manager.hasSnapshot, manager.pendingInputEvent], percent: snapshot.percent }).toEqual(row.result);
+  }
   for (const row of replayFrameState.cases) {
     const memory = new Uint8Array(0x300), view = new DataView(memory.buffer), scene = new Uint8Array(0x20000), calls = [];
     replayFrameState.fields.forEach((offset, index) => view.setInt32(offset, row.initial[index], true));
