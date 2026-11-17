@@ -1,3 +1,5 @@
+import wormRotation from "./fixtures/armageddon/worm-rotation.json" with { type: "json" };
+import { nativeWormRotation } from "../src/armageddon/worm-rotation.js";
 import teamRotation from "./fixtures/armageddon/team-rotation.json" with { type: "json" };
 import { nativeTeamRotationReset, nativeSelectNextTeam } from "../src/armageddon/team-rotation.js";
 import turnStart from "./fixtures/armageddon/turn-start.json" with { type: "json" };
@@ -30,6 +32,7 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
   for (const row of actionBusy.writer) expect(nativeActionBusyWrite(row.input)).toEqual(row.result);
   for (const row of actionBusy.clear) expect(nativeActionBusyClear(row.input)).toEqual(row.result);
   for (const row of actionBusy.gate) expect(nativeActionGate(row.input)).toEqual(row.result);
+  for (const row of wormRotation.cases) expect(nativeWormRotation(row.input)).toEqual(row.result);
   for (const row of teamRotation.reset) expect(nativeTeamRotationReset(row.input)).toEqual(row.result);
   for (const row of teamRotation.cases) expect(nativeSelectNextTeam(row.input)).toEqual(row.result);
   for (const row of turnStart.cases) expect(nativeTurnStart(row.input)).toEqual(row.result);

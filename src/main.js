@@ -1,3 +1,4 @@
+import { nativeWormRotation } from "./armageddon/worm-rotation.js";
 import { nativeTeamRotationReset, nativeSelectNextTeam } from "./armageddon/team-rotation.js";
 import { nativeRetreatCountdown } from "./armageddon/retreat.js";
 import { nativePoisonSettlement } from "./armageddon/poison-settlement.js";
@@ -412,7 +413,7 @@ let terrain,
   wind = 0,
   time = 45,
   shotWait = 0,
-  turnCount = [0, 0],
+  lastSelectedWorm = [0, 0],
   mode = "ai",
   weapon = "rocket",
   move = 0,
@@ -1115,7 +1116,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     cursors: Array(6).fill(1), starts: [0, 0] });
   team = selectNativeMatchTeam();
   round = 1;
-  turnCount = [0, 0];
+  lastSelectedWorm = [0, 0];
   explosions = 0;
   announcementPlayback?.stop(); announcementPlayback = null; announcementVolume = 0;
   nativeAnnouncements = createNativeAnnouncements();
@@ -1604,10 +1605,10 @@ function beginTurn() {
   pendingEnvironmentSettlement = Number(suddenDeath && ["water", "health", "nuke"].includes(suddenDeathType));
   const roster = worms.filter((w) => w.team === team);
   if (!roster.some((w) => w.hp > 0)) return endGame();
-  let next = turnCount[team] % roster.length;
-  while (roster[next].hp <= 0) next = (next + 1) % roster.length;
-  const active = roster[next];
-  turnCount[team] = (next + 1) % roster.length;
+  const selection = nativeWormRotation({ health: roster.map(w => w.hp), previous: lastSelectedWorm[team] });
+  if (!selection.selected) return endGame();
+  lastSelectedWorm[team] = selection.selected;
+  const active = roster[selection.selected - 1];
   current = worms.indexOf(active);
   reactionOrigin = { x: Math.round(active.x * 65536) | 0, y: Math.round((H - active.y) * 65536) | 0 };
   matchDamageSourceActive = true;
@@ -1903,6 +1904,7 @@ function cycleWorm(direction = 1) {
   const index = roster.indexOf(worms[current]);
   const next = roster[(index + direction + roster.length) % roster.length];
   current = worms.indexOf(next);
+  lastSelectedWorm[team] = worms.filter(w => w.team === team).indexOf(next) + 1;
   reactionOrigin = { x: Math.round(next.x * 65536) | 0, y: Math.round((H - next.y) * 65536) | 0 };
   cancelCharge();
   power = 0;
