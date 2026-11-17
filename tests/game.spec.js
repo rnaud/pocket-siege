@@ -75,9 +75,14 @@ test("computer takes its turn and returns control", async ({ page }) => {
     .toBe(true);
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  // Exercise AI handoff without firing vertically back onto our own squad.
-  await setAim(page, "-60");
-  await chargeShot(page);
+  // Test the computer's turn without a human projectile or supply-drop
+  // settlement delaying its start; destructive turns are covered above.
+  await page.evaluate(async () => {
+    await window.siege.debug.resetSeed(42);
+    window.siege.debug.setCrateKind("grenade");
+    window.siege.debug.collectCrate();
+  });
+  await page.locator("#skip").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
       timeout: 18000,
@@ -89,6 +94,7 @@ test("computer takes its turn and returns control", async ({ page }) => {
       timeout: 25000,
     })
     .toBe(2);
+  expect(await page.evaluate(() => window.siege.getState().lastShot?.points ?? 0)).toBeGreaterThan(1);
   await expect(page.locator("#fire")).toBeEnabled();
 });
 test("movement, jump, and pointer aiming", async ({
