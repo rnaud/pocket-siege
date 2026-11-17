@@ -29,3 +29,39 @@ export function nativeSoundChannel(channels, priority) {
   }
   return lowest <= (priority | 0) ? selected : -1;
 }
+
+// 00495F70 initializes 32 handles.00496B90 allocates from the free stack;
+// 00496C90 returns a handle and removes it by swapping the last used entry.
+// Channel displacement (004967E0) invalidates the link without freeing it.
+export class NativeSoundHandles {
+  constructor() {
+    this.channels = Array(32).fill(-1);
+    this.free = Array.from({ length: 32 }, (_, i) => i);
+    this.used = [];
+  }
+  allocate(channel) {
+    if (!this.free.length || channel < 0) return 0;
+    const index = this.free.pop();
+    this.used.push(index);
+    this.channels[index] = channel;
+    return index + 1;
+  }
+  invalidate(handle) {
+    if (handle > 0 && handle <= 32) this.channels[handle - 1] = -1;
+  }
+  release(handle, stopChannel) {
+    const index = (handle | 0) - 1;
+    if (index < 0 || index >= 32) return 0;
+    const channel = this.channels[index];
+    if (channel >= 0) {
+      this.channels[index] = -1;
+      stopChannel(channel);
+    }
+    this.free.push(index);
+    const position = this.used.indexOf(index);
+    if (position < 0) return 0;
+    this.used[position] = this.used[this.used.length - 1];
+    this.used.pop();
+    return 1;
+  }
+}

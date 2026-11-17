@@ -787,7 +787,8 @@ function stopBurstSound(burst = pendingFire?.burst) {
 }
 function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
-  if (p) p.nativeFusePlayback = null;
+  p?.nativeContactPlayback?.stop();
+  if (p) p.nativeFusePlayback = p.nativeContactPlayback = null;
 }
 let nativeClockProgress = 0, nativeClockTarget = 0;
 let nativeClockPresentation = { displayed: 45000, warned: 0, lastSecond: 0, phase: 0 };
@@ -963,7 +964,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   girders = [];
   for (const grave of graves) dispose(grave.mesh);
   graves = [];
-  for (const b of bombs) { b.nativeFusePlayback?.stop(); dispose(b.mesh); }
+  for (const b of bombs) { stopProjectileSound(b); dispose(b.mesh); }
   bombs = [];
   for (const strike of airstrikes) if(strike.mesh) dispose(strike.mesh);
   airstrikes = [];
@@ -1179,6 +1180,7 @@ function stepBombs(dt) {
             b.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, b.nativeContactPlayback);
       }
       if (result.removed || result.detonate) {
+        stopProjectileSound(b);
         bombs.splice(i, 1);
         releaseProjectileMesh(b.mesh);
         if (result.detonate) {
@@ -4508,6 +4510,9 @@ function stepFrame(dt) {
       }
     }
     w.g.visible = w.hp > 0 || w.deathPending || w.dying > 0;
+    if (w.hp <= 0 && !w.deathPending && w.dying <= 0) {
+      w.nativeHitVoicePlayback?.stop(); w.nativeHitVoicePlayback = null;
+    }
     if ((w.hp <= 0 && !w.deathPending) || w.dying > 0) continue;
     if (w.originalTeleport) {
       const teleport = stepOriginalTeleport(w);

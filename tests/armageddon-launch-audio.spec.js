@@ -3,12 +3,24 @@ import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { nativeSoundVolume, nativeSoundPan, nativeSoundFrequency } from "../src/armageddon/sound-mix.js";
 import queueFixture from "./fixtures/armageddon/sound-queue.json" with { type: "json" };
-import { NativeSoundQueue, nativeSoundChannel } from "../src/armageddon/sound-queue.js";
+import { NativeSoundQueue, nativeSoundChannel, NativeSoundHandles } from "../src/armageddon/sound-queue.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json" };
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  let handles;
+  for (const c of queueFixture.handleCases) {
+    if (c.reset) handles = new NativeSoundHandles();
+    const calls = [];
+    const result = c.operation === "allocate" ? handles.allocate(c.value)
+      : c.operation === "invalidate" ? (handles.invalidate(c.value), null)
+      : handles.release(c.value, channel => calls.push(["stop", channel], ["release", channel]));
+    expect(result).toBe(c.result);
+    expect(calls).toEqual(c.calls);
+    expect({ channels: handles.channels, free: handles.free, used: handles.used })
+      .toEqual({ channels: c.channels, free: c.free, used: c.used });
+  }
   expect(Object.keys(soundSlots.slots)).toHaveLength(123);
   for (const entry of Object.values(soundSlots.slots)) {
     const bytes = fs.readFileSync(`public/armageddon/sounds/${entry.clip}`);

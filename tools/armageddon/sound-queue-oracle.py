@@ -132,5 +132,43 @@ for flags in [0,0x10000,0x20000,0x30000]:
    cpu.emu_start(0x496d80,stop,count=10000)
    assert cpu.reg_read(UC_X86_REG_EIP)==stop
    mix_cases.append(dict(flags=flags,master=master,volume=volume,pan=pan,pitch=pitch,frequency=frequency,speed=speed,calls=calls,updates=mix_calls))
-args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases,channelCases=channel_cases,mixCases=mix_cases),separators=(',',':'))+'\n')
-print(f'Wrote {len(cases)} queue, {len(channel_cases)} channel, {len(mix_cases)} mixer cases')
+
+# Full handle allocation/release routines. The sample-start boundary returns
+# a supplied channel (channel arbitration is verified above in channelCases).
+selected_channel=0
+cpu.mem_write(0x496940,b'\xc2\x14\x00')
+def sample_start(cpu,address,size,user):cpu.reg_write(UC_X86_REG_EAX,selected_channel&0xffffffff)
+cpu.hook_add(UC_HOOK_CODE,sample_start,begin=0x496940,end=0x496940)
+handle_cases=[]
+sequences=[
+ [('allocate',i%8) for i in range(34)]+[('release',i) for i in range(1,33)]+[('allocate',2)],
+ [('allocate',0),('invalidate',32),('allocate',0),('release',32),('release',31),('allocate',7),('allocate',-1),('release',0),('release',33)],
+ [('allocate',0),('allocate',1),('allocate',2),('release',31),('allocate',3),('release',32),('release',30),('release',31)],
+]
+for actions in sequences:
+ write(owner+0x9a8,32);write(owner+0xa2c,0)
+ for i in range(32):write(owner+0x8a8+i*4,0xffffffff);write(owner+0x928+i*4,i)
+ for operation,value in actions:
+  channel_calls=[]
+  if operation=='invalidate':write(owner+0x8a8+(value-1)*4,0xffffffff);result=None
+  else:
+   sp=stack+0xf000;write(sp,stop)
+   if operation=='allocate':
+    selected_channel=value
+    for i,v in enumerate([1,3,65536,65536,0]):write(sp+4+i*4,v)
+    entry=0x496b90
+   else:
+    # Release's backend Stop/Release are the same captured interfaces as above.
+    for i in range(8):
+     buffer=owner+0x4000+i*0x100;write(buffer,channel_vtable);write(owner+0x28+i*24,buffer)
+    write(sp+4,value);entry=0x496c90
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(entry,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+   result=cpu.reg_read(UC_X86_REG_EAX)
+  handle_cases.append(dict(reset=operation==actions[0][0] and len(handle_cases)==0,operation=operation,value=value,result=result,calls=channel_calls,
+   channels=[struct.unpack('<i',cpu.mem_read(owner+0x8a8+i*4,4))[0] for i in range(32)],
+   free=[read(owner+0x928+i*4) for i in range(read(owner+0x9a8))],used=[read(owner+0x9ac+i*4) for i in range(read(owner+0xa2c))]))
+ # Mark each sequence start, independent of operation/value repetition.
+ handle_cases[-len(actions)]['reset']=True
+args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases,channelCases=channel_cases,mixCases=mix_cases,handleCases=handle_cases),separators=(',',':'))+'\n')
+print(f'Wrote {len(handle_cases)} handle transitions in addition to queue/channel/mixer cases')
