@@ -1,3 +1,5 @@
+import replayDispatch from "./fixtures/armageddon/replay-dispatch.json" with { type: "json" };
+import { nativeDispatchReplayEvents } from "../src/armageddon/replay-dispatch.js";
 import { createHash } from "node:crypto";
 import replaySession from "./fixtures/armageddon/replay-session.json" with { type: "json" };
 import { nativeReplaySessionTick } from "../src/armageddon/replay-session.js";
@@ -66,6 +68,32 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayDispatch.cases) {
+    const input = row.input, calls = [], sceneMemory = new Uint8Array(0x20000), view = new DataView(sceneMemory.buffer);
+    for (const [offset,value] of [[0x1ab8,1],[0x800,-1],[0x7f0,0x7fffffff],[0x1d43c,input.recording],[0x1d444,input.replaying],[0x1d448,input.slow],[0x1240c,4],[0x1cad4,input.audioCount]]) view.setInt32(offset,value,true);
+    sceneMemory.fill(0xa5,0x12490,0x125bc);
+    for (let i=0;i<input.audioCount*5;i++) view.setInt32(0x1c994+i*4,100+i,true);
+    const incoming = new NativeReplayBuffer(4096), recording = new NativeReplayBuffer(4096);
+    if (input.fill) recording.writeEvent(0x499,new Uint8Array(input.fill).fill(7));
+    for (const [event,payload] of input.events) incoming.writeEvent(event,Uint8Array.from(payload));
+    const manager = { abortValue:77,abortFirst:77,abortSecond:77,abortMode:77 };
+    const deviceCall = offset => { calls.push(["device",offset]); return 0; };
+    const audio = { setSpeed: value => calls.push(["speed",value]) };
+    nativeDispatchReplayEvents(sceneMemory, manager, { incoming, recording,
+      dispatch: (event,payload) => calls.push(["dispatch",event,[...payload]]),
+      flushRoot: () => calls.push(["flush",0x210]), flushEnvironment: () => calls.push(["flush",0x220]),
+      sessionTick: playback => nativeReplaySessionTick(sceneMemory, manager, { playback, recording,
+        device: { pending:()=>deviceCall(0x40), clear:()=>deviceCall(0x34),startRecording:()=>deviceCall(0x30),startPlayback:()=>deviceCall(0x44),checksum:()=>deviceCall(0x48) }, audio }),
+      playSound: (...args) => calls.push(["sound",...args]) });
+    const events = buffer => { const rows=[]; for(let head=buffer.head;head!==null;head=buffer.records.get(head).next) {
+      const record=buffer.records.get(head), bytes=buffer.bytes.slice(head+8,head+8+record.size);
+      rows.push([new DataView(bytes.buffer).getUint32(0,true),[...bytes.slice(4)]]);
+    } return rows; };
+    expect({ calls,input:events(incoming),recorded:events(recording),frame:view.getInt32(0x7f0,true),timer:view.getInt32(0x800,true),tickActive:view.getInt32(0x7f4,true),
+      recording:view.getInt32(0x1d43c,true),replaying:view.getInt32(0x1d444,true),slow:view.getInt32(0x1d448,true),speed:view.getInt32(0x1240c,true),audioCount:view.getInt32(0x1cad4,true),
+      manager:[manager.abortValue,manager.abortFirst,manager.abortSecond,manager.abortMode],clearRegion:[...sceneMemory.slice(0x12490,0x125bc)],
+      debugCounters:[0x15948,0x15740,0x1316c].map(offset=>view.getInt32(offset,true)) }).toEqual(row.result);
+  }
   for (const row of replaySession.cases) {
     const mask = row.mask, seed = mask & 255, calls = [], sceneMemory = new Uint8Array(0x20000), view = new DataView(sceneMemory.buffer);
     const pattern = (length, multiplier) => Uint8Array.from({ length }, (_, i) => (i * multiplier + seed) & 255);
