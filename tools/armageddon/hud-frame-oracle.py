@@ -39,7 +39,10 @@ list_calls=[]
 list_scores=[101,201]
 clock_frame_mode=False
 clock_presentation_mode=False
+clock_countdown_mode=False
 def hook(cpu,address,size,user):
+ if clock_countdown_mode and address in [0x4b6565,0x4b65d8]:
+  cpu.emu_stop();return
  if clock_presentation_mode and address==0x4b6727:
   cpu.emu_stop();return
  if clock_frame_mode and address==0x4edb70:
@@ -219,5 +222,18 @@ for remaining in [0,1,999,1000,1001,3999,4000,4999,5000,5001,45000]:
    after={key:struct.unpack('<i',cpu.mem_read(owner+offset,4))[0] for key,offset in clock_fields.items()}
    sounds=[list(struct.unpack('<5i',cpu.mem_read(context+0x1c994+j*20,20))) for j in range(read(context+0x1cad4))]
    clock_presentation_cases.append({'before':before,'remaining':remaining,'selected':selected,'after':{'state':after,'sounds':sounds}})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases},separators=(',',':'))+'\n')
+clock_presentation_mode=False
+clock_countdown_mode=True
+clock_countdown_cases=[]
+for remaining in [-1,0,1,19,20,21,999,1000,45000]:
+ for active in [False,True]:
+  write(owner+0x38,context);write(owner+0x188,remaining&0xffffffff)
+  write(context+0x1cad4,0)
+  cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_EAX,int(active))
+  cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+  cpu.emu_start(0x4b6525,stop,count=10000)
+  if cpu.reg_read(UC_X86_REG_EIP) not in [0x4b6565,0x4b65d8]:raise RuntimeError('Clock countdown did not finish')
+  sounds=[list(struct.unpack('<5i',cpu.mem_read(context+0x1c994+j*20,20))) for j in range(read(context+0x1cad4))]
+  clock_countdown_cases.append({'remaining':remaining,'active':active,'after':{'remaining':struct.unpack('<i',cpu.mem_read(owner+0x188,4))[0],'sounds':sounds}})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

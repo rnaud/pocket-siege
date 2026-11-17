@@ -99,3 +99,17 @@ export function nativeClockPresentationTick(input, remaining, selected) {
   } else state.phase = (state.phase + 0x666) | 0;
   return { state, sounds };
 }
+
+// 004B6525..004B6565: one 20ms simulation tick. The host supplies the
+// active-turn gate until the full native turn/task controller is integrated.
+export function nativeTurnClockTick(remaining, active) {
+  const sounds = [];
+  if (active && remaining !== 0) {
+    remaining = (remaining - 20) | 0;
+    if (remaining < 1) {
+      remaining = 0;
+      sounds.push([0x5d, 8, 65536, 65536, 0]);
+    }
+  }
+  return { remaining, sounds };
+}

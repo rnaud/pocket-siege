@@ -97,6 +97,7 @@ import {
   updateOriginalTimer,
   nativeClockSlide,
   nativeClockPresentationTick,
+  nativeTurnClockTick,
   updateOriginalClockPanel,
 } from "./armageddon/number-hud.js";
 import {
@@ -4212,8 +4213,9 @@ function step(dt) {
     }
   }
   const clockWasActive = phase === "aim";
+  const clockCountdown = nativeTurnClockTick(Math.round(time * 1000), clockWasActive);
+  time = clockCountdown.remaining / 1000;
   if (phase === "aim") {
-    time -= dt;
     if (time <= 0) {
       cancelCharge();
       stopRope();
@@ -4251,10 +4253,11 @@ function step(dt) {
   }
   const clockUpdate = nativeClockPresentationTick(nativeClockPresentation, Math.max(0, Math.round(time * 1000)), clockWasActive);
   nativeClockPresentation = clockUpdate.state;
-  if (sound && clockUpdate.sounds.length) {
+  const clockSounds = [...clockCountdown.sounds, ...clockUpdate.sounds];
+  if (sound && clockSounds.length) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    for (const request of clockUpdate.sounds) playNativeClockSound(audio, request);
+    for (const request of clockSounds) playNativeClockSound(audio, request);
   }
   if (canMove() && move && !rope.attached && !jetpack.active) {
     const w = worms[current];
