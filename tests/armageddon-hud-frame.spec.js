@@ -1,3 +1,5 @@
+import controllerPostShot from "./fixtures/armageddon/controller-post-shot.json" with { type: "json" };
+import { nativeControllerPendingWeapon } from "../src/armageddon/controller-post-shot.js";
 import controllerControl from "./fixtures/armageddon/controller-control.json" with { type: "json" };
 import controllerActivation from "./fixtures/armageddon/controller-activation.json" with { type: "json" };
 import controllerDeactivation from "./fixtures/armageddon/controller-deactivation.json" with { type: "json" };
@@ -254,6 +256,27 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerPostShot.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    sceneMemory.set(c.initial,0x1b778);const calls=[],descriptor=new Uint8Array(0x200);
+    new DataView(descriptor.buffer).setInt32(0x4c,c.selectable,true);
+    const host={
+      wormHealth:(...args)=>{calls.push(["health",...args]);return c.health;},
+      weaponDescriptor:slot=>{calls.push(["descriptor",slot]);return descriptor;},
+      findDefaultWeapon:worm=>{calls.push(["default",worm]);return 17;},
+      weaponAvailable:(...args)=>{calls.push(["available",...args]);return c.available;},
+      consumeWeapon:(...args)=>calls.push(["consume",...args]),
+      wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
+      selectionCommand:(...args)=>calls.push(["select",...args]),
+    };
+    if(c.mode!=="pending") {
+      const payload=new Uint8Array(4);new DataView(payload.buffer).setInt32(0,c.team,true);
+      expect(nativeControllerCommand(memory,sceneMemory,0x432,payload,host)).toBe(true);
+    }
+    if(c.mode!=="post")nativeControllerPendingWeapon(memory,host);
+    expect({calls,body:controllerPostShot.offsets.map(o=>body.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,body:c.body,ownership:c.ownership});
   }
   for(const c of controllerControl.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);
