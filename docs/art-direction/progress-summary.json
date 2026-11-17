@@ -1,5 +1,5 @@
 {
-  "focus": "Verify capture/restore through the composed replay pipeline, then connect native replay to live game state.",
+  "focus": "Verify snapshot reconstruction through the composed replay pipeline, then connect native replay to live game state.",
   "note": "The game is playable, but the offline rewrite is not yet equivalent to Worms Armageddon. Verified routines can still be waiting for live integration.",
   "areas": [
     {
@@ -100,9 +100,10 @@
     },
     {
       "title": "Replays & local saves",
-      "live": "The current replay is a trajectory overlay. Native input, frame, dispatch, session and audio routines now compose into a pipeline verified across consecutive frames. Snapshot capture/restore are verified separately; live integration remains.",
-      "remaining": "Verify composed capture/restore and resource-heavy actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
+      "live": "The current replay is a trajectory overlay. Native input, frame, dispatch, session and audio routines now compose into a pipeline verified across consecutive frames. Capture and playback-request transitions also match across consecutive frames; snapshot reconstruction is verified separately. Live integration remains.",
+      "remaining": "Verify composed snapshot reconstruction and resource-heavy actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_replay_composed_capture",
         "native_replay_composed_frames",
         "native_replay_input_collection",
         "native_replay_frame_state_audio",

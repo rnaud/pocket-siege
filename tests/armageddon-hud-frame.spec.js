@@ -1,3 +1,4 @@
+import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture.json" with { type: "json" };
 import replayPipeline from "./fixtures/armageddon/replay-pipeline.json" with { type: "json" };
 import { createNativeReplayPipeline } from "../src/armageddon/replay-pipeline.js";
 import replayInput from "./fixtures/armageddon/replay-input.json" with { type: "json" };
@@ -78,6 +79,38 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayPipelineCapture.cases) {
+    const scene = new Uint8Array(0x20000), sceneView = new DataView(scene.buffer);
+    const memory = new Uint8Array(0x300), managerView = new DataView(memory.buffer), calls = [];
+    const pattern = (length, multiplier) => Uint8Array.from({ length }, (_, i) => (i * multiplier + row.seed) & 255);
+    scene.set(pattern(0x3fbc, 13), 0x7ec); scene.set(pattern(0x950, 17), 0x1c188); scene.fill(0xa5, 0x1cad8, 0x1d428);
+    for (const [offset, value] of [[0x7f0,99],[0x7f4,0],[0x800,7],[0x1ab8,0],[0x1240c,4],[0x1d438,1],[0x1cad4,0]]) sceneView.setInt32(offset,value,true);
+    const root = { type: 6, registryType: 26, registryIndex: 0, children: [{ type: 13 }, { type: 14 }], memory: new Uint8Array(0x28c) };
+    root.memory.set(pattern(0x5c,11),0x3c); root.memory.set(pattern(0x138,19),0xd8);
+    const environment = { state: pattern(12,7), all: { entries: [] }, categories: [] };
+    const stream = new NativeReplayStream(65536); stream.bytes.fill(0xcc); stream.seek(13); stream.length=21;
+    const incoming = new NativeReplayBuffer(4096), recording = new NativeReplayBuffer(4096);
+    const deviceCall = (offset, result=0) => { calls.push(['device',offset]); return result; };
+    const pipeline = createNativeReplayPipeline({ sceneMemory: scene, managerMemory: memory, root, environment, stream, incoming, recording, host: {
+      collectRoot: (_root, queue, event, size) => calls.push(['collect',event,size,queue===incoming]),
+      dispatchRoot: (_root,event,payload) => calls.push(['dispatch',event,[...payload]]),
+      queryRoot: (_root,event,output) => { calls.push(['query',event,output.length]); new DataView(output.buffer).setInt32(4,0,true); },
+      flushRoot: () => calls.push(['flush',0x210]), flushEnvironment: () => calls.push(['flush',0x220]), renderFrame: () => calls.push(['render']),
+      device: { pending: () => deviceCall(0x40), startRecording: () => deviceCall(0x30,row.captureAccepted), checksum: () => deviceCall(0x48,-16), startPlayback: () => deviceCall(0x44,row.playbackAccepted), readyForPlayback: () => deviceCall(0x3c) },
+      audio: row.sound ? { setVolume: volume => calls.push(['volume',volume]), setSpeed: speed => calls.push(['speed',speed]), playSound: (...args) => calls.push(['sound',...args]) } : null,
+    } });
+    pipeline.manager.globalCounter=1234;
+    const events = queue => queue.snapshot().records.map(record => { const bytes=Uint8Array.from(record.payload); return [new DataView(bytes.buffer).getUint32(0,true),[...bytes.slice(4)]]; });
+    const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+    row.frames.forEach((expected,index) => {
+      if (index===2) { sceneView.setInt32(0x1d43c,0,true); sceneView.setInt32(0x1d440,1,true); }
+      calls.length=0; pipeline.tick();
+      expect({ calls, scene: replayPipelineCapture.sceneFields.map(offset=>sceneView.getInt32(offset,true)), manager: replayPipelineCapture.managerFields.map(offset=>managerView.getInt32(offset,true)),
+        input: events(incoming), recorded: events(recording), globalCounter: pipeline.manager.globalCounter, position: stream.position, length: stream.length,
+        streamHash: hash(stream.bytes.slice(0,stream.length)), copiedHash: hash(scene.slice(0x1cad8,0x1d428)),
+      }).toEqual(expected);
+    });
+  }
   for (const row of replayPipeline.cases) {
     const scene = new Uint8Array(0x20000), sceneView = new DataView(scene.buffer);
     const memory = new Uint8Array(0x300), managerView = new DataView(memory.buffer);
