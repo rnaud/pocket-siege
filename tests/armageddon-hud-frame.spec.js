@@ -1,8 +1,9 @@
+import controllerPointerInput from "./fixtures/armageddon/controller-pointer-input.json" with { type: "json" };
 import controllerWeaponInput from "./fixtures/armageddon/controller-weapon-input.json" with { type: "json" };
 import controllerMovementInput from "./fixtures/armageddon/controller-movement-input.json" with { type: "json" };
 import controllerMenuInput from "./fixtures/armageddon/controller-menu-input.json" with { type: "json" };
 import controllerInput from "./fixtures/armageddon/controller-input.json" with { type: "json" };
-import { nativeCollectControllerInput, nativeCollectMenuInput, nativeCollectMovementInput, nativeCollectWeaponInput } from "../src/armageddon/controller-input.js";
+import { nativeCollectControllerInput, nativeCollectMenuInput, nativeCollectMovementInput, nativeCollectWeaponInput, nativeCollectPointerInput } from "../src/armageddon/controller-input.js";
 import replayWormRoundtrip from "./fixtures/armageddon/replay-worm-roundtrip.json" with { type: "json" };
 import replayPipelineRestore from "./fixtures/armageddon/replay-pipeline-restore.json" with { type: "json" };
 import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture.json" with { type: "json" };
@@ -86,6 +87,26 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of controllerPointerInput.cases) {
+    const memory=new Uint8Array(0x120),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    for(const [start,count,values] of [[0x1b822,0x1b842,c.controllers],[0x1b7ba,0x1b7da,c.owners],[0x1b778,0x1b798,c.free]]) {
+      scene.setInt16(count,values.length,true);values.forEach((value,i)=>scene.setInt16(start+i*2,value,true));
+    }
+    c.priorities.forEach((value,i)=>scene.setInt16(0x1b79a+i*2,value,true));
+    [...c.xy,123,456].forEach((value,i)=>scene.setInt32(controllerPointerInput.sceneOffsets[i],value,true));
+    const calls=[],queue=new NativeReplayBuffer(c.capacity);
+    nativeCollectPointerInput(memory,sceneMemory,c.hasQueue?queue:null,{
+      wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
+      wormState:(...args)=>{calls.push(["state",...args]);return c.state;},
+      weaponAvailable:(team,slot)=>{calls.push(["available",team,slot]);return slot===c.available;},
+      pointerSample:()=>{calls.push(["pointer"]);return {dx:c.sample[0],dy:c.sample[1],buttons:c.sample[2]};},
+      pointerResetA:()=>calls.push(["resetA"]),pointerResetB:()=>calls.push(["resetB"]),
+      key:key=>{calls.push(["key",key]);return c.keys.includes(key);},sound:(...args)=>calls.push(["sound",...args]),
+    });
+    const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
+    expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
   for (const c of controllerWeaponInput.cases) {
     const memory = new Uint8Array(0x110), body = new DataView(memory.buffer);
     for (const [offset,value] of Object.entries(c.fields)) body.setInt32(Number(offset),value,true);

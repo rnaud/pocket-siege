@@ -10,7 +10,8 @@ export function nativeCollectControllerInput(memory, sceneMemory, queue, host) {
     else nativeCollectMenuInput(memory,sceneMemory,queue,host);
   }
   if (get(0x48) || get(0x74)) return;
-  host.pointer(queue);
+  if (host.pointer) host.pointer(queue);
+  else nativeCollectPointerInput(memory,sceneMemory,queue,host);
   host.keyboard(queue);
   const controller = get(0xf0);
   if (controller < 0) return;
@@ -118,5 +119,82 @@ export function nativeCollectWeaponInput(memory, queue, host) {
     emit(0x419,[team,worm,0]);host.consume(0x1f);host.consume(0x20);
   } else if (host.key(0x21) || host.key(0x1e)) {
     emit(0x419,[team,worm,1]);host.consume(0x21);host.consume(0x1e);
+  }
+}
+
+// 004E5E30/004E5EE0 acquire/release the arsenal's priority-2 pointer owner.
+// Lists contain signed shorts, including the free-list stack and counts.
+function nativeArsenalOwnership(body, scene, open) {
+  const get = offset => body.getInt32(offset,true);
+  const short = offset => scene.getInt16(offset,true);
+  const put = (offset,value) => scene.setInt16(offset,value,true);
+  body.setInt32(0xe4,open?1:0,true);
+  const owner = get(0xf4), count = short(0x1b7da);
+  if (open) {
+    if (owner >= 0) return;
+    const freeCount = short(0x1b798);
+    if (!freeCount) { body.setInt32(0xf4,-1,true);return; }
+    put(0x1b798,freeCount-1);
+    const id = short(0x1b778+(freeCount-1)*2);
+    let index=0;
+    while(index<count && short(0x1b79a+index*2)>=3)index++;
+    for(let i=count;i>index;i--) {
+      put(0x1b79a+i*2,short(0x1b79a+(i-1)*2));
+      put(0x1b7ba+i*2,short(0x1b7ba+(i-1)*2));
+    }
+    put(0x1b79a+index*2,2);put(0x1b7ba+index*2,id);
+    put(0x1b7da,count+1);body.setInt32(0xf4,id,true);
+  } else {
+    if(owner<0 || count<=0)return;
+    let index=0;while(index<count && short(0x1b7ba+index*2)!==owner)index++;
+    if(index===count)return;
+    const freeCount=short(0x1b798);
+    put(0x1b778+freeCount*2,owner);put(0x1b798,freeCount+1);
+    for(let i=index;i<count-1;i++) {
+      put(0x1b79a+i*2,short(0x1b79a+(i+1)*2));
+      put(0x1b7ba+i*2,short(0x1b7ba+(i+1)*2));
+    }
+    body.setInt32(0xf4,-1,true);put(0x1b7da,count-1);
+  }
+}
+
+// Full00501370 including005011F0 and004E5340. Pointer reset operations
+// remain explicit device interfaces; UI ownership and cursor state are native.
+export function nativeCollectPointerInput(memory,sceneMemory,queue,host) {
+  const body = new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  const scene = new DataView(sceneMemory.buffer,sceneMemory.byteOffset,sceneMemory.byteLength);
+  const get = offset => body.getInt32(offset,true);
+  const firstOwner = (start,count,id) => scene.getInt16(count,true)>0 && scene.getInt16(start,true)===id;
+  if(get(0xec)<0 || host.wormBusy(get(0x3c),get(0x4c)))return;
+  if(!firstOwner(0x1b822,0x1b842,get(0xec)))return;
+  if(!get(0xe4)) {
+    if(host.wormBusy(get(0x3c),get(0x4c)) || get(0xe4) || !get(0x84) || get(0x50))return;
+    const {buttons}=host.pointerSample();
+    const state=host.wormState(get(0x3c),get(0x4c));
+    if(state===100 || !(buttons&2))return;
+    let slot=1;while(slot<71 && !host.weaponAvailable(get(0x3c),slot))slot++;
+    if(slot===71)return;
+    host.pointerResetA();host.pointerResetB();
+    nativeArsenalOwnership(body,scene,true);body.setInt32(0xd8,65536,true);
+    return;
+  }
+  if(!firstOwner(0x1b7ba,0x1b7da,get(0xf4)))return;
+  const {dx,dy,buttons}=host.pointerSample();
+  host.pointerResetA();host.pointerResetB();
+  // Keys are still queried when right-click already requests closing.
+  const keyClose=[0x1d,0x1b,0x22,0x23,0x24,0x25,0x28,0x1a].some(key=>host.key(key));
+  if((buttons&2) || keyClose) {
+    nativeArsenalOwnership(body,scene,false);body.setInt32(0xd8,0,true);return;
+  }
+  for(const [offset,delta,limit,copy] of [[0x1246c,dx,0xc0,0x12474],[0x12470,dy,0xc4,0x12478]]) {
+    const value=Math.min(Math.max(0,(scene.getInt32(offset,true)+(delta<<16))|0),get(limit)<<16);
+    scene.setInt32(offset,value,true);scene.setInt32(copy,value,true);
+  }
+  if(!queue || !(buttons&1))return;
+  host.sound(get(0x118)?0x77:0x78,8,65536,65536,0);
+  if(get(0x118)) {
+    const payload=new Uint8Array(16),view=new DataView(payload.buffer);
+    [get(0x3c),get(0x4c),get(0x118),1].forEach((value,i)=>view.setInt32(i*4,value,true));
+    queue.writeEvent(0x41b,payload);
   }
 }
