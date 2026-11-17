@@ -2735,3 +2735,6 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
   pointer-events: none;
 }
 .native-damage-number[hidden] { display: none; }
+
+/* Native announcements animate their scale on simulation ticks. */
+#announcement { transition: none; transform-origin: center; }

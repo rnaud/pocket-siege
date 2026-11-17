@@ -1,3 +1,4 @@
+import { createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -370,12 +371,12 @@ let terrain,
   aiWait = 0,
   sound = false,
   audio,
-  announceUntil = 0,
   last = performance.now(),
   accumulator = 0,
   explosions = 0,
   shakeUntil = 0;
 let configuredDelays = {};
+let nativeAnnouncements = createNativeAnnouncements();
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
   ammoFor(loadout, kind, weaponDelays[team]);
@@ -724,9 +725,7 @@ function updateAimHUD() {
   aimHUD.trail.setAttribute("d", "");
 }
 function announce(text) {
-  $("#announcement").textContent = text;
-  $("#announcement").style.opacity = 1;
-  announceUntil = performance.now() + 2200;
+  queueNativeAnnouncement(nativeAnnouncements, text);
 }
 const soundTimes = new Map();
 function sfx(kind) {
@@ -1017,7 +1016,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   round = 1;
   turnCount = [0, 0];
   ((explosions = 0), (shakeUntil = 0));
-  announceUntil = 0;
+  nativeAnnouncements = createNativeAnnouncements();
   setWeapon("rocket");
   mode = $("#mode").value;
   applyWeather();
@@ -3958,7 +3957,7 @@ function finishMatch(winner, series) {
         ? `${name} WINS THE SERIES!`
         : `${name} WINS!`,
   );
-  announceUntil = Infinity;
+  // Match result is also retained in the status HUD.
   $("#turn-label").textContent = series ? "SERIES COMPLETE" : "MATCH COMPLETE";
   $("#status").textContent =
     format === "best3"
@@ -4175,6 +4174,7 @@ function step(dt) {
     hitStop = Math.max(0, hitStop - dt);
     return;
   }
+  nativeAnnouncementTick(nativeAnnouncements);
   nativeClockProgress = nativeClockSlide(nativeClockProgress, nativeClockTarget);
   updateOriginalClockPanel(nativeClockProgress, team);
   if (phase === "break") {
@@ -5299,8 +5299,11 @@ function frame(now) {
     timerKey = timerState;
     updateOriginalTimer(timerValue, retreat > 0, document, timerMilliseconds, timerRunning);
   }
-  if (now > announceUntil && $("#announcement").style.opacity !== "0")
-    $("#announcement").style.opacity = 0;
+  const announcement = $("#announcement");
+  const message = nativeAnnouncements.entries[nativeAnnouncements.read];
+  announcement.textContent = message?.text ?? "";
+  announcement.style.opacity = nativeAnnouncements.stage && nativeAnnouncements.scale > 0 ? "1" : "0";
+  announcement.style.transform = `scale(${Math.max(0, nativeAnnouncements.scale) / 65536})`;
   water.userData.update(reducedMotion ? 0 : now * 0.001);
   motes.forEach((m, i) => {
     m.position.x = (i * 127 + now * 0.007) % W;

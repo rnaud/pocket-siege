@@ -41,6 +41,12 @@ clock_frame_mode=False
 clock_presentation_mode=False
 clock_countdown_mode=False
 def hook(cpu,address,size,user):
+ if address==stop+0x300: # External CRT strncpy; native queue logic runs unchanged.
+  sp=cpu.reg_read(UC_X86_REG_ESP);dest,source,length=[read(sp+i) for i in [4,8,12]]
+  value=bytes(cpu.mem_read(source,length)).split(b'\0')[0][:length]
+  cpu.mem_write(dest,value+bytes(length-len(value)))
+  cpu.reg_write(UC_X86_REG_EAX,dest);cpu.reg_write(UC_X86_REG_ESP,sp+4)
+  cpu.reg_write(UC_X86_REG_EIP,read(sp));return
  if clock_countdown_mode and address in [0x4b6565,0x4b65d8]:
   cpu.emu_stop();return
  if clock_presentation_mode and address==0x4b6727:
@@ -235,5 +241,39 @@ for remaining in [-1,0,1,19,20,21,999,1000,45000]:
   if cpu.reg_read(UC_X86_REG_EIP) not in [0x4b6565,0x4b65d8]:raise RuntimeError('Clock countdown did not finish')
   sounds=[list(struct.unpack('<5i',cpu.mem_read(context+0x1c994+j*20,20))) for j in range(read(context+0x1cad4))]
   clock_countdown_cases.append({'remaining':remaining,'active':active,'after':{'remaining':struct.unpack('<i',cpu.mem_read(owner+0x188,4))[0],'sounds':sounds}})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases},separators=(',',':'))+'\n')
+clock_countdown_mode=False
+announcement_cases=[]
+announcement_fields={'write':0x1c188,'read':0x1c18c,'stage':0x1c190,'elapsed':0x1c194,'scale':0x1c198}
+for head,count in [(0,0),(0,1),(0,2),(0,3),(19,2)]:
+ for stage,scale,elapsed in [(0,0,0),(1,0,0),(1,58980,0),(2,65536,740),(2,65536,860),(2,65536,1000),(2,65536,3000),(3,65536,0),(3,6556,0)]:
+  for long in [0,1]:
+   before={'read':head,'write':(head+count)%20,'stage':stage,'elapsed':elapsed,'scale':scale,'blocking':long}
+   for key,offset in announcement_fields.items():write(context+offset,before[key])
+   for row in range(20):write(context+0x1c1a0+row*100,long)
+   write(owner+0x38,context);write(owner+0x94,long);write(owner+0xd0,owner+0x8000)
+   sp=stack+0xff00;write(sp,stop)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4eca40,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement controller did not finish')
+   after={key:struct.unpack('<i',cpu.mem_read(context+offset,4))[0] for key,offset in announcement_fields.items()}
+   after['blocking']=read(owner+0x94)
+   announcement_cases.append({'before':before,'long':long,'after':after})
+announcement_queue_cases=[]
+write(0x517904,stop+0x300)
+for head,tail,text_value,font in [(0,0,'READY',15),(19,19,'WRAP',-15),(0,19,'FULL',15),(0,19,'!URGENT',-15),(3,5,'A'*95,28)]:
+ cpu.mem_write(context+0x1c19c,bytes(2100))
+ write(context+0x1c188,tail);write(context+0x1c18c,head);write(context+0x1c190,2)
+ cpu.mem_write(owner+0x9000,text_value.encode()+b'\0');write(owner+0x38,context)
+ sp=stack+0xff00
+ for j,v in enumerate([stop,font&0xffffffff,owner+0x9000,2,1]):write(sp+j*4,v)
+ cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+ cpu.emu_start(0x4ec6a0,stop,count=10000)
+ if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement enqueue did not finish')
+ index=head if text_value.startswith('!') else tail
+ entry=None
+ if read(context+0x1c188)!=(head if text_value.startswith('!') else tail):
+  at=context+index*100
+  entry={'text':bytes(cpu.mem_read(at+0x1c1ac,81)).split(b'\0')[0].decode(),'font':read(at+0x1c1a8),'long':read(at+0x1c1a0),'team':read(at+0x1c19c),'teamOnly':read(at+0x1c1a4)}
+ announcement_queue_cases.append({'head':head,'tail':tail,'text':text_value,'font':font,'after':{'read':read(context+0x1c18c),'write':read(context+0x1c188),'stage':read(context+0x1c190),'entry':entry,'index':index}})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')
