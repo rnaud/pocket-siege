@@ -49,6 +49,16 @@ export class NativeSoundHandles {
   invalidate(handle) {
     if (handle > 0 && handle <= 32) this.channels[handle - 1] = -1;
   }
+  //00496C20: invalid handles (including reconstruction sentinel-1) are
+  //unfinished; displaced handles and backend query failures are finished.
+  finished(handle, query) {
+    const index = ((handle | 0) - 1) | 0;
+    if (index < 0 || index >= 32) return 0;
+    const channel = this.channels[index];
+    if (channel < 0) return 1;
+    const { result, flags } = query(channel);
+    return result !== 0 ? 1 : (~flags & 1);
+  }
   release(handle, stopChannel) {
     const index = (handle | 0) - 1;
     if (index < 0 || index >= 32) return 0;

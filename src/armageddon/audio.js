@@ -113,7 +113,10 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
       if (activeGain) activeGain.gain.value = nativeAttenuationGain(nativeSoundVolume(Math.round(level * 65536), 65536, 0, false));
     },
     get handle() { return handle; },
-    get finished() { return cancelled || (settled && !activeSource); },
+    get finished() {
+      if (handle) return Boolean(handles.finished(handle, () => ({ result: 0, flags: activeSource ? 1 : 0 })));
+      return cancelled || (settled && !activeSource);
+    },
     displace() {
       handles.invalidate(handle);
       cancelled = true;

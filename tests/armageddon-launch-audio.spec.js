@@ -2,6 +2,7 @@ import soundSlots from "../src/armageddon/sound-slots.json" with { type: "json" 
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { nativeSoundVolume, nativeSoundPan, nativeSoundFrequency } from "../src/armageddon/sound-mix.js";
+import completionFixture from "./fixtures/armageddon/sound-completion.json" with { type: "json" };
 import replayCleanup from "./fixtures/armageddon/replay-audio-cleanup.json" with { type: "json" };
 import queueFixture from "./fixtures/armageddon/sound-queue.json" with { type: "json" };
 import { NativeSoundQueue, nativeReplaySoundCleanup, nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup } from "../src/armageddon/sound-queue.js";
@@ -10,6 +11,14 @@ import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  for (const c of completionFixture.cases) {
+    const handles = new NativeSoundHandles(), calls = [];
+    handles.channels.fill(c.channel);
+    const result = handles.finished(c.handle, channel => {
+      calls.push(channel); return { result:c.statusResult, flags:c.statusFlags };
+    });
+    expect({result,calls}).toEqual({result:c.result,calls:c.calls});
+  }
   for (const c of replayCleanup.cases) {
     const channels = structuredClone(c.channels), calls = [];
     const index = buffer => c.channels.findIndex(row => row[5] === buffer);
