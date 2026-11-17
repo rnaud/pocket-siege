@@ -1,3 +1,6 @@
+import soundSlots from "../src/armageddon/sound-slots.json" with { type: "json" };
+import fs from "node:fs";
+import { createHash } from "node:crypto";
 import { nativeSoundVolume, nativeSoundPan, nativeSoundFrequency } from "../src/armageddon/sound-mix.js";
 import queueFixture from "./fixtures/armageddon/sound-queue.json" with { type: "json" };
 import { NativeSoundQueue, nativeSoundChannel } from "../src/armageddon/sound-queue.js";
@@ -6,6 +9,11 @@ import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  expect(Object.keys(soundSlots.slots)).toHaveLength(123);
+  for (const entry of Object.values(soundSlots.slots)) {
+    const bytes = fs.readFileSync(`public/armageddon/sounds/${entry.clip}`);
+    expect(createHash("sha256").update(bytes).digest("hex")).toBe(entry.sha256);
+  }
   for (const c of queueFixture.mixCases) {
     expect(c.calls).toEqual([
       ["position", 0], ["frequency", nativeSoundFrequency(c.frequency, c.pitch, c.speed)],
@@ -46,7 +54,9 @@ test("browser decodes native projectile release samples without an early holy ch
   await expect.poll(() => page.evaluate(() => window.siege?.getState().assetsReady)).toBe(true);
   await page.evaluate(async () => {
     const { attachNativeProjectile } = await import("/src/armageddon/projectile-runtime.js");
-    const { playNativeProjectileReleaseSound } = await import("/src/armageddon/audio.js");
+    const { playNativeProjectileReleaseSound, playNativeQueuedSound } = await import("/src/armageddon/audio.js");
+    const { NativeSoundQueue } = await import("/src/armageddon/sound-queue.js");
+    const queue = new NativeSoundQueue();
     const context = new AudioContext();
     const createSource = context.createBufferSource.bind(context);
     window.releasePlayback = [];
@@ -60,9 +70,14 @@ test("browser decodes native projectile release samples without an early holy ch
       const p = { kind, x: 200, y: 400, vx: 0, vy: 0, fuse: 3, bounce: 0.55 };
       attachNativeProjectile(p, 650);
       window.releaseIds.push(p.nativeRelease.calls.filter(e => e.operation === "sound").map(e => e.request[0]));
-      playNativeProjectileReleaseSound(context, p.nativeRelease);
+      playNativeProjectileReleaseSound(context, p.nativeRelease, request => queue.enqueue(request));
     }
+    window.releaseBeforeFlush = window.releasePlayback.length;
+    window.releaseQueued = queue.requests.map(request => request[0]);
+    queue.flush(request => playNativeQueuedSound(context, request));
   });
+  expect(await page.evaluate(() => window.releaseBeforeFlush)).toBe(0);
+  expect(await page.evaluate(() => window.releaseQueued)).toEqual([75, 75, 75, 73, 73, 73]);
   await expect.poll(() => page.evaluate(() => window.releasePlayback.length)).toBe(6);
   expect(await page.evaluate(() => window.releaseIds)).toEqual([[75], [75], [75], [73], [73], [73]]);
   expect(await page.evaluate(() => window.releasePlayback.every(duration => duration > 0))).toBe(true);

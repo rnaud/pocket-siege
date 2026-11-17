@@ -40,7 +40,6 @@ import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./arm
 import { nativeWormReceiver } from "./armageddon/worm-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
 import { nativeMineTimer, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
-import { playNativeMineSound } from "./armageddon/audio.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
@@ -197,14 +196,10 @@ import {
 import {
   playOriginalSound,
   playNativeSpeech,
-  playNativeCrateDropSound,
-  playNativeSuddenDeathSound,
-  playNativeClockSound,
+  playNativeQueuedSound,
   playNativeAnnouncementLoop,
-  playNativeTeamPanelSound,
   playNativeHitVoice,
   playNativeRecoverySound,
-  playNativeWaterSound,
   playNativeLandingSound,
   playNativeDeathVoice,
 } from "./armageddon/audio.js";
@@ -1178,7 +1173,7 @@ function stepBombs(dt) {
       if (sound && (result.sounds.length || result.events.some(e => e.operation === "sound"))) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
-        for (const request of result.sounds) playNativeWaterSound(audio, request);
+        for (const request of result.sounds) nativeSoundQueue.enqueue(request);
         for (const event of result.events)
           if (event.operation === "sound" && !event.timer)
             b.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, b.nativeContactPlayback);
@@ -2035,7 +2030,7 @@ function dispatchNativeWormMotionEvents(w, result) {
     }
     if (call.operation === "waterSound" && sound) {
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
-      playNativeWaterSound(audio, call.request);
+      nativeSoundQueue.enqueue(call.request);
     }
     if (call.operation === "health") injure(w, call.request[0], 0, true);
     if (call.operation === "particle")
@@ -2847,7 +2842,7 @@ function spawnPlacedDynamite(release) {
   if (sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    playNativeProjectileReleaseSound(audio, body.nativeRelease);
+    playNativeProjectileReleaseSound(audio, body.nativeRelease, request => nativeSoundQueue.enqueue(request));
   }
   if (nativeProjectilePlacementHit(body, terrain, worms, H)) {
     const packet = nativeProjectileDetonationEvents(body, () => matchRandom.logicUint())
@@ -3081,11 +3076,10 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     points: [start, hit],
     impact: { ...hit, kind },
   };
-  if (kind === "shotgun") sfx("shotgun");
-  else if (sound) {
+  if (sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    const playback = playNativeProjectileReleaseSound(audio, release);
+    const playback = playNativeProjectileReleaseSound(audio, release, request => nativeSoundQueue.enqueue(request));
     if (burst && playback) burst.playback = playback;
   }
 }
@@ -3348,7 +3342,7 @@ function fireBat(prepared = false) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
     playNativeProjectileReleaseSound(audio, nativeLaunchAudio(config.record,
-      { loop: 0, burst: 0, ordinal: 1, flag: 0, team: w.team }));
+      { loop: 0, burst: 0, ordinal: 1, flag: 0, team: w.team }), request => nativeSoundQueue.enqueue(request));
   }
   finishAction("Bat swing complete. Retreat!");
 }
@@ -3482,7 +3476,7 @@ function fire() {
     if (sound) {
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
       audio.resume();
-      playNativeProjectileReleaseSound(audio, projectile.nativeRelease);
+      playNativeProjectileReleaseSound(audio, projectile.nativeRelease, request => nativeSoundQueue.enqueue(request));
     }
   } else sfx(kind);
   if (projectile.nativeBody && nativeProjectilePlacementHit(projectile, terrain, worms, H)) {
@@ -4285,12 +4279,7 @@ function queueControllerSpeech(request) {
   return nativeSoundQueue.enqueue([request[0] | 0x10000, ...request.slice(1)]);
 }
 function submitQueuedSound(request) {
-  if (request[0] & 0x10000)
-    playNativeSpeech(audio, request[0] & 65535, request[3] / 65536, request[1], request[4]);
-  else if (request[0] === 81) playNativeCrateDropSound(audio, "weapon");
-  else if (request[0] === 94) playNativeSuddenDeathSound(audio);
-  else if (request[0] === 93) playNativeClockSound(audio, request);
-  else playNativeTeamPanelSound(audio, request);
+  playNativeQueuedSound(audio, request);
 }
 function step(dt) {
   stepFrame(dt);
@@ -4697,7 +4686,7 @@ function stepFrame(dt) {
       if (!sound || !request) return;
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
       audio.resume();
-      playNativeWaterSound(audio, request);
+      nativeSoundQueue.enqueue(request);
     };
     const collide = (x, y, body) => nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
     mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
@@ -4758,7 +4747,7 @@ function stepFrame(dt) {
       if (call.operation !== "sound") continue;
       audio ??= new (window.AudioContext || window.webkitAudioContext)();
       audio.resume();
-      playNativeMineSound(audio, call.request);
+      nativeSoundQueue.enqueue(call.request);
     }
     if (!result.expired) {
       if ((mine.nativeBody.y >> 16) >= nativeProjectileDepth(Math.floor(H - waterLevel))) {
@@ -4786,7 +4775,7 @@ function stepFrame(dt) {
         } else if (call.operation === "sound" && sound) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();
-          playNativeWaterSound(audio, call.request);
+          nativeSoundQueue.enqueue(call.request);
         }
       }
       for (const call of nativeMineStateEvents(mine.nativeBody, mine.nativeTimer.damage)) {
@@ -4809,7 +4798,7 @@ function stepFrame(dt) {
       else if (call.operation === "sound" && sound) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
-        playNativeMineSound(audio, call.request);
+        nativeSoundQueue.enqueue(call.request);
       } else if (call.operation === "delete") {
         removeMine(i);
       }
@@ -4923,7 +4912,7 @@ function stepFrame(dt) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();
           for (const event of nativeContact.sounds)
-            playNativeWaterSound(audio, event);
+            nativeSoundQueue.enqueue(event);
         }
         if (sound) for (const event of nativeContact.events) {
           if (event.operation !== "sound") continue;

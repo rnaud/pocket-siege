@@ -1,3 +1,4 @@
+import soundSlots from "./sound-slots.json";
 import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";
 import { nativeSoundChannel } from "./sound-queue.js";
 import speech from "./speech-slots.json";
@@ -210,30 +211,39 @@ export function playNativeProjectileContactSound(context, request, previous) {
   const name = request[0] === 105 ? "holygrenadeimpact" : request[0] === 113 ? "grenadeimpact" : request[0] === 107 ? "mineimpact" : null;
   if (!name) return previous;
   previous?.stop?.();
-  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[2] / 65536, false, request[1] / 65536, 3, request[3]);
+  return playOriginalClip(context, `sounds/${name}.wav`, () => {}, request[2] / 65536, false, request[1] / 65536, 0, request[3]);
 }
 
-// Original descriptors 0055F2B0/0055F2C0 map release IDs 73/75.
-// Native projectile releases and type2 English laugh speech are routed here;
-// Uzi/Minigun loop descriptors are0055F2D8/0055F2E0 (IDs78/79).
-// The caller owns the returned loop and stops it on completion/interruption.
-export function playNativeProjectileReleaseSound(context, release) {
-  let loop = null;
+// 004A7570 loads explicit ID/filename descriptors at0055F080. The high
+// speech marker is the host's English-bank adapter, not an original sample ID.
+export function playNativeQueuedSound(context, request) {
+  if (request[0] & 0x10000)
+    return playNativeSpeech(context, request[0] & 65535, request[3] / 65536, request[1], request[4]);
+  const entry = soundSlots.slots[request[0]];
+  return entry ? playOriginalClip(context, `sounds/${entry.clip}`, () => {},
+    request[3] / 65536, false, request[2] / 65536, request[1], request[4]) : null;
+}
+
+// Original004FABA9..004FADDB queues one-shots, but004DD610 owns immediate
+// body loops. Voice lookup precedes its queued sound request; it is not itself
+// a playback call. The caller retains the returned loop for stop/interruption.
+export function playNativeProjectileReleaseSound(context, release, enqueue = request => playNativeQueuedSound(context, request)) {
+  let loop = null, voiceSlot = null;
   for (const event of release.calls) {
     if (event.operation === "loopSound") {
-      const name = { 78: "uzifire", 79: "minigunfire" }[event.request[0] & 65535];
-      if (name) loop = playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[2] / 65536, true);
+      const entry = soundSlots.slots[event.request[0] & 65535];
+      if (entry) loop = playOriginalClip(context, `sounds/${entry.clip}`, () => {},
+        event.request[2] / 65536, Boolean(event.request[0] & 0x10000), event.request[1] / 65536, 3, event.request[3]);
       continue;
     }
-    // Speech descriptor0055F540 maps native slot29 to Laugh.wav.
-    if (event.operation === "voice" && event.request[1] === 29) {
-      playOriginalClip(context, "voices/english/laugh.wav", () => {}, 1);
+    if (event.operation === "voice") {
+      voiceSlot = event.request[1];
       continue;
     }
     if (event.operation !== "sound") continue;
-    const name = { 73: "throwrelease", 75: "rocketrelease", 82: "handgunfire", 96: "baseballbatrelease" }[event.request[0]];
-    if (name)
-      playOriginalClip(context, `sounds/${name}.wav`, () => {}, event.request[3] / 65536, false, event.request[2] / 65536, event.request[1], event.request[4]);
+    const request = [...event.request];
+    if (voiceSlot !== null) { request[0] = voiceSlot | 0x10000; voiceSlot = null; }
+    enqueue(request);
   }
   return loop;
 }
