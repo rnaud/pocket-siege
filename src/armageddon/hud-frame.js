@@ -45,12 +45,13 @@ export function paintNativeHUDFrame(canvas, width, height, fill) {
 }
 export function paintNativeTeamHealth(canvas, fraction, color) {
   const amount = Math.imul(fraction, 100) >> 16;
-  if (canvas.dataset.nativeHealth === String(amount)) return;
+  if (canvas.dataset.nativeHealth === String(amount) && canvas.dataset.nativeColor === color) return;
   // 004B8350 takes the standard font's 16px height; 004B87B0 adds one.
   paintNativeHUDFrame(canvas, amount + 4, 17, color);
   canvas.style.width = `${canvas.width}px`;
   canvas.style.height = "17px";
   canvas.dataset.nativeHealth = String(amount);
+  canvas.dataset.nativeColor = color;
 }
 
 // 004EC470 / 004EC5D0 / 004EC5F0: fixed 50Hz team panel controller.
@@ -101,4 +102,10 @@ export function nativeTeamHealthTick(value, roster, maximum, surrendered = false
     value = (value + (difference < 0 ? -0x28f : 0x28f)) | 0;
   else value = target;
   return { value, target, busy };
+}
+
+// 004B87B0: selected team switches both its name and bar to white every 25 ticks.
+export function nativeTeamHighlight(color, selected, tick) {
+  const flashing = Boolean(selected && (Math.trunc((tick | 0) / 25) & 1));
+  return { flashing, font: flashing ? 15 : (color + 9) | 0 };
 }

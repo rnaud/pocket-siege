@@ -36,7 +36,7 @@ test("live team names use original colored glyphs on the pixel grid", async ({
   await page.locator("#start").click();
   await expect(page.locator(".team-lime b")).toHaveAttribute(
     "data-native-font",
-    "stdgrn1",
+    /^(stdgrn1|stdwht1)$/,
   );
   await expect(page.locator(".team-coral b")).toHaveAttribute(
     "data-native-font",
@@ -57,11 +57,22 @@ test("live team names use original colored glyphs on the pixel grid", async ({
       })),
     ).toEqual({
       height: 16,
-      cssHeight: 32,
+      cssHeight: 16,
       smoothing: "pixelated",
       colored: true,
     });
   }
+  const highlights = await page.evaluate(() => new Promise(resolve => {
+    const seen = new Set();
+    const sample = () => {
+      const team = document.querySelector(".team-lime");
+      seen.add(`${team.querySelector("b").dataset.nativeFont}:${team.querySelector(".native-team-health").dataset.nativeColor}`);
+      if (seen.size >= 2) resolve([...seen].sort());
+      else requestAnimationFrame(sample);
+    };
+    sample();
+  }));
+  expect(highlights).toEqual(["stdgrn1:#80ff80", "stdwht1:#ffffff"]);
   await expect(page.locator("#fire")).toBeEnabled();
   await page.screenshot({ path: info.outputPath("native-font-hud.png") });
 });

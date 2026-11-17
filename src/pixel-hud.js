@@ -1,10 +1,12 @@
 import {
   paintNativeHUDFrame,
   paintNativeTeamHealth,
+  nativeTeamHighlight,
 } from "./armageddon/hud-frame.js";
 import { loadNativeFont, paintNativeText } from "./armageddon/font.js";
 
 const frames = new Set();
+const teamFonts = new Map();
 function frame(element, ornate = false) {
   const canvas = document.createElement("canvas");
   canvas.className = "pixel-panel-frame";
@@ -100,8 +102,10 @@ export function mountPixelHUD(arena) {
     [".team-coral b", "stdred1"],
   ]) {
     const label = document.querySelector(selector);
-    loadNativeFont(fontName)
-      .then((font) => {
+    Promise.all([loadNativeFont(fontName), loadNativeFont("stdwht1")])
+      .then(([font, white]) => {
+        teamFonts.set(fontName, font);
+        teamFonts.set("stdwht1", white);
         const canvas = document.createElement("canvas");
         canvas.className = "native-team-name";
         canvas.setAttribute("aria-hidden", "true");
@@ -188,7 +192,18 @@ export function updateHudTeamPanel(progress) {
   document.querySelector(".match-bar").style.setProperty("--team-panel-offset", `${Math.round(32 * progress / 65536)}px`);
 }
 
-export function updateHudTeamHealth(values) {
-  document.querySelectorAll(".native-team-health").forEach((canvas, team) =>
-    paintNativeTeamHealth(canvas, values[team], team ? "#ff8080" : "#80ff80"));
+export function updateHudTeamHealth(values, activeTeam = -1, tick = 0) {
+  document.querySelectorAll(".team").forEach((panel, team) => {
+    const highlight = nativeTeamHighlight(team ? 0 : 2, team === activeTeam, tick);
+    const color = highlight.flashing ? "#ffffff" : team ? "#ff8080" : "#80ff80";
+    const health = panel.querySelector(".native-team-health");
+    if (health) paintNativeTeamHealth(health, values[team], color);
+    const name = highlight.font === 15 ? "stdwht1" : team ? "stdred1" : "stdgrn1";
+    const label = panel.querySelector("b");
+    const canvas = label.querySelector(".native-team-name");
+    if (canvas && teamFonts.has(name) && label.dataset.nativeFont !== name) {
+      paintNativeText(canvas, teamFonts.get(name), label.getAttribute("aria-label"), 1);
+      label.dataset.nativeFont = name;
+    }
+  });
 }

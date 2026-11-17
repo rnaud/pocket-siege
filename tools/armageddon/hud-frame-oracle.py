@@ -102,5 +102,19 @@ for roster in [[(100,0)]*3,[(90,10)]*3,[(90,0)]*3,[(0,100),(50,50),(100,0)],[(0,
     health_cases.append({'roster':[{'hp':h,'damageTaken':d} for h,d in roster],
      'maximum':maximum,'value':value,'surrendered':bool(surrendered),
      'after':{'value':signed(context+0x1b60),'target':signed(context+0x1b78),'busy':read(context+0x800)==12}})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases},separators=(',',':'))+'\n')
-print(f'{len(cases)} frames, {len(panel_cases)} panel ticks, {len(visibility_cases)} visibility ticks, {len(health_cases)} health ticks')
+highlight_cases=[]
+write(owner+0x20,16)
+for color in range(6):
+ for selected in [0,1]:
+  for tick in [-51,-25,-1,0,1,24,25,49,50,74,75,2147483647]:
+   write(owner+8,color);write(store-4,selected);write(context+0x1b8ec,tick&0xffffffff)
+   cpu.mem_write(context+3000+0x3cd2,b'\0')
+   sp=stack+0xff00
+   for i,v in enumerate([stop,0,0,owner+0x3000]):write(sp+i*4,v)
+   cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,sp)
+   cpu.emu_start(0x4b87b0,0x4b883c,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=0x4b883c:raise RuntimeError('Highlight prefix did not finish')
+   highlight_cases.append({'color':color,'selected':selected,'tick':tick,
+     'after':{'flashing':bool(cpu.reg_read(UC_X86_REG_EBP)),'font':cpu.reg_read(UC_X86_REG_EAX)}})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases},separators=(',',':'))+'\n')
+print(f'{len(cases)} frames, {len(panel_cases)} panel ticks, {len(visibility_cases)} visibility ticks, {len(health_cases)} health ticks, {len(highlight_cases)} highlights')

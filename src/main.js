@@ -4182,7 +4182,7 @@ function step(dt) {
     if (result.busy) nativeTeamHealthBusyTicks = 12; // 004B8580 / 004A1A00.
     return result.value;
   });
-  updateHudTeamHealth(nativeTeamHealthValues);
+  updateHudTeamHealth(nativeTeamHealthValues, phase === "over" ? -1 : team, selectionTick);
   updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress));
   for (const w of worms) w.moving = false;
   jumpClock += dt;
