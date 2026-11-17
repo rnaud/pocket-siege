@@ -37,6 +37,10 @@ test("live native labels blink and repaint health after damage", async ({
       .evaluate((c) => c.height),
   ).toBe(33);
   await page.screenshot({ path: info.outputPath("native-worm-labels.png") });
+  // Keep the camera fixed while testing label-mode anchoring; falling crates
+  // legitimately move native camera tracking during these key presses.
+  await page.locator("#overview-toggle").click();
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const arrow = page.locator('.worm-label.active .original-selection');
   const origin = await arrow.boundingBox();
   await page.keyboard.press('Delete'); // Name/health -> health only.
