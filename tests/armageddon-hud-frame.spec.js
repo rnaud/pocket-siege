@@ -1,5 +1,6 @@
+import controllerMenuInput from "./fixtures/armageddon/controller-menu-input.json" with { type: "json" };
 import controllerInput from "./fixtures/armageddon/controller-input.json" with { type: "json" };
-import { nativeCollectControllerInput } from "../src/armageddon/controller-input.js";
+import { nativeCollectControllerInput, nativeCollectMenuInput } from "../src/armageddon/controller-input.js";
 import replayWormRoundtrip from "./fixtures/armageddon/replay-worm-roundtrip.json" with { type: "json" };
 import replayPipelineRestore from "./fixtures/armageddon/replay-pipeline-restore.json" with { type: "json" };
 import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture.json" with { type: "json" };
@@ -83,6 +84,23 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of controllerMenuInput.cases) {
+    const memory = new Uint8Array(0x110), sceneMemory = new Uint8Array(0x1d480);
+    const body = new DataView(memory.buffer), scene = new DataView(sceneMemory.buffer);
+    for (const [offset,value] of Object.entries(c.fields)) body.setInt32(Number(offset),value,true);
+    scene.setInt16(0x1b8aa,c.controllers.length,true);
+    c.controllers.forEach((value,i)=>scene.setInt16(0x1b88a+i*2,value,true));
+    const calls = [], keys = new Set(c.keys), queue = new NativeReplayBuffer(c.capacity);
+    nativeCollectMenuInput(memory,sceneMemory,queue,{
+      lookup: (...args) => { calls.push(["lookup",...args]); return 7; },
+      wormQuery: (worm,event,size) => { calls.push(["wormQuery",event,size]); const out=new Uint8Array(size);new DataView(out.buffer).setInt32(0x1c,c.busy,true);return out; },
+      wormState: (...args) => { calls.push(["state",...args]); return c.state; },
+      key: key => { calls.push(["key",key]);return keys.has(key); },
+      consume: key => { calls.push(["consume",key]);keys.delete(key); },
+    });
+    const events = [];for(let event=queue.readEvent();event;event=queue.readEvent())events.push([event.event,event.payload]);
+    expect({calls,events,latch:body.getInt32(0x108,true)}).toEqual({calls:c.calls,events:c.events,latch:c.latch});
+  }
   for (const c of controllerInput.cases) {
     const memory = new Uint8Array(0x110), sceneMemory = new Uint8Array(0x1d480);
     const body = new DataView(memory.buffer), scene = new DataView(sceneMemory.buffer);
