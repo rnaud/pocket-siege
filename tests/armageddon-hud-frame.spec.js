@@ -1,3 +1,6 @@
+import replayFactory from "./fixtures/armageddon/replay-factory.json" with { type: "json" };
+import replayRestore from "./fixtures/armageddon/replay-restore.json" with { type: "json" };
+import { nativeReadTaskBase, nativeReadTaskChildren } from "../src/armageddon/replay-restore.js";
 import replayPhysics from "./fixtures/armageddon/replay-physics.json" with { type: "json" };
 import { nativeRestorePhysicsMembership } from "../src/armageddon/replay-physics.js";
 import replayChildren from "./fixtures/armageddon/replay-children.json" with { type: "json" };
@@ -45,6 +48,37 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayFactory.cases) {
+    const stream = new NativeReplayStream(256), calls = [], parent = {};
+    stream.bytes.set(row.input.bytes); stream.length = row.input.bytes.length;
+    let allocation = 0;
+    const returned = nativeReadTaskChildren(stream, parent, size => {
+      const id = allocation++, success = row.input.mode === 0 || (row.input.mode === 2 && id % 2 === 0);
+      calls.push(["allocate", size, success ? id : null]);
+      return success ? id : null;
+    }, (schema, id, passedParent, reader) => {
+      calls.push(["construct", schema.tag, id, passedParent === parent, reader === stream]);
+      reader.readByte(); reader.readByte();
+    });
+    expect({ returned, position: stream.position, calls }).toEqual(row.result);
+  }
+  for (const row of replayRestore.cases) {
+    const input = row.input, stream = new NativeReplayStream(64);
+    stream.bytes.set(input.bytes); stream.length = input.bytes.length;
+    let parent = null;
+    if (input.parent) {
+      parent = { capacity: input.parent.capacity, children: input.parent.children.map(id => id === null ? null : { id }),
+        registry: Array.from({ length: 256 }, () => []) };
+      parent.registry[input.bucket].push({ type: input.existing.type, index: input.existing.index, task: { id: input.existing.id } });
+    }
+    const task = nativeReadTaskBase(stream, { id: 9, parent, readChildren: (_, reader) => reader.readByte() === 0 ? 1 : 0 });
+    const registry = task.registry.flatMap((entries, bucket) => entries.map(entry => ({ bucket, type: entry.type, index: entry.index, id: entry.task.id })));
+    expect({ type: task.type, registryType: task.registryType, registryIndex: task.registryIndex,
+      ownsRegistry: task.ownsRegistry, sharedRegistry: !!parent && task.registry === parent.registry,
+      capacity: task.capacity, childCount: task.children.length, parent: parent ? {
+        capacity: parent.capacity, children: parent.children.map(child => child?.id ?? null) } : null,
+      registry, position: stream.position, returnedSelf: task.id === 9 }).toEqual(row.result);
+  }
   for (const row of replayPhysics.cases) expect(nativeRestorePhysicsMembership(row.input)).toEqual(row.result);
   for (const row of replayChildren.cases) {
     const schema = nativeReplayTaskTypes.find(type => type.tag === row.tag);
