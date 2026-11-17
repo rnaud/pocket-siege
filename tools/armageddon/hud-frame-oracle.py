@@ -273,7 +273,10 @@ for head,count in [(0,0),(0,1),(0,2),(0,3),(19,2)]:
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement controller did not finish')
    after={key:struct.unpack('<i',cpu.mem_read(context+offset,4))[0] for key,offset in announcement_fields.items()}
    after['blocking']=read(owner+0x94)
-   announcement_cases.append({'before':before,'long':long,'after':after})
+   write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4eca20,stop,count=1000)
+   pending=bool(cpu.reg_read(UC_X86_REG_EAX)&255)
+   announcement_cases.append({'before':before,'long':long,'after':after,'pending':pending})
 announcement_queue_cases=[]
 write(0x517904,stop+0x300)
 for head,tail,text_value,font in [(0,0,'READY',15),(19,19,'WRAP',-15),(0,19,'FULL',15),(0,19,'!URGENT',-15),(3,5,'A'*95,28)]:

@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -378,6 +378,7 @@ let terrain,
   shakeUntil = 0;
 let configuredDelays = {};
 let nativeAnnouncements = createNativeAnnouncements();
+let pendingTurnStart = false;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
   ammoFor(loadout, kind, weaponDelays[team]);
@@ -1019,6 +1020,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   turnCount = [0, 0];
   ((explosions = 0), (shakeUntil = 0));
   nativeAnnouncements = createNativeAnnouncements();
+  pendingTurnStart = false;
   setWeapon("rocket");
   mode = $("#mode").value;
   applyWeather();
@@ -1261,6 +1263,12 @@ function updateRecordUI() {
     surrender.hidden = !matchStarted || phase === "menu" || phase === "over";
 }
 function beginTurn() {
+  if (nativeAnnouncementsPending(nativeAnnouncements)) {
+    pendingTurnStart = true;
+    phase = "settle";
+    return;
+  }
+  pendingTurnStart = false;
   nativeClockTarget = 65536;
   const inventory = weaponDelays[team];
   weaponDelays[team] = advanceNativeDelays(inventory.turns, inventory.delays);
@@ -4031,6 +4039,7 @@ function endGame() {
   finishMatch(winner, false);
 }
 function nextTurn() {
+  if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
   showNativeTeamPanel(nativeTeamPanel);
   if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
@@ -4177,6 +4186,7 @@ function step(dt) {
     return;
   }
   nativeAnnouncementTick(nativeAnnouncements);
+  if (pendingTurnStart && !nativeAnnouncementsPending(nativeAnnouncements)) beginTurn();
   nativeClockProgress = nativeClockSlide(nativeClockProgress, nativeClockTarget);
   updateOriginalClockPanel(nativeClockProgress, team);
   if (phase === "break") {
@@ -4933,7 +4943,7 @@ function step(dt) {
     }
     if (phase === "settle") {
       shotWait = settled && !healthDisplayBusy && !deathStarted && !worms.some(w => w.nativeDeathRequest) ? shotWait + dt : 0;
-      if (shotWait > 0.7) nextTurn();
+      if (shotWait > 0.7 && !nativeAnnouncementsPending(nativeAnnouncements)) nextTurn();
     }
   }
   for (let i = particles.length - 1; i >= 0; i--) {

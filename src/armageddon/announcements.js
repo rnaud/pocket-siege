@@ -1,6 +1,8 @@
 // Native 20-slot announcement ring (004EC6A0) and 50Hz controller (004ECA40).
 // The historical `scale` field is pixel coverage, not geometric size.
-// Native team visibility filtering and blocking event dispatch remain unported.
+// Native team visibility inputs and the long-message sound envelope remain
+// host adapters. `blocking` preserves the field name used by the oracle;
+// 004EB800 consumes it for audio, while any pending queue delays turn flow.
 export function createNativeAnnouncements() {
   return { read: 0, write: 0, stage: 0, elapsed: 0, scale: 0, blocking: 0,
     entries: Array(20).fill(null) };
@@ -78,4 +80,9 @@ export function nativeAnnouncementDraw(state, screenHeight, playback = 0, teamVi
   if (!state.stage || !state.scale || !entry || (entry.teamOnly && !teamVisible)) return null;
   return { text: entry.text, font: entry.font, coverage: state.scale,
     x: 0, y: (Math.imul(playback, 10) - Math.trunc((screenHeight << 16) / 2) + 0x100000) | 0 };
+}
+
+// 004ECA20; 004B64B0 checks this before advancing the turn controller.
+export function nativeAnnouncementsPending(state) {
+  return state.read !== state.write;
 }
