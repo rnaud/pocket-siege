@@ -145,3 +145,10 @@ export function nativeWormDeathAnnouncement(name, color, drowned, nextRandom) {
   return { text: variants[(nextRandom() & 255) % variants.length].replace("%s", () => name),
     font: color + 17 };
 }
+
+// 004B7D00: English language slots +0x2E8/+0x2EC/+0x2F0.
+export function nativeCrateDropAnnouncement(kind, nextRandom) {
+  const variants = kind === "health" ? elimination.healthDrop
+    : kind === "utility" ? elimination.utilityDrop : elimination.weaponDrop;
+  return { text: variants[(nextRandom() & 255) % variants.length], font: 23 };
+}

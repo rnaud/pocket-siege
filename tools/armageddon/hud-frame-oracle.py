@@ -373,7 +373,7 @@ for drop in [0,32768,65536]:
 announcement_message_mode=True
 write(0x5178f4,stop+0x304)
 elimination_cases=[]
-for kind,table in [('elimination',0x558a60),('victory',0x5589a8),('draw',0x558a90),('suddenDeath',0x558af0)]:
+for kind,table in [('elimination',0x558a60),('victory',0x5589a8),('draw',0x558a90),('suddenDeath',0x558af0),('weaponDrop',0x5588f8),('utilityDrop',0x558e20),('healthDrop',0x558e50)]:
  for seed in [0,1,42,0x12345678,0xffffffff]:
   for frame in [0,1,50,2000]:
    for color in [0,2]:
@@ -381,7 +381,7 @@ for kind,table in [('elimination',0x558a60),('victory',0x5589a8),('draw',0x558a9
     cpu.mem_write(owner+0x9000,name.encode()+b'\0');write(owner+0x38,context)
     write(context+0x1acc,seed);write(context+0x7f0,frame)
     sp=stack+0xff00
-    for j,v in enumerate([stop,table,23 if kind in ['draw','suddenDeath'] else color+17,owner+0x9000]):write(sp+j*4,v)
+    for j,v in enumerate([stop,table,23 if kind in ['draw','suddenDeath','weaponDrop','utilityDrop','healthDrop'] else color+17,owner+0x9000]):write(sp+j*4,v)
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
     announcement_message=None;cpu.emu_start(0x4eeee0,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Elimination message selection did not finish')

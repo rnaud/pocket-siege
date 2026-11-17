@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -195,6 +195,7 @@ import {
 import {
   playOriginalSound,
   playNativeSpeech,
+  playNativeCrateDropSound,
   playNativeSuddenDeathSound,
   playNativeClockSound,
   playNativeAnnouncementLoop,
@@ -1075,7 +1076,7 @@ function crateSprite(kind, falling) {
   const prefix = kind === "health" ? "m" : kind === "utility" ? "u" : "w";
   return `${prefix}crate${falling ? 2 : 1}`;
 }
-function spawnCrate() {
+function spawnCrate(announceDrop = false) {
   if (crate || !terrain) return;
   for (let tries = 0; tries < 40; tries++) {
     const x = 150 + logicRandom() * (W - 300),
@@ -1099,6 +1100,15 @@ function spawnCrate() {
       artAge: 0,
       vy: 0,
     };
+    if (announceDrop) {
+      const message = nativeCrateDropAnnouncement(kind, () => matchRandom.logicUint());
+      queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
+      if (sound && kind !== "health") {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        playNativeCrateDropSound(audio, kind);
+      }
+    }
     return;
   }
 }
@@ -4069,8 +4079,7 @@ function nextTurn() {
       !crate &&
       (crateRain ? round % 2 === 0 : round >= 3 && round % 3 === 0)
     ) {
-      spawnCrate();
-      announce("SUPPLY DROP INBOUND");
+      spawnCrate(true);
     }
     if (!sdTriggered && round >= 6) {
       if (applySuddenDeath()) return;

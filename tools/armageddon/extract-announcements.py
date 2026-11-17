@@ -28,6 +28,9 @@ result={'sha256':digest,'table':'00558A60','messages':messages_at(0x558a60),
  'drawTable':'00558A90','draw':messages_at(0x558a90),
  'suddenDeathTable':'00558AF0','suddenDeath':messages_at(0x558af0),
  'deathTable':'005589C0','death':messages_at(0x5589c0),
- 'drowningTable':'00558AC0','drowning':messages_at(0x558ac0)}
+ 'drowningTable':'00558AC0','drowning':messages_at(0x558ac0),
+ 'weaponDropTable':'005588F8','weaponDrop':messages_at(0x5588f8),
+ 'utilityDropTable':'00558E20','utilityDrop':messages_at(0x558e20),
+ 'healthDropTable':'00558E50','healthDrop':messages_at(0x558e50)}
 a.output.write_text(json.dumps(result,indent=2)+'\n')
-print({key:len(result[key]) for key in ['messages','victory','draw','suddenDeath','death','drowning']})
+print({key:len(result[key]) for key in ['messages','victory','draw','suddenDeath','death','drowning','weaponDrop','utilityDrop','healthDrop']})

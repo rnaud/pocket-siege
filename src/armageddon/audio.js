@@ -245,3 +245,10 @@ export function playNativeTeamPanelSound(context, request) {
 export function playNativeSuddenDeathSound(context) {
   return playOriginalClip(context, "sounds/suddendeath.wav", () => {}, 1);
 }
+
+// 004B7D00: weapon/utility drops request ID81 at priority8, unity pitch/gain;
+// health drops skip it. Descriptor 0055F2F0 identifies ShotgunReload.wav.
+export function playNativeCrateDropSound(context, kind) {
+  if (kind === "health") return null;
+  return playOriginalClip(context, "sounds/shotgunreload.wav", () => {}, 1);
+}

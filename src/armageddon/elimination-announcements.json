@@ -98,5 +98,52 @@
     "%s is sleeping on the sea bed",
     "%s swam like a brick",
     "Water way to go, %s"
+  ],
+  "weaponDropTable": "005588F8",
+  "weaponDrop": [
+    "A weapon crate!",
+    "A jewel from the heavens!",
+    "A gift from the Gods!",
+    "Party time!",
+    "This ain't no packed lunch!",
+    "I wonder what it contains?",
+    "What's in the box?",
+    "Quick! A weapon drop!",
+    "First come, first served",
+    "Lucky, lucky, lucky!",
+    "Christmas comes early!",
+    "Is it your birthday?",
+    "How fortunate!",
+    "Cool things come in small packages",
+    "Someone likes you...",
+    "Collect and destroy!",
+    "Gift wrapped and ready to rock!",
+    "It`s raining weapons!",
+    "Can we tempt you with this?"
+  ],
+  "utilityDropTable": "00558E20",
+  "utilityDrop": [
+    "Tools for fools.",
+    "DIY supplement.",
+    "Utility dispensed.",
+    "Special tools ahoy!",
+    "Coo! That looks useful!",
+    "Spanner Mana.",
+    "Interesting...",
+    "You might find this useful.",
+    "Top tools...",
+    "Collect or conquer?"
+  ],
+  "healthDropTable": "00558E50",
+  "healthDrop": [
+    "Certainly a healthy option...",
+    "Dr Davidson's cure-all.",
+    "Grab it while you can.",
+    "Collect or save, the choice is yours.",
+    "Energy bundle!",
+    "This might save your bacon...",
+    "Red cross, worm happy.",
+    "Energy boost!",
+    "Very tempting..."
   ]
 }
