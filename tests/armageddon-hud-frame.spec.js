@@ -1,3 +1,5 @@
+import weaponInputFlags from "./fixtures/armageddon/weapon-input-flags.json" with { type: "json" };
+import { nativeWeaponInputFlags, nativeApplyWeaponInputFlags, nativeWeaponInputOffsets } from "../src/armageddon/weapon-input-flags.js";
 import targetEntry from "./fixtures/armageddon/target-entry.json" with { type: "json" };
 import targetTeardown from "./fixtures/armageddon/target-teardown.json" with { type: "json" };
 import targetInput from "./fixtures/armageddon/controller-target-input.json" with { type: "json" };
@@ -236,6 +238,14 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of weaponInputFlags.cases) {
+    const descriptor=new Uint8Array(0x200),view=new DataView(descriptor.buffer);
+    for(const [offset,value] of Object.entries(c.fields))view.setInt32(Number(offset),value,true);
+    expect(nativeWeaponInputFlags(descriptor)).toEqual(c.output);
+    const controller=new Uint8Array(0x110).fill(0xa5),expected=controller.slice(),expectedView=new DataView(expected.buffer);
+    c.output.forEach((value,i)=>expectedView.setInt32(nativeWeaponInputOffsets[i],value,true));
+    nativeApplyWeaponInputFlags(controller,descriptor);expect(Buffer.from(controller).equals(Buffer.from(expected))).toBe(true);
   }
   for(const c of targetEntry.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
