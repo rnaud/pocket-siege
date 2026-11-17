@@ -12,10 +12,25 @@ import crateBody from './fixtures/armageddon/crate-body.json' with { type: 'json
 import { nativeCratePlacement } from '../src/armageddon/crate-body.js';
 import crateTick from './fixtures/armageddon/crate-tick.json' with { type: 'json' };
 import { nativeCrateTick } from '../src/armageddon/crate-tick.js';
+import crateContact from './fixtures/armageddon/crate-contact.json' with { type: 'json' };
+import crateEvents from './fixtures/armageddon/crate-events.json' with { type: 'json' };
+import { nativeCrateContact } from '../src/armageddon/crate-contact.js';
+import { nativeCrateEvent } from '../src/armageddon/crate-events.js';
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+  for (const row of crateEvents.cases)
+    expect(nativeCrateEvent(row.input, row.event)).toEqual(row.output);
+  for (const row of crateContact.cases) {
+    const calls = [];
+    nativeCrateContact(row, row.side, row.suppress, {
+      sound: request => calls.push({ operation: 'sound', request }),
+      receive: side => { calls.push({ operation: 'receive', side }); return row.accepted; },
+      bounce: side => calls.push({ operation: 'bounce', side }),
+    });
+    expect(calls).toEqual(row.calls);
+  }
   for (const row of crateState.cases) {
     expect(nativeCrateState(row.input, row.state)).toEqual(row.output);
     expect(nativeCrateArt(row.input)).toEqual(row.art);
