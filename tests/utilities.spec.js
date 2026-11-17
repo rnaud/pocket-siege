@@ -10,6 +10,8 @@ import crateState from './fixtures/armageddon/crate-state.json' with { type: 'js
 import { nativeCrateState, nativeCrateArt } from '../src/armageddon/crate-state.js';
 import crateBody from './fixtures/armageddon/crate-body.json' with { type: 'json' };
 import { nativeCratePlacement } from '../src/armageddon/crate-body.js';
+import crateTick from './fixtures/armageddon/crate-tick.json' with { type: 'json' };
+import { nativeCrateTick } from '../src/armageddon/crate-tick.js';
 
 test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   for (const row of environment.cases)
@@ -36,6 +38,27 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     });
     expect(result).toEqual(row.after);
     expect(events).toEqual(row.events);
+  }
+  for (const row of crateTick.cases) {
+    const events = [];
+    let busy = 0;
+    const result = nativeCrateTick(row.input, row.bottom, {
+      motion: body => { events.push(['motion']); return body; },
+      moving: body => body.moving,
+      camera: request => events.push(['camera', ...request]),
+      busy: () => { events.push(['busy']); busy = 12; },
+      state: state => events.push(['state', state]),
+      detonate: () => events.push(['detonate']),
+      delete: flag => events.push(['delete', flag]),
+      collide: (x, y) => { events.push(['probe', x, y]); return y >= row.input.y + row.clearance * 65536; },
+      visualRandom: () => { events.push(['random']); return 6; },
+      bubble: request => events.push(['bubble', ...request]),
+    });
+    expect(result.body).toEqual(row.output);
+    expect(result.missionStatus).toBe(row.missionStatus);
+    expect(result.deleted).toBe(row.events.some(event => event[0] === 'delete'));
+    expect(events).toEqual(row.events);
+    expect(busy).toBe(row.busy);
   }
   for (const row of automatic.cases) {
     const result = nativeAutomaticUtilities(row.input, row.available, row.bits);
