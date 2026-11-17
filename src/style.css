@@ -2738,3 +2738,11 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 
 /* Native announcements animate their scale on simulation ticks. */
 #announcement { transition: none; transform-origin: center; }
+
+/* 004EC930: centered announcement at y=16; pixels dissolve in place. */
+#announcement { top: 16px; left: 0; width: 100%; opacity: 1; transform: none;
+  line-height: 0; text-shadow: none; }
+#announcement[hidden] { display: none; }
+#announcement canvas { image-rendering: pixelated; }
+
+#announcement:not([hidden]) { display: flex; justify-content: center; }

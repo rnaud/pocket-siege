@@ -1,3 +1,4 @@
+import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
 import { createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
@@ -473,6 +474,7 @@ const originalAssets = Promise.all([
   loadOriginalHUDIcons(),
   loadOriginalWindHUD(),
   loadOriginalNumbers(),
+  loadNativeAnnouncementArt(),
   loadOriginalWormLabels(),
   loadOriginalGirders(),
 ])
@@ -725,7 +727,7 @@ function updateAimHUD() {
   aimHUD.trail.setAttribute("d", "");
 }
 function announce(text) {
-  queueNativeAnnouncement(nativeAnnouncements, text);
+  queueNativeAnnouncement(nativeAnnouncements, text, 23);
 }
 const soundTimes = new Map();
 function sfx(kind) {
@@ -5299,11 +5301,7 @@ function frame(now) {
     timerKey = timerState;
     updateOriginalTimer(timerValue, retreat > 0, document, timerMilliseconds, timerRunning);
   }
-  const announcement = $("#announcement");
-  const message = nativeAnnouncements.entries[nativeAnnouncements.read];
-  announcement.textContent = message?.text ?? "";
-  announcement.style.opacity = nativeAnnouncements.stage && nativeAnnouncements.scale > 0 ? "1" : "0";
-  announcement.style.transform = `scale(${Math.max(0, nativeAnnouncements.scale) / 65536})`;
+  updateNativeAnnouncement(nativeAnnouncements, $("#announcement"));
   water.userData.update(reducedMotion ? 0 : now * 0.001);
   motes.forEach((m, i) => {
     m.position.x = (i * 127 + now * 0.007) % W;

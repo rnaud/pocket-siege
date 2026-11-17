@@ -275,5 +275,16 @@ for head,tail,text_value,font in [(0,0,'READY',15),(19,19,'WRAP',-15),(0,19,'FUL
   at=context+index*100
   entry={'text':bytes(cpu.mem_read(at+0x1c1ac,81)).split(b'\0')[0].decode(),'font':read(at+0x1c1a8),'long':read(at+0x1c1a0),'team':read(at+0x1c19c),'teamOnly':read(at+0x1c1a4)}
  announcement_queue_cases.append({'head':head,'tail':tail,'text':text_value,'font':font,'after':{'read':read(context+0x1c18c),'write':read(context+0x1c188),'stage':read(context+0x1c190),'entry':entry,'index':index}})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases},separators=(',',':'))+'\n')
+announcement_mask_cases=[]
+for width,height,stride in [(7,3,7),(17,5,20),(32,16,32)]:
+ for seed in [0,0xffffffff,0x3c6ef35f]:
+  for coverage in [1,19660,39320,58980,65535]:
+   buffer=owner+0x9000;cpu.mem_write(buffer,bytes([1])*(stride*height))
+   sp=stack+0xff00
+   for j,v in enumerate([stop,buffer,stride-width,width,height,0,seed,(coverage<<16)&0xffffffff]):write(sp+j*4,v)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4ac953,stop,count=100000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Announcement dissolve did not finish')
+   mask=[value for row in range(height) for value in cpu.mem_read(buffer+row*stride,width)]
+   announcement_mask_cases.append({'length':width*height,'seed':seed,'coverage':coverage,'mask':mask})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

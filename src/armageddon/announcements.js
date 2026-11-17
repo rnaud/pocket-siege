@@ -1,5 +1,6 @@
 // Native 20-slot announcement ring (004EC6A0) and 50Hz controller (004ECA40).
-// Font rasterization and team visibility filtering are still host adapters.
+// The historical `scale` field is pixel coverage, not geometric size.
+// Native team visibility filtering and blocking event dispatch remain unported.
 export function createNativeAnnouncements() {
   return { read: 0, write: 0, stage: 0, elapsed: 0, scale: 0, blocking: 0,
     entries: Array(20).fill(null) };
@@ -40,4 +41,20 @@ export function nativeAnnouncementTick(state) {
       break;
   }
   state.blocking = state.stage ? state.entries[state.read].long : 0;
+}
+
+// 004AC953: retain a pixel when the unsigned accumulator addition carries.
+// This is a coverage dissolve, not geometric scaling or alpha blending.
+export function nativeAnnouncementMask(length, seed, coverage) {
+  const mask = new Uint8Array(length);
+  if (coverage >= 65536) { mask.fill(1); return mask; }
+  if (coverage <= 0) return mask;
+  const increment = (coverage << 16) >>> 0;
+  let accumulator = seed >>> 0;
+  for (let i = 0; i < length; i++) {
+    const sum = accumulator + increment;
+    mask[i] = Number(sum > 0xffffffff);
+    accumulator = sum >>> 0;
+  }
+  return mask;
 }
