@@ -1,3 +1,5 @@
+import targetPlacement from "./fixtures/armageddon/target-placement.json" with { type: "json" };
+import { nativeClampPlacementTarget, nativeFindTeleportTarget } from "../src/armageddon/target-placement.js";
 import controllerPointerInput from "./fixtures/armageddon/controller-pointer-input.json" with { type: "json" };
 import controllerWeaponInput from "./fixtures/armageddon/controller-weapon-input.json" with { type: "json" };
 import controllerMovementInput from "./fixtures/armageddon/controller-movement-input.json" with { type: "json" };
@@ -87,6 +89,20 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for(const c of targetPlacement.bounds) {
+    expect(nativeClampPlacementTarget(c.x,c.y,...c.dimensions,c.ceiling)).toEqual(c.output);
+  }
+  for(const c of targetPlacement.teleport) {
+    const calls=[];
+    const result=nativeFindTeleportTarget(c.x,c.y,c.ceiling,(event,payload)=>{
+      const view=new DataView(payload.buffer,payload.byteOffset,payload.byteLength);
+      calls.push([event,payload.length,view.getInt32(0,true),view.getInt32(4,true)]);
+      view.setInt32(0,view.getInt32(0,true)+c.adjust[0],true);
+      view.setInt32(4,view.getInt32(4,true)+c.adjust[1],true);
+      return calls.length-1===c.acceptAt;
+    });
+    expect({calls,accepted:result.accepted,output:[result.x,result.y]}).toEqual({calls:c.calls,accepted:c.accepted,output:c.output});
+  }
   for (const c of controllerPointerInput.cases) {
     const memory=new Uint8Array(0x120),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
     for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
