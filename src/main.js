@@ -42,6 +42,8 @@ import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRe
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
+  attachNativeDrowningFlight,
+  stepNativeDrowningFlight,
   nativeWormMotionCallbacks,
   attachNativeRopeReleaseFlight,
   nativeWormContactBody,
@@ -4214,7 +4216,9 @@ function step(dt) {
     w.recoil = Math.max(0, w.recoil - dt);
     if (w.dying > 0) {
       if (w.drowned) {
-        w.y -= 24 * dt;
+        w.dying = stepNativeDrowningFlight(w, {
+          height: H, waterLevel, gravityScale, frame: matchRandom.frame,
+        }) ? 1 : 0;
         stepOriginalDrowning(w, {
           height: H, random: () => matchRandom.visualUint(),
           emit: ([x, y, vx, vy, size]) => spawnWaterBubble(
@@ -4230,7 +4234,7 @@ function step(dt) {
           audio.resume();
           playNativeDeathVoice(audio, w.originalDeathVoice);
         }
-      } else w.dying = Math.max(0, w.dying - dt);
+      } else if (!w.drowned) w.dying = Math.max(0, w.dying - dt);
       if (w.dying === 0 && w.deathPending) {
         w.deathPending = false;
         explode(w.x, w.y - 10, "death");
@@ -4361,12 +4365,13 @@ function step(dt) {
     const nativeWaterBody = w.nativeRopeBody ?? w.nativeHurtBody;
     const drowning = nativeWaterBody ? nativeWormDrowningState(nativeWaterBody) === 0x87 : w.y - 10 < waterLevel;
     if (drowning || w.x < -30 || w.x > W + 30) {
+      attachNativeDrowningFlight(w, H);
+      if (w === worms[current] && rope.attached) stopRope();
       w.hp = 0;
       w.deathPending = false;
       w.originalParachute = null;
       w.drowned = true;
-      w.dying = 0.65;
-      w.y = Math.min(w.y, waterLevel - 8);
+      w.dying = 1;
       startOriginalDrowning(w);
       w.hurt = 0.65;
       slowMo = Math.max(slowMo, 0.5);

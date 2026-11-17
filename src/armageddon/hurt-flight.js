@@ -9,6 +9,7 @@ import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.
 import { nativeHurtEntry } from "./hurt-entry.js";
 import { nativeWormSkim } from "./worm-water.js";
 import { nativeWaterSound } from "./water-audio.js";
+import { nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeRopeRelease } from "./rope-release.js";
 import { nativeWormTransitionBody } from "./worm-state.js";
 import schemes from "./scheme-runtime-data.json" with { type: "json" };
@@ -63,6 +64,13 @@ export function applyNativeWormContact(worm, body) {
 // Constructor fields from 004F4000/004D5A40, entering hurt from ordinary
 // unrestrained state. Live collision dispatch supplies native terrain/worm IDs.
 export function attachNativeHurtFlight(worm, height) {
+  const body = createNativeWormBody(worm, height, worm.originalHurt.state, worm.originalHurt.angle);
+  worm.nativeHurtBody = body;
+  worm.nativeFlight = null;
+  return body;
+}
+
+function createNativeWormBody(worm, height, state, angle) {
   const x = fixed(worm.x),
     y = fixed(height - worm.y);
   const body = {
@@ -70,7 +78,7 @@ export function attachNativeHurtFlight(worm, height) {
     y,
     vx: fixed(worm.vx / 50),
     vy: fixed(-worm.vy / 50),
-    angle: worm.originalHurt.angle,
+    angle,
     angularVelocity: 0,
     radius: 0x100000,
     enabled: 1,
@@ -90,8 +98,8 @@ export function attachNativeHurtFlight(worm, height) {
       Math.trunc((Math.trunc(((x + y) | 0) / 256) & 65535) / 20) + 0xc000,
     skimScale: 0x20000,
     complex: 1,
-    state: worm.originalHurt.state,
-    type: nativeWormCollisionType(worm.originalHurt.state),
+    state,
+    type: nativeWormCollisionType(state),
     field150: worm.nativeContactMarked ?? 0,
     shape: 3,
     mass: 65536,
@@ -109,9 +117,39 @@ export function attachNativeHurtFlight(worm, height) {
     damageScale: 0,
     voiceCooldown: 0,
   };
-  worm.nativeHurtBody = body;
-  worm.nativeFlight = null;
   return body;
+}
+
+// 004D7730 common entry followed by004D80CD: drowning keeps momentum,
+// releases constraints and sets the water-only collision flags. The body
+// continues004CA320 motion until004DE2DB's world+808 depth cutoff.
+export function attachNativeDrowningFlight(worm, height) {
+  const input = {
+    ...createNativeWormBody(worm, height, worm.frozen ? 0x88 : nativeWormState(worm), 0),
+    ...(worm.nativeRopeBody ?? worm.nativeHurtBody ?? worm.nativeFlight),
+  };
+  const { body } = nativeWormTransitionBody(input, 0x87, {
+    soundHandle: 0, weapon70: 0, ropeMode: 0, schemeByte: byte(0x11d40),
+  });
+  Object.assign(body, {
+    x: fixed(worm.x), y: fixed(height - worm.y),
+    vx: fixed(worm.vx / 50), vy: fixed(-worm.vy / 50),
+    state: 0x87, flags: 0x400000, constrained: 0, segmentCount: 0,
+  });
+  worm.nativeDrowningBody = body;
+  worm.nativeRopeBody = worm.nativeHurtBody = worm.nativeFlight = null;
+  return body;
+}
+
+export function stepNativeDrowningFlight(worm, { height, waterLevel, frame, gravityScale = 1 }) {
+  const body = nativeSimpleBodyTick(worm.nativeDrowningBody, {
+    frame, index: 0, waterY: Math.floor(height - waterLevel),
+    gravity: Math.round(0x3d70 * gravityScale), wind: 0,
+  }, { awake: nativeBodyAwake, collide: () => 0 });
+  worm.nativeDrowningBody = body;
+  worm.x = body.x / 65536; worm.y = height - body.y / 65536;
+  worm.vx = body.vx / 65536 * 50; worm.vy = -body.vy / 65536 * 50;
+  return (body.y >> 16) < nativeProjectileDepth(Math.floor(height - waterLevel));
 }
 
 // Shared callbacks for released flight and the free part of a rope-skim tick.

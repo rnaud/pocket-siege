@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { stepNativeHurtFlight } from "../src/armageddon/hurt-flight.js";
+import { stepNativeHurtFlight, attachNativeDrowningFlight, stepNativeDrowningFlight } from "../src/armageddon/hurt-flight.js";
+import drowning from './fixtures/armageddon/drowning-flight.json' with { type: 'json' };
 
-test("native hurt flight reaches steep-fall recovery on a flat floor", { tag: "@logic" }, () => {
+test("native hurt flight recovers on ground and drowning follows original underwater trajectories", { tag: "@logic" }, () => {
   const worm = {
     x: 100,
     y: 300,
@@ -33,6 +34,21 @@ test("native hurt flight reaches steep-fall recovery on a flat floor", { tag: "@
   expect(recovery.events).toContainEqual(
     expect.objectContaining({ operation: "state", target: 0x76 }),
   );
+  for (const row of drowning.cases) {
+    const submerged = { nativeDrowningBody: { ...row.initial } };
+    for (const tick of row.trajectory) {
+      expect(stepNativeDrowningFlight(submerged, {
+        height: 650, waterLevel: 44, frame: tick.frame,
+      })).toBe(tick.alive);
+      expect(submerged.nativeDrowningBody).toEqual(tick.body);
+    }
+  }
+  const frozen = { x: 200, y: 32, vx: 150, vy: -100, facing: 1, frozen: true, hp: 100 };
+  const wet = attachNativeDrowningFlight(frozen, 650);
+  expect(wet).toMatchObject({ state: 0x87, flags: 0x400000, complex: 1,
+    vx: 3 * 65536, vy: 2 * 65536, constrained: 0 });
+  expect(frozen.x).toBe(200);
+  expect(frozen.y).toBe(32);
 });
 
 test("live hard landing plays native recovery and returns to idle", async ({

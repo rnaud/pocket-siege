@@ -155,3 +155,30 @@ args.output.write_text(json.dumps({'executable_sha256':digest,'entries':['004CA1
     'method':'Original forces and sweep run with fixed-point body fields and explicit collision predicates. Hit side starts at sentinel 99; force position=(4,4). Collision returns object ID 7. Bounce uses the simple-body branch with explicit coefficients and a second body. Water uses level 5, drag 0xcccc, skim scale 0x10000 and observes virtual +0x40 without side effects. Body ticks use the simple-body path with zero earthquake, primed collision-mask cache, native bounce and explicit awake/event callbacks. Awake cases execute 004D11E0 directly for all 32 motion-flag combinations.',
     'sweeps':sweeps,'forces':forces,'bounces':bounces,'water':water,'ticks':ticks,'awake':awake},indent=2)+'\n')
 print(f'Captured {len(sweeps)} sweeps and {len(forces)} force cases and {len(bounces)} simple-body bounces and {len(water)} water cases and {len(ticks)} body ticks')
+
+# Drowned worm trajectories: water-only flags, native awake getter and no
+# eligible collision categories. These exercise original004CA320 every tick.
+write(body_vtable+0xf4,0x4d11e0)
+shape='empty'
+drowning=[]
+for velocity,drag in [([0,0],0xc000),([3<<16,2<<16],0xcccc),([-2<<16,-1<<16],0xc777)]:
+    initial={'enabled':1,'suspended':0,'sleeping':0,'submerged':1,'contact':0,'moving':1,
+        'x':200<<16,'y':618<<16,'vx':velocity[0],'vy':velocity[1],'angle':0,'angularVelocity':0,'radius':16<<16,
+        'flags':0x400000,'gravityScale':65536,'windScale':0,'drag':65536,'skimScale':0x20000,'waterDrag':drag,
+        'restitutionX':0x9999,'restitutionY':0,'tangent':0xf5c2}
+    for name,offset in fields.items():write(body+offset,initial[name]&0xffffffff)
+    write(body+0xc8,0);write(body+0x4c,1)
+    write(owner+0x3b4,606);write(owner+0x3b8,0x3d70);write(owner+0x3bc,0)
+    trajectory=[]
+    for frame in range(300):
+        write(context+0x7f0,frame)
+        for offset,value in {4:body,8:read(body+0x44),12:0x400000,16:read(body+0x90),20:read(body+0x94)}.items():write(owner+offset,value)
+        run(0x4ca320,[body,0])
+        output={name:struct.unpack('<i',cpu.mem_read(body+offset,4))[0] for name,offset in fields.items()}
+        alive=(output['y']>>16)<808
+        trajectory.append(dict(frame=frame,body=output,alive=alive))
+        if not alive:break
+    if trajectory[-1]['alive']:raise RuntimeError('Drowning trajectory never reached removal depth')
+    drowning.append(dict(initial=initial,trajectory=trajectory))
+args.output.with_name('drowning-flight.json').write_text(json.dumps(dict(executable_sha256=digest,method='Original004CA320 with native004D11E0 awake, zero eligible collision categories, water606 and removal depth808. Body fields captured after every tick; alive comparison follows004DE2DB..004DE2ED.',cases=drowning),separators=(',',':'))+'\n')
+print(f'Captured {sum(len(row["trajectory"]) for row in drowning)} drowning motion ticks')
