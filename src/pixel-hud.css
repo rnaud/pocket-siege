@@ -2218,3 +2218,5 @@ body.native-game-hud {
 }
 
 .native-worm-text[hidden] { display: none; }
+
+.native-game-hud .team[hidden] { display: none; }

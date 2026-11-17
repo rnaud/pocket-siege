@@ -1,7 +1,15 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
-import { nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
+import { nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const c of fixture.listCases) {
+    const list = structuredClone(c.before);
+    const result = c.operation === "tick" ? nativeTeamListTick(list)
+      : c.operation === "sort" ? sortNativeTeamList(list, c.scores) : removeNativeTeamListRow(list, c.scores);
+    expect(result).toEqual(c.result);
+    expect(list).toEqual(c.after);
+    expect(nativeTeamListRows(list)).toEqual(c.rows);
+  }
   for (const c of fixture.highlightCases)
     expect(nativeTeamHighlight(c.color, c.selected, c.tick)).toEqual(c.after);
   for (const c of fixture.healthCases)
@@ -53,4 +61,11 @@ test("live native team bars update with damage and keep HUD controls usable", as
   // to 58982 in 16.16, then the original 100px draw truncates again to 89.
   await expect(page.locator(".native-team-health").nth(1)).toHaveAttribute("data-native-health", "89", { timeout: 10000 });
   await expect.poll(() => page.evaluate(() => window.siege.getState().worms.map(w => w.damageTaken))).toEqual([0, 0, 0, 0, 0, 0]);
+  await page.evaluate(() => window.siege.debug.hit(0, 10));
+  await expect.poll(() => page.evaluate(() => {
+    const moss = document.querySelector(".team-lime").getBoundingClientRect();
+    const coral = document.querySelector(".team-coral").getBoundingClientRect();
+    return { x: moss.x - coral.x, y: moss.y - coral.y };
+  }), { timeout: 10000 }).toEqual({ x: 0, y: 16 });
+  await page.screenshot({ path: info.outputPath("native-hud-reordered.png") });
 });

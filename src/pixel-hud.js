@@ -2,6 +2,7 @@ import {
   paintNativeHUDFrame,
   paintNativeTeamHealth,
   nativeTeamHighlight,
+  nativeTeamListRows,
 } from "./armageddon/hud-frame.js";
 import { loadNativeFont, paintNativeText } from "./armageddon/font.js";
 
@@ -187,9 +188,18 @@ export function updateHudTeams(worms, activeTeam) {
   });
 }
 
-export function updateHudTeamPanel(progress) {
-  // 004EC600: center-origin X + 8, bottom minus total row height * visibility.
-  document.querySelector(".match-bar").style.setProperty("--team-panel-offset", `${Math.round(32 * progress / 65536)}px`);
+export function updateHudTeamPanel(progress, list) {
+  // 004EC600 + 004EFDA0: native root-list height and animated child offsets.
+  const height = list.order.length * 16;
+  document.querySelector(".match-bar").style.setProperty("--team-panel-offset", `${Math.round(height * progress / 65536)}px`);
+  const rows = nativeTeamListRows(list);
+  document.querySelectorAll(".team").forEach((panel, id) => {
+    const row = rows.find(row => row.id === id);
+    panel.hidden = !row;
+    if (!row) return;
+    panel.style.left = `calc(50% + ${8 + Math.round(row.x / 65536)}px)`;
+    panel.style.top = `calc(100% - var(--team-panel-offset, 0px) + ${Math.round(row.y / 65536)}px)`;
+  });
 }
 
 export function updateHudTeamHealth(values, activeTeam = -1, tick = 0) {

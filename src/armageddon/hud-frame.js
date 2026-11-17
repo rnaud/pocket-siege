@@ -1,3 +1,5 @@
+import { fixedMultiply } from "./numeric.js";
+import { nativeSin } from "./trig.js";
 // 004B8660: original team/panel frame draw requests. Rectangle endpoints
 // are exclusive; horizontal/vertical line endpoints are inclusive.
 export function nativeHUDFrame(width, height, fill, black, edge) {
@@ -108,4 +110,84 @@ export function nativeTeamHealthTick(value, roster, maximum, surrendered = false
 export function nativeTeamHighlight(color, selected, tick) {
   const flashing = Boolean(selected && (Math.trunc((tick | 0) / 25) & 1));
   return { flashing, font: flashing ? 15 : (color + 9) | 0 };
+}
+
+// 004EFBC0: list state. The host has one team per alliance, hence one row
+// per root child; native multi-team alliance nesting is not yet integrated.
+export function createNativeTeamList(order = [0, 1]) {
+  return { order: [...order], swap: -1, swapProgress: 0, removal: 0,
+    removeIndex: -1, drop: 0, velocity: 0, quick: 1 };
+}
+// 004F0060 / 004F00C0: stable descending order, one adjacent swap at a time.
+export function nativeTeamListNeedsSort(list, scores) {
+  return list.order.some((id, i) => i + 1 < list.order.length && scores[id] < scores[list.order[i + 1]]);
+}
+export function sortNativeTeamList(list, scores) {
+  if (list.removal) return false;
+  if (list.swap >= 0) return true;
+  const index = list.order.findIndex((id, i) => i + 1 < list.order.length && scores[id] < scores[list.order[i + 1]]);
+  if (index < 0) return false;
+  list.swap = index;
+  list.swapProgress = 0;
+  return true;
+}
+// 004F0160 / 004F0190: eliminated rows leave from the bottom after sorting.
+export function removeNativeTeamListRow(list, scores) {
+  if (list.swap >= 0) return false;
+  if (list.removal) return true;
+  if (!list.order.length || scores[list.order.at(-1)] !== 0) return false;
+  list.removal = 1;
+  list.drop = list.velocity = 0;
+  list.removeIndex = list.order.length - 1;
+  return true;
+}
+// 004EFC50. Returns bounce requests; team/alliance lists set quick=1.
+export function nativeTeamListTick(list) {
+  const bounces = [];
+  if (list.swap >= 0) {
+    list.swapProgress = (list.swapProgress + 0xf5c) | 0;
+    if (list.swapProgress > 65535) {
+      const i = list.swap;
+      [list.order[i], list.order[i + 1]] = [list.order[i + 1], list.order[i]];
+      list.swap = -1;
+      list.swapProgress = 0;
+    }
+  }
+  if (list.removal === 1 || list.removal === 2) {
+    list.velocity = (list.velocity + 0x20c) | 0;
+    list.drop = (list.drop + list.velocity) | 0;
+    if (list.drop > 65535) {
+      if (list.removal === 1) {
+        list.removal = 2;
+        list.drop = list.velocity = 0;
+      } else {
+        if (!list.quick && list.removeIndex !== 0) bounces.push(Math.abs(list.velocity));
+        list.drop = 65536;
+        list.velocity = -Math.trunc(Math.imul(list.velocity, 3) / 4) | 0;
+        if (Math.abs(list.velocity) < 0x28f || list.quick === 1) {
+          list.order.splice(list.removeIndex, 1);
+          list.removal = 0;
+        }
+      }
+    }
+  }
+  return bounces;
+}
+// 004EFDA0 with the native 16px row height and one team per alliance.
+export function nativeTeamListRows(list) {
+  const height = 16 << 16;
+  const collapse = list.removal === 2 ? fixedMultiply(16, list.drop) << 16 : 0;
+  return list.order.flatMap((id, index) => {
+    if (list.removal === 2 && list.removeIndex === index) return [];
+    let x = 0, y = (index * height + collapse) | 0;
+    if (index === list.swap || index === list.swap + 1 && list.swap >= 0) {
+      const first = index === list.swap;
+      const sign = (list.swap & 1) ? -1 : 1;
+      x = fixedMultiply(nativeSin(Math.trunc(list.swapProgress / 2)), height * sign * (first ? 1 : -1));
+      y = (y + fixedMultiply(height, list.swapProgress) * (first ? 1 : -1)) | 0;
+    } else if (list.swap < 0 && list.removal === 1 && list.removeIndex === index) {
+      y = (y + Math.imul(list.drop, (list.order.length - index) * 16)) | 0;
+    }
+    return [{ id, x, y }];
+  });
 }

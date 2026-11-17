@@ -1,4 +1,4 @@
-import { nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
+import { createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
 import { createNativeRopeShot, stepNativeRopeShot, stepNativeRopeSwing, nativeRopePoints, refireNativeRope } from "./armageddon/rope-runtime.js";
@@ -761,6 +761,7 @@ function stopProjectileSound(p = projectile) {
   p?.nativeFusePlayback?.stop();
   if (p) p.nativeFusePlayback = null;
 }
+let nativeTeamList = createNativeTeamList();
 let nativeTeamHealthMaximum = 1;
 let nativeTeamHealthBusyTicks = 0;
 let nativeTeamHealthValues = [65536, 65536];
@@ -799,6 +800,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   uiKey = "";
   timerKey = "";
   selectionTick = 0;
+  nativeTeamList = createNativeTeamList();
   nativeTeamHealthMaximum = 1;
   nativeTeamHealthBusyTicks = 0;
   nativeTeamHealthValues = [65536, 65536];
@@ -4173,6 +4175,7 @@ function step(dt) {
   nativeTeamPanelVisibilityTick(nativeTeamPanelVisibility, toggleTeamPanelVisibility);
   toggleTeamPanelVisibility = false;
   nativeTeamPanelTick(nativeTeamPanel);
+  nativeTeamListTick(nativeTeamList);
   const teamRosters = [0, 1].map(team => worms.filter(w => w.team === team));
   for (const roster of teamRosters)
     nativeTeamHealthMaximum = Math.max(nativeTeamHealthMaximum, roster.reduce((sum, w) => (sum + w.hp) | 0, 0));
@@ -4183,7 +4186,7 @@ function step(dt) {
     return result.value;
   });
   updateHudTeamHealth(nativeTeamHealthValues, phase === "over" ? -1 : team, selectionTick);
-  updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress));
+  updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress), nativeTeamList);
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -4861,7 +4864,11 @@ function step(dt) {
   }
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
-  if (phase === "settle" || (phase === "aim" && worms.some(w => w.deathPending))) {
+  const teamScores = teamRosters.map(roster => {
+    const hp = roster.reduce((total, w) => (total + w.hp) | 0, 0);
+    return hp === 0 ? 0 : (hp + 1) | 0; // 004B8510.
+  });
+  if (phase === "settle" || (phase === "aim" && (worms.some(w => w.deathPending) || nativeTeamList.removal))) {
     const settled =
       nativeTeamHealthBusyTicks === 0 &&
       !projectile && !pendingFire &&
@@ -4877,6 +4884,9 @@ function step(dt) {
           for (const w of worms) revealWormHealth(w);
         }
         healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active || w.nativeHealthDisplay.pending);
+      } else if (nativeTeamList.swap >= 0 || nativeTeamListNeedsSort(nativeTeamList, teamScores)) {
+        if (showNativeTeamPanel(nativeTeamPanel)) sortNativeTeamList(nativeTeamList, teamScores);
+        healthDisplayBusy = true;
       } else if (!worms.some(w => w.nativeDeathRequest)) {
         const teams = [0, 1].map(team => worms.filter(w => w.team === team));
         const dispatch = nativeNextDeath(teams.map(roster => roster.map(w => ({
@@ -4888,6 +4898,9 @@ function step(dt) {
           const w = teams[(dispatch.target >> 4) - 1][(dispatch.target & 15) - 1];
           w.nativeDeathRequest = 1;
           deathStarted = true;
+        } else if (nativeTeamList.removal || nativeTeamList.order.length && teamScores[nativeTeamList.order.at(-1)] === 0) {
+          if (showNativeTeamPanel(nativeTeamPanel)) removeNativeTeamListRow(nativeTeamList, teamScores);
+          healthDisplayBusy = true;
         }
       }
     }

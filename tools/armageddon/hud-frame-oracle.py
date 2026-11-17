@@ -35,8 +35,26 @@ methods={0x34:('horizontal',4),0x38:('vertical',4),0x3c:('rect',5),0x58:('pixel'
 for offset in methods:write(vtable+offset,stop+offset)
 calls=[]
 keys=(0,0)
+list_calls=[]
+list_scores=[101,201]
 def hook(cpu,address,size,user):
  offset=address-stop
+ if 0x200 <= offset <= 0x234:
+  sp=cpu.reg_read(UC_X86_REG_ESP);obj=cpu.reg_read(UC_X86_REG_ECX)
+  method=offset-0x200;row=(obj-owner-0x4000)//0x100
+  result=0;argc=0
+  if method==4:result=list_scores[row]
+  if method==8:result=16
+  if method==0x14:
+   argc=4
+   signed=lambda at:struct.unpack('<i',cpu.mem_read(at,4))[0]
+   list_calls.append({'id':row,'x':signed(sp+4),'y':signed(sp+8)})
+   counter=read(sp+12);write(counter,read(counter)+1)
+  if method==0x2c:
+   argc=1;list_calls.append(read(sp+4))
+  cpu.reg_write(UC_X86_REG_EAX,result)
+  cpu.reg_write(UC_X86_REG_ESP,sp+4+argc*4);cpu.reg_write(UC_X86_REG_EIP,read(sp))
+  return
  if offset in [0x100,0x104]:
   sp=cpu.reg_read(UC_X86_REG_ESP)
   key=read(sp+4)
@@ -116,5 +134,35 @@ for color in range(6):
    if cpu.reg_read(UC_X86_REG_EIP)!=0x4b883c:raise RuntimeError('Highlight prefix did not finish')
    highlight_cases.append({'color':color,'selected':selected,'tick':tick,
      'after':{'flashing':bool(cpu.reg_read(UC_X86_REG_EBP)),'font':cpu.reg_read(UC_X86_REG_EAX)}})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases},separators=(',',':'))+'\n')
-print(f'{len(cases)} frames, {len(panel_cases)} panel ticks, {len(visibility_cases)} visibility ticks, {len(health_cases)} health ticks, {len(highlight_cases)} highlights')
+list_cases=[]
+row_vtable=owner+0x5000
+for offset in range(4,0x38,4):write(row_vtable+offset,stop+0x200+offset)
+for i in range(2):write(owner+0x4000+i*0x100,row_vtable)
+fields=['swap','swapProgress','removal','removeIndex','drop','velocity','quick']
+def set_list(state):
+ write(owner,0x526780);write(owner+4,len(state['order']));write(owner+0xc,owner+0x3000)
+ for i,row in enumerate(state['order']):write(owner+0x3000+4*i,owner+0x4000+row*0x100)
+ for i,key in enumerate(fields):write(owner+0x10+i*4,state[key]&0xffffffff)
+def get_list():
+ result={key:struct.unpack('<i',cpu.mem_read(owner+0x10+i*4,4))[0] for i,key in enumerate(fields)}
+ result['order']=[(read(owner+0x3000+4*i)-owner-0x4000)//0x100 for i in range(read(owner+4))]
+ return result
+def run_list(address,args=[]):
+ sp=stack+0xff00
+ for i,v in enumerate([stop,*args]):write(sp+4*i,v&0xffffffff)
+ cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,sp)
+ cpu.emu_start(address,stop,count=100000)
+ if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('List routine did not finish')
+ return bool(cpu.reg_read(UC_X86_REG_EAX))
+for operation in ['sort','remove','tick']:
+ for swap,progress,removal,drop,velocity in [(-1,0,0,0,0),(0,0,0,0,0),(0,32768,0,0,0),(0,65000,0,0,0),(-1,0,1,0,0),(-1,0,1,65000,500),(-1,0,2,0,0),(-1,0,2,65000,500),(-1,0,2,65000,100)]:
+  for list_scores in [[101,201],[201,101],[101,101],[101,0],[0,0]]:
+   for quick in [0,1]:
+    before={'order':[0,1],'swap':swap,'swapProgress':progress,'removal':removal,'removeIndex':1,'drop':drop,'velocity':velocity,'quick':quick}
+    set_list(before);list_calls=[]
+    result=run_list({'sort':0x4f00c0,'remove':0x4f0190,'tick':0x4efc50}[operation])
+    after=get_list();events=list_calls[:];list_calls=[];write(owner+0x6000,0)
+    run_list(0x4efda0,[0,0,owner+0x6000,len(after['order'])*16])
+    list_cases.append({'operation':operation,'scores':list_scores,'before':before,'after':after,'result':events if operation=='tick' else result,'rows':list_calls[:]})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases},separators=(',',':'))+'\n')
+print(f'{len(list_cases)} list/controller drawing cases')

@@ -126,6 +126,7 @@ test("live death plays past the old cutoff before its explosion", async ({
       { timeout: 15000 }, // Three sequential native death strips plus damage reveals.
     )
     .toBe(true);
+  await expect(page.locator(".team-coral")).toBeHidden({ timeout: 5000 });
   const sequence = await page.evaluate(() => window.deathFrameProbe);
   expect(sequence.maxConcurrent).toBe(1);
   expect(sequence.pendingLabelVisible).toBe(true);
