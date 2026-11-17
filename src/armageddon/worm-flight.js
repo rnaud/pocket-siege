@@ -1,3 +1,5 @@
+import records from "./scheme-weapon-data.json" with { type: "json" };
+import { nativeWormTransitionBody } from "./worm-state.js";
 import { nativeWaterSound } from "./water-audio.js";
 import { nativeWormSkim } from "./worm-water.js";
 import { nativeWormReceiver } from "./worm-receiver.js";
@@ -117,6 +119,27 @@ export function attachNativeFirePunchFlight(worm, { height, friction = 96 }, pow
   return calls;
 }
 
+// 004D7730 enters7D with dragCCCC and weapon39+70 wind sensitivity.
+const parachuteWind = records.schemes.find(s => s.resource_id === 195).weapons[39][10];
+export function attachNativeParachuteFlight(worm, { height, friction = 96, windPercent = parachuteWind }) {
+  const previous = worm.nativeFlight ?? {
+    ...nativeAirborneBody(worm, height, friction), state: 0x7e, type: 3, complex: 1,
+  };
+  const entry = nativeWormTransitionBody(previous, 0x7d, { weapon70: windPercent });
+  worm.nativeFlight = { ...entry.body, state: 0x7d };
+  worm.ground = false;
+}
+
+// 004DD020 state7D applies half-gravity directional impulses before motion.
+export function stepNativeParachuteFlight(worm, environment, collide) {
+  const half = Math.trunc(Math.round(0x3d70 * (environment.gravityScale ?? 1)) / 2);
+  const { result, ...velocity } = nativeBodyImpulse(worm.nativeFlight,
+    Math.sign(environment.horizontal ?? 0) * half,
+    -Math.sign(environment.vertical ?? 0) * half);
+  Object.assign(worm.nativeFlight, velocity);
+  return stepNativeJumpFlight(worm, environment, collide);
+}
+
 // Browser coordinate adapter around recovered jump/body routines. Call only
 // after state 0x77 preparation completes. Native units are pixels per 50 Hz
 // tick, y-down. The caller supplies the real collision silhouette and events.
@@ -158,7 +181,7 @@ export function stepNativeJumpFlight(
       index: environment.index ?? 0,
       waterY: Math.floor(height - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale),
-      wind: 0,
+      wind: Math.round((environment.wind ?? 0) / 2500 * 65536),
     },
     {
       awake: nativeBodyAwake,

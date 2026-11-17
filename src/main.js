@@ -16,7 +16,7 @@ import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
-import { attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
+import { attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
@@ -2629,6 +2629,7 @@ function injure(w, damage, direction = 0, native = false) {
   if (!native) {
     w.originalHurt = null;
     w.nativeHurtBody = null;
+    w.nativeFlight = null;
     w.originalRecovery = null;
   }
   w.hurt = 1.4;
@@ -4452,7 +4453,7 @@ function stepFrame(dt) {
     audio.resume();
     for (const request of clockSounds) nativeSoundQueue.enqueue(request);
   }
-  if (canMove() && move && !rope.attached && !jetpack.active) {
+  if (canMove() && move && !rope.attached && !jetpack.active && !worms[current].originalParachute) {
     const w = worms[current];
     w.moving = walkWorm(w, terrain, move, dt);
   }
@@ -4622,17 +4623,14 @@ function stepFrame(dt) {
     } else if (w === worms[current] && rope.attached) {
       stepRope(w, dt);
     } else {
-      if (w === worms[current] && parachuteArmed && !w.ground && w.vy < -240) {
+      if (w === worms[current] && parachuteArmed && !w.ground && !w.originalHurt && !w.knocked && w.vy <= -400) {
         parachuteArmed = false;
         utilityAmmo[team].parachute = spendAmmo(utilityAmmo[team].parachute);
+        attachNativeParachuteFlight(w, { height: H });
         startOriginalParachute(w);
-        w.vy = Math.max(w.vy, -70);
         $("#status").textContent = `${w.name}'s parachute deploys.`;
         updateUI();
       }
-      // Preserve the existing browser fall-speed limit throughout deployment;
-      // the original body-force/drag transition is a separate physics port.
-      if (w.originalParachute) w.vy = Math.max(w.vy, -70);
       if (w.originalHurt && !w.frozen) {
         result = stepNativeHurtFlight(
           w,
@@ -4655,9 +4653,11 @@ function stepFrame(dt) {
             nativeSceneCollision(w, body, x, y, terrain, worms, H),
         );
         dispatchNativeWormMotionEvents(w, result);
-      } else if (w.nativeFlight && !w.frozen && !w.originalParachute) {
-        result = stepNativeJumpFlight(w, {
-          height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: worms.indexOf(w),
+      } else if (w.nativeFlight && !w.frozen) {
+        const tickFlight = w.originalParachute ? stepNativeParachuteFlight : stepNativeJumpFlight;
+        result = tickFlight(w, {
+          height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: worms.indexOf(w),
+          horizontal: w === worms[current] ? move : 0, vertical: w === worms[current] ? aimInput : 0,
           random: () => matchRandom.logicUint(),
           collisionBody: hit => hit >= 2 ? nativeWormContactBody(worms[hit - 2], H) : { type: 1, vx: 0, vy: 0 },
           updateCollisionBody: (hit, body) => { if (hit >= 2) applyNativeWormContact(worms[hit - 2], body); },
@@ -4665,10 +4665,9 @@ function stepFrame(dt) {
         dispatchNativeWormMotionEvents(w, { ...result,
           events: result.events.filter(call => call.target !== 0x7a) });
       } else {
-        if (w.frozen || w.originalParachute) w.nativeFlight = null;
+        if (w.frozen) w.nativeFlight = null;
         result = stepWorm(w, terrain, dt, gravityScale);
       }
-      if (w.originalParachute) w.vy = Math.max(w.vy, -70);
     }
     if (result.landed && w.ground && !w.landing) {
       w.landing = 0.16;
@@ -6389,7 +6388,8 @@ if (import.meta.env.DEV) {
     dropWormForParachute(index = current) {
       const w = worms[index];
       w.y = H - 15;
-      w.vy = -250;
+      // Start above the original automatic deployment threshold (400 px/s).
+      w.vy = -450;
       w.vx = 0;
       w.ground = false;
       parachuteArmed = true;
