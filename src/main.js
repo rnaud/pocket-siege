@@ -67,7 +67,7 @@ import {
 import { carveNativeCrater } from "./armageddon/crater-mask.js";
 import { nativeAreaDamage } from "./armageddon/area-damage.js";
 import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
-import { nativeJetpackInput, nativeJetpackVelocity } from "./armageddon/jetpack.js";
+import { nativeJetpackInitialFuel, nativeJetpackInput, nativeJetpackVelocity } from "./armageddon/jetpack.js";
 import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
 import { nativeHitscanBody, nativeWormHitscanBodies } from "./armageddon/hitscan-body.js";
@@ -432,7 +432,7 @@ let format = "single",
   rope = { attached: false, anchor: null, length: 0, mesh: null },
   jetpack = {
     active: false,
-    fuel: 30,
+    fuel: nativeJetpackInitialFuel / 65536,
     owner: null,
     pulse: 0,
     pulseTime: 0,
@@ -1702,7 +1702,7 @@ function stopJetpack() {
   for (const w of worms) stopOriginalJetpack(w);
   jetpack = {
     active: false,
-    fuel: 30,
+    fuel: nativeJetpackInitialFuel / 65536,
     owner: null,
     pulse: 0,
     pulseTime: 0,
@@ -1874,7 +1874,7 @@ function startJetpack() {
   utilityAmmo[team].jetpack = spendAmmo(utilityAmmo[team].jetpack);
   jetpack = {
     active: true,
-    fuel: 30,
+    fuel: nativeJetpackInitialFuel / 65536,
     owner: current,
     pulse: 0,
     pulseTime: 0,
@@ -1896,10 +1896,8 @@ function startJetpack() {
 }
 function stepJetpack(w, dt) {
   if (!jetpack.active || jetpack.owner !== current) return;
-  jetpack.fuel -= dt * 6;
   if (jetpack.pulseTime > 0) {
     jetpack.pulseTime = Math.max(0, jetpack.pulseTime - dt);
-    jetpack.fuel -= dt * 8;
   }
   const thrust =
     aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0);
@@ -1924,8 +1922,9 @@ function stepJetpack(w, dt) {
   w.ground = false;
   w.moving = Boolean(move);
   w.facing = input.facing;
-  stepOriginalJetpack(w, move, thrust);
-  if (jetpack.fuel <= 0) stopJetpack();
+  const jetpackState = stepOriginalJetpack(w, move, thrust);
+  jetpack.fuel = jetpackState.fuel / 65536;
+  if (jetpackState.target === 0x65) stopJetpack();
 }
 function makeRopeLine(anchor, w) {
   const geometry = new THREE.BufferGeometry().setFromPoints([

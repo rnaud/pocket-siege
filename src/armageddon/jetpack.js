@@ -1,4 +1,8 @@
 import { fixedMultiply } from "./numeric.js";
+import records from "./scheme-weapon-data.json" with { type: "json" };
+// 004D7730 state78 reads the low byte of jetpack record3E +70.
+export const nativeJetpackInitialFuel =
+  (records.schemes.find(s => s.resource_id === 195).weapons[62][10] & 255) << 16;
 // 004EDA70, smoothing with a minimum step.
 function approach(value, target, minimum) {
   const delta = (target - value) | 0;
@@ -7,13 +11,13 @@ function approach(value, target, minimum) {
     ? target
     : (value + Math.sign(delta) * step) | 0;
 }
-// 004DC470. Browser fuel units remain an adapter.
-export function nativeJetpackTick({ facing, lean, side, down, fuel }) {
+// 004DC470. A zero entry fuel value is unlimited; field1C8 inhibits draining.
+export function nativeJetpackTick({ facing, lean, side, down, fuel, fuelLocked = false }) {
   lean = approach(lean, facing < 0 ? -0x38000 : 0x38000, 0x10000);
   const magnitude = Math.abs(lean);
   const sprite = 0x35 - (magnitude >= 0x8000 ? (magnitude - 0x8000) >> 16 : 0);
   let target = null;
-  if (fuel !== 0) {
+  if (!fuelLocked && fuel !== 0) {
     fuel = (fuel + Math.trunc(((side + down) | 0) / -10)) | 0;
     if (fuel <= 0) {
       fuel = 0;

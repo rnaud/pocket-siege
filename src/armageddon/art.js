@@ -7,7 +7,7 @@ import { nativeDeathCue, nativeDeathEntry } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
 import { nativeFlightSprite, nativeFlightProgress } from "./flight-art.js";
-import { nativeJetpackInput, nativeJetpackTick } from "./jetpack.js";
+import { nativeJetpackInitialFuel, nativeJetpackInput, nativeJetpackTick } from "./jetpack.js";
 import { fixedDivide } from "./numeric.js";
 import {
   nativeTeleportTick,
@@ -770,6 +770,7 @@ export function stepOriginalJetpack(worm, steering, thrust) {
       lean: worm.facing * 0x38000,
       side: 0,
       down: 0,
+      fuel: nativeJetpackInitialFuel,
       map,
     };
     worm.originalJump = worm.originalLanding = worm.originalParachute = null;
@@ -781,7 +782,7 @@ export function stepOriginalJetpack(worm, steering, thrust) {
     lean: state.lean,
     side: input.side,
     down: input.down,
-    fuel: 0x640000,
+    fuel: state.fuel,
   });
   Object.assign(state, next);
   const ctx = state.map.image.getContext("2d");
@@ -814,6 +815,7 @@ export function stepOriginalJetpack(worm, steering, thrust) {
     false,
   );
   state.map.needsUpdate = true;
+  return state;
 }
 
 export function stepOriginalWalking(worm) {

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/jetpack.json" with { type: "json" };
 import { nativeJetpackInput, nativeJetpackVelocity, nativeJetpackTick } from "../src/armageddon/jetpack.js";
-test("jetpack poses and easing match 54 original executable ticks", { tag: "@logic" }, () => {
+test("jetpack poses, fuel and inputs match original executable ticks", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeJetpackTick(row.input)).toEqual(row.output);
   for (const row of fixture.inputCases) {

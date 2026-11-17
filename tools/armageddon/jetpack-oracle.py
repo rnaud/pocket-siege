@@ -46,10 +46,10 @@ cpu.hook_add(UC_HOOK_CODE,observe,begin=clear,end=transition)
 cases=[]
 for facing in [-1,1]:
  for lean in [-0x38000,-0x28000,-0x18000,-0x8000,0,0x8000,0x18000,0x28000,0x38000]:
-  for side,down,fuel in [(0,0,0x640000),(0x10000,0x10000,1),(0x8000,0x4ccc,0x640000)]:
-   inp={'facing':facing,'lean':lean,'side':side,'down':down,'fuel':fuel}
+  for side,down,fuel,locked in [(0,0,0x640000,0),(0x10000,0x10000,1,0),(0x8000,0x4ccc,0x640000,0),(0x10000,0x10000,0,0),(0x10000,0x10000,1,1),(0x10000,0x10000,0x1e0000,1)]:
+   inp={'facing':facing,'lean':lean,'side':side,'down':down,'fuel':fuel,'fuelLocked':bool(locked)}
    for offset,key in [(0x1b0,'facing'),(0x238,'lean'),(0x240,'side'),(0x244,'down'),(0x234,'fuel')]:write(owner+offset,inp[key]&0xffffffff)
-   write(owner+0x1c8,0);output={'target':None}
+   write(owner+0x1c8,locked);output={'target':None}
    write(stack+0xff00,stop);cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
    cpu.emu_start(0x4dc470,stop,count=2000)
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Jetpack tick did not return')
