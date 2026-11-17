@@ -82,15 +82,35 @@ export function decodeSprite(buffer) {
   return { width, height, metadata, palette, frames };
 }
 
-export function spriteFrameRGBA(sprite, index) {
+// 004AF790 allocates each source RGB in file order, truncates the native
+// result to a byte (including-1 ->255), and forces source index0 to0.
+export function nativeSpritePaletteMap(sprite, palette) {
+  const mapping = new Uint8Array(sprite.palette.length / 4);
+  for (let index = 1; index < mapping.length; index++) {
+    const offset = index * 4;
+    mapping[index] = palette.add(Array.from(sprite.palette.subarray(offset, offset + 3)));
+  }
+  return mapping;
+}
+
+export function spriteFrameRGBA(sprite, index, sharedPalette = null) {
   const rgba = new Uint8ClampedArray(sprite.width * sprite.height * 4);
   const frame = sprite.frames[index % sprite.frames.length];
   let source = 0;
   for (let y = frame.top; y < frame.bottom; y++)
     for (let x = frame.left; x < frame.right; x++) {
-      const color = frame.pixels[source++] * 4;
+      const sourceIndex = frame.pixels[source++];
       // circle25 includes scanline padding beyond its declared 50px canvas.
       if (x >= sprite.width || y >= sprite.height) continue;
+      if (sharedPalette) {
+        const index = sharedPalette.mapping[sourceIndex];
+        if (index === 0) continue;
+        const offset = (y * sprite.width + x) * 4;
+        rgba.set(sharedPalette.colors[index], offset);
+        rgba[offset + 3] = 255;
+        continue;
+      }
+      const color = sourceIndex * 4;
       rgba.set(
         sprite.palette.subarray(color, color + 4),
         (y * sprite.width + x) * 4,
