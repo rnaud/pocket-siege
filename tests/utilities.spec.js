@@ -1,3 +1,5 @@
+import wormPickup from "./fixtures/armageddon/worm-pickup.json" with { type: "json" };
+import { nativeWormPickupEvent, nativeWormPickupQuery, nativeWormPickupTick } from "../src/armageddon/worm-pickup.js";
 import barrelArt from "./fixtures/armageddon/barrel-art.json" with { type: "json" };
 import { nativeBarrelArt } from "../src/armageddon/barrel-art.js";
 import barrelContacts from "./fixtures/armageddon/barrel-contact.json" with { type: "json" };
@@ -411,6 +413,18 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       expect(projectile.nativeTimer.remaining).toBe(20000);
       expect(projectile.nativeRelease).toBeUndefined();
     }
+  }
+  for (const row of wormPickup.cases) {
+    const calls = [];
+    const body = nativeWormPickupTick(row.input, (...args) => { calls.push(args); return 0; });
+    expect({ body, calls }).toEqual(row.result);
+  }
+  for (const row of wormPickup.events)
+    expect({ body: nativeWormPickupEvent(row.input, row.record), calls: [] }).toEqual(row.result);
+  for (const row of wormPickup.queries) {
+    const calls = [];
+    const value = nativeWormPickupQuery(row.input, (...args) => { calls.push(args); return row.query_result; });
+    expect({ body: row.input, calls, value }).toEqual(row.result);
   }
   for (const row of crateHits.direct_cases) {
     expect(nativeCrateDirectHit(row.input)).toEqual(row.output);
