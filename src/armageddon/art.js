@@ -34,6 +34,11 @@ import spriteIds from "./sprite-ids.json";
 import waterSpriteIds from "./water-sprite-ids.json";
 import * as THREE from "three";
 import { decodeSprite, spriteFrameRGBA } from "./sprite.js";
+import { nativeSpritePaletteMap } from "./sprite.js";
+import { createNativeGamePaletteBanks } from "./palette-banks.js";
+import { nativeStartupFonts, nativeStartupPalette } from "./startup-palette.js";
+import { loadNativeFont } from "./font.js";
+import spritePaletteData from "./sprite-palette-data.json";
 
 const spriteIdByName = new Map(
   Object.entries(spriteIds.sprites).map(([id, sprite]) => [sprite.name, +id]),
@@ -195,7 +200,8 @@ async function loadSpriteBytes(name, url) {
   throw new Error(`Cannot load ${name}: ${failure.message}`);
 }
 export async function loadOriginalArt() {
-  const pending = [...names, ...Object.values(waterSpriteIds.sprites).map(
+  const fonts = new Map();
+  const pending = [...new Set([...names, "cdrom", "phone"]), ...nativeStartupFonts.map(([, name]) => `font/${name}`), ...Object.values(waterSpriteIds.sprites).map(
     ({ name }) => `water/${name}`,
   )];
   let cursor = 0, failed = false;
@@ -205,6 +211,10 @@ export async function loadOriginalArt() {
     while (!failed && cursor < pending.length) {
       const name = pending[cursor++];
       try {
+        if (name.startsWith("font/")) {
+          fonts.set(name.slice(5), await loadNativeFont(name.slice(5)));
+          continue;
+        }
         const url = `${import.meta.env.BASE_URL}armageddon/${name.startsWith("water/") ? `media/water/blue/water/${name.slice(6)}` : `sprites/${name}`}.spr`;
         const sprite = decodeSprite(await loadSpriteBytes(name, url));
         animations.set(name, { sprite, metadata: animationMetadata(sprite), textures: [] });
@@ -214,6 +224,22 @@ export async function loadOriginalArt() {
       }
     }
   }));
+  const banks = createNativeGamePaletteBanks();
+  nativeStartupPalette(banks.get(1), name => animations.get(name).sprite, name => fonts.get(name));
+  // Allocate in native descriptor order after parallel I/O has completed.
+  // Supplemental team/grave sprites have separate native loading paths.
+  for (const [bank, descriptors, prefix] of [[1, spriteIds.sprites, ""], [2, waterSpriteIds.sprites, "water/"]]) {
+    const palette = banks.get(bank);
+    for (const { name } of Object.values(descriptors)) {
+      const animation = animations.get(prefix + name);
+      // Unused animations still contribute colors in native load order. Their
+      // compact extracted headers avoid fetching/decompressing unused frames.
+      const sprite = animation?.sprite ?? { palette: Uint8Array.from([0, 0, 0, 0,
+        ...spritePaletteData.sprites[name].flatMap(index => [...spritePaletteData.colors[index], 255])]) };
+      const mapping = nativeSpritePaletteMap(sprite, palette);
+      if (animation) animation.sharedPalette = { mapping, colors: palette.colors };
+    }
+  }
 }
 
 function texture(name, index) {
@@ -229,7 +255,7 @@ function texture(name, index) {
       .getContext("2d")
       .putImageData(
         new ImageData(
-          spriteFrameRGBA(sprite, index),
+          spriteFrameRGBA(sprite, index, animation.sharedPalette),
           sprite.width,
           sprite.height,
         ),

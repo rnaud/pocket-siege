@@ -33,4 +33,16 @@ export class NativeGamePalette {
     const index = this.used[this.cursor++];
     return [index, [...this.colors[index]]];
   }
+  // 004A6ED0 copies palette state without changing object identity.
+  copyFrom(source) {
+    this.first = source.first;
+    this.last = source.last;
+    this.colors = source.colors.map(color => [...color]);
+    this.changed = source.changed.slice();
+    this.used = [...source.used];
+    this.free = [...source.free];
+    this.cursor = source.cursor;
+    this.dirty = source.dirty;
+    return this;
+  }
 }

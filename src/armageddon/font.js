@@ -1,3 +1,13 @@
+import { nativeSpritePaletteMap } from "./sprite.js";
+
+// 004B04B0 also allocates opaque black for source index0.
+export function nativeFontPaletteMap(font, palette) {
+  const black = palette.add([0, 0, 0]);
+  const mapping = nativeSpritePaletteMap(font, palette);
+  mapping[0] = black;
+  return mapping;
+}
+
 // Original FNT layout: 004B04B0; advances: 004B0A80; glyph copy: 004B08D0.
 export function decodeNativeFont(buffer) {
   const bytes = new Uint8Array(buffer);
