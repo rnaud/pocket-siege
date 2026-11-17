@@ -1,3 +1,5 @@
+import replayPipeline from "./fixtures/armageddon/replay-pipeline.json" with { type: "json" };
+import { createNativeReplayPipeline } from "../src/armageddon/replay-pipeline.js";
 import replayInput from "./fixtures/armageddon/replay-input.json" with { type: "json" };
 import { nativeCollectReplayInput } from "../src/armageddon/replay-input.js";
 import replayFrameState from "./fixtures/armageddon/replay-frame-state.json" with { type: "json" };
@@ -76,6 +78,35 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
 test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+  for (const row of replayPipeline.cases) {
+    const scene = new Uint8Array(0x20000), sceneView = new DataView(scene.buffer);
+    const memory = new Uint8Array(0x300), managerView = new DataView(memory.buffer);
+    for (const [offset, value] of [[0x7f0, 99], [0x800, 7], [0x1240c, 4], [0x1d43c, row.mode === 1 ? 1 : 0], [0x1d444, row.mode === 2 ? 1 : 0], [0x1d448, row.slow]]) sceneView.setInt32(offset, value, true);
+    for (const [offset, value] of [[0x15c, 17], [0x160, 23], [0x164, 1], [0x168, 101], [0x214, 3], [0x21c, 19], [0x224, row.hide], [0x244, row.paused], [0x260, 3], [0x284, 1]]) managerView.setInt32(offset, value, true);
+    const incoming = new NativeReplayBuffer(4096), recording = new NativeReplayBuffer(4096), calls = [];
+    for (const [event, payload] of [[0x401, [1, 2]], [0x3ea, []], [0x402, [3]], [0x3ea, []]]) (row.mode === 2 ? recording : incoming).writeEvent(event, Uint8Array.from(payload));
+    const pipeline = createNativeReplayPipeline({ sceneMemory: scene, managerMemory: memory, incoming, recording, host: {
+      collectRoot: (_root, queue, event, size) => calls.push(['collect', event, size, queue === incoming]),
+      dispatchRoot: (_root, event, payload) => calls.push(['dispatch', event, [...payload]]),
+      queryRoot: (_root, event, output) => { calls.push(['query', event, output.length]); new DataView(output.buffer).setInt32(4, 0, true); },
+      flushRoot: () => calls.push(['flush', 0x210]), flushEnvironment: () => calls.push(['flush', 0x220]),
+      renderFrame: () => calls.push(['render']),
+      device: { pending: () => { calls.push(['device', 0x40]); return 0; } },
+      audio: row.sound ? { setVolume: volume => calls.push(['volume', volume]), setSpeed: speed => calls.push(['speed', speed]), playSound: (...args) => calls.push(['sound', ...args]) } : null,
+    } });
+    const events = queue => queue.snapshot().records.map(record => {
+      const bytes = Uint8Array.from(record.payload);
+      return [new DataView(bytes.buffer).getUint32(0, true), [...bytes.slice(4)]];
+    });
+    for (const expected of row.frames) {
+      calls.length = 0;
+      pipeline.tick();
+      expect({ calls, scene: replayPipeline.sceneFields.map(offset => sceneView.getInt32(offset, true)),
+        manager: replayPipeline.managerFields.map(offset => managerView.getInt32(offset, true)),
+        input: events(incoming), recorded: events(recording),
+      }).toEqual(expected);
+    }
+  }
   for (const row of replayInput.cases) {
     const queue = new NativeReplayBuffer(row.capacity), calls = [];
     if (row.fill !== null) queue.writeEvent(0x499, new Uint8Array(row.fill).fill(7));
