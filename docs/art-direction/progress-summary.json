@@ -14,9 +14,10 @@
     },
     {
       "title": "Weapons & inventory",
-      "live": "Original weapon data and many projectile, melee, hitscan and placed-weapon routines drive live play. Teleport searches nearby valid positions using the original worm mask and collision registry. Live girders now use original target bounds, Manhattan range from the default native scheme, and sprite collision checks against current terrain and bodies. Rejected placement preserves ammo and terrain. Girder shape cycling, scheme overrides and native targeting commands remain. The native descriptor-to-input-mode decoder now matches executable fixtures for primary and secondary weapon settings; selection-event integration remains.",
+      "live": "Original weapon data and many projectile, melee, hitscan and placed-weapon routines drive live play. Teleport searches nearby valid positions using the original worm mask and collision registry. Live girders now use original target bounds, Manhattan range from the default native scheme, and sprite collision checks against current terrain and bodies. Rejected placement preserves ammo and terrain. Girder shape cycling, scheme overrides and native targeting commands remain. Native weapon selection now composes descriptor input flags, arsenal closure, targeting ownership transitions and bounds against executable fixtures. Live browser selection and full team-event dispatch remain to connect.",
       "remaining": "Finish every weapon state machine, scheme override, special-availability rule, ammo-loading path and utility delay lifecycle.",
       "evidence": [
+        "native_weapon_selection_event",
         "native_weapon_input_mode_flags",
         "live_native_girder_placement",
         "native_scene_placement_bitmaps",

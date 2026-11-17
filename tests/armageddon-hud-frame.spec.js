@@ -1,3 +1,5 @@
+import weaponSelection from "./fixtures/armageddon/weapon-selection.json" with { type: "json" };
+import { nativeSelectWeaponEvent } from "../src/armageddon/weapon-selection.js";
 import weaponInputFlags from "./fixtures/armageddon/weapon-input-flags.json" with { type: "json" };
 import { nativeWeaponInputFlags, nativeApplyWeaponInputFlags, nativeWeaponInputOffsets } from "../src/armageddon/weapon-input-flags.js";
 import targetEntry from "./fixtures/armageddon/target-entry.json" with { type: "json" };
@@ -238,6 +240,29 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of weaponSelection.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    sceneMemory.set(c.initial,0x1b778);scene.setInt8(0x11d7c,c.active);scene.setInt32(0x1d444,c.mode,true);scene.setInt32(0x804,696,true);
+    scene.setInt32(0x1247c,123,true);scene.setInt32(0x12480,700*65536,true);
+    const descriptor=new Uint8Array(0x200),descriptorView=new DataView(descriptor.buffer);
+    for(const [offset,value] of Object.entries(c.descriptor))descriptorView.setInt32(Number(offset),value,true);
+    const payload=new Uint8Array(16),command=new DataView(payload.buffer);c.words.forEach((value,i)=>command.setInt32(i*4,value,true));
+    const calls=[];
+    nativeSelectWeaponEvent(memory,sceneMemory,payload,{
+      wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
+      weaponAvailable:(...args)=>{calls.push(["available",...args]);return c.available;},
+      lookup:(...args)=>{calls.push(["lookup",...args]);return 1;},
+      wormQuery:(_,event,size)=>{calls.push(["query",event,size]);const p=new Uint8Array(size),v=new DataView(p.buffer);if(event===0x7d3)v.setInt32(0x20,c.blocked,true);else {v.setInt32(0,100*65536+123,true);v.setInt32(4,20*65536+456,true);}return p;},
+      weaponDescriptor:slot=>{calls.push(["descriptor",slot]);return descriptor;},
+      selectInventory:(...args)=>calls.push(["inventory",...args]),
+      wormState:(...args)=>{calls.push(["state",...args]);return c.state;},
+      cameraMode:mode=>calls.push(["mode",mode]),cameraTarget:(...args)=>calls.push(["target",...args]),
+      targetShape:()=>{calls.push(["shape"]);return {width:33,height:17};},
+      forward:p=>calls.push(["forward",0x41b,p.length,[...p]]),
+    });
+    expect({calls,body:weaponSelection.offsets.map(o=>body.getInt32(o,true)),target:[0x1247c,0x12480].map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,body:c.body,target:c.target,ownership:c.ownership});
   }
   for(const c of weaponInputFlags.cases) {
     const descriptor=new Uint8Array(0x200),view=new DataView(descriptor.buffer);

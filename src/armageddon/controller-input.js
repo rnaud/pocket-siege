@@ -141,7 +141,7 @@ export function nativeCollectTargetActivation(memory,queue,host) {
 
 // 004E5E30/004E5EE0 acquire/release the arsenal's priority-2 pointer owner.
 // Lists contain signed shorts, including the free-list stack and counts.
-function nativeArsenalOwnership(body, scene, open) {
+export function nativeArsenalOwnership(body, scene, open) {
   const get = offset => body.getInt32(offset,true);
   const short = offset => scene.getInt16(offset,true);
   const put = (offset,value) => scene.setInt16(offset,value,true);
