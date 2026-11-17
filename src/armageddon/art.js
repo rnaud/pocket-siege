@@ -174,27 +174,42 @@ const names = [
   ]),
 ];
 const animations = new Map();
-export async function loadOriginalArt() {
-  await Promise.all(
-    [
-      ...names,
-      ...Object.values(waterSpriteIds.sprites).map(
-        ({ name }) => `water/${name}`,
-      ),
-    ].map(async (name) => {
-      const response = await fetch(
-        `${import.meta.env.BASE_URL}armageddon/${name.startsWith("water/") ? `media/water/blue/water/${name.slice(6)}` : `sprites/${name}`}.spr`,
-      );
-      if (!response.ok) throw new Error(`Cannot load ${name}`);
-      const sprite = decodeSprite(await response.arrayBuffer());
-      animations.set(name, {
-        sprite,
-        metadata: animationMetadata(sprite),
-        textures: [],
-      });
-    }),
-  );
+async function loadSpriteBytes(name, url) {
+  let failure;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(url, attempt ? { cache: "reload" } : undefined);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.arrayBuffer();
+    } catch (error) {
+      failure = error;
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 200 * (attempt + 1)));
+    }
+  }
+  throw new Error(`Cannot load ${name}: ${failure.message}`);
 }
+export async function loadOriginalArt() {
+  const pending = [...names, ...Object.values(waterSpriteIds.sprites).map(
+    ({ name }) => `water/${name}`,
+  )];
+  let cursor = 0, failed = false;
+  // Keep the hundreds of original sprite requests from flooding the browser
+  // and CDN. One transient response must not permanently reject game boot.
+  await Promise.all(Array.from({ length: 8 }, async () => {
+    while (!failed && cursor < pending.length) {
+      const name = pending[cursor++];
+      try {
+        const url = `${import.meta.env.BASE_URL}armageddon/${name.startsWith("water/") ? `media/water/blue/water/${name.slice(6)}` : `sprites/${name}`}.spr`;
+        const sprite = decodeSprite(await loadSpriteBytes(name, url));
+        animations.set(name, { sprite, metadata: animationMetadata(sprite), textures: [] });
+      } catch (error) {
+        failed = true;
+        throw error;
+      }
+    }
+  }));
+}
+
 function texture(name, index) {
   const animation = animations.get(name);
   if (!animation) return null;

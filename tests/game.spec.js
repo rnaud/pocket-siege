@@ -1065,7 +1065,10 @@ test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
   await page.waitForTimeout(250);
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.jetpack.active).toBe(true);
-  expect(state.jetpack.fuel).toBeLessThan(30);
+  expect(state.jetpack.fuel).toBe(30);
+  await page.keyboard.down("ArrowUp");
+  await expect.poll(() => page.evaluate(() => window.siege.getState().jetpack.fuel)).toBeLessThan(30);
+  await page.keyboard.up("ArrowUp");
   await page.keyboard.press("j");
   state = await page.evaluate(() => window.siege.getState());
   expect(state.jetpack.active).toBe(false);
