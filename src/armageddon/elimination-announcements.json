@@ -1,0 +1,16 @@
+{
+  "sha256": "0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56",
+  "table": "00558A60",
+  "messages": [
+    "%s fade away",
+    "%s is out!",
+    "%s is out of here!",
+    "%s bit the dust",
+    "%s didn't make the grade",
+    "%s bit the bullet",
+    "%s is missing in action",
+    "%s is history",
+    "It`s too late for %s",
+    "Have pity for %s"
+  ]
+}

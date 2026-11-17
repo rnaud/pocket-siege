@@ -1,3 +1,4 @@
+import elimination from "./elimination-announcements.json" with { type: "json" };
 import { fixedMultiply } from "./numeric.js";
 // Native 20-slot announcement ring (004EC6A0) and 50Hz controller (004ECA40).
 // The historical `scale` field is pixel coverage, not geometric size.
@@ -107,4 +108,11 @@ export function nativeAnnouncementAudioTick(volume, handle, longMessage, started
     handle = 0;
   }
   return { volume, handle, calls };
+}
+
+// 004EEEE0 chooses from the language table using one match-logic RNG draw;
+// 004EC470 supplies the team name and color + 17 (medium team-color font).
+export function nativeTeamEliminationAnnouncement(name, color, nextRandom) {
+  const template = elimination.messages[(nextRandom() & 255) % elimination.messages.length];
+  return { text: template.replace("%s", () => name), font: color + 17 };
 }

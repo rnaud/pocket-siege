@@ -42,10 +42,22 @@ clock_presentation_mode=False
 clock_countdown_mode=False
 announcement_draw_mode=False
 announcement_audio_mode=False
+announcement_message_mode=False
+announcement_message=None
 announcement_audio_calls=[]
 announcement_draw=None
 def hook(cpu,address,size,user):
- global announcement_draw
+ global announcement_draw, announcement_message
+ if announcement_message_mode and address==stop+0x304: # External CRT sprintf for the source's single %s argument.
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  string=lambda at:bytes(cpu.mem_read(at,256)).split(b'\0')[0].decode('cp1252')
+  value=string(read(sp+8)).replace('%s',string(read(sp+12))).encode('cp1252')
+  cpu.mem_write(read(sp+4),value+b'\0');cpu.reg_write(UC_X86_REG_EAX,len(value))
+  cpu.reg_write(UC_X86_REG_ESP,sp+4);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
+ if announcement_message_mode and address==0x4b26a0:
+  sp=cpu.reg_read(UC_X86_REG_ESP);payload=read(sp+24)
+  announcement_message={'text':bytes(cpu.mem_read(read(payload+8),256)).split(b'\0')[0].decode('cp1252'),'font':read(payload+12)}
+  cpu.reg_write(UC_X86_REG_ESP,sp+28);cpu.reg_write(UC_X86_REG_EIP,read(sp));return
  if announcement_audio_mode and address in [0x4edb90,0x4edbe0,0x4edc30]:
   sp=cpu.reg_read(UC_X86_REG_ESP)
   name,count={0x4edb90:('play',5),0x4edbe0:('volume',2),0x4edc30:('stop',1)}[address]
@@ -358,5 +370,20 @@ for drop in [0,32768,65536]:
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4ec567:raise RuntimeError('Team sound block did not finish')
   calls=[list(struct.unpack('<5i',cpu.mem_read(context+0x1c994+j*20,20))) for j in range(read(context+0x1cad4))]
   team_sound_cases.append({'before':{'drop':drop,'bounce':bounce},'after':{'drop':read(context+0x1c140),'bounce':read(context+0x1c144)},'calls':calls})
-args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases},separators=(',',':'))+'\n')
+announcement_message_mode=True
+write(0x5178f4,stop+0x304)
+elimination_cases=[]
+for seed in [0,1,42,0x12345678,0xffffffff]:
+ for frame in [0,1,50,2000]:
+  for color in [0,2]:
+   name='CORAL CREW' if color==0 else 'MOSS COMPANY'
+   cpu.mem_write(owner+0x9000,name.encode()+b'\0');write(owner+0x38,context)
+   write(context+0x1acc,seed);write(context+0x7f0,frame)
+   sp=stack+0xff00
+   for j,v in enumerate([stop,0x558a60,color+17,owner+0x9000]):write(sp+j*4,v)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   announcement_message=None;cpu.emu_start(0x4eeee0,stop,count=10000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Elimination message selection did not finish')
+   elimination_cases.append({'seed':seed,'frame':frame,'name':name,'color':color,'random':read(context+0x1acc),'message':announcement_message})
+args.output.write_text(json.dumps({'sha256':digest,'cases':cases,'panelCases':panel_cases,'visibilityCases':visibility_cases,'healthCases':health_cases,'highlightCases':highlight_cases,'listCases':list_cases,'timerCases':timer_cases,'clockSlideCases':clock_slide_cases,'clockFrame':clock_frame,'clockPresentationCases':clock_presentation_cases,'clockCountdownCases':clock_countdown_cases,'announcementCases':announcement_cases,'announcementQueueCases':announcement_queue_cases,'announcementMaskCases':announcement_mask_cases,'announcementFrameCases':announcement_frame_cases,'announcementDrawCases':announcement_draw_cases,'announcementAudioCases':announcement_audio_cases,'teamSoundCases':team_sound_cases,'eliminationCases':elimination_cases},separators=(',',':'))+'\n')
 print(f'{len(list_cases)} list/controller drawing cases')

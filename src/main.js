@@ -1,5 +1,5 @@
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
-import { nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
+import { nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "./armageddon/announcements.js";
 import { nativeTeamPanelSounds, createNativeTeamList, nativeTeamListTick, nativeTeamListNeedsSort, sortNativeTeamList, removeNativeTeamListRow, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick, showNativeTeamPanel, hideNativeTeamPanelAfterInput } from "./armageddon/hud-frame.js";
 import { nativeNextDeath, nativeRequestedDeathState } from "./armageddon/death-cue.js";
 import { nativeWormDrowningState } from "./armageddon/worm-water.js";
@@ -775,6 +775,7 @@ let nativeClockProgress = 0, nativeClockTarget = 0;
 let nativeClockPresentation = { displayed: 45000, warned: 0, lastSecond: 0, phase: 0 };
 let nativeTeamList = createNativeTeamList();
 const teamPanelSoundState = { drop: 0, bounce: 0 };
+let pendingEliminationTeam = null;
 let nativeTeamHealthMaximum = 1;
 let nativeTeamHealthBusyTicks = 0;
 let nativeTeamHealthValues = [65536, 65536];
@@ -817,6 +818,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeClockPresentation.phase = 0;
   nativeTeamList = createNativeTeamList();
   teamPanelSoundState.drop = teamPanelSoundState.bounce = 0;
+  pendingEliminationTeam = null;
   nativeTeamHealthMaximum = 1;
   nativeTeamHealthBusyTicks = 0;
   nativeTeamHealthValues = [65536, 65536];
@@ -4237,6 +4239,12 @@ function step(dt) {
     audio.resume();
     for (const request of panelSounds) playNativeTeamPanelSound(audio, request);
   }
+  if (pendingEliminationTeam !== null) {
+    const id = pendingEliminationTeam;
+    const message = nativeTeamEliminationAnnouncement(id ? "CORAL CREW" : "MOSS COMPANY", id ? 0 : 2, () => matchRandom.logicUint());
+    queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
+    pendingEliminationTeam = null;
+  }
   const teamRosters = [0, 1].map(team => worms.filter(w => w.team === team));
   for (const roster of teamRosters)
     nativeTeamHealthMaximum = Math.max(nativeTeamHealthMaximum, roster.reduce((sum, w) => (sum + w.hp) | 0, 0));
@@ -4972,8 +4980,10 @@ function step(dt) {
         } else if (nativeTeamList.removal || nativeTeamList.order.length && teamScores[nativeTeamList.order.at(-1)] === 0) {
           if (showNativeTeamPanel(nativeTeamPanel)) {
             const alreadyRemoving = nativeTeamList.removal !== 0;
-            if (removeNativeTeamListRow(nativeTeamList, teamScores) && !alreadyRemoving)
+            if (removeNativeTeamListRow(nativeTeamList, teamScores) && !alreadyRemoving) {
               teamPanelSoundState.drop = 65536;
+              pendingEliminationTeam = nativeTeamList.order[nativeTeamList.removeIndex];
+            }
           }
           healthDisplayBusy = true;
         }
