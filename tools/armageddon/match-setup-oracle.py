@@ -122,17 +122,17 @@ for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['s
   frontend[0x1178]=ord('D');cpu.mem_write(0x6de000,bytes(0x9000));cpu.mem_write(0x6e0000,bytes(frontend))
   cpu.mem_write(owner,bytes((i*7+3)&255 for i in range(0x10000)))
   initial=bytearray(0x1c4);initial[0x14:0xec]=bytes(scheme['bytes']);cpu.mem_write(0x6f454c,bytes(initial))
-  cpu.mem_write(0x6daf90+0xd0,b'\xff'*264);write(0x6daf94,0xffffffff)
+  cpu.mem_write(0x6daf90+0xd0,b'\xff'*264);write(0x6daf94,0xffffffff);write(0x6daf90+0xc0,0);write(0x6daf90+0xc8,0)
   cpu.mem_write(0x6f48bc,b'C:\\WORMS\0');handicap=template['handicap'];clock=0x80000000;profile=None if templateIndex%2 else 0xffffffff
   cpu.mem_write(0x6f4839,b'English'+bytes(58))
   initialProfile=profile;calls=[];paths=[];write(thread+0x14,1)
   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
-  cpu.emu_start(0x415540,0x4156dc,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4156dc
+  cpu.emu_start(0x415540,0x4175ea,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4175ea
   cpu.mem_write(output,bytes(0x2c14));sp=stack+0xf000;write(sp,stop);write(sp+4,owner+0x3c)
   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,output)
   cpu.emu_start(0x4c2640,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   cases.append(dict(resource_id=scheme['resource_id'],directory_available=available,writes=writes,handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
     profile=profile,random_state=read(thread+0x14),paths=paths,calls=calls,scheme=bytes(cpu.mem_read(0x6f454c,0x1c4)).hex(),
     sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest(),inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='00415540..004156DC /004C2640',method='Original scheme preparation, team records, persistent seed/CRT, starting order, loadouts and inventory import compose. Speech fallback and country selection execute; resource probes, CString/bounded-copy interfaces, speech formatting, handicap enablement, time/profile and CRT thread data are interfaces. Complete setup, inventory, scheme, seed state and ordered boundary calls compared.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='00415540..004175EA /004C2640',method='Original scheme preparation, team records, persistent seed/CRT, starting order, loadouts, weapon settings, CRT reseed, environment expansion and inventory import compose. Speech fallback and country selection execute; resource probes, CString/bounded-copy interfaces, speech formatting, handicap enablement, time/profile and CRT thread data are interfaces. Complete setup, inventory, scheme, seed state and ordered boundary calls compared.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} initial match setups')

@@ -1,3 +1,5 @@
+import weaponSettings from './fixtures/armageddon/weapon-settings.json' with {type:'json'};
+import {nativeExpandWeaponSettings} from '../src/armageddon/weapon-settings.js';
 import schemeEnvironment from './fixtures/armageddon/scheme-environment.json' with {type:'json'};
 import {nativeExpandSchemeEnvironment} from '../src/armageddon/scheme-environment.js';
 import speechSetup from './fixtures/armageddon/speech-setup.json' with {type:'json'};
@@ -34,6 +36,13 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const row of weaponSettings.cases) {
+    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),scheme=Uint8Array.from(Buffer.from(row.initial,'hex'));
+    nativePrepareInventoryScheme(memory,scheme);memory[0xd42a]=0;
+    nativeExpandWeaponSettings(memory,scheme.subarray(0x14,0xec));
+    expect(Buffer.from(scheme).toString('hex')).toBe(row.prepared);
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
+  }
   for(const row of schemeEnvironment.cases) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),descriptors=new Uint8Array(0xd0),view=new DataView(descriptors.buffer);
     view.setInt32(0xc8,row.handicap,true);view.setInt32(0xc0,-row.handicap,true);
