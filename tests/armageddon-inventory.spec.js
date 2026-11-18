@@ -8,7 +8,7 @@ import {nativeMissionThumbnail,nativeMissionTerrainPath,nativeMissionWinningCond
 import {nativeClearMatchTeamRecords,nativeInitializeMatchTeamRecords} from '../src/armageddon/match-team-records.js';
 import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
 import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
-import missionNativePalette from './fixtures/armageddon/mission-team-records.json' with {type:'json'};
+import missionNativePalette from './fixtures/armageddon/mission-selected-load.json' with {type:'json'};
 import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
 import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
 import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
@@ -418,6 +418,28 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       host.systemLocale=()=>{calls.push(['locale',snapshot()]);return 0x409;};
       host.languageResource=host.loadString;
       host.readOption=(key,fallback)=>{calls.push(['option',key,fallback,snapshot()]);return key==='DetailLevel'?5:0;};
+    }
+    if(c.selection) {
+      const strings=new Map();
+      const services=missionFileServices({
+        assignString(address,value) {
+          calls.push(['missionString',address,value,snapshot()]);
+          const pointer=0x2300000+(address&0xfff)*8+16;
+          memory.put(address,pointer);strings.set(pointer,value);
+        },
+        readString:pointer=>strings.get(pointer),
+      });
+      const selectionHost={...services,messageBox:host.messageBox,
+        createFile:()=>{calls.push(['missionFileCreate',snapshot()]);return services.createFile();},
+        openFile:(file,...args)=>{
+          calls.push(['missionFileOpen',...args,snapshot()]);
+          const result=services.openFile(file,...args);expect(file.record?.source).toBe(c.profile);return result;
+        },
+        closeFile:file=>{calls.push(['missionFileClose',snapshot()]);services.closeFile(file);},
+        destroyFile:file=>{calls.push(['missionFileDestroy',snapshot()]);services.destroyFile(file);},
+      };
+      const selected=c.selection.training?nativeSelectTraining(memory,missionOwner,c.selection.number,selectionHost):nativeSelectMission(memory,missionOwner,c.selection.number,c.selection.score,selectionHost);
+      expect(selected).toBe(0);
     }
     const result=c.prepareTeams?nativePrepareGlobalMission(memory,host):c.globalOwner?nativeLoadGlobalMission(memory,host):nativeLoadMission(memory,missionOwner,host);
     if(c.nativeInitializer)expect([random.state,storedSeed]).toEqual([c.randomState,c.storedSeed]);

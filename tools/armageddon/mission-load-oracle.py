@@ -17,7 +17,9 @@ parser.add_argument('--native-bitmaps',action='store_true')
 parser.add_argument('--native-palette',type=Path)
 parser.add_argument('--global-owner',action='store_true')
 parser.add_argument('--prepare-teams',action='store_true')
+parser.add_argument('--select-files',action='store_true')
 args = parser.parse_args()
+args.prepare_teams |= args.select_files
 args.global_owner |= args.prepare_teams
 if args.global_owner and not args.native_palette:parser.error('--global-owner requires --native-palette')
 args.native_bitmaps |= bool(args.native_palette)
@@ -175,8 +177,14 @@ def hook(cpu,address,size,user):
   ret(result)
  elif address==0x503dc0:
   fmt=cstring(read(sp+8));
-  value=fmt if b'%' not in fmt else fmt%(cstring(read(sp+12)),signed(read(sp+16))) if fmt==b'%s %d' else fmt%(cstring(read(sp+12)),cstring(read(sp+16))) if fmt==b'%s\\%s' else fmt%signed(read(sp+12))
+  value=fmt%(read(sp+12)&255,signed(read(sp+16))) if b'%c' in fmt else fmt if b'%' not in fmt else fmt%(cstring(read(sp+12)),signed(read(sp+16))) if fmt==b'%s %d' else fmt%(cstring(read(sp+12)),cstring(read(sp+16))) if fmt==b'%s\\%s' else fmt%signed(read(sp+12))
+  if args.select_files and b'.wam' in value:calls.append(['missionString',read(sp+4),value.decode(),snapshot()])
   setstring(read(sp+4),value);ret()
+ elif address==0x503ee0:calls.append(['missionFileCreate',snapshot()]);ret(cpu.reg_read(UC_X86_REG_ECX))
+ elif address==0x503eda:
+  calls.append(['missionFileOpen',read(sp+4),read(sp+8),read(sp+12),snapshot()]);ret(1,12)
+ elif address==0x503ec8:calls.append(['missionFileClose',snapshot()]);ret()
+ elif address==0x503ed4:calls.append(['missionFileDestroy',snapshot()]);ret()
  elif address==0x503d2a:
   dest=cpu.reg_read(UC_X86_REG_ECX);setstring(dest,cstring(read(sp+4)));ret(dest,4)
  elif address==0x503d1e:
@@ -292,6 +300,9 @@ if args.native_flags and not args.native_bitmaps:
     sp=stack+0xe000;write(sp,stop);write(sp+4,team);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
     cpu.emu_start(0x41bc40,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     flagCases.append(dict(country=country,skill=skill,team=team,calls=calls,sha256=snapshot()))
+if args.select_files:
+ for address in [0x503ee0,0x503eda,0x503ec8,0x503ed4]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+selectionNames={source:path for path,source in json.loads(Path('src/armageddon/mission-names.json').read_text()).items()}
 profiles=[]
 for record in json.loads(Path('src/armageddon/mission-catalog.json').read_text())['records']:
  profile={};strings={}
@@ -334,13 +345,21 @@ for name,profile,strings,failure,unselected in profiles:
   if not unselected:write(owner+0x884,1);write(owner+0x54,1 if mutation else -1)
   if args.native_services:cpu.mem_write(0x6e1178,bytes([67+mutation]))
   rng=123+pattern
-  calls=[];initializing=True;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+  calls=[];initializing=True
+  selection=None
+  if args.select_files and name in selectionNames:
+   path=selectionNames[name].split('/')[-1];training=path.startswith('training');number=int(path.removesuffix('.wam').removeprefix('training' if training else 'mission'))
+   selection=dict(training=training,number=number,score=123)
+   write(sp,stop);write(sp+4,number);write(sp+8,123);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x440590 if training else 0x43e710,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+   assert cpu.reg_read(UC_X86_REG_EAX)==0
+  write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43e910,stop,count=2000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   missionResult=signed(cpu.reg_read(UC_X86_REG_EAX))
   if args.prepare_teams:
    write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6db650)
    cpu.emu_start(0x475fa0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,prepareTeams=args.prepare_teams,globalOwner=args.global_owner,nativePalette=bool(args.native_palette),nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=missionResult,callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
+  cases.append(dict(profile=name,selection=selection,prepareTeams=args.prepare_teams,globalOwner=args.global_owner,nativePalette=bool(args.native_palette),nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=missionResult,callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
 teamRecordCases=[];teamClearCases=[]
 if args.prepare_teams:
  for count in [0,1,3,6,7,128,255]:
@@ -370,5 +389,5 @@ if args.native_scheme and not args.native_initializer:
     sp=stack+0xe000;write(sp,stop);write(sp+4,selection);write(sp+8,bank);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6f454c)
     cpu.emu_start(0x470a20,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     schemeCases.append(dict(selection=selection,bank=bank,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition. Native palette mode maps the original DirectX2D DLL and executes its load/read/destroy routines; only CRT file/heap and DirectDraw calls remain intercepted. Full320KiB global/owner/palette-heap memory is compared at each observed boundary and return. Global-owner mode uses the actual006E0484 mission singleton inside frontend storage; its256KiB global/heap comparison includes the mission bytes in place, without duplicating an external owner region. Prepare-teams mode then executes00475FA0 and00475C70 as in the original frontend callers; mission return status is captured before that void preparation stage. Direct cases cover selected-team copy and clear-bank behavior.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords,paletteDllSha256=paletteDllHash,teamRecordCases=teamRecordCases,teamClearCases=teamClearCases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition. Native palette mode maps the original DirectX2D DLL and executes its load/read/destroy routines; only CRT file/heap and DirectDraw calls remain intercepted. Full320KiB global/owner/palette-heap memory is compared at each observed boundary and return. Global-owner mode uses the actual006E0484 mission singleton inside frontend storage; its256KiB global/heap comparison includes the mission bytes in place, without duplicating an external owner region. Prepare-teams mode then executes00475FA0 and00475C70 as in the original frontend callers; mission return status is captured before that void preparation stage. Direct cases cover selected-team copy and clear-bank behavior. Select-files mode additionally executes original mission/training selection with real ISO-derived filename numbers before full loading and team preparation for all48 definitions; CFile/CString services remain interfaces.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords,paletteDllSha256=paletteDllHash,teamRecordCases=teamRecordCases,teamClearCases=teamClearCases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')
