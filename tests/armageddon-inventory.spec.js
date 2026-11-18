@@ -199,6 +199,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       bitmapStorage:bitmap=>{calls.push(['storage',bitmap,snapshot()]);return c.composed?{pixels:owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400,bits:memory.get(bitmap+12),pitch:Math.floor((memory.get(bitmap+4)*memory.get(bitmap+12)+31)/32)*4}:{pixels:owner+0x1000,bits:c.bits,pitch:c.pitch};},
       remapBitmap:(bitmap,map)=>calls.push(['remap',bitmap,mapping(map),snapshot()]),
     };
+    if(c.nativeBitmaps) {
+      delete host.constructBitmap;delete host.bitmapStorage;delete host.remapBitmap;
+      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400;};
+    }
     const result=c.composed?nativeLoadTerrainFile(memory,owner+0x800,0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host);
     expect(result).toBe(c.result);
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);

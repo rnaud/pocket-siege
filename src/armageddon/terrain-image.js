@@ -1,7 +1,9 @@
 import {nativeDecodeImagePixels} from './image-decompress.js';
+import {nativeCreatePanelImage} from './panel-resources.js';
+import {nativeBitmapStorage,nativeRemapBitmap} from './bitmap-storage.js';
 //004F08E0 embedded IMG reader. scratch supplies the original0x428-byte
-//temporary frame (starting at original ESP+0x10). Bitmap allocation/storage,
-//and palette insertion retain explicit resource services.
+//temporary frame (starting at original ESP+0x10). Heap allocation and palette
+//insertion remain services; bitmap construction/storage/remap default to native.
 export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
   const word=a=>memory.byte(a)|(memory.byte(a+1)<<8);
   memory.put(scratch+24,host.tellFile(file));
@@ -24,11 +26,12 @@ export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
   if(bits!==1&&bits!==8)return 0;
   const bitmap=host.allocate(0x2c);
   if(bitmap) {
-    host.constructBitmap(bitmap,word(scratch+2),word(scratch+4),bits);
+    if(host.constructBitmap)host.constructBitmap(bitmap,word(scratch+2),word(scratch+4),bits);
+    else nativeCreatePanelImage(memory,bitmap,word(scratch+2),word(scratch+4),bits,host);
     memory.put(bitmap,bits===1?0x526328:0x5249b0);
   }
   //The original also calls through a null bitmap after allocation failure.
-  const storage=host.bitmapStorage(bitmap);
+  const storage=host.bitmapStorage?host.bitmapStorage(bitmap):nativeBitmapStorage(memory,bitmap);
   memory.put(scratch+8,storage.pixels);memory.put(scratch+32,storage.bits);memory.put(scratch+36,storage.pitch);
   if(memory.byte(scratch+7)&64) {
     const start=memory.get(scratch+24),position=host.tellFile(file);
@@ -42,7 +45,10 @@ export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
       const size=Math.trunc(packed/8)>>>0;
       host.readFile((memory.get(scratch+8)+Math.imul(y,memory.get(scratch+36)))>>>0,size,1,file);
     }
-    if(memory.byte(scratch+7)&128)host.remapBitmap(bitmap,scratch+40);
+    if(memory.byte(scratch+7)&128) {
+      if(host.remapBitmap)host.remapBitmap(bitmap,scratch+40);
+      else nativeRemapBitmap(memory,bitmap,scratch+40);
+    }
   }
   return bitmap;
 }

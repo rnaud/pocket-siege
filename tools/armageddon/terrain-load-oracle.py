@@ -55,15 +55,10 @@ def hook(cpu,address,size,user):
   color=list(struct.unpack('<HHH',cpu.mem_read(read(sp+4),6)));calls.append(['color',receiver,color,snapshot()]);color_index+=1;ret(color_index+10,4)
  elif address==0x492550:
   calls.append(['allocate',read(sp+4),snapshot()]);bitmap+=0x40;pixels=owner+0x2000+(bitmap-owner-0x1000)//0x40*0x400;ret(bitmap)
- elif address==0x492bc0:
-  values=[read(sp+i*4) for i in range(1,4)];calls.append(['construct',receiver,*values,snapshot()]);write(bitmap+4,values[0]);write(bitmap+8,values[1]);write(bitmap+12,values[2]);ret(bitmap,12)
- elif address==stop+0x400:
-  calls.append(['storage',receiver,snapshot()]);write(read(sp+4),pixels);write(read(sp+8),read(bitmap+12));write(read(sp+12),((read(bitmap+4)*read(bitmap+12)+31)//32)*4);ret(0,12)
- elif address==stop+0x500:
-  calls.append(['remap',receiver,bytes(cpu.mem_read(read(sp+4),256)).hex(),snapshot()]);ret(0,4)
+ elif address==0x4924d0:
+  calls.append(['array',read(sp+8),read(sp+4),snapshot()]);ret(pixels)
 for iat,target in [(0x51794c,stop+0x600),(0x51793c,stop+0x700),(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
-for vtable in [0x526328,0x5249b0]:write(vtable+0x20,stop+0x400);write(vtable+0x60,stop+0x500)
-for address in [stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600,stop+0x700,0x4adcb0,0x492550,0x492bc0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x4adcb0,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
 for pattern in [0,0xa5]:
  for variant in range(4):
@@ -82,6 +77,6 @@ for pattern in [0,0xa5]:
    for i,v in enumerate(arguments):write(sp+4+i*4,v)
    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4cc500,stop,count=100000)
    assert cpu.reg_read(UC_X86_REG_EIP)==stop
-   cases.append(dict(composed=True,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004CC500 +004F08E0 +004AB3C9',method='32 original complete terrain-file reads with three embedded images and native decompression, full68KiB memory at service boundaries and completion. CRT transport, palette insertion and bitmap constructor/storage/remap remain interfaces. Includes mixed1/8-bit layers and compression combinations, position records and trailing theme names.',cases=cases),separators=(',',':'))+'\n')
+   cases.append(dict(composed=True,nativeBitmaps=True,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004CC500 +004F08E0 +004AB3C9',method='32 original complete terrain-file reads with three embedded images and native decompression, full68KiB memory at service boundaries and completion. Original bitmap constructor00492BC0, storage00492EF0 and remap00492DB0/004AB6D9 execute. Only CRT transport, heap allocation and palette insertion remain interfaces. Includes mixed1/8-bit layers and compression combinations, position records and trailing theme names.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} composed terrain sequences')
