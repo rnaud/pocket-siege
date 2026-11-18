@@ -1,3 +1,4 @@
+import {nativeCreateLandscapeAt} from './landscape-create.js';
 import {nativeCreateTeamControllerAt} from './controller-create.js';
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
 import {nativeCreateEventGroup,nativeSetGroupSubscription} from './event-group.js';
@@ -18,7 +19,7 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
   if(((memory.get(scene+0x1b8d8)-memory.get(scene+0x1b8d4))&0xffff0000)<0x3000000)
     memory.put(scene+0x1b8d8,memory.get(scene+0x1b8d4)+0x3000000);
   const landscape=host.allocate(0x175c);
-  if(landscape)call(0x4d1f80,[address],landscape);
+  if(landscape)(host.constructLandscape??((at,parent)=>nativeCreateLandscapeAt(memory,at,parent,host)))(landscape,address);
   const group=(type,events)=>{
     const storage=host.allocate(0xa0),task=storage?nativeCreateEventGroup(memory,storage,address,type,0,host):0;
     for(const event of events)nativeSetGroupSubscription(memory,task,event,true);
