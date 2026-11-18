@@ -103,13 +103,19 @@ test("live teleport shows the dissolve before moving and holds the turn until it
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.worms[0].x).toBe(before.worms[0].x);
   expect(state.team).toBe(0);
-  await page.screenshot({ path: info.outputPath("original-teleport.png") });
+  // Observe relocation before taking a screenshot: capture can consume the
+  // entire rematerialization interval on a busy browser worker.
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().worms[0].x))
-    .not.toBe(before.worms[0].x);
-  state = await page.evaluate(() => window.siege.getState());
-  expect(state.team).toBe(0);
-  expect(state.worms[0].originalSprite).toBe("wteldsv");
+    .poll(() => page.evaluate((previousX) => {
+      const state = window.siege.getState();
+      return {
+        moved: state.worms[0].x !== previousX,
+        team: state.team,
+        sprite: state.worms[0].originalSprite,
+      };
+    }, before.worms[0].x), { intervals: [16] })
+    .toEqual({ moved: true, team: 0, sprite: "wteldsv" });
+  await page.screenshot({ path: info.outputPath("original-teleport.png") });
   await expect
     .poll(() =>
       page.evaluate(() => window.siege.getState().worms[0].originalSprite),

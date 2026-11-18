@@ -61,6 +61,17 @@ for (const group of [0, 1, 2])
         )
         .toBe(sprite);
     }
+    if(group===0) {
+      const breathing=await page.evaluate(async()=>{
+        const {originalWormFrame}=await import("/src/armageddon/art.js");
+        const worm={hp:100,team:0,nativePoison:{amount:0}},names=[];
+        const sample=frame=>names.push(originalWormFrame(worm,"idle",frame,0,"rocket",false).name);
+        sample(0);worm.hp=29;sample(1);worm.nativePoison.amount=5;sample(2);
+        sample(200);worm.nativePoison.amount=0;sample(201);worm.hp=100;sample(202);
+        return names;
+      });
+      expect(breathing).toEqual(["wbrth1","wbrth2","wpbrtlk","wpbrth","wbrth2","wbrth1"]);
+    }
     await page.screenshot({
       path: test.info().outputPath("native-weapon.png"),
     });

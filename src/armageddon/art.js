@@ -1,3 +1,4 @@
+import { nativeSynchronizeWormPlayer } from "./worm-animation-sync.js";
 import { nativeAxeTick } from "./axe.js";
 import { nativeWormBubbles } from "./worm-water.js";
 import { nativeRecoveryEntry, nativeRecoveryTick } from "./recovery.js";
@@ -140,6 +141,9 @@ const names = [
     spriteIds.sprites[0x242].name,
     freezeIdle,
     "wbrth1",
+    "wbrth2",
+    "wpbrtlk",
+    "wpbrth",
     "wblink1",
     "wwalk",
     "wwalku",
@@ -1357,9 +1361,15 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   // Zero HP waits for the controller's death dispatch; only originalDeath
   // selects wdie above. Damage reveal and other deaths may still be in progress.
   const frozen = worm.frozen > 0 && worm.hp > 0;
+  const idle = !frozen && (pose === "idle" || pose === "recoil");
   const key = frozen ? "frozen" : name;
   let player = worm.originalPlayer;
   if (!player) player = worm.originalPlayer = new NativeAnimationPlayer();
+  const syncIdle = () => nativeSynchronizeWormPlayer(
+    {team:worm.team,worm:0,field14c:0,field148:worm.nativePoison?.amount??0},
+    {marked:0,color:0},player,id=>animations.get(spriteIds.sprites[id].name).metadata,
+    {teamStatus:()=>0,health:()=>worm.hp},
+  );
   if (worm.originalAnimationKey !== key) {
     const previousId = player.current.id;
     const wasEquipped = worm.originalEquipped;
@@ -1369,7 +1379,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
           sprite_id,
           progress: 0,
         }))
-      : equipped
+      : idle ? [] : equipped
         ? nativeWeaponEquip(
             weaponFields[WEAPON_SLOTS[weapon]],
             wasEquipped ? 0x66 : 0x65,
@@ -1389,6 +1399,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
         animations.get(spriteIds.sprites[id].name).metadata,
         progress,
       );
+    if(idle)syncIdle();
     worm.originalAnimationKey = key;
     worm.originalEquipped = equipped && !frozen;
     worm.originalAnimationStart = frame;
@@ -1398,6 +1409,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     player.advance();
     worm.originalPlayerFrame++;
   }
+  if(idle)syncIdle();
   name = spriteIds.sprites[player.current.id]?.name;
   const animation = animations.get(name);
   if (!animation) return null;
