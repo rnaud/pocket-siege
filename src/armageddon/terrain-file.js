@@ -1,6 +1,7 @@
+import {nativeLoadTerrainImage} from './terrain-image.js';
 //004CC500. The serialized terrain wrapper ignores header contents and read
-//results. Embedded IMG decoding remains a resource interface. scratch is a
-//caller-owned20-byte temporary, separate from persistent terrain memory.
+//results. Its default image loader composes004F08E0 and004AB3C9. scratch is a
+//caller-owned20-byte temporary, followed by the image loader's0x428-byte frame.
 export function nativeLoadTerrainFile(memory,path,palette,outputs,scratch,host) {
   const file=host.openFile(path,'rb');
   if(!file)return 0;
@@ -8,7 +9,8 @@ export function nativeLoadTerrainFile(memory,path,palette,outputs,scratch,host) 
   for(const address of outputs.values)host.readFile(address,4,1,file);
   host.readFile(outputs.positions,(memory.get(outputs.values[2])<<3)>>>0,1,file);
   for(let i=2;i>=0;i--) {
-    const image=host.loadTerrainImage(palette,file);
+    const image=host.loadTerrainImage?host.loadTerrainImage(palette,file)
+      :nativeLoadTerrainImage(memory,palette,file,scratch+20,host);
     memory.put(outputs.images[i],image);
   }
   for(const name of outputs.names) {
