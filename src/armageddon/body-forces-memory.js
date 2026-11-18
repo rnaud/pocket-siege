@@ -1,3 +1,4 @@
+import { nativeBodyWaterResponseMemory } from "./body-response-memory.js";
 import { nativeRopeMotionInPlace } from "./rope-motion.js";
 import { fixedMultiply } from "./numeric.js";
 import { nativeSweep } from "./motion.js";
@@ -27,7 +28,8 @@ export function nativeWaterMotionMemory(
       put(0x94, waterY() << 16);
       put(0x9c, fixedMultiply(get(0x9c), 0xcccc));
       put(0xa0, -get(0xa0));
-      host.skim(body);
+      if (host.skim) host.skim(body);
+      else nativeBodyWaterResponseMemory(memory, body, 0x40);
       return 0;
     }
   }

@@ -5,6 +5,7 @@ import {nativeCollectMatchInput} from '../src/armageddon/match-input.js';
 import matchStatus from './fixtures/armageddon/match-status.json' with {type:'json'};
 import {nativeQueryMatchMemory} from '../src/armageddon/match-status.js';
 import replayWorldReplacement from './fixtures/armageddon/replay-world-replacement.json' with {type:'json'};
+import replayRestoredSounds from './fixtures/armageddon/replay-restored-sounds.json' with {type:'json'};
 import replayRestoredPhysics from './fixtures/armageddon/replay-restored-physics.json' with {type:'json'};
 import replayRestoredFrames from './fixtures/armageddon/replay-restored-frames.json' with {type:'json'};
 import {nativeWriteActorMemory,nativeWriteTaskHeaderMemory,nativeWriteMatchMemory,nativeWriteEnvironmentMemory} from '../src/armageddon/replay-write-memory.js';
@@ -1229,7 +1230,7 @@ test("Native replay frame and input pipeline matches original executable request
   }
 });
 test("Native replay resumed frames matches original executable requests", {tag:"@logic"}, () => {
-  for(const row of [...replayRestoredFrames.cases,...replayRestoredPhysics.cases]) {
+  for(const row of [...replayRestoredFrames.cases,...replayRestoredPhysics.cases,...replayRestoredSounds.cases]) {
     const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000,0x70000),env=initial.subarray(0x70000,0x80000),devices=initial.subarray(0x80000,0x90000),channels=initial.subarray(0x90000),scratch=new Uint8Array(608),calls=[],allocations=[];
     const locate=at=>at>=0x2800000?[scratch,at-0x2800000]:at>=0x2700000?[channels,at-0x2700000]:at>=0x2600000?[devices,at-0x2600000]:at>=0x2500000?[env,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
     const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
@@ -1247,7 +1248,7 @@ test("Native replay resumed frames matches original executable requests", {tag:"
       dispatchTask:(child,sender,event,size)=>calls.push(['child',child,sender,event,size]),
       advanceBody:row.physics?undefined:(...args)=>calls.push(['body',...args]),
       observeBodyStep:(...args)=>calls.push(['body',...args]),
-      physics:{waterChanged:body=>calls.push(['waterChanged',body]),skim:body=>calls.push(['skim',body])},
+      physics:row.waterSounds?{}:{waterChanged:body=>calls.push(['waterChanged',body]),skim:body=>calls.push(['skim',body])},
       observeRootQuery:(root,event,size)=>calls.push(['query',root,event,size]),
       observeTaskCleanup:root=>calls.push(['flushRoot',root]),observeEnvironmentCleanup:address=>calls.push(['flushEnvironment',address]),renderFrame:()=>calls.push(['render']),
     }});
@@ -1258,6 +1259,10 @@ test("Native replay resumed frames matches original executable requests", {tag:"
         if(memory.get(root+20)>1)memory.put(memory.get(root+24)+4,0);
         const environment=memory.get(0x20207d4);
         for(const offset of [0x18,0x34+2*0x1c]){const list=environment+offset;memory.put(list+8,1);if(memory.get(list+12))memory.put(memory.get(list+16),0);}
+      }
+      if(row.primedSounds && frame===17) {
+        memory.put(0x203cad4,15);
+        for(let i=0;i<15;i++) [0x39,0,65536,32768,0].forEach((v,j)=>memory.put(0x203c994+i*20+j*4,v));
       }
       if(frame===20)memory.put(0x203d438,1);
       calls.length=0;allocations.length=0;pipeline.tick();

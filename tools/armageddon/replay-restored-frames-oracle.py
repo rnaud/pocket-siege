@@ -10,7 +10,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
 parser.add_argument('--physics',action='store_true')
+parser.add_argument('--water-sounds',action='store_true')
 args = parser.parse_args()
+if args.water_sounds:args.physics=True
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
 if digest != '0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56':
@@ -94,7 +96,8 @@ def hook(cpu,address,size,user):
   calls.append(['body',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)])
   if not args.physics:ret(0,8)
  elif args.physics and address in [0x4f4fe0,0x4f4fc0]:
-  calls.append(['waterChanged' if address==0x4f4fe0 else 'skim',cpu.reg_read(UC_X86_REG_ECX)]);ret()
+  if not args.water_sounds:
+   calls.append(['waterChanged' if address==0x4f4fe0 else 'skim',cpu.reg_read(UC_X86_REG_ECX)]);ret()
  elif address==0x4b4ce0:
   root=cpu.reg_read(UC_X86_REG_ECX);event,length,pointer=read(sp+8),read(sp+12),read(sp+16)
   if event==0x3ec:calls.append(['collect',root,event,length,read(pointer)==inputQueue])
@@ -183,6 +186,10 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
    for offset in [0x18,0x34+2*0x1c]:
     entry=restoredEnvironment+offset;write(entry+8,1)
     if read(entry+12):write(read(entry+16),0)
+  if args.water_sounds and initialPosition==7 and frame==17:
+   write(context+0x1cad4,15)
+   for i in range(15):
+    for j,value in enumerate([0x39,0,65536,32768,0]):write(context+0x1c994+i*20+j*4,value)
   if frame==20:write(context+0x1d438,1)
   calls.clear();allocationCalls.clear()
   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,manager)
@@ -191,6 +198,6 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
    print('fault',frame,hex(cpu.reg_read(UC_X86_REG_EIP)),hex(cpu.reg_read(UC_X86_REG_ECX)),calls[-5:]);raise
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('frame did not exit')
   frames.append(dict(sha256=hashlib.sha256(snapshot()).hexdigest(),calls=list(calls),allocations=list(allocationCalls),globalCounter=read(0x561ec8),root=read(manager+4),environment=read(context+0x7d4)))
- cases.append(dict(physics=args.physics,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. With --physics, valid moving bodies are restored and original004CA320 executes with original water, air, sweep, collision cache/query and awake routines across all frames and recapture. Water/skim virtual responses remain explicit interfaces; category22 is empty so these scenes do not exercise shape overlap or bounce. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(waterSounds=args.water_sounds,primedSounds=args.water_sounds and initialPosition==7,physics=args.physics,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. With --water-sounds, original water/skim handlers and004EDC90 sound enqueue also execute through frame flush/playback and recapture, including seeded near-capacity queues in half the ordinary sequences. With --physics, valid moving bodies are restored and original004CA320 executes with original water, air, sweep, collision cache/query and awake routines across all frames and recapture. Water/skim virtual responses remain explicit interfaces; category22 is empty so these scenes do not exercise shape overlap or bounce. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} restored frame sequences')

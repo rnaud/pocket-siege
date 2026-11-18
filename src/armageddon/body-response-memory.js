@@ -62,3 +62,37 @@ export function nativeBodyVelocityResponseMemory(memory, body, x, y) {
     );
   return 1;
 }
+
+//004EDC90: enqueue into the actor's scene-owned sixteen-entry sound buffer.
+export function nativeQueueBodySoundMemory(memory, body, request) {
+  const scene = memory.get(body + 0x38),
+    count = memory.get(scene + 0x1cad4) | 0;
+  if (count > 15) return 0;
+  for (let i = 0; i < 5; i++)
+    memory.put(scene + 0x1c994 + count * 20 + i * 4, request[i]);
+  memory.put(scene + 0x1cad4, (count + 1) | 0);
+  return 1;
+}
+
+//004F4FE0 /004F4FC0, called via +3C/+40. Original overflow and truncation
+//matter for splash volume. Muting is handled when the scene flushes the queue.
+export function nativeBodyWaterResponseMemory(memory, body, offset) {
+  const entry = nativeBodyVirtualEntry(memory, body, offset);
+  if (offset === 0x40 && entry === 0x4f4fc0)
+    return nativeQueueBodySoundMemory(memory, body, [0x3a, 0, 65536, 65536, 0]);
+  if (offset === 0x3c && entry === 0x4f4fe0) {
+    const abs = (value) => ((value ^ (value >> 31)) - (value >> 31)) | 0;
+    const sum =
+      (abs(memory.get(body + 0x9c) | 0) + abs(memory.get(body + 0xa0) | 0)) | 0;
+    return nativeQueueBodySoundMemory(memory, body, [
+      0x39,
+      0,
+      65536,
+      (Math.trunc(sum / 5) + 0x8000) | 0,
+      0,
+    ]);
+  }
+  throw new RangeError(
+    `Native water response not connected: ${entry.toString(16)}`,
+  );
+}

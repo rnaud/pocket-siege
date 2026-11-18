@@ -1,5 +1,6 @@
 import {
   nativeBodyAwakeMemory,
+  nativeBodyWaterResponseMemory,
   nativeEarthquakeMemory,
 } from "./body-response-memory.js";
 import {
@@ -81,7 +82,10 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
       }
     }
   }
-  if (get(0xbc) !== submerged) host.waterChanged(body);
+  if (get(0xbc) !== submerged) {
+    if (host.waterChanged) host.waterChanged(body);
+    else nativeBodyWaterResponseMemory(memory, body, 0x3c);
+  }
   if (get(0xc8)) {
     put(0x9c, fixedMultiply(get(0x9c), get(0x84)));
     put(0xa0, fixedMultiply(get(0xa0), get(0x84)));
