@@ -1,3 +1,4 @@
+import {nativeInitializeWorldPresentation} from './world-presentation-create.js';
 import {nativePopulateSceneryAt} from './scenery-create.js';
 import {nativePopulateMapObjectsAt} from './map-objects-memory.js';
 import {nativeCreateLandscapeAt} from './landscape-create.js';
@@ -7,7 +8,6 @@ import {nativeCreateEventGroup,nativeSetGroupSubscription} from './event-group.j
 //004EAAD0 orchestration. Uncomposed child/world constructors use their original
 //addressed interfaces; scene state, creation order and inventory health run here.
 export function nativeInitializeWorld(memory,address,scene,setup,host) {
-  const call=(entry,args=[],at=address)=>host.call(entry,at,args);
   const put=(offset,value)=>memory.put(address+offset,value);
   nativeCreateTaskMemory(memory,address,0,host);put(0,0x527478);put(0x2c,2);put(0x38,scene);put(0,0x527458);put(0x2c,5);memory.put(scene+0x1b76c,1);
   for(const offset of [0x3c,0x40,0x74,0x78,0x7c,0x50,0x60,0x54,0x58,0x70,0x64,0x68,0x84,0x88,0x8c,0x90,0x94])put(offset,0);
@@ -35,7 +35,7 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
   }
   group(24,[0x3e9,0x3ea,0x3eb,0x3ed]);
   group(23,[0x404,0x3e9,0x3ea,0x3eb,0x3ed,0x3fd,0x400]);
-  (host.populateScenery??((at,setup)=>nativePopulateSceneryAt(memory,at,setup,host)))(address,setup);call(0x4eaf40);
+  (host.populateScenery??((at,setup)=>nativePopulateSceneryAt(memory,at,setup,host)))(address,setup);(host.initializeWorldPresentation??(at=>nativeInitializeWorldPresentation(memory,at,host)))(address);
   for(let team=1;team<=(memory.get(address+0x80)|0);team++) {
     const inventory=scene+0x1b94,base=inventory+team*0x51c;
     let health=0;
