@@ -1,3 +1,4 @@
+import {NativeReplayStream} from './replay-stream.js';
 import {NativeReplayBuffer} from './replay-buffer.js';
 import { nativeReplayFrame } from './replay-frame.js';
 import { nativeCollectReplayInput } from './replay-input.js';
@@ -46,8 +47,9 @@ export function createNativeReplayPipeline({ sceneMemory, managerMemory, root, e
 //otherwise the host receives their native addresses. Scratch is caller-owned.
 export function createNativeSceneReplayPipeline({memory,owner,scratch,host,stream,root,environment}) {
   const scene=memory.get(owner+0x2a0);
+  const snapshot=stream??(memory.get(owner+8)?NativeReplayStream.fromMemory(memory,memory.get(owner+8)):undefined);
   const incoming=NativeReplayBuffer.fromMemory(memory,memory.get(owner+0x30),scratch);
   const recording=NativeReplayBuffer.fromMemory(memory,memory.get(owner+0x34),scratch+304);
   return {...createNativeReplayPipeline({sceneMemory:memory.range(scene,0x20000),managerMemory:memory.range(owner,0x2a4),
-    root:root??memory.get(owner+4),environment:environment??memory.get(scene+0x7d4),stream,incoming,recording,host}),incoming,recording};
+    root:root??memory.get(owner+4),environment:environment??memory.get(scene+0x7d4),stream:snapshot,incoming,recording,host}),incoming,recording,stream:snapshot};
 }

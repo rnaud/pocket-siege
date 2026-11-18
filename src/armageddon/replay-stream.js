@@ -5,6 +5,16 @@ export class NativeReplayStream {
     this.bytes = new Uint8Array(capacity);
     this.reset();
   }
+  //Borrow the snapshot stream created at owner+8 without resetting its cursor.
+  static fromMemory(memory,address) {
+    const stream=Object.create(NativeReplayStream.prototype);
+    Object.defineProperties(stream,{
+      bytes:{get:()=>memory.range(memory.get(address+4),memory.get(address+8))},
+      position:{get:()=>memory.get(address+16),set:value=>memory.put(address+16,value)},
+      length:{get:()=>memory.get(address+12),set:value=>memory.put(address+12,value)},
+    });
+    return stream;
+  }
   reset() { this.position = 0; this.length = 0; }
   seek(position) { this.position = position; }
   readByte() { return this.bytes[this.position++]; }

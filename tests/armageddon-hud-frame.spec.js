@@ -1,3 +1,4 @@
+import replaySceneCapture from './fixtures/armageddon/replay-scene-capture.json' with {type:'json'};
 import replayScenePipeline from './fixtures/armageddon/replay-scene-pipeline.json' with {type:'json'};
 import replaySceneInput from './fixtures/armageddon/replay-scene-input.json' with {type:'json'};
 import {inflateSync} from 'node:zlib';
@@ -919,6 +920,31 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     for(const expected of row.frames) {
       calls.length=0;pipeline.tick();expect(calls).toEqual(expected.calls);
       expect(createHash('sha256').update(initial).digest('hex')).toBe(expected.sha256);
+    }
+  }
+  for(const row of replaySceneCapture.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000),scratch=new Uint8Array(608),calls=[];
+    const locate=at=>at>=0x2500000?[scratch,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setInt32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,len)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+len);}};
+    const root={type:6,registryType:26,registryIndex:0,children:[{type:13},{type:14}],memory:memory.range(0x2001000,0x28c)};
+    const environment={state:memory.range(0x20033b4,12),all:{entries:[]},categories:[]};
+    const deviceCall=(offset,result=0)=>{calls.push(['device',offset]);return result;};
+    const pipeline=createNativeSceneReplayPipeline({memory,owner:0x2000000,scratch:0x2500000,root,environment,host:{
+      collectRoot:(_root,queue,event,size)=>calls.push(['collect',event,size,queue.wrapper===0x2007000]),
+      dispatchRoot:(_root,event,payload)=>calls.push(['dispatch',event,[...payload]]),
+      queryRoot:(_root,event,output)=>{calls.push(['query',event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
+      flushRoot:()=>calls.push(['flush',0x210]),flushEnvironment:()=>calls.push(['flush',0x220]),renderFrame:()=>calls.push(['render']),
+      device:{pending:()=>deviceCall(0x40),startRecording:()=>deviceCall(0x30,row.captureAccepted),checksum:()=>deviceCall(0x48,-16),startPlayback:()=>deviceCall(0x44,row.playbackAccepted),readyForPlayback:()=>deviceCall(0x3c)},
+      audio:row.sound?{setVolume:volume=>calls.push(['volume',volume]),setSpeed:speed=>calls.push(['speed',speed]),playSound:(...args)=>calls.push(['sound',...args])}:null,
+    }});
+    expect(pipeline.incoming.bytes.buffer).toBe(initial.buffer);expect(pipeline.recording.bytes.buffer).toBe(initial.buffer);
+    expect(pipeline.stream.bytes.buffer).toBe(initial.buffer);pipeline.manager.globalCounter=1234;
+    for(const [index,expected] of row.frames.entries()) {
+      if(index===2){memory.put(0x231d43c,0);memory.put(0x231d440,1);}
+      calls.length=0;pipeline.tick();expect(calls).toEqual(expected.calls);
+      expect(createHash('sha256').update(initial).digest('hex')).toBe(expected.sha256);
+      expect(pipeline.manager.globalCounter).toBe(expected.globalCounter);
+      expect([pipeline.stream.position,pipeline.stream.length]).toEqual([expected.position,expected.length]);
     }
   }
   for (const row of replayInput.cases) {
