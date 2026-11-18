@@ -10,6 +10,7 @@ export function nativeWormAirborneContact(
   side,
   environment,
   collide,
+  enterState = null,
 ) {
   if (
     ![0x6c, 0x6e, 0x78, 0x79, 0x7d, 0x7e].includes(input.state)
@@ -63,6 +64,7 @@ export function nativeWormAirborneContact(
           target: 0x7a,
           velocity: [body.vx, body.vy],
         });
+        enterState?.(body,0x7a);
         body.state = 0x7a;
       }
       body.vx = body.vy = body.angularVelocity = 0;
@@ -98,6 +100,7 @@ export function nativeWormAirborneCollision(
   environment,
   collide,
   respond = () => false,
+  enterState = null,
 ) {
   const decision = nativeWormAirborneContact(
     input,
@@ -105,6 +108,7 @@ export function nativeWormAirborneCollision(
     side,
     environment,
     collide,
+    enterState,
   );
   const body = decision.body;
   const other = { ...otherInput };

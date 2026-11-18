@@ -268,17 +268,21 @@ export function stepNativeJumpFlight(
             Object.assign(receiver, response.receiver);
             return Boolean(response.result);
           },
+          (candidate,next)=>{
+            const transition=nativeWormTransitionBody(candidate,next,{});
+            Object.assign(candidate,transition.body,{state:next});
+            Object.assign(body,candidate);
+            worm.nativeFlight=body;
+            events.push(...transition.calls);
+          },
         );
         Object.assign(body, result.body);
         environment.updateCollisionBody?.(hit, result.other);
         for (const event of result.calls) {
           if (event.operation === "state" && event.target === 0x7a) {
             landingSpeed = Math.max(0, (event.velocity[1] / 65536) * 50);
-            // 79 -> 7a common body changes. Animation/audio/scheduler side effects
-            // are delivered as events; they are not silently treated as applied.
-            const transition=nativeWormTransitionBody({...body,state:previous},0x7a,{});
-            Object.assign(body,transition.body,{state:0x7a});
-            events.push(...transition.calls);
+            // Body preparation ran synchronously at the native state-entry call.
+            // Animation/audio/scheduler entry still reaches the host as events.
           }
           events.push(previous === 0x78 && event.operation === "sound"
             ? { ...event, operation: "jetpackContactSound" } : event);

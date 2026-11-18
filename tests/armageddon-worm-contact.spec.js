@@ -9,7 +9,7 @@ const fixture = JSON.parse(
 test("airborne contact matches native landing, ceiling and position-attempt decisions", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(7200);
   for (const v of fixture.cases) {
-    const queries = [];
+    const queries = [],entries=[];
     const result = nativeWormAirborneContact(
       v.input,
       v.otherType,
@@ -19,7 +19,9 @@ test("airborne contact matches native landing, ceiling and position-attempt deci
         queries.push([x, y]);
         return v.pattern[queries.length - 1];
       },
+      (body,target)=>entries.push({previous:body.state,target,velocity:[body.vx,body.vy]}),
     );
+    expect(entries).toEqual(v.result.calls.filter(c=>c.operation==='state').map(c=>({previous:v.input.state,target:c.target,velocity:c.velocity})));
     expect({ result, queries }, JSON.stringify(v)).toEqual({
       result: v.result,
       queries: v.queries,
