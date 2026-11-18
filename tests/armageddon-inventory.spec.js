@@ -1,3 +1,5 @@
+import sceneArrowShapes from './fixtures/armageddon/scene-arrow-shapes.json' with {type:'json'};
+import {nativeCreateSceneArrowShapes} from '../src/armageddon/scene-arrow-shapes.js';
 import sceneCollisionShapes from './fixtures/armageddon/scene-collision-shapes.json' with {type:'json'};
 import {nativeCreateSceneCollisionShapes} from '../src/armageddon/scene-collision-shapes.js';
 import collisionShapeCreate from './fixtures/armageddon/collision-shape-create.json' with {type:'json'};
@@ -204,6 +206,29 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(toolMaskMemory.source.pixels);
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(collisionShapeCreate.source.pixels);
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(sceneCollisionShapes.source.pixels);
+  const arrowSources=sceneArrowShapes.sources.map(source=>{
+    const image=decodeImage(fs.readFileSync(new URL(`../public/armageddon/media/gfx/gfx/${source.name}`,import.meta.url)));
+    expect([image.width,image.height]).toEqual([60,60]);
+    expect(createHash('sha256').update(image.pixels).digest('hex')).toBe(source.sha256);
+    return image;
+  });
+  for(const c of sceneArrowShapes.cases) {
+    const owner=0x3000000,bytes=Buffer.alloc(0x200000,c.pattern),calls=[];let allocated=0,descriptors=0;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    arrowSources.forEach((image,i)=>{
+      const pixels=owner+0x20000+i*0x2000;bytes.set(image.pixels,pixels-owner);
+      for(const [offset,value] of [[0,0x5249b0],[4,1],[8,pixels],[12,8],[16,60],[20,60],[24,60],[28,0],[32,0],[36,60],[40,60]])memory.put(owner+0x10000+i*0x40+offset,value);
+    });
+    memory.put(owner+0x5cd0,owner+0xc000);memory.put(owner+0x2ac,owner+0x7000);memory.put(owner+0xc008,owner+0x6000);memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200100);
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeCreateSceneArrowShapes(memory,owner,{
+      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);if(size===0x9c)descriptors++;return size===0x9c&&descriptors===c.failure?0:owner+0x70000+allocated*0x100;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0xc0000+allocated*0x400;},
+      getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return owner+0x9000;},
+      loadNamedArchiveImage:(palette,archive,name)=>{calls.push(['image',palette,archive,name,snapshot()]);return owner+0x10000+Number(name.slice(5,7))*0x40;},
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of sceneCollisionShapes.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0xa0000,c.pattern),calls=[];let allocated=0,descriptors=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
