@@ -1141,6 +1141,12 @@ test("Native replay frame and input pipeline matches original executable request
     const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
     let cursor=row.cursor;const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
     const stream=NativeReplayStream.fromMemory(memory,0x2001000);
+    if(row.captured) {
+      stream.reset();stream.writeBlock(memory.range(0x20207ec,0x3fbc));
+      nativeWriteEnvironmentMemory(memory,memory.get(0x20207d4),stream);
+      nativeWriteMatchMemory(memory,memory.get(0x2000804),stream);
+      expect({sha256:createHash('sha256').update(initial).digest('hex'),length:stream.length,position:stream.position}).toEqual(row.captured);
+    }
     expect(nativeRestoreSceneSnapshot(memory,0x2000800,0x2001000,{
       allocate:size=>{const pointer=allocate(size);allocationCalls.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocationCalls.push(['array',size,pool,pointer]);return pointer;},free:address=>allocationCalls.push(['free',address]),
       release:(at,size)=>allocationCalls.push(['release',at,size]),
