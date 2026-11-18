@@ -1,3 +1,5 @@
+import frontendRandom from './fixtures/armageddon/frontend-random.json' with {type:'json'};
+import {NativeFrontendRandom} from '../src/armageddon/frontend-random.js';
 import turnOrder from './fixtures/armageddon/setup-turn-order.json' with {type:'json'};
 import {nativeInitializeSetupTurnOrder,nativeAdvanceSetupTurnOrder} from '../src/armageddon/setup-turn-order.js';
 import teamSetup from './fixtures/armageddon/team-setup.json' with {type:'json'};
@@ -26,6 +28,21 @@ const fixture = JSON.parse(
 );
 
 test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+  for(const row of frontendRandom.cases) {
+    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
+    for(const [offset,value] of row.writes)memory[offset]=value;
+    const random=new NativeFrontendRandom();let profile=row.initial,calls=[];
+    const host={time:()=>{calls.push(['time',row.clock]);return row.clock;},
+      readSeed:fallback=>{calls.push(['read',fallback]);return profile??fallback;},
+      writeSeed:value=>{calls.push(['write',value]);profile=value;}};
+    for(const step of row.steps) {
+      calls=[];
+      const result=step.entry==='004190C0'?random.nextSeed(host):nativeInitializeSetupTurnOrder(memory,()=>random.nextSeed(host));
+      expect(result).toBe(step.result);expect(calls).toEqual(step.calls);
+      expect(profile).toBe(step.profile);expect(random.state).toBe(step.random_state);
+      expect(createHash('sha256').update(memory).digest('hex')).toBe(step.sha256);
+    }
+  }
   for(const row of turnOrder.cases) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
     for(const [offset,value] of row.writes)memory[offset]=value;
