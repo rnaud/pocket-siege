@@ -1,3 +1,4 @@
+import replayScenePipeline from './fixtures/armageddon/replay-scene-pipeline.json' with {type:'json'};
 import replaySceneInput from './fixtures/armageddon/replay-scene-input.json' with {type:'json'};
 import {inflateSync} from 'node:zlib';
 import defaultWeaponInventory from './fixtures/armageddon/default-weapon-inventory.json' with { type:'json' };
@@ -85,7 +86,7 @@ import replayWormRoundtrip from "./fixtures/armageddon/replay-worm-roundtrip.jso
 import replayPipelineRestore from "./fixtures/armageddon/replay-pipeline-restore.json" with { type: "json" };
 import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture.json" with { type: "json" };
 import replayPipeline from "./fixtures/armageddon/replay-pipeline.json" with { type: "json" };
-import { createNativeReplayPipeline } from "../src/armageddon/replay-pipeline.js";
+import { createNativeReplayPipeline,createNativeSceneReplayPipeline } from "../src/armageddon/replay-pipeline.js";
 import replayInput from "./fixtures/armageddon/replay-input.json" with { type: "json" };
 import { nativeCollectReplayInput,nativeCollectSceneReplayInput } from "../src/armageddon/replay-input.js";
 import replayFrameState from "./fixtures/armageddon/replay-frame-state.json" with { type: "json" };
@@ -900,6 +901,24 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
         manager: replayPipeline.managerFields.map(offset => managerView.getInt32(offset, true)),
         input: events(incoming), recorded: events(recording),
       }).toEqual(expected);
+    }
+  }
+  for(const row of replayScenePipeline.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000),scratch=new Uint8Array(608),calls=[];
+    const locate=at=>at>=0x2500000?[scratch,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setInt32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,len)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+len);}};
+    const pipeline=createNativeSceneReplayPipeline({memory,owner:0x2000000,scratch:0x2500000,host:{
+      collectRoot:(_root,queue,event,size)=>calls.push(['collect',event,size,queue.wrapper===0x2007000]),
+      dispatchRoot:(_root,event,payload)=>calls.push(['dispatch',event,[...payload]]),
+      queryRoot:(_root,event,output)=>{calls.push(['query',event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
+      flushRoot:()=>calls.push(['flush',0x210]),flushEnvironment:()=>calls.push(['flush',0x220]),renderFrame:()=>calls.push(['render']),
+      device:{pending:()=>{calls.push(['device',0x40]);return 0;}},
+      audio:row.sound?{setVolume:volume=>calls.push(['volume',volume]),setSpeed:speed=>calls.push(['speed',speed]),playSound:(...args)=>calls.push(['sound',...args])}:null,
+    }});
+    expect(pipeline.incoming.bytes.buffer).toBe(initial.buffer);expect(pipeline.recording.bytes.buffer).toBe(initial.buffer);
+    for(const expected of row.frames) {
+      calls.length=0;pipeline.tick();expect(calls).toEqual(expected.calls);
+      expect(createHash('sha256').update(initial).digest('hex')).toBe(expected.sha256);
     }
   }
   for (const row of replayInput.cases) {
