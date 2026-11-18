@@ -1,3 +1,5 @@
+import terrainState from './fixtures/armageddon/terrain-state.json' with {type:'json'};
+import {nativeInitializeTerrainState} from '../src/armageddon/terrain-state.js';
 import terrainToolSetup from './fixtures/armageddon/terrain-tool-setup.json' with {type:'json'};
 import toolMaskMemory from './fixtures/armageddon/terrain-tool-mask-memory.json' with {type:'json'};
 import {nativeCreateTerrainToolMasks} from '../src/armageddon/terrain-tool-mask-memory.js';
@@ -214,6 +216,19 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     for(const [offset,value] of [[0,c.bits===1?0x526328:0x5249b0],[8,owner+0x1000],[12,c.bits],[16,c.bits===1?8:36],[20,32],[24,32],...c.clip.map((v,i)=>[28+i*4,v])])memory.put(owner+offset,value);
     expect(nativeFillBitmapCircle(memory,owner,...c.center,c.radius,c.value)).toBe(c.result);
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
+  }
+  for(const c of terrainState.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
+    for(const [offset,bitmap,width,height] of [[0x904,owner+0x1000,...c.dimensions.slice(0,2)],[0x908,owner+0x2000,...c.dimensions.slice(2)]]) {
+      memory.put(owner+offset,bitmap);memory.put(bitmap,0x526328);memory.put(bitmap+20,width);memory.put(bitmap+24,height);
+    }
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    expect(nativeInitializeTerrainState(memory,owner,{
+      allocate:size=>{calls.push(['allocate',size,snapshot()]);return c.failure&2?0:owner+0x3000;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.failure&1?0:owner+0x4000;},
+    })).toBe(c.result);
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
   for(const c of terrainMasks.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x50000,c.pattern),calls=[];let allocated=0;
