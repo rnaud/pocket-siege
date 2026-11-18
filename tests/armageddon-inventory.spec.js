@@ -440,7 +440,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const archiveData=[sceneStartup.graphics_source,...terrainConstruction.archive_sources].map(source=>{if(source.bytes)return Buffer.from(source.bytes,'hex');const header=Buffer.from(source.header,'hex'),data=Buffer.alloc(header.readUInt32LE(4));header.copy(data);Buffer.from(source.index,'hex').copy(data,source.offset);return data;});
     for(const entry of sceneStartup.archive_images) {
       const prefix=['gfx/gfx','custom/snow/level','water/blue/water'][entry.archive];
-      const image=fs.readFileSync(new URL(`../public/armageddon/media/${prefix}/${entry.name.replaceAll('\\','/')}`,import.meta.url));
+      const path=entry.name.endsWith('.fnt')?`fonts/${entry.name}`:`media/${prefix}/${entry.name.replaceAll('\\','/')}`;
+      const image=fs.readFileSync(new URL(`../public/armageddon/${path}`,import.meta.url));
       expect(image.length).toBe(entry.size);expect(createHash('sha256').update(image).digest('hex')).toBe(entry.sha256);
       image.copy(archiveData[entry.archive],entry.offset);
     }
@@ -452,7 +453,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     });
     bytes.set(toolSource.pixels,0x60000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
-    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x4a6ff0],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6178,0x2200b00],[0x6180,0x2200c00],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x4a6ff0],[0x700000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6178,0x497ca0],[0x6180,0x2200c00],[0x6154,0x2200900],[0x2b4,owner+0x700000]])memory.put(owner+offset,value);
+    memory.put(owner+0x704ae8,owner+0xa000);memory.put(owner+0x704b08,0);
+    for(let i=0;i<32;i++)memory.put(owner+0x7049e4+i*4,0);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x9200],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,1],[40,1]])memory.put(owner+0x9100+offset,value);
     memory.putByte(owner+0x9200,3);
     for(const bank of [1,2]) {
@@ -470,7 +473,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     bytes.set(colors,0x350000+0x4ea4-0x47a8);bytes.set(Uint8Array.from({length:340},(_,i)=>(Math.floor(i/20)+i%20)%12),0x350000+0x51a4-0x47a8);
     const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).update(packed).update(signature).update(nameBytes).digest('hex');
     const record=(name,...args)=>calls.push([name,...args,snapshot()]);
-    nativeStartScene(memory,owner,[owner+0x6000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,terrainScratch:stack+0x4000,archiveScratch:stack+0x6000,imageName:stack+0x1000,imageScratch:stack+0x2000},{
+    nativeStartScene(memory,owner,[owner+0x700000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,fontMapping:stack+0x3000,terrainScratch:stack+0x4000,archiveScratch:stack+0x6000,imageName:stack+0x1000,imageScratch:stack+0x2000},{
       allocate:size=>{allocated++;record('allocate',size);let result;if(size===0x1d44c)result=owner+0x300000;else if(size===0xb2c)result=owner+0xd0000;else{result=headers;headers+=(size+15)&~15;}if(size===0x19c)archives++;return result;},
       allocateArray:(size,pool)=>{record('array',size,pool);const result=pixels;pixels+=(size+15)&~15;return result;},
       getRendererPalette:(renderer,bank)=>{record('palette',renderer,bank);return owner+(bank===2?0xb000:0xa000);},
@@ -487,7 +490,6 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       },
       bindTerrainLayers:(...args)=>record('bind',...args),submitRendererPalette:(...args)=>record('commit',...args),
       createRendererPalette:(...args)=>record('createPalette',...args),
-      loadRendererFont:(...args)=>record('font',...args),
       loadRendererSprite:(...args)=>{record('sprite',...args);if(args[5]==='cdrom.spr')memory.put(owner+0xa00c,0x12345678);return 0;},
       commitRendererPalette:(...args)=>record('commit',...args),
       pumpLoadingEvents:()=>record('pump'),rendererDimensions:(...args)=>{record('dimensions',...args);return [640,480];},

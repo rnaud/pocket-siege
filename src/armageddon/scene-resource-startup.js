@@ -1,3 +1,4 @@
+import {nativeLoadRendererFont} from './renderer-font.js';
 import spriteGroups from './scene-sprite-groups.json' with {type:'json'};
 import {nativeLoadSceneSpriteGroup} from './scene-sprite-groups.js';
 import {nativeLoadNamedArchiveImage} from './terrain-image.js';
@@ -19,6 +20,11 @@ export function nativeStartScene(memory,owner,bindings,frontend,scratch,host) {
     memory.putByte(scratch.imageName+name.length,0);
     return nativeLoadNamedArchiveImage(memory,palette,archive,scratch.imageName,scratch.imageScratch,nativeFileArchiveServices(memory,services));
   };
+  services.loadRendererFont=host.loadRendererFont??((renderer,bank,priority,id,archive,name)=>{
+    for(let i=0;i<name.length;i++)memory.putByte(scratch.imageName+i,name.charCodeAt(i));
+    memory.putByte(scratch.imageName+name.length,0);
+    return nativeLoadRendererFont(memory,renderer,bank,priority,id,archive,scratch.imageName,scratch.fontMapping,nativeFileArchiveServices(memory,services));
+  });
   services.loadNamedArchiveImage=host.loadNamedArchiveImage??loadImage;
   services.loadNamedImage=host.loadNamedImage??services.loadNamedArchiveImage;
   const prefixString=address=>{
