@@ -2,6 +2,22 @@ import { nativeEndTargeting } from './target-input.js';
 import { nativeFindDefaultWeapon } from './default-weapon.js';
 
 const view=memory=>new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+//004E6810 event431: record firing, multi-shot ammo and remaining-shot speech.
+export function nativeControllerShot(memory,sceneMemory,payload,host) {
+  const body=view(memory),p=view(payload),get=o=>body.getInt32(o,true);
+  if(p.getInt32(0,true)!==get(0x3c))return;
+  body.setInt32(0x50,1,true);
+  if(p.getInt32(24,true) && p.getInt32(16,true)>1)host.consumeWeapon(get(0x3c),get(0x64));
+  const fired=p.getInt32(8,true),total=p.getInt32(12,true);
+  if(total>1) {
+    const remaining=(total-fired)|0;
+    const text=remaining===0?host.shotText(0x60):remaining<2?host.shotText(0x64):host.shotText(0x68,remaining);
+    host.announce((get(0x54)+0x11)|0,text);
+  }
+  if(fired===total)nativeEndTargeting(memory,sceneMemory);
+  host.forward(0x431,payload);
+}
+
 //004E6810 event432: choose the next weapon before settling the fired ammo.
 export function nativeControllerPostShot(memory,sceneMemory,payload,host) {
   const body=view(memory),get=o=>body.getInt32(o,true),put=(o,v)=>body.setInt32(o,v,true);

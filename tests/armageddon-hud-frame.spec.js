@@ -1,3 +1,4 @@
+import controllerShot from "./fixtures/armageddon/controller-shot.json" with { type: "json" };
 import controllerPostShot from "./fixtures/armageddon/controller-post-shot.json" with { type: "json" };
 import { nativeControllerPendingWeapon } from "../src/armageddon/controller-post-shot.js";
 import controllerControl from "./fixtures/armageddon/controller-control.json" with { type: "json" };
@@ -256,6 +257,17 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerShot.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);
+    for(const [offset,value] of Object.entries(c.fields))body.setInt32(Number(offset),value,true);
+    sceneMemory.set(c.initial,0x1b778);const calls=[];
+    expect(nativeControllerCommand(memory,sceneMemory,0x431,Uint8Array.from(c.payload),{
+      consumeWeapon:(...args)=>calls.push(["consume",...args]),
+      shotText:(...args)=>{calls.push(["text",...args]);return args[0]===0x60?"finished":args[0]===0x64?"one left":`${args[1]} left`;},
+      announce:(...args)=>calls.push(["announce",...args]),forward:(event,p)=>calls.push(["forward",event,[...p]]),
+    })).toBe(true);
+    expect({calls,body:controllerShot.offsets.map(o=>body.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,body:c.body,ownership:c.ownership});
   }
   for(const c of controllerPostShot.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);
