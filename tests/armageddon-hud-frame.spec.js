@@ -1,3 +1,4 @@
+import replayRestoredFrames from './fixtures/armageddon/replay-restored-frames.json' with {type:'json'};
 import {nativeWriteActorMemory,nativeWriteTaskHeaderMemory,nativeWriteMatchMemory,nativeWriteEnvironmentMemory} from '../src/armageddon/replay-write-memory.js';
 import {nativeRestoreSceneSnapshot} from '../src/armageddon/replay-scene-restore.js';
 import replayWormResources from './fixtures/armageddon/replay-worm-resources.json' with {type:'json'};
@@ -1138,6 +1139,33 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     })).toBe(row.result.tree?.id??0);
     expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.result.calls);expect(stream.position).toBe(row.result.position);
     expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
+  }
+  for(const row of replayRestoredFrames.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000,0x70000),env=initial.subarray(0x70000,0x80000),devices=initial.subarray(0x80000,0x90000),channels=initial.subarray(0x90000),scratch=new Uint8Array(608),calls=[],allocations=[];
+    const locate=at=>at>=0x2800000?[scratch,at-0x2800000]:at>=0x2700000?[channels,at-0x2700000]:at>=0x2600000?[devices,at-0x2600000]:at>=0x2500000?[env,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    let cursor=0x2400000;const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
+    const deviceCall=(offset,result=0)=>{calls.push(['device',offset]);return result;};
+    const pipeline=createNativeSceneReplayPipeline({memory,owner:0x2000800,scratch:0x2800000,host:{
+      allocate:size=>{const pointer=allocate(size);allocations.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocations.push(['array',size,pool,pointer]);return pointer;},free:address=>allocations.push(['free',address]),
+      device:{readyForPlayback:()=>{calls.push(['ready']);return 1;},pending:()=>deviceCall(0x40),clear:()=>deviceCall(0x34),startRecording:()=>deviceCall(0x30,1),checksum:()=>deviceCall(0x48,17),startPlayback:()=>deviceCall(0x44)},
+      audio:row.sound?{reset:()=>calls.push(['audioReset']),setVolume:value=>calls.push(['volume',value]),setSpeed:value=>calls.push(['speed',value]),playSound:(...args)=>calls.push(['sound',...args])}:null,
+      flushTask:address=>{calls.push([0x2200200,address]);if(row.clearRoot)memory.put(0x2000804,0);},destroyTask:(address,flags)=>calls.push([0x2200210,address,flags]),
+      flushEnvironment:address=>{if(address===0x2500000){calls.push([0x2200220,address]);if(row.clearEnvironment)memory.put(0x20207d4,0);}else calls.push(['flushEnvironment',address]);},destroyEnvironment:(address,flags)=>calls.push([0x2200230,address,flags]),
+      constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);return args[0];},
+      collectRoot:(root,queue,event,size)=>calls.push(['collect',root,event,size,queue.wrapper===0x2700000]),
+      dispatchRoot:(root,event,payload)=>calls.push(['dispatch',root,event,[...payload]]),
+      queryRoot:(root,event,output)=>{calls.push(['query',root,event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
+      flushRoot:root=>calls.push(['flushRoot',root]),renderFrame:()=>calls.push(['render']),
+    }});
+    pipeline.manager.globalCounter=1234;
+    for(const [frame,expected] of row.frames.entries()) {
+      if(frame===20)memory.put(0x203d438,1);
+      calls.length=0;allocations.length=0;pipeline.tick();
+      expect(calls).toEqual(expected.calls);expect(allocations).toEqual(expected.allocations);
+      expect([pipeline.manager.root,pipeline.manager.environment,pipeline.manager.globalCounter]).toEqual([expected.root,expected.environment,expected.globalCounter]);
+      expect(createHash('sha256').update(initial).digest('hex')).toBe(expected.sha256);
+    }
   }
   for(const capture of replayPipelineRestore.cases) {
     const base=replaySnapshotRestore.cases[capture.baseCase],row={...base,...capture,result:{...base.result,calls:capture.calls}};
