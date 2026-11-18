@@ -59,8 +59,15 @@ export function createNativeSceneReplayPipeline({memory,owner,scratch,host,strea
   const recording=NativeReplayBuffer.fromMemory(memory,memory.get(owner+0x34),scratch+304);
   const addressed=root===undefined&&environment===undefined;
   const cleanup=address=>{host.observeTaskCleanup?.(address);nativeCleanupTaskMemory(memory,address,host.cleanupChild??cleanup);};
+  // Body-owned impact handles share the scene audio device. Explicit physics
+  // adapters may override these when binding more than one addressed backend.
+  const dispatchHost={...host,physics:{
+    ...(host.audio?.startSound?{startSound:(_backend,...request)=>host.audio.startSound(...request)}:{}),
+    ...(host.audio?.stopSound?{stopSound:(_backend,handle)=>host.audio.stopSound(handle)}:{}),
+    ...host.physics,
+  }};
   const nativeHost=addressed?{...host,
-    dispatchRoot:host.dispatchRoot??((root,event,payload)=>{host.observeRootDispatch?.(root,event,payload);return nativeDispatchMatchEventMemory(memory,root,root,event,payload.length,payload,host);}),
+    dispatchRoot:host.dispatchRoot??((root,event,payload)=>{host.observeRootDispatch?.(root,event,payload);return nativeDispatchMatchEventMemory(memory,root,root,event,payload.length,payload,dispatchHost);}),
     collectRoot:host.collectRoot??((root,queue,event,size)=>{
       const payload=new Uint8Array(size);new DataView(payload.buffer).setUint32(0,queue.wrapper,true);
       nativeCollectMatchInput(memory,root,root,size,payload,host);

@@ -11,7 +11,9 @@ parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
 parser.add_argument('--physics',action='store_true')
 parser.add_argument('--water-sounds',action='store_true')
+parser.add_argument('--contacts',action='store_true')
 args = parser.parse_args()
+if args.contacts:args.water_sounds=True
 if args.water_sounds:args.physics=True
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -55,6 +57,9 @@ environment=0x2500000
 cpu.mem_map(environment,0x10000)
 write(context+0x7d4,environment);write(environment,environment+0x1000);write(environment+0x1034,0x4c8f80);write(environment+0x3c0,environment+0x2000);write(environment+0x2000+0x3a4,17)
 
+if args.contacts:
+ write(devices+0x310,stop+0x410);write(devices+0x328,stop+0x420)
+contactCounts={'overlap':0,'start':0,'stop':0,'contact':0,'bounce':0,'step':0}
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value)
 childHandlers={read(int(row['vtable'],16)+8) for row in json.loads(Path('src/armageddon/replay-task-types.json').read_text())}|{read(0x5277e0+8)}
@@ -98,6 +103,19 @@ def hook(cpu,address,size,user):
  elif args.physics and address in [0x4f4fe0,0x4f4fc0]:
   if not args.water_sounds:
    calls.append(['waterChanged' if address==0x4f4fe0 else 'skim',cpu.reg_read(UC_X86_REG_ECX)]);ret()
+ elif args.contacts and address in [0x4f4c30,0x4f4860,0x4d1260]:
+  contactCounts[{0x4f4c30:'contact',0x4f4860:'bounce',0x4d1260:'step'}[address]]+=1
+ elif args.contacts and address==stop+0x400:
+  mask=cpu.reg_read(UC_X86_REG_ECX)
+  values=[signed(read(sp+4+i*4)) for i in range(5)]
+  calls.append(['overlap',mask]+values);contactCounts['overlap']+=1
+  ret(int(values[0]>=signed(read(mask+4))+2 or values[1]>=signed(read(mask+8))+2),20)
+ elif args.contacts and address==stop+0x410:
+  values=[signed(read(sp+4+i*4)) for i in range(5)]
+  calls.append(['impactStart']+values);contactCounts['start']+=1
+  handle=read(devices+0x400)+1;write(devices+0x400,handle);ret(handle,20)
+ elif args.contacts and address==stop+0x420:
+  calls.append(['impactStop',signed(read(sp+4))]);contactCounts['stop']+=1;ret(1,4)
  elif address==0x4b4ce0:
   root=cpu.reg_read(UC_X86_REG_ECX);event,length,pointer=read(sp+8),read(sp+12),read(sp+16)
   if event==0x3ec:calls.append(['collect',root,event,length,read(pointer)==inputQueue])
@@ -176,6 +194,7 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
  payload.append(6);block(bytes((i*17)&255 for i in range(0x138)))
  cpu.mem_write(buffer,bytes(payload));write(stream+0x10,initialPosition);write(stream+0xc,len(payload))
  def snapshot():return bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))+bytes(cpu.mem_read(devices,0x10000))+bytes(cpu.mem_read(channels,0x10000))
+ if args.contacts:write(devices+0x400,100)
  initial=snapshot();frames=[]
  for frame in range(23):
   if frame==16:
@@ -186,6 +205,16 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
    for offset in [0x18,0x34+2*0x1c]:
     entry=restoredEnvironment+offset;write(entry+8,1)
     if read(entry+12):write(read(entry+16),0)
+  if args.contacts and frame==16:
+   write(owner+0xb00c,stop+0x400)
+   listing=read(context+0x7d4)+0x18
+   for i in range(read(listing+12)):
+    actor=read(read(listing+16)+i*4)
+    if not actor:continue
+    mask=owner+0xa000+i*16
+    write(mask,owner+0xb000);write(mask+4,100+i*8);write(mask+8,160)
+    for offset,value in {0x40:4,0x4c:i%2,0x78:0x8000,0x7c:0x6000,0x80:0xc000,0x88:0x8000,
+      0x90:(100+i*8)<<16,0x94:160<<16,0x9c:4<<16,0xa0:1<<16,0xf0:mask}.items():write(actor+offset,value)
   if args.water_sounds and initialPosition==7 and frame==17:
    write(context+0x1cad4,15)
    for i in range(15):
@@ -198,6 +227,9 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
    print('fault',frame,hex(cpu.reg_read(UC_X86_REG_EIP)),hex(cpu.reg_read(UC_X86_REG_ECX)),calls[-5:]);raise
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('frame did not exit')
   frames.append(dict(sha256=hashlib.sha256(snapshot()).hexdigest(),calls=list(calls),allocations=list(allocationCalls),globalCounter=read(0x561ec8),root=read(manager+4),environment=read(context+0x7d4)))
- cases.append(dict(waterSounds=args.water_sounds,primedSounds=args.water_sounds and initialPosition==7,physics=args.physics,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. With --water-sounds, original water/skim handlers and004EDC90 sound enqueue also execute through frame flush/playback and recapture, including seeded near-capacity queues in half the ordinary sequences. With --physics, valid moving bodies are restored and original004CA320 executes with original water, air, sweep, collision cache/query and awake routines across all frames and recapture. Water/skim virtual responses remain explicit interfaces; category22 is empty so these scenes do not exercise shape overlap or bounce. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(contacts=args.contacts,waterSounds=args.water_sounds,primedSounds=args.water_sounds and initialPosition==7,physics=args.physics,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
+if args.contacts:
+ assert all(contactCounts.values()),contactCounts
+ print(contactCounts)
+args.output.write_text(json.dumps(dict(executable_sha256=digest,contactCounts=contactCounts if args.contacts else None,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. With --water-sounds, original water/skim handlers and004EDC90 sound enqueue also execute through frame flush/playback and recapture, including seeded near-capacity queues in half the ordinary sequences. With --physics, valid moving bodies are restored and original004CA320 executes with original water, air, sweep, collision cache/query and awake routines across all frames and recapture. Water/skim virtual responses remain explicit interfaces; category22 is empty so these scenes do not exercise shape overlap or bounce. With --contacts, frame16 seeds restored body masks, motion and category2 collision flags; shape overlap alone is substituted while contact entry, receiver momentum, bounce/step, sound replacement and recapture execute. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} restored frame sequences')

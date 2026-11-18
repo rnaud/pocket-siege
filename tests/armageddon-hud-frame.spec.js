@@ -1,3 +1,4 @@
+import replayRestoredContacts from './fixtures/armageddon/replay-restored-contacts.json' with {type:'json'};
 import matchFrameBegin from './fixtures/armageddon/match-frame-begin.json' with {type:'json'};
 import {nativeDispatchMatchEventMemory} from '../src/armageddon/match-dispatch.js';
 import matchInput from './fixtures/armageddon/match-input.json' with {type:'json'};
@@ -977,7 +978,7 @@ test("Native replay frame and input pipeline matches original executable request
       queryRoot:(_root,event,output)=>{calls.push(['query',event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
       flushRoot:()=>calls.push(['flush',0x210]),flushEnvironment:()=>calls.push(['flush',0x220]),renderFrame:()=>calls.push(['render']),
       device:{pending:()=>{calls.push(['device',0x40]);return 0;}},
-      audio:row.sound?{setVolume:volume=>calls.push(['volume',volume]),setSpeed:speed=>calls.push(['speed',speed]),playSound:(...args)=>calls.push(['sound',...args])}:null,
+      audio:row.sound?{setVolume:volume=>calls.push(['volume',volume]),setSpeed:speed=>calls.push(['speed',speed]),playSound:(...args)=>calls.push(['sound',...args]),startSound:(...args)=>{calls.push(['impactStart',...args]);const handle=memory.get(0x2600400)+1;memory.put(0x2600400,handle);return handle;},stopSound:handle=>{calls.push(['impactStop',handle]);return 1;}}:null,
     }});
     expect(pipeline.incoming.bytes.buffer).toBe(initial.buffer);expect(pipeline.recording.bytes.buffer).toBe(initial.buffer);
     for(const expected of row.frames) {
@@ -996,7 +997,7 @@ test("Native replay frame and input pipeline matches original executable request
       queryRoot:(_root,event,output)=>{calls.push(['query',event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
       flushRoot:()=>calls.push(['flush',0x210]),flushEnvironment:()=>calls.push(['flush',0x220]),renderFrame:()=>calls.push(['render']),
       device:{pending:()=>deviceCall(0x40),startRecording:()=>deviceCall(0x30,row.captureAccepted),checksum:()=>deviceCall(0x48,-16),startPlayback:()=>deviceCall(0x44,row.playbackAccepted),readyForPlayback:()=>deviceCall(0x3c)},
-      audio:row.sound?{setVolume:volume=>calls.push(['volume',volume]),setSpeed:speed=>calls.push(['speed',speed]),playSound:(...args)=>calls.push(['sound',...args])}:null,
+      audio:row.sound?{setVolume:volume=>calls.push(['volume',volume]),setSpeed:speed=>calls.push(['speed',speed]),playSound:(...args)=>calls.push(['sound',...args]),startSound:(...args)=>{calls.push(['impactStart',...args]);const handle=memory.get(0x2600400)+1;memory.put(0x2600400,handle);return handle;},stopSound:handle=>{calls.push(['impactStop',handle]);return 1;}}:null,
     }});
     expect(pipeline.incoming.bytes.buffer).toBe(initial.buffer);expect(pipeline.recording.bytes.buffer).toBe(initial.buffer);
     expect(pipeline.stream.bytes.buffer).toBe(initial.buffer);pipeline.manager.globalCounter=1234;
@@ -1230,7 +1231,7 @@ test("Native replay frame and input pipeline matches original executable request
   }
 });
 test("Native replay resumed frames matches original executable requests", {tag:"@logic"}, () => {
-  for(const row of [...replayRestoredFrames.cases,...replayRestoredPhysics.cases,...replayRestoredSounds.cases]) {
+  for(const row of [...replayRestoredFrames.cases,...replayRestoredPhysics.cases,...replayRestoredSounds.cases,...replayRestoredContacts.cases]) {
     const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000,0x70000),env=initial.subarray(0x70000,0x80000),devices=initial.subarray(0x80000,0x90000),channels=initial.subarray(0x90000),scratch=new Uint8Array(608),calls=[],allocations=[];
     const locate=at=>at>=0x2800000?[scratch,at-0x2800000]:at>=0x2700000?[channels,at-0x2700000]:at>=0x2600000?[devices,at-0x2600000]:at>=0x2500000?[env,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
     const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
@@ -1239,7 +1240,7 @@ test("Native replay resumed frames matches original executable requests", {tag:"
     const pipeline=createNativeSceneReplayPipeline({memory,owner:0x2000800,scratch:0x2800000,host:{
       allocate:size=>{const pointer=allocate(size);allocations.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocations.push(['array',size,pool,pointer]);return pointer;},free:address=>allocations.push(['free',address]),
       device:{readyForPlayback:()=>{calls.push(['ready']);return 1;},pending:()=>deviceCall(0x40),clear:()=>deviceCall(0x34),startRecording:()=>deviceCall(0x30,1),checksum:()=>deviceCall(0x48,17),startPlayback:()=>deviceCall(0x44)},
-      audio:row.sound?{reset:()=>calls.push(['audioReset']),setVolume:value=>calls.push(['volume',value]),setSpeed:value=>calls.push(['speed',value]),playSound:(...args)=>calls.push(['sound',...args])}:null,
+      audio:row.sound?{reset:()=>calls.push(['audioReset']),setVolume:value=>calls.push(['volume',value]),setSpeed:value=>calls.push(['speed',value]),playSound:(...args)=>calls.push(['sound',...args]),startSound:(...args)=>{calls.push(['impactStart',...args]);const handle=memory.get(0x2600400)+1;memory.put(0x2600400,handle);return handle;},stopSound:handle=>{calls.push(['impactStop',handle]);return 1;}}:null,
       flushTask:address=>{calls.push([0x2200200,address]);if(row.clearRoot)memory.put(0x2000804,0);},destroyTask:(address,flags)=>calls.push([0x2200210,address,flags]),
       restore:{flushEnvironment:address=>{calls.push([0x2200220,address]);if(row.clearEnvironment)memory.put(0x20207d4,0);}},destroyEnvironment:(address,flags)=>calls.push([0x2200230,address,flags]),
       constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);return args[0];},
@@ -1248,7 +1249,7 @@ test("Native replay resumed frames matches original executable requests", {tag:"
       dispatchTask:(child,sender,event,size)=>calls.push(['child',child,sender,event,size]),
       advanceBody:row.physics?undefined:(...args)=>calls.push(['body',...args]),
       observeBodyStep:(...args)=>calls.push(['body',...args]),
-      physics:row.waterSounds?{}:{waterChanged:body=>calls.push(['waterChanged',body]),skim:body=>calls.push(['skim',body])},
+      physics:row.contacts?{overlap:(mask,x,y,other,otherX,otherY)=>{calls.push(['overlap',mask,x,y,other,otherX,otherY]);return Number(x >= (memory.get(mask+4)|0)+2 || y >= (memory.get(mask+8)|0)+2);}}:row.waterSounds?{}:{waterChanged:body=>calls.push(['waterChanged',body]),skim:body=>calls.push(['skim',body])},
       observeRootQuery:(root,event,size)=>calls.push(['query',root,event,size]),
       observeTaskCleanup:root=>calls.push(['flushRoot',root]),observeEnvironmentCleanup:address=>calls.push(['flushEnvironment',address]),renderFrame:()=>calls.push(['render']),
     }});
@@ -1259,6 +1260,17 @@ test("Native replay resumed frames matches original executable requests", {tag:"
         if(memory.get(root+20)>1)memory.put(memory.get(root+24)+4,0);
         const environment=memory.get(0x20207d4);
         for(const offset of [0x18,0x34+2*0x1c]){const list=environment+offset;memory.put(list+8,1);if(memory.get(list+12))memory.put(memory.get(list+16),0);}
+      }
+      if(row.contacts && frame===16) {
+        memory.put(0x200b00c,0x2200400);
+        const listing=memory.get(0x20207d4)+0x18;
+        for(let i=0;i<memory.get(listing+12);i++) {
+          const actor=memory.get(memory.get(listing+16)+i*4);if(!actor)continue;
+          const mask=0x200a000+i*16;
+          memory.put(mask,0x200b000);memory.put(mask+4,100+i*8);memory.put(mask+8,160);
+          for(const [offset,value] of Object.entries({0x40:4,0x4c:i%2,0x78:0x8000,0x7c:0x6000,0x80:0xc000,0x88:0x8000,
+            0x90:(100+i*8)<<16,0x94:160<<16,0x9c:4<<16,0xa0:1<<16,0xf0:mask}))memory.put(actor+Number(offset),value);
+        }
       }
       if(row.primedSounds && frame===17) {
         memory.put(0x203cad4,15);
