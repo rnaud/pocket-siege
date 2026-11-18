@@ -1,10 +1,12 @@
+import {nativeCreatePanelImage,nativeCreatePanelText} from './panel-resources.js';
+
 //004B8E70/004B8C20 and their004EFB40/004EFBC0/004EFD90 list setup.
-//Memory uses native addresses. Allocation and text/image resources are supplied
+//Memory uses native addresses. Allocation and font metrics are supplied
 //by the host; alliance grouping, list ownership and ordering execute here.
 export function nativeCreateTeamPanelTree(memory,address,scene,host) {
   const list=(at,vtable)=>{
     memory.put(at,0x527498);memory.put(at+8,6);memory.put(at+4,0);
-    memory.put(at+12,host.allocateArray(24));memory.put(at,vtable);
+    memory.put(at+12,host.allocateArray(24,0x56f790));memory.put(at,vtable);
   };
   const finish=(at,entries)=>{
     memory.put(at+44,entries.length);
@@ -50,9 +52,9 @@ export function nativeCreateTeamPanel(memory,address,team,scene,host) {
   const resources=memory.get(scene+8),height=host.fontHeight(resources,15,32);
   memory.put(address+32,height);
   const text=host.allocate(0x138);
-  memory.put(address+16,text?host.createText(text,resources,15,256):0);
+  memory.put(address+16,text?(host.createText?host.createText(text,resources,15,256):nativeCreatePanelText(memory,text,resources,15,256,host)):0);
   const image=host.allocate(44);
-  if(image){host.createImage(image,128,(height+1)|0,8);memory.put(image,0x5249b0);}
+  if(image){if(host.createImage)host.createImage(image,128,(height+1)|0,8);else nativeCreatePanelImage(memory,image,128,(height+1)|0,8,host);memory.put(image,0x5249b0);}
   memory.put(address+20,image);memory.put(address+28,0);memory.put(address+24,0);
   memory.put(scene+0x1b5c+team*4,65536);memory.put(scene+0x1b74+team*4,65536);
   return address;
