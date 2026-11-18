@@ -35,9 +35,9 @@ test("browser routes native water requests to decoded original samples and gain"
   await page.goto("/");
   // Exercise audio after startup decoding, within the adapter's 500 ms
   // freshness window; testing renderer preload contention is a separate case.
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  // Cold asset loading is setup, not the audio behavior under test. Use the
+  // normal startup timeout rather than the five-second assertion timeout.
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.evaluate(async () => {
     const { playNativeWaterSound } = await import("/src/armageddon/audio.js");
     const context = new AudioContext();
