@@ -32759,6 +32759,61 @@
       "sha256": "2fa60e4172f7c0b0b93343d17617eaa913444207658385fb485e7391988cad0d"
     },
     {
+      "id": "user/flags/cpuflag1.bww",
+      "sources": [
+        "disc/DATA/USER/FLAGS/CPUFLAG1.BWW"
+      ],
+      "path": "media/user/flags/cpuflag1.bww",
+      "format": "bmp",
+      "group": "interface",
+      "bytes": 1418,
+      "sha256": "6984392829922c567782b9f99d57d727f09d8355777b6b8b95f29873c1edb3b2"
+    },
+    {
+      "id": "user/flags/cpuflag2.bww",
+      "sources": [
+        "disc/DATA/USER/FLAGS/CPUFLAG2.BWW"
+      ],
+      "path": "media/user/flags/cpuflag2.bww",
+      "format": "bmp",
+      "group": "interface",
+      "bytes": 1418,
+      "sha256": "7c48d50a00282d082bf5337cc76e195dfa9a7590244779325801e07923cf7cd8"
+    },
+    {
+      "id": "user/flags/cpuflag3.bww",
+      "sources": [
+        "disc/DATA/USER/FLAGS/CPUFLAG3.BWW"
+      ],
+      "path": "media/user/flags/cpuflag3.bww",
+      "format": "bmp",
+      "group": "interface",
+      "bytes": 1418,
+      "sha256": "1ab27e28f2f7a709707a8672ac3bc465ca4cc756d557d3bcc8465be35aeea2e4"
+    },
+    {
+      "id": "user/flags/cpuflag4.bww",
+      "sources": [
+        "disc/DATA/USER/FLAGS/CPUFLAG4.BWW"
+      ],
+      "path": "media/user/flags/cpuflag4.bww",
+      "format": "bmp",
+      "group": "interface",
+      "bytes": 1418,
+      "sha256": "fcc7576d58ad45e968f1fa8ddc9308762eb15c016a80034533242b13ae78fbb9"
+    },
+    {
+      "id": "user/flags/cpuflag5.bww",
+      "sources": [
+        "disc/DATA/USER/FLAGS/CPUFLAG5.BWW"
+      ],
+      "path": "media/user/flags/cpuflag5.bww",
+      "format": "bmp",
+      "group": "interface",
+      "bytes": 1418,
+      "sha256": "573905b40e85739a520f780a6596b4cd1e60eac4ccb5918d59ff929bb3ca90dd"
+    },
+    {
       "id": "user/flags/croatia.bmp",
       "sources": [
         "disc/DATA/USER/FLAGS/CROATIA.BMP"

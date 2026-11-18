@@ -1,3 +1,4 @@
+import {nativeLoadSetupBitmap} from './setup-bitmap.js';
 //0044C7B0. Original filenames, including the original spellings. Invalid country
 //IDs leave the caller's buffer untouched; negative IDs take the default case.
 const names=['United Kingdom','Argentina','Australia','Austria','Belgium','Brazil',
@@ -33,5 +34,6 @@ export function nativeLoadSetupFlag(memory,owner,team,host) {
     filename=`${name}.bmp`;
   }
   const path=`${String.fromCharCode(memory.byte(0x6e1178))}:\\data\\user\\flags\\${filename}`;
-  host.loadFlagBitmap(path,base+0xb47,base+0x747,20,17);
+  if(host.loadFlagBitmap)host.loadFlagBitmap(path,base+0xb47,base+0x747,20,17);
+  else nativeLoadSetupBitmap(memory,path,base+0xb47,base+0x747,20,17,host);
 }

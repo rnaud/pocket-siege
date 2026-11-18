@@ -1,3 +1,5 @@
+import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
+import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
 import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
 import missionNativeFlags from './fixtures/armageddon/mission-native-flags.json' with {type:'json'};
 import missionNativeScheme from './fixtures/armageddon/mission-native-scheme.json' with {type:'json'};
@@ -143,6 +145,21 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of setupBitmap.cases) {
+    const owner=Buffer.from(Uint8Array.from({length:0x10000},(_,i)=>(i*13+5)&255)),source=Buffer.from(Uint8Array.from({length:0x10000},(_,i)=>(i*7+11)&255)),calls=[];
+    const locate=address=>address>=0x2300000?[source,address-0x2300000]:[owner,address-0x2000000];
+    const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
+    const snapshot=()=>createHash('sha256').update(owner).digest('hex');
+    const result=nativeLoadSetupBitmap(memory,'fixture.bmp',0x2001004,0x2008000,c.width,c.height,{
+      loadImage(...args){calls.push(['loadImage',...args,snapshot()]);return c.fail?0:0x1234;},
+      getBitmap(...args){calls.push(['getBitmap',...args,snapshot()]);return {width:c.bitmapWidth,height:c.bitmapHeight,stride:c.stride,bits:c.overlap?0x2001000:0x2300000};},
+      deleteImage(...args){calls.push(['deleteImage',...args,snapshot()]);},
+      openPalette(...args){calls.push(['openPalette',...args,snapshot()]);return 0x5678;},
+      readPalette(...args){calls.push(['readPalette',...args,snapshot()]);for(let i=0;i<1024;i++)memory.putByte(args[1]+i,(i*19+7)&255);},
+      closePalette(...args){calls.push(['closePalette',...args,snapshot()]);},
+    });
+    expect({result,calls,sha256:snapshot()},JSON.stringify(c)).toEqual({result:c.result,calls:c.calls,sha256:c.sha256});
+  }
   for(const c of missionNativeFlags.countryCases) {
     const buffer=new Uint8Array(65).fill(c.pattern);
     expect(nativeCountryFlag(buffer,c.country)).toBe(c.result);

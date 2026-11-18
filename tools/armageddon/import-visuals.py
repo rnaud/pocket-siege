@@ -1,4 +1,4 @@
-"""Import original IMG/SPR/BMP visual media from the user's extracted DATA tree.
+"""Import original IMG/SPR/BMP/BWW visual media from the user's extracted DATA tree.
 
 Preserves exact bytes and source paths; never imports executables or audio.
 Archives use the Team17 DIR format. Existing shared sprites stay canonical.
@@ -12,7 +12,7 @@ args=parser.parse_args()
 root=Path(__file__).resolve().parents[2]/'public/armageddon'
 entries=[]
 by_id={}
-visual={'.img','.spr','.bmp'}
+visual={'.img','.spr','.bmp','.bww'}
 def archive_entries(data):
     if data[:4]!=b'DIR\x1a':raise ValueError('Unsupported archive signature')
     size,toc=struct.unpack_from('<II',data,4)
@@ -31,6 +31,7 @@ def save(source,payload,relative):
     relative=relative.replace("\\", "/")
     suffix=Path(relative).suffix.lower()
     if suffix not in visual:return
+    if suffix=='.bww' and payload[:2]!=b'BM':raise ValueError('Unsupported BWW bitmap: '+source)
     digest=hashlib.sha256(payload).hexdigest()
     if relative in by_id:
         if by_id[relative]['sha256']==digest:
@@ -44,7 +45,7 @@ def save(source,payload,relative):
         target='media/'+relative
         path=root/target;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(payload)
     group='terrain' if relative.startswith(('custom/','level/')) else 'maps' if relative.startswith(('image/','mission/','training/')) else 'water' if relative.startswith('water/') else 'sprites' if suffix=='.spr' else 'interface'
-    entries.append({'id':relative,'sources':[source],'path':target,'format':suffix[1:],'group':group,'bytes':len(payload),'sha256':digest})
+    entries.append({'id':relative,'sources':[source],'path':target,'format':'bmp' if suffix=='.bww' else suffix[1:],'group':group,'bytes':len(payload),'sha256':digest})
     by_id[relative]=entries[-1]
 sources=[(args.data,'disc/DATA','')]
 if args.installed:
