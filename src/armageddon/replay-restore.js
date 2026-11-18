@@ -1,3 +1,4 @@
+import { nativeInitializeWormResources } from './worm-resources.js';
 import { nativeInitializeControllerResources } from './controller-resources.js';
 import { nativeBodyStartSound } from './body-sound.js';
 import { nativeInitializeReplayPresentation } from './replay-presentation-restore.js';
@@ -112,17 +113,7 @@ export function nativeReadWormTask(stream, options) {
   }
   const team = view.getInt32(0x170, true);
   put(0x354, team ? options.context + 0x125bc + Math.imul(team, 0x208) : 0);
-  for (let i = 0; i < 6; i++) {
-    const pointer = options.allocateResource(0x138);
-    put(0x338 + i * 4, pointer ? options.constructText(pointer, options.renderer, 15, i < 3 ? 256 : 48) : 0);
-  }
-  const panel = options.allocateResource(0x34);
-  put(0x358, panel ? options.constructPanel(panel, 2, 2, 30, 30) : 0);
-  for (const offset of [0x35c, 0x360, 0x364, 0x370, 0x374, 0x380, 0x384, 0x38c, 0x388]) put(offset, 0);
-  put(0x36c, 65536);
-  put(0x368, 65536);
-  put(0x37c, options.matchState.presentationValue);
-  if (view.getInt32(0x13c, true)) options.matchState.activeCount = (options.matchState.activeCount + 1) | 0;
+  nativeInitializeWormResources(memory,options);
   return task;
 }
 
