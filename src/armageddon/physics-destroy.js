@@ -25,3 +25,15 @@ export function nativeDestroyPhysicsMemory(memory,address,flags,host) {
   if(flags&1)host.release(address,0xfc);
   return address;
 }
+
+//004C8DA0: category buffers are released in reverse order, then global buffers.
+export function nativeDestroyEnvironmentMemory(memory,address,flags,host) {
+  memory.put(address,0x5268b8);
+  for(let category=31;category>=0;category--) {
+    const list=address+0x34+category*0x1c;memory.put(list,0x5268b4);
+    host.free(memory.get(list+16));host.free(memory.get(list+20));memory.put(list,0x524a14);
+  }
+  memory.put(address+0x18,0x5268b4);host.free(memory.get(address+0x28));host.free(memory.get(address+0x2c));
+  memory.put(address,0x524a14);memory.put(address+0x18,0x524a14);
+  if(flags&1)host.release(address,0x3c4);return address;
+}
