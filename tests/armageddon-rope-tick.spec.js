@@ -40,6 +40,8 @@ test(
 
 // Preserve callback-visible memory: event handlers can change constraints,
 // velocities, segment lists and even scene earthquake state during a tick.
+import swept from "./fixtures/armageddon/body-sweep-memory.json" with { type: "json" };
+import forces from "./fixtures/armageddon/body-forces-memory.json" with { type: "json" };
 import addressed from "./fixtures/armageddon/body-tick-memory.json" with { type: "json" };
 import { nativeAdvancePhysicsListMemory } from "../src/armageddon/match-dispatch.js";
 import { nativeBodyTickMemory } from "../src/armageddon/body-tick-memory.js";
@@ -53,7 +55,11 @@ test(
       environment = body + 0x1000,
       world = body + 0x2000,
       segments = body + 0x5000;
-    for (const [index, row] of addressed.cases.entries()) {
+    for (const [index, row] of [
+      ...addressed.cases,
+      ...forces.cases,
+      ...swept.cases,
+    ].entries()) {
       const bytes = inflateSync(Buffer.from(row.inputMemory, "base64"));
       const memory = {
         get: (at) => bytes.readUInt32LE(at - body),
@@ -127,7 +133,24 @@ test(
         freeBounce: (_body, hit, side) => bounce("freeBounce", [hit, side]),
         collide: (_env, _body, x, y) => {
           call("collide", [x, y]);
-          return 1;
+          if (row.nativeForces && mode === 7) {
+            memory.put(environment + 0x3b4, 170);
+            put(0x9c, 800000);
+            put(0xa0, 1234);
+          }
+          if (row.nativeForces && mode === 8) {
+            put(0x64, 0x8000);
+            put(0x9c, 123456);
+          }
+          return row.nativeForces && mode % 2 ? 0 : 1;
+        },
+        skim: () => {
+          call("skim");
+          put(0xc8, 0);
+          if (mode === 9) {
+            put(0xa0, 0);
+            put(0x9c, 0);
+          }
         },
         earthquake: (_env, _body, amount) => {
           call("earthquake", [amount]);
@@ -135,6 +158,11 @@ test(
           memory.put(world + 0x1ac4, 0);
         },
       };
+      if (row.nativeForces) {
+        delete host.water;
+        delete host.air;
+      }
+      if (row.nativeSweep) delete host.sweep;
       if (row.throughList)
         nativeAdvancePhysicsListMemory(
           memory,

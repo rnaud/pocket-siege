@@ -9,7 +9,10 @@ from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
+parser.add_argument('--native-forces', action='store_true')
+parser.add_argument('--native-sweep', action='store_true')
 args = parser.parse_args()
+if args.native_sweep:args.native_forces=True
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
 if digest != '0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56':
@@ -36,6 +39,10 @@ import base64,zlib,itertools
 environment=owner+0x1000;world=owner+0x2000;segments=owner+0x5000;vt=owner+0x6000;mt=owner+0x7000
 services={0x4c98e0:('refresh',1),0x4c9f10:('water',2),0x4ca110:('air',1),0x4ca8a0:('rope',2),0x4c9aa0:('sweep',3),0x4ca250:('earthquake',2)}
 for i,(name,argc) in enumerate([('awake',0),('waterChanged',0),('bounce',1),('freeBounce',2),('collide',3)]):services[stop+0x100+i*0x100]=(name,argc)
+if args.native_forces:
+ del services[0x4c9f10];del services[0x4ca110]
+ services[stop+0x600]=('skim',0)
+if args.native_sweep:del services[0x4c9aa0]
 calls=[];steps=0
 def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))).hexdigest()
 def hook(cpu,address,size,user):
@@ -72,21 +79,32 @@ def hook(cpu,address,size,user):
   if mode==11:write(owner+0x9c,0);write(owner+0xa0,0)
   if mode==12:write(owner+0x9c,0x7fffffff);write(owner+0xa0,0x80000001)
   if mode==13:write(owner+0xdc,2);write(segments+12,0x1234)
- elif name=='collide':result=1
+ elif name=='collide':
+  result=0 if args.native_forces and mode%2 else 1
+  if args.native_forces and mode==7:write(environment+0x3b4,170);write(owner+0x9c,800000);write(owner+0xa0,1234)
+  if args.native_forces and mode==8:write(owner+0x64,0x8000);write(owner+0x9c,123456)
+ elif name=='skim':
+  write(owner+0xc8,0)
+  if mode==9:write(owner+0xa0,0);write(owner+0x9c,0)
+
  elif name=='earthquake':write(owner+0x9c,456);write(world+0x1ac4,0)
  cpu.reg_write(UC_X86_REG_EAX,result)
 for address,(name,argc) in services.items():
  cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4));cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
-for throughList,mode,velocity,constrained in itertools.product(range(2),range(16),[0,65536,-65536,0x300000,-0x300000,1000000,-2000000,0x70000000],range(2)):
+for throughList,mode,velocity,constrained in itertools.product(range(2),range(16),([0,65536,-65536,1000000] if args.native_sweep else [0,65536,-65536,0x300000,-0x300000,1000000,-2000000,0x70000000]),range(2)):
  cpu.mem_write(owner,bytes(0x10000));calls.clear();steps=0
  for offset,value in {0:vt,0x48:int(mode!=1),0x54:int(mode==2),0xb8:int(mode in [3,4]),0xbc:1,0xc0:1,0xc4:1,0xc8:constrained,0x90:100<<16,0x94:180<<16,0x9c:velocity,0xa0:-velocity,0x98:123,0xa4:456,0x5c:0 if mode==14 else 0x100000,0x6c:65536,0x84:60000,0x8c:0x3000,0xdc:1,0xf8:segments}.items():write(owner+offset,value)
  write(segments+4,[0,0x1000,0xf000,0x8000][mode%4]);write(environment,mt);write(environment+0x3c0,world);write(environment+0x3b8,0x3d70);write(world+0x7f0,(10 if throughList else 12) if mode==4 else 1);write(world+0x1ac4,32 if mode in [3,5] else 0)
  for offset,value in {0xf4:stop+0x100,0x3c:stop+0x200,0x30:stop+0x300,0x2c:stop+0x400}.items():write(vt+offset,value)
+ write(vt+0x40,stop+0x600)
+ if args.native_forces:
+  for offset,value in {0x40:0x400000 if mode>=6 else 0,0xbc:int(mode==10),0x60:0xcccc,0x64:0xf000,0x68:65536,0xb4:65536,0xa0:10000 if mode in [7,8,9] else -velocity}.items():write(owner+offset,value)
+  write(environment+0x3b4,179);write(environment+0x3b8,[0,-0x3d70,0x3d70][mode%3]);write(environment+0x3bc,-0x1000 if mode%2 else 0x2000)
  write(mt+12,stop+0x500);write(environment+0x24,3);write(environment+0x28,environment+0x800);write(environment+0x808,owner);initial=bytes(cpu.mem_read(owner,0x10000));sp=stack+0xff00
  for i,v in enumerate([stop,owner,1]):write(sp+i*4,v)
  cpu.reg_write(UC_X86_REG_ECX,environment);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4ca750 if throughList else 0x4ca320,stop,count=100000)
  assert cpu.reg_read(UC_X86_REG_EIP)==stop
- cases.append(dict(throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='512 original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(nativeSweep=args.native_sweep,nativeForces=args.native_forces,throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,native_forces=args.native_forces,method=f'{len(cases)} original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. With --native-sweep, original004C9AA0 also executes and the velocity matrix uses four values (256 cases). With --native-forces, original004C9F10 water and004CA110 air run without interception, including mutable collision and skim callbacks. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'addressed body ticks')

@@ -1,3 +1,8 @@
+import {
+  nativeWaterMotionMemory,
+  nativeAirForcesMemory,
+  nativeSweepMemory,
+} from "./body-forces-memory.js";
 import { fixedMultiply } from "./numeric.js";
 import { nativeSin, nativeCos } from "./trig.js";
 import { nativeBodyRotation } from "./motion.js";
@@ -21,9 +26,14 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
   put(0xbc, 0);
   put(0xc0, 0);
   put(0xc4, 0);
-  if (!host.water(environment, body, submerged)) {
-    if (!get(0xc8)) host.air(environment, body);
-    else {
+  const water = host.water
+    ? host.water(environment, body, submerged)
+    : nativeWaterMotionMemory(memory, environment, body, submerged, host);
+  if (!water) {
+    if (!get(0xc8)) {
+      if (host.air) host.air(environment, body);
+      else nativeAirForcesMemory(memory, environment, body, host);
+    } else {
       const gravity = fixedMultiply(
         memory.get(environment + 0x3b8) | 0,
         get(0x6c),
@@ -66,7 +76,9 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
   } else {
     let remaining = 65536;
     for (let i = 0; i < 2 && remaining; i++) {
-      const result = host.sweep(environment, body, remaining);
+      const result = host.sweep
+        ? host.sweep(environment, body, remaining)
+        : nativeSweepMemory(memory, environment, body, remaining, host);
       remaining = result.remaining;
       if (result.hit) host.freeBounce(body, result.hit, result.side);
     }
