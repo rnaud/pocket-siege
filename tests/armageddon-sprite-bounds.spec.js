@@ -24,7 +24,7 @@ import rendererFonts from './fixtures/armageddon/renderer-font.json' with {type:
 import {nativeLoadRendererFont,nativeDestroyFont} from '../src/armageddon/renderer-font.js';
 
 import rendererSprites from './fixtures/armageddon/renderer-sprite.json' with {type:'json'};
-import {nativeLoadRendererSprite,nativeDestroySprite} from '../src/armageddon/renderer-sprite.js';
+import {nativeLoadRendererSprite,nativeDestroySprite,nativeUnloadRendererSprite} from '../src/armageddon/renderer-sprite.js';
 
 import streamedLifecycle from './fixtures/armageddon/streamed-sprite-lifecycle.json' with {type:'json'};
 import {nativeCreateStreamedSprite,nativeDestroyStreamedSprite} from '../src/armageddon/streamed-sprite.js';
@@ -51,6 +51,10 @@ import rendererSpriteDraw from './fixtures/armageddon/renderer-sprite-draw.json'
 import {nativeDrawRendererSprite} from '../src/armageddon/renderer-sprite-draw.js';
 
 import rendererSpriteCache from './fixtures/armageddon/renderer-sprite-cache.json' with {type:'json'};
+
+import rendererSpriteLifetime from './fixtures/armageddon/renderer-sprite-lifetime.json' with {type:'json'};
+
+import rendererStreamedLifetime from './fixtures/armageddon/renderer-streamed-lifetime.json' with {type:'json'};
 
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of rendererSpriteDraw.cases) {
@@ -192,21 +196,23 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
     }
     expect({events,result,state:snapshot()},`${c.path} / ${c.mode} / ${c.pattern} / ${c.allocated} / ${c.last}`).toEqual({events:c.events,result:c.result,state:c.state});
   }
-  for(const c of streamedLifecycle.cases) {
+  for(const c of [...streamedLifecycle.cases,...rendererStreamedLifetime.cases]) {
     const owner=0x2000000,sprite=owner+0x1000,renderer=owner+0x2000,table=owner+0x3000,alternate=owner+0x4000,bytes=Buffer.alloc(0x10000,c.pattern);
     const memory={get:p=>bytes.readUInt32LE(p-owner),put:(p,v)=>bytes.writeUInt32LE(v>>>0,p-owner),byte:p=>bytes[p-owner],putByte:(p,v)=>{bytes[p-owner]=v;}};
     const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
     nativeCreateStreamedSprite(memory,sprite,renderer);expect(snapshot()).toBe(c.initial);
     memory.put(sprite+112,table);bytes.writeInt16LE(c.count,sprite-owner+106);
     for(const at of [table,alternate])for(let i=0;i<3;i++)memory.put(at+i*12+8,i!==1?owner+0x5000+i*32:0);
-    const events=[],result=nativeDestroyStreamedSprite(memory,sprite,c.flags,{
+    if(c.unregister)for(const [offset,value] of [[0x2864+c.id*4,0],[0x38e4+c.id*4,sprite],[0x864+c.id*4,1],[0x1864+c.id*4,2],[0x4b08,1]])memory.put(renderer+offset,value);
+    const events=[],host={
       releaseSpriteSurface(renderer,slot){events.push(['surface',renderer,slot,snapshot()]);memory.put(slot,0);if(c.mutate)memory.put(sprite+112,alternate);},
       freeArray(pointer){events.push(['array',pointer,snapshot()]);},
       freeSized(pointer,size){events.push(['free',pointer,size,snapshot()]);},
-    });
+    };
+    const result=c.unregister?nativeUnloadRendererSprite(memory,renderer,c.id,host):nativeDestroyStreamedSprite(memory,sprite,c.flags,host);
     expect({events,result,state:snapshot()}).toEqual({events:c.events,result:c.result,state:c.state});
   }
-  for(const c of [...spriteBitmap.cases,...rendererSpriteCache.cases]) {
+  for(const c of [...spriteBitmap.cases,...rendererSpriteCache.cases,...rendererSpriteLifetime.cases]) {
     const owner=0x2000000,source=0x2400000,sprite=owner+0x3000,bitmap=owner+0x4000,buffer=owner+0x8000;
     const scratch=Buffer.alloc(24),bytes=Buffer.alloc(c.dispatch?0x60000:0x40000,c.pattern),raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex'),data=Buffer.from(raw),counters=Buffer.alloc(16),cacheCounters=Buffer.alloc(8),pointer=Buffer.alloc(4);
     expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
@@ -223,6 +229,7 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x30000],[12,8],[16,192],[20,192],[24,192],[28,0],[32,0],[36,192],[40,192]])memory.put(owner+0x7000+offset,value);
       for(let d=0;d<256;d++)for(let s=0;s<256;s++)memory.putByte(renderer+0x4b2c+d*256+s,(s*3+d*5)&255);
     }
+    if(c.cleanup)for(const [offset,value] of [[0x38e4+7*4,0],[0x864+7*4,1],[0x1864+7*4,2],[0x4b08,1],[0x4b0c,0]])memory.put(renderer+offset,value);
     nativeCreateGamePalette(memory,owner,1,c.last);nativeCreateSprite(memory,sprite,0x497b20,0x497ba0);nativeReadSprite(memory,sprite,owner,source,{allocate:()=>bitmap});
     const snapshot=()=>createHash('sha256').update(bytes).update(data).update(counters).update(cacheCounters).digest('hex');
     expect(snapshot()).toBe(c.initial);
@@ -239,6 +246,16 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       const drawn=(memory.get(sprite+56)|0)>0&&(memory.get(sprite+60)|0)>0?nativeBlitIndexedBitmap(memory,owner+0x6000,step.x,24,memory.get(sprite+56),memory.get(sprite+60),bitmap,0,0,0,step.flags):0;
       expect(drawn).toBe(step.drawn);
       expect(snapshot()).toBe(step.drawn_state);
+    }
+    if(c.cleanup) {
+      const events=[],host={
+        freeSized(address,size){events.push(['freeSized',address,size,snapshot()]);if(c.pattern&&size===44)memory.put(renderer+0x864+7*4,2);},
+        freeArray(address){events.push(['freeArray',address,0,snapshot()]);},
+      };
+      expect(nativeUnloadRendererSprite(memory,renderer,7,host)).toBe(c.removed);
+      expect(snapshot()).toBe(c.removed_state);
+      expect(nativeUnloadRendererSprite(memory,renderer,7,host)).toBe(c.missing);
+      expect(events).toEqual(c.events);expect(snapshot()).toBe(c.final);
     }
   }
   const blend=Buffer.from(Array.from({length:65536},(_,i)=>((i&255)*3+(i>>>8)*5)&255));

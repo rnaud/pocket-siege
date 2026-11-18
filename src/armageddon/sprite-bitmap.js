@@ -1,6 +1,11 @@
-import {nativeAllocateEventRecord,nativeConsumeEventRecord} from './scene-buffers.js';
+import {nativeAllocateEventRecord,nativeConsumeEventRecord,nativeContainsEventRecord} from './scene-buffers.js';
 import {nativeSpriteFrame} from './animation.js';
 const word=(m,p)=>m.byte(p)|(m.byte(p+1)<<8);
+
+//00497BA0 only queries membership; it does not consume/free the cache record.
+export function nativeReleaseSpriteBlock(memory,block) {
+  return nativeContainsEventRecord(memory,memory.get(0x55e3c4),(block-4)>>>0);
+}
 
 //004AF6A0: invalidate the first descriptor owning an evicted cache block.
 export function nativeInvalidateSpriteBlock(memory,sprite,block) {

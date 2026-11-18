@@ -1,6 +1,7 @@
 import {nativeCreateStreamedSprite,nativeLoadStreamedSprite,nativeDestroyStreamedSprite} from './streamed-sprite.js';
 import {nativeCreateSprite,nativeLoadArchiveSprite} from './archive-art.js';
 import {nativeDestroyBitmap8} from './bitmap-storage.js';
+import {nativeReleaseSpriteBlock} from './sprite-bitmap.js';
 
 //004AF600/004AF630. Release the borrowed bitmap wrapper, owned source, then
 //cached compressed blocks in descriptor order. Callbacks may mutate pointers.
@@ -11,11 +12,30 @@ export function nativeDestroySprite(memory,sprite,flags,host) {
   const count=()=>memory.byte(sprite+28)|(memory.byte(sprite+29)<<8);
   if(memory.get(sprite+24)&&count())for(let i=0;i<count();i++) {
     const block=memory.get(memory.get(sprite+24)+i*12+4);
-    if(block)host.releaseSpriteBlock(memory.get(sprite+68),block);
+    if(block){if(host.releaseSpriteBlock)host.releaseSpriteBlock(memory.get(sprite+68),block);else nativeReleaseSpriteBlock(memory,block);}
   }
   memory.put(sprite,0x524a14);
   if(flags&1)host.freeSized(sprite,72);
   return sprite;
+}
+
+//00497C00. Standard slots take priority; decrement the bank read after the
+//destructor, clear priority, and retain the bank index itself.
+export function nativeUnloadRendererSprite(memory,renderer,id,host) {
+  id|=0;if(id<1||id>=1024)return 0;
+  const standard=renderer+0x2864+id*4,streamed=renderer+0x38e4+id*4;
+  const sprite=memory.get(standard);
+  if(sprite) {
+    nativeDestroySprite(memory,sprite,1,host);memory.put(standard,0);
+  } else {
+    const stream=memory.get(streamed);if(!stream)return 0;
+    if(host.destroyStreamedSprite)host.destroyStreamedSprite(stream,1);
+    else nativeDestroyStreamedSprite(memory,stream,1,host);
+    memory.put(streamed,0);
+  }
+  const count=renderer+0x4b04+memory.get(renderer+0x864+id*4)*4;
+  memory.put(count,memory.get(count)-1);memory.put(renderer+0x1864+id*4,0);
+  return 1;
 }
 
 //00497990. Both standard and streamed resources default to original loaders.
