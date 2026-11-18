@@ -1,3 +1,4 @@
+import worldSceneryMemory from './fixtures/armageddon/world-scenery-memory.json' with {type:'json'};
 import worldMineMemory from './fixtures/armageddon/world-mine-memory.json' with {type:'json'};
 import worldBarrelMemory from './fixtures/armageddon/world-barrel-memory.json' with {type:'json'};
 import worldObjectsMemory from './fixtures/armageddon/world-objects-memory.json' with {type:'json'};
@@ -82,7 +83,7 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true})),...worldMineMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true}))]) {
+  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true})),...worldMineMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true})),...worldSceneryMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true}))]) {
     const owner=new Uint8Array(0x10000),heap=new Uint8Array(c.world?0x100000:c.controller?0x40000:0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
@@ -100,6 +101,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     host.portraitLabel=at=>{calls.push(['label',at]);return 0x76543210+c.bits;};host.setPortraitLabel=value=>portraitLabel=value;
     if(c.nativePlacement){delete host.gravity;delete host.placeWorm;host.collisionOverlap=(...args)=>{calls.push(['overlap',...args]);return +(args[2]>=2+c.bits%4+(c.mines&&(c.bits&32)?(args[1]&7)>>1:0)&&(args[3]===0x2007300||args[1]>=800));};}
     if(c.nativeSpawn)for(const key of ['randomSpawnWord','randomSpawn','sideSpawn','reserveSpawn'])delete host[key];
+    if(!c.scenery)host.populateScenery=(at,setup)=>{calls.push(['call',0x4ebe10,at,[setup]]);return at;};
     if(!c.objects)host.populateNaturalObjects=(at,setup)=>{calls.push(['call',0x4eba80,at,[setup]]);return at;};
     if(!c.mines)host.constructNaturalMine=(...args)=>{calls.push(['mine',...args]);return args[0];};if(!c.barrels)host.constructNaturalBarrel=(...args)=>{calls.push(['barrel',...args]);return args[0];};
     if(!c.landscape)host.constructLandscape=(at,parent)=>{calls.push(['call',0x4d1f80,at,[parent]]);return at;};
@@ -212,6 +214,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       portraitLabel:at=>{calls.push(['label',at]);return 0x76543210+row.count;},setPortraitLabel:value=>portraitLabel=value,
       fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;},
       virtual:(...args)=>calls.push(['virtual',...args]),
+      populateScenery:(at,setup)=>{calls.push(['call',0x4ebe10,at,[setup]]);return at;},
       populateNaturalObjects:(at,setup)=>{calls.push(['call',0x4eba80,at,[setup]]);return at;},
       constructLandscape:(at,parent)=>{calls.push(['call',0x4d1f80,at,[parent]]);return at;},
       constructWorm:(at,...args)=>{calls.push(['call',0x4d5a40,at,args]);return at;},
@@ -255,6 +258,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     memory.range=(at,length)=>at>=0x2400000?heap.subarray(at-0x2400000,at-0x2400000+length):scene.subarray(at-0x2300000,at-0x2300000+length);
     if(row.root)nativeCreateMatchRootAt(memory,0x2400000,0x2300000,0x23047a8,{
       ...host,virtual:(...args)=>calls.push(['virtual',...args]),
+      populateScenery:(at,setup)=>{calls.push(['call',0x4ebe10,at,[setup]]);return at;},
       populateNaturalObjects:(at,setup)=>{calls.push(['call',0x4eba80,at,[setup]]);return at;},
       constructLandscape:(at,parent)=>{calls.push(['call',0x4d1f80,at,[parent]]);return at;},
       constructWorm:(at,...args)=>{calls.push(['call',0x4d5a40,at,args]);return at;},

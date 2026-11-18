@@ -1,3 +1,4 @@
+import {nativePopulateSceneryAt} from './scenery-create.js';
 import {nativePopulateMapObjectsAt} from './map-objects-memory.js';
 import {nativeCreateLandscapeAt} from './landscape-create.js';
 import {nativeCreateTeamControllerAt} from './controller-create.js';
@@ -34,7 +35,7 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
   }
   group(24,[0x3e9,0x3ea,0x3eb,0x3ed]);
   group(23,[0x404,0x3e9,0x3ea,0x3eb,0x3ed,0x3fd,0x400]);
-  call(0x4ebe10,[setup]);call(0x4eaf40);
+  (host.populateScenery??((at,setup)=>nativePopulateSceneryAt(memory,at,setup,host)))(address,setup);call(0x4eaf40);
   for(let team=1;team<=(memory.get(address+0x80)|0);team++) {
     const inventory=scene+0x1b94,base=inventory+team*0x51c;
     let health=0;
