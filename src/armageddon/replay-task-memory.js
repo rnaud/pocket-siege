@@ -1,3 +1,8 @@
+import taskTypes from './replay-task-types.json' with {type:'json'};
+import {nativeCreatePanelText} from './panel-resources.js';
+import {nativeInitializeControllerResources} from './controller-resources.js';
+import {nativeCreateControllerPortrait,nativeCreateControllerFrame} from './controller-visual-resources.js';
+import {nativeBodyStartSound} from './body-sound.js';
 import {nativeInitializeWormResourcesAt} from './worm-resources.js';
 import {nativeRegisterPhysicsMemory} from './physics-memory.js';
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
@@ -50,5 +55,47 @@ export function nativeReadWormMemory(memory,address,parent,context,stream,host) 
   const team=memory.get(address+0x170);
   memory.put(address+0x354,team?context+0x125bc+Math.imul(team,0x208):0);
   nativeInitializeWormResourcesAt(memory,address,context,host);
+  return address;
+}
+
+//Concrete readers include saved blocks whose writers intentionally emit nothing.
+const restoreOnlyBlocks={13:[0x3c,0xc04],16:[0x3c,0x24],22:[0x3c,0x28],27:[0x3c,0x1c],29:[0x3c,0x28]};
+export function nativeReadActorMemory(memory,tag,address,parent,context,stream,host) {
+  if(tag===18)return nativeReadWormMemory(memory,address,parent,context,stream,host);
+  const schema=taskTypes.find(row=>row.tag===tag);
+  if(!schema||tag===28||tag===31)throw new RangeError(`Addressed replay constructor not connected: ${tag}`);
+  if(schema.physics)nativeReadPhysicsMemory(memory,address,parent,context,stream,host);
+  else {
+    nativeReadTaskMemory(memory,address,parent,stream,host);
+    memory.put(address,0x527478);stream.readByte();memory.put(address+0x38,context);
+  }
+  memory.put(address,Number(schema.vtable));
+  const get=offset=>memory.get(address+offset)|0,put=(offset,value)=>memory.put(address+offset,value);
+  const increment=offset=>memory.put(context+offset,memory.get(context+offset)+1);
+  const counter={16:0x12424,22:0x12428,27:0x12420}[tag];if(counter)increment(counter);
+  stream.readByte();const [offset,size]=restoreOnlyBlocks[tag]??schema.block;
+  memory.range(address+offset,size).set(stream.readBlock(size));
+  const constructText=host.constructText??((at,...args)=>nativeCreatePanelText(memory,at,...args,host));
+  const text=(offset,font,width)=>{const at=host.allocate(0x138);put(offset,at?constructText(at,memory.get(context+8),font,width):0);};
+  if(tag===8) {memory.put(context+0x450+get(0x100)*4,address);text(0x190,15,16);}
+  else if(tag===10)nativeInitializeControllerResources(memory.range(address,schema.size),{
+    allocateResource:size=>host.allocate(size),context,renderer:memory.get(context+8),
+    palette:Array.from({length:9},(_,i)=>memory.get(context+0x12434+i*4)),constructText,
+    constructPortrait:host.constructPortrait??((at,...args)=>nativeCreateControllerPortrait(memory,at,...args,host)),
+    constructFrame:host.constructFrame??((at,...args)=>nativeCreateControllerFrame(memory,at,...args,host)),
+  });
+  else if(tag===11) {
+    text(0x3d0,15,48);text(0x3cc,15,16);put(0x3d8,0);put(0x3d4,0);
+    if(get(0x31c)) {
+      const device=memory.get(context+12);
+      put(0x3d8,nativeBodyStartSound(memory.get(context+0x1d448),device?{start:(...args)=>host.startSound(device,...args)}:null,[get(0x31c),4,65536,65536,0]));
+    }
+    put(0x3dc,(get(0x140)+Math.trunc(((get(0x138)+get(0x13c))|0)/25)+get(0x144))&65535);
+  } else if(tag===15) {
+    put(0x264,0);text(0x268,15,256);text(0x26c,15,48);text(0x270,15,48);
+    if(get(0x260))increment(get(0x124)===3?0x1b8f4:0x1b8f0);increment(0x1242c);
+  } else if(tag===24) {
+    memory.put(context+0x4b0+get(0x80)*4,address);put(0xb0,memory.get(context+0x12430)&255);increment(0x12430);put(0xb4,0);
+  } else if(tag===29)text(0x64,23,48);
   return address;
 }

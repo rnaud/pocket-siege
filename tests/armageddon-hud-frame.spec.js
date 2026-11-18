@@ -1,6 +1,6 @@
 import replayWormResources from './fixtures/armageddon/replay-worm-resources.json' with {type:'json'};
 import replayTaskMemory from './fixtures/armageddon/replay-task-memory.json' with {type:'json'};
-import {nativeReadTaskMemory,nativeReadPhysicsMemory,nativeReadWormMemory} from '../src/armageddon/replay-task-memory.js';
+import {nativeReadTaskMemory,nativeReadPhysicsMemory,nativeReadWormMemory,nativeReadActorMemory} from '../src/armageddon/replay-task-memory.js';
 import {nativeReadEnvironmentMemory} from '../src/armageddon/physics-memory.js';
 import {nativeDestroyEnvironmentMemory} from '../src/armageddon/physics-destroy.js';
 import replaySceneCapture from './fixtures/armageddon/replay-scene-capture.json' with {type:'json'};
@@ -1256,6 +1256,24 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       ...(row.completeResources?{fontHeight:(...args)=>{calls.push(['font',...args]);return 8;}}:{constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructPanel:(...args)=>{calls.push([0x4fd5a0,...args]);return args[0];}}),
     })).toBe(0x2000000);
     expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.result.calls);expect(stream.position).toBe(row.result.position);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
+  }
+  for(const row of replayActorRestore.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),env=initial.subarray(0x30000),calls=[],allocationCalls=[],sounds=[];
+    const locate=at=>at>=0x2040000?[env,at-0x2040000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    let cursor=0x2006000,resourceIndex=0;const fail=row.input.allocations.findIndex(request=>request.pointer===0);
+    const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
+    const stream=NativeReplayStream.fromMemory(memory,0x2001000);
+    expect(nativeReadActorMemory(memory,row.input.tag,0x2000000,0,0x2020000,stream,{
+      allocate:size=>{const resource=[0x164,0x138,0x34,0x170,0x3c].includes(size),pointer=resource&&resourceIndex++===fail?0:allocate(size);allocationCalls.push(['allocate',size,pointer]);return pointer;},
+      allocateArray:(size,pool)=>{const pointer=allocate(size);allocationCalls.push(['array',size,pool,pointer]);return pointer;},free:address=>allocationCalls.push(['free',address]),
+      restoreChild:()=>{throw new Error('Unexpected concrete child in actor fixture');},
+      constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},
+      constructPortrait:(...args)=>{calls.push([0x500170,...args]);return args[0];},constructFrame:(...args)=>{calls.push([0x4ffed0,...args]);return args[0];},
+      startSound:(_device,...args)=>{sounds.push(args);return 0x654321;},
+    })).toBe(0x2000000);
+    expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.result.calls);expect(sounds).toEqual(row.result.sounds);expect(stream.position).toBe(row.result.position);
     expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
   }
   for(const row of replayTaskMemory.cases) {
