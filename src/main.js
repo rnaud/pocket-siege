@@ -42,7 +42,6 @@ import { registerNativeFlame } from "./armageddon/flame-spread.js";
 import { stepNativeFlame } from "./armageddon/flame-runtime.js";
 import { nativeFlameArt } from "./armageddon/flame-art.js";
 import { createNativeCrateBody, stepNativeCrateBody } from "./armageddon/crate-runtime.js";
-import { nativeCrateArt } from "./armageddon/crate-state.js";
 import nativeWaterSpriteIds from "./armageddon/water-sprite-ids.json";
 import { NativeSoundQueue } from "./armageddon/sound-queue.js";
 import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
@@ -228,6 +227,7 @@ import {
   updateOriginalProjectile,
   projectileSprites,
   originalWormFrame,
+  updateOriginalCrate,
   stepOriginalIdle,
   startOriginalRecoil,
   startOriginalPreparation,
@@ -1179,6 +1179,7 @@ function dispose(obj) {
   group.remove(obj);
   obj.traverse((o) => {
     o.geometry?.dispose();
+    if (o.userData.nativeCrateLabel !== undefined) o.material?.map?.dispose();
     if (o.material) o.material.dispose();
   });
 }
@@ -1199,6 +1200,8 @@ function crateOpeningSprite(kind) {
 }
 function crateSnapshot(crate) {
   return {
+    nativeOrderId: crate.nativeOrderId,
+    nativeRenderRank: nativeRenderOrder.orders[crate.nativeOrderId],
     x: crate.x,
     y: crate.y,
     kind: crate.kind,
@@ -1237,6 +1240,7 @@ function spawnCrate(announceDrop = false) {
     mesh.position.set(x, H + 34, 18);
     group.add(mesh);
     const crate = {
+      nativeOrderId: nativeRenderOrder.allocate(),
       content: chooseCrateContent(kind),
       quantity: kind === "health" ? 25 : 1,
       x,
@@ -1561,6 +1565,7 @@ function collectCrate(w, crate = crates[0]) {
   }
   pickupLabel(w, label);
   $("#status").textContent = `${w.name} grabs a supply crate: ${label}.`;
+  nativeRenderOrder.release(crate.nativeOrderId);
   dispose(mesh);
   crates.splice(crates.indexOf(crate), 1);
   dispatchWormEntryAudio(w, nativeCratePickupAudio(crate.nativeBody.kind, w.team + 1, (_team, slot) => slot));
@@ -5952,6 +5957,7 @@ function stepFrame(dt) {
     crate.mesh.position.set(crate.x, crate.y, 18);
     if (result.deleted) {
       if (detonate) detonateNativeCrate(crate);
+      nativeRenderOrder.release(crate.nativeOrderId);
       dispose(crate.mesh);
       crates.splice(crates.indexOf(crate), 1);
     } else if (wasFalling && !crate.falling) announce("SUPPLY CRATE LANDED");
@@ -6389,14 +6395,11 @@ function frame(now) {
     barrel.mesh.position.set(Math.round(x / 65536), Math.round(H - y / 65536), 17);
   }
   for (const crate of crates) {
-    crate.mesh.position.y = Math.round(crate.y);
-    const art = nativeCrateArt(crate.nativeBody);
-    const name = nativeWaterSpriteIds.sprites[art.sprite]
-      ? `water/${nativeWaterSpriteIds.sprites[art.sprite].name}`
-      : nativeSpriteIds.sprites[art.sprite].name;
-    updateOriginalObject(crate.mesh, name, 0, art.progress);
-    if (crate.mesh.userData.beacon)
-      crate.mesh.userData.beacon.rotation.y = now * 0.002;
+    updateOriginalCrate(crate.mesh, crate.nativeBody, {
+      rank: nativeRenderOrder.orders[crate.nativeOrderId], labelMode, frame: selectionTick,
+      // Native content-display ownership is not yet connected to the host schemes.
+      showContents: false,
+    });
   }
   for (const mine of mines) {
     const art = nativeMineArt(mine.nativeBody, mine.nativeTimer, nativeRenderOrder.orders[mine.nativeOrderId]);

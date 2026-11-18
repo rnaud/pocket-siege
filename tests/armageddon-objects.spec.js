@@ -29,6 +29,20 @@ test("original crates descend by parachute and switch to ground idle art", async
     })
     .toMatch(/^[muw]crate1$/);
   await page.screenshot({ path: "test-results/original-world-objects.png" });
+  const ranks = await page.evaluate(async () => {
+    const { restoreReplayActors } = await import('/src/armageddon/replay-actor-adapter.js');
+    const debug = window.siege.debug, before = debug.captureReplayState();
+    const decode = snapshot => restoreReplayActors(snapshot.actors, { resolveResource: id => snapshot.resources.get(id) }).get('match');
+    const first = decode(before), id = first.actors.crates[0].nativeOrderId;
+    debug.collectCrate();
+    const after = decode(debug.captureReplayState()).controllers.renderOrder;
+    debug.restoreReplayState(before);
+    const restored = decode(debug.captureReplayState()).controllers.renderOrder;
+    return { allocated: first.controllers.renderOrder.active.includes(id),
+      released: after.free.includes(id) && !after.active.includes(id),
+      restored: JSON.stringify(restored) === JSON.stringify(first.controllers.renderOrder) };
+  });
+  expect(ranks).toEqual({ allocated: true, released: true, restored: true });
 });
 test("cluster fragments and fire use original art in live gameplay", async ({
   page,
@@ -51,7 +65,7 @@ test("native object strips preserve ping-pong playback and feet when changing ca
 }) => {
   await start(page);
   const result = await page.evaluate(async () => {
-    const { createOriginalObject, updateOriginalObject, originalVisual } =
+    const { createOriginalObject, updateOriginalObject, updateOriginalCrate, originalVisual } =
       await import("/src/armageddon/art.js");
     const mesh = createOriginalObject("wcrate2", -10);
     const foot = () => {
@@ -67,10 +81,27 @@ test("native object strips preserve ping-pong playback and feet when changing ca
     const middle = mesh.userData.originalFrame;
     updateOriginalObject(mesh, "wcrate1", 0, 0xffff);
     const end = mesh.userData.originalFrame;
+    const { H } = await import('/src/physics.js');
+    const body = { x: 100.75 * 65536, y: 200.25 * 65536, kind: 1, state: 104,
+      progress: 0, openingProgress: 0, variant: 0, fuse: 1500, submerged: 0 };
+    updateOriginalCrate(mesh, body, { rank: 2, frame: 25, showContents: true,
+      contentName: 'Grenade', contentSpecial: true });
+    const labels = mesh.children.filter(child => child.userData.nativeCrateLabel !== undefined);
+    const crateDraw = { position: [mesh.position.x, mesh.position.y],
+      centered: [mesh.children[0].position.x, mesh.children[0].position.y],
+      labels: labels.filter(child => child.visible).length,
+      countdownBorder: [...labels.find(child => child.userData.nativeCrateLabel === 1).material.map.image
+        .getContext('2d').getImageData(1,0,1,1).data] };
+    updateOriginalCrate(mesh, { ...body, fuse: 0 }, { showContents: false });
+    crateDraw.hidden = labels.every(child => !child.visible);
+    crateDraw.expectedY = H - 200;
+    for (const label of labels) { label.geometry.dispose(); label.material.map.dispose(); label.material.dispose(); }
     mesh.children[0].geometry.dispose();
     mesh.children[0].material.dispose();
-    return { fallingFoot, landedFoot, middle, end, count: data.count };
+    return { fallingFoot, landedFoot, middle, end, count: data.count, crateDraw };
   });
+  expect(result.crateDraw).toEqual({ position: [100, result.crateDraw.expectedY], centered: [0,0],
+    labels: 2, countdownBorder: [255,255,255,255], hidden: true, expectedY: result.crateDraw.expectedY });
   expect(result.fallingFoot).toBe(-10);
   expect(result.landedFoot).toBe(-10);
   expect(result.middle).toBe(result.count - 1);

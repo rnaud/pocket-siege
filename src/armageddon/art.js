@@ -1,3 +1,5 @@
+import { nativeDrawCrate } from "./crate-draw.js";
+import { createNativeTextRenderer, paintNativeTextImage } from "./text-image-art.js";
 import { NativeSpriteDrawQueue } from "./sprite-draw-queue.js";
 import { nativeDrawWorm } from "./worm-render.js";
 import { nativeResolveWormSprite } from "./worm-sprite.js";
@@ -196,6 +198,7 @@ const names = [
 ];
 const slopeNames=slopeSprites.filter(id=>names.includes(spriteIds.sprites[id].name)).flatMap(id=>[1,2].map(offset=>spriteIds.sprites[id+offset].name));
 const animations = new Map();
+const fonts = new Map();
 async function loadSpriteBytes(name, url) {
   let failure;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -211,7 +214,6 @@ async function loadSpriteBytes(name, url) {
   throw new Error(`Cannot load ${name}: ${failure.message}`);
 }
 export async function loadOriginalArt() {
-  const fonts = new Map();
   const pending = [...new Set([...names, ...slopeNames, "cdrom", "phone"]), ...nativeStartupFonts.map(([, name]) => `font/${name}`), ...Object.values(waterSpriteIds.sprites).map(
     ({ name }) => `water/${name}`,
   )];
@@ -360,6 +362,64 @@ export function updateOriginalObject(group, name, age, progress = null) {
   group.userData.originalSprite = name;
   group.userData.originalFrame = index;
   return true;
+}
+
+const crateTextRenderers = new WeakMap();
+const fontNameById = new Map(nativeStartupFonts);
+// Browser resource adapter for004E0CC0. Each crate submits its body and labels
+// through the recovered mixed queue; the scene-wide actor queue remains separate.
+export function updateOriginalCrate(group, body, { rank = 0, labelMode = 1,
+  showContents = false, frame = 0, contentName = '', contentSpecial = false } = {}) {
+  const queue = new NativeSpriteDrawQueue(), results = new Map();
+  let textRenderers = crateTextRenderers.get(group);
+  if (!textRenderers) { textRenderers = new Map(); crateTextRenderers.set(group, textRenderers); }
+  const colors = { 7: [157,157,157], 8: [0,0,0], 9: [255,255,255] };
+  nativeDrawCrate({ ...body, rank, contentLabel: 0, fuseLabel: 1 }, { labelMode, showContents, frame }, {
+    position: () => body, submerged: () => body.submerged,
+    special: () => contentSpecial, name: () => contentName, format: String,
+    palette: id => id,
+    raster: (slot, text, font, background, border, coverage) => {
+      let renderer = textRenderers.get(slot);
+      if (!renderer) {
+        //004DFFA0 allocates256px content and48px countdown buffers.
+        renderer = createNativeTextRenderer(slot === 0 ? 256 : 48, fonts.get('stdwht1').height + 1,
+          id => fonts.get(fontNameById.get(id)), id => colors[id]);
+        textRenderers.set(slot, renderer);
+      }
+      const result = renderer.render({ text, font, background, border, coverage });
+      results.set(slot, { result, key: `${font}:${background}:${border}:${coverage}:${text}` });
+      return { image: slot, width: result.width, height: result.height };
+    },
+    image: (...args) => queue.image(...args), sprite: (...args) => queue.draw(...args),
+  });
+  const baseX = body.x >> 16, baseY = body.y >> 16;
+  group.position.set(baseX, H - baseY, group.position.z);
+  for (const child of group.children) if (child.userData.nativeCrateLabel !== undefined) child.visible = false;
+  let layer = 0;
+  queue.flush({ x: 0, y: 0, z: 0, distance: 65536 }, (x, y, sprite, progress) => {
+    const name = waterSpriteIds.sprites[sprite]
+      ? `water/${waterSpriteIds.sprites[sprite].name}` : spriteIds.sprites[sprite].name;
+    updateOriginalObject(group, name, 0, progress);
+    group.userData.originalPlane.position.set((x >> 16) - baseX, baseY - (y >> 16), layer++ * 0.001);
+  }, (x, y, slot, _sx, _sy, width, height) => {
+    let plane = group.children.find(child => child.userData.nativeCrateLabel === slot);
+    if (!plane) {
+      const canvas = document.createElement('canvas'), map = new THREE.CanvasTexture(canvas);
+      map.colorSpace = THREE.SRGBColorSpace; map.minFilter = map.magFilter = THREE.NearestFilter; map.generateMipmaps = false;
+      plane = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false }));
+      plane.userData.nativeCrateLabel = slot; group.add(plane);
+      nativePaletteDisplay.bind(plane.material, 1);
+    }
+    const { result, key } = results.get(slot);
+    if (plane.userData.nativeTextKey !== key) {
+      paintNativeTextImage(plane.material.map.image, result); plane.material.map.needsUpdate = true;
+      plane.userData.nativeTextKey = key;
+    }
+    plane.scale.set(width, height, 1);
+    plane.position.set((x >> 16) - baseX, baseY - (y >> 16), layer++ * 0.001);
+    plane.visible = true;
+  });
+  group.userData.nativeCrateDrawRecords = queue.records;
 }
 
 export function createOriginalVisual(name) {
