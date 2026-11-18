@@ -1,3 +1,4 @@
+import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
 import terrainLoad from './fixtures/armageddon/terrain-load.json' with {type:'json'};
 import imageDecompress from './fixtures/armageddon/image-decompress.json' with {type:'json'};
 import {nativeDecodeImagePixels} from '../src/armageddon/image-decompress.js';
@@ -203,7 +204,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       delete host.constructBitmap;delete host.bitmapStorage;delete host.remapBitmap;
       host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400;};
     }
-    const result=c.composed?nativeLoadTerrainFile(memory,owner+0x800,0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host);
+    if(c.nativePalette){delete host.addPaletteColor;nativeCreateGamePalette(memory,owner+0x8000,c.first,c.last);}
+    const result=c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host);
     expect(result).toBe(c.result);
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }

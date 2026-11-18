@@ -1,9 +1,10 @@
 import {nativeDecodeImagePixels} from './image-decompress.js';
 import {nativeCreatePanelImage} from './panel-resources.js';
 import {nativeBitmapStorage,nativeRemapBitmap} from './bitmap-storage.js';
+import {nativeAddGamePaletteColor} from './game-palette-memory.js';
 //004F08E0 embedded IMG reader. scratch supplies the original0x428-byte
-//temporary frame (starting at original ESP+0x10). Heap allocation and palette
-//insertion remain services; bitmap construction/storage/remap default to native.
+//temporary frame (starting at original ESP+0x10). Heap/file transport remain
+//services; bitmap operations, palette insertion and decompression default to native.
 export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
   const word=a=>memory.byte(a)|(memory.byte(a+1)<<8);
   memory.put(scratch+24,host.tellFile(file));
@@ -17,7 +18,7 @@ export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
     host.readFile(scratch+296,3,word(scratch),file);
     for(let i=0;i<word(scratch);i++) {
       const color=Array.from({length:3},(_,j)=>memory.byte(scratch+296+i*3+j));
-      memory.putByte(scratch+41+i,host.addPaletteColor(palette,color));
+      memory.putByte(scratch+41+i,host.addPaletteColor?host.addPaletteColor(palette,color):nativeAddGamePaletteColor(memory,palette,color));
     }
   }
   host.readFile(scratch+2,2,1,file);

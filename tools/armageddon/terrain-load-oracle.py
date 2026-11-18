@@ -51,20 +51,21 @@ def hook(cpu,address,size,user):
   if chunk:cpu.mem_write(dest,chunk)
   ret(len(chunk)//n if n else 0)
  elif address==stop+0x300:ret(0 if bytes(cpu.mem_read(read(sp+4),4))==b'IMG\x1a' else 1)
- elif address==0x4adcb0:
-  color=list(struct.unpack('<HHH',cpu.mem_read(read(sp+4),6)));calls.append(['color',receiver,color,snapshot()]);color_index+=1;ret(color_index+10,4)
  elif address==0x492550:
   calls.append(['allocate',read(sp+4),snapshot()]);bitmap+=0x40;pixels=owner+0x2000+(bitmap-owner-0x1000)//0x40*0x400;ret(bitmap)
  elif address==0x4924d0:
   calls.append(['array',read(sp+8),read(sp+4),snapshot()]);ret(pixels)
 for iat,target in [(0x51794c,stop+0x600),(0x51793c,stop+0x700),(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
-for address in [stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x4adcb0,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
 for pattern in [0,0xa5]:
  for variant in range(4):
   for count in [0,1,8,32]:
    cursor=0;color_index=0;calls=[];bitmap=owner+0x1000;pixels=0
    cpu.mem_write(owner,bytes([pattern])*0x10000);cpu.mem_write(stack,bytes([pattern])*0x10000);cpu.mem_write(compressed,bytes([pattern])*0x1000)
+   first,last=[(137,248),(0,2),(254,254),(2,1)][variant]
+   sp=stack+0xf000;write(sp,stop);write(sp+4,first);write(sp+8,last)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x8000);cpu.emu_start(0x4adac0,stop,count=10000)
    stream=struct.pack('<7I',0x12345678,0,1920,696,77,23,count)+bytes((i*17)&255 for i in range(count*8))
    for index,bits in enumerate([8,1,8]):
     flags=128|(64 if (variant>> (index%2))&1 else 0)
@@ -72,11 +73,11 @@ for pattern in [0,0xa5]:
     body+=bytes([1,2,3,0x88,0,0x80,3,0,0x80,0]) if flags&64 else bytes(i%4 for i in range(((9*bits+7)//8)*3))
     stream+=b'IMG\x1a'+struct.pack('<I',len(body)+8)+body
    stream+=b'\x0bcustom\\snow\x0awater\\blue'
-   arguments=[owner+0x800,0x4567,owner,owner+4,owner+8,owner+0x100,owner+0x10,owner+0x14,owner+0x18,owner+0x400,owner+0x600]
+   arguments=[owner+0x800,owner+0x8000,owner,owner+4,owner+8,owner+0x100,owner+0x10,owner+0x14,owner+0x18,owner+0x400,owner+0x600]
    sp=stack+0xf000;write(sp,stop)
    for i,v in enumerate(arguments):write(sp+4+i*4,v)
    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4cc500,stop,count=100000)
    assert cpu.reg_read(UC_X86_REG_EIP)==stop
-   cases.append(dict(composed=True,nativeBitmaps=True,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004CC500 +004F08E0 +004AB3C9',method='32 original complete terrain-file reads with three embedded images and native decompression, full68KiB memory at service boundaries and completion. Original bitmap constructor00492BC0, storage00492EF0 and remap00492DB0/004AB6D9 execute. Only CRT transport, heap allocation and palette insertion remain interfaces. Includes mixed1/8-bit layers and compression combinations, position records and trailing theme names.',cases=cases),separators=(',',':'))+'\n')
+   cases.append(dict(composed=True,nativeBitmaps=True,nativePalette=True,first=first,last=last,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004CC500 +004F08E0 +004AB3C9',method='32 original complete terrain-file reads with three embedded images and native decompression, full68KiB memory at service boundaries and completion. Original bitmap constructor00492BC0, storage00492EF0 and remap00492DB0/004AB6D9 execute. Original palette constructor004ADAC0 and insertion004ADCB0 also execute, including index zero, exhaustion and repeated colors. Only CRT transport and heap allocation remain interfaces. Includes mixed1/8-bit layers and compression combinations, position records and trailing theme names.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} composed terrain sequences')
