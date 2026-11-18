@@ -1,3 +1,5 @@
+import sceneTeamFlags from './fixtures/armageddon/scene-team-flags.json' with {type:'json'};
+import {nativeCreateSceneTeamFlags} from '../src/armageddon/scene-team-flags.js';
 import sceneHUDResources from './fixtures/armageddon/scene-hud-resources.json' with {type:'json'};
 import {nativeLoadSceneHUDResources} from '../src/armageddon/scene-hud-resources.js';
 import sceneThemeResources from './fixtures/armageddon/scene-theme-resources.json' with {type:'json'};
@@ -37,7 +39,7 @@ import archiveDirectory from './fixtures/armageddon/archive-directory.json' with
 import {nativeLoadArchiveDirectory} from '../src/armageddon/archive-directory.js';
 import bitmapRectangle from './fixtures/armageddon/bitmap-rectangle.json' with {type:'json'};
 import {nativeFillBitmapRect} from '../src/armageddon/bitmap-rectangle.js';
-import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
+import {nativeCreateGamePalette,nativeFindClosestGamePaletteColor} from '../src/armageddon/game-palette-memory.js';
 import terrainLoad from './fixtures/armageddon/terrain-startup.json' with {type:'json'};
 import {nativeLoadTerrainLayers,nativeLoadTerrainThemes,nativeLoadTerrainSoil,nativeLoadTerrainGrass,nativePrepareTerrainMasks,nativeCreateTerrain} from '../src/armageddon/terrain-startup.js';
 import imageDecompress from './fixtures/armageddon/image-decompress.json' with {type:'json'};
@@ -207,6 +209,35 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneTeamFlags.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x40000,c.pattern),calls=[];let allocated=0;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    const word=(at,value)=>bytes.writeUInt16LE(value&65535,at-owner);
+    memory.put(owner+0x5cd0,owner+0x10000);memory.put(owner+0x10008,owner+0x6000);memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200100);
+    memory.putByte(owner+0x14886,c.count);memory.put(owner+0x22454,0x123);word(owner+0x890e,c.used);
+    for(let i=0;i<8;i++) {
+      word(owner+0x8910+i*2,i);
+      [43,71,97].forEach((m,j)=>word(owner+0x800c+i*6+j*2,(i*m)&255));
+    }
+    for(let team=0;team<6;team++) {
+      for(let i=0;i<768;i++)memory.putByte(owner+0x14ea4+team*3000+i,(Math.floor(i/3)*[43,71,97][i%3]+(Math.floor(i/3)>=8?team:0))&255);
+      for(let i=0;i<340;i++)memory.putByte(owner+0x151a4+team*3000+i,(Math.floor(i/20)+i%20+team*7)%12);
+    }
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeCreateSceneTeamFlags(memory,owner,{
+      getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return owner+0x8000;},
+      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);return owner+0x1000+allocated*0x40;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x4000+allocated*0x200;},
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+    for(const lookup of c.lookups) {
+      lookup.color.forEach((value,i)=>word(owner+0xa000+i*2,value));
+      const error={value:0x12345678};memory.put(owner+0xa010,error.value);
+      expect(nativeFindClosestGamePaletteColor(memory,owner+0x8000,lookup.color,error)).toBe(lookup.index);
+      expect(error.value).toBe(lookup.error);memory.put(owner+0xa010,error.value);
+      expect(snapshot()).toBe(lookup.sha256);
+    }
+  }
   for(const c of sceneHUDResources.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern),calls=[];let images=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),putByte:(a,v)=>{bytes[a-owner]=v;}};

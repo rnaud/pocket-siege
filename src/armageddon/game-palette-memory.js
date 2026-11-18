@@ -31,3 +31,18 @@ export function nativeAddGamePaletteColor(memory,palette,color) {
   memory.putByte(palette+0x60c+index,1);memory.put(palette+0xb10,1);
   return index;
 }
+
+//004ADD80: nearest used nonzero index, with original weighted RGB distance.
+//Ties retain the first index; an empty palette leaves the error output intact.
+export function nativeFindClosestGamePaletteColor(memory,palette,color,error) {
+  const rgb=color.map(v=>v<<16>>16);let selected=0,best=1000000;
+  for(let i=0;i<word(memory,palette+0x90e);i++) {
+    const index=word(memory,palette+0x910+i*2);
+    if(!index)continue;
+    const distance=rgb.reduce((sum,v,c)=>sum+Math.abs(word(memory,palette+12+index*6+c*2)-v)*[3,5,2][c],0);
+    if(!distance){if(error)error.value=0;return index;}
+    if(distance<best){best=distance;selected=index;}
+  }
+  if(selected&&error)error.value=Math.trunc(best*100/765);
+  return selected;
+}
