@@ -37,6 +37,7 @@ test("play a full destructive turn with responsive controls", async ({
   // This fixed shot needs a fixed terrain fixture; the default picks an original map.
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await expect(page.locator("#menu")).not.toBeVisible();
   await expect(page.locator("#fire")).toBeEnabled();
   expect(
@@ -44,14 +45,17 @@ test("play a full destructive turn with responsive controls", async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  const finishTurn = target => page.evaluate(target => {
+    for(let frames=0;frames<1500;frames+=25) {
+      window.siege.debug.advanceReplayFrames(25);
+      if(window.siege.getState().team===target)return target;
+    }
+    return window.siege.getState().team;
+  },target);
   const before = await page.evaluate(() => window.siege.getState());
   await setAim(page, "-60");
   await chargeShot(page);
-  await expect
-    .poll(async () => page.evaluate(() => window.siege.getState().team), {
-      timeout: 20000,
-    })
-    .toBe(1);
+  expect(await finishTurn(1)).toBe(1);
   const after = await page.evaluate(() => window.siege.getState());
   expect(after.explosions).toBeGreaterThan(0);
   expect(after.terrainPixels).toBeLessThan(before.terrainPixels);
@@ -63,11 +67,7 @@ test("play a full destructive turn with responsive controls", async ({
   await page.locator('[data-weapon="grenade"]').click();
   await setAim(page, "90");
   await chargeShot(page);
-  await expect
-    .poll(async () => page.evaluate(() => window.siege.getState().team), {
-      timeout: 20000,
-    })
-    .toBe(0);
+  expect(await finishTurn(0)).toBe(0);
   expect(errors).toEqual([]);
 });
 test("computer takes its turn and returns control", async ({ page }) => {
@@ -1039,7 +1039,9 @@ test("field kit teleport and girder target the battlefield", async ({
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="teleport"]').click();
   let box = await page.locator("#arena").boundingBox();
@@ -1058,7 +1060,9 @@ test("field kit teleport and girder target the battlefield", async ({
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="girder"]').click();
   box = await page.locator("#arena").boundingBox();

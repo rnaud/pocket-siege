@@ -1,3 +1,4 @@
+import { nativeInitializeWormPlacement } from "./worm-placement.js";
 import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom } from './spawn-pool.js';
 import { nativeInitializePhysics } from './physics-create.js';
 import { nativeInitializeWormResources } from './worm-resources.js';
@@ -58,14 +59,7 @@ export function nativeInitializeWorm(memory,sceneMemory,team,worm,configuration,
   for(const o of [0x180,0x184,0x188])put(o,0);
   const health=Math.max(0,Math.min(9999,host.wormHealth(team,worm)));
   memory.set(new TextEncoder().encode(String(health)+'\0'),0x326);
-  put(0x288,0x420cc6);put(0x40,2);
-  const place=()=>{if(host.placeWorm(x,y))return true;put(0x90,x);put(0x94,y);put(0xb8,0);return false;};
-  place();put(0x40,get(0x288));put(0x78,0x9999);put(0x7c,0);
-  put(0x60,Math.trunc(((Math.trunc(((x+y)|0)/256)|0)&65535)/20)+0xc000);
-  put(0xb4,0x20000);put(0x4c,1);put(0x48,1);
-  if(!deployment && (y>>16)<sg(0x804)) {
-    do {if(place())break;y=(y+65536)|0;} while((y>>16)<sg(0x804));
-  }
+  nativeInitializeWormPlacement(memory,x,y,deployment,sg(0x804),host.placeWorm);
   const animation=host.allocateAnimation(0x164);put(0x350,animation?host.constructAnimation(animation,sg(8)):0);
   if(host.initializeResources)host.initializeResources();else nativeInitializeWormResources(memory,host.resources);
   host.changeState(deployment?100:101);

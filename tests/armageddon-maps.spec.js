@@ -1,3 +1,5 @@
+import { nativePlaceWormAt } from "../src/armageddon/worm-placement.js";
+import { nativeSceneCollision } from "../src/armageddon/collision-scene.js";
 import { nativeDefaultMapObjects } from "../src/armageddon/map-setup.js";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
@@ -110,7 +112,7 @@ test("authored map is playable at full size and switching back restores the host
 test("all authored maps support six separated, grounded worm spawns including caves", { tag: "@logic" }, async () => {
   const { originalMapSpawns } =
     await import("../src/armageddon/map-placement.js");
-  const { stepWorm, bodyBlocked } = await import("../src/physics.js");
+  const { bodyBlocked } = await import("../src/physics.js");
   const {nativeMapTheme}=await import("../src/armageddon/map-theme.js");
   const theme=nativeMapTheme(Object.fromEntries(["soil","grass","bridge-l","bridge","bridge-r"].map(name=>{
     const bytes=fs.readFileSync(`public/armageddon/media/level/forest/level/${name}.img`);
@@ -129,15 +131,14 @@ test("all authored maps support six separated, grounded worm spawns including ca
       const x=object.kind==="mine"?object.payload[2]:object.x,y=object.kind==="mine"?object.payload[3]:object.y;
       expect(positions.some(p=>p.x===x/65536 && p.y===terrain.height-y/65536)).toBe(false);
     }
-    const worms = positions.map((p) => ({
-      ...p,
-      vx: 0,
-      vy: 0,
-      hp: 100,
-      ground: true,
-    }));
-    for (let tick = 0; tick < 240; tick++)
-      for (const worm of worms) stepWorm(worm, terrain, 1 / 120);
+    const worms=[];
+    for(const p of positions) {
+      const worm={...p,vx:0,vy:0,hp:100};
+      const placed=nativePlaceWormAt(Math.round(p.x*65536),Math.round((terrain.height-p.y)*65536),terrain.height-80,96,
+        (x,y,body)=>nativeSceneCollision(worm,body,x/65536,terrain.height-y/65536,terrain,worms,terrain.height,[]));
+      worm.x=placed.x/65536;worm.y=terrain.height-placed.y/65536;
+      worm.ground=bodyBlocked(terrain,worm.x,worm.y-1);worms.push(worm);
+    }
     for (const [i, worm] of worms.entries()) {
       expect(worm.y, asset.id).toBeGreaterThan(80);
       expect(worm.y, asset.id).toBeLessThanOrEqual(terrain.height);

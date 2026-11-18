@@ -1,3 +1,4 @@
+import { nativePlaceWormAt } from "./armageddon/worm-placement.js";
 import { nativeTeleportPlacement } from "./armageddon/teleport-placement.js";
 import { captureReplayResources, restoreReplayResources } from "./armageddon/replay-render-adapter.js";
 import { captureReplayEnvironment, restoreReplayEnvironment } from "./armageddon/replay-environment-adapter.js";
@@ -1127,10 +1128,18 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   terrainDirty = false;
   worms = [];
   if(authored)spawnHazards(terrain.nativeSpawnSetup.objects);
-  worms = spawns.map((p, index) =>
-    createWorm(index < 3 ? 0 : 1, index % 3, p.x, p.y),
-  );
-  for (let i = 0; i < 240; i++)
+  for(const [index,p] of spawns.entries()) {
+    const worm=createWorm(index<3?0:1,index%3,p.x,p.y);
+    if(authored) {
+      const placed=nativePlaceWormAt(Math.round(p.x*65536),Math.round((H-p.y)*65536),
+        Math.floor(H-waterLevel),NATIVE_MINE_FRICTION,
+        (x,y,body)=>nativeSceneCollision(worm,body,x/65536,H-y/65536,terrain,worms,H));
+      worm.x=placed.x/65536;worm.y=H-placed.y/65536;
+      worm.renderY=worm.y;worm.ground=bodyBlocked(terrain,worm.x,worm.y-1);
+    }
+    worms.push(worm);
+  }
+  if(!authored)for (let i = 0; i < 240; i++)
     for (const w of worms) stepWorm(w, terrain, 1 / 120, gravityScale);
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
   nativeTeamRotation = nativeTeamRotationReset({ groups: 2,
