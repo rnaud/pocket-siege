@@ -58,11 +58,8 @@ function nativeAirborneBody(worm, height, friction) {
 // 65 -> 6E retains complex body response and flags;004D7730 changes its
 // category to3.004F7490 supplies no launch impulse or suspension change.
 export function attachNativeDrillFlight(worm, { height, friction = 96 }) {
-  const body = nativeAirborneBody(worm, height, friction);
-  body.shape = 3;
-  body.state = 0x6e;
-  body.type = 3;
-  body.complex = 1;
+  const previous={...nativeAirborneBody(worm,height,friction),state:0x65,type:2,complex:1};
+  const body={...nativeWormTransitionBody(previous,0x6e,{}).body,state:0x6e};
   worm.nativeFlight = body;
 }
 
@@ -107,11 +104,8 @@ export function stepNativeDrillFlight(worm, environment, collide) {
 // 65 -> 6c common transition clears collision flag4, preserves complex bounce,
 // and changes category to3. The original entry supplies the launch velocity.
 export function attachNativeFirePunchFlight(worm, { height, friction = 96 }, power) {
-  const body = nativeAirborneBody(worm, height, friction);
-  body.state = 0x6c;
-  body.type = 3;
-  body.complex = 1;
-  body.flags &= ~4;
+  const previous={...nativeAirborneBody(worm,height,friction),state:0x65,type:2,complex:1};
+  const body={...nativeWormTransitionBody(previous,0x6c,{}).body,state:0x6c};
   const calls = nativeFirePunchEntry(power, body.x, body.y);
   const velocity = calls.find(call => call.operation === "velocity");
   body.vx = velocity.x;
@@ -282,9 +276,9 @@ export function stepNativeJumpFlight(
             landingSpeed = Math.max(0, (event.velocity[1] / 65536) * 50);
             // 79 -> 7a common body changes. Animation/audio/scheduler side effects
             // are delivered as events; they are not silently treated as applied.
-            body.complex = 1;
-            body.type = 2;
-            body.drag = 65536;
+            const transition=nativeWormTransitionBody({...body,state:previous},0x7a,{});
+            Object.assign(body,transition.body,{state:0x7a});
+            events.push(...transition.calls);
           }
           events.push(previous === 0x78 && event.operation === "sound"
             ? { ...event, operation: "jetpackContactSound" } : event);
@@ -318,8 +312,9 @@ export function stepNativeFirePunchFlight(worm, environment, collide, sprite, re
   }, record, environment.random ?? (() => 0));
   const finished = calls.some(call => call.operation === "state");
   if (finished) {
-    body.state = 0x6a;
-    body.flags |= 4;
+    const transition=nativeWormTransitionBody(body,0x6a,{});
+    Object.assign(body,transition.body,{state:0x6a});
+    result.events.push(...transition.calls);
     worm.ground = true;
     worm.nativeFlight = null;
   }

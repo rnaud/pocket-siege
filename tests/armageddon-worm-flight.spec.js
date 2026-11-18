@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   attachNativeJumpFlight,
+  attachNativeParachuteFlight,
   stepNativeJumpFlight,
 } from "../src/armageddon/worm-flight.js";
 const environment = { height: 650, waterLevel: 0 };
@@ -30,14 +31,17 @@ test("composed jump flight preserves native impulse and exact force integration"
 });
 
 test("native flight lands with impact velocity retained before stopping", { tag: "@logic" }, () => {
-  for (const [direction, backflip] of [
+  for (const [direction, backflip, parachute] of [
     [1, 0],
     [-1, 0],
     [0, 0],
     [0, 1],
+    [1, 0, true],
   ]) {
     const w = worm();
     attachNativeJumpFlight(w, environment, direction, backflip);
+    if(parachute)attachNativeParachuteFlight(w,{...environment,windPercent:100});
+    w.nativeFlight.field250=23;
     let result;
     for (let tick = 0; tick < 100 && w.nativeFlight; tick++)
       result = stepNativeJumpFlight(
@@ -46,7 +50,12 @@ test("native flight lands with impact velocity retained before stopping", { tag:
         (x, y) => (y <= 10 ? 1 : 0),
       );
     expect(result.landed).toBe(true);
-    expect(result.landingSpeed).toBeGreaterThan(100);
+    expect(result.body.field250).toBe(0);
+    expect(result.body.windScale).toBe(0);
+    expect(result.body.type).toBe(2);
+    expect(result.body.complex).toBe(1);
+    if(parachute){expect(result.landingSpeed).toBeGreaterThan(0);expect(result.landingSpeed).toBeLessThan(100);}
+    else expect(result.landingSpeed).toBeGreaterThan(100);
     expect(w.nativeFlight).toBeNull();
     expect(w.ground).toBe(true);
     expect(w.vx).toBe(0);
@@ -130,6 +139,7 @@ test("Fire Punch rises with native forces and exits directly to recoil on ground
   const w = worm();
   const record = { '0x70':30, '0x74':45, '0x78':100 };
   attachNativeFirePunchFlight(w, environment, 100);
+  w.nativeFlight.field250=23;
   expect(w.nativeFlight.flags & 4).toBe(0);
   expect(w.nativeFlight.type).toBe(3);
   expect(w.nativeFlight.complex).toBe(1);
@@ -149,6 +159,11 @@ test("Fire Punch rises with native forces and exits directly to recoil on ground
       if (call.operation === 'state') expect(call.value).toBe(0x6a);
     }
     if (switched) expect(area).toHaveLength(0);
+    if(result.finished){
+      expect(result.body.state).toBe(0x6a);
+      expect(result.body.flags&4).toBe(4);
+      expect(result.body.field250).toBe(0);
+    }
     expect(result.events.some(event => event.operation === 'state' && event.target === 0x7a)).toBe(false);
     finished = result.finished;
   }
