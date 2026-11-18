@@ -37,3 +37,19 @@ export function nativeCreatePhysicsAt(memory,address,parent,category,shape,host)
   });
   return address;
 }
+
+//004CA7E0: stable compaction of dirty lists only. Inactive buffer tails survive.
+export function nativeCompactPhysicsMemory(memory,environment) {
+  for(let index=0;index<33;index++) {
+    const list=environment+(index===0?0x18:0x34+(index-1)*0x1c);
+    if(!memory.get(list+8))continue;
+    const source=memory.get(list+16),target=memory.get(list+20);
+    let count=0;
+    for(let i=0;i<(memory.get(list+12)|0);i++) {
+      const body=memory.get(source+i*4);
+      if(body)memory.put(target+count++*4,body);
+    }
+    memory.put(list+24,source);memory.put(list+16,target);memory.put(list+20,source);
+    memory.put(list+12,count);memory.put(list+8,0);
+  }
+}

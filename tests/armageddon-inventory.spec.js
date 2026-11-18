@@ -1,3 +1,4 @@
+import physicsCompact from './fixtures/armageddon/physics-compact.json' with {type:'json'};
 import fullStartupDispatch from './fixtures/armageddon/full-startup-dispatch.json' with {type:'json'};
 import fullStartupSettings from './fixtures/armageddon/full-startup-settings.json' with {type:'json'};
 import fullStartupMemory from './fixtures/armageddon/full-startup-memory.json' with {type:'json'};
@@ -18,7 +19,7 @@ import wormMemoryAnimation from './fixtures/armageddon/worm-memory-animation.jso
 import wormMemory from './fixtures/armageddon/worm-memory.json' with {type:'json'};
 import {nativeCreateWormAt} from '../src/armageddon/worm-create.js';
 import physicsMemory from './fixtures/armageddon/physics-memory.json' with {type:'json'};
-import {nativeCreatePhysicsAt,nativeRegisterPhysicsMemory} from '../src/armageddon/physics-memory.js';
+import {nativeCreatePhysicsAt,nativeRegisterPhysicsMemory,nativeCompactPhysicsMemory} from '../src/armageddon/physics-memory.js';
 import groupDispatch from './fixtures/armageddon/event-group-dispatch.json' with {type:'json'};
 import {nativeDispatchEventGroupChildren} from '../src/armageddon/event-group.js';
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory,nativeSendTaskEventMemory} from '../src/armageddon/task-memory.js';
@@ -127,6 +128,17 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const label=`constructor case ${c.bits}: world=${!!c.world}, objects=${!!c.objects}, barrels=${!!c.barrels}, mines=${!!c.mines}`;
     expect(calls,label).toEqual(c.calls);
     expect(createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),label).toBe(c.sha256);
+  }
+  for(const {seed,sha256} of physicsCompact.cases) {
+    const bytes=Uint8Array.from({length:0x10000},(_,i)=>(i*13+seed)&255),view=new DataView(bytes.buffer);
+    const memory={get:at=>view.getUint32(at-0x2000000,true),put:(at,value)=>view.setUint32(at-0x2000000,value,true)};
+    for(let index=0;index<33;index++) {
+      const at=0x2000000+(index===0?0x18:0x34+(index-1)*0x1c),storage=0x2001000+index*0x200,count=(seed+index)%17;
+      for(const [offset,value] of [[4,32],[8,(seed+index)%3],[12,count],[16,storage],[20,storage+0x100],[24,0xabcdef01]])memory.put(at+offset,value);
+      for(let slot=0;slot<count;slot++)memory.put(storage+slot*4,(seed+slot+index)%4===0?0:0x80000000+index*32+slot);
+    }
+    nativeCompactPhysicsMemory(memory,0x2000000);
+    expect(createHash('sha256').update(bytes).digest('hex'),`registry compaction ${seed}`).toBe(sha256);
   }
   const physicsActual=[],physicsExpected=[];
   for(const row of physicsMemory.cases) {
