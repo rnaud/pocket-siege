@@ -1,3 +1,4 @@
+import {nativeCreateTerrainToolMasks} from './terrain-tool-mask-memory.js';
 import {nativeCreateTerrainMasks} from './terrain-crater-masks.js';
 import {nativeBitmapPixel8,nativeDestroyBitmap8} from './bitmap-storage.js';
 import {nativeLoadNamedArchiveImage} from './terrain-image.js';
@@ -69,4 +70,16 @@ export function nativePrepareTerrainMasks(memory,terrain,host) {
   host.submitRendererPalette(renderer,2);
   host.bindTerrainLayers(renderer,memory.get(terrain+0x8f8),memory.get(terrain+0x908),memory.get(terrain+0x904));
   nativeCreateTerrainMasks(memory,terrain,host);
+}
+
+//004A78A0..004A7B3A: compose the original resource-loading prefix through
+//crater masks and tool silhouettes. Later terrain state/body setup follows.
+export function nativeInitializeTerrainResources(memory,terrain,settings,scratch,host) {
+  const services={...host,archiveScratch:scratch};
+  nativeLoadTerrainLayers(memory,terrain,settings,scratch,services);
+  nativeLoadTerrainThemes(memory,terrain,settings.metadata,services);
+  nativeLoadTerrainSoil(memory,terrain,scratch,services);
+  nativeLoadTerrainGrass(memory,terrain,scratch,services);
+  nativePrepareTerrainMasks(memory,terrain,services);
+  nativeCreateTerrainToolMasks(memory,terrain,settings.maskImage,services);
 }
