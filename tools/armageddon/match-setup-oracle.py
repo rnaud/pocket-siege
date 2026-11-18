@@ -139,6 +139,11 @@ languageObject=task+0x800;languageTable=task+0x1000;nameGetter=task+0x1800;empty
 write(task+0x2a0,scene);write(task+0x5cd0,scene);write(languageObject,languageTable)
 cpu.mem_write(languageTable,struct.pack('<I',nameGetter)*256)
 cpu.mem_write(nameGetter,b'\xb8'+struct.pack('<I',emptyName)+b'\xc3')
+modeObject=task+0x2000;modeTable=task+0x2100;modeCallback=task+0x2200
+write(modeObject,modeTable);write(modeTable+4,modeCallback);cpu.mem_write(modeCallback,b'\xc2\x04\x00')
+modeCalls=[]
+def modeHook(cpu,address,size,user):modeCalls.append(read(cpu.reg_read(UC_X86_REG_ESP)+4)&255)
+cpu.hook_add(UC_HOOK_CODE,modeHook,begin=modeCallback,end=modeCallback)
 cases=[]
 for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['schemes']:
  for templateIndex,template in enumerate(templates):
@@ -169,9 +174,14 @@ for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['s
   cpu.emu_start(0x4a55d0,0x4a55e3,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4a55e3
   cpu.reg_write(UC_X86_REG_ESI,task);cpu.reg_write(UC_X86_REG_ESP,stack+0xf000)
   write(0x561ec8,0xdeadbeef)
+  cpu.ctl_remove_cache(0x49d454,0x49db9a)
   cpu.emu_start(0x49d454,0x49d47a,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x49d47a
-  cases.append(dict(resource_id=scheme['resource_id'],directory_available=available,writes=writes,handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
-    team_counter=read(0x561ec8),gameplay_sha256=hashlib.sha256(cpu.mem_read(scene,0x20000)).hexdigest(),gameplay_mode=templateIndex&1,gameplay_tall=(templateIndex>>1)&1,result=result,resolution=resolution,display_flags=displayFlags,lcid=lcid,resource=resource.hex(),country=read(0x6f47f4),options=options,music_enabled=musicEnabled,music=bytes(cpu.mem_read(0x6f3ec0,0xc6)).hex(),profile=profile,random_state=read(thread+0x14),paths=paths,calls=calls,scheme=bytes(cpu.mem_read(0x6f454c,0x1c4)).hex(),
+  gameplayHash=hashlib.sha256(cpu.mem_read(scene,0x20000)).hexdigest()
+  stateInputs=[[0x24,modeObject],[0x1474,0],[0x1500,0],[0x1b18,0],[0x1920,0],[0x1668,0],[0x1b8b0,templateIndex*15],[0x1b8d4,0],[0x1b8d8,0]]
+  for offset,value in stateInputs:write(scene+offset,value)
+  modeCalls.clear();cpu.emu_start(0x49d47a,0x49db9a,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x49db9a
+  cases.append(dict(state_inputs=stateInputs,state_calls=list(modeCalls),state_sha256=hashlib.sha256(cpu.mem_read(scene,0x20000)).hexdigest(),resource_id=scheme['resource_id'],directory_available=available,writes=writes,handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
+    team_counter=read(0x561ec8),gameplay_sha256=gameplayHash,gameplay_mode=templateIndex&1,gameplay_tall=(templateIndex>>1)&1,result=result,resolution=resolution,display_flags=displayFlags,lcid=lcid,resource=resource.hex(),country=read(0x6f47f4),options=options,music_enabled=musicEnabled,music=bytes(cpu.mem_read(0x6f3ec0,0xc6)).hex(),profile=profile,random_state=read(thread+0x14),paths=paths,calls=calls,scheme=bytes(cpu.mem_read(0x6f454c,0x1c4)).hex(),
     sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest(),inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest()))
 musicCases=[]
 for selection in [0,-1,1,11,2147483647,-2147483648]:

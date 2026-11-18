@@ -1,3 +1,5 @@
+import matchState from './fixtures/armageddon/match-state.json' with {type:'json'};
+import {nativeInitializeMatchState} from '../src/armageddon/match-state.js';
 import teamAccess from './fixtures/armageddon/team-access.json' with {type:'json'};
 import {nativeInitializeTeamAccess} from '../src/armageddon/team-access.js';
 import {nativeInitializeGameplayRecords} from '../src/armageddon/gameplay-setup.js';
@@ -51,6 +53,16 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const stateActual=[],stateExpected=[];
+  for(const row of matchState.cases) {
+    const scene=new Uint8Array(accessPattern),view=new DataView(scene.buffer),calls=[];
+    for(const [offset,value] of row.words)view.setInt32(offset,value,true);
+    for(const [offset,value] of row.bytes)scene[offset]=value;
+    nativeInitializeMatchState(scene,mode=>calls.push(mode));
+    stateActual.push([createHash('sha256').update(scene).digest('hex'),calls]);
+    stateExpected.push([row.sha256,row.calls]);
+  }
+  expect(stateActual).toEqual(stateExpected);
   const accessActual=[],accessExpected=[];
   for(const row of teamAccess.cases) {
     const scene=new Uint8Array(accessPattern),counter=new Uint8Array([239,190,173,222]);
@@ -148,6 +160,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     nativeInitializeGameplayRecords(scene,memory,()=>new Uint8Array(1),counter);
     expect(new DataView(counter.buffer).getUint32(0,true)).toBe(row.team_counter);
     expect(createHash('sha256').update(scene).digest('hex')).toBe(row.gameplay_sha256);
+    for(const [offset,value] of row.state_inputs)sceneView.setInt32(offset,value,true);
+    const stateCalls=[];nativeInitializeMatchState(scene,mode=>stateCalls.push(mode));
+    expect(stateCalls).toEqual(row.state_calls);
+    expect(createHash('sha256').update(scene).digest('hex')).toBe(row.state_sha256);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
 
   }
