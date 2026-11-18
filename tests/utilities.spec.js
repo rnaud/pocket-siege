@@ -1,3 +1,4 @@
+import crateSchemes from './fixtures/armageddon/crate-scheme.json' with {type:'json'};
 import { createNativeCrateScheme } from '../src/armageddon/crate-scheme.js';
 import crateContentPool from './fixtures/armageddon/crate-content-pool.json' with { type: 'json' };
 import { nativeCrateContentPool } from '../src/armageddon/crate-content-pool.js';
@@ -257,6 +258,8 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
   }
+  expect(crateSchemes.cases.map(row=>createNativeCrateScheme(row.resource_id,row.scene)))
+    .toEqual(crateSchemes.cases.map(row=>({pool:row.pool,used:[],ammo:row.ammo})));
   for (const row of crateContentPool.schemes)
     expect(createNativeCrateScheme(row.resource_id,{tall:row.tall}).pool).toEqual(row.pool);
   for (const row of crateContentPool.cases)
