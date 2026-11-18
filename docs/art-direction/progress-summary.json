@@ -4,7 +4,7 @@
   "areas": [
     {
       "title": "Worm movement & physics",
-      "live": "Native collision masks, jump flight, hurt motion, drowning and several recovery paths are integrated. Fresh worm initialization now matches original spawn selection, state fields, gravity-derived thresholds, labels, ownership slots and placement retry ordering against full constructor memory captures. Physics/placement/state-entry adapters still need live composition. Fresh worm construction now defaults to native physics-memory initialization and shares resource setup with replay restoration; composed constructor captures also verify the registration-time body state. Environment membership, placement and state entry still need composition. The fresh worm factory now composes task attachment/registration and native environment membership, verified with original constructor/list-insertion captures. Spawn providers, placement and state entry remain adapters. Fresh worm construction now uses recovered weighted/side spawn selection, reservation and a separate spawn random stream, verified in native constructor sequences. Candidate generation and live match integration remain.",
+      "live": "Native collision masks, jump flight, hurt motion, drowning and several recovery paths are integrated. Fresh worm initialization now matches original spawn selection, state fields, gravity-derived thresholds, labels, ownership slots and placement retry ordering against full constructor memory captures. Physics/placement/state-entry adapters still need live composition. Fresh worm construction now defaults to native physics-memory initialization and shares resource setup with replay restoration; composed constructor captures also verify the registration-time body state. Environment membership, placement and state entry still need composition. The fresh worm factory now composes task attachment/registration and native environment membership, verified with original constructor/list-insertion captures. Spawn providers, placement and state entry remain adapters. Fresh worm construction now uses recovered weighted/side spawn selection, reservation and a separate spawn random stream, verified in native constructor sequences. Landgen candidate generation is separately verified; live match integration remains.",
       "remaining": "Complete the movement/state lifecycle, ground interactions and collision ordering; compare full movement sequences with the original.",
       "evidence": [
         "native_worm_spawn_pool",
@@ -86,9 +86,10 @@
     },
     {
       "title": "Maps & terrain",
-      "live": "Original authored maps, terrain objects, collision masks and animated water are available in the game. Fresh worm construction now uses recovered weighted/side spawn selection, reservation and a separate spawn random stream, verified in native constructor sequences. Candidate generation and live match integration remain. Native pool construction now matches original coordinate packing, duplicate rejection and the64-position capacity against executable captures; terrain candidate discovery remains separate.",
+      "live": "Original authored maps, terrain objects, collision masks and animated water are available in the game. Executable-verified Landgen candidate discovery and fallback carving now compose with native64-position pool construction and natural mine/barrel selection, preserving separate setup random streams. Worm construction consumes the remaining pool through native weighted/side selection and reservation. This setup pipeline is not yet connected to live match initialization.",
       "remaining": "Complete native procedural generation, placement constraints, bridges, terrain-theme behavior and terrain history/dirty-region handling.",
       "evidence": [
+        "native_map_spawn_setup",
         "native_worm_spawn_pool",
         "live_authored_maps",
         "authored_map_placement",

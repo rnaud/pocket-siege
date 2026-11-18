@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import indexedFixture from "./fixtures/armageddon/map-generation.json" with { type: "json" };
 import packedFixture from "./fixtures/armageddon/map-generation-packed.json" with { type: "json" };
 import { nativeMapFallbackMasks } from "../src/armageddon/map-fallback.js";
-import { nativeGenerateMapCandidates } from "../src/armageddon/map-generation.js";
+import { nativeGenerateMapSetup } from "../src/armageddon/map-setup.js";
 const hash = (pixels) => createHash("sha256").update(pixels).digest("hex");
 for (const [name, fixture] of [
   ["indexed", indexedFixture],
@@ -56,7 +56,8 @@ for (const [name, fixture] of [
         },
       };
       let seed = c.seed;
-      const result = nativeGenerateMapCandidates(
+      const sceneMemory=new Uint8Array(0x12420);
+      const result = nativeGenerateMapSetup(
         layers,
         {
           water: c.water,
@@ -66,8 +67,12 @@ for (const [name, fixture] of [
           existing: [{ x: 50, y: 50 }],
         },
         () => (seed = (Math.imul(seed, 0x19660d) + 0x3c6ef35f) >>> 0),
+        {count:0,reserve:64},sceneMemory,
       );
       expect(result.points, JSON.stringify(c)).toEqual(c.ordered);
+      expect(result.objects).toEqual([]);
+      expect(result.spawnPool).toEqual(c.ordered.map(({x,y})=>({position:((x<<16)+y)|0,weight:1})));
+      expect(new DataView(sceneMemory.buffer).getUint32(0x1241c,true)).toBe(0);
       expect(result.discovered).toEqual(c.discovered);
       expect(result.existing).toEqual(c.existing);
       expect(hash(result.grid.cells)).toBe(c.gridHash);

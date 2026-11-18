@@ -1,3 +1,4 @@
+import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn } from "./spawn-pool.js";
 //004EBA80 consumes the weighted terrain candidate pool, reserving enough
 // positions for worms.004EE900 uses the plain LCG during world setup.
 export function nativeMapObjects(points, settings, random) {
@@ -6,25 +7,13 @@ export function nativeMapObjects(points, settings, random) {
   let ordinal = 0;
   const choose = (mode) => {
     if (!remaining.length) return null;
-    let index = 0;
-    if (mode === "last") index = remaining.length - 1;
-    else if (mode === "weighted") {
-      const value = (random() >>> 8) & 65535;
-      const total = remaining.reduce((sum, p) => (sum + p.weight) | 0, 0);
-      let weight = 0;
-      index = remaining.findIndex((p) => {
-        weight = (weight + p.weight) | 0;
-        return value < Math.trunc(Math.imul(weight, 65536) / total);
-      });
-      if (index < 0) return null;
-    }
-    const point = remaining[index];
-    //004CBDB0 removes the first matching packed coordinate, retaining order.
-    remaining.splice(
-      remaining.findIndex((p) => p.position === point.position),
-      1,
-    );
-    return point.position;
+    const output={value:0};
+    const found=mode==="weighted"
+      ? nativeSelectSpawn(remaining,random()>>>8,output)
+      : nativeSelectSideSpawn(remaining,mode==="last",output);
+    if(!found)return null;
+    nativeReserveSpawn(remaining,output.value);
+    return output.value;
   };
   while (ordinal < settings.count && remaining.length > settings.reserve) {
     const mode =

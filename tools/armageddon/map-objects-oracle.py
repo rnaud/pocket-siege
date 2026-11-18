@@ -48,19 +48,26 @@ def hook(cpu,address,size,user):
 cpu.hook_add(UC_HOOK_CODE,hook)
 points=[dict(position=((100+i*70)<<16)|(200+i*5),weight=i%4+1) for i in range(12)]
 cases=[]
-for reserve in [0,6]:
- for count in [0,3,20]:
-  for kind in [0,1,2]:
-   for edges in [0,1]:
-    for fuse in [-1,3]:
-     for seed in [0,42]:
-      write(pool+4,len(points))
-      for i,p in enumerate(points):write(entries+i*8,p['position']);write(entries+i*8+4,p['weight'])
-      cpu.mem_write(context+0x4886,b'\x01');cpu.mem_write(context+0x543c,bytes([reserve]));cpu.mem_write(context+0x11d50,bytes([kind,edges]));cpu.mem_write(scheme+0xd5a6,bytes([fuse&255,count]));write(context+0x1241c,seed)
-      calls=[];sp=stack+0xff00;write(sp,stop);write(sp+4,scheme);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
-      cpu.emu_start(0x4eba80,stop,count=100000)
-      if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Natural placement did not finish')
-      remaining=[dict(position=read(entries+i*8),weight=read(entries+i*8+4)) for i in range(read(pool+4))]
-      cases.append(dict(reserve=reserve,count=count,kind=kind,edges=edges,fuse=fuse,seed=seed,calls=calls,remaining=remaining,randomState=read(context+0x1241c)))
+for buildPool in [False,True]:
+ for reserve in [0,6]:
+  for count in [0,3,20]:
+   for kind in [0,1,2]:
+    for edges in [0,1]:
+     for fuse in [-1,3]:
+      for seed in [0,42]:
+       write(pool+4,len(points))
+       for i,p in enumerate(points):write(entries+i*8,p['position']);write(entries+i*8+4,p['weight'])
+       if buildPool:
+        write(pool+4,0);write(pool+8,64);write(owner+0x5cd0,context)
+        sp=stack+0xf000;write(sp+0x10,len(points))
+        for i,p in enumerate(points):write(sp+0x118+i*8,p['position']>>16);write(sp+0x11c+i*8,p['position']&65535)
+        cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EBX,owner)
+        cpu.emu_start(0x4a5ae5,0x4a5b1e,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4a5b1e
+       cpu.mem_write(context+0x4886,b'\x01');cpu.mem_write(context+0x543c,bytes([reserve]));cpu.mem_write(context+0x11d50,bytes([kind,edges]));cpu.mem_write(scheme+0xd5a6,bytes([fuse&255,count]));write(context+0x1241c,seed)
+       calls=[];sp=stack+0xff00;write(sp,stop);write(sp+4,scheme);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+       cpu.emu_start(0x4eba80,stop,count=100000)
+       if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Natural placement did not finish')
+       remaining=[dict(position=read(entries+i*8),weight=read(entries+i*8+4)) for i in range(read(pool+4))]
+       cases.append(dict(buildPool=buildPool,reserve=reserve,count=count,kind=kind,edges=edges,fuse=fuse,seed=seed,calls=calls,remaining=remaining,randomState=read(context+0x1241c)))
 args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004EBA80, weighted point selection/removal004CBC40/004CBCD0/004CBD60/004CBD80/004CBDB0 and RNG004EE900 execute unchanged. Actor lookup/allocation and object constructor boundaries supplied/captured.',points=points,cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} natural object placement cases')
