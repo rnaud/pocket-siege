@@ -62,7 +62,7 @@ camera=owner+0x4000;table=owner+0x4100;groupTable=owner+0x4200
 write(camera,table)
 virtuals={owner+0x4300:0x20,owner+0x4400:0x2c}
 write(table+0x20,owner+0x4300);write(table+0x2c,owner+0x4400);write(groupTable+0x20,owner+0x4300)
-entries={0x4ed910:1,0x4d1f80:1,0x4b1ae0:1,0x4eba80:1,0x4e4ed0:3,0x4ebe10:1,0x4eaf40:0,0x4b2670:2}
+entries={0x4d1f80:1,0x4eba80:1,0x4e4ed0:3,0x4ebe10:1,0x4eaf40:0}
 for entry,n in entries.items():cpu.mem_write(entry,b'\xc2'+struct.pack('<H',n*4))
 for entry in virtuals:cpu.mem_write(entry,b'\xc2\x04\x00')
 cpu.mem_write(0x492550,b'\xc3')
@@ -93,10 +93,10 @@ for count in range(7):
   for offset,value in shorts:cpu.mem_write(context+offset,struct.pack('<H',value&65535))
   for offset,value in bytewrites:cpu.mem_write(context+offset,bytes([value]))
   cpu.mem_write(heap,bytes((i*7+3)&255 for i in range(0x10000)))
-  cursor=heap+0x1000;allocation=0;failure=0 if variant==0 else count+4+(variant-1)%7;calls.clear();sp=stack+0xf000
+  cursor=heap+0x1000;allocation=0;failure=1 if variant==0 else count+9+(variant-1)%7;calls.clear();sp=stack+0xf000
   for i,value in enumerate([stop,context,context+0x47a8]):write(sp+i*4,value)
   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,heap)
   cpu.emu_start(0x4b2ad0,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   cases.append(dict(count=count,variant=variant,words=words,bytes=bytewrites,shorts=shorts,failure=failure,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0x10000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004B2AD0',method='Original fresh match-root constructor with rotation, deployment inventory query/write and complete resource constructors. World initialization, event-group construction and global event subscription execute; base/child constructors, object population, presentation, registration and external services remain observed interfaces.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004B2AD0',method='Original fresh match-root constructor with rotation, deployment inventory query/write and complete resource constructors. World initialization, event-group construction and global event subscription execute; base task attachment and registry execute; other child constructors, object population, presentation and external services remain observed interfaces.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'match root initializations')

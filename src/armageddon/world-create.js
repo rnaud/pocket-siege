@@ -1,10 +1,11 @@
+import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
 import {nativeCreateEventGroup,nativeSetGroupSubscription} from './event-group.js';
 //004EAAD0 orchestration. Uncomposed child/world constructors use their original
 //addressed interfaces; scene state, creation order and inventory health run here.
 export function nativeInitializeWorld(memory,address,scene,setup,host) {
   const call=(entry,args=[],at=address)=>host.call(entry,at,args);
   const put=(offset,value)=>memory.put(address+offset,value);
-  call(0x4ed910,[scene]);put(0,0x527458);put(0x2c,5);memory.put(scene+0x1b76c,1);
+  nativeCreateTaskMemory(memory,address,0,host);put(0,0x527478);put(0x2c,2);put(0x38,scene);put(0,0x527458);put(0x2c,5);memory.put(scene+0x1b76c,1);
   for(const offset of [0x3c,0x40,0x74,0x78,0x7c,0x50,0x60,0x54,0x58,0x70,0x64,0x68,0x84,0x88,0x8c,0x90,0x94])put(offset,0);
   put(0x44,memory.get(scene+0x804)<<16);put(0x48,memory.get(scene+0x804)<<16);
   for(const offset of [0x4c,0x5c,0x6c])put(offset,-1);
@@ -37,5 +38,5 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
     if(!memory.get(base-12))for(let worm=0;worm<(memory.get(base)|0);worm++)health=(health+memory.get(base-0x49c+worm*0x9c))|0;
     if((memory.get(scene+0x81c)|0)<health)memory.put(scene+0x81c,health);
   }
-  call(0x4b2670,[20,0]);return address;
+  nativeRegisterTaskMemory(memory,address,20,0,host);return address;
 }

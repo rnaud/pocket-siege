@@ -1,3 +1,4 @@
+import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from '../src/armageddon/task-memory.js';
 import {nativeSetGroupSubscription,nativeDispatchEventGroup} from '../src/armageddon/event-group.js';
 import worldCreate from './fixtures/armageddon/world-create.json' with {type:'json'};
 import {nativeInitializeWorld} from '../src/armageddon/world-create.js';
@@ -65,6 +66,20 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const taskActual=[],taskExpected=[];
+  for(const row of worldCreate.task_cases) {
+    const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
+    const memory={get:at=>view.getUint32(at-0x2400000,true),put:(at,v)=>view.setInt32(at-0x2400000,v,true),byte:at=>heap[at-0x2400000],putByte:(at,v)=>heap[at-0x2400000]=v};
+    let cursor=0x2404000;
+    const allocate=(kind,size,pool)=>{const value=cursor;cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
+    const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),free:at=>calls.push(['free',at])};
+    nativeCreateTaskMemory(memory,0x2400000,0,host);nativeRegisterTaskMemory(memory,0x2400000,20,0,host);
+    for(let i=0;i<row.children;i++) {
+      const at=0x2400400+i*64;nativeCreateTaskMemory(memory,at,0x2400000,host);nativeRegisterTaskMemory(memory,at,i%2?20:3,i%2?0:1,host);
+    }
+    taskActual.push([createHash('sha256').update(heap).digest('hex'),calls]);taskExpected.push([row.sha256,row.calls]);
+  }
+  expect(taskActual).toEqual(taskExpected);
   const groupActual=[],groupExpected=[];
   for(const row of worldCreate.event_cases) {
     const bytes=Uint8Array.from({length:0xa0},(_,i)=>(i*7+3)&255),calls=[];
@@ -85,6 +100,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     let cursor=0x2401000,allocation=0;
     nativeInitializeWorld(memory,0x2400000,0x2300000,0x23047a8,{
       allocate:size=>{const value=allocation++===row.failure?0:cursor;if(value)cursor+=(size+15)&~15;calls.push(['allocate',size,value]);return value;},
+      allocateArray:(size,pool)=>{const value=cursor;cursor+=(size+15)&~15;calls.push(['array',size,value,pool]);return value;},
+      free:at=>calls.push(['free',at]),
       virtual:(...args)=>calls.push(['virtual',...args]),
       call:(entry,at,args)=>{
         calls.push(['call',entry,at,args]);
