@@ -96,7 +96,7 @@ export function nativeCreateWorm({id,parent,memory=new Uint8Array(0x390),sceneMe
 import { nativeCreatePanelText, nativeCreateWormPanel } from './panel-resources.js';
 import { nativeCreatePhysicsAt } from './physics-memory.js';
 import { nativeRegisterTaskMemory } from './task-memory.js';
-//004D5A40 address-backed factory. Spawn, resource and state services remain host interfaces.
+//004D5A40 address-backed factory. Gravity, placement and renderer metadata remain host interfaces.
 export function nativeCreateWormAt(memory,address,parent,team,worm,configuration,host) {
   const scene=memory.get(parent+0x38);
   nativeInitializeWorm(memory.range(address,0x390),memory.range(scene,0x20000),team,worm,memory.range(configuration,40),{
@@ -117,6 +117,7 @@ export function nativeCreateWormAt(memory,address,parent,team,worm,configuration
       for(let offset=8;offset<=32;offset+=4)memory.put(at+offset,0);
       return at;
     },
+    changeState:host.changeState??(state=>nativeEnterFreshWormState(memory,address,state)),
     synchronizeAnimation:host.synchronizeAnimation??host.settlePhysics??(()=>nativeSynchronizeWormAt(memory,address,host)),
     initializeResources:undefined,
     resources:{allocateResource:size=>host.allocate(size),renderer:memory.get(scene+8),
@@ -127,4 +128,18 @@ export function nativeCreateWormAt(memory,address,parent,team,worm,configuration
     registerTask:(type,index)=>nativeRegisterTaskMemory(memory,address,type,index,host),
   });
   return address;
+}
+
+//004D7730 as reached by004D5A40: pristine body/player, deployment100 or idle101.
+// The general transition lifecycle remains in worm-state.js; this entry must not
+// be reused for an actor that has already entered gameplay.
+export function nativeEnterFreshWormState(memory,address,state) {
+  if((state!==100&&state!==101)||memory.get(address+0x50)!==0||memory.get(address+0x3c)!==2||
+    [0xc8,0x104,0x26c,0x2e0].some(offset=>memory.get(address+offset)!==0)||memory.get(memory.get(address+0x350)+8)!==0)
+    throw new RangeError('Expected freshly constructed native worm');
+  memory.put(address+0x64,65536);memory.put(address+0x250,0);memory.put(address+0x154,0);
+  if(state===101)for(const offset of [0x250,0x150,0x254,0x258,0x15c])memory.put(address+offset,0);
+  memory.put(address+0x50,state);
+  const scene=memory.get(address+0x38),inventory=scene+0x1b94+memory.get(address+0xfc)*0x51c+memory.get(address+0x100)*0x9c;
+  memory.put(inventory-0x594,state);memory.put(inventory-0x4fc,0);
 }

@@ -1501,6 +1501,8 @@ test("live native team bars update with damage and keep HUD controls usable", as
   expect(palettePixels).toBe(576);
 
   await page.locator("#mode").selectOption("local");
+  // Keep damage accounting independent of random-map ledges and drowning.
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await expect(page.locator(".native-team-health").first()).toHaveAttribute(
     "data-native-health",
