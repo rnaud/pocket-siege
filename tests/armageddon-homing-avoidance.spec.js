@@ -74,8 +74,6 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
   const target = await page.evaluate(() => window.siege.getState().homingTarget);
   await page.locator("#angle").fill("90");
   await page.locator("#angle").dispatchEvent("input");
-  await page.locator("#fire").dispatchEvent("pointerdown", { pointerId: 2 });
-  await page.waitForTimeout(500);
   if (kind === "magic") await page.evaluate(() => {
     const pauseDuringFlight = () => {
       const state = window.siege.getState();
@@ -86,7 +84,20 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
     };
     requestAnimationFrame(pauseDuringFlight);
   });
-  await page.locator("#fire").dispatchEvent("pointerup", { pointerId: 2 });
+  // Install the flight observer before charging. Release at a simulation charge
+  // threshold in the same browser callback; slow protocol round trips must not
+  // turn a short charge into an automatic full-power shot before observation.
+  await page.evaluate(() => new Promise(resolve => {
+    const fire = document.querySelector("#fire");
+    fire.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 2, bubbles: true }));
+    const release = () => {
+      if (window.siege.getState().power >= 30) {
+        fire.dispatchEvent(new PointerEvent("pointerup", { pointerId: 2, bubbles: true }));
+        resolve();
+      } else requestAnimationFrame(release);
+    };
+    requestAnimationFrame(release);
+  }));
   await expect.poll(() => page.evaluate(() => window.siege.getState().projectile?.kind)).toBe(kind);
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.projectile.sprite).toMatch(sprite);
