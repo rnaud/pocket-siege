@@ -1,3 +1,5 @@
+import teamSetup from './fixtures/armageddon/team-setup.json' with {type:'json'};
+import {nativeBuildTeamSetup} from '../src/armageddon/team-setup.js';
 import setupFixture from './fixtures/armageddon/inventory-setup.json' with {type:'json'};
 import { nativeBuildInventorySetup, nativeSetupWeaponValue, nativeFindSetupTeam, nativePrepareInventoryScheme } from '../src/armageddon/inventory-setup.js';
 import initialization from './fixtures/armageddon/inventory-initialization.json' with {type:'json'};
@@ -22,6 +24,22 @@ const fixture = JSON.parse(
 );
 
 test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+  for(const row of teamSetup.cases) {
+    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
+    const frontend=Uint8Array.from({length:0x7000},(_,i)=>(i*13+7)&255),view=new DataView(frontend.buffer);
+    for(const [offset,size,value] of row.writes) {
+      if(size===1)view.setUint8(offset,value);else view.setInt32(offset,value,true);
+    }
+    const calls=[];let path=0;
+    nativeBuildTeamSetup(memory,frontend,row.scheme,{
+      handicapEnabled:()=>{calls.push(['handicap']);return row.handicap;},
+      speechPath:cd=>{calls.push(['speech',cd]);return Buffer.from(row.paths[path++],'hex');},
+    });
+    expect(calls).toEqual(row.calls);
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
+    const inventory=new Uint8Array(0x2c14);nativeInitializeInventory(inventory,memory.subarray(0x3c));
+    expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
+  }
   for(const row of setupFixture.preparations) {
     const template=setupFixture.cases[0],memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(memory.buffer);
     for(const [offset,size,value] of template.writes) {
