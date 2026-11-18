@@ -595,22 +595,23 @@ function mountCurrentMenuArt() {
     canvas.getContext("2d").drawImage(source,0,0);
   }
 }
+const SKY_HEADROOM = 256;
 const backdropMap = new THREE.CanvasTexture(document.createElement("canvas"));
 backdropMap.colorSpace = THREE.SRGBColorSpace;
 backdropMap.minFilter = backdropMap.magFilter = THREE.NearestFilter;
 backdropMap.generateMipmaps = false;
 const backdrop = new THREE.Mesh(
-  new THREE.PlaneGeometry(W, H),
+  new THREE.PlaneGeometry(W, H + SKY_HEADROOM),
   nativePaletteDisplay.bind(new THREE.MeshBasicMaterial({ map: backdropMap }), 3),
 );
-backdrop.position.set(W / 2, H / 2, -180);
+backdrop.position.set(W / 2, (H + SKY_HEADROOM) / 2, -180);
 group.add(backdrop);
 function updateOriginalBackdrop() {
   if (!terrain || backdrop.userData.originalTheme === terrain.theme) return;
   const canvas = document.createElement("canvas");
   canvas.width = W;
-  canvas.height = H;
-  if (!paintOriginalBackdrop(canvas.getContext("2d"), terrain.theme, WATER))
+  canvas.height = H + SKY_HEADROOM;
+  if (!paintOriginalBackdrop(canvas.getContext("2d"), terrain.theme, WATER, SKY_HEADROOM))
     return;
   backdropMap.dispose();
   backdropMap.image = canvas;
@@ -1099,9 +1100,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     ctx.imageSmoothingEnabled = false;
     for (const mesh of [land, backdrop]) {
       mesh.geometry.dispose();
-      mesh.geometry = new THREE.PlaneGeometry(W, H);
+      const height = H + (mesh === backdrop ? SKY_HEADROOM : 0);
+      mesh.geometry = new THREE.PlaneGeometry(W, height);
       mesh.position.x = W / 2;
-      mesh.position.y = H / 2;
+      mesh.position.y = height / 2;
     }
     backdrop.userData.originalTheme = null;
     group.remove(water);
@@ -6103,18 +6105,8 @@ function screen(x, y) {
     y: ((view.y + view.h - y) / view.h) * renderer.domElement.clientHeight,
   };
 }
-// Monitor moves and browser zoom can change density without changing layout.
-let displayDensityQuery;
-function watchDisplayDensity() {
-  displayDensityQuery?.removeEventListener("change", onDisplayDensityChange);
-  displayDensityQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
-  displayDensityQuery.addEventListener("change", onDisplayDensityChange, { once: true });
-}
-function onDisplayDensityChange() {
-  watchDisplayDensity();
-  resize();
-}
-watchDisplayDensity();
+// Density may change without a layout resize (monitor moves/browser zoom).
+let renderedDisplayDensity = 0;
 function resize() {
   const stageAspect = terrain?.pixels ? W / H : 16 / 9;
   const stageWidth = Math.max(
@@ -6132,7 +6124,8 @@ function resize() {
   arena.style.width = `${fill ? battlefieldFrame.clientWidth : stageWidth}px`;
   arena.style.height = `${fill ? battlefieldFrame.clientHeight : Math.floor(stageWidth / stageAspect)}px`;
   arena.classList.toggle("portrait-camera", portrait);
-  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight, coarsePointer ? 480 : 960, window.devicePixelRatio);
+  renderedDisplayDensity = window.devicePixelRatio;
+  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight, coarsePointer ? 480 : 960, renderedDisplayDensity);
   renderer.setSize(pixels.width, pixels.height, false);
   renderer.domElement.style.width = `${pixels.width * pixels.scale}px`;
   renderer.domElement.style.height = `${pixels.height * pixels.scale}px`;
@@ -6150,6 +6143,7 @@ new ResizeObserver(() => requestAnimationFrame(resize)).observe(
 );
 function frame(now) {
   requestAnimationFrame(frame);
+  if (renderedDisplayDensity !== window.devicePixelRatio) resize();
   const frameDt = Math.min((now - last) / 1000, 0.1);
   const slow = slowMo > 0 && !reducedMotion;
   if (slowMo > 0) slowMo = Math.max(0, slowMo - frameDt);
@@ -6212,7 +6206,7 @@ function frame(now) {
     cameraY,
     cameraZoom,
     arena.clientWidth / arena.clientHeight,
-    nativeCameraFocus && !overview && !manualCamera ? H + 256 : H,
+    nativeCameraFocus && !overview && !manualCamera ? H + SKY_HEADROOM : H,
   );
   view.x = nextView.x;
   view.y = nextView.y;

@@ -100,14 +100,16 @@ export function paintOriginalTerrain(ctx, terrain) {
 
 // Source-resolution sky and scenery; camera/parallax placement remains the
 // browser adapter. Never stretch the theme's authored silhouettes or dithering.
-export function paintOriginalBackdrop(ctx, name, waterLevel) {
+export function paintOriginalBackdrop(ctx, name, waterLevel, skyHeadroom = 0) {
   const theme = art.get(name);
   if (!theme) return false;
   const { width, height } = ctx.canvas;
   const { gradient, background } = theme;
   const output = ctx.createImageData(width, height);
   for (let y = 0; y < height; y++) {
-    const sourceY = Math.min(y, gradient.height - 1);
+    // Extend the top row above the map without moving the authored gradient
+    // or the water-anchored scenery below it.
+    const sourceY = Math.min(Math.max(0, y - skyHeadroom), gradient.height - 1);
     for (let x = 0; x < width; x++) {
       const source = (sourceY * gradient.width + (x % gradient.width)) * 4;
       output.data.set(
