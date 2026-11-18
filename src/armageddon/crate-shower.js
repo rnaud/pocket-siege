@@ -14,6 +14,7 @@ export function nativeCrateShowerTick(input, interfaces) {
   const position = interfaces.place ? interfaces.place(1, 1) : (() => {
     const result = nativeCrateSpawnSearch(interfaces.bottom, interfaces.tall, 1, 1, {
       random: interfaces.nextRandom, collide: interfaces.collide, nearest: interfaces.nearest,
+      bodies: interfaces.bodies, type: interfaces.type, position: interfaces.position,
     });
     return result.success ? result : null;
   })();

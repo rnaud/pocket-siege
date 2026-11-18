@@ -1,3 +1,5 @@
+import { nativeNearestBody } from './nearest-body.js';
+
 //004B7A80. Both output positions survive failed probes, as in the pointer API.
 export function nativeCrateSpawnColumn(x, y, bottom, grounded, collide) {
   const groundX=x; let groundY=y;
@@ -28,7 +30,9 @@ export function nativeCrateSpawnSearch(bottom, tall, grounded, avoidActors, host
     position=nativeCrateSpawnColumn(x,y,bottom,grounded,host.collide);
     if(!position.success)continue;
     if(avoidActors) {
-      const distance=host.nearest(position.groundX,position.groundY,0x21c04);
+      const distance=host.nearest
+        ? host.nearest(position.groundX,position.groundY,0x21c04)
+        : nativeNearestBody(host.bodies,position.groundX,position.groundY,0x21c04,host);
       if(distance!==null && distance<0x400000)continue;
     }
     if(position.groundY<((bottom-32)<<16) && position.groundY>0)

@@ -1,3 +1,6 @@
+import crateShowerNearest from './fixtures/armageddon/crate-shower-nearest.json' with { type: 'json' };
+import nearestBody from './fixtures/armageddon/nearest-body.json' with { type: 'json' };
+import { nativeNearestBody } from '../src/armageddon/nearest-body.js';
 import crateShowerPlacement from './fixtures/armageddon/crate-shower-placement.json' with { type: 'json' };
 import { createHash } from 'node:crypto';
 import crateSpawnSearch from './fixtures/armageddon/crate-spawn-search.json' with { type: 'json' };
@@ -248,7 +251,15 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
   }
-  for (const row of [...crateSpawnSearch.cases,...crateShowerPlacement.cases]) {
+  for (const row of nearestBody.cases) {
+    const calls=[];
+    expect(nativeNearestBody(row.bodies,row.x,row.y,row.flags,{
+      type:body=>{calls.push(['type',body.id]);return body.type;},
+      position:body=>{calls.push(['position',body.id]);return body;},
+    })).toBe(row.result);
+    expect(calls).toEqual(row.calls);
+  }
+  for (const row of [...crateSpawnSearch.cases,...crateShowerPlacement.cases,...crateShowerNearest.cases]) {
     let rng=row.seed; const calls=[];
     const host={
       random:()=>{rng=(Math.imul(rng,1664525)+1013904223)>>>0;calls.push(['random',rng]);return rng;},
@@ -260,6 +271,12 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       },
       nearest:(...args)=>{calls.push(['nearest',...args]);return row.distance===-1?null:row.distance;},
     };
+    if (row.bodies) {
+      delete host.nearest;
+      host.bodies=[null,...row.bodies];
+      host.type=body=>{calls.push(['type',body.id]);return body.type;};
+      host.position=body=>{calls.push(['position',body.id]);return body;};
+    }
     if ('count' in row.result) {
       const result=nativeCrateShowerTick({count:5,timer:0,pool:[1,6,11],used:[]},{
         ...host,bottom:row.bottom,tall:row.tall,nextRandom:host.random,
