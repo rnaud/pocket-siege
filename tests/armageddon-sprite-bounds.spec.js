@@ -50,6 +50,8 @@ import {nativeDrawRendererBlendedBitmap} from '../src/armageddon/renderer-bitmap
 import rendererSpriteDraw from './fixtures/armageddon/renderer-sprite-draw.json' with {type:'json'};
 import {nativeDrawRendererSprite} from '../src/armageddon/renderer-sprite-draw.js';
 
+import rendererSpriteCache from './fixtures/armageddon/renderer-sprite-cache.json' with {type:'json'};
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of rendererSpriteDraw.cases) {
     const owner=0x2000000,arena=Buffer.alloc(0x20000,c.pattern),scratch=Buffer.alloc(24);
@@ -204,20 +206,32 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
     });
     expect({events,result,state:snapshot()}).toEqual({events:c.events,result:c.result,state:c.state});
   }
-  for(const c of spriteBitmap.cases) {
+  for(const c of [...spriteBitmap.cases,...rendererSpriteCache.cases]) {
     const owner=0x2000000,source=0x2400000,sprite=owner+0x3000,bitmap=owner+0x4000,buffer=owner+0x8000;
-    const bytes=Buffer.alloc(0x40000,c.pattern),raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex'),data=Buffer.from(raw),counters=Buffer.alloc(16),cacheCounters=Buffer.alloc(8),pointer=Buffer.alloc(4);
+    const scratch=Buffer.alloc(24),bytes=Buffer.alloc(c.dispatch?0x60000:0x40000,c.pattern),raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex'),data=Buffer.from(raw),counters=Buffer.alloc(16),cacheCounters=Buffer.alloc(8),pointer=Buffer.alloc(4);
     expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
-    const region=p=>p>=source?[data,p-source]:p>=owner?[bytes,p-owner]:p>=0x7d54e8?[cacheCounters,p-0x7d54e8]:p>=0x5602e4?[counters,p-0x5602e4]:[pointer,p-0x55e3c4];
+    const region=p=>p>=source?[data,p-source]:p>=0x2100000?[scratch,p-0x2100000]:p>=owner?[bytes,p-owner]:p>=0x7d54e8?[cacheCounters,p-0x7d54e8]:p>=0x5602e4?[counters,p-0x5602e4]:[pointer,p-0x55e3c4];
     const memory={get(p){const [b,o]=region(p);return b.readUInt32LE(o);},put(p,v){const [b,o]=region(p);b.writeUInt32LE(v>>>0,o);},byte(p){const [b,o]=region(p);return b[o];},putByte(p,v){const [b,o]=region(p);b[o]=v;}};
     [0xfffffff0,17,0xfffffff0,23].forEach((v,i)=>counters.writeUInt32LE(v,i*4));cacheCounters.writeUInt32LE(0xfffffff0,0);cacheCounters.writeUInt32LE(123,4);
     memory.put(0x55e3c4,buffer);memory.put(buffer,0x5266a0);memory.put(buffer+4,owner+0x10000);memory.put(buffer+8,c.capacity);
     for(const offset of [12,16,20,24,28])memory.put(buffer+offset,0);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x20000],[12,8],[16,192],[20,192],[24,192],[28,5],[32,3],[36,187],[40,189]])memory.put(owner+0x6000+offset,value);
+    const renderer=owner+0x40000;
+    if(c.dispatch) {
+      memory.put(owner+0x6000+36,123);
+      for(const [offset,value] of [[20,5],[24,3],[28,123],[32,189],[36,96],[40,96],[0x30,3],[0x454,1],[0x458,owner+0x6000],[0x460,owner+0x7000],[0x14b2c,0],[0x2864+7*4,sprite]])memory.put(renderer+offset,value);
+      for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x30000],[12,8],[16,192],[20,192],[24,192],[28,0],[32,0],[36,192],[40,192]])memory.put(owner+0x7000+offset,value);
+      for(let d=0;d<256;d++)for(let s=0;s<256;s++)memory.putByte(renderer+0x4b2c+d*256+s,(s*3+d*5)&255);
+    }
     nativeCreateGamePalette(memory,owner,1,c.last);nativeCreateSprite(memory,sprite,0x497b20,0x497ba0);nativeReadSprite(memory,sprite,owner,source,{allocate:()=>bitmap});
     const snapshot=()=>createHash('sha256').update(bytes).update(data).update(counters).update(cacheCounters).digest('hex');
     expect(snapshot()).toBe(c.initial);
     for(const step of c.steps) {
+      if(c.dispatch) {
+        nativeDrawRendererSprite(memory,renderer,4<<16,3<<16,step.encoded,step.progress,0x2100000,{});
+        expect(snapshot(),`${c.path}, cache ${c.capacity}, progress ${step.progress}, flags ${step.encoded}`).toBe(step.state);
+        continue;
+      }
       expect(nativeSelectSpriteFrame(memory,sprite,step.progress,Array.from({length:6},(_,i)=>owner+0x5000+i*4))).toBe(step.selected);
       expect(snapshot()).toBe(step.selected_state);
       expect(nativePrepareSpriteBitmap(memory,sprite)).toBe(step.result);
