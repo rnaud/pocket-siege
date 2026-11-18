@@ -891,9 +891,18 @@ test("the last shot can be replayed over the battlefield", async ({ page }) => {
       { timeout: 15000 },
     )
     .toBeGreaterThan(2);
-  await expect
-    .poll(() => page.locator("#replay").isEnabled(), { timeout: 20000 })
-    .toBe(true);
+  // Finish the real shot/settlement simulation without depending on CI frame
+  // rate. The existing helper only suppresses persistent score writes.
+  const settled = await page.evaluate(() => {
+    for (let frames = 0; frames < 3000; frames += 25) {
+      const phase = window.siege.getState().phase;
+      if (phase === "aim" || phase === "over") return true;
+      window.siege.debug.advanceReplayFrames(25);
+    }
+    return false;
+  });
+  expect(settled).toBe(true);
+  await expect(page.locator("#replay")).toBeEnabled();
   await page.locator("#replay").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().replaying))

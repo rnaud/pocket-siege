@@ -1,3 +1,6 @@
+import missionInventory from './fixtures/armageddon/mission-inventory.json' with {type:'json'};
+import missionInventoryFields from '../src/armageddon/mission-inventory-keys.json' with {type:'json'};
+import {nativeLoadMissionInventory} from '../src/armageddon/mission-inventory.js';
 import missionOptions from './fixtures/armageddon/mission-options.json' with {type:'json'};
 import {nativeLoadMissionScheme,nativeLoadMissionOptions} from '../src/armageddon/mission-options.js';
 import runtimeActorDestroy from './fixtures/armageddon/runtime-actor-destroy.json' with {type:'json'};
@@ -124,6 +127,30 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of missionInventory.cases) {
+    const globals=Buffer.alloc(0x10000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6f0000];
+    const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
+    const short=(address,value)=>{memory.putByte(address,value);memory.putByte(address+1,value>>>8);};
+    memory.put(0x2000880,0x2001000);owner.write(c.section+'\0',0x2000,'ascii');
+    for(let i=0;i<71;i++)for(const base of [0x6f3624,0x6f36b2])short(base+(c.team*143+i)*2,c.mutation?[-1,0,1,32767,-32768,123][i%6]:0);
+    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    nativeLoadMissionInventory(memory,0x2000000,c.section,c.team,{
+      profileInt(section,key,fallback,filename) {
+        calls.push([section,key,fallback,filename,snapshot()]);
+        if(c.mutation) {
+          if(calls.length%11===0) {
+            const [kind,slot]=missionInventoryFields.entries[calls.length-1];
+            short((kind==='ammo'?0x6f3624:0x6f36b2)+(c.team*143+slot)*2,32760);
+          }
+          memory.put(0x2000880,filename===0x2001000?0x2001100:0x2001000);
+        }
+        return c.values[key.toLowerCase()]??c.values['*']??fallback;
+      },
+    });
+    expect({count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} ${c.section} ${c.mutation}`).toEqual({count:c.callCount,calls:c.callsSha256,state:c.sha256});
+  }
+
   for(const c of missionOptions.cases) {
     const globals=Buffer.alloc(0x10000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6f0000];
