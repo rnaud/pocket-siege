@@ -1,3 +1,4 @@
+import {nativeCreateEventBufferMemory} from './scene-buffers.js';
 import taskTypes from './replay-task-types.json' with {type:'json'};
 import {nativeCreatePanelText} from './panel-resources.js';
 import {nativeInitializeControllerResources} from './controller-resources.js';
@@ -63,11 +64,14 @@ const restoreOnlyBlocks={13:[0x3c,0xc04],16:[0x3c,0x24],22:[0x3c,0x28],27:[0x3c,
 export function nativeReadActorMemory(memory,tag,address,parent,context,stream,host) {
   if(tag===18)return nativeReadWormMemory(memory,address,parent,context,stream,host);
   const schema=taskTypes.find(row=>row.tag===tag);
-  if(!schema||tag===28||tag===31)throw new RangeError(`Addressed replay constructor not connected: ${tag}`);
+  if(!schema||tag===28)throw new RangeError(`Addressed replay constructor not connected: ${tag}`);
   if(schema.physics)nativeReadPhysicsMemory(memory,address,parent,context,stream,host);
   else {
     nativeReadTaskMemory(memory,address,parent,stream,host);
     memory.put(address,0x527478);stream.readByte();memory.put(address+0x38,context);
+  }
+  if(tag===31) {
+    memory.put(address,0x527518);memory.put(address+0xd0,65536);memory.put(address+0x40,0);memory.put(address+0xc4,0);memory.put(address+0x3c,0x12345678);
   }
   memory.put(address,Number(schema.vtable));
   const get=offset=>memory.get(address+offset)|0,put=(offset,value)=>memory.put(address+offset,value);
@@ -97,5 +101,12 @@ export function nativeReadActorMemory(memory,tag,address,parent,context,stream,h
   } else if(tag===24) {
     memory.put(context+0x4b0+get(0x80)*4,address);put(0xb0,memory.get(context+0x12430)&255);increment(0x12430);put(0xb4,0);
   } else if(tag===29)text(0x64,23,48);
+  else if(tag===31) {
+    put(0x2dc8,0);const queue=host.allocate(8);
+    put(0x2dc4,queue?nativeCreateEventBufferMemory(memory,queue,256,host):0);
+    const table=host.allocate(16);
+    if(table){memory.put(table,0x526918);memory.put(table+8,71);memory.put(table+12,host.allocateArray(568,0x567600));memory.put(table+4,0);}
+    put(0x2dcc,table);put(0x2dd0,0);
+  }
   return address;
 }

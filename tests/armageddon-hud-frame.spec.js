@@ -1174,6 +1174,19 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       } });
     expect({ body: [...task.memory.slice(0x3c)], position: stream.position, calls }).toEqual(row.result);
   }
+  for(const row of replayTerrainRestore.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000),calls=[];
+    const locate=at=>at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    let cursor=0x2006000;const allocate=size=>{if(size===row.failSize)return 0;const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
+    const stream=NativeReplayStream.fromMemory(memory,0x2004000);
+    expect(nativeReadActorMemory(memory,31,0x2000000,0,0x2020000,stream,{
+      allocate:size=>{const pointer=allocate(size);calls.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);calls.push(['array',size,pool,pointer]);return pointer;},free:address=>calls.push(['free',address]),
+      restoreChild:()=>{throw new Error('Unexpected concrete child in terrain fixture');},
+    })).toBe(0x2000000);
+    expect(calls).toEqual(row.calls);expect(stream.position).toBe(row.result.position);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
+  }
   for (const row of replayTerrainRestore.cases) {
     const stream = new NativeReplayStream(16384), allocations = [...row.input.allocations];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);

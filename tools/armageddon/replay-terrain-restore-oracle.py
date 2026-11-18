@@ -31,11 +31,11 @@ def write(address,value): cpu.mem_write(address,struct.pack('<I',value&0xfffffff
 def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 def signed(v):return v if v<0x80000000 else v-0x100000000
 
-import itertools
+import itertools,base64,zlib
 stream=owner+0x4000;buffer=owner+0x8000;context=owner+0x20000
 cpu.mem_map(context,0x20000)
-write(stream+4,buffer);write(stream+0x14,context)
-heap=owner+0x6000;allocations=[];failSize=0
+write(stream+4,buffer);write(stream+8,16384);write(stream+0x14,context)
+heap=owner+0x6000;allocations=[];calls=[];failSize=0
 
 def ret(value=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value)
@@ -49,18 +49,20 @@ def hook(cpu,address,size,user):
   if resource and size==failSize:pointer=0
   else:
    heap+=(size+15)&~15;cpu.mem_write(pointer,bytes(size))
+  calls.append(['array',size,read(sp+4),pointer] if address==0x4924d0 else ['allocate',size,pointer])
   if resource:allocations.append({'size':size,'pointer':pointer})
   ret(pointer)
- elif address==0x492510:ret()
+ elif address==0x492510:calls.append(['free',read(sp+4)]);ret()
 cpu.hook_add(UC_HOOK_CODE,hook)
 cases=[]
 for position,seed,failSize in itertools.product([0,1,2,3],[0,17,255],[0,8,32,16]):
- heap=owner+0x6000;allocations.clear()
+ heap=owner+0x6000;allocations.clear();calls.clear()
  cpu.mem_write(owner,bytes([0xa5])*0x2dd4)
  payload=bytearray([0xcc]*position+[1,31,21,3,0,2,31])
  while len(payload)%4:payload.append(255)
  payload.extend((i*13+seed)&255 for i in range(0x2ce8))
  cpu.mem_write(buffer,bytes(payload));write(stream+0x10,position);write(stream+0xc,len(payload))
+ initial=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))
  sp=stack+0xf000;write(sp,stop);write(sp+4,0);write(sp+8,stream);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
  cpu.emu_start(0x4cd180,stop+1,count=100000)
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('terrain constructor did not exit')
@@ -68,6 +70,7 @@ for position,seed,failSize in itertools.product([0,1,2,3],[0,17,255],[0,8,32,16]
  ringState={'pointer':ring,'dataPointer':read(ring+4),'capacity':read(ring+8),'count':read(ring+12),'writeOffset':read(ring+16),'readOffset':read(ring+20),'head':read(ring+24),'tail':read(ring+28),'bytes':list(cpu.mem_read(read(ring+4),256))} if ring else None
  tableState={'pointer':table,'dataPointer':read(table+12),'capacity':read(table+8),'count':read(table+4),'bytes':list(cpu.mem_read(read(table+12),568))} if table else None
  result={'body':list(cpu.mem_read(owner+0x3c,0x2d98)),'position':read(stream+0x10),'queue':{'pointer':queue,'ring':ringState} if queue else None,'table':tableState}
- cases.append({'input':{'position':position,'bytes':list(payload),'allocations':list(allocations)},'result':result})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004CD180 including original base/derived constructors,0049C650 queue,004AF2F0 ring and004CBB90 hash table. Only heap allocation/free substituted; captures all body and allocated data bytes and nested buffer state, including three allocation-failure branches.','cases':cases},separators=(',',':'))+'\n')
+ final=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))
+ cases.append({'inputMemory':base64.b64encode(zlib.compress(initial)).decode(),'sha256':hashlib.sha256(final).hexdigest(),'calls':list(calls),'failSize':failSize,'input':{'position':position,'bytes':list(payload),'allocations':list(allocations)},'result':result})
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004CD180 including original base/derived constructors,0049C650 queue,004AF2F0 ring and004CBB90 hash table. Only heap allocation/free substituted; captures all body and allocated data bytes and nested buffer state, including three allocation-failure branches. Complete192KiB owner/context memory and ordered allocation/free calls also captured.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} terrain restores')
