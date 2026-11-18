@@ -1,3 +1,5 @@
+import terrainImage from './fixtures/armageddon/terrain-image.json' with {type:'json'};
+import {nativeLoadTerrainImage} from '../src/armageddon/terrain-image.js';
 import terrainFile from './fixtures/armageddon/terrain-file.json' with {type:'json'};
 import {nativeLoadTerrainFile} from '../src/armageddon/terrain-file.js';
 import sceneGraphics from './fixtures/armageddon/scene-graphics.json' with {type:'json'};
@@ -161,6 +163,31 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of terrainImage.cases) {
+    const owner=0x2000000,scratch=0x2100000,compressed=0x714be0;
+    const bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(0x428,c.pattern),packed=Buffer.alloc(0x1000,c.pattern),calls=[];
+    const locate=a=>a>=scratch?[temporary,a-scratch]:a>=owner?[bytes,a-owner]:[packed,a-compressed];
+    const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=locate(a);return b[o];},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
+    const snapshot=()=>createHash('sha256').update(bytes).update(packed).digest('hex');
+    const mapping=a=>{const [b,o]=locate(a);return b.subarray(o,o+256).toString('hex');};
+    const stream=Buffer.from(c.stream,'hex');let cursor=5,colorIndex=0;
+    const host={
+      tellFile:file=>{calls.push(['tell',file,snapshot()]);return cursor;},
+      readFile:(dest,n,count,file)=>{
+        calls.push(['read',dest>=scratch?'scratch':dest,n,count,file,snapshot()]);
+        const chunk=stream.subarray(cursor,cursor+n*count);cursor+=chunk.length;
+        const [b,o]=locate(dest);chunk.copy(b,o);return n?Math.floor(chunk.length/n):0;
+      },
+      addPaletteColor:(...args)=>{calls.push(['color',...args,snapshot()]);return ++colorIndex+10;},
+      allocate:n=>{calls.push(['allocate',n,snapshot()]);return owner;},
+      constructBitmap:(bitmap,width,height,bits)=>{calls.push(['construct',bitmap,width,height,bits,snapshot()]);memory.put(bitmap+4,width);memory.put(bitmap+8,height);memory.put(bitmap+12,bits);},
+      bitmapStorage:bitmap=>{calls.push(['storage',bitmap,snapshot()]);return {pixels:owner+0x1000,bits:c.bits,pitch:c.pitch};},
+      remapBitmap:(bitmap,map)=>calls.push(['remap',bitmap,mapping(map),snapshot()]),
+      decodeTerrainPixels:(pixels,source,map)=>calls.push(['decode',pixels,source,mapping(map),snapshot()]),
+    };
+    expect(nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host)).toBe(c.result);
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of terrainFile.cases) {
     const owner=0x2000000,scratch=0x2100000,bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(20),calls=[];
     const locate=a=>a>=scratch?[temporary,a-scratch]:[bytes,a-owner];
