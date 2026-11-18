@@ -1,4 +1,5 @@
-import sceneContext from './fixtures/armageddon/scene-context.json' with {type:'json'};
+import sceneGraphics from './fixtures/armageddon/scene-graphics.json' with {type:'json'};
+import {nativePrepareSceneGraphics} from '../src/armageddon/scene-graphics.js';
 import {nativeCreateSceneContext} from '../src/armageddon/scene-context.js';
 import missionSelection from './fixtures/armageddon/mission-selection.json' with {type:'json'};
 import missionNames from '../src/armageddon/mission-names.json' with {type:'json'};
@@ -158,19 +159,34 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of sceneContext.cases) {
-    const owner=0x2000000,scene=0x2300000,frontend=0x2500000;
-    const ownerBytes=Buffer.alloc(0x10000,c.pattern),sceneBytes=Buffer.alloc(0x20000,c.pattern),frontendBytes=Buffer.alloc(0x10000,c.pattern),calls=[];
-    const locate=a=>a>=frontend?[frontendBytes,a-frontend]:a>=scene?[sceneBytes,a-scene]:[ownerBytes,a-owner];
-    const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
+  for(const c of sceneGraphics.cases) {
+    const owner=0x2000000,scene=0x2300000,frontend=0x2500000,services=0x2600000;
+    const ownerBytes=Buffer.alloc(0x10000,c.pattern),sceneBytes=Buffer.alloc(0x20000,c.pattern),frontendBytes=Buffer.alloc(0x10000,c.pattern),serviceBytes=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const locate=a=>a>=services?[serviceBytes,a-services]:a>=frontend?[frontendBytes,a-frontend]:a>=scene?[sceneBytes,a-scene]:[ownerBytes,a-owner];
+    const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=locate(a);return b[o];},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
     const source=c.offset===null?frontend:scene+0x47a8+c.offset;
     for(let i=0;i<0xdc64;i++)memory.putByte(source+i,(i*13+c.variant*37)&255);
-    const snapshot=()=>createHash('sha256').update(ownerBytes).update(sceneBytes).update(frontendBytes).digest('hex');
-    const result=nativeCreateSceneContext(memory,owner,c.bindings,source,{
+    for(const address of [services,services+0x200])memory.put(address,services+0x800);
+    for(const [offset,target] of [[4,0x2200100],[0x44,0x2200200],[0x60,0x2200300],[0x14,0x2200400]])memory.put(services+0x800+offset,target);
+    const snapshot=()=>createHash('sha256').update(ownerBytes).update(sceneBytes).update(frontendBytes).update(serviceBytes).digest('hex');
+    let allocations=0,colorIndex=10;
+    const host={
       initializePalette:(...args)=>{calls.push(['palette',...args,snapshot()]);if(c.mutation)memory.put(source+0x100,0x12345678);},
-      allocate:(...args)=>{calls.push(['allocate',...args,snapshot()]);if(c.mutation)memory.put(source+0x104,0x87654321);return scene;},
-    });
-    expect(result).toBe(scene);expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
+      allocate:(...args)=>{calls.push(['allocate',...args,snapshot()]);allocations++;if(c.mutation&&allocations===1)memory.put(source+0x104,0x87654321);return allocations===1?scene:services+0x1000;},
+      openGraphicsArchive:(...args)=>{calls.push(['archive',...args,snapshot()]);return 1;},
+      initializePaletteBanks:(...args)=>{calls.push(['banks',...args,snapshot()]);if(c.mutation)memory.putByte(source+0xde,7);},
+      loadStartupFonts:(...args)=>calls.push(['fonts',...args,snapshot()]),
+      loadEffects:(...args)=>{calls.push(['effects',...args,snapshot()]);if(c.mutation)memory.put(scene+12,services+0x500);},
+      loadSpeech:(...args)=>calls.push(['speech',...args,snapshot()]),
+      addPaletteColor:(...args)=>{calls.push(['color',...args,snapshot()]);return ++colorIndex;},
+      rendererDimensions:(...args)=>{calls.push(['dimensions',...args,snapshot()]);if(c.mutation)memory.put(scene+8,services+0x200);return [c.width,c.height];},
+      clearRendererRect:(...args)=>calls.push(['clear',...args,snapshot()]),
+      presentRenderer:(...args)=>calls.push(['present',...args,snapshot()]),
+      getRendererPalette:(...args)=>{calls.push(['getPalette',...args,snapshot()]);return services+0x600;},
+    };
+    expect(nativeCreateSceneContext(memory,owner,c.bindings,source,host)).toBe(scene);
+    nativePrepareSceneGraphics(memory,owner,source,c.bindings[1],host);
+    expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
   }
   expect(Object.keys(missionNames)).toHaveLength(48);
   for(const [name,source] of Object.entries(missionNames)) {
