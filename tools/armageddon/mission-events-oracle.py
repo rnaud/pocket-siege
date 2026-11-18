@@ -53,7 +53,7 @@ def hook(cpu,address,size,user):
  elif address==0x503dc0:
   setstring(read(sp+4),cstring(read(sp+8))%signed(read(sp+12)));ret()
  elif address==0x503d42:
-  resource=read(sp+4);calls.append(['string',resource,snapshot()]);setstring(cpu.reg_read(UC_X86_REG_ECX),bytes(text));ret(1,4)
+  resource=read(sp+4);calls.append(['string',resource,snapshot()]);setstring(cpu.reg_read(UC_X86_REG_ECX),resourceStrings.get(resource,b'') if originalTables else bytes(text));ret(1,4)
  elif address==stop+0x200:
   value=cstring(read(sp+12));cpu.mem_write(read(sp+4),value+b'\0');ret(len(value))
  elif address==stop+0x100:
@@ -63,6 +63,25 @@ def hook(cpu,address,size,user):
   values=profile.get(section.lower(),{})
   ret(values.get(key.lower(),fallback),16)
 for address in [0x503d48,0x503d24,0x503dc0,0x503d42,stop+0x100,stop+0x200,stop+0x300,stop+0x400]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+# Read English RT_STRING bytes directly from the input PE, independently of
+# the generated browser catalog. Localized LoadString remains a host boundary.
+def fileoffset(rva):
+ for i in range(struct.unpack_from('<H',data,pe+6)[0]):
+  virtual,start,rawsize,raw=struct.unpack_from('<IIII',data,headers+40*i+8)
+  if start<=rva<start+max(virtual,rawsize):return raw+rva-start
+ raise ValueError(hex(rva))
+root=fileoffset(struct.unpack_from('<I',data,optional+112)[0]);resourceStrings={}
+def walk(relative,path):
+ at=root+relative;named,count=struct.unpack_from('<HH',data,at+12)
+ for i in range(named+count):
+  name,target=struct.unpack_from('<II',data,at+16+8*i)
+  if target&0x80000000:walk(target&0x7fffffff,path+[name])
+  elif len(path)==2 and path[0]==6 and name==1033:
+   rva,length=struct.unpack_from('<II',data,root+target);pos=fileoffset(rva)
+   for index in range(16):
+    n=struct.unpack_from('<H',data,pos)[0];pos+=2
+    resourceStrings[(path[1]-1)*16+index]=data[pos:pos+n*2].decode('utf-16-le').encode('cp1252');pos+=n*2
+walk(0,[])
 profiles=[]
 for record in json.loads(Path('src/armageddon/mission-catalog.json').read_text())['records']:
  profile={}

@@ -1,3 +1,5 @@
+import stringResources from '../src/armageddon/string-resources.json' with {type:'json'};
+import {originalResourceStringBytes} from '../src/armageddon/string-resources.js';
 import missionOwner from './fixtures/armageddon/mission-owner.json' with {type:'json'};
 import {nativeCreateMissionOwner} from '../src/armageddon/mission-owner.js';
 import missionEvents from './fixtures/armageddon/mission-events.json' with {type:'json'};
@@ -131,6 +133,17 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const block of stringResources.blocks) {
+    const parts=[];
+    for(const text of block.strings) {const bytes=Buffer.from(text,'utf16le'),size=Buffer.alloc(2);size.writeUInt16LE(bytes.length/2);parts.push(size,bytes);}
+    expect(createHash('sha256').update(Buffer.concat(parts)).digest('hex')).toBe(block.sha256);
+  }
+  const ansiDecoder=new TextDecoder('windows-1252'),encodingMismatches=[];
+  for(const [language,blocks] of Object.entries(stringResources.languages))
+    for(const [block,index] of Object.entries(blocks))
+      for(let i=0;i<16;i++)
+        if(ansiDecoder.decode(originalResourceStringBytes((Number(block)-1)*16+i,language))!==stringResources.blocks[index].strings[i])encodingMismatches.push([language,block,i]);
+  expect(encodingMismatches).toEqual([]);
   for (const c of missionOwner.cases) {
     const owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={put:(address,value)=>owner.writeUInt32LE(value>>>0,address-0x2000000)};
@@ -156,7 +169,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         if(c.mutation)memory.put(0x2000880,filename===0x2001000?0x2001100:0x2001000);
         return c.values[section.toLowerCase()]?.[key.toLowerCase()]??fallback;
       },
-      loadString(resource) {calls.push(['string',resource,snapshot()]);return c.text;},
+      loadString(resource) {calls.push(['string',resource,snapshot()]);return c.originalTables?originalResourceStringBytes(resource):c.text;},
     });
     expect({count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} events ${c.mutation}`).toEqual({count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
