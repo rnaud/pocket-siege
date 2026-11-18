@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import bankFixture from './fixtures/armageddon/inventory-banks.json' with { type:'json' };
+import { nativeInventorySet, nativeInventoryAdd, nativeInventorySpend, nativeInventoryAvailable } from '../src/armageddon/inventory.js';
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import {
@@ -15,6 +18,16 @@ const fixture = JSON.parse(
 );
 
 test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+  const operations={set:nativeInventorySet,add:nativeInventoryAdd,spend:nativeInventorySpend,available:nativeInventoryAvailable};
+  for(const row of bankFixture.cases) {
+    const memory=new Uint8Array(0x2c14),view=new DataView(memory.buffer);
+    for(const [offset,value] of row.writes)view.setInt32(offset,value,true);
+    for(const step of row.steps) {
+      const [name,...args]=step.operation,result=operations[name](memory,...args);
+      if(name==='available')expect(result).toBe(step.result);
+      expect(createHash('sha256').update(memory).digest('hex')).toBe(step.sha256);
+    }
+  }
   for (const v of fixture.vectors) {
     const result =
       v.operation === "add"

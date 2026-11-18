@@ -1,3 +1,4 @@
+import defaultWeaponInventory from './fixtures/armageddon/default-weapon-inventory.json' with { type:'json' };
 import wormSlope from "./fixtures/armageddon/worm-slope.json" with {type:"json"};
 import { nativeWormSlopeTick } from "../src/armageddon/worm-slope.js";
 import wormSprite from "./fixtures/armageddon/worm-sprite.json" with {type:"json"};
@@ -645,7 +646,7 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     })).toBe(true);
     expect({calls,body:controllerDeactivation.offsets.map(o=>body.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b8ac)]}).toEqual({calls:c.calls,body:c.body,ownership:c.ownership});
   }
-  for(const c of defaultWeapon.cases) {
+  for(const c of [...defaultWeapon.cases,...defaultWeaponInventory.cases]) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer);
     body.setInt32(0x3c,2,true);body.setInt32(0x4c,3,true);body.setInt32(0x44,c.controller,true);body.setInt32(0x40,1,true);body.setInt32(0xf0,-1,true);body.setInt32(0xe8,-1,true);scene.setInt32(0x4730+(2*75+4)*40,c.saved,true);
     const calls=[],host={
@@ -655,10 +656,15 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       teamFlags:team=>{calls.push(["flags",team]);return c.flags;},
       weaponDescriptor:slot=>{calls.push(["descriptor",slot]);const d=new Uint8Array(0x200),v=new DataView(d.buffer);for(const [o,value] of Object.entries(c.descriptors[slot]??{}))v.setInt32(Number(o),value,true);return d;},
       selectionSound:(...args)=>calls.push(["sound",...args]),sendWorm:(...args)=>calls.push(["send",...args.map(v=>v??0)]),
-      setWeaponAmmo:(...args)=>calls.push(["ammo",...args]),selectInventory:(...args)=>calls.push(["inventory",...args]),selectionCommand:(...args)=>calls.push(["command",...args]),
+      addWeaponAmmo:(...args)=>calls.push(["ammo",...args]),selectInventory:(...args)=>calls.push(["inventory",...args]),selectionCommand:(...args)=>calls.push(["command",...args]),
     };
+    if(c.writes) {
+      for(const [offset,value] of c.writes)scene.setInt32(0x1b94+offset,value,true);
+      delete host.weaponAvailable;delete host.addWeaponAmmo;
+    }
     const result=c.routine==="0x4e55d0"?nativeFindDefaultWeapon(memory,sceneMemory,4,host):c.routine==="0x4e54d0"?nativeSelectDefaultWeapon(memory,sceneMemory,4,host):nativeSelectControllerWorm(memory,sceneMemory,4,host);
     expect(calls).toEqual(c.calls);if(c.result!==null)expect(result).toBe(c.result);
+    if(c.inventory_sha256)expect(createHash('sha256').update(sceneMemory.subarray(0x1b94,0x1b94+0x2c14)).digest('hex')).toBe(c.inventory_sha256);
   }
   for(const c of wormSelection.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);

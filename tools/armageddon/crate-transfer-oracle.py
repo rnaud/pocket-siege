@@ -54,24 +54,28 @@ def hook(cpu,address,size,user):
  elif address==0x4eefb0:ret(8)
 cpu.hook_add(UC_HOOK_CODE,hook)
 for team in [1,2]:write(inventory+team*0x51c+8,team)
-def ammo(team,slot):return inventory+0x1eb8+(slot+team*0x8e)*4
+def ammo(team,slot):return inventory+0x1eb8+(slot+read(inventory+team*0x51c+8)*0x8e)*4
 hpaddr=inventory+0x51c+0x9c-0x538
 cases=[]
-for kind in [0,1,2,3,4,5]:
- for donorTeam in [1,2]:
-  for count in [-1,0,2147483647]:
-   for amount in [-1,0,25]:
-    for hp in [50,100,2147483647]:
-     recipient=[count]*71;donor=[7]*71
-     for slot in range(71):write(ammo(1,slot),count);write(ammo(2,slot),7)
-     write(hpaddr,hp)
-     record={'kind':kind,'donorTeam':donorTeam,'weapon':6,'quantity':amount,'health':amount,'inventory':[amount if i in [0,6,70] else 0 for i in range(71)]}
-     sp=stack+0xf000;cpu.mem_write(sp,bytes(0x500));write(sp+0x14c,donorTeam);write(sp+0x160,kind);write(sp+0x164,amount);write(sp+0x168,6);write(sp+0x288,amount);write(sp+0x3a8,1)
-     for i,v in enumerate(record['inventory']):write(sp+0x16c+i*4,v)
-     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,1)
-     cpu.emu_start(0x4f596c,0x4f5b49,count=20000)
-     if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5b49:raise RuntimeError('Transfer did not finish')
-     cases.append({'record':record,'hp':hp,'recipient':recipient,'donor':donor,'category':read(sp+0x30),'output':{'hp':signed(read(hpaddr)),'recipient':[signed(read(ammo(1,i))) for i in range(71)],'donor':[signed(read(ammo(2,i))) for i in range(71)]}})
+for banks in [[1,2],[1,1]]:
+ for team,bank in zip([1,2],banks):write(inventory+team*0x51c+8,bank)
+ for kind in [0,1,2,3,4,5]:
+  for donorTeam in [1,2]:
+   for count in [-1,0,2147483647]:
+    for amount in [-1,0,25]:
+     for hp in [50,100,2147483647]:
+      recipient=[count]*71;donor=[7]*71
+      for slot in range(71):write(ammo(1,slot),count);write(ammo(2,slot),7)
+      recipient=[signed(read(ammo(1,i))) for i in range(71)]
+      donor=[signed(read(ammo(2,i))) for i in range(71)]
+      write(hpaddr,hp)
+      record={'kind':kind,'donorTeam':donorTeam,'weapon':6,'quantity':amount,'health':amount,'inventory':[amount if i in [0,6,70] else 0 for i in range(71)]}
+      sp=stack+0xf000;cpu.mem_write(sp,bytes(0x500));write(sp+0x14c,donorTeam);write(sp+0x160,kind);write(sp+0x164,amount);write(sp+0x168,6);write(sp+0x288,amount);write(sp+0x3a8,1)
+      for i,v in enumerate(record['inventory']):write(sp+0x16c+i*4,v)
+      cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,1)
+      cpu.emu_start(0x4f596c,0x4f5b49,count=20000)
+      if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5b49:raise RuntimeError('Transfer did not finish')
+      cases.append({'banks':banks,'record':record,'hp':hp,'recipient':recipient,'donor':donor,'category':read(sp+0x30),'output':{'hp':signed(read(hpaddr)),'recipient':[signed(read(ammo(1,i))) for i in range(71)],'donor':[signed(read(ammo(2,i))) for i in range(71)]}})
 stat_cases=[]
 for category in [0,1,2,3,4,5]:
  for team,worm in [(1,1),(2,4),(6,8)]:
@@ -92,5 +96,5 @@ for kind in [0,1,2,3,4,5]:
   cpu.emu_start(0x4f5b57,0x4f5b82,count=1000)
   if cpu.reg_read(UC_X86_REG_EIP)!=0x4f5b82:raise RuntimeError('Audio did not finish')
   audio_cases.append({'kind':kind,'team':team,'calls':list(sound_calls)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F596C..004F5B49','method':'Original pickup transfer branches, ammo add/set, health get/set and weapon lookup execute unchanged. Text formatting and notification interfaces omitted. Recipient team1/worm1; donor may alias recipient.','cases':cases,'audio_entry':'004F5B57..004F5B82 plus004DD5D0; team voice resolution and playback captured','audio_cases':audio_cases,'statistics_entry':'004F5B9D..004F5C18 with original004C33A0/004C33E0/004C3420/004C3460 executed unchanged','stat_cases':stat_cases},separators=(',',':'))+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004F596C..004F5B49','method':'Original pickup transfer branches, ammo add/set, health get/set and weapon lookup execute unchanged. Text formatting and notification interfaces omitted. Recipient team1/worm1; donor may alias recipient by team or shared ammo-bank ownership.','cases':cases,'audio_entry':'004F5B57..004F5B82 plus004DD5D0; team voice resolution and playback captured','audio_cases':audio_cases,'statistics_entry':'004F5B9D..004F5C18 with original004C33A0/004C33E0/004C3420/004C3460 executed unchanged','stat_cases':stat_cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} pickup transfers')

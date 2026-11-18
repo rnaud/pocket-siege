@@ -90,7 +90,7 @@ import pickup from './fixtures/armageddon/crate-pickup.json' with { type: 'json'
 import { nativePickupCandidate } from '../src/armageddon/crate-pickup.js';
 import transfer from './fixtures/armageddon/crate-transfer.json' with { type: 'json' };
 import { nativeCrateTransfer, nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from '../src/armageddon/crate-transfer.js';
-import { addNativeAmmo } from '../src/armageddon/inventory.js';
+import { nativeInventorySet } from '../src/armageddon/inventory.js';
 import { nativeBodyBase } from '../src/armageddon/mine-body.js';
 import { createNativeCrateBody, stepNativeCrateBody } from '../src/armageddon/crate-runtime.js';
 import { nativeCollisionBitmapOverlap } from '../src/armageddon/collision-mask.js';
@@ -137,15 +137,18 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(nativeCratePickupAudio(row.kind, row.team, () => 1234)).toEqual(row.calls);
   for (const row of transfer.cases) {
     expect(nativePickupCategory(row.record.kind)).toBe(row.category);
-    const stocks = { 1: [...row.recipient], 2: [...row.donor] };
+    const memory=new Uint8Array(0x2c14),view=new DataView(memory.buffer);
+    for(const team of [1,2])view.setInt32(team*0x51c+8,row.banks[team-1],true);
+    row.recipient.forEach((count,slot)=>nativeInventorySet(memory,1,slot,count));
+    row.donor.forEach((count,slot)=>nativeInventorySet(memory,2,slot,count));
+    const stock=team=>Array.from({length:71},(_,slot)=>view.getInt32(0x1eb8+(slot+row.banks[team-1]*0x8e)*4,true));
     let hp = row.hp;
     nativeCrateTransfer(row.record, 1, 1, {
-      addAmmo: (team, slot, amount) => { stocks[team][slot] = addNativeAmmo(stocks[team][slot], amount); },
-      setAmmo: (team, slot, value) => { stocks[team][slot] = value; },
+      inventory:memory,
       health: () => hp,
       setHealth: (team, worm, value) => { hp = value; },
     });
-    expect({ hp, recipient: stocks[1], donor: stocks[2] }).toEqual(row.output);
+    expect({ hp, recipient: stock(1), donor: stock(2) }).toEqual(row.output);
   }
   for (const row of pickup.cases) {
     const queries = [], actor = { ...row.actor, type: 11 };
