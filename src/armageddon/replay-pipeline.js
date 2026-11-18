@@ -1,3 +1,4 @@
+import {nativeDispatchMatchEventMemory} from './match-dispatch.js';
 import {nativeCollectMatchInput} from './match-input.js';
 import {nativeQueryMatchMemory} from './match-status.js';
 import {nativeCleanupTaskMemory} from './task-memory.js';
@@ -59,6 +60,7 @@ export function createNativeSceneReplayPipeline({memory,owner,scratch,host,strea
   const addressed=root===undefined&&environment===undefined;
   const cleanup=address=>{host.observeTaskCleanup?.(address);nativeCleanupTaskMemory(memory,address,host.cleanupChild??cleanup);};
   const nativeHost=addressed?{...host,
+    dispatchRoot:host.dispatchRoot??((root,event,payload)=>{host.observeRootDispatch?.(root,event,payload);return nativeDispatchMatchEventMemory(memory,root,root,event,payload.length,payload,host);}),
     collectRoot:host.collectRoot??((root,queue,event,size)=>{
       const payload=new Uint8Array(size);new DataView(payload.buffer).setUint32(0,queue.wrapper,true);
       nativeCollectMatchInput(memory,root,root,size,payload,host);

@@ -54,6 +54,7 @@ write(context+0x7d4,environment);write(environment,environment+0x1000);write(env
 
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value)
+childHandlers={read(int(row['vtable'],16)+8) for row in json.loads(Path('src/armageddon/replay-task-types.json').read_text())}|{read(0x5277e0+8)}
 def hook(cpu,address,size,user):
  global heap
  if address==stop:cpu.emu_stop();return
@@ -86,11 +87,15 @@ def hook(cpu,address,size,user):
  elif address in [stop+0x350,stop+0x360,stop+0x370,stop+0x380,stop+0x390]:
   offset={0x350:0x30,0x360:0x40,0x370:0x48,0x380:0x44,0x390:0x34}[address-stop]
   calls.append(['device',offset]);ret({0x30:1,0x48:17}.get(offset,0))
+ elif address in childHandlers and read(sp+8)==0x3e9:
+  calls.append(['child',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8),read(sp+12)]);ret(0,16)
+ elif address==0x4ca320:
+  calls.append(['body',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);ret(0,8)
  elif address==0x4b4ce0:
   root=cpu.reg_read(UC_X86_REG_ECX);event,length,pointer=read(sp+8),read(sp+12),read(sp+16)
   if event==0x3ec:calls.append(['collect',root,event,length,read(pointer)==inputQueue])
   else:calls.append(['dispatch',root,event,list(cpu.mem_read(pointer,length)) if length else []])
-  ret(0,16)
+  if event!=0x3e9:ret(0,16)
  elif address==0x4b7970:
   calls.append(['query',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)])
  elif address in [0x4b2a00,0x4ca7e0]:calls.append(['flushRoot' if address==0x4b2a00 else 'flushEnvironment',cpu.reg_read(UC_X86_REG_ECX)])
@@ -177,5 +182,5 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('frame did not exit')
   frames.append(dict(sha256=hashlib.sha256(snapshot()).hexdigest(),calls=list(calls),allocations=list(allocationCalls),globalCounter=read(0x561ec8),root=read(manager+4),environment=read(context+0x7d4)))
  cases.append(dict(inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native match-status queries and nested panel lookup also execute; only old-object cleanup, root gameplay, renderer, devices and heap remain interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} restored frame sequences')

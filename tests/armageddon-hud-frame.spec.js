@@ -1,3 +1,5 @@
+import matchFrameBegin from './fixtures/armageddon/match-frame-begin.json' with {type:'json'};
+import {nativeDispatchMatchEventMemory} from '../src/armageddon/match-dispatch.js';
 import matchInput from './fixtures/armageddon/match-input.json' with {type:'json'};
 import {nativeCollectMatchInput} from '../src/armageddon/match-input.js';
 import matchStatus from './fixtures/armageddon/match-status.json' with {type:'json'};
@@ -578,6 +580,27 @@ test("Native task and controller dispatch matches original executable requests",
   }
 });
 test("Native controller selection and input matches original executable requests", {tag:"@logic"}, () => {
+  for(const row of matchFrameBegin.cases) {
+    const bytes=inflateSync(Buffer.from(row.inputMemory,'base64')),calls=[];
+    const offset=at=>at>=0x2300000?0x10000+at-0x2300000:at-0x2000000;
+    const memory={get:at=>bytes.readUInt32LE(offset(at)),put:(at,value)=>bytes.writeUInt32LE(value>>>0,offset(at))};
+    nativeDispatchMatchEventMemory(memory,0x2000000,0x1234,0x3e9,0x124,bytes.subarray(0x5000,0x5124),{
+      dispatchTask:(target,sender,event,size,payload)=>{
+        calls.push(['child',target,sender,event,size,new DataView(payload.buffer,payload.byteOffset).getUint32(0,true)]);
+        if(target!==0x2001000)return;
+        if(row.childMode===1)memory.put(0x2000014,0);
+        else if(row.childMode===2)memory.put(0x23007d4,0x2003000);
+        else if(row.childMode===3)memory.put(0x2000018,0x2001400);
+      },
+      advanceBody:(environment,body,index)=>{
+        calls.push(['body',environment,body,index]);if(calls.filter(c=>c[0]==='body').length!==1)return;
+        if(row.bodyMode===1)memory.put(environment+0x24,0);
+        else if(row.bodyMode===2)memory.put(environment+0x28,environment+0x300);
+        else if(row.bodyMode===3){memory.put(memory.get(environment+0x28)+memory.get(environment+0x24)*4,0x2009000);memory.put(environment+0x24,memory.get(environment+0x24)+1);}
+      },
+    });
+    expect(calls).toEqual(row.calls);expect(createHash('sha256').update(bytes).digest('hex')).toBe(row.sha256);
+  }
   for(const row of matchInput.cases) {
     const bytes=inflateSync(Buffer.from(row.inputMemory,'base64')),calls=[];
     const offset=at=>at>=0x2300000?0x10000+at-0x2300000:at-0x2000000;
@@ -1219,7 +1242,8 @@ test("Native replay resumed frames matches original executable requests", {tag:"
       restore:{flushEnvironment:address=>{calls.push([0x2200220,address]);if(row.clearEnvironment)memory.put(0x20207d4,0);}},destroyEnvironment:(address,flags)=>calls.push([0x2200230,address,flags]),
       constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);return args[0];},
       collectRoot:(root,queue,event,size)=>calls.push(['collect',root,event,size,queue.wrapper===0x2700000]),
-      dispatchRoot:(root,event,payload)=>calls.push(['dispatch',root,event,[...payload]]),
+      observeRootDispatch:(root,event,payload)=>calls.push(['dispatch',root,event,[...payload]]),dispatchMatchEvent:()=>{},
+      dispatchTask:(child,sender,event,size)=>calls.push(['child',child,sender,event,size]),advanceBody:(...args)=>calls.push(['body',...args]),
       observeRootQuery:(root,event,size)=>calls.push(['query',root,event,size]),
       observeTaskCleanup:root=>calls.push(['flushRoot',root]),observeEnvironmentCleanup:address=>calls.push(['flushEnvironment',address]),renderFrame:()=>calls.push(['render']),
     }});
