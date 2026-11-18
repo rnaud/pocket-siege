@@ -1,3 +1,4 @@
+import {nativeInitializeWormSpawnFields} from './armageddon/worm-spawn-fields.js';
 import {speechBankOptions,speechRequestId} from './armageddon/speech-resources.js';
 import { NativeCollisionScene } from './armageddon/collision-scene.js';
 import { nativeCrateSpawnSearch } from './armageddon/crate-spawn-search.js';
@@ -693,7 +694,10 @@ function createWorm(t, i, x, spawnY = null) {
     spawnY ??
     Math.max(...[-4, -2, 0, 2, 4].map((dx) => terrain.surface(x + dx))) + 8;
   const nativeIdleMemory=new Uint8Array(0x390);
-  new DataView(nativeIdleMemory.buffer).setInt32(0x2c8,((Math.imul(Math.floor(x)+Math.floor(H-y),0x660d)&65535)%100)+200,true);
+  const nativeSpawn=nativeInitializeWormSpawnFields(nativeIdleMemory,{
+    team:t+1,worm:i+1,color:t?0:2,frame:matchRandom.frame,
+    x:Math.round(x*65536),y:Math.round((H-y)*65536),
+  });
   return {
     team: t,
     nativeSpeechBank:$('#team-voice-'+t)?.value||'english',
@@ -726,7 +730,7 @@ function createWorm(t, i, x, spawnY = null) {
     damageTaken: 0,
     matchStats: createNativeWormMatchStats(t + 1, i + 1),
     shadow,
-    facing: t ? -1 : 1,
+    facing: nativeSpawn.facing,
     label,
     ground: false,
     knocked: false,
