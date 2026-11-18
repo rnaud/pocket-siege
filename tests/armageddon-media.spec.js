@@ -7,10 +7,26 @@ import imagePalettes from "./fixtures/armageddon/image-palette.json" with { type
 import terrainPalettes from "./fixtures/armageddon/terrain-palette.json" with { type: "json" };
 import { nativeTerrainPalette } from "../src/armageddon/terrain-palette.js";
 import { decodeSprite } from "../src/armageddon/sprite.js";
+import { resolveOriginalMapId, randomOriginalMap } from "../src/armageddon/maps.js";
+import mapNames from "../src/armageddon/map-names.json" with { type: "json" };
 const root = new URL("../public/armageddon/", import.meta.url);
 const catalog = JSON.parse(fs.readFileSync(new URL("media.json", root)));
 
 test("every imported visual preserves its original bytes and native containers decode", { tag: "@logic" }, () => {
+  expect(Object.keys(mapNames)).toHaveLength(100);
+  const randomMaps = new Set(Array.from({length:100}, (_, seed) => randomOriginalMap(seed)));
+  for (const [name, asset] of Object.entries(mapNames)) {
+    const id = `original:${asset.id}`;
+    expect(resolveOriginalMapId(`D:\\DATA\\${name.replaceAll('/', '\\').toUpperCase()}`)).toBe(id);
+    expect(resolveOriginalMapId(`original:${name}`)).toBe(id);
+    expect(resolveOriginalMapId(id)).toBe(id);
+    expect(randomMaps.has(id)).toBe(true);
+    const bytes = fs.readFileSync(new URL(`media/${asset.id}`, root));
+    expect(crypto.createHash('sha256').update(bytes).digest('hex')).toBe(asset.sha256);
+  }
+  expect(resolveOriginalMapId('C:\\data\\mission\\mission22.img')).toBe('original:mission/missi~11.img');
+  expect(resolveOriginalMapId('C:\\data\\mission\\training13.img')).toBe('original:mission/traini~5.img');
+  expect(resolveOriginalMapId('C:\\data\\mission\\mission999.img')).toBe(null);
   for (const row of terrainPalettes.cases) {
     const sources = {};
     for (const asset of row.rows) {

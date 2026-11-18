@@ -1,4 +1,5 @@
 import catalog from "./map-catalog.json" with { type: "json" };
+import mapNames from "./map-names.json" with { type: "json" };
 import { decodeImage, imageRGBA, nativeImagePaletteMap } from "./image.js";
 import { NativeGamePalette } from "./game-palette.js";
 
@@ -72,9 +73,19 @@ export function randomOriginalMap(seed) {
   return `original:${selectableOriginalMaps[(seed >>> 0) % selectableOriginalMaps.length].id}`;
 }
 const sourceMaps = new Map();
-export const originalMapLoaded = id => sourceMaps.has(id);
+// Original mission startup supplies CD paths with Joliet long filenames.
+// Existing saves and the random pool retain the imported ISO9660 identifiers.
+export function resolveOriginalMapId(path) {
+  const name = path.replace(/^original:/i, "").replaceAll("\\", "/")
+    .replace(/^[a-z]:\/data\//i, "").replace(/^data\//i, "").toLowerCase();
+  const id = mapNames[name]?.id ?? name;
+  return catalog.some(asset => asset.id === id) ? `original:${id}` : null;
+}
+export const originalMapLoaded = id => sourceMaps.has(resolveOriginalMapId(id));
 export async function loadOriginalMap(id) {
-  if (!id.startsWith("original:")) return;
+  const resolved = resolveOriginalMapId(id);
+  if (!resolved && !id.startsWith("original:")) return;
+  id = resolved ?? id;
   const asset = catalog.find((a) => `original:${a.id}` === id);
   if (!asset) throw new Error(`Unknown original map ${id}`);
   if (!sourceMaps.has(id)) {
@@ -88,6 +99,7 @@ export async function loadOriginalMap(id) {
   }
 }
 export function createOriginalMap(id) {
+  id = resolveOriginalMapId(id);
   const source = sourceMaps.get(id);
   if (!source) return null;
   const terrain = new OriginalMapTerrain(source, id);
