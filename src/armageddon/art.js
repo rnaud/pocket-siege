@@ -148,6 +148,7 @@ const names = [
     "wpbrtlk",
     "wpbrth",
     ...[44,58,61,64,67,70,73,76,79,82,85,88,91,94,97,100].map(id=>spriteIds.sprites[id].name),
+    ...[126,127].map(id=>spriteIds.sprites[id].name),
     "wblink1",
     "wwalk",
     "wwalku",
@@ -1047,6 +1048,21 @@ export function stepOriginalIdle(worm, frame, memory, sceneMemory, host) {
   worm.originalPlayerFrame=frame;
 }
 
+function resolvedPlayerPose(worm,player,state,{aimed=false,equipped=false}={}) {
+  const torch=worm.originalBlowtorch?.body;
+  const x=torch?.x??0,y=torch?.y??0;
+  const resolved=nativeResolveWormSprite({
+    slope:worm.nativeGroundPose?.variant??0,facing:worm.facing??1,
+    toolAngle:torch?.aim??0x8000,xOverride:torch?.field1fc??x,
+  },{
+    position:()=>({x,y}),current:()=>({sprite:player.current.id,progress:player.current.progress}),state:()=>state,
+  });
+  const name=spriteIds.sprites[resolved.sprite&0x3ffff].name,sprite=animations.get(name).sprite;
+  const index=nativeSpriteFrame(sprite.frames.length,sprite.metadata[2],resolved.progress);
+  return {map:texture(name,index),name,index,aimed,equipped,facing:resolved.sprite&0x40000?1:-1,
+    offsetX:(resolved.x>>16)-(x>>16)};
+}
+
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
     const state = worm.originalJetpack;
@@ -1318,20 +1334,8 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
 
   if (worm.originalPreparation || worm.originalAxe || worm.originalFirePunch || worm.originalDrill || worm.originalBlowtorch) {
     const player = worm.originalBlowtorch?.player ?? worm.originalDrill?.player ?? worm.originalFirePunch?.player ?? worm.originalAxe?.player ?? worm.originalPlayer;
-    const name = spriteIds.sprites[player.current.id].name;
-    const sprite = animations.get(name).sprite;
-    const index = nativeSpriteFrame(
-      sprite.frames.length,
-      sprite.metadata[2],
-      player.current.progress,
-    );
-    return {
-      map: texture(name, index),
-      name,
-      index,
-      aimed: false,
-      equipped: true,
-    };
+    const state=worm.originalBlowtorch?0x71:worm.originalDrill?0x6e:worm.originalFirePunch?0x6c:worm.originalAxe?0x72:0x69;
+    return resolvedPlayerPose(worm,player,state,{equipped:true});
   }
   const recoil = worm.originalRecoil;
   if (
@@ -1355,20 +1359,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       if (next.target !== null) worm.originalRecoil = null;
     }
     if (worm.originalRecoil) {
-      const name = spriteIds.sprites[player.current.id].name;
-      const sprite = animations.get(name).sprite;
-      const index = nativeSpriteFrame(
-        sprite.frames.length,
-        sprite.metadata[2],
-        player.current.progress,
-      );
-      return {
-        map: texture(name, index),
-        name,
-        index,
-        aimed: false,
-        equipped: true,
-      };
+      return resolvedPlayerPose(worm,player,0x6a,{equipped:true});
     }
   } else if (recoil) worm.originalRecoil = null;
   let name =
@@ -1458,20 +1449,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       ),
     );
   }
-  const resolved=nativeResolveWormSprite({slope:worm.nativeGroundPose?.variant??0,facing:worm.facing??1}, {
-    position:()=>({x:0,y:0}),current:()=>({sprite:player.current.id,progress:player.current.progress}),
-    state:()=>frozen?0x88:equipped?0x66:0x65,
-  });
-  name=spriteIds.sprites[resolved.sprite&0x3ffff].name;
-  const resolvedSprite=animations.get(name).sprite;
-  const index = nativeSpriteFrame(resolvedSprite.frames.length,resolvedSprite.metadata[2],resolved.progress);
-  worm.originalAnimation = name;
-  return {
-    map: texture(name, index),
-    name,
-    index,
-    aimed,
-    facing:resolved.sprite&0x40000?1:-1,
-    equipped: equipped && !frozen,
-  };
+  const resolved=resolvedPlayerPose(worm,player,frozen?0x88:equipped?0x66:0x65,{aimed,equipped:equipped&&!frozen});
+  worm.originalAnimation=resolved.name;
+  return resolved;
 }

@@ -41,8 +41,14 @@ test("renderer keeps original firing poses for their native countdown", async ({
       const first = originalWormFrame(worm, "idle", 1, 45, weapon, false);
       const last = originalWormFrame(worm, "idle", end - 1, 45, weapon, false);
       const done = originalWormFrame(worm, "idle", end, 45, weapon, false);
+      const slopes=[-1,0,1].map(variant=>{
+        const tilted={hp:100,facing:-1,nativeGroundPose:{variant}};
+        startOriginalRecoil(tilted,weapon,45,0);
+        const pose=originalWormFrame(tilted,"idle",1,45,weapon,false);
+        return {name:pose.name,facing:pose.facing};
+      });
       return {
-        weapon,
+        weapon,slopes,
         first: first.name,
         last: last.name,
         done: done.name,
@@ -61,7 +67,20 @@ test("renderer keeps original firing poses for their native countdown", async ({
     ["shotgun", "wshotf", "wshotf", "wbrth1", true],
     ["bat", "wbsbswn", "wbsbswn", "wbrth1", true],
   ]);
-  for (const r of result) expect(r.lastFrame).toBe(r.firstFrame);
+  for (const r of result) {
+    expect(r.lastFrame).toBe(r.firstFrame);
+    expect(r.slopes).toEqual([r.first+"u",r.first,r.first+"d"].map(name=>({name,facing:-1})));
+  }
+  const torch=await page.evaluate(async()=>{
+    const {startOriginalBlowtorch,originalWormFrame}=await import("/src/armageddon/art.js");
+    return [0,32768,65536].map(aim=>{
+      const worm={hp:100,facing:1};startOriginalBlowtorch(worm);
+      worm.originalBlowtorch.body={x:12.75*65536,y:0,field1fc:10.25*65536,aim};
+      const pose=originalWormFrame(worm,"idle",0,45,"blowtorch",true);
+      return {name:pose.name,offsetX:pose.offsetX,facing:pose.facing};
+    });
+  });
+  expect(torch).toEqual(["wblowwd","wbloww","wblowwu"].map(name=>({name,offsetX:-2,facing:1})));
   expect(result.find((r) => r.weapon === "mine").firstFrame).toBe(16);
 });
 

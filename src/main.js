@@ -3835,6 +3835,7 @@ function torchPosition(w, body, x, y, flags = body.flags) {
     nativeSceneCollision(w,candidate,px/65536,H-py/65536,terrain,worms,H)).result;
 }
 function syncTorchPosition(w, body) {
+  if(w.originalBlowtorch)w.originalBlowtorch.body=body;
   w.x = body.x/65536; w.y = H-body.y/65536;
 }
 function fireBlowtorch(prepared = false) {
@@ -6291,7 +6292,7 @@ function frame(now) {
         original.map.image.height,
         1,
       );
-      w.body.position.set(0, 0, 24);
+      w.body.position.set(original.offsetX??0, 0, 24);
       w.g.scale.x = 1;
       // Render queue004C3FA0 discards fractional body coordinates.
       w.renderY = Math.ceil(w.y);
