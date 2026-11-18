@@ -1,3 +1,5 @@
+import sceneResourceFinish from './fixtures/armageddon/scene-resource-finish.json' with {type:'json'};
+import {nativeFinishSceneResources} from '../src/armageddon/scene-resource-finish.js';
 import sceneTerrain from './fixtures/armageddon/scene-terrain.json' with {type:'json'};
 import {nativePrepareSceneTerrain} from '../src/armageddon/scene-terrain.js';
 import sceneLoadingProgress from './fixtures/armageddon/scene-loading-progress.json' with {type:'json'};
@@ -216,6 +218,27 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneResourceFinish.cases) {
+    const owner=0x2000000,stack=0x2100000,bytes=Buffer.alloc(0x100000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,images=0;
+    for(const [offset,hex] of c.initial)Buffer.from(hex,'hex').copy(bytes,offset);
+    const region=a=>a>=stack?[stackBytes,a-stack]:[bytes,a-owner];
+    const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
+    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8218,0x821c)).digest('hex');
+    const record=(name,...args)=>calls.push([name,...args,snapshot()]);
+    nativeFinishSceneResources(memory,owner,stack+0x8218,[0,0,0],{
+      allocate:size=>{record('allocate',size);return owner+0x1000+(++allocated)*0x40;},
+      allocateArray:(size,pool)=>{record('array',size,pool);return size?owner+0x40000+allocated*0x4000:0;},
+      free:(...args)=>record('arrayFree',...args),freeSized:(...args)=>record('free',...args),
+      getRendererPalette:(renderer,bank)=>{record('palette',renderer,bank);return owner+(bank===2?0x9000:0x8000);},
+      loadNamedArchiveImage:(palette,archive,name)=>{images++;record('image',palette,archive,name);return name==='fill.img'?owner+0x3000:owner+0xa000+images*0x40;},
+      loadResourceGroup:(...args)=>record('group',...args),loadRendererSprite:(...args)=>record('sprite',...args),
+      drawRendererPrimitive:(...args)=>record('draw',...args),
+      rendererDimensions:(...args)=>{record('dimensions',...args);return [641,479];},
+      clearRendererRect:(...args)=>record('clear',...args),presentRenderer:(...args)=>record('present',...args),
+      commitRendererPalette:(...args)=>record('commit',...args),
+    });
+    expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
+  }
   for(const c of sceneTerrain.cases) {
     const owner=0x2000000,stack=0x2100000,bytes=Buffer.alloc(0x100000,c.pattern),scratchBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocations=0;
     const region=a=>a>=stack?[scratchBytes,a-stack]:[bytes,a-owner];
