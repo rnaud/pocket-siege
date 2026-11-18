@@ -1,4 +1,4 @@
-import schemes from "./scheme-runtime-data.json" with { type: "json" };
+import schemes from "./scheme-runtime.js";
 import { fixedDivide, fixedMultiply } from "./numeric.js";
 import { nativeVectorLength } from "./blast-damage.js";
 // 004D9670. The match's byte at +0x11D6F controls fan width; +0x1AC0

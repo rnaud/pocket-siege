@@ -1,6 +1,6 @@
 import { nativeSurfaceSlope } from "./surface-slope.js";
 import { nativeSlopeTurn } from "./direction.js";
-import schemes from "./scheme-runtime-data.json" with { type: "json" };
+import schemes from "./scheme-runtime.js";
 export const NATIVE_MINE_FRICTION = schemes.schemes.find(
   (s) => s.resource_id === 195,
 ).bytes[0x11ba0 - schemes.context_offset];

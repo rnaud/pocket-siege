@@ -13,7 +13,7 @@ import { nativeWaterSound } from "./water-audio.js";
 import { nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeRopeRelease } from "./rope-release.js";
 import { nativeWormTransitionBody } from "./worm-state.js";
-import schemes from "./scheme-runtime-data.json" with { type: "json" };
+import schemes from "./scheme-runtime.js";
 const scheme = schemes.schemes.find((s) => s.resource_id === 195);
 const byte = (address) => scheme.bytes[address - schemes.context_offset];
 const fixed = (value) => Math.round(value * 65536) | 0;

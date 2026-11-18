@@ -1,4 +1,4 @@
-import schemes from "./scheme-runtime-data.json" with { type: "json" };
+import schemes from "./scheme-runtime.js";
 import { nativeGenerateMapCandidates } from "./map-generation.js";
 import { nativeBuildSpawnPool, nativeSpawnRandom } from "./spawn-pool.js";
 import { nativeMapObjects } from "./map-objects.js";

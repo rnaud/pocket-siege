@@ -2,7 +2,7 @@ import { nativeValidateGirderTarget } from './target-placement.js';
 import { nativeDrawCollisionRegistry } from './collision-registry.js';
 import { nativePlacementBitmapBlit } from './placement-bitmap.js';
 import { NativeCollisionScene } from './collision-scene.js';
-import schemes from './scheme-runtime-data.json' with { type: 'json' };
+import schemes from './scheme-runtime.js';
 
 //00415540 expands the scheme range at builder+d600; the runtime copy maps
 // it to context+11d6c. Match the resource195 defaults used by live physics.

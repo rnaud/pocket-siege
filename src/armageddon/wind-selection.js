@@ -1,4 +1,4 @@
-import schemes from './scheme-runtime-data.json' with { type: 'json' };
+import schemes from './scheme-runtime.js';
 const defaults = schemes.schemes.find(scheme => scheme.resource_id === 195).bytes;
 export const nativeDefaultWind = { strength: (defaults[0] << 24) >> 24,
   fixed: ((defaults[2] | defaults[3] << 8) << 16) >> 16 };

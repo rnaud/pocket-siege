@@ -1,3 +1,5 @@
+import runtimeSchemes from '../src/armageddon/scheme-runtime.js';
+import capturedRuntimeSchemes from '../src/armageddon/scheme-runtime-data.json' with {type:'json'};
 import {nativeSetupLanguage} from '../src/armageddon/setup-language.js';
 import {nativeSetupMusic} from '../src/armageddon/setup-metadata.js';
 import weaponSettings from './fixtures/armageddon/weapon-settings.json' with {type:'json'};
@@ -38,6 +40,7 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  expect(runtimeSchemes.schemes.map(s=>({...s,bytes:[...s.bytes]}))).toEqual(capturedRuntimeSchemes.schemes);
   const localeActual=[],localeExpected=[];
   for(const [lcid,german,first,country,language,calls] of matchSetup.locale_cases) {
     const memory=new Uint8Array(8),view=new DataView(memory.buffer),seen=[];
