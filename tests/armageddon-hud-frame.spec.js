@@ -983,10 +983,9 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       sessionTick: playback => nativeReplaySessionTick(sceneMemory, manager, { playback, recording,
         device: { pending:()=>deviceCall(0x40), clear:()=>deviceCall(0x34),startRecording:()=>deviceCall(0x30),startPlayback:()=>deviceCall(0x44),checksum:()=>deviceCall(0x48) }, audio }),
       playSound: (...args) => calls.push(["sound",...args]) });
-    const events = buffer => { const rows=[]; for(let head=buffer.head;head!==null;head=buffer.records.get(head).next) {
-      const record=buffer.records.get(head), bytes=buffer.bytes.slice(head+8,head+8+record.size);
-      rows.push([new DataView(bytes.buffer).getUint32(0,true),[...bytes.slice(4)]]);
-    } return rows; };
+    const events = buffer => buffer.snapshot().records.map(record=>{
+      const bytes=Uint8Array.from(record.payload);return [new DataView(bytes.buffer).getUint32(0,true),[...bytes.slice(4)]];
+    });
     expect({ calls,input:events(incoming),recorded:events(recording),frame:view.getInt32(0x7f0,true),timer:view.getInt32(0x800,true),tickActive:view.getInt32(0x7f4,true),
       recording:view.getInt32(0x1d43c,true),replaying:view.getInt32(0x1d444,true),slow:view.getInt32(0x1d448,true),speed:view.getInt32(0x1240c,true),audioCount:view.getInt32(0x1cad4,true),
       manager:[manager.abortValue,manager.abortFirst,manager.abortSecond,manager.abortMode],clearRegion:[...sceneMemory.slice(0x12490,0x125bc)],

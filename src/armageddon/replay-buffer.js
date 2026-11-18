@@ -1,101 +1,58 @@
-// 004AF390..004AF4F0. Pointer values are represented as byte offsets;
-// null remains distinct from a valid record at offset zero.
+import {
+  nativeAllocateEventRecord,nativeAppendSceneEvent,nativeResetEventBuffer,
+  nativeEventBufferCount,nativeEventBufferUsage,nativePeekEventRecord,
+  nativeConsumeEventRecord,nativeContainsEventRecord,nativeCopyEventBuffer,nativeReadSceneEvent,
+} from './scene-buffers.js';
+
+//Replay's offset-based API now uses the same native linked-record memory as
+//scene initialization and shutdown. Address zero remains the null pointer.
+const WRAPPER=0,BUFFER=8,DATA=64;
 export class NativeReplayBuffer {
   constructor(capacity) {
-    this.capacity = capacity;
-    this.bytes = new Uint8Array(capacity);
-    this.records = new Map();
+    this.storage=new Uint8Array(DATA+capacity+304);
+    const view=new DataView(this.storage.buffer);
+    this.memory={get:at=>view.getUint32(at,true),put:(at,v)=>view.setInt32(at,v,true),
+      byte:at=>this.storage[at],putByte:(at,v)=>this.storage[at]=v};
+    this.bytes=this.storage.subarray(DATA,DATA+capacity);this.scratch=DATA+capacity;
+    for(const [at,value] of [[WRAPPER,0x526544],[WRAPPER+4,BUFFER],[BUFFER,0x5266a0],[BUFFER+4,DATA],[BUFFER+8,capacity]])this.memory.put(at,value);
     this.clear();
   }
-  clear() {
-    this.writeOffset = 0;
-    this.readOffset = 0;
-    this.head = null;
-    this.tail = null;
-    this.count = 0;
-    this.records.clear();
-  }
-  allocate(size) {
-    const aligned = (size + 11) & ~3;
-    let offset = this.writeOffset;
-    if (offset < this.readOffset) {
-      if (this.readOffset <= offset + aligned) return null;
-    } else if (this.capacity <= offset + aligned) {
-      offset = 0;
-      if (this.readOffset <= aligned) return null;
-    }
-    const record = { offset, size, next: null };
-    if (this.tail !== null) this.records.get(this.tail).next = offset;
-    this.records.set(offset, record);
-    this.tail = offset;
-    if (this.head === null) this.head = offset;
-    this.writeOffset = offset + aligned;
-    this.count++;
-    return offset + 8;
-  }
+  get capacity(){return this.memory.get(BUFFER+8);}
+  get writeOffset(){return this.memory.get(BUFFER+12);}
+  set writeOffset(value){this.memory.put(BUFFER+12,value);}
+  get readOffset(){return this.memory.get(BUFFER+16);}
+  set readOffset(value){this.memory.put(BUFFER+16,value);}
+  get head(){const pointer=this.memory.get(BUFFER+24);return pointer?pointer-DATA:null;}
+  set head(value){this.memory.put(BUFFER+24,value===null?0:value+DATA);}
+  get tail(){const pointer=this.memory.get(BUFFER+20);return pointer?pointer-DATA:null;}
+  set tail(value){this.memory.put(BUFFER+20,value===null?0:value+DATA);}
+  get count(){return nativeEventBufferCount(this.memory,BUFFER);}
+  set count(value){this.memory.put(BUFFER+28,value);}
+  clear(){nativeResetEventBuffer(this.memory,BUFFER);}
+  allocate(size){const pointer=nativeAllocateEventRecord(this.memory,BUFFER,size);return pointer?pointer-DATA:null;}
   push(bytes) {
-    const offset = this.allocate(bytes.length);
-    if (offset === null) return null;
-    this.bytes.set(bytes, offset);
-    return offset;
+    const offset=this.allocate(bytes.length);if(offset===null)return null;
+    this.bytes.set(bytes,offset);return offset;
   }
   peek() {
-    if (this.head === null) return null;
-    const { offset, size } = this.records.get(this.head);
-    return { offset: offset + 8, bytes: this.bytes.slice(offset + 8, offset + 8 + size) };
+    const pointer=nativePeekEventRecord(this.memory,BUFFER,this.scratch+4);
+    if(!pointer)return null;
+    return {offset:pointer-DATA,bytes:this.storage.slice(pointer,pointer+this.memory.get(this.scratch+4))};
   }
-  pop() {
-    if (this.head === null) return 0;
-    const previous = this.head;
-    this.head = this.records.get(previous).next;
-    this.records.delete(previous);
-    if (this.head === null) {
-      this.tail = null;
-      this.readOffset = this.writeOffset = 0;
-    } else this.readOffset = this.head;
-    this.count--;
-    return 1;
-  }
-  contains(offset) {
-    for (let head = this.head; head !== null; head = this.records.get(head).next)
-      if (head + 8 === offset) return 1;
-    return 0;
-  }
-  percentUsed() {
-    const used = this.writeOffset - this.readOffset +
-      (this.writeOffset < this.readOffset ? this.capacity : 0);
-    return Math.trunc(Math.imul(used, 100) / this.capacity);
-  }
-  copyFrom(source) {
-    // Native copying is incremental: a full destination retains the prefix.
-    for (let head = source.head; head !== null; head = source.records.get(head).next) {
-      const record = source.records.get(head);
-      if (this.push(source.bytes.slice(head + 8, head + 8 + record.size)) === null) return 0;
-    }
-    return 1;
-  }
-  writeEvent(event, payload) {
-    const bytes = new Uint8Array(payload.length + 4);
-    new DataView(bytes.buffer).setUint32(0, event >>> 0, true);
-    bytes.set(payload, 4);
-    return this.push(bytes) === null ? 0 : 1;
-  }
+  pop(){return nativeConsumeEventRecord(this.memory,BUFFER);}
+  contains(offset){return nativeContainsEventRecord(this.memory,BUFFER,offset+DATA);}
+  percentUsed(){return nativeEventBufferUsage(this.memory,BUFFER);}
+  copyFrom(source){return nativeCopyEventBuffer(this.memory,BUFFER,BUFFER,source.memory);}
+  writeEvent(event,payload){return nativeAppendSceneEvent(this.memory,WRAPPER,event,payload);}
   readEvent() {
-    const record = this.peek();
-    // 0049C780 refuses an oversized head without consuming it.
-    if (!record || record.bytes.length > 0x128) return null;
-    const event = new DataView(record.bytes.buffer).getUint32(0, true);
-    this.pop();
-    return { event, payload: [...record.bytes.slice(4)] };
+    if(!nativeReadSceneEvent(this.memory,WRAPPER,this.scratch,this.scratch+4,this.scratch+8,true))return null;
+    return {event:this.memory.get(this.scratch),payload:[...this.storage.slice(this.scratch+8,this.scratch+8+this.memory.get(this.scratch+4))]};
   }
   snapshot() {
-    const records = [];
-    for (let head = this.head; head !== null; head = this.records.get(head).next) {
-      const record = this.records.get(head);
-      records.push({ offset: head, payload: [...this.bytes.slice(head + 8, head + 8 + record.size)] });
-    }
-    return { writeOffset: this.writeOffset, readOffset: this.readOffset,
-      head: this.head, tail: this.tail, count: this.count,
-      percent: this.percentUsed(), records };
+    const records=[];
+    for(let pointer=this.memory.get(BUFFER+24);pointer;pointer=this.memory.get(pointer+4))
+      records.push({offset:pointer-DATA,payload:[...this.storage.slice(pointer+8,pointer+8+this.memory.get(pointer))]});
+    return {writeOffset:this.writeOffset,readOffset:this.readOffset,head:this.head,tail:this.tail,
+      count:this.count,percent:this.percentUsed(),records};
   }
 }

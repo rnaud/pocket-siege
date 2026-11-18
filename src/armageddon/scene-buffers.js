@@ -89,11 +89,11 @@ export function nativeContainsEventRecord(memory,buffer,payload) {
   return 0;
 }
 //004AF4F0: partial copies remain committed when the destination fills.
-export function nativeCopyEventBuffer(memory,destination,source) {
-  for(let record=memory.get(source+24);record;record=memory.get(record+4)) {
-    const size=memory.get(record),target=nativeAllocateEventRecord(memory,destination,size);
+export function nativeCopyEventBuffer(memory,destination,source,sourceMemory=memory) {
+  for(let record=sourceMemory.get(source+24);record;record=sourceMemory.get(record+4)) {
+    const size=sourceMemory.get(record),target=nativeAllocateEventRecord(memory,destination,size);
     if(!target)return 0;
-    for(let i=0;i<size;i++)memory.putByte(target+i,memory.byte(record+8+i));
+    for(let i=0;i<size;i++)memory.putByte(target+i,sourceMemory.byte(record+8+i));
   }
   return 1;
 }
