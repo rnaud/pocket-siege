@@ -1118,11 +1118,14 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         terrain,
         waterLevel,
         slots.length,matchSeed,preparedNativeMapTheme(terrain.theme,true),
+        {count:2,kind:1,edges:0,fuse:3},
       )
     : slots.map((x) => ({ x, y: null }));
   paintTerrain(ctx, terrain, texture);
   updateOriginalBackdrop();
   terrainDirty = false;
+  worms = [];
+  if(authored)spawnHazards(terrain.nativeSpawnSetup.objects);
   worms = spawns.map((p, index) =>
     createWorm(index < 3 ? 0 : 1, index % 3, p.x, p.y),
   );
@@ -1148,7 +1151,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   mode = $("#mode").value;
   applyWeather();
   spawnCrate();
-  spawnHazards();
+  if(!authored)spawnHazards();
   beginTurn();
   updateRecordUI();
   resize();
@@ -1244,8 +1247,21 @@ function spawnCrate(announceDrop = false) {
     return;
   }
 }
-function spawnHazards() {
+function spawnHazards(requests=null) {
   if (hazards.length || !terrain) return;
+  if(requests) {
+    for(const request of requests) {
+      if(request.kind!=="barrel")throw new Error("Natural mine constructor is not connected");
+      const mesh=createOriginalObject("oildrum1",-14);
+      const hazard={mesh,nativeOrderId:nativeRenderOrder.allocate()};
+      hazard.nativeBody=nativeBarrelBody(request.x,request.y,request.settle,
+        Math.floor(H-waterLevel),NATIVE_MINE_FRICTION,
+        (px,py,body)=>nativeSceneCollision(hazard,body,px/65536,H-py/65536,terrain,worms,H));
+      hazard.x=hazard.nativeBody.x/65536;hazard.y=H-hazard.nativeBody.y/65536;
+      mesh.position.set(hazard.x,hazard.y,17);group.add(mesh);hazards.push(hazard);
+    }
+    return;
+  }
   for (let i = 0; i < 2; i++) {
     for (let tries = 0; tries < 30; tries++) {
       const x = 180 + logicRandom() * (W - 360),

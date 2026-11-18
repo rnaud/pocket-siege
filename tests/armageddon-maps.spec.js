@@ -109,9 +109,14 @@ test("all authored maps support six separated, grounded worm spawns including ca
     const positions = originalMapSpawns(
       terrain,
       80,
-      6,42,theme,
+      6,42,theme,{count:2,kind:1,edges:0,fuse:3},
     );
     expect(positions, asset.id).toHaveLength(6);
+    expect(terrain.nativeSpawnSetup.objects.length).toBeLessThanOrEqual(2);
+    for(const object of terrain.nativeSpawnSetup.objects) {
+      expect(object.kind).toBe("barrel");
+      expect(positions.some(p=>p.x===object.x/65536 && p.y===terrain.height-object.y/65536)).toBe(false);
+    }
     const worms = positions.map((p) => ({
       ...p,
       vx: 0,

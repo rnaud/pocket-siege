@@ -86,9 +86,10 @@
     },
     {
       "title": "Maps & terrain",
-      "live": "Original authored maps, terrain objects, collision masks and animated water are available in the game. Authored maps now use native candidate discovery, fallback terrain carving/platforms, pool trimming and weighted worm spawn selection instead of the custom horizontal-slot search. Separate setup random streams and original coordinate packing/reservation are preserved. All100 authored maps pass the existing six-worm grounding/separation checks.",
-      "remaining": "Connect natural mine/barrel construction, native side placement and scheme settings; finish complete landscape generation, terrain-theme behavior and terrain history/dirty-region handling. Live worm construction/settling and water/seed conversion still use host adapters.",
+      "live": "Original authored maps, terrain objects, collision masks and animated water are available in the game. Authored maps now use native candidate discovery, fallback terrain carving/platforms, pool trimming and weighted worm spawn selection instead of the custom horizontal-slot search. Separate setup random streams and original coordinate packing/reservation are preserved. All100 authored maps pass the existing six-worm grounding/separation checks. Authored-map barrels now reserve positions from the same native pool and settle through their native constructor before worms are created.",
+      "remaining": "Connect natural mine construction, native side placement and scheme settings; finish complete landscape generation, terrain-theme behavior and terrain history/dirty-region handling. Live worm construction/settling and water/seed conversion still use host adapters.",
       "evidence": [
+        "live_native_natural_barrels",
         "live_native_map_spawns",
         "native_map_spawn_setup",
         "native_worm_spawn_pool",

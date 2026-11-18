@@ -6,7 +6,7 @@ import { nativeSelectSpawn, nativeReserveSpawn, nativeSpawnRandom } from "./spaw
 
 // Adapt imported bitmap layers to Landgen's positive-down coordinates. Keep
 // its palette distinct from the game's palette used for final sprite display.
-export function originalMapSpawns(terrain,waterLevel,count,seed,theme) {
+export function originalMapSpawns(terrain,waterLevel,count,seed,theme,objects={count:0}) {
   const {width,height}=terrain,palette=new NativeMapPalette();
   const color=palette.remap({width,height,pixels:terrain.sourcePixels,palette:terrain.sourcePalette});
   const translation=new Uint8Array(256);
@@ -21,7 +21,7 @@ export function originalMapSpawns(terrain,waterLevel,count,seed,theme) {
     water:Math.round(waterLevel*100/height),requested:count,
     platform,rimColor:translation[theme.rimColor],
   },()=>landgenSeed=(Math.imul(landgenSeed,0x19660d)+0x3c6ef35f)>>>0,
-  {count:0,reserve:count},sceneMemory);
+  {...objects,reserve:count},sceneMemory);
   const spawns=[];
   for(let i=0;i<count;i++) {
     const output={value:0};
@@ -38,6 +38,6 @@ export function originalMapSpawns(terrain,waterLevel,count,seed,theme) {
   terrain.pixels=imageRGBA(image,true,{mapping:terrain.nativePaletteMapping,colors:terrain.nativePalette.colors});
   for(let y=0;y<height;y++)for(let x=0;x<width;x++)
     terrain.data[(height-1-y)*width+x]=solid.pixels[y*width+x];
-  terrain.nativeSpawnSetup={points:setup.points,landgenSeed,spawnSeed:new DataView(sceneMemory.buffer).getUint32(0x1241c,true)};
+  terrain.nativeSpawnSetup={objects:setup.objects,points:setup.points,landgenSeed,spawnSeed:new DataView(sceneMemory.buffer).getUint32(0x1241c,true)};
   return spawns;
 }
