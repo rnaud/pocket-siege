@@ -34,8 +34,13 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 
 compressed=0x714be0
 bitmap=owner;pixels=owner+0x1000
+archive_data=[(args.executable.parents[2]/name).read_bytes() for name in ['DATA/CUSTOM/SNOW/LEVEL.DIR','DATA/WATER/BLUE/WATER.DIR']]
+archive_sources=[]
+for data_ in archive_data:
+ offset=struct.unpack_from('<I',data_,8)[0]+4
+ archive_sources.append(dict(sha256=hashlib.sha256(data_).hexdigest(),header=data_[:12].hex(),offset=offset,index=data_[offset:].hex()))
 
-def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(compressed,0x1000))).hexdigest()
+def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(compressed,0x1000))+bytes(cpu.mem_read(0x560230,4))).hexdigest()
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);cpu.reg_write(UC_X86_REG_EIP,read(sp));cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EAX,value)
 def cstring(address):
@@ -47,7 +52,8 @@ def hook(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP);receiver=cpu.reg_read(UC_X86_REG_ECX)
  if address==stop+0xb00:
   value=cstring(read(sp+8)).replace('%s',cstring(read(sp+12)));cpu.mem_write(read(sp+4),value.encode('latin1')+b'\0');ret(len(value))
- elif address==0x4ad270:calls.append(['directory',receiver,snapshot()]);ret(variant&1)
+ elif address==stop+0xc00:
+  file,offset,origin=[read(sp+i*4) for i in range(1,4)];calls.append(['seek',file,offset,origin,snapshot()]);archive_cursors[file-0x5001]=offset;ret(0)
  elif address==stop+0x800:calls.append(['palette',receiver,read(sp+4),snapshot()]);ret(owner+0x8000,4)
  elif address==stop+0x900:calls.append(['submit',receiver,read(sp+4),snapshot()]);ret(0,4)
  elif address==stop+0x600:
@@ -58,24 +64,27 @@ def hook(cpu,address,size,user):
  elif address==stop+0x200:
   dest,n,count,file=[read(sp+i*4) for i in range(1,5)]
   calls.append(['read','scratch' if stack<=dest<stack+0x10000 else dest,n,count,file,snapshot()])
-  chunk=stream[cursor:cursor+n*count];cursor+=len(chunk)
+  if file==0x1234:chunk=stream[cursor:cursor+n*count];cursor+=len(chunk)
+  else:
+   index=file-0x5001;position=archive_cursors[index];chunk=archive_data[index][position:position+n*count];archive_cursors[index]+=len(chunk)
   if chunk:cpu.mem_write(dest,chunk)
   ret(len(chunk)//n if n else 0)
- elif address==stop+0x300:ret(0 if bytes(cpu.mem_read(read(sp+4),4))==b'IMG\x1a' else 1)
+ elif address==stop+0x300:ret(0 if bytes(cpu.mem_read(read(sp+4),4))==bytes(cpu.mem_read(read(sp+8),4)) else 1)
  elif address==0x492550:
   calls.append(['allocate',read(sp+4),snapshot()])
   if read(sp+4)==0x19c:archives+=1;ret(owner+0x7000+(archives-1)*0x200)
   else:bitmap+=0x40;pixels=owner+0x2000+(bitmap-owner-0x1000)//0x40*0x400;ret(bitmap)
  elif address==0x4924d0:
-  calls.append(['array',read(sp+8),read(sp+4),snapshot()]);ret(pixels)
-for iat,target in [(0x5178f4,stop+0xb00),(0x51794c,stop+0x600),(0x51793c,stop+0x700),(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
-for address in [stop+0xb00,0x4ad270,stop+0x800,stop+0x900,stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+  calls.append(['array',read(sp+8),read(sp+4),snapshot()]);ret(owner+0x9000+(archives-1)*0x2000 if read(sp+4)==0x560220 else pixels)
+for iat,target in [(0x5178ec,stop+0xc00),(0x5178f4,stop+0xb00),(0x51794c,stop+0x600),(0x51793c,stop+0x700),(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
+for address in [stop+0xb00,stop+0xc00,stop+0x800,stop+0x900,stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
 for pattern in [0,0xa5]:
  for variant in range(4):
   for count in [0,1,8,32]:
-   cursor=0;archives=0;color_index=0;calls=[];bitmap=owner+0x1000;pixels=0
+   cursor=0;archive_cursors=[0,0];archives=0;color_index=0;calls=[];bitmap=owner+0x1000;pixels=0
    cpu.mem_write(owner,bytes([pattern])*0x10000);cpu.mem_write(stack,bytes([pattern])*0x10000);cpu.mem_write(compressed,bytes([pattern])*0x1000)
+   cpu.mem_write(0x560230,bytes([pattern])*4)
    first,last=[(137,248),(0,2),(254,254),(2,1)][variant]
    sp=stack+0xf000;write(sp,stop);write(sp+4,first);write(sp+8,last)
    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x8000);cpu.emu_start(0x4adac0,stop,count=10000)
@@ -93,6 +102,6 @@ for pattern in [0,0xa5]:
    for i,v in enumerate(arguments):write(sp+4+i*4,v)
    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x4000);cpu.emu_start(0x4a78a0,0x4a7a67,count=100000)
    assert cpu.reg_read(UC_X86_REG_EIP)==0x4a7a67
-   cases.append(dict(terrainStartup=True,themeArchives=True,nativeRectangles=True,composed=True,nativeBitmaps=True,nativePalette=True,first=first,last=last,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004A78A0..004A7A67',method='32 original terrain constructor prefixes compose complete file/image/bitmap/palette/decompression loading. Full68KiB memory at callbacks and completion. Renderer palette access/submission, CRT transport and heap allocation remain interfaces. Includes water percentages0/23/100/101. Native rectangle clipping and1/8-bit clearing execute. Original theme archive constructors and004CC460 file opening execute, with both open failure and directory parse results. Directory parsing, remaining terrain construction and live startup remain unfinished.',cases=cases),separators=(',',':'))+'\n')
+   cases.append(dict(nativeDirectories=True,terrainStartup=True,themeArchives=True,nativeRectangles=True,composed=True,nativeBitmaps=True,nativePalette=True,first=first,last=last,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(archive_sources=archive_sources,executable_sha256=digest,entry='004A78A0..004A7A67',method='32 original terrain constructor prefixes compose complete file/image/bitmap/palette/decompression loading. Full68KiB plus shared signature memory at callbacks and completion. Renderer palette access/submission, CRT transport and heap allocation remain interfaces. Includes water percentages0/23/100/101. Native rectangle clipping and1/8-bit clearing execute. Original theme archive constructors and004CC460 file opening execute, including real CUSTOM/SNOW/LEVEL.DIR and WATER/BLUE/WATER.DIR directory reading and pointer relocation. File-backed virtual read/seek/view implementations execute. Remaining terrain construction and live startup remain unfinished.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} composed terrain sequences')
