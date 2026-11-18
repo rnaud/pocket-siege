@@ -1,6 +1,6 @@
 import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
 import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
-import missionNativePalette from './fixtures/armageddon/mission-native-palette.json' with {type:'json'};
+import missionNativePalette from './fixtures/armageddon/mission-global-owner.json' with {type:'json'};
 import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
 import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
 import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
@@ -8,7 +8,7 @@ import missionNativeFlags from './fixtures/armageddon/mission-native-flags.json'
 import missionNativeScheme from './fixtures/armageddon/mission-native-scheme.json' with {type:'json'};
 import {nativeSelectSetupScheme,originalSchemeResource} from '../src/armageddon/scheme-selection.js';
 import missionLoad from './fixtures/armageddon/mission-load.json' with {type:'json'};
-import {nativeLoadMission} from '../src/armageddon/mission-load.js';
+import {nativeLoadMission,nativeLoadGlobalMission} from '../src/armageddon/mission-load.js';
 import missionTeams from './fixtures/armageddon/mission-teams.json' with {type:'json'};
 import {nativeLoadMissionTeams} from '../src/armageddon/mission-teams.js';
 import missionWorms from './fixtures/armageddon/mission-worms.json' with {type:'json'};
@@ -227,6 +227,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   // The deepest capture supersedes the earlier all-profile callback captures.
   // Keep scheme rejection separately: native mission bank0 always exists.
   for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativePalette.cases]) {
+    const missionOwner=c.globalOwner?0x6e0484:0x2000000;
     const globalBase=c.nativeInitializer?0x6da000:0x6e0000;
     const globals=Buffer.alloc(c.nativeInitializer?0x30000:0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const bitmapBytes=Buffer.alloc(0x10000),paletteHeap=Buffer.alloc(0x10000,c.pattern),paletteSlot=Buffer.alloc(4);
@@ -242,12 +243,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       memory.range(0x6f48bc,9).set(Buffer.from('C:\\WORMS\0'));
       memory.put(0x6f49cc,2);memory.put(0x6f49ec,0);memory.put(0x6f49c4,1);
     }
-    nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
-    memory.put(0x2000880,0x2001000);memory.put(0x6f47f4,c.country);memory.putByte(0x6e6880,1);
-    if(!c.unselected){memory.put(0x2000884,1);memory.put(0x2000054,c.mutation?1:-1);}
+    nativeCreateMissionOwner(memory,missionOwner,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
+    memory.put((missionOwner+0x880),(missionOwner+0x1000));memory.put(0x6f47f4,c.country);memory.putByte(0x6e6880,1);
+    if(!c.unselected){memory.put((missionOwner+0x884),1);memory.put((missionOwner+0x54),c.mutation?1:-1);}
     if(c.nativeServices)memory.putByte(0x6e1178,67+c.mutation);
     const random=new NativeFrontendRandom(123+c.pattern);
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).update(c.nativePalette?paletteHeap:Buffer.alloc(0)).digest('hex');
+    const snapshot=()=>createHash('sha256').update(globals).update(c.globalOwner?Buffer.alloc(0):owner).update(c.nativePalette?paletteHeap:Buffer.alloc(0)).digest('hex');
     const host={
       setResourceString(address,id) {calls.push(['label',address,id,snapshot()]);memory.put(address,0x2500000+id*4);},
       findResource(module,id,type) {calls.push(['findResource',module,id,type,snapshot()]);return 0x2400000+id*256;},
@@ -263,7 +264,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       readLandFile(section,key,fallback,size,filename) {calls.push(['land',section,key,fallback,size,filename,snapshot()]);return Buffer.from(c.strings[section.toLowerCase()]?.[key.toLowerCase()]??fallback,'latin1').subarray(0,size-1);},
       profileInt(section,key,fallback,filename) {
         calls.push(['profile',section,key,fallback,filename,snapshot()]);
-        if(c.mutation)memory.put(0x2000880,filename===0x2001000?0x2001100:0x2001000);
+        if(c.mutation)memory.put((missionOwner+0x880),filename===(missionOwner+0x1000)?(missionOwner+0x1100):(missionOwner+0x1000));
         return c.values[section.toLowerCase()]?.[key.toLowerCase()]??fallback;
       },
       profileString(section,key,fallback,dest,size,filename) {
@@ -325,7 +326,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       host.languageResource=host.loadString;
       host.readOption=(key,fallback)=>{calls.push(['option',key,fallback,snapshot()]);return key==='DetailLevel'?5:0;};
     }
-    const result=nativeLoadMission(memory,0x2000000,host);
+    const result=c.globalOwner?nativeLoadGlobalMission(memory,host):nativeLoadMission(memory,missionOwner,host);
     if(c.nativeInitializer)expect([random.state,storedSeed]).toEqual([c.randomState,c.storedSeed]);
     expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }

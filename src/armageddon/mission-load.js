@@ -47,3 +47,9 @@ export function nativeLoadMission(memory, owner, host) {
   host.finalizeSetup?.(0x6e68ac);
   return 0;
 }
+
+//Original frontend callers443E3A and47FC13 use the singleton inside the
+//frontend globals. Keep its storage aliased with shared match preparation.
+export function nativeLoadGlobalMission(memory,host) {
+  return nativeLoadMission(memory,0x6e0484,host);
+}

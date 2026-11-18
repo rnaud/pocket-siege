@@ -15,7 +15,9 @@ parser.add_argument('--native-initializer',action='store_true')
 parser.add_argument('--native-flags',action='store_true')
 parser.add_argument('--native-bitmaps',action='store_true')
 parser.add_argument('--native-palette',type=Path)
+parser.add_argument('--global-owner',action='store_true')
 args = parser.parse_args()
+if args.global_owner and not args.native_palette:parser.error('--global-owner requires --native-palette')
 args.native_bitmaps |= bool(args.native_palette)
 args.native_flags |= args.native_bitmaps
 args.native_initializer |= args.native_flags
@@ -38,8 +40,8 @@ headers = optional+struct.unpack_from('<H',data,pe+20)[0]
 for i in range(struct.unpack_from('<H',data,pe+6)[0]):
     _,rva,size,offset=struct.unpack_from('<IIII',data,headers+40*i+8)
     if size: cpu.mem_write(base+rva,data[offset:offset+size])
-owner, stack, stop = 0x2000000, 0x2100000, 0x2200000
-for address in [owner, stack, stop]: cpu.mem_map(address,0x10000)
+owner, stack, stop = (0x6e0484 if args.global_owner else 0x2000000), 0x2100000, 0x2200000
+for address in ([stack,stop] if args.global_owner else [owner,stack,stop]):cpu.mem_map(address,0x10000)
 def write(address,value): cpu.mem_write(address,struct.pack('<I',value&0xffffffff))
 def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 def signed(v):return v if v<0x80000000 else v-0x100000000
@@ -52,7 +54,7 @@ def cstring(address):
  result=bytearray()
  while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
  return bytes(result)
-def snapshot():return hashlib.sha256(bytes(cpu.mem_read(globalBase,globalSize))+bytes(cpu.mem_read(owner,0x10000))+(bytes(cpu.mem_read(0x2700000,0x10000)) if args.native_palette else b'')).hexdigest()
+def snapshot():return hashlib.sha256(bytes(cpu.mem_read(globalBase,globalSize))+(b'' if args.global_owner else bytes(cpu.mem_read(owner,0x10000)))+(bytes(cpu.mem_read(0x2700000,0x10000)) if args.native_palette else b'')).hexdigest()
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value&0xffffffff)
 def setstring(obj,value):
@@ -332,7 +334,7 @@ for name,profile,strings,failure,unselected in profiles:
   rng=123+pattern
   calls=[];initializing=True;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43e910,stop,count=2000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,nativePalette=bool(args.native_palette),nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
+  cases.append(dict(profile=name,globalOwner=args.global_owner,nativePalette=bool(args.native_palette),nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
 schemeCases=[]
 if args.native_scheme and not args.native_initializer:
  for selection in [-1,*range(19),2147483647]:
@@ -342,5 +344,5 @@ if args.native_scheme and not args.native_initializer:
     sp=stack+0xe000;write(sp,stop);write(sp+4,selection);write(sp+8,bank);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6f454c)
     cpu.emu_start(0x470a20,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     schemeCases.append(dict(selection=selection,bank=bank,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition. Native palette mode maps the original DirectX2D DLL and executes its load/read/destroy routines; only CRT file/heap and DirectDraw calls remain intercepted. Full320KiB global/owner/palette-heap memory is compared at each observed boundary and return.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords,paletteDllSha256=paletteDllHash),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition. Native palette mode maps the original DirectX2D DLL and executes its load/read/destroy routines; only CRT file/heap and DirectDraw calls remain intercepted. Full320KiB global/owner/palette-heap memory is compared at each observed boundary and return. Global-owner mode uses the actual006E0484 mission singleton inside frontend storage; its256KiB global/heap comparison includes the mission bytes in place, without duplicating an external owner region.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords,paletteDllSha256=paletteDllHash),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')
