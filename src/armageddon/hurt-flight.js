@@ -19,9 +19,10 @@ const byte = (address) => scheme.bytes[address - schemes.context_offset];
 const fixed = (value) => Math.round(value * 65536) | 0;
 
 export function nativeWormContactBody(worm, height = 0) {
-  const body = worm.nativeHurtBody ?? worm.nativeFlight;
   const state = nativeWormState(worm);
+  const body = worm.nativeHurtBody ?? worm.nativeFlight ?? createNativeWormBody(worm,height,state,0);
   return {
+    ...body,
     worm: true,
     type: nativeWormCollisionType(state),
     state,
@@ -37,9 +38,10 @@ export function nativeWormContactBody(worm, height = 0) {
 }
 
 export function applyNativeWormContact(worm, body) {
+  const previous=nativeWormState(worm);
   // State entry must happen before the next sweep query, so the registry
   // stops treating the newly hurt receiver as an ordinary type2 body.
-  if (body.state !== undefined && body.state !== nativeWormState(worm)) {
+  if (body.state !== undefined && body.state !== previous) {
     const entry = nativeHurtEntry(body.state, worm.nativeHurtBody?.angle ?? worm.nativeFlight?.angle ?? 0);
     if (entry) {
       worm.originalHurt = { state: body.state, angle: entry.angle, sprite: entry.calls[1].sprite_id };
@@ -47,11 +49,8 @@ export function applyNativeWormContact(worm, body) {
       worm.ground = false;
       worm.knocked = true;
       worm.hurt = Math.max(worm.hurt ?? 0, 1.4);
-      if (worm.nativeHurtBody) {
-        worm.nativeHurtBody.state = body.state;
-        worm.nativeHurtBody.type = nativeWormCollisionType(body.state);
-        worm.nativeHurtBody.angle = entry.angle;
-      }
+      const transition=nativeWormTransitionBody({...body,state:previous},body.state,{schemeByte:byte(0x11d40)});
+      worm.nativeHurtBody={...transition.body,state:body.state,angle:entry.angle};
       // Hurt translation owns the body from this point onward.
       worm.nativeFlight = null;
     }

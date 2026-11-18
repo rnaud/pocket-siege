@@ -79,7 +79,9 @@ test("registered hurt worm excludes itself and other hurt types", { tag: "@logic
 
 test("hurt contact imparts horizontal velocity and state to a standing receiver", { tag: "@logic" }, () => {
   const a = worm(100, 200, 600), b = worm(118, 200, 0, 0, null);
+  b.nativeSpawnPhysics={waterDrag:0xd123,tangent:0x7000};
   const result = environment({ solid: () => false }, [a, b]).step(a);
+  expect(b.nativeHurtBody).toMatchObject({state:0x80,type:3,vx:12*65536,waterDrag:0xd123,tangent:0x7000,drag:65536,field154:0});
   expect(a.vx).toBe(600);
   expect(b.vx).toBe(600);
   expect(result.events).toContainEqual({ operation: "state", target: 0x80, receiverHit: 3 });
