@@ -1,3 +1,4 @@
+import {nativeCompactPhysicsEntries} from './physics-compaction.js';
 import {nativeCreateTaskMemory} from './task-memory.js';
 import {nativeInitializePhysics} from './physics-create.js';
 
@@ -44,11 +45,8 @@ export function nativeCompactPhysicsMemory(memory,environment) {
     const list=environment+(index===0?0x18:0x34+(index-1)*0x1c);
     if(!memory.get(list+8))continue;
     const source=memory.get(list+16),target=memory.get(list+20);
-    let count=0;
-    for(let i=0;i<(memory.get(list+12)|0);i++) {
-      const body=memory.get(source+i*4);
-      if(body)memory.put(target+count++*4,body);
-    }
+    const count=nativeCompactPhysicsEntries(memory.get(list+12),
+      index=>memory.get(source+index*4),(index,body)=>memory.put(target+index*4,body));
     memory.put(list+24,source);memory.put(list+16,target);memory.put(list+20,source);
     memory.put(list+12,count);memory.put(list+8,0);
   }

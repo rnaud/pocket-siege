@@ -1,3 +1,4 @@
+import {nativeCompactPhysicsEntries} from './physics-compaction.js';
 import {nativeRestorePhysicsMembership} from './replay-physics.js';
 import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
 import shapes from "./collision-shapes.json" with { type: "json" };
@@ -46,6 +47,8 @@ export class NativeCollisionScene {
     });
     this.allBodies={capacity:16,entries:[this.rows[1][0]]};
     this.categoryCapacity=Array(32).fill(16);
+    this.dirtyLists=new Set();
+    this.spareLists=Array.from({length:33},()=>[]);
     this.manager = new NativeCollisionRegistry(
       this.rows,
       (a, ax, ay, b, bx, by) => {
@@ -66,11 +69,26 @@ export class NativeCollisionScene {
   //004C9460 leaves holes in both lists. Fresh/body-state registration uses
   //negative saved indices, so004C8F80 appends instead of filling those holes.
   removeBody(body) {
-    for(const row of [this.rows[body.type],this.allBodies.entries]) {
+    for(const type of [body.type,32]) {
+      const row=type===32?this.allBodies.entries:this.rows[type];
       const index=row?.indexOf(body) ?? -1;
-      if(index>=0)row[index]=null;
+      if(index>=0) {row[index]=null;this.dirtyLists.add(type);}
     }
     this.manager.cache=null;
+  }
+
+  //End-of-frame004CA7E0, after actor changes. Clean lists and overlap caches
+  //are unchanged; only dirty backing lists swap, retaining membership order.
+  finishFrame() {
+    for(const type of [32,...Array.from({length:32},(_,i)=>i)]) {
+      if(!this.dirtyLists.has(type))continue;
+      const source=type===32?this.allBodies.entries:this.rows[type],target=this.spareLists[type];
+      const count=nativeCompactPhysicsEntries(source.length,index=>source[index],(index,body)=>{target[index]=body;});
+      target.length=count;
+      if(type===32)this.allBodies.entries=target;else this.rows[type]=target;
+      this.spareLists[type]=source;
+    }
+    this.dirtyLists.clear();
   }
 
   registerBody(body,type) {
@@ -210,4 +228,12 @@ export function nativeSceneObject(terrain, id) {
   if (scene) for (const [identity, actor] of scene.objects)
     if (actor.id === id) return identity;
   return null;
+}
+
+//The live host calls this after its frame tasks, before queued audio. Synchronize
+//final removals/state changes even if no collision query followed them.
+export function nativeFinishSceneCollisionFrame(terrain,worms,objects=[]) {
+  const scene=scenes.get(terrain);
+  if(!scene)return;
+  scene.syncWorms(worms);scene.syncObjects(objects);scene.finishFrame();
 }

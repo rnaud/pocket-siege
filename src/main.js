@@ -106,7 +106,7 @@ import {
   nativeWormContactBody,
   applyNativeWormContact,
 } from "./armageddon/hurt-flight.js";
-import { nativeSceneCollision as queryNativeScene, nativeSceneObject } from "./armageddon/collision-scene.js";
+import { nativeSceneCollision as queryNativeScene, nativeSceneObject, nativeFinishSceneCollisionFrame } from "./armageddon/collision-scene.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
@@ -5055,7 +5055,9 @@ function stepIdleGestures() {
 }
 
 function step(dt) {
+  const advancing=!mapLoading && !menu.open && !document.hidden && !replaying && hitStop<=0;
   stepFrame(dt);
+  if(advancing)nativeFinishSceneCollisionFrame(terrain,worms,[...mines,...crates,...hazards]);
   if (!mapLoading && !menu.open && !document.hidden)
     tickOriginalWindPresentation(replaying);
   // 004A1A00 submits queued sounds after frame tasks. Immediate per-body

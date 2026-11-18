@@ -49,6 +49,24 @@ test("barrel registry respects masks, self exclusion, removal and live body posi
   expect(ordered.rows[17][0]).toBeNull();
   expect(ordered.probe(3,300<<16,200<<16,1<<17)).toBe(secondId);
 
+  const cleanTerrainRow=ordered.rows[1],oldObjectRow=ordered.rows[17];
+  const cache={sentinel:true};ordered.manager.cache=cache;
+  ordered.finishFrame();
+  expect(ordered.rows[1]).toBe(cleanTerrainRow);
+  expect(ordered.rows[17]).not.toBe(oldObjectRow);
+  expect(ordered.rows[17].map(body=>body.id)).toEqual([secondId,ordered.objects.get(third).id]);
+  expect(ordered.rows[2]).toEqual([retained]);
+  expect(ordered.allBodies.entries).toEqual([cleanTerrainRow[0],retained,ordered.objects.get(second),ordered.objects.get(third)]);
+  expect(ordered.manager.cache).toBe(cache);
+  expect(ordered.probe(3,300<<16,200<<16,1<<17)).toBe(secondId);
+  const compacted=ordered.rows[17];ordered.finishFrame();expect(ordered.rows[17]).toBe(compacted);
+  for(let i=0;i<100;i++) {
+    b.originalHurt={state:0x80};ordered.syncWorms([b]);
+    b.originalHurt=null;ordered.syncWorms([b]);ordered.finishFrame();
+    expect(ordered.allBodies.entries.length).toBe(4);
+    expect(ordered.rows[2]).toEqual([retained]);expect(ordered.rows[3]).toEqual([]);
+  }
+
   const ground = new NativeCollisionScene({solid:(x,y)=>x>=0 && x<1920 && y<150},650);
   const barrelAtGround={nativeBody:{type:17,shape:9,enabled:1,x:960<<16,y:480<<16}};
   ground.syncObjects([barrelAtGround]);
