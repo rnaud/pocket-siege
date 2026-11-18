@@ -34,15 +34,19 @@ context=0x3000000;cpu.mem_map(context,0x20000)
 manager=owner+0x1000;manager_table=owner+0x1100;probe=stop+0x100;register=stop+0x200
 write(context+0x7d4,manager);write(manager,manager_table);write(manager_table+0xc,probe);write(manager_table+0x34,register)
 for address,code in [(0x4ed970,b'\xc2\x04\x00'),(0x4b19e0,b'\xc2\x04\x00'),(register,b'\xc2\x04\x00'),(probe,b'\xc2\x0c\x00')]:cpu.mem_write(address,code)
-hit=0;queries=[]
+hit=0;queries=[];slopeCalls=[];slope=None
+cpu.mem_write(0x4f4e60,b"\xc2\x10\x00")
 def signed(v):return v if v<0x80000000 else v-0x100000000
 def hook(cpu,address,size,user):
+ if address==0x4f4e60:
+  sp=cpu.reg_read(UC_X86_REG_ESP);slopeCalls.append([signed(read(sp+4)),signed(read(sp+8)),read(sp+12)])
+  write(read(sp+16),(slope or 0)&0xffffffff);cpu.reg_write(UC_X86_REG_EAX,int(slope is not None))
  if address==probe:
   sp=cpu.reg_read(UC_X86_REG_ESP);queries.append([signed(read(sp+8)),signed(read(sp+12)),read(owner+0x40)])
   cpu.reg_write(UC_X86_REG_EAX,hit)
 cpu.hook_add(UC_HOOK_CODE,hook)
 fields={'state':0x50,'impulseScale':0xd8,'accumulated':0xe0,'type':0x3c,'shape':0x44,'complex':0x4c,'mass':0x58,'enabled':0x48,'suspended':0x54,'sleeping':0xb8,'submerged':0xbc,'contact':0xc0,'moving':0xc4,'x':0x90,'y':0x94,'vx':0x9c,'vy':0xa0,'angle':0x98,'angularVelocity':0xa4,'radius':0x5c,'flags':0x40,'gravityScale':0x6c,'windScale':0x68,'drag':0x64,'skimScale':0xb4,'waterDrag':0x60,'restitutionX':0x78,'restitutionY':0x7c,'tangent':0x80}
-cases=[]
+cases=[];settleCases=[]
 for friction in [0,66,96]:
  for arm in [-1,0,4000]:
   for x,y in [[0,0],[123456,234567],[-65537,-196609],[2147483000,1200]]:
@@ -55,12 +59,24 @@ for friction in [0,66,96]:
     before={key:signed(read(owner+off)) for key,off in fields.items()}
     write(owner,0x527300);payload=owner+0x2000;config=owner+0x2100
     for i,v in enumerate([0,0,x,y,32768,-49152,0,0,0,0,0]):write(payload+i*4,v&0xffffffff)
-    for i,v in enumerate([48,arm,60,3000,50,100,50,0]):write(config+i*4,v&0xffffffff)
-    write(sp+0x28,config);write(sp+0x34,1)
+    record=[48,arm,60,{0:0,66:3000,96:-1}[friction],50,100,50,0]
+    for i,v in enumerate(record):write(config+i*4,v&0xffffffff)
+    write(sp+0x28,config);write(sp+0x34,hit)
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_EBP,payload)
     queries=[];cpu.emu_start(0x4e9512,0x4e96b4,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=0x4e96b4:raise RuntimeError('Mine initialization did not finish')
     after={key:signed(read(owner+off)) for key,off in fields.items()}
-    cases.append(dict(before=before,x=x,y=y,vx=32768,vy=-49152,arm=arm,friction=friction,hit=hit,queries=queries,after=after))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004F4000 base numeric constructor and004E9512..004E96B4 mine initializer execute unchanged; task base/registration stubbed, placement hit supplied.',cases=cases),separators=(',',':'))+'\n')
+    timerOffsets={'enabled':0x104,'triggered':0x108,'radius':0x114,'fuse':0x118,'arm':0x11c,'damage':0x124,'lastBeep':0x12c,'placed':0x13c,'forceBlast':0x10c,'dud':0x128}
+    cases.append(dict(record=record,placed=hit,timer={key:signed(read(owner+off)) for key,off in timerOffsets.items()},before=before,x=x,y=y,vx=32768,vy=-49152,arm=arm,friction=friction,hit=hit,queries=queries,after=after))
+for c in cases:
+ for waterOffset in [-1,4]:
+  for slope in [None,-131072,32768,131072]:
+   for key,off in fields.items():write(owner+off,c['after'][key]&0xffffffff)
+   write(owner+0x38,context);water=(c['y']>>16)+waterOffset;write(context+0x804,water&0xffffffff)
+   write(payload+8,c['x']&0xffffffff);write(payload+12,c['y']&0xffffffff)
+   write(sp+0x30,1);hit=c['hit'];queries=[];slopeCalls=[]
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EBX,owner);cpu.reg_write(UC_X86_REG_EBP,payload)
+   cpu.emu_start(0x4e96b4,0x4e9746,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4e9746
+   settleCases.append(dict(before=c['after'],x=c['x'],y=c['y'],water=water,hit=hit,slope=slope,queries=queries,slopeCalls=slopeCalls,after={key:signed(read(owner+off)) for key,off in fields.items()}))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original004F4000 base numeric constructor and004E9512..004E96B4 mine initializer execute unchanged; task base/registration stubbed, placement hit supplied.',cases=cases,settleCases=settleCases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} mine physical initialization cases')

@@ -4,6 +4,13 @@ const record = records.schemes.find((s) => s.resource_id === 195).weapons[
   WEAPON_SLOTS.mine
 ];
 const word = (offset) => record[(offset - 0x48) / 4];
+//004E9512..004E95B9 initializes both placed and natural mines from this
+// eight-word weapon record. Natural mines supply their scheme fuse directly.
+export function nativeMineTimerFromRecord(record,placed) {
+  return {enabled:1,triggered:0,radius:record[2]|0,fuse:record[3]|0,
+    arm:record[1]|0,damage:record[6]|0,lastBeep:Math.trunc((record[3]|0)/250)|0,
+    placed:placed|0,forceBlast:0,dud:0};
+}
 export function nativeMineInitialTimer() {
   return {
     arm: word(0x78),

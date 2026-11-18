@@ -11,7 +11,7 @@ function polynomial(value) {
   term = fixedMultiply((term - 0x548e) | 0, square);
   return short(fixedDivide(fixedMultiply((term + 0xfff7) | 0, value), 0x6487e));
 }
-function atan(value) {
+export function nativeSlopeTurn(value) {
   if (value > 65536) return short(0x4000 - polynomial(fixedDivide(65536, value)));
   if (value < -65536) return short(-0x4000 - polynomial(fixedDivide(65536, value)));
   return polynomial(value);
@@ -24,8 +24,8 @@ export function nativeDirectionTurn(x, y) {
   const ax = abs(x), ay = abs(y);
   if (((ax + ay) | 0) < 6) return 0;
   if (ax <= ay) {
-    const angle = atan(fixedDivide(x, y));
+    const angle = nativeSlopeTurn(fixedDivide(x, y));
     return short(y < 0 ? angle - 0x8000 : angle);
   }
-  return short((x < 0 ? -0x4000 : 0x4000) - atan(fixedDivide(y, x)));
+  return short((x < 0 ? -0x4000 : 0x4000) - nativeSlopeTurn(fixedDivide(y, x)));
 }
