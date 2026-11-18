@@ -1,3 +1,7 @@
+import terrainMasks from './fixtures/armageddon/terrain-crater-masks.json' with {type:'json'};
+import bitmapCircle from './fixtures/armageddon/bitmap-circle.json' with {type:'json'};
+import {nativeCreateTerrainMasks} from '../src/armageddon/terrain-crater-masks.js';
+import {nativeFillBitmapCircle} from '../src/armageddon/bitmap-circle.js';
 import terrainGrass from './fixtures/armageddon/terrain-grass.json' with {type:'json'};
 import terrainSoil from './fixtures/armageddon/terrain-soil.json' with {type:'json'};
 import archiveRealImages from './fixtures/armageddon/archive-real-images.json' with {type:'json'};
@@ -184,6 +188,23 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of bitmapCircle.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern);
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    for(const [offset,value] of [[0,c.bits===1?0x526328:0x5249b0],[8,owner+0x1000],[12,c.bits],[16,c.bits===1?8:36],[20,32],[24,32],...c.clip.map((v,i)=>[28+i*4,v])])memory.put(owner+offset,value);
+    expect(nativeFillBitmapCircle(memory,owner,...c.center,c.radius,c.value)).toBe(c.result);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
+  }
+  for(const c of terrainMasks.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x50000,c.pattern),calls=[];let allocated=0;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeCreateTerrainMasks(memory,owner,{
+      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);return c.failure&&allocated===33?0:owner+0x1000+allocated*0x40;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return pool===0x54a150?0:owner+0x4000+(allocated-1)*0x2000;},
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of archiveHandle.cases) {
     const owner=0x2000000,handle=owner+0x8000,bytes=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
