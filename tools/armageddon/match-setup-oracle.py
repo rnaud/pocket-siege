@@ -79,33 +79,60 @@ def cstring(address):
 def teamHook(cpu,address,size,user):
  if address==0x4703a0:
   calls.append(['handicap']);cpu.reg_write(UC_X86_REG_EAX,handicap)
- elif address==0x4194cb:
-  calls.append(['speechFallback']);cpu.reg_write(UC_X86_REG_EIP,0x4195f0)
  elif address==sprintf:
   sp=cpu.reg_read(UC_X86_REG_ESP);dest,fmt,arg=read(sp+4),cstring(read(sp+8)),read(sp+12)
   value=fmt%(arg if b'%c' in fmt else cstring(arg));cpu.mem_write(dest,value+b'\0')
   paths.append(value.hex()+'00');calls.append(['speech',b'%c' in fmt]);cpu.reg_write(UC_X86_REG_EAX,len(value))
-for address in [sprintf,0x4703a0,0x4194cb]:cpu.hook_add(UC_HOOK_CODE,teamHook,begin=address,end=address)
+for address in [sprintf,0x4703a0]:cpu.hook_add(UC_HOOK_CODE,teamHook,begin=address,end=address)
 output=owner+0x20000;cpu.mem_map(output,0x10000)
+# Observe only C-library/MFC interfaces; native fallback and country lookup run.
+formatString=stop+0x300;directory=stop+0x400;copyString=stop+0x500
+for address in [0x503d48,0x503d24,0x503dc0,directory,copyString]:cpu.mem_write(address,b'\xc3')
+write(0x517900,directory)
+# Resolve the EXE import slot by name rather than assuming its address.
+imports=base+struct.unpack_from('<I',data,optional+104)[0]
+p=imports
+while read(p+12):
+ lookup=base+(read(p) or read(p+16));iat=base+read(p+16);i=0
+ while read(lookup+i*4):
+  item=read(lookup+i*4)
+  if not item&0x80000000 and cstring(base+item+2)==b'strncpy':write(iat+i*4,copyString)
+  i+=1
+ p+=20
+def speechHook(cpu,address,size,user):
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ if address==0x503d48:write(cpu.reg_read(UC_X86_REG_ECX),formatString)
+ elif address==0x503dc0:
+  obj,fmt,a,b=read(sp+4),cstring(read(sp+8)),cstring(read(sp+12)),cstring(read(sp+16))
+  cpu.mem_write(formatString,fmt%(a,b)+b'\0');write(obj,formatString)
+ elif address==directory:
+  value=cstring(read(sp+4));calls.append(['directory',value.hex()]);cpu.reg_write(UC_X86_REG_EAX,int(not available and value!=b'C:\\WORMS'))
+ elif address==copyString:
+  dest,source,count=read(sp+4),read(sp+8),read(sp+12);value=cstring(source)[:count]
+  cpu.mem_write(dest,value+bytes(count-len(value)));cpu.reg_write(UC_X86_REG_EAX,dest)
+for address in [0x503d48,0x503dc0,directory,copyString]:cpu.hook_add(UC_HOOK_CODE,speechHook,begin=address,end=address)
 templates=[r for r in json.loads(Path('tests/fixtures/armageddon/team-setup.json').read_text())['cases'] if next(v for o,n,v in r['writes'] if o==0x6880)==3 and r['scheme'][0x15]==100]
 cases=[]
 for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['schemes']:
  for templateIndex,template in enumerate(templates):
   frontend=bytearray((i*13+7)&255 for i in range(0x7000))
-  for off,size,value in template['writes']:frontend[off:off+size]=(value&((1<<(size*8))-1)).to_bytes(size,'little')
+  available=templateIndex%2==1
+  writes=template['writes']+[[0x687e,1,(templateIndex//2)%2]]+[[0x179c+i*0xd7b+0x14+64,1,0] for i in range(6)]+[[0x11f4+i*0x78,4,[2,12,44,50][(i+2)%4]] for i in range(-2,13)]
+  for off,size,value in writes:frontend[off:off+size]=(value&((1<<(size*8))-1)).to_bytes(size,'little')
   frontend[0x1178]=ord('D');cpu.mem_write(0x6de000,bytes(0x9000));cpu.mem_write(0x6e0000,bytes(frontend))
   cpu.mem_write(owner,bytes((i*7+3)&255 for i in range(0x10000)))
   initial=bytearray(0x1c4);initial[0x14:0xec]=bytes(scheme['bytes']);cpu.mem_write(0x6f454c,bytes(initial))
   cpu.mem_write(0x6daf90+0xd0,b'\xff'*264);write(0x6daf94,0xffffffff)
   cpu.mem_write(0x6f48bc,b'C:\\WORMS\0');handicap=template['handicap'];clock=0x80000000;profile=None if templateIndex%2 else 0xffffffff
+  cpu.mem_write(0x6f4839,b'English'+bytes(58))
   initialProfile=profile;calls=[];paths=[];write(thread+0x14,1)
   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x415540,0x4156dc,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4156dc
   cpu.mem_write(output,bytes(0x2c14));sp=stack+0xf000;write(sp,stop);write(sp+4,owner+0x3c)
   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,output)
   cpu.emu_start(0x4c2640,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(resource_id=scheme['resource_id'],writes=template['writes'],handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
+  cases.append(dict(resource_id=scheme['resource_id'],directory_available=available,writes=writes,handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
     profile=profile,random_state=read(thread+0x14),paths=paths,calls=calls,scheme=bytes(cpu.mem_read(0x6f454c,0x1c4)).hex(),
     sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest(),inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='00415540..004156DC /004C2640',method='Original scheme preparation, team records, persistent seed/CRT, starting order, loadouts and inventory import compose. Speech filesystem fallback skipped explicitly; speech formatting, handicap enablement, time/profile and CRT thread data are interfaces. Complete setup, inventory, scheme, seed state and ordered boundary calls compared.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='00415540..004156DC /004C2640',method='Original scheme preparation, team records, persistent seed/CRT, starting order, loadouts and inventory import compose. Speech fallback and country selection execute; resource probes, CString/bounded-copy interfaces, speech formatting, handicap enablement, time/profile and CRT thread data are interfaces. Complete setup, inventory, scheme, seed state and ordered boundary calls compared.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} initial match setups')

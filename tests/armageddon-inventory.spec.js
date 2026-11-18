@@ -43,6 +43,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const scheme=Uint8Array.from(Buffer.from(row.initial_scheme,'hex')),random=new NativeFrontendRandom();
     const descriptors=new Uint8Array(0x1d8);descriptors.fill(255,0xd0);
     const calls=[];let path=0,profile=row.initial_profile;
+    const defaultSpeech=new Uint8Array(65);defaultSpeech.set(new TextEncoder().encode('English'));
     nativeBuildInitialMatchSetup(memory,inventory,scheme,teamData,{
       descriptors,random,
       seedStorage:{time:()=>{calls.push(['time',row.clock]);return row.clock;},
@@ -50,7 +51,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         writeSeed:value=>{calls.push(['write',value]);profile=value;}},
       handicapEnabled:()=>{calls.push(['handicap']);return row.handicap;},
       speechPath:cd=>{calls.push(['speech',cd]);return Buffer.from(row.paths[path++],'hex');},
-      speechFallback:()=>calls.push(['speechFallback']),
+      defaultSpeech,workingDirectory:new TextEncoder().encode('C:\\WORMS\0'),
+      changeDirectory:bytes=>{
+        const end=bytes.indexOf(0),value=Buffer.from(end===-1?bytes:bytes.subarray(0,end));
+        calls.push(['directory',value.toString('hex')]);return row.directory_available||value.toString()==='C:\\WORMS'?0:1;
+      },
     });
     expect(calls).toEqual(row.calls);expect(profile).toBe(row.profile);expect(random.state).toBe(row.random_state);
     expect(Buffer.from(scheme).toString('hex')).toBe(row.scheme);
