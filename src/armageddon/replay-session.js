@@ -2,7 +2,7 @@ import { nativeWriteMatchController, nativeWritePhysicsEnvironment, nativeWriteR
 
 // Full004A1E10. Device/audio calls are host interfaces; snapshot writing,
 // sparse replay-state copies, flag transitions and checksum are composed ports.
-export function nativeReplaySessionTick(sceneMemory, manager, { stream, recording, playback, device, audio }) {
+export function nativeReplaySessionTick(sceneMemory, manager, { stream, recording, playback, device, audio, writeActors }) {
   const view = new DataView(sceneMemory.buffer, sceneMemory.byteOffset, sceneMemory.byteLength);
   const get = offset => view.getInt32(offset, true);
   const put = (offset, value) => view.setInt32(offset, value, true);
@@ -21,11 +21,14 @@ export function nativeReplaySessionTick(sceneMemory, manager, { stream, recordin
   if (get(0x1d438) && !get(0x1d43c) && !get(0x1d444) && !get(0x1d428) && !get(0x1d42c)) {
     stream.reset();
     stream.writeBlock(sceneMemory.slice(0x7ec, 0x47a8));
-    nativeWritePhysicsEnvironment(stream, manager.environment.state);
-    const lists = { all: manager.environment.all.entries, categories: manager.environment.categories.map(list => list.entries) };
-    nativeWriteMatchController(stream, { ...manager.root,
-      presentation: manager.root.memory.slice(0x3c, 0x98), controller: manager.root.memory.slice(0xd8, 0x210),
-    }, child => nativeWriteReplayTask(stream, child, lists));
+    if(writeActors)writeActors(stream);
+    else {
+      nativeWritePhysicsEnvironment(stream, manager.environment.state);
+      const lists = { all: manager.environment.all.entries, categories: manager.environment.categories.map(list => list.entries) };
+      nativeWriteMatchController(stream, { ...manager.root,
+        presentation: manager.root.memory.slice(0x3c, 0x98), controller: manager.root.memory.slice(0xd8, 0x210),
+      }, child => nativeWriteReplayTask(stream, child, lists));
+    }
     manager.globalCounter = 0;
     recording.clear();
     if (device.startRecording()) {

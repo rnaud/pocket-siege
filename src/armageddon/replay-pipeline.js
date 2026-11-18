@@ -1,3 +1,5 @@
+import {nativeRestoreSceneSnapshot} from './replay-scene-restore.js';
+import {nativeWriteEnvironmentMemory,nativeWriteMatchMemory} from './replay-write-memory.js';
 import {NativeReplayStream} from './replay-stream.js';
 import {NativeReplayBuffer} from './replay-buffer.js';
 import { nativeReplayFrame } from './replay-frame.js';
@@ -9,7 +11,7 @@ import { nativeAdvanceReplayFrameState, nativeAdvanceInputFrameState, nativeRepl
 
 // Shared backing memory keeps scalar manager fields coherent across the ports.
 // Object references (root/environment) retain host identities, not native pointers.
-export function createNativeReplayPipeline({ sceneMemory, managerMemory, root, environment, stream, incoming, recording, host }) {
+export function createNativeReplayPipeline({ sceneMemory, managerMemory, root, environment, stream, incoming, recording, host, writeActors, restoreSnapshot }) {
   const view = new DataView(managerMemory.buffer, managerMemory.byteOffset, managerMemory.byteLength);
   const manager = { root, environment, globalCounter: 0 };
   const offsets = { captureFrame: 0x15c, checksum: 0x160, hasSnapshot: 0x164,
@@ -23,7 +25,7 @@ export function createNativeReplayPipeline({ sceneMemory, managerMemory, root, e
   const renderFrame = () => host.renderFrame(manager);
   const adapters = {
     audio: host.audio, device: host.device, incoming, recording,
-    restoreSnapshot: () => nativeRestoreReplaySnapshot(stream, manager, { ...host.restore, sceneMemory }),
+    restoreSnapshot: restoreSnapshot??(() => nativeRestoreReplaySnapshot(stream, manager, { ...host.restore, sceneMemory })),
     updateAudio: () => nativeReplayFrameAudio(managerMemory, sceneMemory, host),
     collectInput: queue => nativeCollectReplayInput(manager, queue, {
       collectRoot: (target, event, size) => host.collectRoot(manager.root, target, event, size),
@@ -32,7 +34,7 @@ export function createNativeReplayPipeline({ sceneMemory, managerMemory, root, e
     dispatchEvents: queue => nativeDispatchReplayEvents(sceneMemory, manager, {
       incoming: queue, recording, dispatch: dispatchRoot,
       flushRoot: () => host.flushRoot(manager.root), flushEnvironment: () => host.flushEnvironment(manager.environment),
-      sessionTick: playback => nativeReplaySessionTick(sceneMemory, manager, { stream, recording, playback, device: host.device, audio: host.audio }),
+      sessionTick: playback => nativeReplaySessionTick(sceneMemory, manager, { stream, recording, playback, device: host.device, audio: host.audio, writeActors }),
       playSound: host.audio ? (...args) => host.audio.playSound(...args) : undefined,
     }),
     advancePlayback: () => nativeAdvanceReplayFrameState(managerMemory),
@@ -43,13 +45,24 @@ export function createNativeReplayPipeline({ sceneMemory, managerMemory, root, e
 }
 
 //Bind004A30A0's offline channels at owner+30/+34 to their existing native
-//allocations. Root/environment objects may be supplied by replay restoration;
-//otherwise the host receives their native addresses. Scratch is caller-owned.
+//allocations, with native-memory serialization/restoration by default. Explicit
+//root/environment objects retain the legacy host adapter. Scratch is caller-owned.
 export function createNativeSceneReplayPipeline({memory,owner,scratch,host,stream,root,environment}) {
   const scene=memory.get(owner+0x2a0);
   const snapshot=stream??(memory.get(owner+8)?NativeReplayStream.fromMemory(memory,memory.get(owner+8)):undefined);
   const incoming=NativeReplayBuffer.fromMemory(memory,memory.get(owner+0x30),scratch);
   const recording=NativeReplayBuffer.fromMemory(memory,memory.get(owner+0x34),scratch+304);
-  return {...createNativeReplayPipeline({sceneMemory:memory.range(scene,0x20000),managerMemory:memory.range(owner,0x2a4),
-    root:root??memory.get(owner+4),environment:environment??memory.get(scene+0x7d4),stream:snapshot,incoming,recording,host}),incoming,recording,stream:snapshot};
+  const addressed=root===undefined&&environment===undefined;
+  const pipeline=createNativeReplayPipeline({sceneMemory:memory.range(scene,0x20000),managerMemory:memory.range(owner,0x2a4),
+    root:root??memory.get(owner+4),environment:environment??memory.get(scene+0x7d4),stream:snapshot,incoming,recording,host,
+    writeActors:addressed?(writer=>{
+      nativeWriteEnvironmentMemory(memory,memory.get(scene+0x7d4),writer);
+      nativeWriteMatchMemory(memory,memory.get(owner+4),writer);
+    }):undefined,
+    restoreSnapshot:addressed?(()=>nativeRestoreSceneSnapshot(memory,owner,memory.get(owner+8),host.restore??host)):undefined,
+  });
+  if(addressed)for(const [key,address] of [['root',owner+4],['environment',scene+0x7d4]])Object.defineProperty(pipeline.manager,key,{
+    enumerable:true,get:()=>memory.get(address),set:value=>memory.put(address,value),
+  });
+  return {...pipeline,incoming,recording,stream:snapshot};
 }

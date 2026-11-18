@@ -1,5 +1,5 @@
 import {nativeWriteActorMemory,nativeWriteTaskHeaderMemory,nativeWriteMatchMemory,nativeWriteEnvironmentMemory} from '../src/armageddon/replay-write-memory.js';
-import {nativeRestoreSceneSnapshot,nativeReplaySceneEntry} from '../src/armageddon/replay-scene-restore.js';
+import {nativeRestoreSceneSnapshot} from '../src/armageddon/replay-scene-restore.js';
 import replayWormResources from './fixtures/armageddon/replay-worm-resources.json' with {type:'json'};
 import replayTaskMemory from './fixtures/armageddon/replay-task-memory.json' with {type:'json'};
 import {nativeReadTaskMemory,nativeReadPhysicsMemory,nativeReadWormMemory,nativeReadActorMemory,nativeReadRootMemory} from '../src/armageddon/replay-task-memory.js';
@@ -933,10 +933,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000),scratch=new Uint8Array(608),calls=[];
     const locate=at=>at>=0x2500000?[scratch,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setInt32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,len)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+len);}};
-    const root={type:6,registryType:26,registryIndex:0,children:[{type:13},{type:14}],memory:memory.range(0x2001000,0x28c)};
-    const environment={state:memory.range(0x20033b4,12),all:{entries:[]},categories:[]};
     const deviceCall=(offset,result=0)=>{calls.push(['device',offset]);return result;};
-    const pipeline=createNativeSceneReplayPipeline({memory,owner:0x2000000,scratch:0x2500000,root,environment,host:{
+    const pipeline=createNativeSceneReplayPipeline({memory,owner:0x2000000,scratch:0x2500000,host:{
       collectRoot:(_root,queue,event,size)=>calls.push(['collect',event,size,queue.wrapper===0x2007000]),
       dispatchRoot:(_root,event,payload)=>calls.push(['dispatch',event,[...payload]]),
       queryRoot:(_root,event,output)=>{calls.push(['query',event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
@@ -1148,13 +1146,14 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
     let cursor=0x2400000;const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
     const stream=NativeReplayStream.fromMemory(memory,0x2001000);
-    expect(nativeReplaySceneEntry(memory,0x2000800,{
+    const pipeline=createNativeSceneReplayPipeline({memory,owner:0x2000800,scratch:0x2700000,host:{
       allocate:size=>{const failed=(size===0x28c&&row.mode>0)||(size===0x3c4&&row.mode===2),pointer=failed?0:allocate(size);allocationCalls.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocationCalls.push(['array',size,pool,pointer]);return pointer;},free:address=>allocationCalls.push(['free',address]),
       device:{readyForPlayback:()=>{calls.push(['ready']);return 1;}},audio:row.sound?{reset:()=>calls.push(['audioReset'])}:null,
       flushTask:address=>{calls.push([0x2200200,address]);if(row.input.clearRoot)memory.put(0x2000804,0);},destroyTask:(address,flags)=>calls.push([0x2200210,address,flags]),
       flushEnvironment:address=>{calls.push([0x2200220,address]);if(row.input.clearEnvironment)memory.put(0x20207d4,0);},destroyEnvironment:(address,flags)=>calls.push([0x2200230,address,flags]),
       constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);return args[0];},
-    })).toBe(false);
+    }});pipeline.tick();
+    expect(pipeline.manager.root).toBe(row.result.tree?.id??0);expect(pipeline.manager.environment).toBe(row.result.environment?.id??0);
     expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.result.calls);expect(stream.position).toBe(row.result.position);
     expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
   }
