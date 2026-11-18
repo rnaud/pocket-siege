@@ -1151,7 +1151,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     if(authored) {
       const placed=nativePlaceWormAt(Math.round(p.x*65536),Math.round((H-p.y)*65536),
         Math.floor(H-waterLevel),NATIVE_MINE_FRICTION,
-        (x,y,body)=>nativeSceneCollision(worm,body,x/65536,H-y/65536,terrain,worms,H));
+        (x,y,body)=>nativeSceneCollision(worm,body,x/65536,H-y/65536,terrain,worms,H),worm.nativeIdleMemory);
+      worm.nativeSpawnPhysics=placed.physics;
       worm.x=placed.x/65536;worm.y=H-placed.y/65536;
       worm.renderY=worm.y;worm.ground=bodyBlocked(terrain,worm.x,worm.y-1);
     }

@@ -16,13 +16,17 @@ export function nativeInitializeWormPlacement(memory,x,y,deployment,water,collid
 
 // Numeric scene adapter shares the constructor's placement block. Task/resource
 // ownership is supplied elsewhere; callers consume the resulting coordinates.
-export function nativePlaceWormAt(x,y,water,friction,collide) {
-  const memory=new Uint8Array(0x390),body=new DataView(memory.buffer),scene=new Uint8Array(0x11ba1);
+export function nativePlaceWormAt(x,y,water,friction,collide,memory=new Uint8Array(0x390)) {
+  const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength),scene=new Uint8Array(0x11ba1);
   scene[0x11ba0]=friction;
   nativeInitializePhysics(memory,scene,2,3,{initializeTask:()=>{},registerPhysics:()=>{}});
   nativeInitializeWormPlacement(memory,x,y,false,water,(px,py)=>collide(px,py,{
     type:2,shape:3,flags:body.getInt32(0x40,true),enabled:body.getInt32(0x48,true),
     x:body.getInt32(0x90,true),y:body.getInt32(0x94,true),
   }));
-  return {x:body.getInt32(0x90,true),y:body.getInt32(0x94,true)};
+  return {x:body.getInt32(0x90,true),y:body.getInt32(0x94,true),physics:{
+    waterDrag:body.getInt32(0x60,true),tangent:body.getInt32(0x80,true),
+    restitutionX:body.getInt32(0x78,true),restitutionY:body.getInt32(0x7c,true),
+    skimScale:body.getInt32(0xb4,true),
+  }};
 }

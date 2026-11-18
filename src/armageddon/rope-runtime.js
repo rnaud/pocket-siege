@@ -79,12 +79,12 @@ function createNativeTraversalBody(worm, angle, height) {
     // Base004F4000 and worm004D5A40 numeric setup; attachment applies scheme mode.
     suspended: 0, mass: 65536, gravityScale: 65536,
     ropeFriction: 0xfeb8, ropeBounce: 0x9999, angleDamping: 0x3ae1,
-    waterDrag: Math.trunc((Math.trunc(positionSum / 256) & 65535) / 20) + 0xc000,
-    skimScale: 0x20000, submerged: 0, contact: 0, moving: 0,
+    waterDrag: worm.nativeSpawnPhysics?.waterDrag ?? Math.trunc((Math.trunc(positionSum / 256) & 65535) / 20) + 0xc000,
+    skimScale: worm.nativeSpawnPhysics?.skimScale ?? 0x20000, submerged: 0, contact: 0, moving: 0,
     angularVelocity: 0, field154: 0, field2ec: 0, soundHandle: 0,
     // Free-body fields remain valid if a water callback releases the rope.
     radius: 0x100000, complex: 1, drag: 65536, windScale: 0,
-    restitutionX: 0x9999, restitutionY: 0, tangent: 0xf5c2,
+    restitutionX: worm.nativeSpawnPhysics?.restitutionX ?? 0x9999, restitutionY: worm.nativeSpawnPhysics?.restitutionY ?? 0, tangent: worm.nativeSpawnPhysics?.tangent ?? 0xf5c2,
     maxVx: 0, maxVy: 0, impact: 0, damageScale: 0, voiceCooldown: 0,
     lastFacingFrame: 0, field150: 0, field250: 0,
   };

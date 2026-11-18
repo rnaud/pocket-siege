@@ -105,12 +105,12 @@ function createNativeWormBody(worm, height, state, angle) {
     windScale: 0,
     drag: 65536,
     flags: 0x420cc6,
-    restitutionX: 0x9999,
-    restitutionY: 0,
-    tangent: Math.trunc((byte(0x11ba0) << 16) / 100),
-    waterDrag:
+    restitutionX: worm.nativeSpawnPhysics?.restitutionX ?? 0x9999,
+    restitutionY: worm.nativeSpawnPhysics?.restitutionY ?? 0,
+    tangent: worm.nativeSpawnPhysics?.tangent ?? Math.trunc((byte(0x11ba0) << 16) / 100),
+    waterDrag: worm.nativeSpawnPhysics?.waterDrag ??
       Math.trunc((Math.trunc(((x + y) | 0) / 256) & 65535) / 20) + 0xc000,
-    skimScale: 0x20000,
+    skimScale: worm.nativeSpawnPhysics?.skimScale ?? 0x20000,
     complex: 1,
     state,
     type: nativeWormCollisionType(state),

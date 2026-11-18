@@ -1,3 +1,6 @@
+import {attachNativeDrillFlight} from '../src/armageddon/worm-flight.js';
+import {attachNativeHurtFlight} from '../src/armageddon/hurt-flight.js';
+import {createNativeRopeShot} from '../src/armageddon/rope-runtime.js';
 import { nativePlaceWormAt } from "../src/armageddon/worm-placement.js";
 import { nativeSceneCollision } from "../src/armageddon/collision-scene.js";
 import { nativeDefaultMapObjects } from "../src/armageddon/map-setup.js";
@@ -136,6 +139,15 @@ test("all authored maps support six separated, grounded worm spawns including ca
       const worm={...p,vx:0,vy:0,hp:100};
       const placed=nativePlaceWormAt(Math.round(p.x*65536),Math.round((terrain.height-p.y)*65536),terrain.height-80,96,
         (x,y,body)=>nativeSceneCollision(worm,body,x/65536,terrain.height-y/65536,terrain,worms,terrain.height,[]));
+      // Constructor coefficients survive movement and mode changes. The extra
+      // pixel offset makes recomputing water drag from the new position differ.
+      const moved={...worm,x:worm.x+13.25,y:worm.y+7.5,facing:1,team:0,nativeSpawnPhysics:placed.physics};
+      attachNativeDrillFlight(moved,{height:terrain.height,friction:1});
+      const airborne=moved.nativeFlight;
+      moved.originalHurt={state:0x80,angle:0};
+      const hurt=attachNativeHurtFlight(moved,terrain.height);
+      const rope=createNativeRopeShot(moved,45,terrain.height);
+      for(const body of [airborne,hurt,rope])for(const [field,value] of Object.entries(placed.physics))expect(body[field],field).toBe(value);
       worm.x=placed.x/65536;worm.y=terrain.height-placed.y/65536;
       worm.ground=bodyBlocked(terrain,worm.x,worm.y-1);worms.push(worm);
     }
