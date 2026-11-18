@@ -1,3 +1,5 @@
+import crateDraw from "./fixtures/armageddon/crate-draw.json" with { type: "json" };
+import { nativeDrawCrate } from "../src/armageddon/crate-draw.js";
 import poisonSettlement from "./fixtures/armageddon/poison-settlement.json" with { type: "json" };
 import { nativePoisonSettlement } from "../src/armageddon/poison-settlement.js";
 import nuclearEffect from "./fixtures/armageddon/nuclear-effect.json" with { type: "json" };
@@ -150,6 +152,24 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       sound: request => calls.push({ operation: 'sound', request }),
       receive: side => { calls.push({ operation: 'receive', side }); return row.accepted; },
       bounce: side => calls.push({ operation: 'bounce', side }),
+    });
+    expect(calls).toEqual(row.calls);
+  }
+  for (const row of crateDraw.cases) {
+    const calls = [];
+    nativeDrawCrate(row.body, row.scene, {
+      position: () => { calls.push(['position']); return row.body; },
+      submerged: () => { calls.push(['submerged']); return row.body.submerged; },
+      special: id => { calls.push(['special', id]); return row.special; },
+      palette: id => { calls.push(['palette', id]); return 0x2000 + id; },
+      name: id => { calls.push(['name', id]); return `Weapon ${id}`; },
+      format: value => { calls.push(['format', value]); return String(value); },
+      raster: (...args) => {
+        calls.push(['raster', ...args]);
+        return { image: 0x5000 + args[0], width: args[1].length * 8, height: 16 };
+      },
+      image: (...args) => calls.push(['image', ...args]),
+      sprite: (...args) => calls.push(['sprite', ...args]),
     });
     expect(calls).toEqual(row.calls);
   }
