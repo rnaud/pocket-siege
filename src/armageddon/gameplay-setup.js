@@ -8,6 +8,11 @@ import {nativeInitializeInventory} from './inventory-initialization.js';
 //Scene allocation, map/resource construction and later task setup are separate.
 export function nativeInitializeGameplayRecords(scene,frontend,localizedName,sharedCounter=new Uint8Array(4)) {
   scene.set(frontend.subarray(0x3c,0xdca0),0x47a8);
+  nativeInitializeSceneGameplayRecords(scene,localizedName,sharedCounter);
+}
+
+//0049D454..0049D47A: scene payload is already installed by the frontend.
+export function nativeInitializeSceneGameplayRecords(scene,localizedName,sharedCounter=new Uint8Array(4)) {
   nativeInitializeWeaponRecords(scene,localizedName);
   nativeInitializeInventory(scene.subarray(0x1b94,0x47a8),scene.subarray(0x47a8));
   nativeInitializeTeamAccess(scene,sharedCounter);
