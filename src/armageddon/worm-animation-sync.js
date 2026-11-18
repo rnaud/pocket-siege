@@ -35,7 +35,20 @@ export function nativeSynchronizeWormAnimation(body,team,host) {
 export function nativeSynchronizeWormMemory(memory,sceneMemory,host) {
   const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
   const team=body.getInt32(0xfc,true),base=team*3000;
-  nativeSynchronizeWormAnimation({team,worm:body.getInt32(0x100,true),
-    field14c:body.getInt32(0x14c,true),field148:body.getInt32(0x148,true)},
-    {color:sceneMemory[base+0x3cd1],marked:sceneMemory[base+0x3cd2]},host);
+  const state={team,worm:body.getInt32(0x100,true),
+    field14c:body.getInt32(0x14c,true),field148:body.getInt32(0x148,true)};
+  const teamState={color:sceneMemory[base+0x3cd1],marked:sceneMemory[base+0x3cd2]};
+  if(host.player)nativeSynchronizeWormPlayer(state,teamState,host.player,host.metadata,host);
+  else nativeSynchronizeWormAnimation(state,teamState,host);
+}
+
+// Compose the original synchronization requests with the recovered16-slot
+// player. Metadata resolution remains owned by the loaded sprite resources.
+export function nativeSynchronizeWormPlayer(body,team,player,metadata,queries) {
+  nativeSynchronizeWormAnimation(body,team,{
+    ...queries,
+    current:()=>({sprite:player.current.id,progress:player.current.progress}),
+    progress:value=>player.setProgress(value),reset:()=>player.clear(),
+    queue:sprite=>player.enqueue(sprite,metadata(sprite)),
+  });
 }

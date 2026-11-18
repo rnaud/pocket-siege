@@ -1,5 +1,7 @@
+import wormAnimationPlayer from "./fixtures/armageddon/worm-animation-player.json" with { type: "json" };
+import { NativeAnimationPlayer as WormAnimationPlayer } from "../src/armageddon/animation.js";
 import wormAnimationSync from "./fixtures/armageddon/worm-animation-sync.json" with { type: "json" };
-import { nativeSynchronizeWormAnimation } from "../src/armageddon/worm-animation-sync.js";
+import { nativeSynchronizeWormAnimation, nativeSynchronizeWormMemory } from "../src/armageddon/worm-animation-sync.js";
 import wormSpawnCreate from "./fixtures/armageddon/worm-spawn-create.json" with { type: "json" };
 import { nativeAddSpawn, nativeBuildSpawnPool, nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn } from "../src/armageddon/spawn-pool.js";
 import wormEnvironmentCreate from "./fixtures/armageddon/worm-environment-create.json" with { type: "json" };
@@ -286,6 +288,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of wormAnimationPlayer.cases) {
+    const player=new WormAnimationPlayer().restoreReplayState(Uint8Array.from(c.before)),calls=[];
+    const memory=new Uint8Array(0x390),body=new DataView(memory.buffer),scene=new Uint8Array(0x6000);
+    for(const [offset,value] of [[0xfc,2],[0x100,3],[0x14c,c.bits&1],[0x148,(c.bits>>2)&1]])body.setInt32(offset,value,true);
+    scene[6000+0x3cd1]=c.color;scene[6000+0x3cd2]=c.marked;
+    nativeSynchronizeWormMemory(memory,scene,{player,metadata:sprite=>wormAnimationPlayer.metadata[sprite],
+        teamStatus:team=>{calls.push(["teamStatus",team]);return c.status;},
+        health:(team,worm)=>{calls.push(["health",team,worm]);return c.health;},
+      });
+    expect(calls).toEqual(c.calls);
+    expect([...player.replayState()]).toEqual(c.after);
   }
   for(const c of wormAnimationSync.cases) {
     const calls=[];
