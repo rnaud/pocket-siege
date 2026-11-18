@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import struct
-from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE, UC_HOOK_MEM_INVALID
 from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_EBP, UC_X86_REG_EDI, UC_X86_REG_ESI
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
@@ -29,11 +29,11 @@ for i in range(struct.unpack_from('<H',data,pe+6)[0]):
     _,rva,size,offset=struct.unpack_from('<IIII',data,headers+40*i+8)
     if size: cpu.mem_write(base+rva,data[offset:offset+size])
 owner, stack, stop = 0x3000000, 0x2100000, 0x2200000
-cpu.mem_map(owner,0x800000)
+cpu.mem_map(owner,0xc00000)
 for address in [stack, stop]: cpu.mem_map(address,0x10000)
 def write(address,value): cpu.mem_write(address,struct.pack('<I',value&0xffffffff))
 def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
-def signed(v):return v if v<0x80000000 else v-0x100000000
+def signed(v):return v if v<0xc0000000 else v-0x100000000
 
 
 sources=json.loads(args.image.read_text());mask=json.loads(args.masks.read_text())
@@ -54,7 +54,7 @@ for raw in archive_data:
 
 cpu.mem_write(stop+0x1800,struct.pack('<H',0x0f7f))
 cpu.mem_write(0x504110,b'\xd9\x2d'+struct.pack('<I',stop+0x1800)+b'\x83\xec\x08\xdf\x3c\x24\x58\x5a\xc3')
-def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x800000))+bytes(cpu.mem_read(stack+0x8010,4))+bytes(cpu.mem_read(stack+0x8118,256))+bytes(cpu.mem_read(stack+0x8218,0xb18))+bytes(cpu.mem_read(0x714be0,0x10000))+bytes(cpu.mem_read(0x560230,4))+bytes(cpu.mem_read(0x7d6058,256))).hexdigest()
+def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0xc00000))+bytes(cpu.mem_read(stack+0x8010,4))+bytes(cpu.mem_read(stack+0x8118,256))+bytes(cpu.mem_read(stack+0x8218,0xb18))+bytes(cpu.mem_read(0x714be0,0x10000))+bytes(cpu.mem_read(0x560230,4))+bytes(cpu.mem_read(0x7d6058,256))+bytes(cpu.mem_read(0x5602e4,16))).hexdigest()
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);cpu.reg_write(UC_X86_REG_EIP,read(sp));cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EAX,value)
 def cstring(address):
@@ -62,7 +62,7 @@ def cstring(address):
  while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
  return result.decode('latin1')
 def hook(cpu,address,size,user):
- global allocated,pixels,headers,archives,cursor,graphics_archive
+ global allocated,pixels,sprite_pixels,surfaces,headers,archives,cursor,graphics_archive
  sp=cpu.reg_read(UC_X86_REG_ESP);receiver=cpu.reg_read(UC_X86_REG_ECX)
  if address==0x492550:
   allocated+=1;n=read(sp+4);calls.append(['allocate',n,snapshot()])
@@ -74,12 +74,15 @@ def hook(cpu,address,size,user):
    if archives==0:graphics_archive=result
   ret(result)
  elif address==0x4924d0:
-  n=read(sp+8);calls.append(['array',n,read(sp+4),snapshot()]);result=pixels;pixels+=(n+15)&~15;assert pixels<owner+0x300000;ret(result)
+  n=read(sp+8);pool=read(sp+4);calls.append(['array',n,pool,snapshot()])
+  if pool==0x5602f4:result=sprite_pixels;sprite_pixels+=(n+15)&~15;assert sprite_pixels<owner+0xc00000
+  else:result=pixels;pixels+=(n+15)&~15;assert pixels<owner+0x300000
+  ret(result)
  elif address==0x492590:calls.append(['free',read(sp+4),read(sp+8),snapshot()]);ret()
  elif address==stop+0x100:calls.append(['palette',receiver,read(sp+4),snapshot()]);ret(owner+(0xb000 if read(sp+4)==2 else 0xa000),4)
  elif address==stop+0x200:
   fmt=cstring(read(sp+8));arg=read(sp+12);value=fmt%((cstring(arg),cstring(read(sp+16))) if fmt.count('%s')==2 else cstring(arg) if '%s' in fmt else arg);cpu.mem_write(read(sp+4),value.encode()+b'\0');ret(len(value))
- elif address in [0x492710,0x4b0420]:
+ elif address in [0x492710,0x4b0420,0x4af6f0,0x4afe00]:
   name=cstring(read(sp+12));file=read(read(sp+8)+0x198)
   requested_images.add((file-0x5000,name.lower()))
  elif address==0x491fa0:calls.append(['pump',snapshot()]);ret()
@@ -94,6 +97,18 @@ def hook(cpu,address,size,user):
  elif address==stop+0x900:calls.append(['commit',receiver,read(sp+4),snapshot()]);ret(0,4)
  elif address==stop+0xa00:calls.append(['createPalette',receiver,read(sp+4),read(sp+8),snapshot()]);ret(0,8)
  elif address==stop+0xb00:calls.append(['font',receiver,*[read(sp+i*4) for i in range(1,5)],cstring(read(sp+20)),snapshot()]);ret(0,20)
+ elif address==0x49a390:
+  slot,width,height,flags=[read(sp+i*4) for i in range(1,5)]
+  calls.append(['surfaceCreate',receiver,slot,width,height,flags,snapshot()])
+  surface=owner+0x600000+surfaces*64;surfaces+=1;pitch=(width+3)&~3
+  write(slot,surface);write(surface,owner+0x680000);write(surface+4,sprite_pixels);write(surface+8,pitch);write(surface+12,width);write(surface+16,height)
+  sprite_pixels+=(pitch*height+15)&~15;assert sprite_pixels<owner+0xc00000;ret(0,16)
+ elif address==stop+0x1300:
+  surface,descriptor=read(sp+4),read(sp+8);calls.append(['surfaceDescribe',surface,snapshot()]);write(descriptor+16,read(surface+8));ret(0,8)
+ elif address==0x49a430:
+  surface=read(sp+4);calls.append(['surfaceLock',receiver,surface,snapshot()]);ret(read(surface+4),4)
+ elif address==0x49a490:
+  surface=read(sp+4);calls.append(['surfaceUnlock',surface,snapshot()]);ret(0,4)
  elif address==0x492510:calls.append(['arrayFree',read(sp+4),snapshot()]);ret()
  elif address==stop+0xc00:calls.append(['bind',receiver,*[read(sp+i*4) for i in range(1,4)],snapshot()]);ret(0,12)
  elif address==stop+0xd00:
@@ -112,20 +127,28 @@ def hook(cpu,address,size,user):
   ret(len(chunk)//n if n else 0)
  elif address==stop+0x1200:ret(0 if bytes(cpu.mem_read(read(sp+4),4))==bytes(cpu.mem_read(read(sp+8),4)) else 1)
 for iat,target in [(0x5178f4,stop+0x200),(0x5178ec,stop+0xd00),(0x51794c,stop+0xe00),(0x51793c,stop+0xf00),(0x517940,stop+0x1000),(0x517930,stop+0x1100),(0x51796c,stop+0x1200)]:write(iat,target)
-for a in [0x492550,0x4924d0,0x492590,0x492710,0x4b0420,0x492510,0x491fa0,*[stop+i*0x100 for i in range(1,19)]]:cpu.hook_add(UC_HOOK_CODE,hook,begin=a,end=a)
+for a in [0x492550,0x4924d0,0x492590,0x492710,0x4b0420,0x4af6f0,0x4afe00,0x49a390,0x49a430,0x49a490,0x492510,0x491fa0,*[stop+i*0x100 for i in range(1,20)]]:cpu.hook_add(UC_HOOK_CODE,hook,begin=a,end=a)
+def invalid_memory(cpu,access,address,size,value,user):
+ print('Invalid memory',hex(cpu.reg_read(UC_X86_REG_EIP)),hex(address),'pattern',pattern,'last calls',calls[-3:],flush=True)
+ return False
+cpu.hook_add(UC_HOOK_MEM_INVALID,invalid_memory)
 cases=[]
 for pattern,count in [(0,0),(0xa5,1)]:
- calls=[];allocated=0;pixels=owner+0x100000;headers=owner+0x400000;archives=-1;graphics_archive=0;cursor=0;archive_cursors=[0,0,0]
+ calls=[];allocated=0;pixels=owner+0x100000;sprite_pixels=owner+0x800000;surfaces=0;headers=owner+0x400000;archives=-1;graphics_archive=0;cursor=0;archive_cursors=[0,0,0]
  stream=bytes.fromhex(next(c['stream'] for c in terrain_cases if c['pattern']==pattern and c['variant']==0 and c['count']==count))
- cpu.mem_write(owner,bytes([pattern])*0x800000);cpu.mem_write(stack,bytes([pattern])*0x10000)
- cpu.mem_write(0x714be0,bytes([pattern])*0x10000);cpu.mem_write(0x560230,bytes([pattern])*4);cpu.mem_write(0x7d6058,bytes([pattern])*256)
+ cpu.mem_write(owner,bytes([pattern])*0xc00000);cpu.mem_write(stack,bytes([pattern])*0x10000)
+ cpu.mem_write(0x714be0,bytes([pattern])*0x10000);cpu.mem_write(0x560230,bytes([pattern])*4);cpu.mem_write(0x7d6058,bytes([pattern])*256);cpu.mem_write(0x5602e4,bytes([pattern])*16)
  for i,source in enumerate(sources):
   at=owner+0x20000+i*0x2000;cpu.mem_write(at,bytes(source['pixels']))
   for offset,v in [(0,0x5249b0),(4,1),(8,at),(12,8),(16,60),(20,60),(24,60),(28,0),(32,0),(36,60),(40,60)]:write(owner+0x10000+i*0x40+offset,v)
  cpu.mem_write(owner+0x60000,bytes(mask['pixels']))
  for offset,v in [(0,0x5249b0),(4,1),(8,owner+0x60000),(12,8),(16,512),(20,512),(24,64),(28,0),(32,0),(36,512),(40,64)]:write(owner+0x9000+offset,v)
- for offset,v in [(0,owner+0x6400),(0x6404,0x4a6ff0),(0x700000,owner+0x6100),(0x6114,stop+0x100),(0x6110,stop+0xa00),(0x6104,stop+0x300),(0x6144,stop+0x400),(0x6148,stop+0x500),(0x6160,stop+0x600),(0x6170,stop+0x800),(0x6178,0x497ca0),(0x6180,stop+0xc00),(0x6154,stop+0x900),(0x2b4,owner+0x700000)]:write(owner+offset,v)
+ for offset,v in [(0,owner+0x6400),(0x6404,0x4a6ff0),(0x700000,owner+0x6100),(0x6114,stop+0x100),(0x6110,stop+0xa00),(0x6104,stop+0x300),(0x6144,stop+0x400),(0x6148,stop+0x500),(0x6160,stop+0x600),(0x6170,0x497990),(0x6178,0x497ca0),(0x6180,stop+0xc00),(0x6154,stop+0x900),(0x2b4,owner+0x700000)]:write(owner+offset,v)
+ write(owner+0x680058,stop+0x1300)
  write(owner+0x704ae8,owner+0xa000);write(owner+0x704b08,0)
+ write(owner+0x704aec,owner+0xb000);write(owner+0x704af0,owner+0xa000)
+ write(owner+0x704b0c,0);write(owner+0x704b10,0)
+ for i in range(1024):write(owner+0x702864+i*4,0);write(owner+0x7038e4+i*4,0)
  for i in range(32):write(owner+0x7049e4+i*4,0)
  for offset,v in [(0,0x5249b0),(4,1),(8,owner+0x9200),(12,8),(16,4),(20,1),(24,1),(28,0),(32,0),(36,1),(40,1)]:write(owner+0x9100+offset,v)
  cpu.mem_write(owner+0x9200,b'\x03')
@@ -147,5 +170,5 @@ for pattern,count in [(0,0),(0xa5,1)]:
  cpu.emu_start(0x4a5350,stop,count=200000000)
  assert cpu.reg_read(UC_X86_REG_EIP)==stop
  cases.append(dict(pattern=pattern,count=count,stream=stream.hex(),calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(archive_images=[dict(archive=index,name=name,offset=archive_entries[index][name][0],size=archive_entries[index][name][1],sha256=hashlib.sha256(archive_data[index][archive_entries[index][name][0]:sum(archive_entries[index][name])]).hexdigest()) for index,name in sorted(requested_images)],graphics_source=dict(sha256=hashlib.sha256(graphics_data).hexdigest(),header=graphics_data[:12].hex(),offset=graphics_offset,index=graphics_data[graphics_offset:].hex()),executable_sha256=digest,entry='004A5350',method='Two complete original offline startup executions now compose the full native terrain constructor,including terrain file and real snow/water directory decoding,soil/grass images,crater/tool masks and collision ownership,alongside all context,graphics,palette,font,arrow,spawn,HUD and custom-team stages. Full8MiB owner memory plus spawn scratch,parent temporary palette,packed buffer,archive signature and normalized lookup name match at every external callback and completion. External heap,CRT transport,graphics archive opening,named graphics images,renderer/event pump and sprintf remain interfaces. Graphics archive construction,opening,directory decoding and pointer relocation now also execute natively against the real installed Gfx.dir directory. Every named startup IMG now loads through native archive lookup,entry handles,alignment,decompression,palette insertion and bitmap allocation. Requested original archive payloads are identified by offset,size and SHA256 and reconstructed from preserved public asset bytes in the port comparison. Original004A6FF0 sprite-group traversal now also executes,including767 gameplay and74 water descriptors plus CD-ROM/phone groups and native progress after every dispatch. Descriptor order and full filenames are preserved. Font renderer registration now executes original00497CA0, including all28 font constructors, archive loading, palette mapping and retained renderer slots/counts. Font payloads are included in the archive manifest. Sprite decoding remains a renderer interface. Live browser startup remains unfinished.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(archive_images=[dict(archive=index,name=name,offset=archive_entries[index][name][0],size=archive_entries[index][name][1],sha256=hashlib.sha256(archive_data[index][archive_entries[index][name][0]:sum(archive_entries[index][name])]).hexdigest()) for index,name in sorted(requested_images)],graphics_source=dict(sha256=hashlib.sha256(graphics_data).hexdigest(),header=graphics_data[:12].hex(),offset=graphics_offset,index=graphics_data[graphics_offset:].hex()),executable_sha256=digest,entry='004A5350',method='Two complete original004A5350 offline startup executions compose context,palette,terrain construction,collision shapes,spawn resources,HUD/team images,fonts and sprite registration. All1071 requested archive payloads (846 SPR,197 IMG,28 FNT) are reconstructed at original offsets from size/SHA256-verified public assets. Standard and streamed sprite constructors,archive ownership,palette mapping,frame tables and pixels execute natively.13 streamed surfaces per case use explicit create/describe/lock/unlock services; heap,CRT transport,event pump,presentation and sprintf remain interfaces. Full12MiB owner memory,spawn scratch,parent palette,packed buffer,archive signature,normalized name and sprite counters match at every external callback and completion. Compressed drawing,backend surface internals and live browser ownership remain unfinished.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete scene resource startup sequences')

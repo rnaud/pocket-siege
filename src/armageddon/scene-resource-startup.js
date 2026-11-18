@@ -1,3 +1,4 @@
+import {nativeLoadRendererSprite} from './renderer-sprite.js';
 import {nativeLoadRendererFont} from './renderer-font.js';
 import spriteGroups from './scene-sprite-groups.json' with {type:'json'};
 import {nativeLoadSceneSpriteGroup} from './scene-sprite-groups.js';
@@ -14,12 +15,17 @@ import {nativeFinishSceneResources} from './scene-resource-finish.js';
 //palette cleanup. Scratch belongs to the caller; external services share one
 //memory/heap/renderer throughout all stages.
 export function nativeStartScene(memory,owner,bindings,frontend,scratch,host) {
-  const services={...host,archiveScratch:scratch.archiveScratch,initializePalette:host.initializePalette??((first,last)=>nativeCreateGamePalette(memory,scratch.palette,first,last))};
+  const services={...host,streamSpriteScratch:scratch.streamSpriteScratch,archiveScratch:scratch.archiveScratch,initializePalette:host.initializePalette??((first,last)=>nativeCreateGamePalette(memory,scratch.palette,first,last))};
   const loadImage=(palette,archive,name)=>{
     for(let i=0;i<name.length;i++)memory.putByte(scratch.imageName+i,name.charCodeAt(i));
     memory.putByte(scratch.imageName+name.length,0);
     return nativeLoadNamedArchiveImage(memory,palette,archive,scratch.imageName,scratch.imageScratch,nativeFileArchiveServices(memory,services));
   };
+  services.loadRendererSprite=host.loadRendererSprite??((renderer,bank,priority,id,archive,name,flags)=>{
+    for(let i=0;i<name.length;i++)memory.putByte(scratch.imageName+i,name.charCodeAt(i));
+    memory.putByte(scratch.imageName+name.length,0);
+    return nativeLoadRendererSprite(memory,renderer,bank,priority,id,archive,scratch.imageName,flags,nativeFileArchiveServices(memory,services));
+  });
   services.loadRendererFont=host.loadRendererFont??((renderer,bank,priority,id,archive,name)=>{
     for(let i=0;i<name.length;i++)memory.putByte(scratch.imageName+i,name.charCodeAt(i));
     memory.putByte(scratch.imageName+name.length,0);

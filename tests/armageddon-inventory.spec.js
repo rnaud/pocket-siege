@@ -434,18 +434,19 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     return image;
   });
   for(const c of sceneStartup.cases) {
-    const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x800000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000,headers=owner+0x400000,archives=-1,cursor=0;
-    const packed=Buffer.alloc(0x10000,c.pattern),signature=Buffer.alloc(4,c.pattern),nameBytes=Buffer.alloc(256,c.pattern);
+    const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0xc00000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000,spritePixels=owner+0x800000,surfaces=0,headers=owner+0x400000,archives=-1,cursor=0;
+    const packed=Buffer.alloc(0x10000,c.pattern),signature=Buffer.alloc(4,c.pattern),nameBytes=Buffer.alloc(256,c.pattern),spriteCounters=Buffer.alloc(16,c.pattern);
     const stream=Buffer.from(c.stream,'hex'),archiveCursors=[0,0,0];
     const archiveData=[sceneStartup.graphics_source,...terrainConstruction.archive_sources].map(source=>{if(source.bytes)return Buffer.from(source.bytes,'hex');const header=Buffer.from(source.header,'hex'),data=Buffer.alloc(header.readUInt32LE(4));header.copy(data);Buffer.from(source.index,'hex').copy(data,source.offset);return data;});
     for(const entry of sceneStartup.archive_images) {
       const prefix=['gfx/gfx','custom/snow/level','water/blue/water'][entry.archive];
-      const path=entry.name.endsWith('.fnt')?`fonts/${entry.name}`:`media/${prefix}/${entry.name.replaceAll('\\','/')}`;
+      let path=entry.name.endsWith('.fnt')?`fonts/${entry.name}`:`media/${prefix}/${entry.name.replaceAll('\\','/')}`;
+      if(entry.name.endsWith('.spr')&&!fs.existsSync(new URL(`../public/armageddon/${path}`,import.meta.url)))path=`sprites/${entry.name.replaceAll('\\','/')}`;
       const image=fs.readFileSync(new URL(`../public/armageddon/${path}`,import.meta.url));
       expect(image.length).toBe(entry.size);expect(createHash('sha256').update(image).digest('hex')).toBe(entry.sha256);
       image.copy(archiveData[entry.archive],entry.offset);
     }
-    const region=a=>a>=owner?[bytes,a-owner]:a>=stack?[stackBytes,a-stack]:a>=0x7d6058?[nameBytes,a-0x7d6058]:a>=0x714be0?[packed,a-0x714be0]:a>=0x560230?[signature,a-0x560230]:[Buffer.from('grass.img\0\0\0soil.img\0'),a-0x55f7d4];
+    const region=a=>a>=owner?[bytes,a-owner]:a>=stack?[stackBytes,a-stack]:a>=0x7d6058?[nameBytes,a-0x7d6058]:a>=0x714be0?[packed,a-0x714be0]:a>=0x5602e4?[spriteCounters,a-0x5602e4]:a>=0x560230?[signature,a-0x560230]:[Buffer.from('grass.img\0\0\0soil.img\0'),a-0x55f7d4];
     const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
     arrowSources.forEach((image,i)=>{
       const at=owner+0x20000+i*0x2000;bytes.set(image.pixels,at-owner);
@@ -453,8 +454,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     });
     bytes.set(toolSource.pixels,0x60000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
-    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x4a6ff0],[0x700000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6178,0x497ca0],[0x6180,0x2200c00],[0x6154,0x2200900],[0x2b4,owner+0x700000]])memory.put(owner+offset,value);
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x4a6ff0],[0x700000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x497990],[0x6178,0x497ca0],[0x6180,0x2200c00],[0x6154,0x2200900],[0x2b4,owner+0x700000]])memory.put(owner+offset,value);
+    memory.put(owner+0x680058,0x2201300);
     memory.put(owner+0x704ae8,owner+0xa000);memory.put(owner+0x704b08,0);
+    memory.put(owner+0x704aec,owner+0xb000);memory.put(owner+0x704af0,owner+0xa000);
+    memory.put(owner+0x704b0c,0);memory.put(owner+0x704b10,0);
+    for(let i=0;i<1024;i++){memory.put(owner+0x702864+i*4,0);memory.put(owner+0x7038e4+i*4,0);}
     for(let i=0;i<32;i++)memory.put(owner+0x7049e4+i*4,0);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x9200],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,1],[40,1]])memory.put(owner+0x9100+offset,value);
     memory.putByte(owner+0x9200,3);
@@ -471,11 +476,20 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const colors=Uint8Array.from({length:768},(_,i)=>(Math.floor(i/3)*[43,71,97][i%3])&255);
     bytes.set(colors,0x350000+0x48a4-0x47a8);bytes.set(Uint8Array.from({length:768},(_,i)=>(Math.floor(i/24)+i%24)%12),0x350000+0x4ba4-0x47a8);
     bytes.set(colors,0x350000+0x4ea4-0x47a8);bytes.set(Uint8Array.from({length:340},(_,i)=>(Math.floor(i/20)+i%20)%12),0x350000+0x51a4-0x47a8);
-    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).update(packed).update(signature).update(nameBytes).digest('hex');
-    const record=(name,...args)=>calls.push([name,...args,snapshot()]);
-    nativeStartScene(memory,owner,[owner+0x700000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,fontMapping:stack+0x3000,terrainScratch:stack+0x4000,archiveScratch:stack+0x6000,imageName:stack+0x1000,imageScratch:stack+0x2000},{
+    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).update(packed).update(signature).update(nameBytes).update(spriteCounters).digest('hex');
+    const record=(name,...args)=>{const row=[name,...args,snapshot()],index=calls.length;calls.push(row);if(JSON.stringify(row)!==JSON.stringify(c.calls[index]))expect(row,`startup callback ${index}, pattern ${c.pattern}`).toEqual(c.calls[index]);};
+    nativeStartScene(memory,owner,[owner+0x700000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,fontMapping:stack+0x3000,streamSpriteScratch:stack+0x5000,terrainScratch:stack+0x4000,archiveScratch:stack+0x6000,imageName:stack+0x1000,imageScratch:stack+0x2000},{
+      createSpriteSurface:(renderer,slot,width,height,flags)=>{
+        record('surfaceCreate',renderer,slot,width,height,flags);
+        const surface=owner+0x600000+surfaces++*64,pitch=(width+3)&~3;
+        memory.put(slot,surface);memory.put(surface,owner+0x680000);memory.put(surface+4,spritePixels);memory.put(surface+8,pitch);memory.put(surface+12,width);memory.put(surface+16,height);
+        spritePixels+=(pitch*height+15)&~15;return 0;
+      },
+      describeSpriteSurface:(surface,descriptor)=>{record('surfaceDescribe',surface);memory.put(descriptor+16,memory.get(surface+8));},
+      lockSpriteSurface:(renderer,surface)=>{record('surfaceLock',renderer,surface);return memory.get(surface+4);},
+      unlockSpriteSurface:surface=>record('surfaceUnlock',surface),
       allocate:size=>{allocated++;record('allocate',size);let result;if(size===0x1d44c)result=owner+0x300000;else if(size===0xb2c)result=owner+0xd0000;else{result=headers;headers+=(size+15)&~15;}if(size===0x19c)archives++;return result;},
-      allocateArray:(size,pool)=>{record('array',size,pool);const result=pixels;pixels+=(size+15)&~15;return result;},
+      allocateArray:(size,pool)=>{record('array',size,pool);if(pool===0x5602f4){const result=spritePixels;spritePixels+=(size+15)&~15;return result;}const result=pixels;pixels+=(size+15)&~15;return result;},
       getRendererPalette:(renderer,bank)=>{record('palette',renderer,bank);return owner+(bank===2?0xb000:0xa000);},
       freeSized:(...args)=>record('free',...args),
       free:(...args)=>record('arrayFree',...args),
@@ -490,7 +504,6 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       },
       bindTerrainLayers:(...args)=>record('bind',...args),submitRendererPalette:(...args)=>record('commit',...args),
       createRendererPalette:(...args)=>record('createPalette',...args),
-      loadRendererSprite:(...args)=>{record('sprite',...args);if(args[5]==='cdrom.spr')memory.put(owner+0xa00c,0x12345678);return 0;},
       commitRendererPalette:(...args)=>record('commit',...args),
       pumpLoadingEvents:()=>record('pump'),rendererDimensions:(...args)=>{record('dimensions',...args);return [640,480];},
       clearRendererRect:(...args)=>record('clear',...args),drawRendererPrimitive:(...args)=>record('draw',...args),presentRenderer:(...args)=>record('present',...args),

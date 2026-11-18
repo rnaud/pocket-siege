@@ -1,3 +1,4 @@
+import {nativeCreateStreamedSprite,nativeLoadStreamedSprite,nativeDestroyStreamedSprite} from './streamed-sprite.js';
 import {nativeCreateSprite,nativeLoadArchiveSprite} from './archive-art.js';
 import {nativeDestroyBitmap8} from './bitmap-storage.js';
 
@@ -17,21 +18,21 @@ export function nativeDestroySprite(memory,sprite,flags,host) {
   return sprite;
 }
 
-//00497990. Standard SPR resources own their parser/archive state. The alternate
-//streamed format retains explicit construction/loading/destruction services.
+//00497990. Both standard and streamed resources default to original loaders.
+//Streamed surfaces retain explicit renderer creation/locking services.
 export function nativeLoadRendererSprite(memory,renderer,bank,priority,id,archive,name,flags,host) {
   bank|=0;priority|=0;id|=0;
   if(priority<1||bank<1||bank>7||!memory.get(renderer+0x4ae4+bank*4))return 0;
   if(id<1||id>=1024||memory.get(renderer+0x2864+id*4)||memory.get(renderer+0x38e4+id*4))return 0;
   const streamed=!!(flags&0x200000),sprite=host.allocate(streamed?116:72);
   if(sprite) {
-    if(streamed)host.createStreamedSprite(sprite,renderer);
+    if(streamed){if(host.createStreamedSprite)host.createStreamedSprite(sprite,renderer);else nativeCreateStreamedSprite(memory,sprite,renderer);}
     else nativeCreateSprite(memory,sprite,0x497b20,0x497ba0);
   }
   const palette=memory.get(renderer+0x4ae4+bank*4);
-  const loaded=streamed?host.loadStreamedSprite(sprite,palette,archive,name):nativeLoadArchiveSprite(memory,sprite,palette,archive,name,host);
+  const loaded=streamed?(host.loadStreamedSprite?host.loadStreamedSprite(sprite,palette,archive,name):nativeLoadStreamedSprite(memory,sprite,palette,archive,name,host.streamSpriteScratch,host)):nativeLoadArchiveSprite(memory,sprite,palette,archive,name,host);
   if(!loaded) {
-    if(sprite){if(streamed)host.destroyStreamedSprite(sprite,1);else nativeDestroySprite(memory,sprite,1,host);}
+    if(sprite){if(streamed){if(host.destroyStreamedSprite)host.destroyStreamedSprite(sprite,1);else nativeDestroyStreamedSprite(memory,sprite,1,host);}else nativeDestroySprite(memory,sprite,1,host);}
     return 0;
   }
   memory.put(renderer+(streamed?0x38e4:0x2864)+id*4,sprite);

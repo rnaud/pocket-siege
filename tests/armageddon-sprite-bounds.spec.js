@@ -26,6 +26,9 @@ import {nativeLoadRendererFont,nativeDestroyFont} from '../src/armageddon/render
 import rendererSprites from './fixtures/armageddon/renderer-sprite.json' with {type:'json'};
 import {nativeLoadRendererSprite,nativeDestroySprite} from '../src/armageddon/renderer-sprite.js';
 
+import streamedLifecycle from './fixtures/armageddon/streamed-sprite-lifecycle.json' with {type:'json'};
+import {nativeCreateStreamedSprite,nativeDestroyStreamedSprite} from '../src/armageddon/streamed-sprite.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
@@ -86,6 +89,20 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       }
     }
     expect({events,result,state:snapshot()},`${c.path} / ${c.mode} / ${c.pattern} / ${c.allocated} / ${c.last}`).toEqual({events:c.events,result:c.result,state:c.state});
+  }
+  for(const c of streamedLifecycle.cases) {
+    const owner=0x2000000,sprite=owner+0x1000,renderer=owner+0x2000,table=owner+0x3000,alternate=owner+0x4000,bytes=Buffer.alloc(0x10000,c.pattern);
+    const memory={get:p=>bytes.readUInt32LE(p-owner),put:(p,v)=>bytes.writeUInt32LE(v>>>0,p-owner),byte:p=>bytes[p-owner],putByte:(p,v)=>{bytes[p-owner]=v;}};
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeCreateStreamedSprite(memory,sprite,renderer);expect(snapshot()).toBe(c.initial);
+    memory.put(sprite+112,table);bytes.writeInt16LE(c.count,sprite-owner+106);
+    for(const at of [table,alternate])for(let i=0;i<3;i++)memory.put(at+i*12+8,i!==1?owner+0x5000+i*32:0);
+    const events=[],result=nativeDestroyStreamedSprite(memory,sprite,c.flags,{
+      releaseSpriteSurface(renderer,slot){events.push(['surface',renderer,slot,snapshot()]);memory.put(slot,0);if(c.mutate)memory.put(sprite+112,alternate);},
+      freeArray(pointer){events.push(['array',pointer,snapshot()]);},
+      freeSized(pointer,size){events.push(['free',pointer,size,snapshot()]);},
+    });
+    expect({events,result,state:snapshot()}).toEqual({events:c.events,result:c.result,state:c.state});
   }
   const startup = new NativeGamePalette(0, 104);
   startup.add([0, 0, 0]);
