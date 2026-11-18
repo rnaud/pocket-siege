@@ -173,7 +173,8 @@ import { nativeTurnClockTick, nativeClockPresentationTick, nativeTimerFont, nati
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hud-frame.json" with { type: "json" };
 import { nativeTeamPanelSounds, nativeTeamListTick, nativeTeamListRows, sortNativeTeamList, removeNativeTeamListRow, nativeHUDFrame, nativeTeamHighlight, nativeTeamHealthTick, nativeTeamPanelTick, nativeTeamPanelVisibilityTick } from "../src/armageddon/hud-frame.js";
-test("HUD frame drawing matches original executable requests", { tag: "@logic" }, () => {
+test.describe.configure({mode:"parallel"});
+test("Native placement matches original executable requests", { tag: "@logic" }, () => {
   const initialPlacementPixels=new Uint8Array(1920*696);
   for(let i=0;i<initialPlacementPixels.length;i++)initialPlacementPixels[i]=(0xa5>>(i&7))&1;
   const packPlacement=(pixels,packed)=>{
@@ -310,6 +311,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
   }
+});
+test("Native worm rendering and construction matches original executable requests", {tag:"@logic"}, () => {
   for(const c of wormSlope.cases) {
     const calls=[];
     const result=nativeWormSlopeTick({pending:c.pending,slope:c.slope,variant:c.variant},c.facing,123456,-765432,{
@@ -427,6 +430,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const expectedCalls=c.factory?c.calls.filter(call=>!["base","type","register"].includes(call[0])):c.calls;
     expect({calls,body:[...memory.slice(0x3c)],scene:wormCreate.sceneOffsets.map(o=>scene.getInt32(o,true))}).toEqual({calls:expectedCalls,body:c.body,scene:c.scene});
   }
+});
+test("Native task and controller dispatch matches original executable requests", {tag:"@logic"}, () => {
   for(const c of taskCreate.cases) {
     const parent={id:taskCreate.parent,memory:new Uint8Array(0x3c),registry:Array.from({length:256},()=>[]),capacity:c.capacity,children:c.children.map(id=>id?{id}:null)};
     const pv=new DataView(parent.memory.buffer);pv.setInt32(0xc,c.capacity,true);pv.setInt32(0x14,c.children.length,true);
@@ -566,6 +571,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     })).toBe(true);
     expect({calls,body:controllerFrame.offsets.map(o=>body.getInt32(o,true))}).toEqual({calls:c.calls,body:c.body});
   }
+});
+test("Native controller selection and input matches original executable requests", {tag:"@logic"}, () => {
   for(const c of weaponDelays.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),calls=[],delays=[...c.initial];
     for(const [o,v] of [[0x3c,c.team],[0x54,c.priority],[0xc8,c.dirty]])body.setInt32(o,v,true);
@@ -851,6 +858,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     expect(calls).toEqual(c.calls);
   }
 
+});
+test("Native replay frame and input pipeline matches original executable requests", {tag:"@logic"}, () => {
   for (const row of replayPipelineCapture.cases) {
     const scene = new Uint8Array(0x20000), sceneView = new DataView(scene.buffer);
     const memory = new Uint8Array(0x300), managerView = new DataView(memory.buffer), calls = [];
@@ -1140,6 +1149,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.result.calls);expect(stream.position).toBe(row.result.position);
     expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
   }
+});
+test("Native replay resumed frames matches original executable requests", {tag:"@logic"}, () => {
   for(const row of replayRestoredFrames.cases) {
     const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000,0x70000),env=initial.subarray(0x70000,0x80000),devices=initial.subarray(0x80000,0x90000),channels=initial.subarray(0x90000),scratch=new Uint8Array(608),calls=[],allocations=[];
     const locate=at=>at>=0x2800000?[scratch,at-0x2800000]:at>=0x2700000?[channels,at-0x2700000]:at>=0x2600000?[devices,at-0x2600000]:at>=0x2500000?[env,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
@@ -1568,6 +1579,8 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
   for (const row of replayControl.capture) expect(nativeReplayCaptureRequest(row.input)).toEqual(row.result);
   for (const row of replayControl.inputs) expect(nativeReplayInput(row.input)).toEqual(row.result);
   for (const row of replayControl.playback) expect(nativeReplayPlaybackRequest(row.input)).toEqual(row.result);
+});
+test("Native turn presentation and HUD matches original executable requests", {tag:"@logic"}, () => {
   for (const row of actionBusy.writer) expect(nativeActionBusyWrite(row.input)).toEqual(row.result);
   for (const row of actionBusy.clear) expect(nativeActionBusyClear(row.input)).toEqual(row.result);
   for (const row of actionBusy.gate) expect(nativeActionGate(row.input)).toEqual(row.result);
