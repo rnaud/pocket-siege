@@ -1,3 +1,4 @@
+import terrainMaskSetup from './fixtures/armageddon/terrain-mask-setup.json' with {type:'json'};
 import terrainMasks from './fixtures/armageddon/terrain-crater-masks.json' with {type:'json'};
 import bitmapCircle from './fixtures/armageddon/bitmap-circle.json' with {type:'json'};
 import {nativeCreateTerrainMasks} from '../src/armageddon/terrain-crater-masks.js';
@@ -20,7 +21,7 @@ import bitmapRectangle from './fixtures/armageddon/bitmap-rectangle.json' with {
 import {nativeFillBitmapRect} from '../src/armageddon/bitmap-rectangle.js';
 import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
 import terrainLoad from './fixtures/armageddon/terrain-startup.json' with {type:'json'};
-import {nativeLoadTerrainLayers,nativeLoadTerrainThemes,nativeLoadTerrainSoil,nativeLoadTerrainGrass} from '../src/armageddon/terrain-startup.js';
+import {nativeLoadTerrainLayers,nativeLoadTerrainThemes,nativeLoadTerrainSoil,nativeLoadTerrainGrass,nativePrepareTerrainMasks} from '../src/armageddon/terrain-startup.js';
 import imageDecompress from './fixtures/armageddon/image-decompress.json' with {type:'json'};
 import {nativeDecodeImagePixels} from '../src/armageddon/image-decompress.js';
 import terrainImage from './fixtures/armageddon/terrain-image.json' with {type:'json'};
@@ -287,10 +288,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     nativeDecodeImagePixels({byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}},destination,source,palette);
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
   }
-  for(const c of [...terrainImage.cases,...terrainLoad.cases,...terrainSoil.cases,...terrainGrass.cases,...archiveImage.cases.map(c=>({...c,archiveImage:true})),...[...archiveImageLoad.cases,...archiveImageComposed.cases,...archiveRealImages.cases].map(c=>({...c,namedImage:true}))]) {
+  for(const c of [...terrainImage.cases,...terrainLoad.cases,...terrainSoil.cases,...terrainGrass.cases,...terrainMaskSetup.cases,...archiveImage.cases.map(c=>({...c,archiveImage:true})),...[...archiveImageLoad.cases,...archiveImageComposed.cases,...archiveRealImages.cases].map(c=>({...c,namedImage:true}))]) {
     const owner=0x2000000,scratch=0x2100000,compressed=0x714be0;
     const nameBytes=Buffer.alloc(256,c.pattern);
-    const bytes=Buffer.alloc(c.terrainSoil?0x50000:c.realArchive?0x30000:0x10000,c.pattern),temporary=Buffer.alloc(0x43c,c.pattern),packed=Buffer.alloc(c.realArchive||c.terrainSoil?0x10000:0x1000,c.pattern),signature=Buffer.alloc(4,c.pattern),calls=[];
+    const bytes=Buffer.alloc(c.terrainMaskSetup?0xa0000:c.terrainSoil?0x50000:c.realArchive?0x30000:0x10000,c.pattern),temporary=Buffer.alloc(0x43c,c.pattern),packed=Buffer.alloc(c.realArchive||c.terrainSoil?0x10000:0x1000,c.pattern),signature=Buffer.alloc(4,c.pattern),calls=[];
     const locate=a=>a>=scratch?[temporary,a-scratch]:a>=owner?[bytes,a-owner]:a>=0x7d6058?[nameBytes,a-0x7d6058]:a>=compressed?[packed,a-compressed]:a>=0x560230?[signature,a-0x560230]:[Buffer.from("grass.img\0\0\0soil.img\0"),a-0x55f7d4];
     const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=locate(a);return b[o];},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
     const snapshot=()=>createHash('sha256').update(bytes).update(packed).update(c.nativeDirectories?signature:Buffer.alloc(0)).update(c.namedImage||c.terrainSoil?nameBytes:Buffer.alloc(0)).update(c.realArchive?signature:Buffer.alloc(0)).digest('hex');
@@ -355,11 +356,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     }
     if(c.nativeBitmaps) {
       delete host.constructBitmap;delete host.bitmapStorage;delete host.remapBitmap;
-      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.nativeDirectories&&pool===0x560220?owner+0x9000+(archives-1)*0x2000:c.terrainGrass&&bitmap>=owner+0x1180?owner+0x49000:c.terrainSoil&&bitmap>=owner+0x1100?(bitmap===owner+0x1100?owner+0x10000:owner+0x20000):owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400;};
+      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.terrainMaskSetup&&pool===0x54a150?0:c.terrainMaskSetup&&bitmap>=owner+0x11c0?owner+0x50000+(bitmap-owner-0x11c0)/0x40*0x2000:c.nativeDirectories&&pool===0x560220?owner+0x9000+(archives-1)*0x2000:c.terrainGrass&&bitmap>=owner+0x1180?owner+0x49000:c.terrainSoil&&bitmap>=owner+0x1100?(bitmap===owner+0x1100?owner+0x10000:owner+0x20000):owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400;};
     }
     if(c.nativePalette){delete host.addPaletteColor;nativeCreateGamePalette(memory,owner+0x8000,c.first,c.last);}
     if(c.terrainStartup) {
-      memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200800);memory.put(owner+0x6154,0x2200900);
+      memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200800);memory.put(owner+0x6154,0x2200900);if(c.terrainMaskSetup)memory.put(owner+0x6180,0x2200a00);
       host.getRendererPalette=(...args)=>{calls.push(['palette',...args,snapshot()]);return owner+0x8000;};
       host.submitRendererPalette=(...args)=>calls.push(['submit',...args,snapshot()]);
       if(!c.nativeRectangles)host.clearBitmapRect=(...args)=>calls.push(['clear',...args,snapshot()]);
@@ -375,6 +376,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         if(c.terrainGrass) {
           host.free=at=>calls.push(['arrayFree',at,snapshot()]);
           nativeLoadTerrainGrass(memory,owner+0x4000,scratch,host);
+          if(c.terrainMaskSetup) {
+            host.bindTerrainLayers=(...args)=>calls.push(['bind',...args,snapshot()]);
+            nativePrepareTerrainMasks(memory,owner+0x4000,host);
+          }
         }
       }
     }

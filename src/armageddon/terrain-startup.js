@@ -1,3 +1,4 @@
+import {nativeCreateTerrainMasks} from './terrain-crater-masks.js';
 import {nativeBitmapPixel8,nativeDestroyBitmap8} from './bitmap-storage.js';
 import {nativeLoadNamedArchiveImage} from './terrain-image.js';
 import {nativeCreatePanelImage} from './panel-resources.js';
@@ -59,4 +60,13 @@ export function nativeLoadTerrainGrass(memory,terrain,scratch,host) {
   const grass=nativeLoadNamedArchiveImage(memory,palette,archive,0x55f7d4,scratch,nativeFileArchiveServices(memory,host));
   memory.put(terrain+0x8e8,nativeBitmapPixel8(memory,grass,128,0));
   if(grass)nativeDestroyBitmap8(memory,grass,1,host);
+}
+
+//004A7AFC..004A7B2B. Submit palette bank2, bind the loaded terrain layers to
+//the renderer, then construct the original hole/rim masks in the terrain owner.
+export function nativePrepareTerrainMasks(memory,terrain,host) {
+  const renderer=memory.get(terrain+0x8f4);
+  host.submitRendererPalette(renderer,2);
+  host.bindTerrainLayers(renderer,memory.get(terrain+0x8f8),memory.get(terrain+0x908),memory.get(terrain+0x904));
+  nativeCreateTerrainMasks(memory,terrain,host);
 }
