@@ -1,3 +1,4 @@
+import { nativeDrawControllerTarget } from './controller-target-draw.js';
 import { nativeDrawControllerPanels } from './controller-panel-draw.js';
 import { nativeDrawControllerCountdown } from './controller-countdown-draw.js';
 import { nativeUpdateControllerPresentation } from './controller-presentation.js';
@@ -38,7 +39,7 @@ export function nativeControllerFrame(memory,sceneMemory,event,payload,host) {
     nativeControllerCountdown(memory,sceneMemory,host);
   } else if(event===0x3eb) {
     if(host.drawPresentation)host.drawPresentation();else nativeDrawControllerPanels(memory,sceneMemory,host);
-    host.drawTargeting();
+    if(host.drawTargeting)host.drawTargeting();else nativeDrawControllerTarget(memory,sceneMemory,host);
     if(host.drawCountdown)host.drawCountdown();else nativeDrawControllerCountdown(memory,sceneMemory,host);
     host.forward(event,payload);
   } else if(event===0x3ec) {

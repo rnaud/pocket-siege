@@ -1,3 +1,5 @@
+import controllerTargetDraw from "./fixtures/armageddon/controller-target-draw.json" with { type: "json" };
+import { nativeDrawControllerTarget } from "../src/armageddon/controller-target-draw.js";
 import controllerPanelDraw from "./fixtures/armageddon/controller-panel-draw.json" with { type: "json" };
 import { nativeDrawControllerPanels } from "../src/armageddon/controller-panel-draw.js";
 import controllerCountdownDraw from "./fixtures/armageddon/controller-countdown-draw.json" with { type: "json" };
@@ -268,6 +270,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerTargetDraw.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
+    for(const [o,v] of Object.entries(c.fields))body.setInt32(Number(o),v,true);
+    scene.setInt16(0x1b7da,c.owners.length,true);c.owners.forEach((v,i)=>scene.setInt16(0x1b7ba+i*2,v,true));
+    scene.setInt32(0x1247c,c.x,true);scene.setInt32(0x12480,c.y,true);scene.setUint32(0x310+c.fields[0xe0]*4,c.sprite,true);
+    nativeDrawControllerTarget(memory,sceneMemory,{
+      teamIndicator:team=>{calls.push(["indicator",team]);return c.indicator;},teamVisible:team=>{calls.push(["visible",team]);return c.visible;},
+      teamTeleportMarker:team=>{calls.push(["teleport",team]);return c.marker;},imageSize:image=>{calls.push(["size",image]);return [c.width,c.height];},
+      drawTarget:(...args)=>calls.push(["target",...args]),drawPlacement:(...args)=>calls.push(["placement",...args]),
+    });
+    expect(calls).toEqual(c.calls);
   }
   for(const c of controllerPanelDraw.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
