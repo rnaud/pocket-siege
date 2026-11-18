@@ -36,7 +36,7 @@ import indexedBlits from './fixtures/armageddon/indexed-bitmap-blit.json' with {
 import {nativeBlitIndexedBitmap} from '../src/armageddon/indexed-bitmap-blit.js';
 
 import streamedDraws from './fixtures/armageddon/streamed-sprite-draw.json' with {type:'json'};
-import {nativeSelectStreamedSpriteFrame,nativeBlitRendererSurface,nativeDrawRendererStreamedSprite} from '../src/armageddon/streamed-sprite-draw.js';
+import {nativeSelectStreamedSpriteFrame,nativeBlitRendererSurface} from '../src/armageddon/streamed-sprite-draw.js';
 
 import rendererStreamedDraws from './fixtures/armageddon/renderer-streamed-draw.json' with {type:'json'};
 
@@ -47,7 +47,37 @@ import {nativeAddGamePaletteColor} from '../src/armageddon/game-palette-memory.j
 import rendererBitmapDraw from './fixtures/armageddon/renderer-bitmap-draw.json' with {type:'json'};
 import {nativeDrawRendererBlendedBitmap} from '../src/armageddon/renderer-bitmap-draw.js';
 
+import rendererSpriteDraw from './fixtures/armageddon/renderer-sprite-draw.json' with {type:'json'};
+import {nativeDrawRendererSprite} from '../src/armageddon/renderer-sprite-draw.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
+  for(const c of rendererSpriteDraw.cases) {
+    const owner=0x2000000,arena=Buffer.alloc(0x20000,c.pattern),scratch=Buffer.alloc(24);
+    const memory={get:p=>p>=0x2100000?scratch.readUInt32LE(p-0x2100000):arena.readUInt32LE(p-owner),put:(p,v)=>p>=0x2100000?scratch.writeUInt32LE(v>>>0,p-0x2100000):arena.writeUInt32LE(v>>>0,p-owner),byte:p=>arena[p-owner],putByte:(p,v)=>{arena[p-owner]=v;}};
+    for(const [offset,value] of [[0,owner+0x4000],[20,-2],[24,1],[28,19],[32,30],[36,12],[40,6],[0x30,3],[0x460,owner+0x1200],[0x2864+7*4,owner+0x16000],[0x48,owner+0x4100],[0x454,c.locked],[0x458,owner+0x1000],[0x14b2c,0]])memory.put(owner+offset,value);
+    memory.put(owner+0x406c,0x2200100);
+    for(const target of [owner+0x4100,owner+0x4200])memory.put(target,owner+0x4300);
+    memory.put(owner+0x4358,0x2200200);memory.put(owner+0x4364,0x2200300);
+    for(const [bitmap,pixels,width,height,pitch,clip] of [[owner+0x1000,owner+0x2000,20,14,24,[1,1,19,13]],[owner+0x18000,owner+0x19000,16,12,16,[2,1,14,10]],[owner+0x1200,owner+0x3800,32,16,32,[0,0,32,16]]])
+      for(const [offset,value] of [[0,0x5249b0],[4,1],[8,pixels],[12,8],[16,pitch],[20,width],[24,height],[28,clip[0]],[32,clip[1]],[36,clip[2]],[40,clip[3]]])memory.put(bitmap+offset,value);
+    for(let i=0;i<1024;i++) {
+      memory.putByte(owner+0x2000+i,i%5===0?0:(i*13+7)&255);
+      memory.putByte(owner+0x19000+i,i%3===0?0:(i*17+3)&255);
+    }
+    for(let d=0;d<256;d++)for(let s=0;s<256;s++)memory.putByte(owner+0x4b2c+d*256+s,(s*3+d*5)&255);
+    const sprite=owner+0x16000;
+    for(const [offset,value] of [[8,32],[10,16],[12,c.pattern&3],[14,3],[16,0]])arena.writeUInt16LE(value,sprite-owner+offset);
+    for(const [offset,value] of [[20,owner+0x17000],[32,owner+0x18000],[40,owner+0x19000]])memory.put(sprite+offset,value);
+    [[-4,-3,8,5],[2,1,13,8],[1,-2,14,8]].forEach((rect,i)=>{memory.put(owner+0x17000+i*12,i*160);rect.forEach((v,j)=>arena.writeInt16LE(v,0x17000+i*12+4+j*2));});
+    const snapshot=()=>createHash('sha256').update(arena).digest('hex'),events=[];let waits=0;
+    const host={
+      waitRenderer(renderer){events.push(['wait',renderer,snapshot()]);waits++;if(c.mutate&&waits===3)memory.put(owner+0x48,owner+0x4100);return waits%2;},
+      describeSurface(target){events.push(['describe',target,108,snapshot()]);if(c.mutate)memory.put(owner+0x48,owner+0x4200);return {width:20,height:14,pitch:24};},
+      lockSurface(target,rect,flags,event){events.push(['lock',target,rect,108,flags,event,snapshot()]);return {status:0,pixels:owner+0x2000};},
+    };
+    nativeDrawRendererSprite(memory,owner,4<<16,3<<16,c.encoded,c.progress,0x2100000,host);
+    expect(events).toEqual(c.events);expect(snapshot()).toBe(c.state);
+  }
   for(const c of rendererBitmapDraw.cases) {
     const owner=0x2000000,arena=Buffer.alloc(0x20000,c.pattern);
     const memory={get:p=>arena.readUInt32LE(p-owner),put:(p,v)=>arena.writeUInt32LE(v>>>0,p-owner),byte:p=>arena[p-owner],putByte:(p,v)=>{arena[p-owner]=v;}};
@@ -227,7 +257,7 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       unlockSurface(surface,flags){events.push(['unlock',surface,flags,snapshot()]);if(c.mutate){memory.put(renderer+0x48,alternate);memory.put(renderer+0x454,99);}},
       blitSurface(surface,x,y,source,rect,flags){events.push(['blit',surface,x,y,source,rect,flags,snapshot()]);},
     };
-    if(c.dispatch)nativeDrawRendererStreamedSprite(memory,renderer,4<<16,3<<16,c.encoded,c.progress,0x2100000,host);
+    if(c.dispatch)nativeDrawRendererSprite(memory,renderer,4<<16,3<<16,c.encoded,c.progress,0x2100000,host);
     else nativeBlitRendererSurface(memory,renderer,[-3,5,30,19][c.flags],c.locked?-2:3,memory.get(outputs[0]),memory.get(outputs[1]),selected,memory.get(outputs[4]),memory.get(outputs[5]),c.flags,host);
     expect({events,state:snapshot()}).toEqual({events:c.events,state:c.state});
   }
