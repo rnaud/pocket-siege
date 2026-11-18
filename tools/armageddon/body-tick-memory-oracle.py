@@ -1,0 +1,92 @@
+"""Capture original004CA320 addressed control flow and callback-visible memory."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import struct
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
+from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_EBP
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('executable', type=Path)
+parser.add_argument('output', type=Path)
+args = parser.parse_args()
+data = args.executable.read_bytes()
+digest = hashlib.sha256(data).hexdigest()
+if digest != '0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56':
+    parser.error('Executable differs from verified WA 3.0.0.0')
+pe = struct.unpack_from('<I',data,0x3c)[0]
+optional = pe+24
+base = struct.unpack_from('<I',data,optional+28)[0]
+size = struct.unpack_from('<I',data,optional+56)[0]
+cpu = Uc(UC_ARCH_X86, UC_MODE_32)
+cpu.mem_map(base,(size+0xfff)&~0xfff)
+cpu.mem_write(base,data[:struct.unpack_from('<I',data,optional+60)[0]])
+headers = optional+struct.unpack_from('<H',data,pe+20)[0]
+for i in range(struct.unpack_from('<H',data,pe+6)[0]):
+    _,rva,size,offset=struct.unpack_from('<IIII',data,headers+40*i+8)
+    if size: cpu.mem_write(base+rva,data[offset:offset+size])
+owner, stack, stop = 0x2000000, 0x2100000, 0x2200000
+for address in [owner, stack, stop]: cpu.mem_map(address,0x10000)
+def write(address,value): cpu.mem_write(address,struct.pack('<I',value&0xffffffff))
+def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
+def signed(v):return v if v<0x80000000 else v-0x100000000
+
+
+import base64,zlib,itertools
+environment=owner+0x1000;world=owner+0x2000;segments=owner+0x5000;vt=owner+0x6000;mt=owner+0x7000
+services={0x4c98e0:('refresh',1),0x4c9f10:('water',2),0x4ca110:('air',1),0x4ca8a0:('rope',2),0x4c9aa0:('sweep',3),0x4ca250:('earthquake',2)}
+for i,(name,argc) in enumerate([('awake',0),('waterChanged',0),('bounce',1),('freeBounce',2),('collide',3)]):services[stop+0x100+i*0x100]=(name,argc)
+calls=[];steps=0
+def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))).hexdigest()
+def hook(cpu,address,size,user):
+ global steps
+ name,argc=services[address];sp=cpu.reg_read(UC_X86_REG_ESP);arg=lambda i:read(sp+4+i*4)
+ params=[]
+ if name=='water':params=[signed(arg(1))]
+ if name=='earthquake':params=[signed(arg(1))]
+ if name=='bounce':params=[arg(0)]
+ if name=='freeBounce':params=[arg(0),arg(1)]
+ if name=='collide':params=[signed(arg(1)),signed(arg(2))]
+ if name in ['rope','sweep']:params=[read(arg(1 if name=='rope' else 2))]
+ calls.append([name,params,snapshot()]);result=0
+ if name=='awake':
+  result=int(mode not in [3,4,5]);
+  if mode==15:write(world+0x1ac4,23)
+ elif name=='refresh':
+  if mode==6:write(owner+0xbc,1);write(owner+0xc8,1-read(owner+0xc8))
+ elif name=='water':
+  write(owner+0xbc,int(mode%3==0))
+  if mode==7:write(owner+0xc8,0)
+  if mode==8:write(environment+0x3b8,0x8000)
+  result=int(mode==9)
+ elif name=='air':write(owner+0x9c,read(owner+0x9c)+123);write(owner+0xc4,1)
+ elif name=='waterChanged':
+  if mode==10:write(owner+0xc8,1-read(owner+0xc8))
+ elif name in ['rope','sweep']:
+  steps+=1;remaining=arg(1 if name=='rope' else 2)
+  write(remaining,0 if mode%4==0 else read(remaining)//2)
+  write(owner+0x90,read(owner+0x90)+111);write(owner+0x94,read(owner+0x94)-222)
+  result=7 if steps%2 else 0
+  if name=='sweep':write(arg(1),3)
+ elif name in ['bounce','freeBounce']:
+  if mode==11:write(owner+0x9c,0);write(owner+0xa0,0)
+  if mode==12:write(owner+0x9c,0x7fffffff);write(owner+0xa0,0x80000001)
+  if mode==13:write(owner+0xdc,2);write(segments+12,0x1234)
+ elif name=='collide':result=1
+ elif name=='earthquake':write(owner+0x9c,456);write(world+0x1ac4,0)
+ cpu.reg_write(UC_X86_REG_EAX,result)
+for address,(name,argc) in services.items():
+ cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4));cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+cases=[]
+for throughList,mode,velocity,constrained in itertools.product(range(2),range(16),[0,65536,-65536,0x300000,-0x300000,1000000,-2000000,0x70000000],range(2)):
+ cpu.mem_write(owner,bytes(0x10000));calls.clear();steps=0
+ for offset,value in {0:vt,0x48:int(mode!=1),0x54:int(mode==2),0xb8:int(mode in [3,4]),0xbc:1,0xc0:1,0xc4:1,0xc8:constrained,0x90:100<<16,0x94:180<<16,0x9c:velocity,0xa0:-velocity,0x98:123,0xa4:456,0x5c:0 if mode==14 else 0x100000,0x6c:65536,0x84:60000,0x8c:0x3000,0xdc:1,0xf8:segments}.items():write(owner+offset,value)
+ write(segments+4,[0,0x1000,0xf000,0x8000][mode%4]);write(environment,mt);write(environment+0x3c0,world);write(environment+0x3b8,0x3d70);write(world+0x7f0,(10 if throughList else 12) if mode==4 else 1);write(world+0x1ac4,32 if mode in [3,5] else 0)
+ for offset,value in {0xf4:stop+0x100,0x3c:stop+0x200,0x30:stop+0x300,0x2c:stop+0x400}.items():write(vt+offset,value)
+ write(mt+12,stop+0x500);write(environment+0x24,3);write(environment+0x28,environment+0x800);write(environment+0x808,owner);initial=bytes(cpu.mem_read(owner,0x10000));sp=stack+0xff00
+ for i,v in enumerate([stop,owner,1]):write(sp+i*4,v)
+ cpu.reg_write(UC_X86_REG_ECX,environment);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4ca750 if throughList else 0x4ca320,stop,count=100000)
+ assert cpu.reg_read(UC_X86_REG_EIP)==stop
+ cases.append(dict(throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='512 original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
+print('Captured',len(cases),'addressed body ticks')
