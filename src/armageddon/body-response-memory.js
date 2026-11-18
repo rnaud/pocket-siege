@@ -126,7 +126,10 @@ export function nativeBodyContactMemory(memory, body, other, side, host) {
   const accepted = host.acceptContact
     ? host.acceptContact(other, body, side)
     : nativeAcceptBodyContactMemory(memory, other, body, side);
-  if (!accepted) host.respondContact(body, other, side);
+  if (!accepted) {
+    if (host.respondContact) host.respondContact(body, other, side);
+    else nativeRespondBodyContactMemory(memory, body, other, side, host);
+  }
 }
 
 //004F4990 /004E8B80 transfer momentum.004D15E0 declines handling.
@@ -157,4 +160,88 @@ export function nativeAcceptBodyContactMemory(
     memory.put(body + 0xa0, velocity.vy);
   }
   return result.result;
+}
+
+//004D1260 uses the actor's current scene environment, and clears sleep only
+//after an accepted position. The caller may cache the +100 virtual entry.
+export function nativeTryBodyPositionMemory(
+  memory,
+  body,
+  x,
+  y,
+  host,
+  entry = nativeBodyVirtualEntry(memory, body, 0x100),
+) {
+  if (entry !== 0x4d1260)
+    throw new RangeError(
+      `Native position handler not connected: ${entry.toString(16)}`,
+    );
+  const environment = memory.get(memory.get(body + 0x38) + 0x7d4);
+  if (host.collide(environment, body, x, y)) return 0;
+  memory.put(body + 0x90, x);
+  memory.put(body + 0xb8, 0);
+  memory.put(body + 0x94, y);
+  return 1;
+}
+
+//004F4860 with004F4700 complex stepping. Failed probes can mutate the actor;
+//the second attempt rereads its coordinates, but uses the cached direction
+//and virtual entry. Final low-speed stops apply to both contacting bodies.
+export function nativeRespondBodyContactMemory(
+  memory,
+  body,
+  other,
+  side,
+  host,
+) {
+  const entry = nativeBodyVirtualEntry(memory, body, 0x24);
+  if (entry !== 0x4f4860)
+    throw new RangeError(
+      `Native bounce handler not connected: ${entry.toString(16)}`,
+    );
+  const get = (offset) => memory.get(body + offset) | 0,
+    put = (offset, value) => memory.put(body + offset, value);
+  if (side === 1 || side === 3) {
+    put(0x9c, fixedMultiply(get(0x9c), get(0x80)));
+    put(0xa0, -fixedMultiply(get(0xa0), get(0x7c)));
+  } else if (side === 2 || side === 4) {
+    let stepped = false;
+    if (get(0x4c)) {
+      const step = get(0x9c) < 0 ? -65536 : 65536;
+      const positionEntry = nativeBodyVirtualEntry(memory, body, 0x100);
+      const attempt = (x, y) =>
+        host.tryPosition
+          ? host.tryPosition(body, x, y)
+          : nativeTryBodyPositionMemory(
+              memory,
+              body,
+              x,
+              y,
+              host,
+              positionEntry,
+            );
+      stepped =
+        attempt((get(0x90) + step) | 0, (get(0x94) - 65536) | 0) ||
+        attempt((get(0x90) + step) | 0, (get(0x94) + 65536) | 0);
+    }
+    if (stepped)
+      put(
+        0x9c,
+        fixedMultiply(get(0x9c), Math.trunc(Math.imul(get(0x80), 30) / 32)),
+      );
+    else {
+      put(0x9c, -fixedMultiply(get(0x9c), get(0x78)));
+      put(0xa0, fixedMultiply(get(0xa0), get(0x80)));
+    }
+  }
+  const abs = (v) => ((v ^ (v >> 31)) - (v >> 31)) | 0;
+  for (const actor of [body, other])
+    if (
+      ((abs(memory.get(actor + 0x9c) | 0) + abs(memory.get(actor + 0xa0) | 0)) |
+        0) <
+      0x6666
+    ) {
+      memory.put(actor + 0xa0, 0);
+      memory.put(actor + 0x9c, 0);
+    }
 }

@@ -40,6 +40,7 @@ test(
 
 // Preserve callback-visible memory: event handlers can change constraints,
 // velocities, segment lists and even scene earthquake state during a tick.
+import bounces from "./fixtures/armageddon/body-bounce-memory.json" with { type: "json" };
 import receivers from "./fixtures/armageddon/body-receiver-memory.json" with { type: "json" };
 import contacts from "./fixtures/armageddon/body-contact-memory.json" with { type: "json" };
 import impulses from "./fixtures/armageddon/body-impulse-memory.json" with { type: "json" };
@@ -73,6 +74,7 @@ test(
       ...impulses.cases,
       ...contacts.cases,
       ...receivers.cases,
+      ...bounces.cases,
     ].entries()) {
       const bytes = inflateSync(Buffer.from(row.inputMemory, "base64"));
       const memory = {
@@ -181,6 +183,15 @@ test(
             put(0x44, 99);
           }
           if (mode === 8) memory.put(environment + 0x40, 2);
+          if (row.nativeBounce)
+            return Number(
+              params[1] !== 100 &&
+                (mode % 4 === 1
+                  ? params[2] <= 180
+                  : mode % 4 === 2
+                    ? params[2] >= 180
+                    : true),
+            );
           return row.nativeCollision
             ? Number(params[1] !== 100 && mode % 3 !== 0)
             : Number(mode % 2 === 0);
@@ -226,6 +237,7 @@ test(
         delete host.freeBounce;
       }
       if (row.nativeReceiver) delete host.acceptContact;
+      if (row.nativeBounce) delete host.respondContact;
       if (row.throughList)
         nativeAdvancePhysicsListMemory(
           memory,
