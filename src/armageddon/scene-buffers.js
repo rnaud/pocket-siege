@@ -32,10 +32,15 @@ export function nativeDestroyInitialSceneBuffers(memory,owner,flags,host) {
   if(stream){memory.put(stream,0x5268ac);host.free(memory.get(stream+4));memory.put(stream,0x524a14);if(flags&1)host.release(stream,24);}
   for(const offset of [0x28,0x2c,0x30,0x34,0x38]) {
     const wrapper=memory.get(owner+offset);if(!wrapper)continue;
-    memory.put(wrapper,0x526544);const buffer=memory.get(wrapper+4);
-    if(buffer){memory.put(buffer,0x5266a0);host.free(memory.get(buffer+4));memory.put(buffer,0x524a14);host.release(buffer,32);}
-    memory.put(wrapper,0x524a14);if(flags&1)host.release(wrapper,8);
+    nativeDestroyEventBufferMemory(memory,wrapper,flags,host);
   }
+}
+
+//0049C690/004AF330: shared by scene channels and terrain-owned history.
+export function nativeDestroyEventBufferMemory(memory,address,flags,host) {
+  memory.put(address,0x526544);const buffer=memory.get(address+4);
+  if(buffer){memory.put(buffer,0x5266a0);host.free(memory.get(buffer+4));memory.put(buffer,0x524a14);host.release(buffer,32);}
+  memory.put(address,0x524a14);if(flags&1)host.release(address,8);return address;
 }
 
 //004AF470: aligned linked records in a circular allocation buffer.

@@ -53,7 +53,7 @@ def soundHook(cpu,entry,size,user):calls.append(['stopSound',cpu.reg_read(UC_X86
 cpu.hook_add(UC_HOOK_CODE,soundHook,begin=soundCallback,end=soundCallback)
 import base64,zlib,itertools
 schemas=json.loads(Path('src/armageddon/replay-task-types.json').read_text())
-tags=[7,9,13,15,16,17,21,22,23,24,25,26,27,28,29,30]
+tags=[7,9,13,15,16,17,21,22,23,24,25,26,27,28,29,30,31]
 cases=[]
 for tag,flags,variant in itertools.product(tags,range(4),range(4)):
  schema=next(row for row in schemas if row['tag']==tag)
@@ -82,7 +82,12 @@ for tag,flags,variant in itertools.product(tags,range(4),range(4)):
   write(body+0xc8,variant%2);write(body+0xf8,heap+0x7000);write(body+0xf4,0x1234 if variant>=2 else 0)
  write(context+12,owner+0x6000 if variant%2 else 0);write(owner+0x6000,owner+0x6100);write(owner+0x6128,soundCallback)
  def snapshot():return bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(heap,0x10000))+bytes(cpu.mem_read(context,0x20000))
+ if tag==31:
+  write(body+0x2dd0,variant);write(context+0x1d428,[0,1,0x80000000,0x7fffffff][variant])
+  events=owner+0xa000;inner=events+0x20;tableAt=owner+0xb000
+  write(body+0x2dc4,events if variant else 0);write(events,0x526544);write(events+4,inner if variant!=2 else 0);write(inner,0x5266a0);write(inner+4,events+0x100)
+  write(body+0x2dcc,tableAt if variant!=1 else 0);write(tableAt,0x526918);write(tableAt+12,tableAt+0x100)
  initial=snapshot();calls.clear();invoke(read(int(schema['vtable'],16)),body,[flags])
  cases.append(dict(tag=tag,flags=flags,variant=variant,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=hashlib.sha256(snapshot()).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='256 original runtime actor destructions across16 concrete types, four flags and four runtime resource/list/counter states. Original recursive base, registry, physics, presentation-slot and cached text/image destructors execute. Full256KiB memory and ordered frees/releases/audio stops are captured. Heap and audio backend remain interfaces; weapon actor11 and terrain31 are excluded.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='272 original runtime actor destructions across17 concrete types, four flags and four runtime resource/list/counter states. Original recursive base, registry, physics, presentation-slot and cached text/image destructors execute. Full256KiB memory and ordered frees/releases/audio stops are captured. Heap and audio backend remain interfaces; terrain-owned history/hash buffers execute; weapon actor11 is excluded.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'runtime actor destructions')

@@ -1,3 +1,4 @@
+import {nativeDestroyEventBufferMemory} from './scene-buffers.js';
 import {nativeReleasePresentationSlot} from './presentation-slot-memory.js';
 import {nativeDestroyTaskMemory} from './task-destroy.js';
 import {nativeDestroyPhysicsMemory} from './physics-destroy.js';
@@ -36,7 +37,7 @@ export function nativeDestroyWorldTaskMemory(memory,address,flags,host) {
   if(vtable===0x527548)return nativeDestroyPhysicsMemory(memory,address,flags,nested);
   const size={0x526ad0:0x175c,0x527428:0xa0,0x526c78:0x60,0x527070:0xc40,0x5277e0:0x640,
     0x5271d8:0x15c,0x526cb8:0x11c,0x526f48:0x274,0x526f28:0x60,0x526f08:0x210,
-    0x526c98:0x64,0x526c58:0xb8,0x526c38:0x70,0x526c18:0x90,0x526bf8:0x58,0x526ab0:0x68}[vtable];
+    0x526c98:0x64,0x526c58:0xb8,0x526c38:0x70,0x526c18:0x90,0x526bf8:0x58,0x526ab0:0x68,0x526958:0x2dd4}[vtable];
   if(size===undefined)throw new RangeError(`Unsupported world task destructor ${vtable.toString(16)}`);
   memory.put(address,vtable);
   const scene=memory.get(address+0x38);
@@ -52,6 +53,13 @@ export function nativeDestroyWorldTaskMemory(memory,address,flags,host) {
   if(counter!==undefined)decrement(counter);
   if(vtable===0x526c58)memory.put(scene+0x4b0+memory.get(address+0x80)*4,0);
   if(vtable===0x526ab0)text(0x64);
+  if(vtable===0x526958) {
+    if(memory.get(address+0x2dd0))decrement(0x1d428);
+    const events=memory.get(address+0x2dc4);if(events)nativeDestroyEventBufferMemory(memory,events,1,host);
+    const table=memory.get(address+0x2dcc);
+    if(table){memory.put(table,0x526918);host.free(memory.get(table+12));memory.put(table,0x524a14);host.release(table,16);}
+    memory.put(address,0x527518);
+  }
   if([0x526ad0,0x5271d8,0x526cb8,0x526f48].includes(vtable))nativeDestroyPhysicsMemory(memory,address,0,nested);
   else {memory.put(address,0x527478);nativeDestroyTaskMemory(memory,address,0,nested);}
   if(flags&1)host.release(address,size);return address;
