@@ -452,7 +452,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     });
     bytes.set(toolSource.pixels,0x60000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
-    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200700],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6178,0x2200b00],[0x6180,0x2200c00],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x4a6ff0],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6178,0x2200b00],[0x6180,0x2200c00],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x9200],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,1],[40,1]])memory.put(owner+0x9100+offset,value);
     memory.putByte(owner+0x9200,3);
     for(const bank of [1,2]) {
@@ -487,9 +487,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       },
       bindTerrainLayers:(...args)=>record('bind',...args),submitRendererPalette:(...args)=>record('commit',...args),
       createRendererPalette:(...args)=>record('createPalette',...args),
-      loadFontResourceGroup:(...args)=>{record('fontGroup',...args);if(args[5][0]===5)memory.put(owner+0xa00c,0x12345678);},
       loadRendererFont:(...args)=>record('font',...args),
-      loadResourceGroup:(...args)=>record('group',...args),loadRendererSprite:(...args)=>record('sprite',...args),
+      loadRendererSprite:(...args)=>{record('sprite',...args);if(args[5]==='cdrom.spr')memory.put(owner+0xa00c,0x12345678);return 0;},
       commitRendererPalette:(...args)=>record('commit',...args),
       pumpLoadingEvents:()=>record('pump'),rendererDimensions:(...args)=>{record('dimensions',...args);return [640,480];},
       clearRendererRect:(...args)=>record('clear',...args),drawRendererPrimitive:(...args)=>record('draw',...args),presentRenderer:(...args)=>record('present',...args),

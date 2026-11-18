@@ -1,3 +1,5 @@
+import spriteGroups from './scene-sprite-groups.json' with {type:'json'};
+import {nativeLoadSceneSpriteGroup} from './scene-sprite-groups.js';
 import {nativeLoadNamedArchiveImage} from './terrain-image.js';
 import {nativeFileArchiveServices} from './archive-file.js';
 import {nativeLoadSceneFonts} from './scene-fonts.js';
@@ -19,8 +21,14 @@ export function nativeStartScene(memory,owner,bindings,frontend,scratch,host) {
   };
   services.loadNamedArchiveImage=host.loadNamedArchiveImage??loadImage;
   services.loadNamedImage=host.loadNamedImage??services.loadNamedArchiveImage;
+  const prefixString=address=>{
+    if(address===0x56fb80)return '';
+    let value='';for(let i=0;memory.byte(address+i);i++)value+=String.fromCharCode(memory.byte(address+i));return value;
+  };
+  services.loadResourceGroup=host.loadResourceGroup??((receiver,bank,palette,archive,prefix,table)=>nativeLoadSceneSpriteGroup(memory,receiver,bank,palette,archive,prefixString(prefix),spriteGroups[table],services));
+  services.loadFontResourceGroup=host.loadFontResourceGroup??((receiver,bank,palette,archive,prefix,descriptor)=>nativeLoadSceneSpriteGroup(memory,receiver,bank,palette,archive,prefixString(prefix),[descriptor.slice(0,3)],services));
   nativeCreateSceneContext(memory,owner,bindings,frontend,services);
-  services.loadStartupFonts=host.loadStartupFonts??(()=>nativeLoadSceneFonts(memory,owner,scratch.fontPalette,host));
+  services.loadStartupFonts=host.loadStartupFonts??(()=>nativeLoadSceneFonts(memory,owner,scratch.fontPalette,services));
   nativePrepareSceneGraphics(memory,owner,frontend,bindings[1],services);
   nativeCreateSceneWorldResources(memory,owner,bindings[0],scratch,services);
   nativeFinishSceneResources(memory,owner,scratch.palette,scratch.waterColor,services);
