@@ -78,6 +78,7 @@ test("live death plays past the old cutoff before its explosion", async ({
       maxConcurrent: 0,
       damageVisibleAtFirstDeath: null,
       pendingLabelVisible: false,
+      advancedFrames: 0,
     };
     const sample = () => {
       const probe = window.deathFrameProbe;
@@ -106,6 +107,13 @@ test("live death plays past the old cutoff before its explosion", async ({
             .some(canvas => !canvas.hidden);
         if (!probe.deaths.includes(worm.x)) probe.deaths.push(worm.x);
         probe.max = Math.max(probe.max, worm.originalFrame);
+      }
+      // Keep a rendered sample between small simulation batches. Software
+      // rendering on CI must not dictate how long three death strips take.
+      // Five ticks cannot skip the late portion of the 86-tick death strip.
+      if (probe.advancedFrames < 3000 && window.siege.getState().phase !== "over") {
+        window.siege.debug.advanceReplayFrames(5);
+        probe.advancedFrames += 5;
       }
       requestAnimationFrame(sample);
     };
