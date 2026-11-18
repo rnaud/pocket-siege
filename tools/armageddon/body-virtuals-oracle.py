@@ -34,6 +34,6 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 
 schemas=json.loads(Path('src/armageddon/replay-task-types.json').read_text())
 tables=sorted({int(row['vtable'],16) for row in schemas if row['physics']}|{0x527548,0x526de0})
-entries={str(table):{str(offset):read(table+offset) for offset in [0x2c,0x30,0x34,0x3c,0x40,0xf4]} for table in tables}
+entries={str(table):{str(offset):read(table+offset) for offset in [0x24,0x28,0x2c,0x30,0x34,0x3c,0x40,0x48,0x60,0xf4]} for table in tables}
 args.output.write_text(json.dumps(dict(executable_sha256=digest,entries=entries),indent=2)+'\n')
 print('Captured',len(tables),'physics virtual tables')

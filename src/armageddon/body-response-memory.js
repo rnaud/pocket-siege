@@ -1,3 +1,4 @@
+import { nativeBodyCollision } from "./body-collision.js";
 import { nativeBodyVirtualEntry } from "./body-virtuals.js";
 import { fixedMultiply } from "./numeric.js";
 
@@ -95,4 +96,65 @@ export function nativeBodyWaterResponseMemory(memory, body, offset) {
   throw new RangeError(
     `Native water response not connected: ${entry.toString(16)}`,
   );
+}
+
+//004F4C60: rope impact reflects both velocity components using coefficient+88.
+export function nativeRopeBounceMemory(memory, body) {
+  const entry = nativeBodyVirtualEntry(memory, body, 0x30);
+  if (entry !== 0x4f4c60)
+    throw new RangeError(
+      `Native rope response not connected: ${entry.toString(16)}`,
+    );
+  memory.put(
+    body + 0x9c,
+    -fixedMultiply(memory.get(body + 0x9c) | 0, memory.get(body + 0x88) | 0),
+  );
+  memory.put(
+    body + 0xa0,
+    -fixedMultiply(memory.get(body + 0xa0) | 0, memory.get(body + 0x88) | 0),
+  );
+}
+
+//004F4C30: the contacted actor's +28 handler gets first refusal. Only a zero
+//return invokes the moving actor's +24 response; keep both identities intact.
+export function nativeBodyContactMemory(memory, body, other, side, host) {
+  const entry = nativeBodyVirtualEntry(memory, body, 0x2c);
+  if (entry !== 0x4f4c30)
+    throw new RangeError(
+      `Native contact handler not connected: ${entry.toString(16)}`,
+    );
+  const accepted = host.acceptContact
+    ? host.acceptContact(other, body, side)
+    : nativeAcceptBodyContactMemory(memory, other, body, side);
+  if (!accepted) host.respondContact(body, other, side);
+}
+
+//004F4990 /004E8B80 transfer momentum.004D15E0 declines handling.
+export function nativeAcceptBodyContactMemory(
+  memory,
+  receiver,
+  incoming,
+  side,
+) {
+  const entry = nativeBodyVirtualEntry(memory, receiver, 0x28);
+  if (entry === 0x4d15e0) return 0;
+  if (entry !== 0x4f4990 && entry !== 0x4e8b80)
+    throw new RangeError(
+      `Native contact receiver not connected: ${entry.toString(16)}`,
+    );
+  const read = (body) => ({
+    vx: memory.get(body + 0x9c) | 0,
+    vy: memory.get(body + 0xa0) | 0,
+    mass: memory.get(body + 0x58) | 0,
+    tangent: memory.get(body + 0x80) | 0,
+  });
+  const result = nativeBodyCollision(read(receiver), read(incoming), side);
+  for (const [body, velocity] of [
+    [receiver, result.receiver],
+    [incoming, result.incoming],
+  ]) {
+    memory.put(body + 0x9c, velocity.vx);
+    memory.put(body + 0xa0, velocity.vy);
+  }
+  return result.result;
 }

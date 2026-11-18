@@ -1,5 +1,7 @@
 import {
   nativeBodyAwakeMemory,
+  nativeRopeBounceMemory,
+  nativeBodyContactMemory,
   nativeBodyWaterResponseMemory,
   nativeEarthquakeMemory,
 } from "./body-response-memory.js";
@@ -95,7 +97,10 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
         ? host.rope(environment, body, remaining)
         : nativeRopeMotionMemory(memory, environment, body, remaining, host);
       remaining = result.remaining;
-      if (result.hit) host.bounce(body, result.hit);
+      if (result.hit) {
+        if (host.bounce) host.bounce(body, result.hit);
+        else nativeRopeBounceMemory(memory, body);
+      }
     }
     let direction = 0;
     const segments = memory.get(body + 0xf8);
@@ -123,7 +128,11 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
         ? host.sweep(environment, body, remaining)
         : nativeSweepMemory(memory, environment, body, remaining, host);
       remaining = result.remaining;
-      if (result.hit) host.freeBounce(body, result.hit, result.side);
+      if (result.hit) {
+        if (host.freeBounce) host.freeBounce(body, result.hit, result.side);
+        else
+          nativeBodyContactMemory(memory, body, result.hit, result.side, host);
+      }
     }
     if (get(0x5c)) {
       const rotated = nativeBodyRotation({

@@ -16,7 +16,11 @@ parser.add_argument('--native-refresh', action='store_true')
 parser.add_argument('--native-collision', action='store_true')
 parser.add_argument('--native-response', action='store_true')
 parser.add_argument('--native-impulse', action='store_true')
+parser.add_argument('--native-contact', action='store_true')
+parser.add_argument('--native-receiver', action='store_true')
 args = parser.parse_args()
+if args.native_receiver:args.native_contact=True
+if args.native_contact:args.native_impulse=True
 if args.native_impulse:args.native_response=True
 if args.native_response:args.native_collision=True
 if args.native_collision:args.native_refresh=True
@@ -61,12 +65,17 @@ if args.native_collision:del services[stop+0x500]
 if args.native_response:
  del services[0x4ca250];del services[stop+0x100];services[stop+0x900]=('impulse',2)
 if args.native_impulse:del services[stop+0x900]
+if args.native_contact:
+ del services[stop+0x300];del services[stop+0x400]
+ services[stop+0xa00]=('acceptContact',2);services[stop+0xb00]=('respondContact',2)
+if args.native_receiver:del services[stop+0xa00]
 calls=[];steps=0
 def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))).hexdigest()
 def hook(cpu,address,size,user):
  global steps
  name,argc=services[address];sp=cpu.reg_read(UC_X86_REG_ESP);arg=lambda i:read(sp+4+i*4)
  params=[]
+ if name in ['acceptContact','respondContact']:params=[cpu.reg_read(UC_X86_REG_ECX),arg(0),arg(1)]
  if name=='impulse':params=[signed(arg(0)),signed(arg(1))]
  if name=='overlap':params=[cpu.reg_read(UC_X86_REG_ECX),signed(arg(0)),signed(arg(1)),arg(2),signed(arg(3)),signed(arg(4))]
  if name=='terrain':params=[signed(arg(0)),signed(arg(1))]
@@ -104,6 +113,8 @@ def hook(cpu,address,size,user):
   result=0 if args.native_forces and mode%2 else 1
   if args.native_forces and mode==7:write(environment+0x3b4,170);write(owner+0x9c,800000);write(owner+0xa0,1234)
   if args.native_forces and mode==8:write(owner+0x64,0x8000);write(owner+0x9c,123456)
+ elif name=='acceptContact':result=mode%2
+ elif name=='respondContact':write(owner+0x9c,-signed(read(owner+0x9c)));write(owner+0xa0,-signed(read(owner+0xa0)))
  elif name=='impulse':
   write(owner+0x9c,read(owner+0x9c)+arg(0));write(owner+0xa0,read(owner+0xa0)+arg(1));write(world+0x1ac4,0)
  elif name=='overlap':
@@ -153,10 +164,18 @@ for impulseEntry,throughList,mode,velocity,constrained in itertools.product(([0x
   write(world+0x1ac4,[1,65536,-65536,0x7fffffff][mode%4] if mode in [3,5,12,15] else 0)
   if mode in [3,4]:write(owner+0xc0,0);write(owner+0xc4,0)
   if mode==5:write(environment+0x3b8,0)
+ if args.native_contact:
+  write(vt+0x2c,0x4f4c30);write(vt+0x30,0x4f4c60);write(vt+0x24,stop+0xb00);write(owner+0x88,0x8000 if mode%2 else 65536)
+  for other in [owner+0x9400,owner+0x9500]:write(other,owner+0xa000)
+  write(owner+0xa028,stop+0xa00)
+ if args.native_receiver:
+  write(owner+0xa028,0x4f4990 if mode%2 else 0x4d15e0);write(owner+0x58,65536)
+  for other in [owner+0x9400,owner+0x9500]:
+   for offset,value in {0x58:65536,0x80:0x8000,0x9c:65536,0xa0:-32768}.items():write(other+offset,value)
  write(mt+12,0x4c9770 if args.native_collision else stop+0x500);write(environment+0x24,3);write(environment+0x28,environment+0x800);write(environment+0x808,owner);initial=bytes(cpu.mem_read(owner,0x10000));sp=stack+0xff00
  for i,v in enumerate([stop,owner,1]):write(sp+i*4,v)
  cpu.reg_write(UC_X86_REG_ECX,environment);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4ca750 if throughList else 0x4ca320,stop,count=100000)
  assert cpu.reg_read(UC_X86_REG_EIP)==stop
- cases.append(dict(nativeImpulse=args.native_impulse,nativeResponse=args.native_response,nativeCollision=args.native_collision,nativeRefresh=args.native_refresh,nativeRope=args.native_rope,nativeSweep=args.native_sweep,nativeForces=args.native_forces,throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,native_forces=args.native_forces,method=f'{len(cases)} original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. With --native-impulse, both original004D12B0 replacement and004F4D20 additive velocity receivers execute (512 cases). With --native-response, original004D11E0 awake and004CA250 earthquake also execute with signed strengths and random seed extremes; only the impulse receiver is intercepted. With --native-collision, original004C9770/004C97A0 also execute for every movement collision, using explicit mutable mask-overlap callbacks. With --native-refresh, original004C98E0/004C9970 also execute over sparse category lists with mutable mask-overlap callbacks and cache-hit cases. With --native-rope, original004CA8A0 also executes against five-segment ropes and an explicit terrain-point interface. With --native-sweep, original004C9AA0 also executes and the velocity matrix uses four values (256 cases). With --native-forces, original004C9F10 water and004CA110 air run without interception, including mutable collision and skim callbacks. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(nativeReceiver=args.native_receiver,nativeContact=args.native_contact,nativeImpulse=args.native_impulse,nativeResponse=args.native_response,nativeCollision=args.native_collision,nativeRefresh=args.native_refresh,nativeRope=args.native_rope,nativeSweep=args.native_sweep,nativeForces=args.native_forces,throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,native_forces=args.native_forces,method=f'{len(cases)} original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. With --native-receiver, original004F4990 momentum exchange or004D15E0 refusal executes; the moving actor response remains an interface. With --native-contact, original004F4C30 receiver-first contact routing and004F4C60 rope rebound also execute, retaining explicit accept/respond handlers. With --native-impulse, both original004D12B0 replacement and004F4D20 additive velocity receivers execute (512 cases). With --native-response, original004D11E0 awake and004CA250 earthquake also execute with signed strengths and random seed extremes; only the impulse receiver is intercepted. With --native-collision, original004C9770/004C97A0 also execute for every movement collision, using explicit mutable mask-overlap callbacks. With --native-refresh, original004C98E0/004C9970 also execute over sparse category lists with mutable mask-overlap callbacks and cache-hit cases. With --native-rope, original004CA8A0 also executes against five-segment ropes and an explicit terrain-point interface. With --native-sweep, original004C9AA0 also executes and the velocity matrix uses four values (256 cases). With --native-forces, original004C9F10 water and004CA110 air run without interception, including mutable collision and skim callbacks. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'addressed body ticks')

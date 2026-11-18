@@ -40,6 +40,8 @@ test(
 
 // Preserve callback-visible memory: event handlers can change constraints,
 // velocities, segment lists and even scene earthquake state during a tick.
+import receivers from "./fixtures/armageddon/body-receiver-memory.json" with { type: "json" };
+import contacts from "./fixtures/armageddon/body-contact-memory.json" with { type: "json" };
 import impulses from "./fixtures/armageddon/body-impulse-memory.json" with { type: "json" };
 import responded from "./fixtures/armageddon/body-response-memory.json" with { type: "json" };
 import collided from "./fixtures/armageddon/body-collision-memory.json" with { type: "json" };
@@ -69,6 +71,8 @@ test(
       ...collided.cases,
       ...responded.cases,
       ...impulses.cases,
+      ...contacts.cases,
+      ...receivers.cases,
     ].entries()) {
       const bytes = inflateSync(Buffer.from(row.inputMemory, "base64"));
       const memory = {
@@ -154,6 +158,15 @@ test(
           }
           return row.nativeForces && mode % 2 ? 0 : 1;
         },
+        acceptContact: (...params) => {
+          call("acceptContact", params);
+          return mode % 2;
+        },
+        respondContact: (...params) => {
+          call("respondContact", params);
+          put(0x9c, -(get(0x9c) | 0));
+          put(0xa0, -(get(0xa0) | 0));
+        },
         impulse: (_body, x, y) => {
           call("impulse", [x, y]);
           put(0x9c, get(0x9c) + x);
@@ -208,6 +221,11 @@ test(
         delete host.earthquake;
       }
       if (row.nativeImpulse) delete host.impulse;
+      if (row.nativeContact) {
+        delete host.bounce;
+        delete host.freeBounce;
+      }
+      if (row.nativeReceiver) delete host.acceptContact;
       if (row.throughList)
         nativeAdvancePhysicsListMemory(
           memory,
