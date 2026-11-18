@@ -1,3 +1,5 @@
+import initialization from './fixtures/armageddon/inventory-initialization.json' with {type:'json'};
+import { nativeInitializeInventory } from '../src/armageddon/inventory-initialization.js';
 import { createHash } from 'node:crypto';
 import bankFixture from './fixtures/armageddon/inventory-banks.json' with { type:'json' };
 import { nativeInventorySet, nativeInventoryAdd, nativeInventorySpend, nativeInventoryAvailable } from '../src/armageddon/inventory.js';
@@ -18,6 +20,17 @@ const fixture = JSON.parse(
 );
 
 test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+  for(const row of initialization.cases) {
+    const setup=new Uint8Array(0x10000),source=new DataView(setup.buffer);
+    for(const [offset,size,value] of row.writes) {
+      if(size===1)source.setUint8(offset,value);else source.setInt16(offset,value,true);
+    }
+    for(const [offset,name] of row.names)setup.set(new TextEncoder().encode(name+'\0'),offset);
+    const memory=Uint8Array.from({length:0x2c14},(_,i)=>(row.fill+i%7)&255);
+    nativeInitializeInventory(memory,setup);
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
+    for(const [team,slot,count] of row.availability)expect(nativeInventoryAvailable(memory,team,slot)).toBe(count);
+  }
   const operations={set:nativeInventorySet,add:nativeInventoryAdd,spend:nativeInventorySpend,available:nativeInventoryAvailable};
   for(const row of bankFixture.cases) {
     const memory=new Uint8Array(0x2c14),view=new DataView(memory.buffer);
