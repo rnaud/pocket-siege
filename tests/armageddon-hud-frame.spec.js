@@ -1,3 +1,4 @@
+import controllerFrame from "./fixtures/armageddon/controller-frame.json" with { type: "json" };
 import weaponDelays from "./fixtures/armageddon/weapon-delays.json" with { type: "json" };
 import { nativeAdvanceWeaponDelays } from "../src/armageddon/weapon-delays.js";
 import controllerShot from "./fixtures/armageddon/controller-shot.json" with { type: "json" };
@@ -259,6 +260,23 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerFrame.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
+    for(const [o,v] of Object.entries(c.fields))body.setInt32(Number(o),v,true);
+    scene.setInt8(0x11d7c,c.active);scene.setInt8(0x11e78,c.spectator);scene.setInt32(0x20,c.network,true);
+    scene.setInt32(0x1247c,123456,true);scene.setInt32(0x12480,-131072,true);
+    const payload=new Uint8Array(4);new DataView(payload.buffer).setInt32(0,123,true);
+    expect(nativeControllerCommand(memory,sceneMemory,c.event,payload,{
+      forward:(event,p)=>calls.push(["forward",event,[...p]]),
+      weaponAvailable:(...args)=>{calls.push(["available",...args]);return c.available;},
+      wormBusy:(...args)=>{calls.push(["busy",...args]);return c.busy;},
+      selectionCommand:(...args)=>calls.push(["select",...args]),sendTask:(...args)=>calls.push(["send",...args]),
+      cameraTarget:(...args)=>calls.push(["camera",...args]),selectionSound:(...args)=>calls.push(["sound",...args]),
+      updatePresentation:()=>calls.push(["update"]),collectCameraInput:()=>calls.push(["cameraInput"]),collectPauseInput:()=>calls.push(["pauseInput"]),
+      drawPresentation:()=>calls.push(["draw"]),drawTargeting:()=>calls.push(["targetDraw"]),drawCountdown:()=>calls.push(["timerDraw"]),collectInput:token=>calls.push(["input",token]),
+    })).toBe(true);
+    expect({calls,body:controllerFrame.offsets.map(o=>body.getInt32(o,true))}).toEqual({calls:c.calls,body:c.body});
   }
   for(const c of weaponDelays.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),calls=[],delays=[...c.initial];

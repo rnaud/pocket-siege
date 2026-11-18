@@ -1,3 +1,4 @@
+import { nativeControllerFrame } from './controller-frame.js';
 import { nativeControllerShot, nativeControllerPostShot } from './controller-post-shot.js';
 import { nativeControllerControl } from "./controller-control.js";
 import { nativeControllerActivation } from "./controller-activation.js";
@@ -7,6 +8,7 @@ import { nativeSelectWeaponEvent } from './weapon-selection.js';
 //004E6810 command branches. Return false for events whose lifecycle handler
 // has not been ported here; a rejected, recognized command is still handled.
 export function nativeControllerCommand(memory,sceneMemory,event,payload,host) {
+  if(nativeControllerFrame(memory,sceneMemory,event,payload,host))return true;
   if(event===0x431){nativeControllerShot(memory,sceneMemory,payload,host);return true;}
   if(event===0x432){nativeControllerPostShot(memory,sceneMemory,payload,host);return true;}
   if(nativeControllerControl(memory,sceneMemory,event,payload,host))return true;
