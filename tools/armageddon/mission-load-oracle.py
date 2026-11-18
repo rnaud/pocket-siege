@@ -9,6 +9,7 @@ from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
+parser.add_argument('--native-services',action='store_true')
 args = parser.parse_args()
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -47,6 +48,7 @@ def setstring(obj,value):
 write(0x5174a4,stop+0x100);write(0x5178f4,stop+0x200)
 write(0x517954,stop+0x300);write(0x517950,stop+0x400);write(0x5174a8,stop+0x500)
 def hook(cpu,address,size,user):
+ global rng
  sp=cpu.reg_read(UC_X86_REG_ESP)
  if address==0x503d48:setstring(cpu.reg_read(UC_X86_REG_ECX),b'');ret()
  elif address in [0x503d24,stop+0x300,stop+0x400]:ret()
@@ -77,7 +79,9 @@ def hook(cpu,address,size,user):
  elif address==0x503d42:
   resource=read(sp+4);calls.append(['string',resource,snapshot()]);setstring(cpu.reg_read(UC_X86_REG_ECX),resourceStrings.get(resource,b'') if originalTables else resourceStrings.get(resource,b''));ret(1,4)
  elif address==stop+0x200:
-  value=cstring(read(sp+12));cpu.mem_write(read(sp+4),value+b'\0');ret(len(value))
+  fmt=cstring(read(sp+8));value=fmt%(read(sp+12)&255) if b'%c' in fmt else fmt%cstring(read(sp+12));cpu.mem_write(read(sp+4),value+b'\0');ret(len(value))
+ elif address==stop+0x700:
+  calls.append(['random',snapshot()]);rng=(rng*214013+2531011)&0xffffffff;ret((rng>>16)&32767)
  elif address==0x41bc40:
   team=read(sp+4);receiver=cpu.reg_read(UC_X86_REG_ECX);calls.append(['flag',receiver,team,snapshot()])
   write(receiver+team*0xd7b+0x747,0x12345678);ret(0,4)
@@ -94,7 +98,9 @@ def hook(cpu,address,size,user):
   if mutation:write(owner+0x880,owner+0x1100 if filename==owner+0x1000 else owner+0x1000)
   values=profile.get(section.lower(),{})
   ret(values.get(key.lower(),fallback),16)
-for address in [0x503d48,0x503d24,0x503dc0,0x503d42,0x503d2a,0x503d1e,0x503ec2,0x470a20,0x415540,0x4197d0,0x419610,0x419740,0x41b730,0x41bc40,stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [0x503d48,0x503d24,0x503dc0,0x503d42,0x503d2a,0x503d1e,0x503ec2,0x470a20,0x415540,0x4197d0,0x419610,0x419740,0x41b730,0x41bc40,stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600,stop+0x700]:
+ if args.native_services and address in [0x4197d0,0x419610,0x419740,0x41b730]:continue
+ cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 # Read English RT_STRING bytes directly from the input PE, independently of
 # the generated browser catalog. Localized LoadString remains a host boundary.
 def fileoffset(rva):
@@ -121,6 +127,7 @@ while read(p+12):
  while read(lookup+i*4):
   item=read(lookup+i*4)
   if not item&0x80000000 and cstring(base+item+2)==b'strncpy':write(iat+i*4,stop+0x600)
+  if not item&0x80000000 and cstring(base+item+2)==b'rand':write(iat+i*4,stop+0x700)
   i+=1
  p+=20
 profiles=[]
@@ -152,8 +159,10 @@ for name,profile,strings,failure,unselected in profiles:
   cpu.emu_start(0x43d6c0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   write(owner+0x880,owner+0x1000);write(0x6f47f4,country);cpu.mem_write(0x6e6880,b'\1')
   if not unselected:write(owner+0x884,1);write(owner+0x54,1 if mutation else -1)
+  if args.native_services:cpu.mem_write(0x6e1178,bytes([67+mutation]))
+  rng=123+pattern
   calls=[];write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43e910,stop,count=2000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot()))
+  cases.append(dict(profile=name,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot()))
 args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')

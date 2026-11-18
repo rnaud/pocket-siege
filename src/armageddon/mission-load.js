@@ -1,3 +1,5 @@
+import {nativeConfigureSetupMode,nativeCountSetupAlliances} from './setup-mode.js';
+import {nativeSetupMusic} from './setup-metadata.js';
 import {nativeLoadMissionScheme, nativeLoadMissionOptions} from './mission-options.js';
 import {nativeLoadMissionTeams} from './mission-teams.js';
 import {nativeLoadMissionEvents} from './mission-events.js';
@@ -20,8 +22,16 @@ export function nativeLoadMission(memory, owner, host) {
     return fail('ERROR: Could not load Mission scheme');
   nativeLoadMissionTeams(memory, owner, teams, host);
   host.initializeSetup(0x6e68ac);
-  host.initializeMode(0x6e68ac, 2);
-  nativeLoadMissionOptions(memory, owner, host);
+  if (host.initializeMode) host.initializeMode(0x6e68ac, 2);
+  else nativeConfigureSetupMode(memory, 0x6e68ac, 2);
+  nativeLoadMissionOptions(memory, owner, {
+    ...host,
+    teamCount: host.teamCount ?? (() => nativeCountSetupAlliances(memory)),
+    setupMusic: host.setupMusic ?? (selection => nativeSetupMusic(
+      memory.range(0x6f3ec0, 0xc6), selection, memory.byte(0x6e1178),
+      memory.get(0x6f49c4) !== 0, host.random,
+    )),
+  });
   nativeLoadMissionEvents(memory, owner, host);
   const buffer = host.readLandFile('Enviroment', 'LandFile', 'none', 48, memory.get(owner + 0x880));
   const nul = buffer.indexOf(0), land = nul < 0 ? buffer : buffer.subarray(0, nul);
@@ -31,6 +41,7 @@ export function nativeLoadMission(memory, owner, host) {
   let i = 0;
   while (i < land.length && land[i]) memory.putByte(0x6f3f88 + i, land[i++]);
   memory.putByte(0x6f3f88 + i, 0);
-  host.finalizeSetup(0x6e68ac);
+  //00419610 is a bare RET in the original executable.
+  host.finalizeSetup?.(0x6e68ac);
   return 0;
 }

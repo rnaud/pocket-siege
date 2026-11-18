@@ -1,3 +1,4 @@
+import missionNativeServices from './fixtures/armageddon/mission-native-services.json' with {type:'json'};
 import missionLoad from './fixtures/armageddon/mission-load.json' with {type:'json'};
 import {nativeLoadMission} from '../src/armageddon/mission-load.js';
 import missionTeams from './fixtures/armageddon/mission-teams.json' with {type:'json'};
@@ -139,15 +140,19 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of missionLoad.cases) {
+  for(const c of [...missionLoad.cases,...missionNativeServices.cases]) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
+    memory.range=(address,length)=>{const [b,o]=locate(address);return b.subarray(o,o+length);};
     nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
     memory.put(0x2000880,0x2001000);memory.put(0x6f47f4,c.country);memory.putByte(0x6e6880,1);
     if(!c.unselected){memory.put(0x2000884,1);memory.put(0x2000054,c.mutation?1:-1);}
+    if(c.nativeServices)memory.putByte(0x6e1178,67+c.mutation);
+    const random=new NativeFrontendRandom(123+c.pattern);
     const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
-    const result=nativeLoadMission(memory,0x2000000,{
+    const host={
+      random:{random() {calls.push(['random',snapshot()]);return random.random();}},
       selectScheme(...args) {calls.push(['scheme',...args,snapshot()]);if(!c.failure)memory.put(0x6f4560,0x12345678);return c.failure?-1:0;},
       initializeSetup(receiver) {calls.push(['initialize',receiver,snapshot()]);memory.putByte(0x6e69c6,Math.max(1,Math.min(6,c.teams)));},
       initializeMode(receiver,mode) {calls.push(['mode',receiver,mode,snapshot()]);memory.putByte(0x6f3cdc,87);},
@@ -169,7 +174,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       },
       loadString(resource) {calls.push(['string',resource,snapshot()]);return originalResourceStringBytes(resource);},
       loadTeamFlag(receiver,team) {calls.push(['flag',receiver,team,snapshot()]);memory.put(receiver+team*0xd7b+0x747,0x12345678);},
-    });
+    };
+    if(c.nativeServices)for(const key of ['initializeMode','finalizeSetup','setupMusic','teamCount'])delete host[key];
+    const result=nativeLoadMission(memory,0x2000000,host);
     expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
   for(const c of missionTeams.cases) {
