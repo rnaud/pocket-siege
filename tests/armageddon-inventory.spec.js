@@ -1,3 +1,5 @@
+import matchSetup from './fixtures/armageddon/match-setup.json' with {type:'json'};
+import {nativeBuildInitialMatchSetup} from '../src/armageddon/match-setup.js';
 import frontendRandom from './fixtures/armageddon/frontend-random.json' with {type:'json'};
 import {NativeFrontendRandom} from '../src/armageddon/frontend-random.js';
 import turnOrder from './fixtures/armageddon/setup-turn-order.json' with {type:'json'};
@@ -27,7 +29,32 @@ const fixture = JSON.parse(
   ),
 );
 
-test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const row of matchSetup.cases) {
+    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),inventory=new Uint8Array(0x2c14);
+    const teamData=new Uint8Array(0x9000),frontend=teamData.subarray(0x2000),view=new DataView(frontend.buffer,frontend.byteOffset,frontend.byteLength);
+    frontend.set(Uint8Array.from({length:0x7000},(_,i)=>(i*13+7)&255));
+    for(const [offset,size,value] of row.writes) {
+      if(size===1)view.setUint8(offset,value);else view.setInt32(offset,value,true);
+    }
+    frontend[0x1178]=68;
+    const scheme=Uint8Array.from(Buffer.from(row.initial_scheme,'hex')),random=new NativeFrontendRandom();
+    const descriptors=new Uint8Array(0x1d8);descriptors.fill(255,0xd0);
+    const calls=[];let path=0,profile=row.initial_profile;
+    nativeBuildInitialMatchSetup(memory,inventory,scheme,teamData,{
+      descriptors,random,
+      seedStorage:{time:()=>{calls.push(['time',row.clock]);return row.clock;},
+        readSeed:fallback=>{calls.push(['read',fallback]);return profile??fallback;},
+        writeSeed:value=>{calls.push(['write',value]);profile=value;}},
+      handicapEnabled:()=>{calls.push(['handicap']);return row.handicap;},
+      speechPath:cd=>{calls.push(['speech',cd]);return Buffer.from(row.paths[path++],'hex');},
+      speechFallback:()=>calls.push(['speechFallback']),
+    });
+    expect(calls).toEqual(row.calls);expect(profile).toBe(row.profile);expect(random.state).toBe(row.random_state);
+    expect(Buffer.from(scheme).toString('hex')).toBe(row.scheme);
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
+    expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
+  }
   for(const row of frontendRandom.cases) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
     for(const [offset,value] of row.writes)memory[offset]=value;
