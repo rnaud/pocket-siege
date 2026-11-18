@@ -1,3 +1,4 @@
+import { nativeSurfaceSlope } from "./surface-slope.js";
 import { nativeSlopeTurn } from "./direction.js";
 import schemes from "./scheme-runtime-data.json" with { type: "json" };
 export const NATIVE_MINE_FRICTION = schemes.schemes.find(
@@ -68,7 +69,7 @@ export function nativeMineBody(base, payload, arm, friction, collide) {
 //004E96B4..004E9746. Probe one pixel below the requested spawn, not the
 // current body location: rejected initial placement retains the base sentinel.
 // Surface slope is queried at the first blocked/water-bound coordinate.
-export function nativeSettleMineBody(previous,payload,water,collide,slope) {
+export function nativeSettleMineBody(previous,payload,water,collide,slope=(x,y,limit,body)=>nativeSurfaceSlope(body,x,y,limit,collide)) {
   const body={...previous};
   const x=payload.x|0;let y=(payload.y+65536)|0;
   while((y>>16)<water) {
