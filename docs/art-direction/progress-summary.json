@@ -52,9 +52,10 @@
     },
     {
       "title": "Rope & utilities",
-      "live": "Recovered rope launch, swing, release and refire behavior is integrated alongside original utility art and several utility actions. Crate Spy now activates automatically from pickups and reveals native crate labels using the persistent team flag and human-control visibility gate.",
+      "live": "Recovered rope launch, swing, release and refire behavior is integrated alongside original utility art and several utility actions. Crate Spy now activates automatically from pickups and reveals native crate labels using the persistent team flag and human-control visibility gate. The native Crate Shower scheduler now composes original candidate search and vertical placement traversal, verified in270 direct/composed executable cases; live collision/nearest-body, scheme-pool and crate-construction adapters remain unfinished.",
       "remaining": "Finish native control and state transitions for jetpack, parachute, teleport, girders, freeze and other utilities; verify their interactions.",
       "evidence": [
+        "native_crate_spawn_search",
         "live_native_crate_spy",
         "live_rope_swing",
         "live_rope_release_and_refire",

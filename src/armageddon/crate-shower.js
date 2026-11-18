@@ -1,3 +1,5 @@
+import { nativeCrateSpawnSearch } from './crate-spawn-search.js';
+
 // 004B81B0, one 20ms team-task update. Contents are selected without
 // replacement; exhausted pools refill in selection order. Placement,
 // allocation and crate construction retain their separate native interfaces.
@@ -9,7 +11,12 @@ export function nativeCrateShowerTick(input, interfaces) {
   body.timer = (body.timer - 20) | 0;
   if (body.timer > 0) return body;
   body.timer = 4000;
-  const position = interfaces.place(1, 1);
+  const position = interfaces.place ? interfaces.place(1, 1) : (() => {
+    const result = nativeCrateSpawnSearch(interfaces.bottom, interfaces.tall, 1, 1, {
+      random: interfaces.nextRandom, collide: interfaces.collide, nearest: interfaces.nearest,
+    });
+    return result.success ? result : null;
+  })();
   if (!position) { body.count = 0; return body; }
   const random = interfaces.nextRandom();
   // Native DIV faults before its nominal zero guard. A valid scheme must

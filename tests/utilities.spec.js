@@ -1,3 +1,7 @@
+import crateShowerPlacement from './fixtures/armageddon/crate-shower-placement.json' with { type: 'json' };
+import { createHash } from 'node:crypto';
+import crateSpawnSearch from './fixtures/armageddon/crate-spawn-search.json' with { type: 'json' };
+import { nativeCrateSpawnSearch } from '../src/armageddon/crate-spawn-search.js';
 import crateVisibility from './fixtures/armageddon/crate-visibility.json' with { type: 'json' };
 import textImages from "./fixtures/armageddon/text-image.json" with { type: "json" };
 import { nativeRenderTextImage } from "../src/armageddon/text-image.js";
@@ -243,6 +247,34 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result.deleted).toBe(row.events.some(event => event[0] === 'delete'));
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
+  }
+  for (const row of [...crateSpawnSearch.cases,...crateShowerPlacement.cases]) {
+    let rng=row.seed; const calls=[];
+    const host={
+      random:()=>{rng=(Math.imul(rng,1664525)+1013904223)>>>0;calls.push(['random',rng]);return rng;},
+      collide:(...args)=>{
+        calls.push(['collide',...args]); const [,x,y]=args;
+        return row.terrain===1 || (row.terrain===2 && y>=row.floor*65536) ||
+          (row.terrain===3 && (y>=row.floor*65536 || y<=-64*65536)) ||
+          (row.terrain===4 && x<960*65536 && y>=row.floor*65536);
+      },
+      nearest:(...args)=>{calls.push(['nearest',...args]);return row.distance===-1?null:row.distance;},
+    };
+    if ('count' in row.result) {
+      const result=nativeCrateShowerTick({count:5,timer:0,pool:[1,6,11],used:[]},{
+        ...host,bottom:row.bottom,tall:row.tall,nextRandom:host.random,
+        parent:(...args)=>{calls.push(['parent',...args]);return 0x1234;},
+        busy:()=>calls.push(['busy']),ammo:slot=>slot+2,
+        allocate:size=>{calls.push(['allocate',size]);return 0x2004000;},
+        create:(allocation,parent,record,mode)=>calls.push(['create',parent,mode,record.x,record.y,record.kind,record.ammo,record.weapon]),
+      });
+      expect(result).toEqual(row.result);
+    } else {
+      const result=nativeCrateSpawnSearch(row.bottom,row.tall,row.grounded,true,host);
+      expect({success:result.success,x:result.x,y:result.y}).toEqual(row.result);
+    }
+    expect(calls.length).toBe(row.call_count);
+    expect(createHash('sha256').update(JSON.stringify(calls)).digest('hex')).toBe(row.calls_sha256);
   }
   for (const row of crateVisibility.cases)
     expect(nativeCrateContentsVisible(row.team,row.visible,row.controller,row.flags)).toBe(row.result);
