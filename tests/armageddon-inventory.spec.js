@@ -1,3 +1,4 @@
+import {originalMissionPresentation} from '../src/armageddon/mission-presentation.js';
 import archiveImageLoad from './fixtures/armageddon/archive-image-load.json' with {type:'json'};
 import archiveImage from './fixtures/armageddon/archive-image.json' with {type:'json'};
 import {nativeLoadArchiveImage,nativeLoadNamedArchiveImage} from '../src/armageddon/terrain-image.js';
@@ -403,6 +404,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       return value===undefined?fallback:parseInt(value,10);
     };
     expect(resolveOriginalMapId(nativeMissionTerrainPath(memory,owner,host))).not.toBeNull();
+    expect(originalMissionPresentation(name)).toEqual({title:nativeMissionTitle(memory,owner,host).trim(),briefing:nativeMissionBriefing(memory,owner,host).trim(),thumbnail:kind==='training'?null:nativeMissionThumbnail(memory,owner,host).replaceAll('\\','/')});
     if(name==='mission/training16.wam') {
       //Original resource tables point this definition at blank placeholders.
       expect(nativeMissionTitle(memory,owner,host)).toBe('  ');

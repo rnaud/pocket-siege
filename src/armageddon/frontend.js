@@ -1,3 +1,4 @@
+import {originalMissionPresentation} from './mission-presentation.js';
 import missionNames from './mission-names.json' with {type:'json'};
 // Full-screen front end built around the original imported menu bitmaps.
 // Existing controls retain their IDs and native form/dialog behavior.
@@ -83,17 +84,19 @@ export function mountArmageddonFrontend() {
     list.replaceChildren(); preview.replaceChildren();
     const paths = Object.keys(missionNames).filter(path => path.startsWith(`mission/${training ? 'training' : 'mission'}`)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
     paths.forEach((path, index) => {
+      const scenario = originalMissionPresentation(path);
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = `${training ? 'Training' : 'Mission'} ${index + 1}`;
+      button.textContent = scenario.title || `${training ? 'Training' : 'Mission'} ${index + 1}`;
       button.addEventListener('click', () => {
         for (const item of list.children) item.setAttribute('aria-pressed', String(item === button));
         const title = document.createElement('h3');title.textContent = button.textContent;
-        const note = document.createElement('p');note.textContent = 'Original scenario imported. Play and completion medals will become available when this mode is ready.';
+        const note = document.createElement('p');note.className = 'frontend-briefing';
+        note.textContent = scenario.briefing || 'This original scenario has no briefing text.';
         preview.replaceChildren(title);
         if (!training) {
           const image = document.createElement('img'); image.alt = `Landscape for ${button.textContent}`;
-          image.src = `${import.meta.env.BASE_URL}armageddon/media/graphics/missionmenu/thumb${Number(path.match(/mission(\d+)\.wam$/)[1])}.bmp`;
+          image.src = `${import.meta.env.BASE_URL}armageddon/media/${scenario.thumbnail}`;
           preview.append(image);
         }
         preview.append(note);

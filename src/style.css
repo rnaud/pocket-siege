@@ -2772,3 +2772,5 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
   #menu#menu .frontend-campaign-body { grid-template-columns: 1fr; }
   #menu#menu .frontend-mission-list { max-height: 180px; }
 }
+
+#menu#menu .frontend-mission-preview .frontend-briefing { white-space: pre-line; text-align: left; font-family: system-ui, sans-serif; line-height: 1.6; text-transform: none; }
