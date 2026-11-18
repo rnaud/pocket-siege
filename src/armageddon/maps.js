@@ -16,6 +16,7 @@ export class OriginalMapTerrain {
     this.nativePalette = new NativeGamePalette(137, 248);
     this.nativePaletteMapping = nativeImagePaletteMap(image, this.nativePalette);
     this.sourcePixels = image.pixels;
+    this.sourcePalette = image.palette;
     this.pixels = imageRGBA(image, true, { mapping: this.nativePaletteMapping, colors: this.nativePalette.colors });
     this.data = new Uint8Array(this.width * this.height);
     for (let y = 0; y < this.height; y++) {

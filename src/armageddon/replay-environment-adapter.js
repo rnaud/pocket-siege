@@ -4,7 +4,7 @@ import { NativeGamePalette } from './game-palette.js';
 // Host backing layers for native replay adapters. This is not the original
 // binary snapshot format: it preserves the browser terrain's two coordinate
 // layouts and palette allocator alongside the already-native random streams.
-const terrainFields = ['data', 'pixels', 'sourcePixels', 'nativePaletteMapping',
+const terrainFields = ['data', 'pixels', 'sourcePixels', 'sourcePalette', 'nativePaletteMapping',
   'decorationPixels', 'craterRim', 'decorations', 'id', 'seed', 'layout', 'theme'];
 function checkDimensions(terrain, width, height) {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0 ||

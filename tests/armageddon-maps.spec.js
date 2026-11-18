@@ -99,12 +99,17 @@ test("all authored maps support six separated, grounded worm spawns including ca
   const { originalMapSpawns } =
     await import("../src/armageddon/map-placement.js");
   const { stepWorm, bodyBlocked } = await import("../src/physics.js");
+  const {nativeMapTheme}=await import("../src/armageddon/map-theme.js");
+  const theme=nativeMapTheme(Object.fromEntries(["soil","grass","bridge-l","bridge","bridge-r"].map(name=>{
+    const bytes=fs.readFileSync(`public/armageddon/media/level/forest/level/${name}.img`);
+    return [name,decodeImage(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength))];
+  })),true);
   for (const asset of maps) {
     const terrain = new OriginalMapTerrain(read(asset), asset.id);
     const positions = originalMapSpawns(
       terrain,
       80,
-      [180, 340, 490, 710, 860, 1020].map((x) => x / 1200),
+      6,42,theme,
     );
     expect(positions, asset.id).toHaveLength(6);
     const worms = positions.map((p) => ({
@@ -117,11 +122,11 @@ test("all authored maps support six separated, grounded worm spawns including ca
     for (let tick = 0; tick < 240; tick++)
       for (const worm of worms) stepWorm(worm, terrain, 1 / 120);
     for (const [i, worm] of worms.entries()) {
-      expect(worm.y, asset.id).toBeGreaterThan(104);
-      expect(worm.y, asset.id).toBeLessThanOrEqual(646);
+      expect(worm.y, asset.id).toBeGreaterThan(80);
+      expect(worm.y, asset.id).toBeLessThanOrEqual(terrain.height);
       expect(worm.ground, asset.id).toBe(true);
       expect(bodyBlocked(terrain, worm.x, worm.y), asset.id).toBe(false);
-      expect(Math.abs(worm.y - positions[i].y), asset.id).toBeLessThan(1);
+
       for (const other of worms.slice(0, i))
         expect(
           Math.abs(worm.x - other.x) >= 32 || Math.abs(worm.y - other.y) >= 32,

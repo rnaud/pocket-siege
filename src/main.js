@@ -164,6 +164,7 @@ import {
 } from "./armageddon/girders.js";
 import { nativeSceneGirderPlacement } from "./armageddon/girder-placement.js";
 import { nativeClampPlacementTarget } from "./armageddon/target-placement.js";
+import { loadNativeMapTheme, preparedNativeMapTheme } from "./armageddon/map-theme.js";
 import { originalMapSpawns } from "./armageddon/map-placement.js";
 import {
   originalMapCatalog,
@@ -557,6 +558,7 @@ const originalAssets = Promise.all([
   .then(() =>
     Promise.all([
       loadOriginalDecorations($("#terrain-theme").value),
+      loadNativeMapTheme($("#terrain-theme").value,true),
       loadOriginalDecorations("forest"),
     ]),
   )
@@ -1110,17 +1112,17 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
       bridges: "BRIDGES",
     }[terrain.layout] ??
     terrain.layout.replace("original:", "").replace(".img", "").toUpperCase();
-  paintTerrain(ctx, terrain, texture);
-  updateOriginalBackdrop();
-  terrainDirty = false;
   const slots = [180, 340, 490, 710, 860, 1020];
   const spawns = authored
     ? originalMapSpawns(
         terrain,
         waterLevel,
-        slots.map((x) => x / 1200),
+        slots.length,matchSeed,preparedNativeMapTheme(terrain.theme,true),
       )
     : slots.map((x) => ({ x, y: null }));
+  paintTerrain(ctx, terrain, texture);
+  updateOriginalBackdrop();
+  terrainDirty = false;
   worms = spawns.map((p, index) =>
     createWorm(index < 3 ? 0 : 1, index % 3, p.x, p.y),
   );
@@ -6759,6 +6761,7 @@ async function prepareDecorations() {
     await Promise.all([
       loadOriginalMap($("#map-layout").value === "random" ? randomOriginalMap(preparedRandomSeed) : $("#map-layout").value),
       loadOriginalDecorations($("#terrain-theme").value),
+      loadNativeMapTheme($("#terrain-theme").value,true),
       loadOriginalDecorations("forest"),
     ]);
     if (version !== decorationLoadVersion) return;

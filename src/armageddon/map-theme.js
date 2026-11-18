@@ -24,7 +24,9 @@ export function nativeMapTheme(
 }
 
 const pending = new Map(),
-  prepared = new Map();
+  prepared = new Map(),
+  ready = new Map();
+export const preparedNativeMapTheme = (theme,bitmap=false) => ready.get(`${theme}:${bitmap}`);
 export function loadNativeMapTheme(theme, bitmap = false, palette) {
   if (!themes.includes(theme))
     throw new Error(`Unknown terrain theme ${theme}`);
@@ -56,7 +58,9 @@ export function loadNativeMapTheme(theme, bitmap = false, palette) {
   if (!prepared.has(key))
     prepared.set(
       key,
-      pending.get(key).then((source) => nativeMapTheme(source, bitmap)),
+      pending.get(key).then((source) => {
+        const theme=nativeMapTheme(source,bitmap);ready.set(key,theme);return theme;
+      }),
     );
   return prepared.get(key);
 }
