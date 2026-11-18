@@ -44,7 +44,33 @@ import rendererBlend from './fixtures/armageddon/renderer-blend.json' with {type
 import {nativeBuildRendererBlendTable} from '../src/armageddon/renderer-blend.js';
 import {nativeAddGamePaletteColor} from '../src/armageddon/game-palette-memory.js';
 
+import rendererBitmapDraw from './fixtures/armageddon/renderer-bitmap-draw.json' with {type:'json'};
+import {nativeDrawRendererBlendedBitmap} from '../src/armageddon/renderer-bitmap-draw.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
+  for(const c of rendererBitmapDraw.cases) {
+    const owner=0x2000000,arena=Buffer.alloc(0x20000,c.pattern);
+    const memory={get:p=>arena.readUInt32LE(p-owner),put:(p,v)=>arena.writeUInt32LE(v>>>0,p-owner),byte:p=>arena[p-owner],putByte:(p,v)=>{arena[p-owner]=v;}};
+    for(const [offset,value] of [[0,owner+0x4000],[20,-2],[24,1],[28,19],[32,30],[0x48,owner+0x4100],[0x454,c.locked],[0x458,owner+0x1000],[0x14b2c,0]])memory.put(owner+offset,value);
+    memory.put(owner+0x406c,0x2200100);
+    for(const target of [owner+0x4100,owner+0x4200])memory.put(target,owner+0x4300);
+    memory.put(owner+0x4358,0x2200200);memory.put(owner+0x4364,0x2200300);
+    for(const [bitmap,pixels,width,height,clip] of [[owner+0x1000,owner+0x2000,20,14,[1,1,19,13]],[owner+0x1100,owner+0x3000,16,12,[2,1,14,10]]])
+      for(const [offset,value] of [[0,0x5249b0],[4,1],[8,pixels],[12,8],[16,24],[20,width],[24,height],[28,clip[0]],[32,clip[1]],[36,clip[2]],[40,clip[3]]])memory.put(bitmap+offset,value);
+    for(let i=0;i<1024;i++) {
+      memory.putByte(owner+0x2000+i,i%5===0?0:(i*13+7)&255);
+      memory.putByte(owner+0x3000+i,i%3===0?0:(i*17+3)&255);
+    }
+    for(let d=0;d<256;d++)for(let s=0;s<256;s++)memory.putByte(owner+0x4b2c+d*256+s,(s*3+d*5)&255);
+    const snapshot=()=>createHash('sha256').update(arena).digest('hex'),events=[];let waits=0;
+    const host={
+      waitRenderer(renderer){events.push(['wait',renderer,snapshot()]);waits++;if(c.mutate&&waits===3)memory.put(owner+0x48,owner+0x4100);return waits%2;},
+      describeSurface(target){events.push(['describe',target,108,snapshot()]);if(c.mutate)memory.put(owner+0x48,owner+0x4200);return {width:20,height:14,pitch:24};},
+      lockSurface(target,rect,flags,event){events.push(['lock',target,rect,108,flags,event,snapshot()]);return {status:c.failed,pixels:owner+0x2000};},
+    };
+    nativeDrawRendererBlendedBitmap(memory,owner,...c.rect,owner+0x1100,4,3,c.flags,host);
+    expect(events).toEqual(c.events);expect(snapshot()).toBe(c.state);
+  }
   for(const c of rendererBlend.cases) {
     const owner=0x2000000,arena=Buffer.alloc(0x20000,c.pattern);
     const memory={get:p=>arena.readUInt32LE(p-owner),put:(p,v)=>arena.writeUInt32LE(v>>>0,p-owner),byte:p=>arena[p-owner],putByte:(p,v)=>{arena[p-owner]=v;}};
