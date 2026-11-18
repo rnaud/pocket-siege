@@ -1,3 +1,5 @@
+import missionSelection from './fixtures/armageddon/mission-selection.json' with {type:'json'};
+import {nativeSelectMission,nativeSelectTraining} from '../src/armageddon/mission-selection.js';
 import missionResources from './fixtures/armageddon/mission-resources.json' with {type:'json'};
 import {nativeMissionThumbnail,nativeMissionTerrainPath,nativeMissionWinningCondition,nativeMissionSelection} from '../src/armageddon/mission-resources.js';
 import {nativeClearMatchTeamRecords,nativeInitializeMatchTeamRecords} from '../src/armageddon/match-team-records.js';
@@ -151,6 +153,23 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of missionSelection.cases) {
+    const owner=0x2000000, bytes=Buffer.alloc(0x10000,0xa5),calls=[];let drive=68;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:()=>drive};
+    const snapshot=()=>createHash('sha256').update(bytes).update(Buffer.from([drive])).digest('hex');
+    const change=base=>{for(const [offset,v] of [[0x884,base+1],[0x54,base+2],[0x87c,base+3]])memory.put(owner+offset,v);};
+    const file={};
+    const host={
+      createFile:()=>{calls.push(['create',snapshot()]);if(c.mutation)drive=90;return file;},
+      assignString:(address,path)=>{calls.push(['assign',address,path,snapshot()]);memory.put(address,owner+0x1000);bytes.write(path+'\0',0x1000,'latin1');},
+      openFile:(handle,...args)=>{expect(handle).toBe(file);calls.push(['open',...args,snapshot()]);if(c.mutation)change(80);return c.success;},
+      closeFile:handle=>{expect(handle).toBe(file);calls.push(['close',snapshot()]);if(c.mutation)change(90);},
+      destroyFile:handle=>{expect(handle).toBe(file);calls.push(['destroy',snapshot()]);},
+      messageBox:(...args)=>calls.push(['message',...args,snapshot()]),
+    };
+    const result=c.entry==='0043E710'?nativeSelectMission(memory,owner,c.selection,c.score,host):nativeSelectTraining(memory,owner,c.selection,host);
+    expect({result,calls,sha256:snapshot()}).toEqual({result:c.result,calls:c.calls,sha256:c.sha256});
+  }
   for(const c of missionResources.cases) {
     const owner=0x2000000, fields=new Map([[owner+0x884,c.mission],[owner+0x54,c.training],[owner+0x880,owner+0x1000],[0x6e1178,68]]),calls=[];
     const memory={get:address=>fields.get(address)>>>0,byte:address=>fields.get(address)};
