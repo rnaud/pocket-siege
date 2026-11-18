@@ -9,6 +9,7 @@ from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
+parser.add_argument('--runtime',type=Path,required=True)
 args = parser.parse_args()
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -32,8 +33,29 @@ def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 def signed(v):return v if v<0x80000000 else v-0x100000000
 
 
+# Map the bundled runtime at its preferred address; no DLL entry point runs.
+runtime=args.runtime.read_bytes();runtime_digest=hashlib.sha256(runtime).hexdigest()
+assert runtime_digest=='df9f2aab7f7119f214c5d743d961fde4bf324f19011fbbb7e9cf666856fba0ba'
+pe=struct.unpack_from('<I',runtime,60)[0];opt=pe+24
+runtime_base=struct.unpack_from('<I',runtime,opt+28)[0]
+size=struct.unpack_from('<I',runtime,opt+56)[0]
+cpu.mem_map(runtime_base,(size+0xfff)&~0xfff)
+cpu.mem_write(runtime_base,runtime[:struct.unpack_from('<I',runtime,opt+60)[0]])
+headers=opt+struct.unpack_from('<H',runtime,pe+20)[0]
+for i in range(struct.unpack_from('<H',runtime,pe+6)[0]):
+ _,rva,size,offset=struct.unpack_from('<IIII',runtime,headers+40*i+8)
+ if size:cpu.mem_write(runtime_base+rva,runtime[offset:offset+size])
+exports=runtime_base+struct.unpack_from('<I',runtime,opt+96)[0]
+functions=runtime_base+read(exports+28);names=runtime_base+read(exports+32);ordinals=runtime_base+read(exports+36)
+for i in range(read(exports+24)):
+ address=runtime_base+read(names+i*4);name=bytes(cpu.mem_read(address,32)).split(b'\0')[0]
+ if name==b'strncmp':
+  ordinal=struct.unpack('<H',cpu.mem_read(ordinals+i*2,2))[0]
+  write(0x51796c,runtime_base+read(functions+ordinal*4));break
+else:raise RuntimeError('strncmp export missing')
+
 originalGetters={address:bytes(cpu.mem_read(address,3)) for address in [0x470370,0x470340]}
-for address,argc in [(0x470370,1),(0x470340,1),(0x476070,1),(0x41b760,1)]:cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4))
+for address,argc in [(0x470370,1),(0x470340,1)]:cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4))
 def hook(cpu,address,size,user):
  global tables,descriptorAddress
  sp=cpu.reg_read(UC_X86_REG_ESP)
@@ -54,7 +76,7 @@ def hook(cpu,address,size,user):
    descriptorAddress=cpu.reg_read(UC_X86_REG_ECX);cpu.reg_write(UC_X86_REG_EAX,value&0xffffffff)
  elif address in [0x476070,0x41b760]:
   team=(read(sp+4)-owner-0x122)//3000
-  calls.append(['stats' if address==0x476070 else 'special',team]);cpu.reg_write(UC_X86_REG_EAX,team)
+  calls.append(['stats' if address==0x476070 else 'special',team])
 for address in [0x418b8e,0x470370,0x470340,0x476070,0x41b760]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 def run():
  sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
@@ -89,10 +111,20 @@ for preset in [0,1,2,3,6,8,9,13,14,15,16,17]:
     extras=[[6,2],[40,-1]] if preset%2 else []
     for i,value in enumerate([v for pair in extras for v in pair]+[-1,-1]):write(0x6daf94+i*4,value)
     counts=[(i+preset)%2 for i in range(71)];delaysInput=[[0,1,-1,32767,65535][(i+preset)%5] for i in range(71)]
+    cpu.mem_write(0x6de000,bytes(0x9000))
+    teamRecords=[]
+    # Reverse saved records and rotate special records: identity is by name.
+    for team in range(3):
+     statsIndex=2-team;specialIndex=(team+preset)%6
+     teamRecords.append([team,statsIndex,specialIndex])
+     cpu.mem_write(0x6dec30+statsIndex*0x39c,('Team'+str(team)).encode()+b'\0')
+     cpu.mem_write(0x6dec41+statsIndex*0x39c,b'\1')
+     cpu.mem_write(0x6e179f+specialIndex*0xd7b,('Team'+str(team)).encode()+b'\0')
+     cpu.mem_write(0x6e18c0+specialIndex*0xd7b,b'\1')
     saved=[];specials=[]
     for team in range(3):
      row=[[-1,0,2,32767][(slot+team)%4] for slot in range(71)];saved.append(row)
-     cpu.mem_write(0x6de508+team*0x8e,struct.pack('<71h',*row));specials.append((team+preset)%9);cpu.mem_write(0x6e18c1+team*0xd7b,bytes([specials[-1]]))
+     cpu.mem_write(0x6de508+(2-team)*0x8e,struct.pack('<71h',*row));specials.append((team+preset)%9);cpu.mem_write(0x6e18c1+((team+preset)%6)*0xd7b,bytes([specials[-1]]))
     descriptors=[]
     for index in range(22):
      slot=([19,62,10,30,50,31,55,19]+list(range(40,54)))[index]
@@ -114,6 +146,23 @@ for preset in [0,1,2,3,6,8,9,13,14,15,16,17]:
     cpu.mem_write(output,bytes(0x2c14));sp=stack+0xf000;write(sp,stop);write(sp+4,owner+0x3c)
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,output)
     cpu.emu_start(0x4c2640,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-    cases.append(dict(getter_results=getterResults,descriptors=descriptors,names=names,inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest(),preset=preset,writes=writes,scheme=scheme,counts=counts,delays=delaysInput,extras=extras,saved=saved,specials=specials,calls=calls,sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='00417750 / 004C2640',method='Complete original loadout builder; Original scheme count/delay getters and first-match table search execute; saved-team lookup interfaces supplied. Native special-delay gate and all stockpile/preset/special arithmetic execute. Every setup byte and interface call compared; original runtime initialization executes afterward and all inventory output bytes are captured.',cases=cases),separators=(',',':'))+'\n')
+    cases.append(dict(team_records=teamRecords,getter_results=getterResults,descriptors=descriptors,names=names,inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest(),preset=preset,writes=writes,scheme=scheme,counts=counts,delays=delaysInput,extras=extras,saved=saved,specials=specials,calls=calls,sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest()))
+lookups=[]
+for active in [0,1,255]:
+ for position in range(6):
+  cpu.mem_write(0x6de000,bytes(0x9000));writes=[]
+  for index in range(6):
+   name=b'ABCDEFGHIJKLMNOP'+(b'A' if index==position else b'B')+b'\0'
+   # Stats flag occupies byte17, so bounded name comparison is essential.
+   for offset,value in [(0xc30+index*0x39c,name),(0xc41+index*0x39c,bytes([active if index==position else 0])),
+                        (0x379f+index*0xd7b,name),(0x38c0+index*0xd7b,bytes([active if index==position else 0]))]:
+    cpu.mem_write(0x6de000+offset,value);writes.append([offset,value.hex()])
+  for query in [b'ABCDEFGHIJKLMNOPA',b'ABCDEFGHIJKLMNOPB',b'abcdefgh',b'',b'ABCDEFGHIJKLMNOP',bytes([255])*16]:
+   cpu.mem_write(owner,query+b'\0');results=[]
+   for entry in [0x476070,0x41b760]:
+    sp=stack+0xf000;write(sp,stop);write(sp+4,owner);cpu.reg_write(UC_X86_REG_ESP,sp)
+    cpu.emu_start(entry,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+    results.append(signed(cpu.reg_read(UC_X86_REG_EAX)))
+   lookups.append(dict(writes=writes,name=(query+b'\0').hex(),results=results))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,lookups=lookups,entry='00417750 / 004C2640',method='Complete original loadout builder; Original scheme count/delay getters and first-match table search execute; original saved-team and special-team name searches execute, using bundled CRT strncmp. Native special-delay gate and all stockpile/preset/special arithmetic execute. Every setup byte and interface call compared; original runtime initialization executes afterward and all inventory output bytes are captured.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} loadout builds')

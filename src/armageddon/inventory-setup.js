@@ -10,8 +10,38 @@ export function nativeSetupWeaponValue(memory, slot, delay=false) {
   return 0;
 }
 
+//00476070 uses a 16-byte name comparison;0041B760 uses the complete
+//NUL-terminated name. Both scan six records and skip inactive entries.
+export function nativeFindSetupTeam(data, name, special=false) {
+  const start=special?0x379f:0xc30,stride=special?0xd7b:0x39c;
+  for(let team=0;team<6;team++) {
+    const record=start+team*stride;
+    if(!data[record+(special?0x121:0x11)])continue;
+    let i=0;
+    while(i<(special?name.length:16)) {
+      if(data[record+i]!==name[i])break;
+      if(!name[i])return team;
+      i++;
+    }
+    if(!special && i===16)return team;
+  }
+  return -1;
+}
+
+//Global team data window begins at006DE000, including saved inventory.
+export function nativeSetupSavedAmmo(data,name,missingTeam) {
+  const index=nativeFindSetupTeam(data,name);
+  if(index===-1)missingTeam?.();
+  const view=new DataView(data.buffer,data.byteOffset,data.byteLength);
+  return Array.from({length:71},(_,slot)=>view.getInt16(0x508+index*0x8e+slot*2,true));
+}
+export function nativeSetupSpecial(data,name) {
+  const index=nativeFindSetupTeam(data,name,true);
+  return index===-1?-1:data[0x38c1+index*0xd7b];
+}
+
 //00417750. Frontend setup before the +3C runtime copy and004C2640 import.
-//Saved-team lookup and descriptor getters remain interfaces; setup bytes,
+//Saved-team and descriptor reads default to the recovered memory lookups; setup bytes,
 //signed short stockpiles and per-team bank assignment remain authoritative.
 export function nativeBuildInventorySetup(memory, scheme, preset, extras, host) {
   const view=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
@@ -35,7 +65,7 @@ export function nativeBuildInventorySetup(memory, scheme, preset, extras, host) 
     const get=slot=>view.getInt16(base+slot*2,true),set=(slot,value)=>view.setInt16(base+slot*2,value,true);
     if(!scheme[8])memory.fill(0,base,base+142);
     else if(round>1) {
-      const saved=host.saved(team);
+      const saved=host.saved?host.saved(team):nativeSetupSavedAmmo(host.teamData,memory.subarray(0x122+team*3000),host.missingTeam);
       if(!copied.has(bank)) {
         copied.add(bank);for(let slot=0;slot<71;slot++)set(slot,saved[slot]);
       }
@@ -50,7 +80,7 @@ export function nativeBuildInventorySetup(memory, scheme, preset, extras, host) 
     for(const [slot,value] of tables.presets[preset]??[])if(get(slot)!==-1)set(slot,get(slot)+value);
     for(const [slot,value] of extras)if(get(slot)!==-1)set(slot,value===-1?-1:get(slot)+value);
     if(scheme[0x22]===1) {
-      const special=host.special(team);
+      const special=host.special?host.special(team):nativeSetupSpecial(host.teamData,memory.subarray(0x122+team*3000));
       const bonus=[[44,1],[26,3],[53,1],[4,2],[5,1],[52,2],[43,1],[24,1]][special];
       if(bonus)set(bonus[0],get(bonus[0])+bonus[1]);
     }
