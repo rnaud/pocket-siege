@@ -1,3 +1,4 @@
+import { nativeDrawControllerPanels } from './controller-panel-draw.js';
 import { nativeDrawControllerCountdown } from './controller-countdown-draw.js';
 import { nativeUpdateControllerPresentation } from './controller-presentation.js';
 import { nativeCollectCameraInput, nativeCollectPauseInput } from './controller-frame-input.js';
@@ -36,7 +37,8 @@ export function nativeControllerFrame(memory,sceneMemory,event,payload,host) {
     if(host.collectPauseInput)host.collectPauseInput();else nativeCollectPauseInput(memory,sceneMemory,host);
     nativeControllerCountdown(memory,sceneMemory,host);
   } else if(event===0x3eb) {
-    host.drawPresentation();host.drawTargeting();
+    if(host.drawPresentation)host.drawPresentation();else nativeDrawControllerPanels(memory,sceneMemory,host);
+    host.drawTargeting();
     if(host.drawCountdown)host.drawCountdown();else nativeDrawControllerCountdown(memory,sceneMemory,host);
     host.forward(event,payload);
   } else if(event===0x3ec) {

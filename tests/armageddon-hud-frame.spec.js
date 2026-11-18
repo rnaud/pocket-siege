@@ -1,3 +1,5 @@
+import controllerPanelDraw from "./fixtures/armageddon/controller-panel-draw.json" with { type: "json" };
+import { nativeDrawControllerPanels } from "../src/armageddon/controller-panel-draw.js";
 import controllerCountdownDraw from "./fixtures/armageddon/controller-countdown-draw.json" with { type: "json" };
 import { nativeDrawControllerCountdown } from "../src/armageddon/controller-countdown-draw.js";
 import controllerPresentation from "./fixtures/armageddon/controller-presentation.json" with { type: "json" };
@@ -266,6 +268,17 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerPanelDraw.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
+    for(const [o,v] of Object.entries(c.fields))body.setInt32(Number(o),v,true);
+    scene.setInt16(0x1b7da,c.owners.length,true);c.owners.forEach((v,i)=>scene.setInt16(0x1b7ba+i*2,v,true));
+    for(const [o,v] of [[0x1b8dc,c.viewportWidth],[0x1b8e0,c.viewportHeight],[0xac,2468],[0x12474,c.px],[0x12478,c.py]])scene.setInt32(o,v,true);
+    nativeDrawControllerPanels(memory,sceneMemory,{
+      teamVisible:team=>{calls.push(["visible",team]);return c.visible;},teamPanel:flag=>{calls.push(["panel",flag]);return {image:c.panelImage,width:c.panelWidth,height:c.panelHeight};},
+      drawImage:(...args)=>calls.push(["draw",...args]),drawCursor:(...args)=>calls.push(["cursor",...args]),
+    });
+    expect(calls).toEqual(c.calls);
   }
   for(const c of controllerCountdownDraw.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
