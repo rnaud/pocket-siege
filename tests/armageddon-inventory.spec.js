@@ -1,3 +1,4 @@
+import worldMineMemory from './fixtures/armageddon/world-mine-memory.json' with {type:'json'};
 import worldBarrelMemory from './fixtures/armageddon/world-barrel-memory.json' with {type:'json'};
 import worldObjectsMemory from './fixtures/armageddon/world-objects-memory.json' with {type:'json'};
 import worldLandscapeMemory from './fixtures/armageddon/world-landscape-memory.json' with {type:'json'};
@@ -81,7 +82,7 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true}))]) {
+  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true})),...worldMineMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true}))]) {
     const owner=new Uint8Array(0x10000),heap=new Uint8Array(c.world?0x100000:c.controller?0x40000:0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
@@ -95,11 +96,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       placeWorm:(x,y)=>{calls.push(['place',x,y,memory.get(0x2000040)|0,memory.get(0x2000048)|0]);return ++attempts>=c.successAt;},
       changeState:c.nativeState?undefined:state=>calls.push(['state',state]),settlePhysics:c.synchronized?undefined:()=>calls.push(['settle']),animationMetadata:(renderer,id)=>{calls.push(['metadata',renderer,id]);return {rate:id%3?25<<16:0,loop:id%2,span:5+id%7};},
     };
+    host.mineReplacementEffect=request=>calls.push(['effect',request]);host.deleteTask=(...args)=>calls.push(['delete',...args]);
     host.portraitLabel=at=>{calls.push(['label',at]);return 0x76543210+c.bits;};host.setPortraitLabel=value=>portraitLabel=value;
-    if(c.nativePlacement){delete host.gravity;delete host.placeWorm;host.collisionOverlap=(...args)=>{calls.push(['overlap',...args]);return +(args[2]>=2+c.bits%4&&(args[3]===0x2007300||args[1]>=800));};}
+    if(c.nativePlacement){delete host.gravity;delete host.placeWorm;host.collisionOverlap=(...args)=>{calls.push(['overlap',...args]);return +(args[2]>=2+c.bits%4+(c.mines&&(c.bits&32)?(args[1]&7)>>1:0)&&(args[3]===0x2007300||args[1]>=800));};}
     if(c.nativeSpawn)for(const key of ['randomSpawnWord','randomSpawn','sideSpawn','reserveSpawn'])delete host[key];
     if(!c.objects)host.populateNaturalObjects=(at,setup)=>{calls.push(['call',0x4eba80,at,[setup]]);return at;};
-    host.constructNaturalMine=(...args)=>{calls.push(['mine',...args]);return args[0];};if(!c.barrels)host.constructNaturalBarrel=(...args)=>{calls.push(['barrel',...args]);return args[0];};
+    if(!c.mines)host.constructNaturalMine=(...args)=>{calls.push(['mine',...args]);return args[0];};if(!c.barrels)host.constructNaturalBarrel=(...args)=>{calls.push(['barrel',...args]);return args[0];};
     if(!c.landscape)host.constructLandscape=(at,parent)=>{calls.push(['call',0x4d1f80,at,[parent]]);return at;};
     host.surfaceDimensions=at=>{calls.push(['dimensions',at]);return at===0x2007600?[1,c.bits%24]:[34+c.bits%3,18+c.bits%5];};
     host.readSurfacePixel=(at,x,y)=>{calls.push(['pixel',at,x,y]);return c.bits&1?y:y%7;};
@@ -111,7 +113,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     else if(c.controller)nativeCreateTeamControllerAt(memory,0x2000000,0x2008000,c.team,0x2001000,host);
     else nativeCreateWormAt(memory,0x2000000,0x2008000,c.team,c.worm,0x2001000,host);
     if(c.controller)expect(portraitLabel).toBe(c.portraitLabel);
-    const label=`constructor case ${c.bits}: world=${!!c.world}, objects=${!!c.objects}, barrels=${!!c.barrels}`;
+    const label=`constructor case ${c.bits}: world=${!!c.world}, objects=${!!c.objects}, barrels=${!!c.barrels}, mines=${!!c.mines}`;
     expect(calls,label).toEqual(c.calls);
     expect(createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),label).toBe(c.sha256);
   }

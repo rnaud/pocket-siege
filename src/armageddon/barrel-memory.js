@@ -1,3 +1,4 @@
+import {nativeClaimPresentationSlot} from './presentation-slot-memory.js';
 import {nativeCreatePhysicsAt} from './physics-memory.js';
 import {nativeQueryCollisionMemory} from './collision-registry.js';
 
@@ -8,20 +9,7 @@ export function nativeCreateBarrelAt(memory,address,parent,x,y,settle,host) {
   for(const offset of [0xfc,0x104,0x10c])memory.put(address+offset,0);
   memory.put(address+0x108,50);
   const scene=memory.get(address+0x38),environment=memory.get(scene+0x7d4);
-  let slot=-1;
-  if(memory.get(scene+0xc28)) {
-    memory.put(scene+0xc28,memory.get(scene+0xc28)-1);slot=memory.get(scene+0x828+memory.get(scene+0xc28)*4)|0;
-    const count=memory.get(scene+0x102c);memory.put(scene+0x1030+slot*4,count);memory.put(scene+0xc2c+count*4,slot);memory.put(scene+0x102c,count+1);
-  }
-  memory.put(address+0x100,slot);
-  const rank=memory.get(scene+0x1030+slot*4)|0;
-  if(rank) {
-    for(let i=0;i<(memory.get(scene+0x102c)|0);i++) {
-      const at=scene+0x1030+memory.get(scene+0xc2c+i*4)*4;
-      if((memory.get(at)|0)<rank)memory.put(at,memory.get(at)+1);
-    }
-    memory.put(scene+0x1030+slot*4,0);
-  }
+  memory.put(address+0x100,nativeClaimPresentationSlot(memory,scene));
   const place=()=>{
     if(nativeQueryCollisionMemory(memory,environment,address,x,y,memory.get(address+0xf0),memory.get(address+0x40),host.collisionOverlap))return true;
     memory.put(address+0x90,x);memory.put(address+0x94,y);memory.put(address+0xb8,0);return false;
