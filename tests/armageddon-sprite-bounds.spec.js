@@ -29,6 +29,9 @@ import {nativeLoadRendererSprite,nativeDestroySprite} from '../src/armageddon/re
 import streamedLifecycle from './fixtures/armageddon/streamed-sprite-lifecycle.json' with {type:'json'};
 import {nativeCreateStreamedSprite,nativeDestroyStreamedSprite} from '../src/armageddon/streamed-sprite.js';
 
+import spriteBitmap from './fixtures/armageddon/sprite-bitmap.json' with {type:'json'};
+import {nativeSelectSpriteFrame,nativePrepareSpriteBitmap} from '../src/armageddon/sprite-bitmap.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
@@ -103,6 +106,25 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       freeSized(pointer,size){events.push(['free',pointer,size,snapshot()]);},
     });
     expect({events,result,state:snapshot()}).toEqual({events:c.events,result:c.result,state:c.state});
+  }
+  for(const c of spriteBitmap.cases) {
+    const owner=0x2000000,source=0x2400000,sprite=owner+0x3000,bitmap=owner+0x4000,buffer=owner+0x8000;
+    const bytes=Buffer.alloc(0x40000,c.pattern),raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex'),data=Buffer.from(raw),counters=Buffer.alloc(16),cacheCounters=Buffer.alloc(8),pointer=Buffer.alloc(4);
+    expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
+    const region=p=>p>=source?[data,p-source]:p>=owner?[bytes,p-owner]:p>=0x7d54e8?[cacheCounters,p-0x7d54e8]:p>=0x5602e4?[counters,p-0x5602e4]:[pointer,p-0x55e3c4];
+    const memory={get(p){const [b,o]=region(p);return b.readUInt32LE(o);},put(p,v){const [b,o]=region(p);b.writeUInt32LE(v>>>0,o);},byte(p){const [b,o]=region(p);return b[o];},putByte(p,v){const [b,o]=region(p);b[o]=v;}};
+    [0xfffffff0,17,0xfffffff0,23].forEach((v,i)=>counters.writeUInt32LE(v,i*4));cacheCounters.writeUInt32LE(0xfffffff0,0);cacheCounters.writeUInt32LE(123,4);
+    memory.put(0x55e3c4,buffer);memory.put(buffer,0x5266a0);memory.put(buffer+4,owner+0x10000);memory.put(buffer+8,c.capacity);
+    for(const offset of [12,16,20,24,28])memory.put(buffer+offset,0);
+    nativeCreateGamePalette(memory,owner,1,c.last);nativeCreateSprite(memory,sprite,0x497b20,0x497ba0);nativeReadSprite(memory,sprite,owner,source,{allocate:()=>bitmap});
+    const snapshot=()=>createHash('sha256').update(bytes).update(data).update(counters).update(cacheCounters).digest('hex');
+    expect(snapshot()).toBe(c.initial);
+    for(const step of c.steps) {
+      expect(nativeSelectSpriteFrame(memory,sprite,step.progress,Array.from({length:6},(_,i)=>owner+0x5000+i*4))).toBe(step.selected);
+      expect(snapshot()).toBe(step.selected_state);
+      expect(nativePrepareSpriteBitmap(memory,sprite)).toBe(step.result);
+      expect(snapshot(),`${c.path}, cache ${c.capacity}, progress ${step.progress}`).toBe(step.state);
+    }
   }
   const startup = new NativeGamePalette(0, 104);
   startup.add([0, 0, 0]);
