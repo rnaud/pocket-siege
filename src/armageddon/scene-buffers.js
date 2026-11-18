@@ -37,3 +37,25 @@ export function nativeDestroyInitialSceneBuffers(memory,owner,flags,host) {
     memory.put(wrapper,0x524a14);if(flags&1)host.release(wrapper,8);
   }
 }
+
+//004AF470: aligned linked records in a circular allocation buffer.
+export function nativeAllocateEventRecord(memory,buffer,size) {
+  const boundary=memory.get(buffer+16)|0,span=((size+11)&~3)>>>0;
+  let cursor=memory.get(buffer+12)|0;
+  if(cursor<boundary){if(boundary<=((cursor+span)|0))return 0;}
+  else if((memory.get(buffer+8)|0)<=((cursor+span)|0)) {
+    cursor=0;if(boundary<=(span|0))return 0;
+  }
+  const record=(memory.get(buffer+4)+cursor)>>>0;
+  memory.put(record,size);memory.put(record+4,0);
+  const tail=memory.get(buffer+20);if(tail)memory.put(tail+4,record);
+  memory.put(buffer+20,record);if(!memory.get(buffer+24))memory.put(buffer+24,record);
+  memory.put(buffer+12,cursor+span);memory.put(buffer+28,memory.get(buffer+28)+1);
+  return record+8;
+}
+//0049C7F0: event code precedes the byte payload.
+export function nativeAppendSceneEvent(memory,wrapper,event,payload) {
+  const record=nativeAllocateEventRecord(memory,memory.get(wrapper+4),payload.length+4);
+  if(!record)return 0;memory.put(record,event);
+  for(let i=0;i<payload.length;i++)memory.putByte(record+4+i,payload[i]);return 1;
+}

@@ -75,3 +75,12 @@ export function nativeCleanupTaskMemory(memory,address,cleanupChild=child=>nativ
   memory.put(address+32,source);memory.put(address+24,target);memory.put(address+28,source);
   memory.put(address+20,count);memory.put(address+16,0);
 }
+
+//004B2970: depth traversal rereads mutable child count/backing storage.
+export function nativeVisitTaskDepth(memory,address,depth,visitChild=(child,next)=>nativeVisitTaskDepth(memory,child,next)) {
+  let index=0;
+  while(index<(memory.get(address+20)|0)) {
+    const child=memory.get(memory.get(address+24)+index++*4);
+    if(child)visitChild(child,(depth+1)|0);
+  }
+}

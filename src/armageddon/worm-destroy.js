@@ -32,8 +32,8 @@ export function nativeDestroyWormMemory(memory,address,flags,host) {
 }
 
 //004E5100 signed16 priority pools retain inactive tail words after removal.
-export function nativeReleasePriorityMemory(memory,address,field,free,freeCount,priorities,active,activeCount,allowNegative=false) {
-  const scene=memory.get(address+0x38),slot=memory.get(address+field)|0;
+export function nativeReleasePriorityMemory(memory,address,field,free,freeCount,priorities,active,activeCount,allowNegative=false,scene=memory.get(address+0x38)) {
+  const slot=memory.get(address+field)|0;
   if(slot<0&&!allowNegative)return;
   const get=offset=>(memory.byte(scene+offset)|(memory.byte(scene+offset+1)<<8))<<16>>16;
   const put=(offset,value)=>{memory.putByte(scene+offset,value&255);memory.putByte(scene+offset+1,(value>>8)&255);};
