@@ -17,6 +17,9 @@ import spriteMemory from './fixtures/armageddon/sprite-memory.json' with {type:'
 import {nativeReadSprite} from '../src/armageddon/sprite-memory.js';
 import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
 
+import archiveArt from './fixtures/armageddon/archive-art.json' with {type:'json'};
+import {nativeCreateSprite,nativeCreateFont,nativeLoadArchiveSprite,nativeLoadArchiveFont} from '../src/armageddon/archive-art.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
@@ -32,6 +35,36 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
     const events=[];
     const result=c.font?nativeReadFont(memory,owner+0x3000,owner,source,0x2500000):nativeReadSprite(memory,owner+0x3000,owner,source,{allocate(size){events.push({size,state:snapshot()});return c.allocated?owner+0x4000:0;}});
     expect({events,result,state:snapshot()},`${c.path??'raw'} / ${c.pattern} / ${c.allocated} / ${c.last}`).toEqual({events:c.events??[],result:c.result,state:c.state});
+  }
+  for(const c of archiveArt.cases) {
+    const raw=readFileSync(new URL(`../${c.path}`,import.meta.url));
+    expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
+    const owner=0x2000000,source=0x2400000,stop=0x2200000,archive=owner+0x5000,vtable=owner+0x5800,name=owner+0x7000,table=owner+0x8000,entry=owner+0x9000,obj=owner+0x3000;
+    const arena=Buffer.alloc(0x10000,c.pattern),data=c.mode==='mapped'?Buffer.from(raw):Buffer.alloc(raw.length,c.pattern),counters=Buffer.alloc(16),normalized=Buffer.alloc(256,c.pattern),mapping=Buffer.alloc(256);
+    const region=p=>p>=0x2500000?[mapping,p-0x2500000]:p>=source?[data,p-source]:p>=owner?[arena,p-owner]:p>=0x7d6058?[normalized,p-0x7d6058]:[counters,p-0x5602e4];
+    const memory={get(p){const [b,o]=region(p);return b.readUInt32LE(o);},put(p,v){const [b,o]=region(p);b.writeUInt32LE(v>>>0,o);},byte(p){const [b,o]=region(p);return b[o];},putByte(p,v){const [b,o]=region(p);b[o]=v;}};
+    const write=(p,v)=>memory.put(p,v),copy=(p,bytes)=>bytes.forEach((v,i)=>memory.putByte(p+i,v));
+    [0xfffffff0,17,0xfffffff0,23].forEach((v,i)=>counters.writeUInt32LE(v,i*4));
+    write(archive,vtable);write(vtable+4,stop+0x100);write(vtable+8,stop+0x300);write(vtable+12,stop+0x200);write(vtable+20,0x4ad780);
+    write(archive+4,table);copy(table,Buffer.alloc(4096));write(archive+0x18c,16);write(archive+0x190,0);
+    for(let i=0;i<16;i++){write(archive+0x10c+i*4,i);write(archive+12+i*16,0);}
+    const filename=Buffer.from(c.path.split('/').at(-1)+'\0');copy(name,filename);write(entry,0);write(entry+4,1234);write(entry+8,raw.length);copy(entry+12,filename);
+    let hash=0;for(const byte of filename.subarray(0,-1))hash=(byte+((hash>>>9)|((hash*2)&1023)))&1023;
+    if(c.mode!=='missing')write(table+hash*4,entry);
+    nativeCreateGamePalette(memory,owner,1,c.last);
+    if(c.font)nativeCreateFont(memory,obj);else nativeCreateSprite(memory,obj,0x497b20,0x497ba0);
+    const snapshot=()=>createHash('sha256').update(arena).update(data).update(counters).update(normalized).digest('hex');
+    expect(snapshot()).toBe(c.initial);
+    const events=[],host={
+      lookupArchiveResource(at,name){events.push(['view',at,name,snapshot()]);return c.mode==='mapped'?source:0;},
+      allocate(size){events.push(['allocate',size,snapshot()]);return size===12?owner+0x6000:c.allocated?owner+0x6100:0;},
+      allocateArray(size,pool){events.push(['array',size,pool,snapshot()]);return source;},
+      seekArchive(at,position){events.push(['seek',at,position,snapshot()]);return 1;},
+      readArchive(at,destination,size){events.push(['read',at,destination,size,snapshot()]);copy(destination,raw.subarray(0,size));return size;},
+      freeSized(pointer,size){events.push(['free',pointer,size,snapshot()]);},
+    };
+    const result=c.font?nativeLoadArchiveFont(memory,obj,owner,archive,name,0x2500000,host):nativeLoadArchiveSprite(memory,obj,owner,archive,name,host);
+    expect({events,result,state:snapshot()},`${c.path} / ${c.mode} / ${c.pattern} / ${c.allocated} / ${c.last}`).toEqual({events:c.events,result:c.result,state:c.state});
   }
   const startup = new NativeGamePalette(0, 104);
   startup.add([0, 0, 0]);

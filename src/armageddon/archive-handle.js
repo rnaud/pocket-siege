@@ -40,3 +40,10 @@ export function nativeDestroyArchiveEntry(memory,handle,flags,host) {
   if(flags&1)host.freeSized(handle,12);
   return handle;
 }
+
+//004ACB30. Unlike tell, a detached entry reports -1 for its size.
+export function nativeArchiveEntrySize(memory,handle) {
+  const archive=memory.get(handle+8);if(!archive)return -1;
+  const record=recordFor(memory,archive,memory.get(handle+4));
+  return record?(memory.get(record+20)-memory.get(record+16))|0:0;
+}
