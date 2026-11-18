@@ -1,3 +1,5 @@
+import matchInput from './fixtures/armageddon/match-input.json' with {type:'json'};
+import {nativeCollectMatchInput} from '../src/armageddon/match-input.js';
 import matchStatus from './fixtures/armageddon/match-status.json' with {type:'json'};
 import {nativeQueryMatchMemory} from '../src/armageddon/match-status.js';
 import replayWorldReplacement from './fixtures/armageddon/replay-world-replacement.json' with {type:'json'};
@@ -576,6 +578,22 @@ test("Native task and controller dispatch matches original executable requests",
   }
 });
 test("Native controller selection and input matches original executable requests", {tag:"@logic"}, () => {
+  for(const row of matchInput.cases) {
+    const bytes=inflateSync(Buffer.from(row.inputMemory,'base64')),calls=[];
+    const offset=at=>at>=0x2300000?0x10000+at-0x2300000:at-0x2000000;
+    const memory={get:at=>bytes.readUInt32LE(offset(at)),put:(at,value)=>bytes.writeUInt32LE(value>>>0,offset(at)),byte:at=>bytes[offset(at)],putByte:(at,value)=>{bytes[offset(at)]=value;}};
+    nativeCollectMatchInput(memory,0x2000000,0x2000000,0x124,bytes.subarray(0x5000,0x5124),{
+      dispatchTask:(target,sender,event,size,payload)=>{
+        calls.push(['dispatch',target,sender,event,size,new DataView(payload.buffer,payload.byteOffset).getUint32(0,true)]);
+        if(target!==0x2001000)return;
+        if(row.mutation===1)memory.put(0x200019c,0);
+        else if(row.mutation===2)memory.put(0x2000014,0);
+        else if(row.mutation===3){memory.putByte(0x231b88a,42);memory.putByte(0x231b88b,0);}
+      },
+      key:(...args)=>{calls.push(['key',...args]);return row.pressed;},consume:(...args)=>calls.push(['consume',...args]),
+    });
+    expect(calls).toEqual(row.calls);expect(createHash('sha256').update(bytes).digest('hex')).toBe(row.sha256);
+  }
   for(const c of weaponDelays.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),calls=[],delays=[...c.initial];
     for(const [o,v] of [[0x3c,c.team],[0x54,c.priority],[0xc8,c.dirty]])body.setInt32(o,v,true);
