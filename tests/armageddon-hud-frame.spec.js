@@ -1,3 +1,5 @@
+import replaySceneInput from './fixtures/armageddon/replay-scene-input.json' with {type:'json'};
+import {inflateSync} from 'node:zlib';
 import defaultWeaponInventory from './fixtures/armageddon/default-weapon-inventory.json' with { type:'json' };
 import wormSlope from "./fixtures/armageddon/worm-slope.json" with {type:"json"};
 import { nativeWormSlopeTick } from "../src/armageddon/worm-slope.js";
@@ -85,7 +87,7 @@ import replayPipelineCapture from "./fixtures/armageddon/replay-pipeline-capture
 import replayPipeline from "./fixtures/armageddon/replay-pipeline.json" with { type: "json" };
 import { createNativeReplayPipeline } from "../src/armageddon/replay-pipeline.js";
 import replayInput from "./fixtures/armageddon/replay-input.json" with { type: "json" };
-import { nativeCollectReplayInput } from "../src/armageddon/replay-input.js";
+import { nativeCollectReplayInput,nativeCollectSceneReplayInput } from "../src/armageddon/replay-input.js";
 import replayFrameState from "./fixtures/armageddon/replay-frame-state.json" with { type: "json" };
 import { nativeAdvanceReplayFrameState, nativeAdvanceInputFrameState, nativeReplayFrameAudio } from "../src/armageddon/replay-frame-state.js";
 import replayFrame from "./fixtures/armageddon/replay-frame.json" with { type: "json" };
@@ -915,6 +917,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       return [new DataView(bytes.buffer).getUint32(0, true), [...bytes.slice(4)]];
     });
     expect({ calls, events, flags: [manager.hasSnapshot, manager.pendingInputEvent], percent: snapshot.percent }).toEqual(row.result);
+  }
+  for(const row of replaySceneInput.cases) {
+    const bytes=Uint8Array.from(inflateSync(Buffer.from(row.input,'base64'))),view=new DataView(bytes.buffer),base=0x2000000,calls=[];
+    const memory={get:at=>view.getUint32(at-base,true),put:(at,v)=>view.setInt32(at-base,v,true),byte:at=>bytes[at-base],putByte:(at,v)=>bytes[at-base]=v,range:(at,len)=>bytes.subarray(at-base,at-base+len)};
+    const queue=nativeCollectSceneReplayInput(memory,base,base+0x2000,base+0xe000,{
+      collectRoot:(target,event,size)=>calls.push(['root',event,size,target.wrapper===base+0x2000]),
+      collectDevice:target=>calls.push(['device',target.wrapper===base+0x2000]),
+    });
+    expect(queue.bytes.buffer).toBe(bytes.buffer);
+    const events=queue.snapshot().records.map(record=>{const payload=Uint8Array.from(record.payload);return [new DataView(payload.buffer).getUint32(0,true),[...payload.slice(4)]];});
+    expect({calls,events,flags:[memory.get(base+0x164),memory.get(base+0x284)],percent:queue.percentUsed()}).toEqual(row.result);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(row.sha256);
   }
   for (const row of replayFrameState.cases) {
     const memory = new Uint8Array(0x300), view = new DataView(memory.buffer), scene = new Uint8Array(0x20000), calls = [];
