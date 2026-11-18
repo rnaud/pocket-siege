@@ -2,7 +2,7 @@ import { nativeProjectileSoundTick } from "./projectile-timer.js";
 import soundSlots from "./sound-slots.json";
 import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";
 import { nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup, nativeReplaySoundCleanup } from "./sound-queue.js";
-import speech from "./speech-slots.json";
+import {originalSpeechClip} from "./speech-resources.js";
 
 const sounds = {
   splash: "splash",
@@ -207,11 +207,11 @@ export function playNativeRopeContactSound(context, request) {
 }
 
 // Original table 0055F460 consists of explicit ID/filename pairs, not ordinal
-// slots: Oops/Orders/Ouch precede IDs38..40 in the table. English remains the
-// host default until team speech selection lands.
-export function playNativeSpeech(context, slot, level = 1, priority = 3, pan = 0, tracked = false) {
-  const entry = speech.slots[slot];
-  return entry ? playOriginalClip(context, `voices/english/${entry.clip}`, () => {}, level, false, 1, priority, pan, tracked) : null;
+// slots: Oops/Orders/Ouch precede IDs38..40 in the table. Bank lookup uses
+// the shipped catalog and native missing-bank fallback.
+export function playNativeSpeech(context, slot, level = 1, priority = 3, pan = 0, tracked = false, bank = "English") {
+  const clip = originalSpeechClip(slot,bank);
+  return clip ? playOriginalClip(context, clip, () => {}, level, false, 1, priority, pan, tracked) : null;
 }
 
 export function playNativeDeathVoice(context, request) {

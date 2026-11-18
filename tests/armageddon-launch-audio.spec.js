@@ -1,3 +1,6 @@
+import {readFileSync} from 'node:fs';
+import bankData from '../src/armageddon/speech-bank-data.json' with {type:'json'};
+import {originalSpeechClip,resolveOriginalSpeechBank} from '../src/armageddon/speech-resources.js';
 import bodySoundFixture from "./fixtures/armageddon/body-sound.json" with { type: "json" };
 import { nativeBodyStartSound, nativeBodySoundFinished, nativeBodyStopSound } from "../src/armageddon/body-sound.js";
 import soundSlots from "../src/armageddon/sound-slots.json" with { type: "json" };
@@ -13,6 +16,14 @@ import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 
 test("weapon release audio and casing choices match all original records", { tag: "@logic" }, () => {
+  const catalog=JSON.parse(readFileSync(new URL('../public/armageddon/voices.json',import.meta.url)));
+  const slots=JSON.parse(readFileSync(new URL('../src/armageddon/speech-slots.json',import.meta.url))).slots;
+  expect(bankData.banks).toEqual(Object.fromEntries(Object.entries(catalog).map(([bank,clips])=>[bank,Object.entries(slots).filter(([,entry])=>clips.includes(entry.clip)).map(([id])=>Number(id))])));
+  expect(resolveOriginalSpeechBank('Danish-Pyrus')).toBe('danish~1');
+  expect(resolveOriginalSpeechBank('Missing bank','Portuguese')).toBe('portug~1');
+  expect(resolveOriginalSpeechBank('Missing bank','Missing fallback')).toBeNull();
+  expect(originalSpeechClip(1,'Australian')).toBe('voices/austra~1/amazing.wav');
+  expect(originalSpeechClip(999,'English')).toBeNull();
   for (const c of bodySoundFixture.cases) {
     const calls = [];
     const backend = c.present ? Object.fromEntries(["start","finished","stop"].map(name => [name, (...args) => { calls.push([name,args]); return c.backendResult; }])) : null;
@@ -87,8 +98,9 @@ test("weapon release audio and casing choices match all original records", { tag
 
 
 test("browser decodes native projectile release samples without an early holy chant", async ({ page }) => {
-  const requested = [];
+  const requested = [],voices=[];
   page.on("request", request => {
+    if(request.url().includes("/voices/"))voices.push(request.url().split("/voices/")[1]);
     if (/\/(throwrelease|rocketrelease|holygrenade)\.wav$/.test(request.url()))
       requested.push(request.url().split("/").pop());
   });
@@ -127,4 +139,14 @@ test("browser decodes native projectile release samples without an early holy ch
   expect(await page.evaluate(() => window.releaseIds)).toEqual([[75], [75], [75], [73], [73], [73]]);
   expect(await page.evaluate(() => window.releasePlayback.every(duration => duration > 0))).toBe(true);
   expect(requested.sort()).toEqual(["rocketrelease.wav", "throwrelease.wav"]);
+  await page.evaluate(async()=>{
+    const {playNativeSpeech}=await import('/src/armageddon/audio.js');
+    const context=new AudioContext(),createSource=context.createBufferSource.bind(context);
+    context.createBufferSource=()=>{const node=createSource(),start=node.start.bind(node);
+      node.start=()=>{window.releasePlayback.push(node.buffer.duration);start();};return node;};
+    for(const bank of ['Australian','Danish-Pyrus','Missing bank'])playNativeSpeech(context,1,1,3,0,false,bank);
+  });
+  await expect.poll(()=>page.evaluate(()=>window.releasePlayback.length)).toBe(9);
+  expect(voices.sort()).toEqual(['austra~1/amazing.wav','danish~1/amazing.wav','english/amazing.wav']);
+
 });
