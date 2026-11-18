@@ -1,3 +1,4 @@
+import archiveImageComposed from './fixtures/armageddon/archive-image-composed.json' with {type:'json'};
 import {originalMissionPresentation} from '../src/armageddon/mission-presentation.js';
 import archiveImageLoad from './fixtures/armageddon/archive-image-load.json' with {type:'json'};
 import archiveImage from './fixtures/armageddon/archive-image.json' with {type:'json'};
@@ -262,7 +263,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     nativeDecodeImagePixels({byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}},destination,source,palette);
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
   }
-  for(const c of [...terrainImage.cases,...terrainLoad.cases,...archiveImage.cases.map(c=>({...c,archiveImage:true})),...archiveImageLoad.cases.map(c=>({...c,namedImage:true}))]) {
+  for(const c of [...terrainImage.cases,...terrainLoad.cases,...archiveImage.cases.map(c=>({...c,archiveImage:true})),...[...archiveImageLoad.cases,...archiveImageComposed.cases].map(c=>({...c,namedImage:true}))]) {
     const owner=0x2000000,scratch=0x2100000,compressed=0x714be0;
     const nameBytes=Buffer.alloc(256,c.pattern);
     const bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(0x43c,c.pattern),packed=Buffer.alloc(0x1000,c.pattern),signature=Buffer.alloc(4,c.pattern),calls=[];
@@ -304,6 +305,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       };
       host.freeSized=(at,size)=>calls.push(['free',at,size,snapshot()]);
     }
+    if(c.nativeImageServices) {
+      delete host.constructBitmap;delete host.bitmapStorage;delete host.remapBitmap;delete host.addPaletteColor;
+      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x1000;};
+      nativeCreateGamePalette(memory,owner+0xc000,c.first,c.last);
+    }
     if(c.archiveImage) {
       host.tellArchiveEntry=host.tellFile;
       host.readArchiveEntry=(entry,dest,n)=>{
@@ -324,7 +330,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       host.submitRendererPalette=(...args)=>calls.push(['submit',...args,snapshot()]);
       if(!c.nativeRectangles)host.clearBitmapRect=(...args)=>calls.push(['clear',...args,snapshot()]);
     }
-    const result=c.namedImage?nativeLoadNamedArchiveImage(memory,0x4567,owner+0x4000,owner+0x7000,scratch,host):c.terrainStartup?nativeLoadTerrainLayers(memory,owner+0x4000,{renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):(c.archiveImage?nativeLoadArchiveImage:nativeLoadTerrainImage)(memory,0x4567,0x1234,scratch,host);
+    const result=c.namedImage?nativeLoadNamedArchiveImage(memory,c.nativeImageServices?owner+0xc000:0x4567,owner+0x4000,owner+0x7000,scratch,host):c.terrainStartup?nativeLoadTerrainLayers(memory,owner+0x4000,{renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):(c.archiveImage?nativeLoadArchiveImage:nativeLoadTerrainImage)(memory,0x4567,0x1234,scratch,host);
     if(c.themeArchives){
       if(c.nativeDirectories){host.archiveScratch=scratch;host.seekFile=(file,offset,origin)=>{calls.push(['seek',file,offset,origin,snapshot()]);archiveCursors[file-0x5001]=offset;return 0;};}
       else host.loadArchiveDirectory=archive=>{calls.push(['directory',archive,snapshot()]);return c.variant&1;};
