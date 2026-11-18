@@ -1,3 +1,4 @@
+import speechBanks from './armageddon/speech-bank-data.json' with {type:'json'};
 import terrainThemes from "./armageddon/terrain-themes.js";
 import { WEAPON_SLOTS } from "./armageddon/delays.js";
 import { MAP_LAYOUTS } from "./map-generator.js";
@@ -29,6 +30,7 @@ const SCHEMES = [
 export function defaultSettings() {
   return {
     sound: false,
+    teamSpeech:['english','english'],
     weaponDelays: {},
     mode: "ai",
     difficulty: "regular",
@@ -71,6 +73,7 @@ export function readSettings(storage) {
           .map((k) => [k, parsed.weaponDelays[k]]),
       ),
       sound: Boolean(parsed.sound),
+      teamSpeech:[0,1].map(i=>Object.hasOwn(speechBanks.banks,parsed.teamSpeech?.[i])?parsed.teamSpeech[i]:'english'),
       terrainTheme: terrainThemes.includes(parsed.terrainTheme)
         ? parsed.terrainTheme
         : base.terrainTheme,

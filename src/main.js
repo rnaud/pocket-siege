@@ -1,3 +1,4 @@
+import {speechBankOptions,speechRequestId} from './armageddon/speech-resources.js';
 import { NativeCollisionScene } from './armageddon/collision-scene.js';
 import { nativeCrateSpawnSearch } from './armageddon/crate-spawn-search.js';
 import { nativeWormSlopeTick } from "./armageddon/worm-slope.js";
@@ -695,6 +696,7 @@ function createWorm(t, i, x, spawnY = null) {
   new DataView(nativeIdleMemory.buffer).setInt32(0x2c8,((Math.imul(Math.floor(x)+Math.floor(H-y),0x660d)&65535)%100)+200,true);
   return {
     team: t,
+    nativeSpeechBank:$('#team-voice-'+t)?.value||'english',
     name: names[t][i],
     hp: 100,
     nativePickupFlag: 0,
@@ -834,7 +836,7 @@ function announceMatchResult(winner) {
     const request = nativeVictorySpeech(worms.filter(w => w.team === winner).map(w => w.matchStats.damageReceived));
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    queueControllerSpeech(request);
+    queueControllerSpeech(request,worms.find(w=>w.team===winner));
   }
   const message = nativeMatchResultAnnouncement(winner ? "CORAL CREW" : "MOSS COMPANY", winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
@@ -2435,7 +2437,7 @@ function dispatchNativeWormMotionEvents(w, result) {
       if (call.operation === "voice" && sound) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         target.nativeHitVoicePlayback = playNativeHitVoice(audio,
-          { index: call.slot }, target.nativeHitVoicePlayback);
+          { index: call.slot }, target.nativeHitVoicePlayback,target.nativeSpeechBank);
       }
       continue;
     }
@@ -2455,7 +2457,7 @@ function dispatchNativeWormMotionEvents(w, result) {
       w.nativeHitVoicePlayback = playNativeHitVoice(
         audio,
         { index: call.slot },
-        w.nativeHitVoicePlayback,
+        w.nativeHitVoicePlayback,w.nativeSpeechBank,
       );
     }
     if (call.operation === "state") {
@@ -2997,6 +2999,7 @@ function saveSettings() {
   writeSettings({
     sound,
     weaponDelays: configuredDelays,
+    teamSpeech:[0,1].map(t=>$('#team-voice-'+t).value),
     mode: $("#mode").value,
     difficulty: $("#difficulty").value,
     format: $("#format").value,
@@ -3031,6 +3034,7 @@ function applySettings() {
   set("#turn-time", String(saved.turnTime));
   set("#retreat-time", String(saved.retreatTime));
   set("#sudden-death", saved.suddenDeath);
+  saved.teamSpeech.forEach((bank,t)=>set('#team-voice-'+t,bank));
   sound = saved.sound;
   updateSoundButton();
 }
@@ -3591,7 +3595,7 @@ function applyNativeHitPackets(targets, dispatches, owner = current) {
             victim.nativeHitVoicePlayback = playNativeHitVoice(
               audio,
               call.voice,
-              victim.nativeHitVoicePlayback,
+              victim.nativeHitVoicePlayback,victim.nativeSpeechBank,
             );
           }
         }
@@ -4983,10 +4987,9 @@ function queueGameSound(request) {
   audio.resume();
   return nativeSoundQueue.enqueue(request);
 }
-// Team-bank IDs remain a host adapter: mark English speech with bit 16,
-// matching the existing clock adapter, while retaining all five request words.
-function queueControllerSpeech(request) {
-  return nativeSoundQueue.enqueue([request[0] | 0x10000, ...request.slice(1)]);
+// Preserve the speaker bank in the host speech ID through the native queue.
+function queueControllerSpeech(request,owner=worms[current]) {
+  return nativeSoundQueue.enqueue([speechRequestId(request[0],owner?.nativeSpeechBank), ...request.slice(1)]);
 }
 function submitQueuedSound(request) {
   playNativeQueuedSound(audio, request);
@@ -5301,7 +5304,7 @@ function stepFrame(dt) {
         if (w.originalDeathVoice && sound) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();
-          queueControllerSpeech(w.originalDeathVoice);
+          queueControllerSpeech(w.originalDeathVoice,w);
         }
       } else if (!w.drowned) w.dying = Math.max(0, w.dying - dt);
       if (w.dying === 0 && w.deathPending) {
@@ -6855,6 +6858,11 @@ for (const folder of ["image", "mission"]) {
     );
   $("#map-layout").append(optgroup);
 }
+for(const t of [0,1]) {
+  const select=$('#team-voice-'+t);
+  for(const bank of speechBankOptions)select.add(new Option(bank.label,bank.value));
+  select.value='english';select.addEventListener('change',saveSettings);
+}
 applySettings();
 let decorationLoadVersion = 0;
 async function prepareDecorations() {
@@ -7133,6 +7141,7 @@ window.siege = {
     terrainPixels: terrain.data.reduce((a, b) => a + b, 0),
     worms: worms.map(
       ({
+        nativeSpeechBank,
         name,
         hp,
         damageTaken,
@@ -7155,6 +7164,7 @@ window.siege = {
         nativePoison,
         originalRecovery,
       }) => ({
+        nativeSpeechBank,
         name,
         hp,
         damageTaken,

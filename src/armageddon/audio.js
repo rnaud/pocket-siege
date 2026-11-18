@@ -2,7 +2,7 @@ import { nativeProjectileSoundTick } from "./projectile-timer.js";
 import soundSlots from "./sound-slots.json";
 import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";
 import { nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup, nativeReplaySoundCleanup } from "./sound-queue.js";
-import {originalSpeechClip} from "./speech-resources.js";
+import {originalSpeechClip,speechRequestId,speechRequestBank} from "./speech-resources.js";
 
 const sounds = {
   splash: "splash",
@@ -214,14 +214,14 @@ export function playNativeSpeech(context, slot, level = 1, priority = 3, pan = 0
   return clip ? playOriginalClip(context, clip, () => {}, level, false, 1, priority, pan, tracked) : null;
 }
 
-export function playNativeDeathVoice(context, request) {
+export function playNativeDeathVoice(context, request, bank="English") {
   if (request[0] === 6 || request[0] === 33)
-    return playNativeSpeech(context, request[0], request[3] / 65536, request[1], request[4]);
+    return playNativeSpeech(context, request[0], request[3] / 65536, request[1], request[4],false,bank);
 }
 
-export function playNativeHitVoice(context, request, previousPlayback) {
+export function playNativeHitVoice(context, request, previousPlayback, bank="English") {
   previousPlayback?.stop();
-  return playNativeSpeech(context, request.index, 1, 3, 0, true);
+  return playNativeSpeech(context, request.index, 1, 3, 0, true,bank);
 }
 
 // Descriptors 0055F1C8..0055F1F0 (Twang1..6), 0055F220 (WormPop).
@@ -259,7 +259,7 @@ export function cleanupNativeContactSound(playback) {
 // speech marker is the host's English-bank adapter, not an original sample ID.
 export function playNativeQueuedSound(context, request) {
   if (request[0] & 0x10000)
-    return playNativeSpeech(context, request[0] & 65535, request[3] / 65536, request[1], request[4]);
+    return playNativeSpeech(context, request[0] & 65535, request[3] / 65536, request[1], request[4],false,speechRequestBank(request[0]));
   const entry = soundSlots.slots[request[0]];
   return entry ? playOriginalClip(context, `sounds/${entry.clip}`, () => {},
     request[3] / 65536, false, request[2] / 65536, request[1], request[4]) : null;
@@ -284,7 +284,7 @@ export function playNativeWormEntryAudio(context, owner, calls) {
       if (voiceSlot !== null) {
         owner.nativeHitVoicePlayback?.stop();
         owner.nativeHitVoicePlayback = playNativeSpeech(context, voiceSlot,
-          request[3] / 65536, request[1], request[4], true);
+          request[3] / 65536, request[1], request[4], true,owner.nativeSpeechBank);
         voiceSlot = null;
       } else owner.nativeHitVoicePlayback = playNativeOwnedSound(context, request, owner.nativeHitVoicePlayback);
     }
@@ -307,7 +307,7 @@ export function playNativeFireInputAudio(context, owner, calls, enqueue) {
     const request = call.request;
     if (call.operation === "speech") {
       owner.nativeHitVoicePlayback?.stop();
-      owner.nativeHitVoicePlayback = playNativeSpeech(context, request[0], request[2] / 65536, 3, request[3], true);
+      owner.nativeHitVoicePlayback = playNativeSpeech(context, request[0], request[2] / 65536, 3, request[3], true,owner.nativeSpeechBank);
     } else if (call.operation === "localSound") {
       owner.nativeActionPlayback = playNativeOwnedSound(context,
         [request[0], 3, ...request.slice(1)], owner.nativeActionPlayback);
@@ -342,7 +342,7 @@ export function playNativeProjectileReleaseSound(context, release, enqueue = req
     }
     if (event.operation !== "sound") continue;
     const request = [...event.request];
-    if (voiceSlot !== null) { request[0] = voiceSlot | 0x10000; voiceSlot = null; }
+    if (voiceSlot !== null) { request[0] = speechRequestId(voiceSlot,owner?.nativeSpeechBank); voiceSlot = null; }
     enqueue(request);
   }
   return loop;

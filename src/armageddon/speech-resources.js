@@ -36,3 +36,12 @@ export function originalSpeechClip(slot,bank='English') {
   const resolved=resolveOriginalSpeechBank(bank),entry=slots.slots[slot];
   return resolved&&entry&&catalog[resolved].includes(Number(slot))?`voices/${resolved}/${entry.clip}`:null;
 }
+
+export const speechBankOptions=Object.keys(catalog).map(bank=>({value:bank,
+  label:Object.entries(aliases).find(([,value])=>value===bank)?.[0]??bank}));
+const requestBanks=['english',...Object.keys(catalog).filter(bank=>bank!=='english')];
+//Host audio IDs already use bit16 to mark speech. Upper bits retain the
+//resolved bank across queue copies and replay serialization; low16 stay slots.
+export const speechRequestId=(slot,bank='English')=>
+  (slot&65535)|0x10000|(Math.max(0,requestBanks.indexOf(resolveOriginalSpeechBank(bank)))<<17);
+export const speechRequestBank=id=>requestBanks[(id>>>17)&63]??'english';

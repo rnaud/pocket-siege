@@ -18,6 +18,7 @@ test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
   expect(readSettings(storage)).toEqual(defaultSettings());
   const settings = {
     sound: true,
+    teamSpeech:['danish~1','austra~1'],
     weaponDelays: { holy: 2, airstrike: -1 },
     mode: "local",
     difficulty: "veteran",
@@ -43,6 +44,8 @@ test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
   expect(readSettings(storage).mapLayout).toBe("random");
   writeSettings({ ...settings, terrainTheme: "invalid" }, storage);
   expect(readSettings(storage).terrainTheme).toBe("forest");
+  writeSettings({...settings,teamSpeech:['missing','german']},storage);
+  expect(readSettings(storage).teamSpeech).toEqual(['english','german']);
   storage.setItem("pocket-siege-settings-v1", "{nope");
   expect(readSettings(storage)).toEqual(defaultSettings());
 });

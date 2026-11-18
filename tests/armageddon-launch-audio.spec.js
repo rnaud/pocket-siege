@@ -140,13 +140,25 @@ test("browser decodes native projectile release samples without an early holy ch
   expect(await page.evaluate(() => window.releasePlayback.every(duration => duration > 0))).toBe(true);
   expect(requested.sort()).toEqual(["rocketrelease.wav", "throwrelease.wav"]);
   await page.evaluate(async()=>{
-    const {playNativeSpeech}=await import('/src/armageddon/audio.js');
+    const {playNativeFireInputAudio,playNativeQueuedSound,playNativeHitVoice}=await import('/src/armageddon/audio.js');
+    const {speechRequestId}=await import('/src/armageddon/speech-resources.js');
     const context=new AudioContext(),createSource=context.createBufferSource.bind(context);
     context.createBufferSource=()=>{const node=createSource(),start=node.start.bind(node);
       node.start=()=>{window.releasePlayback.push(node.buffer.duration);start();};return node;};
-    for(const bank of ['Australian','Danish-Pyrus','Missing bank'])playNativeSpeech(context,1,1,3,0,false,bank);
+    playNativeFireInputAudio(context,{nativeSpeechBank:'Australian'},[{operation:'speech',request:[1,65536,65536,0]}],()=>{});
+    playNativeQueuedSound(context,[speechRequestId(1,'Danish-Pyrus'),3,65536,65536,0]);
+    playNativeHitVoice(context,{index:1},null,'Missing bank');
   });
   await expect.poll(()=>page.evaluate(()=>window.releasePlayback.length)).toBe(9);
   expect(voices.sort()).toEqual(['austra~1/amazing.wav','danish~1/amazing.wav','english/amazing.wav']);
+  await page.locator('#team-voice-0').selectOption('austra~1');
+  await page.locator('#team-voice-1').selectOption('danish~1');
+  await page.reload();
+  await expect(page.locator('#team-voice-0')).toHaveValue('austra~1');
+  await expect(page.locator('#team-voice-1')).toHaveValue('danish~1');
+  await expect.poll(()=>page.evaluate(()=>window.siege?.getState().assetsReady)).toBe(true);
+  await page.locator('#mode').selectOption('local');await page.locator('#start').click();
+  expect(await page.evaluate(()=>window.siege.getState().worms.map(w=>w.nativeSpeechBank).sort())).toEqual(['austra~1','austra~1','austra~1','danish~1','danish~1','danish~1']);
+
 
 });
