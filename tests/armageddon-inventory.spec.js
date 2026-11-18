@@ -1,3 +1,6 @@
+import toolMaskMemory from './fixtures/armageddon/terrain-tool-mask-memory.json' with {type:'json'};
+import {nativeCreateTerrainToolMasks} from '../src/armageddon/terrain-tool-mask-memory.js';
+import {decodeImage} from '../src/armageddon/image.js';
 import terrainMaskSetup from './fixtures/armageddon/terrain-mask-setup.json' with {type:'json'};
 import terrainMasks from './fixtures/armageddon/terrain-crater-masks.json' with {type:'json'};
 import bitmapCircle from './fixtures/armageddon/bitmap-circle.json' with {type:'json'};
@@ -189,6 +192,21 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  const toolSource=decodeImage(fs.readFileSync(new URL('../public/armageddon/media/gfx/gfx/masks.img',import.meta.url)));
+  expect([toolSource.width,toolSource.height]).toEqual([toolMaskMemory.source.width,toolMaskMemory.source.height]);
+  expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(toolMaskMemory.source.pixels);
+  for(const c of toolMaskMemory.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x60000,c.pattern),calls=[];let allocated=0,descriptors=0;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    bytes.set(toolSource.pixels,0x10000);
+    for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x10000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x1000+offset,value);
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeCreateTerrainToolMasks(memory,owner,owner+0x1000,{
+      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);if(size===28)descriptors++;return size===28&&descriptors===c.failure?0:owner+0x2000+allocated*0x40;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x20000+allocated*0x1000;},
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of bitmapCircle.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern);
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
