@@ -2746,3 +2746,29 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #announcement canvas { position: static; flex: none; image-rendering: pixelated; }
 
 #announcement:not([hidden]) { display: flex; justify-content: center; }
+
+/* Original illustrated mode choices, with separate campaign/training screens. */
+#menu#menu [hidden] { display: none !important; }
+#menu#menu .frontend-modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+#menu#menu .frontend-modes button { display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 8px; padding: 12px 8px; background: #100b40; }
+#menu#menu .frontend-modes button[aria-pressed="true"] { border-color: #ffe982; background: #30235c; box-shadow: inset 0 0 0 1px #91743e, 2px 2px #000; }
+#menu#menu .frontend-modes img { width: auto; max-width: 100%; height: 86px; object-fit: contain; image-rendering: pixelated; }
+#menu#menu .frontend-modes strong { color: #ffe982; font-size: 14px; }
+#menu#menu .frontend-modes span { font: 13px/1.4 monospace; color: #d5d3f0; }
+#menu#menu .frontend-campaign { flex: 1; }
+#menu#menu .frontend-availability { color: #ffe982; font: 15px/1.5 monospace; text-align: center; margin: 0 0 20px; }
+#menu#menu .frontend-campaign-body { display: grid; grid-template-columns: minmax(180px, 1fr) 2fr; gap: 24px; }
+#menu#menu .frontend-mission-list { display: grid; gap: 5px; max-height: 340px; overflow: auto; padding: 4px; background: #08062d; }
+#menu#menu .frontend-mission-list button { text-align: left; padding: 10px; }
+#menu#menu .frontend-mission-list button[aria-pressed="true"] { color: #ffe982; border-color: #ffe982; }
+#menu#menu .frontend-mission-preview { text-align: center; color: #d5d3f0; font: 15px/1.5 monospace; }
+#menu#menu .frontend-mission-preview h3 { color: #ffe982; }
+#menu#menu .frontend-mission-preview img { width: 256px; max-width: 100%; image-rendering: pixelated; }
+#menu#menu .frontend-mission-preview p { color: #d5d3f0; font: 15px/1.5 monospace; max-width: 420px; margin: 20px auto; }
+@media(max-width: 650px) {
+  #menu#menu .frontend-modes { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  #menu#menu .frontend-modes img { height: 60px; }
+  #menu#menu .frontend-modes span { font-size: 11px; }
+  #menu#menu .frontend-campaign-body { grid-template-columns: 1fr; }
+  #menu#menu .frontend-mission-list { max-height: 180px; }
+}
