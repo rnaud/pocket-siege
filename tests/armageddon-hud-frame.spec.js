@@ -1,3 +1,5 @@
+import wormSprite from "./fixtures/armageddon/worm-sprite.json" with {type:"json"};
+import { nativeResolveWormSprite } from "../src/armageddon/worm-sprite.js";
 import wormRender from "./fixtures/armageddon/worm-render.json" with {type:"json"};
 import { nativeDrawWorm } from "../src/armageddon/worm-render.js";
 import wormIdleGesture from "./fixtures/armageddon/worm-idle-gesture.json" with { type: "json" };
@@ -292,6 +294,24 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of wormSprite.cases) {
+    const calls=[];
+    const result=nativeResolveWormSprite(c.body,{
+      position:()=>{calls.push(["position"]);return {x:c.body.x,y:c.body.y};},
+      current:()=>{calls.push(["current"]);return {sprite:c.sprite,progress:c.progress};},
+      state:()=>{calls.push(["state"]);return c.state;},
+    });
+    expect({result,calls}).toEqual({result:c.result,calls:c.calls});
+    calls.length=0;
+    nativeDrawWorm(c.body,{
+      position:()=>{calls.push(["position"]);return {x:c.body.x,y:c.body.y};},
+      current:()=>{calls.push(["current"]);return {sprite:c.sprite,progress:c.progress};},
+      state:()=>{calls.push(["state"]);return c.state;},
+      teamFlags:team=>{calls.push(["teamFlags",team]);return c.flags;},draw:(...request)=>calls.push(["draw",...request]),
+    });
+    expect(calls).toEqual(c.renderCalls);
+
   }
   for(const c of wormRender.cases) {
     const calls=[];

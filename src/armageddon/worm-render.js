@@ -1,7 +1,8 @@
+import { nativeResolveWormSprite } from "./worm-sprite.js";
 //004D8B20 composes the resolved pose with team/poison flags and draw priority.
-//004DB780 sprite resolution and004EEDF0 queue submission remain supplied ports.
+// Default to004DB780 pose resolution;004EEDF0 queue submission remains supplied.
 export function nativeDrawWorm(body,host) {
-  const {x,y,sprite,progress}=host.sprite();
+  const {x,y,sprite,progress}=host.sprite?host.sprite():nativeResolveWormSprite(body,host);
   let flagged=sprite|0;
   if(host.teamFlags(body.team)&8)flagged|=0x1000000;
   if(body.poison)flagged|=0x4000000;
