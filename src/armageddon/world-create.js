@@ -15,8 +15,13 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
   for(const offset of [0x4c,0x5c,0x6c])put(offset,-1);
   put(0x80,memory.byte(setup+0xde));
   for(let offset=0x1c188;offset<=0x1c198;offset+=4)memory.put(scene+offset,0);
-  host.virtual(memory.get(scene+0x7d4),0x20,[0x3d70]);
-  host.virtual(memory.get(scene+0x7d4),0x2c,[memory.get(scene+0x804)]);
+  const environment=memory.get(scene+0x7d4);
+  if(host.virtual) {
+    host.virtual(environment,0x20,[0x3d70]);host.virtual(environment,0x2c,[memory.get(scene+0x804)]);
+  } else {
+    //004C8C50/004C8C80, original gravity and water-bound setters.
+    memory.put(environment+0x3b8,0x3d70);memory.put(environment+0x3b4,memory.get(scene+0x804));
+  }
   memory.put(scene+0x1b8d8,(memory.get(scene+0x804)+160)<<16);
   if(((memory.get(scene+0x1b8d8)-memory.get(scene+0x1b8d4))&0xffff0000)<0x3000000)
     memory.put(scene+0x1b8d8,memory.get(scene+0x1b8d4)+0x3000000);

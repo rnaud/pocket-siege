@@ -51,3 +51,17 @@ export function nativeCompactPhysicsMemory(memory,environment) {
     memory.put(list+12,count);memory.put(list+8,0);
   }
 }
+
+//004C8BB0/004C8D10: fresh environment with two native buffers per list.
+export function nativeCreateEnvironmentMemory(memory,address,maskRegistry,host) {
+  memory.put(address,0x524a14);
+  for(let index=0;index<33;index++) {
+    const list=address+(index===0?0x18:0x34+(index-1)*0x1c);
+    memory.put(list,0x5268b4);memory.put(list+4,256);memory.put(list+8,0);memory.put(list+12,0);
+    memory.put(list+16,host.allocateArray(1024,0x561f5c));
+    memory.put(list+20,host.allocateArray(memory.get(list+4)<<2,0x561f5c));
+  }
+  memory.put(address,0x5268b8);memory.put(address+0x3c0,maskRegistry);
+  memory.put(address+0x3b8,0);memory.put(address+0x3bc,0);memory.put(address+4,0);
+  return address;
+}
