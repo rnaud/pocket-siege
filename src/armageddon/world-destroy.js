@@ -1,3 +1,4 @@
+import {nativeDestroyWeaponActorMemory} from './weapon-actor-destroy.js';
 import {nativeDestroyEventBufferMemory} from './scene-buffers.js';
 import {nativeReleasePresentationSlot} from './presentation-slot-memory.js';
 import {nativeDestroyTaskMemory} from './task-destroy.js';
@@ -30,7 +31,7 @@ export function nativeDestroyMatchRootMemory(memory,address,flags,host) {
 export function nativeDestroyWorldTaskMemory(memory,address,flags,host) {
   const vtable=memory.get(address);
   const nested={...host,destroyChild:(child,childFlags)=>nativeDestroyWorldTaskMemory(memory,child,childFlags,host)};
-  const specialized={0x526720:nativeDestroyMatchRootMemory,0x5271b8:nativeDestroyTeamControllerMemory,
+  const specialized={0x527090:nativeDestroyWeaponActorMemory,0x526720:nativeDestroyMatchRootMemory,0x5271b8:nativeDestroyTeamControllerMemory,
     0x526de0:nativeDestroyWormMemory,0x527300:nativeDestroyMineMemory,0x526988:nativeDestroyBarrelMemory};
   if(specialized[vtable])return specialized[vtable](memory,address,flags,nested);
   if(vtable===0x526700)return nativeDestroyTaskMemory(memory,address,flags,nested);

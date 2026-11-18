@@ -296,6 +296,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const offset=at=>at>=0x2400000?0x10000+at-0x2400000:at>=0x2300000?0x20000+at-0x2300000:at-0x2000000;
     const memory={get:at=>bytes.readUInt32LE(offset(at)),put:(at,value)=>bytes.writeUInt32LE(value>>>0,offset(at))};
     nativeDestroyWorldTaskMemory(memory,0x2400100,row.flags,{
+      dispatchTask:(target,sender,event,size,payload)=>{
+        calls.push(['event',target,sender,event,size,new DataView(payload.buffer,payload.byteOffset).getUint32(0,true)]);
+        if(event===0x438)memory.put(0x2400100+0x3d8,0x5678);
+      },
       free:at=>calls.push(['free',at]),release:(at,size)=>calls.push(['release',at,size]),stopSound:(...args)=>calls.push(['stopSound',...args]),
     });
     expect(calls,`actor teardown ${row.tag}/${row.flags}/${row.variant}`).toEqual(row.calls);

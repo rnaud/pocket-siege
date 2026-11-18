@@ -51,11 +51,18 @@ def invoke(entry,at,values):
 soundCallback=stop+0x100;cpu.mem_write(soundCallback,b'\xc2\x04\x00')
 def soundHook(cpu,entry,size,user):calls.append(['stopSound',cpu.reg_read(UC_X86_REG_ECX),read(cpu.reg_read(UC_X86_REG_ESP)+4)])
 cpu.hook_add(UC_HOOK_CODE,soundHook,begin=soundCallback,end=soundCallback)
+eventCallback=stop+0x200;cpu.mem_write(eventCallback,b'\xc2\x10\x00')
+def eventHook(cpu,entry,size,user):
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ calls.append(['event',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8),read(sp+12),read(read(sp+16))])
+ #A receiver may restart a sound during state-exit notification.
+ if read(sp+8)==0x438:write(body+0x3d8,0x5678)
+cpu.hook_add(UC_HOOK_CODE,eventHook,begin=eventCallback,end=eventCallback)
 import base64,zlib,itertools
 schemas=json.loads(Path('src/armageddon/replay-task-types.json').read_text())
-tags=[7,9,13,15,16,17,21,22,23,24,25,26,27,28,29,30,31]
+tags=[7,9,11,13,15,16,17,21,22,23,24,25,26,27,28,29,30,31]
 cases=[]
-for tag,flags,variant in itertools.product(tags,range(4),range(4)):
+for tag,flags,variant,mode in (row+(mode,) for row in itertools.product(tags,range(4),range(4)) for mode in (range(4) if row[0]==11 else [0])):
  schema=next(row for row in schemas if row['tag']==tag)
  cpu.mem_write(owner,bytes(0x10000));cpu.mem_write(heap,bytes(0x10000));cpu.mem_write(context,bytes(0x20000));cursor=heap+0x8000
  invoke(0x4b1ae0,owner,[0]);write(owner+0x38,context)
@@ -70,11 +77,11 @@ for tag,flags,variant in itertools.product(tags,range(4),range(4)):
  write(context+0xc28,2);write(context+0x102c,3)
  for i,slot in enumerate([3,1,2]):write(context+0xc2c+i*4,slot);write(context+0x1030+slot*4,i)
  slot=[1,3,2,7][variant]
- if tag in [9,15,21,30]:write(body+({9:0x10c}.get(tag,0x100)),slot)
+ if tag in [9,11,15,21,30]:write(body+({9:0x10c,11:0x12c}.get(tag,0x100)),slot)
  for offset in [0x12420,0x12424,0x12428,0x1242c,0x1b8f0,0x1b8f4]:write(context+offset,[0,1,0x80000000,0x7fffffff][variant])
  if tag==24:write(body+0x80,variant);write(context+0x4b0+variant*4,body)
  if tag==15:write(body+0x260,variant);write(body+0x124,variant)
- for index,offset in enumerate([0x268,0x270,0x26c] if tag==15 else [0x64] if tag==29 else []):
+ for index,offset in enumerate([0x268,0x270,0x26c] if tag==15 else [0x3cc,0x3d0] if tag==11 else [0x64] if tag==29 else []):
   text=owner+0x7000+index*0x200;write(body+offset,text if variant!=index else 0);write(text,0x5268a4)
   for j,field in enumerate([12,16]):
    image=owner+0x8000+index*0x100+j*0x40;write(text+field,image if variant>=j+1 else 0);write(image,0x526390);write(image+4,variant%2);write(image+8,owner+0x9000+index*0x100+j*0x40)
@@ -87,7 +94,11 @@ for tag,flags,variant in itertools.product(tags,range(4),range(4)):
   events=owner+0xa000;inner=events+0x20;tableAt=owner+0xb000
   write(body+0x2dc4,events if variant else 0);write(events,0x526544);write(events+4,inner if variant!=2 else 0);write(inner,0x5266a0);write(inner+4,events+0x100)
   write(body+0x2dcc,tableAt if variant!=1 else 0);write(tableAt,0x526918);write(tableAt+12,tableAt+0x100)
+ if tag==11:
+  for offset,value in [(0x130,0x12345678 if mode&1 else 0),(0x3a8,mode&2),(0x394,variant%2),(0x398,[0,0x7fff,0x8000,0xffff][variant]),(0x9c,[0,-7,0x7fffffff,-0x80000000][variant]),(0xa0,[7,-1,-0x80000000,0x7fffffff][variant]),(0x3d8,0x1111 if variant else 0),(0x3d4,0x2222 if variant>=2 else 0),(0x378,mode&2),(0x2d4,0x1020),(0x334,0x2040)]:write(body+offset,value)
+  if mode:
+   invoke(0x4b2670,child,[20,0]);write(0x526708,eventCallback)
  initial=snapshot();calls.clear();invoke(read(int(schema['vtable'],16)),body,[flags])
- cases.append(dict(tag=tag,flags=flags,variant=variant,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=hashlib.sha256(snapshot()).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='272 original runtime actor destructions across17 concrete types, four flags and four runtime resource/list/counter states. Original recursive base, registry, physics, presentation-slot and cached text/image destructors execute. Full256KiB memory and ordered frees/releases/audio stops are captured. Heap and audio backend remain interfaces; terrain-owned history/hash buffers execute; weapon actor11 is excluded.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(tag=tag,flags=flags,variant=variant,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=hashlib.sha256(snapshot()).hexdigest()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='336 original runtime actor destructions across18 concrete types, four flags and four runtime resource/list/counter states. Original recursive base, registry, physics, presentation-slot and cached text/image destructors execute. Full256KiB memory and ordered frees/releases/audio stops are captured. Heap and audio backend remain interfaces; terrain-owned history/hash buffers execute; weapon actor11 state exit and registered sends execute with only the receiver callback substituted; message comparison uses its initialized first word.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'runtime actor destructions')
