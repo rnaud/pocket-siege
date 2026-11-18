@@ -32,9 +32,9 @@ export function nativeDestroyWormMemory(memory,address,flags,host) {
 }
 
 //004E5100 signed16 priority pools retain inactive tail words after removal.
-function releasePriority(memory,address,field,free,freeCount,priorities,active,activeCount) {
+export function nativeReleasePriorityMemory(memory,address,field,free,freeCount,priorities,active,activeCount,allowNegative=false) {
   const scene=memory.get(address+0x38),slot=memory.get(address+field)|0;
-  if(slot<0)return;
+  if(slot<0&&!allowNegative)return;
   const get=offset=>(memory.byte(scene+offset)|(memory.byte(scene+offset+1)<<8))<<16>>16;
   const put=(offset,value)=>{memory.putByte(scene+offset,value&255);memory.putByte(scene+offset+1,(value>>8)&255);};
   for(let i=0;i<get(activeCount);i++) {
@@ -48,10 +48,10 @@ function releasePriority(memory,address,field,free,freeCount,priorities,active,a
 //types must provide their virtual deletion through host.destroyChild.
 export function nativeDestroyTeamControllerMemory(memory,address,flags,host) {
   memory.put(address,0x5271b8);
-  releasePriority(memory,address,0xf0,0x1b848,0x1b868,0x1b86a,0x1b88a,0x1b8aa);
-  releasePriority(memory,address,0xe8,0x1b778,0x1b798,0x1b79a,0x1b7ba,0x1b7da);
-  releasePriority(memory,address,0xec,0x1b7e0,0x1b800,0x1b802,0x1b822,0x1b842);
-  releasePriority(memory,address,0xf4,0x1b778,0x1b798,0x1b79a,0x1b7ba,0x1b7da);
+  nativeReleasePriorityMemory(memory,address,0xf0,0x1b848,0x1b868,0x1b86a,0x1b88a,0x1b8aa);
+  nativeReleasePriorityMemory(memory,address,0xe8,0x1b778,0x1b798,0x1b79a,0x1b7ba,0x1b7da);
+  nativeReleasePriorityMemory(memory,address,0xec,0x1b7e0,0x1b800,0x1b802,0x1b822,0x1b842);
+  nativeReleasePriorityMemory(memory,address,0xf4,0x1b778,0x1b798,0x1b79a,0x1b7ba,0x1b7da);
   const portrait=memory.get(address+0x110);if(portrait)releasePlain(memory,portrait,0x170,host);
   const text=memory.get(address+0x11c);if(text)nativeDestroyPanelText(memory,text,1,host);
   const frame=memory.get(address+0x114);if(frame)releaseImageOwner(memory,frame,0x5277c0,56,0x3c,host);
