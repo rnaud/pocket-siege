@@ -1,3 +1,4 @@
+import {nativePopulateMapObjectsAt} from './map-objects-memory.js';
 import {nativeCreateLandscapeAt} from './landscape-create.js';
 import {nativeCreateTeamControllerAt} from './controller-create.js';
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
@@ -26,7 +27,7 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
   };
   //004EB970 original global event group.
   group(25,[0x433,0x404,0x3e9,0x3ea,0x3eb,0x3ed,0x414,0x415,0x416,0x3ec,0x3f6,0x3fd,0x3ff]);
-  call(0x4eba80,[setup]);
+  (host.populateNaturalObjects??((at,setup)=>nativePopulateMapObjectsAt(memory,at,setup,host)))(address,setup);
   for(let team=1;team<=memory.byte(setup+0xde);team++) {
     const storage=host.allocate(0x120);
     if(storage)nativeCreateTeamControllerAt(memory,storage,address,team,setup+0xe0+(team-1)*3000,host);
