@@ -69,5 +69,23 @@ for pool,used in [([1],[]),([1,6,11],[8]),([67,69],[])]:
         'pool':[read(context+0x154c+i*4) for i in range(read(context+0x1668))],
         'used':[read(context+0x166c+i*4) for i in range(read(context+0x1788))]}
       cases.append({'input':{'count':count,'timer':timer,'pool':pool,'used':used},'placement':bool(placement),'allocate':bool(allocate),'random':random,'output':output,'events':events,'busy':read(context+0x800)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004B81B0','method':'Original scheduler, pool removal/refill and busy setter execute; parent lookup, placement, RNG, allocation and constructor are captured interfaces. Empty content pools are excluded: original divides before its zero guard.','cases':cases},separators=(',',':'))+'\n')
+schemes=[]
+pools=json.loads(Path('tests/fixtures/armageddon/crate-content-pool.json').read_text())['schemes']
+for scheme in json.loads(Path('src/armageddon/crate-scheme-data.json').read_text())['schemes']:
+ for row in [r for r in pools if r['resource_id']==scheme['resource_id']]:
+  pool=row['pool'];used=[]
+  if not pool:continue
+  for random in [0,0x12345678,0xffffffff]:
+   placement=1;allocate=1;count=5;timer=0;events=[]
+   write(owner+0x1dc,count);write(owner+0x1d8,timer);write(context+0x800,0)
+   write(context+0x1668,len(pool));write(context+0x1788,0)
+   for i,v in enumerate(pool):write(context+0x154c+i*4,v)
+   for i,v in enumerate(scheme['ammo']):write(context+0x1bfb8+i*4,v)
+   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4b81b0,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+   output={'count':signed(read(owner+0x1dc)),'timer':signed(read(owner+0x1d8)),
+     'pool':[read(context+0x154c+i*4) for i in range(read(context+0x1668))],
+     'used':[read(context+0x166c+i*4) for i in range(read(context+0x1788))],'ammo':scheme['ammo']}
+   schemes.append({'resource_id':scheme['resource_id'],'tall':row['tall'],'input':{'count':count,'timer':timer,'pool':pool,'used':used,'ammo':scheme['ammo']},'placement':True,'allocate':True,'random':random,'output':output,'events':events,'busy':read(context+0x800)})
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004B81B0','method':'Original scheduler, pool removal/refill and busy setter execute; parent lookup, placement, RNG, allocation and constructor are captured interfaces. Empty content pools are excluded: original divides before its zero guard.','cases':cases,'schemes':schemes},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} crate shower cases')

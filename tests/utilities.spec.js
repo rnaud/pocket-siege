@@ -1,3 +1,4 @@
+import { createNativeCrateScheme } from '../src/armageddon/crate-scheme.js';
 import crateContentPool from './fixtures/armageddon/crate-content-pool.json' with { type: 'json' };
 import { nativeCrateContentPool } from '../src/armageddon/crate-content-pool.js';
 import crateShowerNearest from './fixtures/armageddon/crate-shower-nearest.json' with { type: 'json' };
@@ -253,6 +254,8 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
   }
+  for (const row of crateContentPool.schemes)
+    expect(createNativeCrateScheme(row.resource_id,{tall:row.tall}).pool).toEqual(row.pool);
   for (const row of crateContentPool.cases)
     expect(nativeCrateContentPool(row.initial,row.scene,slot=>row.descriptors[slot])).toEqual(row.output);
   for (const row of nearestBody.cases) {
@@ -306,7 +309,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result.body).toEqual(row.output);
     expect(row.counts.map((count, i) => result.cleared.includes(67 + i) ? 0 : count)).toEqual(row.after);
   }
-  for (const row of shower.cases) {
+  for (const row of [...shower.cases,...shower.schemes]) {
     const events = [];
     let busy = 0;
     const result = nativeCrateShowerTick(row.input, {
@@ -314,7 +317,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       busy: () => { events.push(['busy']); busy = 12; },
       place: (...args) => { events.push(['place', ...args]); return row.placement ? { x: 123 * 65536, y: -45 * 65536 } : null; },
       nextRandom: () => { events.push(['random']); return row.random; },
-      ammo: weapon => weapon + 2,
+      ammo: row.input.ammo ? undefined : weapon => weapon + 2,
       allocate: size => { events.push(['allocate', size]); return row.allocate; },
       create: (allocation, parent, record, mode) => events.push(['create', parent, mode, record.x, record.y, record.kind, record.ammo, record.weapon]),
     });

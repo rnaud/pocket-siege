@@ -1,7 +1,7 @@
 import { nativeSpecialCrateContent } from './crate-draw.js';
 
 //004C23E0. Availability here is independent of inventory count and delay.
-// Inputs preserve raw native scheme bytes and descriptor offset+10C.
+// Inputs preserve raw native scheme bytes and descriptor offset+50.
 export function nativeCrateContentAllowed(slot, scene, descriptor) {
   if(nativeSpecialCrateContent(slot) && !(scene.specialWeapons&255))return false;
   if(scene.tall && !descriptor)return false;

@@ -52,5 +52,15 @@ for specialWeapons in [0,1]:
        cpu.emu_start(0x49db4f,0x49db9a,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==0x49db9a
        output=[read(context+0x154c+i*4) for i in range(read(context+0x1668))]
        cases.append(dict(scene=scene,descriptors=descriptors,initial=initial,output=output))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='0049DB4F..0049DB9A / 004C23E0 / 004AA8F0',method='Original initialization loop, eligibility and special-weapon classifier execute unchanged. Scene flags, weapon descriptors and initial pool supplied directly; no substituted game calls.',cases=cases),separators=(',',':'))+'\n')
+schemes=[]
+for scheme in json.loads(Path('src/armageddon/crate-scheme-data.json').read_text())['schemes']:
+ for tall in [0,1]:
+  scene={**scheme['scene'],'tall':tall}
+  for off,key in [(0x11d57,'specialWeapons'),(0x11d62,'environmentDisabled'),(0x11d68,'modeByte')]:cpu.mem_write(context+off,bytes([scene[key]]))
+  write(context+0x20,scene['mode']);write(context+0x1b8ac,tall);write(context+0x1668,0)
+  for slot,value in enumerate(scheme['descriptors']):write(context+0x1260c+slot*0x208,value)
+  cpu.reg_write(UC_X86_REG_ESP,stack+0xf000);cpu.reg_write(UC_X86_REG_ESI,owner);cpu.reg_write(UC_X86_REG_EDI,1)
+  cpu.emu_start(0x49db4f,0x49db9a,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==0x49db9a
+  schemes.append(dict(resource_id=scheme['resource_id'],tall=tall,pool=[read(context+0x154c+i*4) for i in range(read(context+0x1668))]))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='0049DB4F..0049DB9A / 004C23E0 / 004AA8F0',method='Original initialization loop, eligibility and special-weapon classifier execute unchanged. Scene flags, weapon descriptors and initial pool supplied directly; no substituted game calls.',cases=cases,schemes=schemes),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} native crate pool initializations')

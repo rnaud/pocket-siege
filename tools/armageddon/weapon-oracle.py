@@ -80,7 +80,7 @@ for index in range(71):
                               for offset in range(0x48,0x208,4)}})
 if args.records_only:
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004B90A0','inputs':inputs,'records':records,'crate_projectile':list(struct.unpack_from('<94i',result,0x1b5f4))},indent=2)+'\n')
+    args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004B90A0','inputs':inputs,'records':records,'crate_projectile':list(struct.unpack_from('<94i',result,0x1b5f4)), 'crate_ammo':list(struct.unpack_from('<71i',result,0x1bfb8)), 'crate_scene':{'specialWeapons':result[0x11d57],'tall':struct.unpack_from('<i',result,0x1b8ac)[0],'environmentDisabled':result[0x11d62],'modeByte':result[0x11d68],'mode':struct.unpack_from('<i',result,0x20)[0]}},indent=2)+'\n')
     print(f'Captured {len(records)} records for scheme {args.scheme_resource_id}')
     raise SystemExit(0)
 # The original selector consumes weapon type/action/sprite fields, not localized names.

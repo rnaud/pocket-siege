@@ -33,7 +33,7 @@ export function nativeCrateShowerTick(input, interfaces) {
     body.used = [];
   }
   const record = { x: position.x, y: position.y, kind: 1,
-    ammo: interfaces.ammo(weapon), weapon };
+    ammo: interfaces.ammo ? interfaces.ammo(weapon) : body.ammo[weapon], weapon };
   const allocation = interfaces.allocate(0x274);
   if (allocation) interfaces.create(allocation, parent, record, 1);
   interfaces.busy();
