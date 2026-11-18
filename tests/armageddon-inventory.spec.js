@@ -1,3 +1,4 @@
+import {nativeSetupMusic} from '../src/armageddon/setup-metadata.js';
 import weaponSettings from './fixtures/armageddon/weapon-settings.json' with {type:'json'};
 import {nativeExpandWeaponSettings} from '../src/armageddon/weapon-settings.js';
 import schemeEnvironment from './fixtures/armageddon/scheme-environment.json' with {type:'json'};
@@ -36,6 +37,11 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const row of matchSetup.music_cases) {
+    const memory=Uint8Array.from({length:0xc6},(_,i)=>(i*11+5)&255),random=new NativeFrontendRandom(row.seed);
+    nativeSetupMusic(memory,row.selection,90,row.enabled,random);
+    expect(Buffer.from(memory).toString('hex')).toBe(row.memory);expect(random.state).toBe(row.state);
+  }
   for(const row of weaponSettings.cases) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),scheme=Uint8Array.from(Buffer.from(row.initial,'hex'));
     nativePrepareInventoryScheme(memory,scheme);memory[0xd42a]=0;
@@ -61,8 +67,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const descriptors=new Uint8Array(0x1d8);descriptors.fill(255,0xd0);
     const calls=[];let path=0,profile=row.initial_profile;
     const defaultSpeech=new Uint8Array(65);defaultSpeech.set(new TextEncoder().encode('English'));
-    nativeBuildInitialMatchSetup(memory,inventory,scheme,teamData,{
-      descriptors,random,
+    const music=Uint8Array.from({length:0xc6},(_,i)=>(i*11+5)&255);
+    const result=nativeBuildInitialMatchSetup(memory,inventory,scheme,teamData,{
+      descriptors,random,music,drive:68,musicEnabled:row.music_enabled,
+      displayFlags:row.display_flags,resolution:row.resolution,
+      language:()=>{calls.push(['language']);return row.language;},
+      readOption:(key,fallback)=>{calls.push(['option',key,fallback]);return row.options[key];},
       seedStorage:{time:()=>{calls.push(['time',row.clock]);return row.clock;},
         readSeed:fallback=>{calls.push(['read',fallback]);return profile??fallback;},
         writeSeed:value=>{calls.push(['write',value]);profile=value;}},
@@ -74,6 +84,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         calls.push(['directory',value.toString('hex')]);return row.directory_available||value.toString()==='C:\\WORMS'?0:1;
       },
     });
+    expect(result>>>0).toBe(row.result);expect(Buffer.from(music).toString('hex')).toBe(row.music);
     expect(calls).toEqual(row.calls);expect(profile).toBe(row.profile);expect(random.state).toBe(row.random_state);
     expect(Buffer.from(scheme).toString('hex')).toBe(row.scheme);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);

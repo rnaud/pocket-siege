@@ -1,3 +1,4 @@
+import {nativeSetupMetadata} from './setup-metadata.js';
 import {nativeExpandWeaponSettings} from './weapon-settings.js';
 import {nativeExpandSchemeEnvironment} from './scheme-environment.js';
 import {nativeResolveSetupSpeech} from './speech-setup.js';
@@ -6,9 +7,8 @@ import {nativeBuildTeamSetup} from './team-setup.js';
 import {nativeInitializeSetupTurnOrder} from './setup-turn-order.js';
 import {nativeInitializeInventory} from './inventory-initialization.js';
 
-//00415540..004175EA followed by004C2640. Team data begins at006DE000.
-//The later map/display/metadata tail is separate. Speech resource probing and
-//path formatting use host interfaces.
+//00415540 followed by004C2640. Team data begins at006DE000.
+//Resource probing, profile storage and installed language use host interfaces.
 export function nativeBuildInitialMatchSetup(memory,inventory,schemeState,teamData,host) {
   nativePrepareInventoryScheme(memory,schemeState);
   memory[0xd42a]=0;
@@ -24,5 +24,7 @@ export function nativeBuildInitialMatchSetup(memory,inventory,schemeState,teamDa
   nativeExpandWeaponSettings(memory,scheme);
   host.random.seed(host.seedStorage.time());
   nativeExpandSchemeEnvironment(memory,scheme,host.descriptors);
+  const result=nativeSetupMetadata(memory,host);
   nativeInitializeInventory(inventory,memory.subarray(0x3c));
+  return result;
 }
