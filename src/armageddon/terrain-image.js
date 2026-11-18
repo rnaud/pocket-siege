@@ -1,6 +1,7 @@
+import {nativeDecodeImagePixels} from './image-decompress.js';
 //004F08E0 embedded IMG reader. scratch supplies the original0x428-byte
 //temporary frame (starting at original ESP+0x10). Bitmap allocation/storage,
-//palette insertion and compressed decoding retain explicit resource services.
+//and palette insertion retain explicit resource services.
 export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
   const word=a=>memory.byte(a)|(memory.byte(a+1)<<8);
   memory.put(scratch+24,host.tellFile(file));
@@ -33,7 +34,8 @@ export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
     const start=memory.get(scratch+24),position=host.tellFile(file);
     const remaining=(start-position+memory.get(scratch+28))>>>0;
     host.readFile(0x714be0,remaining,1,file);
-    host.decodeTerrainPixels(memory.get(scratch+8),0x714be0,scratch+40);
+    if(host.decodeTerrainPixels)host.decodeTerrainPixels(memory.get(scratch+8),0x714be0,scratch+40);
+    else nativeDecodeImagePixels(memory,memory.get(scratch+8),0x714be0,scratch+40);
   } else {
     for(let y=0;y<word(scratch+4);y++) {
       const packed=(Math.imul(word(scratch+2),memory.get(scratch+32))+7)|0;

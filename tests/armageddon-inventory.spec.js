@@ -1,3 +1,5 @@
+import imageDecompress from './fixtures/armageddon/image-decompress.json' with {type:'json'};
+import {nativeDecodeImagePixels} from '../src/armageddon/image-decompress.js';
 import terrainImage from './fixtures/armageddon/terrain-image.json' with {type:'json'};
 import {nativeLoadTerrainImage} from '../src/armageddon/terrain-image.js';
 import terrainFile from './fixtures/armageddon/terrain-file.json' with {type:'json'};
@@ -163,6 +165,16 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of imageDecompress.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern),palette=owner+0x100,source=owner+0x2000,destination=owner+0x8000;
+    for(let i=0;i<256;i++)bytes[0x100+i]=(c.mapping===0?i:c.mapping===1?255-i:i*37)&255;
+    const prefix=Buffer.from(Array.from({length:2048},(_,i)=>i%128));
+    const encoded=c.length?c.distance-1:c.distance;
+    const stream=Buffer.concat([prefix,Buffer.from([0x80|(c.length<<3)|(encoded>>>8),encoded&255]),Buffer.from(c.length?[]:[c.extra]),Buffer.from([0x80,0])]);
+    stream.copy(bytes,source-owner);
+    nativeDecodeImagePixels({byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}},destination,source,palette);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
+  }
   for(const c of terrainImage.cases) {
     const owner=0x2000000,scratch=0x2100000,compressed=0x714be0;
     const bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(0x428,c.pattern),packed=Buffer.alloc(0x1000,c.pattern),calls=[];
@@ -183,7 +195,6 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       constructBitmap:(bitmap,width,height,bits)=>{calls.push(['construct',bitmap,width,height,bits,snapshot()]);memory.put(bitmap+4,width);memory.put(bitmap+8,height);memory.put(bitmap+12,bits);},
       bitmapStorage:bitmap=>{calls.push(['storage',bitmap,snapshot()]);return {pixels:owner+0x1000,bits:c.bits,pitch:c.pitch};},
       remapBitmap:(bitmap,map)=>calls.push(['remap',bitmap,mapping(map),snapshot()]),
-      decodeTerrainPixels:(pixels,source,map)=>calls.push(['decode',pixels,source,mapping(map),snapshot()]),
     };
     expect(nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host)).toBe(c.result);
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);

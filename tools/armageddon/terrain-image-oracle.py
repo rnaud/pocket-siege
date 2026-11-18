@@ -58,11 +58,9 @@ def hook(cpu,address,size,user):
   calls.append(['storage',receiver,snapshot()]);write(read(sp+4),pixels);write(read(sp+8),bits);write(read(sp+12),pitch);ret(0,12)
  elif address==stop+0x500:
   calls.append(['remap',receiver,bytes(cpu.mem_read(read(sp+4),256)).hex(),snapshot()]);ret(0,4)
- elif address==0x4ab3c9:
-  calls.append(['decode',read(sp+4),read(sp+8),bytes(cpu.mem_read(read(sp+12),256)).hex(),snapshot()]);ret()
 for iat,target in [(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
 for vtable in [0x526328,0x5249b0]:write(vtable+0x20,stop+0x400);write(vtable+0x60,stop+0x500)
-for address in [stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,0x4adcb0,0x492550,0x492bc0,0x4ab3c9]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,0x4adcb0,0x492550,0x492bc0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
 for pattern in [0,0xa5]:
  for bits in [1,8,4]:
@@ -73,11 +71,11 @@ for pattern in [0,0xa5]:
     body=bytes([bits,flags])
     if flags&128:body+=struct.pack('<H',3)+bytes([255,0,0,0,255,0,0,0,255])
     body+=struct.pack('<HH',width,height)
-    body+=bytes((i*13)&255 for i in range(19 if flags&64 else ((width*bits+7)//8)*height))
+    body+=bytes([1,2,3,0x88,0,0x80,3,0,0x80,0]) if flags&64 else bytes((i*13)&255 for i in range(((width*bits+7)//8)*height))
     stream=b'xxxxx'+b'IMG\x1a'+struct.pack('<I',len(body)+8)+body
     sp=stack+0xf000;write(sp,stop);write(sp+4,0x4567);write(sp+8,0x1234)
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4f08e0,stop,count=10000)
     assert cpu.reg_read(UC_X86_REG_EIP)==stop
     cases.append(dict(pattern=pattern,bits=bits,pitch=pitch,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004F08E0',method='Original embedded image loader;72 full64KiB output plus4KiB compressed-buffer captures. CRT transport, palette insertion, bitmap construction/storage/remap and compressed decode are interfaces. Covers1/8bpp, unsupported4bpp, optional palettes/compression, padded storage and zero height. Does not claim compressed pixel decoding or live terrain integration.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004F08E0',method='Original embedded image loader;72 full64KiB output plus4KiB compressed-buffer captures. CRT transport, palette insertion, bitmap construction/storage/remap are interfaces; original004AB3C9 compressed decoder executes. Covers1/8bpp, unsupported4bpp, optional palettes/compression, padded storage and zero height. Includes literal palette translation and overlapping short/long copies. Full bitmap services and live terrain integration remain unfinished.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} embedded image sequences')
