@@ -1,3 +1,5 @@
+import taskDestroy from './fixtures/armageddon/task-destroy.json' with {type:'json'};
+import {nativeDestroyTaskMemory} from '../src/armageddon/task-destroy.js';
 import fullStartupCleanup from './fixtures/armageddon/full-startup-cleanup.json' with {type:'json'};
 import taskCleanup from './fixtures/armageddon/task-cleanup.json' with {type:'json'};
 import physicsCompact from './fixtures/armageddon/physics-compact.json' with {type:'json'};
@@ -136,6 +138,24 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const label=`constructor case ${c.bits}: world=${!!c.world}, objects=${!!c.objects}, barrels=${!!c.barrels}, mines=${!!c.mines}`;
     expect(calls,label).toEqual(c.calls);
     expect(createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),label).toBe(c.sha256);
+  }
+  for(const {count,flags,mode,calls:expected,sha256} of taskDestroy.cases) {
+    const owner=Uint8Array.from({length:0x10000},(_,i)=>(i*11+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),calls=[];
+    const locate=at=>at>=0x2400000?[heap,at-0x2400000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setUint32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;}};
+    let cursor=0x2408000;
+    const allocate=(kind,size,pool)=>{const at=cursor;cursor+=(size+15)&~15;calls.push([kind,size,at,...(kind==='array'?[pool]:[])]);return at;};
+    const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),free:at=>calls.push(['free',at]),release:(at,size)=>calls.push(['release',at,size])};
+    nativeCreateTaskMemory(memory,0x2000000,0,host);nativeRegisterTaskMemory(memory,0x2000000,20,0,host);
+    for(let index=0;index<count;index++) {
+      const child=0x2400100+index*0x300;nativeCreateTaskMemory(memory,child,0x2000000,host);nativeRegisterTaskMemory(memory,child,mode<2?20:-20,mode===1?0:index+2,host);
+      for(let j=0;j<mode%3;j++) {const grandchild=child+(j+1)*0x100;nativeCreateTaskMemory(memory,grandchild,child,host);nativeRegisterTaskMemory(memory,grandchild,3,index*3+j,host);}
+    }
+    if(count&&(mode&1))nativeDestroyTaskMemory(memory,0x2400100,1,host);
+    if(mode&2)nativeCleanupTaskMemory(memory,0x2000000);
+    nativeDestroyTaskMemory(memory,0x2000000,flags,host);
+    expect(calls,`destruction ${count}/${flags}/${mode}`).toEqual(expected);
+    expect(createHash('sha256').update(owner).update(heap).digest('hex')).toBe(sha256);
   }
   for(const row of taskCleanup.cases) {
     const {count,mode,mask,dirty}=row,owner=0x2000000,children=owner+0x4000,alternate=owner+0x5000,scratch=owner+0x6000,table=owner+0x8000;
