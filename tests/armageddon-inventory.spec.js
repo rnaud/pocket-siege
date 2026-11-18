@@ -1,3 +1,5 @@
+import sceneContext from './fixtures/armageddon/scene-context.json' with {type:'json'};
+import {nativeCreateSceneContext} from '../src/armageddon/scene-context.js';
 import missionSelection from './fixtures/armageddon/mission-selection.json' with {type:'json'};
 import missionNames from '../src/armageddon/mission-names.json' with {type:'json'};
 import {resolveMissionDefinition,missionFileServices} from '../src/armageddon/mission-files.js';
@@ -156,6 +158,20 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneContext.cases) {
+    const owner=0x2000000,scene=0x2300000,frontend=0x2500000;
+    const ownerBytes=Buffer.alloc(0x10000,c.pattern),sceneBytes=Buffer.alloc(0x20000,c.pattern),frontendBytes=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const locate=a=>a>=frontend?[frontendBytes,a-frontend]:a>=scene?[sceneBytes,a-scene]:[ownerBytes,a-owner];
+    const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
+    const source=c.offset===null?frontend:scene+0x47a8+c.offset;
+    for(let i=0;i<0xdc64;i++)memory.putByte(source+i,(i*13+c.variant*37)&255);
+    const snapshot=()=>createHash('sha256').update(ownerBytes).update(sceneBytes).update(frontendBytes).digest('hex');
+    const result=nativeCreateSceneContext(memory,owner,c.bindings,source,{
+      initializePalette:(...args)=>{calls.push(['palette',...args,snapshot()]);if(c.mutation)memory.put(source+0x100,0x12345678);},
+      allocate:(...args)=>{calls.push(['allocate',...args,snapshot()]);if(c.mutation)memory.put(source+0x104,0x87654321);return scene;},
+    });
+    expect(result).toBe(scene);expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
+  }
   expect(Object.keys(missionNames)).toHaveLength(48);
   for(const [name,source] of Object.entries(missionNames)) {
     const record=resolveMissionDefinition(`D:\\DATA\\${name.toUpperCase().replaceAll('/','\\')}`);
