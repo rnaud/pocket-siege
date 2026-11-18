@@ -25,9 +25,21 @@ export function progressPageData() {
       const [sha, date, ...title] = line.split("\t");
       return { sha, date, title: title.join("\t") };
     });
+  for (const area of summary.areas) {
+    if (
+      !area.plain?.now ||
+      !area.plain?.next ||
+      !area.milestones?.length ||
+      area.milestones.some(
+        (item) => !item.title || typeof item.done !== "boolean",
+      )
+    )
+      throw new Error(`Missing readable progress milestones: ${area.title}`);
+  }
   return {
     reference: tracker.reference_version,
     status: tracker.status,
+    measurement: summary.measurement,
     focus: summary.focus,
     note: summary.note,
     commits,

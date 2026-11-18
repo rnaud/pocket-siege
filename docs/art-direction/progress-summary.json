@@ -1,10 +1,10 @@
 {
-  "focus": "Connect the verified world/startup constructors, actor ownership and input pipelines to live gameplay, and complete remaining actor lifecycles.",
-  "note": "The game is playable, but the offline rewrite is not yet equivalent to Worms Armageddon. Verified routines can still be waiting for live integration.",
+  "focus": "Make the tested original game rules work together in the game you play. Then finish proper replays and saves.",
+  "note": "You can play a match now. It still does not behave exactly like Worms Armageddon. Much of the recent work prepares the engine underneath the game.",
   "areas": [
     {
       "title": "Worm movement & physics",
-      "live": "Native collision masks, jump flight, hurt motion, drowning and several recovery paths drive live play. Authored-map worms use recovered spawn discovery/selection and constructor placement; live spawn fields and initial facing share the executable-verified constructor code. Placement retains native physics coefficients across airborne, hurt and rope modes. Landing, Drill/Fire Punch entry/exit and hurt collisions compose recovered common state preparation; collision receivers immediately acquire their native hurt body. Separately, complete address-backed worm construction\u2014including task/physics registration, inventory, spawn RNG, text/panel/animation resources and fresh state entry\u2014matches original memory and ordered-call captures inside full world/startup sequences. That complete ownership model is not yet the live browser actor model. Live collision registration now shares native sparse insertion, preserving global/category ordering and actor identities through category changes and host-list updates. Native dirty-list compaction matches96 complete executable memory captures and now shares its stable traversal with live end-of-frame cleanup, preserving body order and overlap caches while removing membership holes. Native memory ownership and replay cleanup integration remain unfinished. Physics-body destruction now matches320 complete original construction/destruction sequences, including sparse deregistration, owned resources and sound cleanup; derived actor destruction and live task ownership remain unfinished.",
+      "live": "Native collision masks, jump flight, hurt motion, drowning and several recovery paths drive live play. Authored-map worms use recovered spawn discovery/selection and constructor placement; live spawn fields and initial facing share the executable-verified constructor code. Placement retains native physics coefficients across airborne, hurt and rope modes. Landing, Drill/Fire Punch entry/exit and hurt collisions compose recovered common state preparation; collision receivers immediately acquire their native hurt body. Separately, complete address-backed worm construction—including task/physics registration, inventory, spawn RNG, text/panel/animation resources and fresh state entry—matches original memory and ordered-call captures inside full world/startup sequences. That complete ownership model is not yet the live browser actor model. Live collision registration now shares native sparse insertion, preserving global/category ordering and actor identities through category changes and host-list updates. Native dirty-list compaction matches96 complete executable memory captures and now shares its stable traversal with live end-of-frame cleanup, preserving body order and overlap caches while removing membership holes. Native memory ownership and replay cleanup integration remain unfinished. Physics-body destruction now matches320 complete original construction/destruction sequences, including sparse deregistration, owned resources and sound cleanup; derived actor destruction and live task ownership remain unfinished.",
       "remaining": "Connect complete native actor ownership and the full movement/state lifecycle, including complete task cleanup, grounded state, state-specific entry/finalization, constraints and event ordering; verify complete movement sequences against the original.",
       "evidence": [
         "native_physics_destruction",
@@ -32,6 +32,28 @@
         "live_native_worm_mask",
         "live_hurt_motion_recovery",
         "composed_jump_flight_adapter"
+      ],
+      "plain": {
+        "now": "Worms can walk, jump, get hurt and drown using many original rules.",
+        "next": "Finish the movement states and make them work together exactly like the original."
+      },
+      "milestones": [
+        {
+          "title": "Original collision shape and spawn placement in play",
+          "done": true
+        },
+        {
+          "title": "Original jump, hurt and drowning behavior in play",
+          "done": true
+        },
+        {
+          "title": "Complete movement and rope state transitions in play",
+          "done": false
+        },
+        {
+          "title": "Full movement sequences checked against the original",
+          "done": false
+        }
       ]
     },
     {
@@ -65,6 +87,28 @@
         "live_projectile_adapter",
         "live_projectile_fire_input",
         "live_placed_fire"
+      ],
+      "plain": {
+        "now": "The arsenal uses original weapon settings, with many weapons already playable.",
+        "next": "Finish every weapon’s special rules, ammo handling and settings."
+      },
+      "milestones": [
+        {
+          "title": "Original weapon settings used in play",
+          "done": true
+        },
+        {
+          "title": "Projectile, melee and placed weapons playable",
+          "done": true
+        },
+        {
+          "title": "Every weapon and utility state fully connected",
+          "done": false
+        },
+        {
+          "title": "All ammo, delays and scheme rules match in play",
+          "done": false
+        }
       ]
     },
     {
@@ -75,6 +119,28 @@
         "live_original_radial_blast",
         "live_original_damage_accounting",
         "composed_flame_runtime"
+      ],
+      "plain": {
+        "now": "Explosions dig holes, hurt worms and set off fire and other objects.",
+        "next": "Make every collision and chain reaction happen in the right order."
+      },
+      "milestones": [
+        {
+          "title": "Original blast and crater behavior in play",
+          "done": true
+        },
+        {
+          "title": "Original damage accounting in play",
+          "done": true
+        },
+        {
+          "title": "All collision and chain-reaction paths connected",
+          "done": false
+        },
+        {
+          "title": "Complete destruction sequences checked against the original",
+          "done": false
+        }
       ]
     },
     {
@@ -88,6 +154,28 @@
         "live_rope_swing",
         "live_rope_release_and_refire",
         "live_original_teleport"
+      ],
+      "plain": {
+        "now": "The rope works, and several tools already use original behavior.",
+        "next": "Finish jetpack, parachute, teleport, girders and their interactions."
+      },
+      "milestones": [
+        {
+          "title": "Recovered rope launch, swing and release in play",
+          "done": true
+        },
+        {
+          "title": "Crate Spy reveals contents in play",
+          "done": true
+        },
+        {
+          "title": "Every utility’s controls and states connected",
+          "done": false
+        },
+        {
+          "title": "Utility combinations checked against the original",
+          "done": false
+        }
       ]
     },
     {
@@ -114,6 +202,28 @@
         "live_native_worm_rotation",
         "native_turn_start_controller",
         "native_weapon_completion_retreat_request"
+      ],
+      "plain": {
+        "now": "Teams take turns, wind changes and poison takes effect.",
+        "next": "Connect the full original turn controller, including busy states and retreat timing."
+      },
+      "milestones": [
+        {
+          "title": "Original team rotation and wind selection in play",
+          "done": true
+        },
+        {
+          "title": "Original poison and end-of-turn effects in play",
+          "done": true
+        },
+        {
+          "title": "Complete original turn controller connected",
+          "done": false
+        },
+        {
+          "title": "All match-ending and scheme rules checked in play",
+          "done": false
+        }
       ]
     },
     {
@@ -134,6 +244,28 @@
         "live_authored_maps",
         "authored_map_placement",
         "live_terrain_object_sprites"
+      ],
+      "plain": {
+        "now": "All 100 imported maps are available. Worms, mines and barrels use original placement rules.",
+        "next": "Finish map settings, terrain themes and the original map generator."
+      },
+      "milestones": [
+        {
+          "title": "Original authored maps and water in play",
+          "done": true
+        },
+        {
+          "title": "Original spawn selection in play",
+          "done": true
+        },
+        {
+          "title": "Complete original map generation and theme behavior",
+          "done": false
+        },
+        {
+          "title": "All terrain changes and settings match in play",
+          "done": false
+        }
       ]
     },
     {
@@ -171,6 +303,28 @@
         "visual_media_import",
         "animation_player",
         "native_wind_meter_drawing"
+      ],
+      "plain": {
+        "now": "Original sprites, many animations and parts of the HUD are in the game.",
+        "next": "Finish animation transitions and make every scene element draw in the correct order."
+      },
+      "milestones": [
+        {
+          "title": "Original sprites and HUD elements in play",
+          "done": true
+        },
+        {
+          "title": "Recovered poses and idle gestures in play",
+          "done": true
+        },
+        {
+          "title": "Complete animation and drawing order connected",
+          "done": false
+        },
+        {
+          "title": "Complete original HUD behavior connected",
+          "done": false
+        }
       ]
     },
     {
@@ -183,13 +337,57 @@
         "speech_descriptor_mapping",
         "live_original_death_voice",
         "live_landing_audio"
+      ],
+      "plain": {
+        "now": "Original sounds are available, and you can choose from 49 saved team voices.",
+        "next": "Finish the rules for which sound plays, when it plays and when it stops."
+      },
+      "milestones": [
+        {
+          "title": "Original sound effects used in play",
+          "done": true
+        },
+        {
+          "title": "49 selectable, saved team voice banks",
+          "done": true
+        },
+        {
+          "title": "All original sound ownership and priority rules",
+          "done": false
+        },
+        {
+          "title": "All speech and sound triggers checked in play",
+          "done": false
+        }
       ]
     },
     {
       "title": "Computer opponents",
       "live": "A playable computer opponent is present. Its host heuristics are not a complete port of the original AI.",
       "remaining": "Port native movement planning, trajectory search, weapon selection and difficulty behavior.",
-      "evidence": []
+      "evidence": [],
+      "plain": {
+        "now": "You can play against the computer, but it uses our own decision-making.",
+        "next": "Replace it with the original aiming, movement and weapon choices."
+      },
+      "milestones": [
+        {
+          "title": "Original weapon choice in play",
+          "done": false
+        },
+        {
+          "title": "Original aiming and trajectory search in play",
+          "done": false
+        },
+        {
+          "title": "Original movement planning in play",
+          "done": false
+        },
+        {
+          "title": "Original difficulty behavior checked in play",
+          "done": false
+        }
+      ]
     },
     {
       "title": "Setup, missions & progression",
@@ -248,6 +446,28 @@
         "native_frontend_team_setup",
         "embedded_scheme_resources",
         "scheme_runtime_expansion"
+      ],
+      "plain": {
+        "now": "You can set up local matches, choose maps and play a series.",
+        "next": "Connect the original match setup, then finish saved teams, missions and training."
+      },
+      "milestones": [
+        {
+          "title": "Local setup, map selection and series playable",
+          "done": true
+        },
+        {
+          "title": "Complete original match setup connected",
+          "done": false
+        },
+        {
+          "title": "Original saved teams and schemes complete",
+          "done": false
+        },
+        {
+          "title": "Missions, training and progression complete",
+          "done": false
+        }
       ]
     },
     {
@@ -344,16 +564,58 @@
         "native_replay_physics_restore",
         "native_replay_child_records",
         "native_replay_snapshot_stream"
+      ],
+      "plain": {
+        "now": "The public replay shows shot paths. Proper replay building blocks work in isolated checks.",
+        "next": "Connect them to live matches so a whole game can be replayed or saved."
+      },
+      "milestones": [
+        {
+          "title": "Record a complete live match with original rules",
+          "done": false
+        },
+        {
+          "title": "Replay a complete live match exactly",
+          "done": false
+        },
+        {
+          "title": "Save and resume a live match",
+          "done": false
+        },
+        {
+          "title": "Complete replay and save cycles checked against the original",
+          "done": false
+        }
       ]
     },
     {
       "title": "Determinism & whole-match parity",
       "live": "A 50 Hz simulation and native random streams underpin many executable-verified routines.",
       "remaining": "Finish original input queues, dispatch order and random-call ordering; compare representative complete matches with the original executable.",
-      "evidence": [
-        "numeric_primitives",
-        "native_action_busy_and_input_gate"
+      "evidence": ["numeric_primitives", "native_action_busy_and_input_gate"],
+      "plain": {
+        "now": "The game runs at 50 simulation steps per second and uses recovered random-number routines.",
+        "next": "Make input, events and randomness line up across a whole match."
+      },
+      "milestones": [
+        {
+          "title": "50 Hz simulation and recovered random streams in use",
+          "done": true
+        },
+        {
+          "title": "Complete original input and event ordering connected",
+          "done": false
+        },
+        {
+          "title": "Complete original random-call ordering connected",
+          "done": false
+        },
+        {
+          "title": "Representative whole matches match the original",
+          "done": false
+        }
       ]
     }
-  ]
+  ],
+  "measurement": "Percentages count the visible milestones completed in the playable game. Each milestone counts equally. They are a broad progress guide, not a percentage of code decompiled or an estimate of time left. Work only tested in isolation does not tick a box. Online play is excluded."
 }

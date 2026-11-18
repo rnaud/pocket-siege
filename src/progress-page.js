@@ -21,6 +21,13 @@ const date = (value) =>
   }).format(new Date(value));
 $("#build").textContent =
   `${data.commits[0].sha.slice(0, 7)} · ${date(data.commits[0].date)}`;
+const milestones = data.areas.flatMap((area) => area.milestones);
+const complete = milestones.filter((item) => item.done).length;
+$("#overall-value").textContent =
+  `${Math.round((complete / milestones.length) * 100)}%`;
+$("#overall-count").textContent =
+  `${complete} of ${milestones.length} playable milestones complete`;
+$("#measurement").textContent = data.measurement;
 for (const [index, area] of data.areas.entries()) {
   const card = el("article", "area");
   const heading = el("div", "area-heading");
@@ -28,18 +35,49 @@ for (const [index, area] of data.areas.entries()) {
     el("span", "area-index", String(index + 1).padStart(2, "0")),
     el("h3", "", area.title),
   );
+  const done = area.milestones.filter((item) => item.done).length;
+  const percent = Math.round((done / area.milestones.length) * 100);
+  heading.append(el("strong", "area-percent", `${percent}%`));
+  const meter = el("progress");
+  meter.max = area.milestones.length;
+  meter.value = done;
+  meter.setAttribute(
+    "aria-label",
+    `${area.title}: ${done} of ${meter.max} milestones complete`,
+  );
   card.append(
     heading,
-    el("span", "label", "CURRENT STATE"),
-    el("p", "current", area.live),
-    el("span", "label remaining-label", "STILL TO DO"),
-    el("p", "remaining", area.remaining),
+    meter,
+    el("span", "label", "WHAT WORKS"),
+    el("p", "current", area.plain.now),
+    el("span", "label remaining-label", "WHAT’S NEXT"),
+    el("p", "remaining", area.plain.next),
   );
-  if (area.evidence.length) {
+  const checklist = el("details", "milestones");
+  checklist.append(
+    el(
+      "summary",
+      "",
+      `Why ${percent}%? ${done} of ${area.milestones.length} milestones`,
+    ),
+  );
+  const list = el("ul");
+  for (const item of area.milestones)
+    list.append(
+      el(
+        "li",
+        item.done ? "done" : "pending",
+        `${item.done ? "Done" : "To finish"} — ${item.title}`,
+      ),
+    );
+  checklist.append(list);
+  card.append(checklist);
+  {
     const details = el("details", "evidence");
     details.append(
       el("summary", "", `Technical evidence (${area.evidence.length})`),
     );
+    details.append(el("p", "", area.live), el("p", "", area.remaining));
     for (const entry of area.evidence)
       details.append(el("h4", "", entry.title), el("p", "", entry.note));
     card.append(details);

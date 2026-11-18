@@ -411,3 +411,73 @@ footer a {
     scroll-behavior: auto;
   }
 }
+
+.area-heading {
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.area-percent {
+  margin-left: auto;
+  color: var(--lime);
+  font-size: 24px;
+}
+progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-bottom: 24px;
+  accent-color: var(--lime);
+  border: 0;
+  background: var(--edge);
+}
+progress::-webkit-progress-bar {
+  background: var(--edge);
+}
+progress::-webkit-progress-value {
+  background: var(--lime);
+}
+progress::-moz-progress-bar {
+  background: var(--lime);
+}
+.overall {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 26px;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+}
+.overall > strong {
+  font-size: clamp(40px, 8vw, 64px);
+  color: var(--lime);
+}
+.overall p {
+  color: var(--muted);
+  font:
+    16px/1.5 system-ui,
+    sans-serif;
+}
+.milestones {
+  margin-bottom: 18px;
+}
+.milestones summary,
+.evidence summary {
+  font:
+    14px/1.6 system-ui,
+    sans-serif;
+}
+.milestones ul {
+  padding-left: 20px;
+  font:
+    15px/1.6 system-ui,
+    sans-serif;
+}
+.milestones li {
+  margin: 10px 0;
+}
+.milestones .done {
+  color: var(--lime);
+}
+.milestones .pending {
+  color: var(--muted);
+}

@@ -33,22 +33,30 @@
         </div>
       </section>
       <nav class="section-nav" aria-label="Page sections">
-        <a href="#parity">REMAINING PARITY <span id="area-count"></span></a
+        <a href="#parity">GAME PROGRESS <span id="area-count"></span></a
         ><a href="#changelog">CHANGELOG ↓</a>
       </nav>
       <section id="parity" aria-labelledby="parity-title">
         <div class="section-heading">
           <div>
             <div class="eyebrow">01 / WHAT’S LEFT</div>
-            <h2 id="parity-title">Remaining parity work</h2>
+            <h2 id="parity-title">How much is done?</h2>
           </div>
           <span class="reference" id="reference"></span>
         </div>
         <p class="section-intro">
-          Progress is tracked by behavior, not a guessed percentage. “Verified”
-          means a routine has been compared with the original executable; it
-          does not necessarily mean it is connected to live play.
+          “Works in the game” means you can use it now. “Tested separately”
+          means we checked a piece against the original, but still need to
+          connect it.
         </p>
+        <div class="overall">
+          <strong id="overall-value"></strong>
+          <div>
+            <h3>Overall playable milestones</h3>
+            <p id="overall-count"></p>
+          </div>
+        </div>
+        <p id="measurement" class="section-intro"></p>
         <div id="areas" class="areas"></div>
         <aside class="excluded">
           <h3>Outside this rewrite</h3>
