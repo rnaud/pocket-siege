@@ -1,3 +1,5 @@
+import sceneTerrain from './fixtures/armageddon/scene-terrain.json' with {type:'json'};
+import {nativePrepareSceneTerrain} from '../src/armageddon/scene-terrain.js';
 import sceneLoadingProgress from './fixtures/armageddon/scene-loading-progress.json' with {type:'json'};
 import {nativeAdvanceSceneLoading} from '../src/armageddon/scene-loading-progress.js';
 import sceneFinish from './fixtures/armageddon/scene-finish.json' with {type:'json'};
@@ -214,6 +216,26 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneTerrain.cases) {
+    const owner=0x2000000,stack=0x2100000,bytes=Buffer.alloc(0x100000,c.pattern),scratchBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocations=0;
+    const region=a=>a>=stack?[scratchBytes,a-stack]:[bytes,a-owner];
+    const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
+    memory.put(owner+0x5cd0,owner+0x10000);memory.put(owner+0x2ac,owner+0x6000);
+    const snapshot=()=>createHash('sha256').update(bytes).update(scratchBytes.subarray(0x8010,0x8d20)).digest('hex');
+    const masks=nativePrepareSceneTerrain(memory,owner,owner+0x6100,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118},{
+      allocate:size=>{allocations++;calls.push(['allocate',size,snapshot()]);if(c.mutation)memory.put(owner+0x5cd0,owner+(allocations===1?0x10000:0x30000));return c.failure===allocations?0:owner+(allocations===1?0x1000:0x2000);},
+      allocateArray:(...args)=>{calls.push(['array',...args,snapshot()]);return owner+0x70000;},
+      loadNamedImage:(...args)=>{calls.push(['image',...args,snapshot()]);if(c.mutation)memory.put(owner+0x5cd0,owner+0x50000);return owner+0x4000;},
+      createTerrain:(terrain,settings)=>{
+        const {maskImage,renderer,mode,path,count,positions,metadata,water}=settings;
+        calls.push(['terrain',terrain,maskImage,renderer,mode,path,count,positions,metadata,water,snapshot()]);
+        memory.put(count,3);memory.put(positions,123);memory.put(metadata,456);memory.put(water,78);
+        if(c.mutation)memory.put(owner+0x5cd0,owner+0x10000);
+        return terrain;
+      },
+    });
+    expect({calls,sha256:snapshot(),masks}).toEqual({calls:c.calls,sha256:c.sha256,masks:c.masks});
+  }
   for(const c of sceneLoadingProgress.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
