@@ -1,3 +1,5 @@
+import wormMemory from './fixtures/armageddon/worm-memory.json' with {type:'json'};
+import {nativeCreateWormAt} from '../src/armageddon/worm-create.js';
 import physicsMemory from './fixtures/armageddon/physics-memory.json' with {type:'json'};
 import {nativeCreatePhysicsAt,nativeRegisterPhysicsMemory} from '../src/armageddon/physics-memory.js';
 import groupDispatch from './fixtures/armageddon/event-group-dispatch.json' with {type:'json'};
@@ -69,6 +71,25 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  const wormActual=[],wormExpected=[];
+  for(const c of wormMemory.cases) {
+    const owner=new Uint8Array(0x10000),heap=new Uint8Array(0x10000),scene=new Uint8Array(0x20000),calls=[];
+    const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
+    for(const [at,value] of c.initialWords)memory.put(at,value);
+    let cursor=0x2408000,attempts=0;
+    const allocate=(kind,size,pool)=>{const value=kind==='allocate'&&size===0x164&&(c.bits&64)?0:cursor;if(value)cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
+    const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),free:at=>calls.push(['free',at]),
+      randomSpawnWord:()=>{calls.push(['random']);return 0x12345678;},randomSpawn:r=>{calls.push(['randomSpawn',r]);return c.packed;},sideSpawn:side=>{calls.push(['sideSpawn',side]);return c.packed;},reserveSpawn:p=>calls.push(['reserve',p]),
+      gravity:()=>{calls.push(['gravity']);return c.gravity;},setWormBusy:(...args)=>calls.push(['busy',...args]),wormHealth:(...args)=>{calls.push(['health',...args]);return c.health;},
+      placeWorm:(x,y)=>{calls.push(['place',x,y,memory.get(0x2000040)|0,memory.get(0x2000048)|0]);return ++attempts>=c.successAt;},
+      allocateAnimation:size=>allocate('allocate',size),constructAnimation:(...args)=>{calls.push(['animation',...args]);return 456;},initializeResources:()=>calls.push(['resources']),changeState:state=>calls.push(['state',state]),settlePhysics:()=>calls.push(['settle']),
+    };
+    nativeCreateTaskMemory(memory,0x2008000,0,host);memory.put(0x2008038,0x2300000);
+    nativeCreateWormAt(memory,0x2000000,0x2008000,c.team,c.worm,0x2001000,host);
+    wormActual.push([createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),calls]);wormExpected.push([c.sha256,c.calls]);
+  }
+  expect(wormActual).toEqual(wormExpected);
   const physicsActual=[],physicsExpected=[];
   for(const row of physicsMemory.cases) {
     const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),owner=Uint8Array.from({length:0x3c},(_,i)=>(i*11+5)&255),scene=new Uint8Array(0x20000),calls=[];

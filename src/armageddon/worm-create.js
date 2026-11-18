@@ -92,3 +92,19 @@ export function nativeCreateWorm({id,parent,memory=new Uint8Array(0x390),sceneMe
   });
   return task;
 }
+
+import { nativeCreatePhysicsAt } from './physics-memory.js';
+import { nativeRegisterTaskMemory } from './task-memory.js';
+//004D5A40 address-backed factory. Spawn, resource and state services remain host interfaces.
+export function nativeCreateWormAt(memory,address,parent,team,worm,configuration,host) {
+  const scene=memory.get(parent+0x38);
+  nativeInitializeWorm(memory.range(address,0x390),memory.range(scene,0x20000),team,worm,memory.range(configuration,40),{
+    ...host,
+    initializePhysics:(category,shape,type)=>{
+      nativeCreatePhysicsAt(memory,address,parent,category,shape,host);
+      memory.put(address,0x526de0);memory.put(address+0x2c,type);
+    },
+    registerTask:(type,index)=>nativeRegisterTaskMemory(memory,address,type,index,host),
+  });
+  return address;
+}
