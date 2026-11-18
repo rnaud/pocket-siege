@@ -1,4 +1,4 @@
-"""Recover authored map long filenames from ISO Joliet/ISO9660 extent identity.
+"""Recover map and mission filenames from ISO Joliet/ISO9660 extent identity.
 
 Keeps existing imported filenames and saved selections; emits only aliases whose
 source bytes match an existing map. No positional or numeric alias guessing.
@@ -42,6 +42,17 @@ with args.iso.open('rb') as stream:
         if data != (root/'public/armageddon'/asset['path']).read_bytes():
             raise ValueError('Imported bytes differ: '+asset['id'])
         aliases[name] = {'id':asset['id'],'sha256':hashlib.sha256(data).hexdigest()}
+    missions = {}
+    records = json.loads((root/'src/armageddon/mission-catalog.json').read_text())['records']
+    for record in records:
+        extent,size = short['/data/mission/'+record['source'].lower()]
+        name = long[(extent,size)].removeprefix('/data/')
+        stream.seek(extent*2048); data = stream.read(size)
+        if hashlib.sha256(data).hexdigest() != record['sha256'] or data.decode('cp1252') != record['text']:
+            raise ValueError('Imported mission differs: '+record['source'])
+        missions[name] = record['source']
 output = root/'src/armageddon/map-names.json'
 output.write_text(json.dumps(dict(sorted(aliases.items())),indent=2)+'\n')
 print(f'Verified {len(aliases)} authored map names against ISO bytes')
+(root/'src/armageddon/mission-names.json').write_text(json.dumps(dict(sorted(missions.items())),indent=2)+'\n')
+print(f'Verified {len(missions)} mission definition names against ISO bytes')

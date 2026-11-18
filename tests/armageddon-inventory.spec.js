@@ -1,4 +1,7 @@
 import missionSelection from './fixtures/armageddon/mission-selection.json' with {type:'json'};
+import missionNames from '../src/armageddon/mission-names.json' with {type:'json'};
+import {resolveMissionDefinition,missionFileServices} from '../src/armageddon/mission-files.js';
+import {resolveOriginalMapId} from '../src/armageddon/maps.js';
 import {nativeSelectMission,nativeSelectTraining} from '../src/armageddon/mission-selection.js';
 import missionResources from './fixtures/armageddon/mission-resources.json' with {type:'json'};
 import {nativeMissionThumbnail,nativeMissionTerrainPath,nativeMissionWinningCondition,nativeMissionSelection} from '../src/armageddon/mission-resources.js';
@@ -153,6 +156,33 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  expect(Object.keys(missionNames)).toHaveLength(48);
+  for(const [name,source] of Object.entries(missionNames)) {
+    const record=resolveMissionDefinition(`D:\\DATA\\${name.toUpperCase().replaceAll('/','\\')}`);
+    expect(record.source).toBe(source);
+    expect(resolveMissionDefinition(`mission/${source}`)).toBe(record);
+    const owner=0x2000000,bytes=Buffer.alloc(0x10000),strings=new Map(),messages=[];
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:()=>68};
+    const host={...missionFileServices({
+      assignString:(address,value)=>{memory.put(address,owner+0x1000);strings.set(owner+0x1000,value);},
+      readString:address=>strings.get(address),
+    }),messageBox:(...args)=>messages.push(args)};
+    const [,kind,number]=name.match(/^mission\/(mission|training)(\d+)\.wam$/);
+    const result=kind==='mission'?nativeSelectMission(memory,owner,Number(number),123,host):nativeSelectTraining(memory,owner,Number(number),host);
+    expect(result).toBe(0);expect(messages).toEqual([]);
+    expect(resolveMissionDefinition(strings.get(memory.get(owner+0x880)))).toBe(record);
+    host.profileInt=(section,key,fallback,filename)=>{
+      const selected=resolveMissionDefinition(strings.get(filename));
+      const value=selected.sections.find(s=>s.name.toLowerCase()===section.toLowerCase())?.entries.find(([k])=>k.toLowerCase()===key.toLowerCase())?.[1];
+      return value===undefined?fallback:parseInt(value,10);
+    };
+    expect(resolveOriginalMapId(nativeMissionTerrainPath(memory,owner,host))).not.toBeNull();
+    memory.put(owner+0x884,7);memory.put(owner+0x54,-1);
+    expect(nativeSelectMission(memory,owner,999,0,host)).toBe(-1);
+    expect(memory.get(owner+0x884)).toBe(7);
+  }
+  expect(resolveMissionDefinition('C:\\data\\mission\\mission999.wam')).toBeNull();
+  expect(resolveMissionDefinition('other/mission1.wam')).toBeNull();
   for(const c of missionSelection.cases) {
     const owner=0x2000000, bytes=Buffer.alloc(0x10000,0xa5),calls=[];let drive=68;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:()=>drive};
