@@ -1,3 +1,5 @@
+import physicsMemory from './fixtures/armageddon/physics-memory.json' with {type:'json'};
+import {nativeCreatePhysicsAt,nativeRegisterPhysicsMemory} from '../src/armageddon/physics-memory.js';
 import groupDispatch from './fixtures/armageddon/event-group-dispatch.json' with {type:'json'};
 import {nativeDispatchEventGroupChildren} from '../src/armageddon/event-group.js';
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory,nativeSendTaskEventMemory} from '../src/armageddon/task-memory.js';
@@ -67,6 +69,27 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  const physicsActual=[],physicsExpected=[];
+  for(const row of physicsMemory.cases) {
+    const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),owner=Uint8Array.from({length:0x3c},(_,i)=>(i*11+5)&255),scene=new Uint8Array(0x20000),calls=[];
+    const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
+    let cursor=0x2408000;
+    const allocate=(kind,size,pool)=>{const value=cursor;cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
+    const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),free:at=>calls.push(['free',at])};
+    nativeCreateTaskMemory(memory,0x2000000,0,host);memory.put(0x2000038,0x2300000);
+    memory.put(0x23007d4,0x2402000);scene[0x11ba0]=[0,1,100,255][row.shape];memory.put(0x2402000,0x2005000);memory.put(0x24023c0,0x2406000);
+    for(let i=0;i<4;i++)memory.put(0x24063a4+i*4,0x12340000+i);
+    for(const [base,storage] of [[0x2402018,0x2404000],[0x2402034+row.category*0x1c,0x2405000]]) {
+      for(const [offset,value] of [[4,row.capacity],[12,row.count],[16,storage],[20,storage+256]])memory.put(base+offset,value);
+      for(let i=0;i<row.count;i++)memory.put(storage+i*4,i%2?0x98760000+i:0);
+    }
+    nativeCreatePhysicsAt(memory,0x2400100,0x2000000,row.category,row.shape,host);
+    memory.put(0x24001e8,row.all_index);memory.put(0x24001e4,row.category_index);
+    nativeRegisterPhysicsMemory(memory,0x2402000,0x2400100,host);
+    physicsActual.push([createHash('sha256').update(owner).update(heap).digest('hex'),calls]);physicsExpected.push([row.sha256,row.calls]);
+  }
+  expect(physicsActual).toEqual(physicsExpected);
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
   for(const row of groupDispatch.send_cases) {
     const bytes=new Uint8Array(0x8000),view=new DataView(bytes.buffer),calls=[];
