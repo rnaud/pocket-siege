@@ -1021,6 +1021,10 @@ export function stepOriginalRecovery(worm) {
 //004DDBD0: gesture choice precedes player advance, then state101 sync.
 // Called by the simulation; rendering the same frame must not choose gestures.
 export function stepOriginalIdle(worm, frame, memory, sceneMemory, host) {
+  const body=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  // Both004D97F0 hit routes accumulate raw damage at20C;004DD7D0
+  // consumes that same latch, not displayed HP loss or lifetime damage.
+  if(worm.nativeBlastAccumulated!==undefined)body.setInt32(0x20c,worm.nativeBlastAccumulated,true);
   const metadata=id=>animations.get(spriteIds.sprites[id].name).metadata;
   const player=worm.originalPlayer??=new NativeAnimationPlayer();
   if(worm.originalAnimationKey!=="wbrth1") {
@@ -1034,6 +1038,7 @@ export function stepOriginalIdle(worm, frame, memory, sceneMemory, host) {
     ...host,current:()=>({sprite:player.current.id,progress:player.current.progress}),
     queue:id=>player.enqueue(id,metadata(id)),
   });
+  worm.nativeBlastAccumulated=body.getInt32(0x20c,true);
   player.advance();
   nativeSynchronizeWormMemory(memory,sceneMemory,{...host,player,metadata});
   worm.originalPlayerFrame=frame;

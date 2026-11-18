@@ -84,6 +84,26 @@ for (const group of [0, 1, 2])
         return {name,randomCalls,unchanged:JSON.stringify(before)===JSON.stringify([...worm.originalPlayer.replayState()]),cooldown:new DataView(memory.buffer).getInt32(0x2c8,true)};
       });
       expect(gesture).toEqual({name:"wblink1",randomCalls:2,unchanged:true,cooldown:200});
+      const reactions=await page.evaluate(async()=>{
+        const {originalWormFrame,stepOriginalIdle}=await import("/src/armageddon/art.js");
+        const {nativeDirectHitResponse}=await import("/src/armageddon/direct-hit-response.js");
+        const {nativeBlastResponse}=await import("/src/armageddon/blast-response.js");
+        return [25,26].map(damage=>{
+          const direct=nativeDirectHitResponse({state:101,accumulated:0},[0,0,0,0,0,10],0);
+          const blast=nativeBlastResponse({...direct.result,facing:1},damage-10);
+          const worm={hp:100,team:0,nativePoison:{amount:0},nativeBlastAccumulated:blast.result.accumulated};
+          const memory=new Uint8Array(0x390),scene=new Uint8Array(0x6000),host={state:()=>101,random:()=>0,teamStatus:()=>0,health:()=>100};
+          originalWormFrame(worm,"idle",0,0,"rocket",false);
+          // The latch survives an ineligible part of the breathing cycle.
+          stepOriginalIdle(worm,1,memory,scene,host);
+          const retained=worm.nativeBlastAccumulated;
+          worm.originalPlayer.current.progress=65535;
+          stepOriginalIdle(worm,2,memory,scene,host);
+          return {retained,name:originalWormFrame(worm,"idle",2,0,"rocket",false).name,remaining:worm.nativeBlastAccumulated};
+        });
+      });
+      expect(reactions).toEqual([{retained:25,name:"waccuse",remaining:0},{retained:26,name:"wfist",remaining:0}]);
+
 
     }
     await page.screenshot({
