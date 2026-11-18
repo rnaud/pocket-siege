@@ -1,5 +1,6 @@
 import { OriginalMusic } from "./armageddon/music.js";
 import {nativeInitializeWormSpawnFields} from './armageddon/worm-spawn-fields.js';
+import {nativeBodyBelowWater} from './armageddon/motion.js';
 import {speechBankOptions,speechRequestId} from './armageddon/speech-resources.js';
 import { NativeCollisionScene } from './armageddon/collision-scene.js';
 import { nativeCrateSpawnSearch } from './armageddon/crate-spawn-search.js';
@@ -5486,7 +5487,8 @@ function stepFrame(dt) {
       jump(w.jumpQueued.kind);
     if (w.jumpQueued && jumpClock > w.jumpQueued.until) w.jumpQueued = null;
     const nativeWaterBody = w.nativeRopeBody ?? w.nativeHurtBody ?? w.nativeFlight;
-    const drowning = nativeWaterBody ? nativeWormDrowningState(nativeWaterBody) === 0x87 : w.y - 10 < waterLevel;
+    const drowning = nativeWaterBody ? nativeWormDrowningState(nativeWaterBody) === 0x87
+      : nativeBodyBelowWater(0x420cc6,Math.round((H-w.y)*65536)|0,Math.floor(H-waterLevel));
     if (drowning || w.x < -30 || w.x > W + 30) {
       attachNativeDrowningFlight(w, H);
       if (w === worms[current] && rope.attached) stopRope();

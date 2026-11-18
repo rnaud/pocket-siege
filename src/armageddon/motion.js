@@ -151,9 +151,12 @@ export function nativeSimpleBounce(body, other, side, collide) {
 // 004C9F10: bodies carrying flag 0x400000 can skim the water surface.
 // A successful skim emits body virtual event +0x40; otherwise water applies
 // drag and a fixed downward acceleration. Collision uses native coordinates.
+export function nativeBodyBelowWater(flags,y,waterY) {
+  return Boolean(flags & 0x400000) && (y >> 16) > waterY;
+}
 export function nativeWaterMotion(body, waterY, suppressSkim, collide) {
   let { y, vx, vy, submerged = 0 } = body;
-  if (!(body.flags & 0x400000) || y >> 16 <= waterY)
+  if (!nativeBodyBelowWater(body.flags,y,waterY))
     return { y, vx, vy, submerged, skim: false, result: 0 };
   if (
     !suppressSkim &&
