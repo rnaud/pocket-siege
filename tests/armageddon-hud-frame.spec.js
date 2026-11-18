@@ -1,3 +1,5 @@
+import controllerPresentation from "./fixtures/armageddon/controller-presentation.json" with { type: "json" };
+import { nativeUpdateControllerPresentation } from "../src/armageddon/controller-presentation.js";
 import controllerFrameInput from "./fixtures/armageddon/controller-frame-input.json" with { type: "json" };
 import { nativeCollectCameraInput, nativeCollectPauseInput } from "../src/armageddon/controller-frame-input.js";
 import controllerFrame from "./fixtures/armageddon/controller-frame.json" with { type: "json" };
@@ -262,6 +264,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerPresentation.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
+    for(const [o,v] of Object.entries(c.fields))body.setInt32(Number(o),v,true);
+    controllerPresentation.sceneOffsets.forEach((o,i)=>scene.setInt32(o,c.initial[i],true));scene.setInt32(0x1d444,c.blocked,true);
+    nativeUpdateControllerPresentation(memory,sceneMemory,{
+      teamVisible:team=>{calls.push(["visible",team]);return c.visible;},teamIndicator:team=>{calls.push(["indicator",team]);return c.indicator;},
+      arsenalMeasure:()=>{calls.push(["measure"]);return [c.width,c.height];},
+      arsenalLayout:(...args)=>{calls.push(["layout",...args]);expect(scene.getInt32(0x12474,true)).toBe(0);expect(scene.getInt32(0x12478,true)).toBe(0);return [c.x,c.y];},
+      arsenalPosition:(...args)=>calls.push(["position",...args]),arsenalSelection:()=>{calls.push(["selection"]);return c.selection;},
+    });
+    expect({calls,body:controllerPresentation.offsets.map(o=>body.getInt32(o,true)),scene:controllerPresentation.sceneOffsets.map(o=>scene.getInt32(o,true))}).toEqual({calls:c.calls,body:c.body,scene:c.scene});
   }
   for(const c of controllerFrameInput.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];

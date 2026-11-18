@@ -57,9 +57,10 @@
     },
     {
       "title": "Turns & match rules",
-      "live": "Native team/worm rotation, wind selection, settlement presentation, poison settlement and recurring environment effects are integrated. Native controller worm-selection reset and ordered actor notifications now match executable fixtures, including input-mode and pointer-ownership cleanup; live controller integration remains. Controller block, resume and deactivation events now match native ownership, input-mode, ammo-settlement and camera/AI cleanup sequences; activation now also matches original input ownership, default-selection requests and human/AI branch ordering. Worm cycling, timer cancellation, arsenal closure and action-counter events also match native fixtures. Child-task dispatch, delay presentation and live integration remain. Post-shot cleanup and deferred weapon selection now match native execution, including selection-before-ammo ordering and busy-state retention; live controller integration remains. Native activation now defaults to the executable-verified70-slot weapon-delay countdown, including unlock announcement RNG and sound ordering; live inventory/presentation wiring remains. Native frame dispatch now composes deferred selection, camera requests and selection countdown with verified update order, sound gates and fixed-point smoothing. Camera focus and pause collectors now also match the executable and run by default, including queried worm coordinates, key consumption and ownership gates. Presentation and live browser adapters remain.",
+      "live": "Native team/worm rotation, wind selection, settlement presentation, poison settlement and recurring environment effects are integrated. Native controller worm-selection reset and ordered actor notifications now match executable fixtures, including input-mode and pointer-ownership cleanup; live controller integration remains. Controller block, resume and deactivation events now match native ownership, input-mode, ammo-settlement and camera/AI cleanup sequences; activation now also matches original input ownership, default-selection requests and human/AI branch ordering. Worm cycling, timer cancellation, arsenal closure and action-counter events also match native fixtures. Child-task dispatch, delay presentation and live integration remain. Post-shot cleanup and deferred weapon selection now match native execution, including selection-before-ammo ordering and busy-state retention; live controller integration remains. Native activation now defaults to the executable-verified70-slot weapon-delay countdown, including unlock announcement RNG and sound ordering; live inventory/presentation wiring remains. Native frame dispatch now composes deferred selection, camera requests and selection countdown with verified update order, sound gates and fixed-point smoothing. Camera focus and pause collectors now also match the executable and run by default, including queried worm coordinates, key consumption and ownership gates. Presentation state updates now also match native smoothing, panel and arsenal-refresh behavior; widget drawing and live browser adapters remain.",
       "remaining": "Connect the complete native turn controller, action-busy ownership, retreat requests, input gates and scheme rules.",
       "evidence": [
+        "native_controller_presentation_update",
         "native_controller_frame_input",
         "native_controller_frame_dispatch",
         "native_weapon_delay_advance",
@@ -86,9 +87,10 @@
     },
     {
       "title": "Sprites, animation & HUD",
-      "live": "Original media, native animation routines and many HUD elements are integrated, including the animated wind meter.",
+      "live": "Original media, native animation routines and many HUD elements are integrated, including the animated wind meter. Native controller presentation now reproduces panel sliding, cursor smoothing and arsenal refresh/selection state against executable fixtures, and runs by default in native frame updates. Arsenal widget rendering and live browser wiring remain.",
       "remaining": "Finish the complete animation state graph, remaining poses and HUD transitions, renderer/task visibility and native scheduling.",
       "evidence": [
+        "native_controller_presentation_update",
         "visual_media_import",
         "animation_player",
         "native_wind_meter_drawing"
