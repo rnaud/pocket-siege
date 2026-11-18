@@ -1,3 +1,4 @@
+import {nativeCreateFileArchive,nativeOpenFileArchive} from './archive-file.js';
 import {nativeAddGamePaletteColor} from './game-palette-memory.js';
 //004A6820: clear/present all three initial surfaces using one renderer and
 //one dimension query. The original repeats the same rectangle each time.
@@ -23,12 +24,10 @@ export function nativeInitializeSceneTeamColors(memory, owner, palette, host) {
 //font/palette backends and sound loading remain explicit resource services.
 export function nativePrepareSceneGraphics(memory,owner,frontend,initialAudio,host) {
   const archive=host.allocate(0x19c);
-  if(archive) {
-    memory.put(archive,0x5265d8);memory.put(archive+0x194,0);
-    memory.put(archive,0x526938);memory.put(archive+0x198,0);
-  }
+  if(archive)nativeCreateFileArchive(memory,archive);
   memory.put(owner+0x2ac,archive);
-  host.openGraphicsArchive(memory.get(owner+0x2ac),'data\\Gfx\\Gfx.dir');
+  if(host.openGraphicsArchive)host.openGraphicsArchive(memory.get(owner+0x2ac),'data\\Gfx\\Gfx.dir');
+  else nativeOpenFileArchive(memory,memory.get(owner+0x2ac),'data\\Gfx\\Gfx.dir',host);
   nativeClearStartupRenderer(memory,owner,host);
   if(host.initializePaletteBanks)host.initializePaletteBanks(owner);
   else nativeInitializeScenePaletteBanks(memory,owner,host);
