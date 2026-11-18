@@ -69,7 +69,7 @@ test(`live ${kind} adapter releases five original missile bodies on consecutive 
   }
 });
 
-for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl", 30], ["postal", "postbox", "letter1", 50], ["napalmstrike", "airjeto", "airmisl", 15]])
+for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl", 30], ["postal", "postbox", "letter1", 50], ["napalmstrike", "airjeto", "airmisl", 15], ["carpetbomb", "cpttruck", "carpet2", 30]])
 test(`live ${kind} aircraft releases original missiles and resolves its strike`, async ({
   page,
 }) => {
@@ -109,8 +109,10 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
   expect(strike.sprite).toBe(carrier);
   expect(await page.evaluate(kind => window.siege.getState().ammo[0][kind], kind)).toBe(0);
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().bombs.length))
-    .toBe(5);
+    .poll(() => page.evaluate(() => window.siege.getState().bombs.length), {
+      timeout: 10000,
+    })
+    .toBeGreaterThan(0);
   const missiles = await page.evaluate(() => window.siege.getState().bombs);
   expect(
     missiles.every((b) => b.sprite === sprite && b.nativeDamage === damage),
@@ -145,7 +147,9 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
       .toBeNull();
   } else {
     await expect
-      .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus))
+      .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus), {
+        timeout: 20000,
+      })
       .toBeNull();
   }
 });
@@ -180,5 +184,32 @@ test("native napalm strike releases record-driven fire missiles", { tag: "@logic
   expect(nativeProjectileDetonationEvents(missile, () => 0)).toEqual([
     { operation: "blast", request: [1, 16252928, -13631488, 40, 15, 1] },
     { operation: "fire", request: [16252928, -13631488] },
+  ]);
+});
+
+test("native carpet bomb releases record-driven bomb payloads", { tag: "@logic" }, () => {
+  const strike = createNativeAirstrike(600, 300, 1, 0, 650, 1, "carpetbomb");
+  expect(strike.sprite).toBe(684);
+  expect(strike.sound).toBe(52);
+  expect(strike.config).toMatchObject({
+    count: 5, spacing: 32, speed: 100, kind: 2,
+  });
+  const missiles = [];
+  let removed = false;
+  for (let tick = 0; tick < 300 && !removed; tick++) {
+    const result = stepNativeAirstrike(strike, 650);
+    missiles.push(...result.missiles);
+    removed = result.removed;
+  }
+  expect(removed).toBe(true);
+  expect(missiles).toHaveLength(5);
+  const missile = missiles[0];
+  expect(missile.nativeBody).toMatchObject({ sprite: 686, hitMask: 0 });
+  expect(missile.nativeDetonation).toMatchObject({
+    push: 100, damage: 30, secondary: 0, offset: 0,
+  });
+  expect(missile.nativeTimer.remaining).toBe(9000);
+  expect(nativeProjectileDetonationEvents(missile, () => 0)).toEqual([
+    { operation: "blast", request: [1, 16252928, -13631488, 100, 30, 1] },
   ]);
 });

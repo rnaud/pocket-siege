@@ -416,8 +416,8 @@
     {
       "slot": 51,
       "native_name": "CarpetBomb",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "carpetbomb",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 0
     },
