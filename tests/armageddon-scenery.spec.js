@@ -149,6 +149,7 @@ test("explosions render native debris for the selected terrain and release it", 
   expect(pixelCheck).toEqual({ same: true, width: 60, scale: 1 });
   await page.locator("#terrain-theme").selectOption("snow");
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   const { debris, explosions } = await page.evaluate(async () => {
     await window.siege.debug.resetSeed(42);

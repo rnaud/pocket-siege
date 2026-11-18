@@ -61,6 +61,7 @@ test("live girder uses original horizontal source dimensions", async ({
 }, info) => {
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#utilities-toggle").click();

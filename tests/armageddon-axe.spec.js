@@ -20,6 +20,7 @@ async function prepare(page) {
   await page.goto('/');
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('#mode').selectOption('local');
+  await page.locator('#map-layout').selectOption('fern');
   await page.locator('#start').click();
   const targets = await page.evaluate(async () => { await window.siege.debug.resetSeed(42); return window.siege.debug.stageMeleeTargets(); });
   await page.locator('#inventory-toggle').click();

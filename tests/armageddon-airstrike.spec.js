@@ -76,6 +76,7 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
@@ -98,7 +99,10 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
     }
     sample();
   });
-  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+  // Different native flight paths need different targets on this fixed map:
+  // keep missiles on land without striking the central barrel with Air Strike.
+  const targetX = kind === "airstrike" ? 0.75 : 0.5;
+  await page.mouse.click(box.x + box.width * targetX, box.y + box.height * 0.55);
   const strike = await page.evaluate(
     () => window.siege.getState().airstrikes[0],
   );
