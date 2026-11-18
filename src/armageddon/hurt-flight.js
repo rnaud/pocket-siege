@@ -243,6 +243,14 @@ export function nativeWormMotionCallbacks(worm, environment, collision, events) 
           Object.assign(receiver, contact.receiver);
           return Boolean(contact.result);
         },
+        (candidate,next)=>{
+          const entry=nativeWormTransitionBody(candidate,next,{schemeByte:byte(0x11d40)});
+          Object.assign(candidate,entry.body,{state:next});
+          Object.assign(body,candidate);
+          if(worm.nativeRopeBody)worm.nativeRopeBody=body;
+          worm.nativeHurtBody=body;
+          events.push(...entry.calls);
+        },
       );
       Object.assign(body, response.body);
       environment.updateCollisionBody?.(hit, response.other);

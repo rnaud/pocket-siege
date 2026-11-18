@@ -27,6 +27,8 @@ test("native hurt flight recovers on ground and drowning follows original underw
   }
   expect(recovery).toBeTruthy();
   expect(recovery.body.field250).toBe(1);
+  expect(recovery.body.type).toBe(3);
+  expect(recovery.body.field154).toBe(0);
   expect(recovery.body.vx).toBe(0);
   expect(recovery.body.vy).toBe(0);
   // Native y-down sweep stops one fixed unit before blocked pixel 551.

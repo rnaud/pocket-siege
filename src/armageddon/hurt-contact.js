@@ -10,6 +10,7 @@ export function nativeWormHurtCollision(
   environment,
   collide,
   respond = () => false,
+  enterState = null,
 ) {
   if (![0x73, 0x7f, 0x80, 0x81].includes(input.state))
     throw new RangeError("Unsupported hurt state");
@@ -17,6 +18,7 @@ export function nativeWormHurtCollision(
     other = { ...otherInput },
     calls = [];
   const setState = (target) => {
+    enterState?.(body,target);
     body.state = target;
     calls.push({ operation: "state", target, velocity: [body.vx, body.vy] });
   };
