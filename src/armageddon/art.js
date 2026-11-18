@@ -1,4 +1,5 @@
-import { nativeSynchronizeWormPlayer } from "./worm-animation-sync.js";
+import { nativeWormIdleGesture } from "./worm-idle-gesture.js";
+import { nativeSynchronizeWormMemory, nativeSynchronizeWormPlayer } from "./worm-animation-sync.js";
 import { nativeAxeTick } from "./axe.js";
 import { nativeWormBubbles } from "./worm-water.js";
 import { nativeRecoveryEntry, nativeRecoveryTick } from "./recovery.js";
@@ -144,6 +145,7 @@ const names = [
     "wbrth2",
     "wpbrtlk",
     "wpbrth",
+    ...[44,58,61,64,67,70,73,76,79,82,85,88,91,94,97,100].map(id=>spriteIds.sprites[id].name),
     "wblink1",
     "wwalk",
     "wwalku",
@@ -1014,6 +1016,27 @@ export function stepOriginalRecovery(worm) {
   if (result.calls.some((call) => call.operation === "state"))
     worm.originalRecovery = null;
   return result.calls;
+}
+
+//004DDBD0: gesture choice precedes player advance, then state101 sync.
+// Called by the simulation; rendering the same frame must not choose gestures.
+export function stepOriginalIdle(worm, frame, memory, sceneMemory, host) {
+  const metadata=id=>animations.get(spriteIds.sprites[id].name).metadata;
+  const player=worm.originalPlayer??=new NativeAnimationPlayer();
+  if(worm.originalAnimationKey!=="wbrth1") {
+    player.clear();
+    nativeSynchronizeWormMemory(memory,sceneMemory,{...host,player,metadata});
+    worm.originalAnimationKey="wbrth1";
+    worm.originalEquipped=false;
+    worm.originalAnimationStart=frame;
+  }
+  nativeWormIdleGesture(memory,sceneMemory,{
+    ...host,current:()=>({sprite:player.current.id,progress:player.current.progress}),
+    queue:id=>player.enqueue(id,metadata(id)),
+  });
+  player.advance();
+  nativeSynchronizeWormMemory(memory,sceneMemory,{...host,player,metadata});
+  worm.originalPlayerFrame=frame;
 }
 
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {

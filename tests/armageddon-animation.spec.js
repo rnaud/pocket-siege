@@ -71,6 +71,20 @@ for (const group of [0, 1, 2])
         return names;
       });
       expect(breathing).toEqual(["wbrth1","wbrth2","wpbrtlk","wpbrth","wbrth2","wbrth1"]);
+      const gesture=await page.evaluate(async()=>{
+        const {originalWormFrame,stepOriginalIdle}=await import("/src/armageddon/art.js");
+        const worm={hp:100,team:0,nativePoison:{amount:0}},memory=new Uint8Array(0x390),scene=new Uint8Array(0x6000);
+        originalWormFrame(worm,"idle",0,0,"rocket",false);
+        worm.originalPlayer.current.progress=65535;
+        let randomCalls=0;
+        stepOriginalIdle(worm,1,memory,scene,{state:()=>101,random:()=>{randomCalls++;return 0;},teamStatus:()=>0,health:()=>100});
+        const name=originalWormFrame(worm,"idle",1,0,"rocket",false).name;
+        const before=[...worm.originalPlayer.replayState()];
+        for(let i=0;i<20;i++)originalWormFrame(worm,"idle",1,0,"rocket",false);
+        return {name,randomCalls,unchanged:JSON.stringify(before)===JSON.stringify([...worm.originalPlayer.replayState()]),cooldown:new DataView(memory.buffer).getInt32(0x2c8,true)};
+      });
+      expect(gesture).toEqual({name:"wblink1",randomCalls:2,unchanged:true,cooldown:200});
+
     }
     await page.screenshot({
       path: test.info().outputPath("native-weapon.png"),

@@ -226,6 +226,7 @@ import {
   updateOriginalProjectile,
   projectileSprites,
   originalWormFrame,
+  stepOriginalIdle,
   startOriginalRecoil,
   startOriginalPreparation,
   stepOriginalPreparation,
@@ -685,6 +686,8 @@ function createWorm(t, i, x, spawnY = null) {
   const y =
     spawnY ??
     Math.max(...[-4, -2, 0, 2, 4].map((dx) => terrain.surface(x + dx))) + 8;
+  const nativeIdleMemory=new Uint8Array(0x390);
+  new DataView(nativeIdleMemory.buffer).setInt32(0x2c8,((Math.imul(Math.floor(x)+Math.floor(H-y),0x660d)&65535)%100)+200,true);
   return {
     team: t,
     name: names[t][i],
@@ -692,6 +695,8 @@ function createWorm(t, i, x, spawnY = null) {
     nativePickupFlag: 0,
     nativePickupState: 0x65,
     nativePoison: { amount: 0, latched: 0 },
+    nativeIdleMemory,
+    nativeOrderId: nativeRenderOrder.allocate(),
     nativeHealthDisplay: { value: 100 << 16, target: 100 << 16, progress: 0, active: 0, pending: 0 },
     x,
     y,
@@ -4984,6 +4989,33 @@ function updateAutomaticUtilities() {
   damageMultiplier = nativeTeamEnvironment({ damageMultiplier, gravityPercent: 100 }, result.body.flags).damageMultiplier;
 }
 
+// Transient native scene projection; authoritative ranks remain in the shared
+// render registry and per-worm bytes are included in actor replay snapshots.
+const idleSceneMemory=new Uint8Array(0x6000);
+function stepIdleGestures() {
+  const scene=new DataView(idleSceneMemory.buffer);
+  scene.setInt32(0x102c,nativeRenderOrder.active.length,true);
+  nativeRenderOrder.active.forEach((id,i)=>scene.setInt32(0xc2c+i*4,id,true));
+  nativeRenderOrder.orders.forEach((rank,id)=>scene.setInt32(0x1030+id*4,rank,true));
+  for(const w of worms) {
+    if(w.hp<=0 || w===worms[current] || !w.ground || w.moving || w.knocked || w.hurt>0.35 || w.recoil>0 || w.landing>0 ||
+      w.originalTeleport || w.originalPreparation || w.originalRecoil || nativeWormState(w)!==0x65 || phase==="over")continue;
+    const body=new DataView(w.nativeIdleMemory.buffer);
+    for(const [offset,value] of [[0xfc,w.team],[0x100,w.matchStats.worm],[0x148,w.nativePoison.amount],[0x158,w.nativeOrderId],[0x38c,w.nativeHitVoicePlayback?1:0]])body.setInt32(offset,value,true);
+    stepOriginalIdle(w,matchRandom.frame+1,w.nativeIdleMemory,idleSceneMemory,{
+      state:()=>0x65,random:()=>matchRandom.logicUint(),teamStatus:()=>0,health:()=>w.hp,
+      stopSound:()=>{w.nativeHitVoicePlayback?.stop();w.nativeHitVoicePlayback=null;},
+      sound:(...request)=>{
+        if(!sound)return 0;
+        audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();
+        w.nativeHitVoicePlayback=playNativeOwnedSound(audio,request,w.nativeHitVoicePlayback);
+        return w.nativeHitVoicePlayback?1:0;
+      },
+    });
+  }
+  nativeRenderOrder.active.forEach(id=>{nativeRenderOrder.orders[id]=scene.getInt32(0x1030+id*4,true);});
+}
+
 function step(dt) {
   stepFrame(dt);
   if (!mapLoading && !menu.open && !document.hidden)
@@ -6017,6 +6049,7 @@ function stepFrame(dt) {
     nativeCameraFocus = null;
     nativeCameraFraming = null;
   }
+  stepIdleGestures();
   matchRandom.finishFrame();
 }
 function screen(x, y) {
@@ -6220,9 +6253,7 @@ function frame(now) {
                       ]
                     : active && phase === "aim"
                       ? "aim"
-                      : Math.floor((now + w.x * 13) / 180) % 22 === 0
-                        ? "blink"
-                        : "idle";
+                      : "idle";
     w.g.userData.pose = pose;
     const original = originalWormFrame(
       w,
