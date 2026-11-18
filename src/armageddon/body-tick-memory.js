@@ -2,6 +2,7 @@ import {
   nativeWaterMotionMemory,
   nativeAirForcesMemory,
   nativeSweepMemory,
+  nativeRopeMotionMemory,
 } from "./body-forces-memory.js";
 import { fixedMultiply } from "./numeric.js";
 import { nativeSin, nativeCos } from "./trig.js";
@@ -50,7 +51,9 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
     put(0xa0, fixedMultiply(get(0xa0), get(0x84)));
     let remaining = 65536;
     for (let i = 0; i < 10 && remaining; i++) {
-      const result = host.rope(environment, body, remaining);
+      const result = host.rope
+        ? host.rope(environment, body, remaining)
+        : nativeRopeMotionMemory(memory, environment, body, remaining, host);
       remaining = result.remaining;
       if (result.hit) host.bounce(body, result.hit);
     }

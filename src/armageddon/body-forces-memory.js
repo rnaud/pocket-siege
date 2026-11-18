@@ -1,3 +1,4 @@
+import { nativeRopeMotionInPlace } from "./rope-motion.js";
 import { fixedMultiply } from "./numeric.js";
 import { nativeSweep } from "./motion.js";
 const abs32 = (value) => ((value ^ (value >> 31)) - (value >> 31)) | 0;
@@ -89,4 +90,48 @@ export function nativeSweepMemory(memory, environment, body, remaining, host) {
   memory.put(body + 0x90, result.x);
   memory.put(body + 0x94, result.y);
   return result;
+}
+
+//004CA8A0 uses body/segment memory throughout its callbacks. This view lets the
+//same recovered solver write through immediately and retain callback mutations.
+export function nativeRopeMotionMemory(
+  memory,
+  environment,
+  address,
+  remaining,
+  host,
+) {
+  const body = {};
+  const fields = {
+    x: 0x90,
+    y: 0x94,
+    vx: 0x9c,
+    vy: 0xa0,
+    anchorX: 0xcc,
+    anchorY: 0xd0,
+    length: 0xd4,
+    segmentCount: 0xdc,
+  };
+  for (const [name, offset] of Object.entries(fields))
+    Object.defineProperty(body, name, {
+      get: () => memory.get(address + offset) | 0,
+      set: (value) => memory.put(address + offset, value),
+    });
+  body.segments = new Proxy(
+    {},
+    {
+      get: (_, index) =>
+        memory.get(memory.get(address + 0xf8) + Number(index) * 4) | 0,
+      set: (_, index, value) => {
+        memory.put(memory.get(address + 0xf8) + Number(index) * 4, value);
+        return true;
+      },
+    },
+  );
+  const terrain = memory.get(memory.get(environment + 0x3c0) + 0x24);
+  const result = nativeRopeMotionInPlace(body, remaining, {
+    terrain: (x, y) => host.terrain(terrain, x, y),
+    collide: (x, y) => host.collide(environment, address, x, y),
+  });
+  return { remaining: result.remaining, hit: result.hit };
 }
