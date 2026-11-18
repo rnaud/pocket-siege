@@ -135,7 +135,9 @@ function playOriginalClip(context, name, fallback, level, loop = false, rate = 1
   pendingPlaybacks.get(context).set(playback, tracked);
   loadOriginalClip(context, name)
     .then((buffer) => {
-      if (cancelled || performance.now() - requested > 500) return;
+      // Owned loops remain relevant until their owner stops them, even when
+      // first-use cache access or decoding takes longer than a transient effect.
+      if (cancelled || (!loop && performance.now() - requested > 500)) return;
       if (tracked && !handles.free.length) return;
       channel = nativeSoundChannel(channels, priority);
       if (channel < 0) return;

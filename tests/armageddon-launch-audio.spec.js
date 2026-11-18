@@ -136,6 +136,32 @@ test("browser decodes native projectile release samples without an early holy ch
   });
   await page.goto("/");
   await expect.poll(() => page.evaluate(() => window.siege?.getState().assetsReady)).toBe(true);
+  // A cold decode must not discard a still-owned loop after500ms. A loop
+  // stopped before that same decode completes must never start afterward.
+  await page.evaluate(async () => {
+    const {playNativeProjectileFuse}=await import('/src/armageddon/audio.js');
+    const context=new AudioContext(),decode=context.decodeAudioData.bind(context);
+    context.decodeAudioData=async bytes=>{
+      const buffer=await decode(bytes);
+      await new Promise(resolve=>setTimeout(resolve,650));
+      return buffer;
+    };
+    const create=context.createBufferSource.bind(context);
+    window.delayedLoops=[];
+    context.createBufferSource=()=>{
+      const source=create(),start=source.start.bind(source),stop=source.stop.bind(source);
+      const record={stopped:false};
+      source.start=(...args)=>{window.delayedLoops.push(record);start(...args);};
+      source.stop=(...args)=>{record.stopped=true;stop(...args);};
+      return source;
+    };
+    window.delayedLoop=playNativeProjectileFuse(context,0x10042);
+    playNativeProjectileFuse(context,0x10042).stop();
+    window.delayedLoopContext=context;
+  });
+  await expect.poll(()=>page.evaluate(()=>window.delayedLoops)).toEqual([{stopped:false}]);
+  await page.evaluate(async()=>{window.delayedLoop.stop();await window.delayedLoopContext.close();});
+  expect(await page.evaluate(()=>window.delayedLoops)).toEqual([{stopped:true}]);
   await page.evaluate(async () => {
     const { attachNativeProjectile } = await import("/src/armageddon/projectile-runtime.js");
     const { playNativeProjectileReleaseSound, playNativeQueuedSound } = await import("/src/armageddon/audio.js");
