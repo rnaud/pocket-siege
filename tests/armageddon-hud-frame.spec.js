@@ -1,3 +1,6 @@
+import taskDispatch from "./fixtures/armageddon/task-dispatch.json" with { type: "json" };
+import { nativeForwardTaskEvent, nativeSendTaskEvent } from "../src/armageddon/task-dispatch.js";
+import { nativeDispatchControllerTask } from "../src/armageddon/controller-task.js";
 import controllerTargetDraw from "./fixtures/armageddon/controller-target-draw.json" with { type: "json" };
 import { nativeDrawControllerTarget } from "../src/armageddon/controller-target-draw.js";
 import controllerPanelDraw from "./fixtures/armageddon/controller-panel-draw.json" with { type: "json" };
@@ -270,6 +273,29 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of taskDispatch.forward)for(const controller of [false,true]) {
+    const task={memory:new Uint8Array(0x200),children:c.children.map(id=>id||null)},calls=[];let mutated=false;
+    const dispatch=(child,sender,event,size,payload)=>{
+      calls.push([child,sender,event,size,[...payload]]);
+      if(!mutated) {
+        mutated=true;
+        if(c.action==="append")task.children.push(9);
+        else if(c.action==="truncate")task.children.length=Math.min(1,task.children.length);
+        else if(c.action==="clear_next" && task.children.length>1)task.children[1]=null;
+        else if(c.action==="replace")task.children=[8,9,7];
+      }
+      return 0;
+    };
+    const payload=Uint8Array.of(16,50,84,118);
+    if(controller)nativeDispatchControllerTask(task,new Uint8Array(0x20000),123,0x440,4,payload,{dispatch});
+    else nativeForwardTaskEvent(task,123,0x440,4,payload,dispatch);
+    expect({calls,result:task.children.map(id=>id??0)}).toEqual({calls:c.calls,result:c.result});
+  }
+  for(const c of taskDispatch.send) {
+    const registry=[];registry[c.bucket]=c.entries;const calls=[];
+    const result=nativeSendTaskEvent(registry,123,c.type,c.index,0x440,4,Uint8Array.of(16,50,84,118),(child,sender,event,size,payload)=>{calls.push([child,sender,event,size,[...payload]]);return 0;});
+    expect({calls,result}).toEqual({calls:c.calls,result:c.result});
   }
   for(const c of controllerTargetDraw.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
