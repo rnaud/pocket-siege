@@ -1,3 +1,5 @@
+import {nativeCleanupTaskMemory} from './task-memory.js';
+import {nativeCompactPhysicsMemory} from './physics-memory.js';
 import {nativeRestoreSceneSnapshot} from './replay-scene-restore.js';
 import {nativeWriteEnvironmentMemory,nativeWriteMatchMemory} from './replay-write-memory.js';
 import {NativeReplayStream} from './replay-stream.js';
@@ -53,13 +55,18 @@ export function createNativeSceneReplayPipeline({memory,owner,scratch,host,strea
   const incoming=NativeReplayBuffer.fromMemory(memory,memory.get(owner+0x30),scratch);
   const recording=NativeReplayBuffer.fromMemory(memory,memory.get(owner+0x34),scratch+304);
   const addressed=root===undefined&&environment===undefined;
+  const cleanup=address=>{host.observeTaskCleanup?.(address);nativeCleanupTaskMemory(memory,address,host.cleanupChild??cleanup);};
+  const nativeHost=addressed?{...host,
+    flushRoot:host.flushRoot??cleanup,
+    flushEnvironment:host.flushEnvironment??(address=>{host.observeEnvironmentCleanup?.(address);nativeCompactPhysicsMemory(memory,address);}),
+  }:host;
   const pipeline=createNativeReplayPipeline({sceneMemory:memory.range(scene,0x20000),managerMemory:memory.range(owner,0x2a4),
-    root:root??memory.get(owner+4),environment:environment??memory.get(scene+0x7d4),stream:snapshot,incoming,recording,host,
+    root:root??memory.get(owner+4),environment:environment??memory.get(scene+0x7d4),stream:snapshot,incoming,recording,host:nativeHost,
     writeActors:addressed?(writer=>{
       nativeWriteEnvironmentMemory(memory,memory.get(scene+0x7d4),writer);
       nativeWriteMatchMemory(memory,memory.get(owner+4),writer);
     }):undefined,
-    restoreSnapshot:addressed?(()=>nativeRestoreSceneSnapshot(memory,owner,memory.get(owner+8),host.restore??host)):undefined,
+    restoreSnapshot:addressed?(()=>nativeRestoreSceneSnapshot(memory,owner,memory.get(owner+8),{...nativeHost,...host.restore})):undefined,
   });
   if(addressed)for(const [key,address] of [['root',owner+4],['environment',scene+0x7d4]])Object.defineProperty(pipeline.manager,key,{
     enumerable:true,get:()=>memory.get(address),set:value=>memory.put(address,value),

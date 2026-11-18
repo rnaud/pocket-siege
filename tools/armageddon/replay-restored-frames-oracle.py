@@ -93,7 +93,7 @@ def hook(cpu,address,size,user):
   ret(0,16)
  elif address==0x4b7970:
   calls.append(['query',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);write(read(sp+12)+4,0);ret(0,12)
- elif address in [0x4b2a00,0x4ca7e0]:calls.append(['flushRoot' if address==0x4b2a00 else 'flushEnvironment',cpu.reg_read(UC_X86_REG_ECX)]);ret()
+ elif address in [0x4b2a00,0x4ca7e0]:calls.append(['flushRoot' if address==0x4b2a00 else 'flushEnvironment',cpu.reg_read(UC_X86_REG_ECX)])
  elif address==0x49fc60:calls.append(['render']);ret()
  elif address==0x492510:allocationCalls.append(['free',read(sp+4)]);ret()
  elif address in [0x4c6610,0x492bc0]:
@@ -159,6 +159,14 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
  def snapshot():return bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))+bytes(cpu.mem_read(devices,0x10000))+bytes(cpu.mem_read(channels,0x10000))
  initial=snapshot();frames=[]
  for frame in range(23):
+  if frame==16:
+   #Exercise real cleanup after restore: a task hole and sparse physics holes.
+   root=read(manager+4);write(root+16,1)
+   if read(root+20)>1:write(read(root+24)+4,0)
+   restoredEnvironment=read(context+0x7d4)
+   for offset in [0x18,0x34+2*0x1c]:
+    entry=restoredEnvironment+offset;write(entry+8,1)
+    if read(entry+12):write(read(entry+16),0)
   if frame==20:write(context+0x1d438,1)
   calls.clear();allocationCalls.clear()
   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,manager)
@@ -168,5 +176,5 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('frame did not exit')
   frames.append(dict(sha256=hashlib.sha256(snapshot()).hexdigest(),calls=list(calls),allocations=list(allocationCalls),globalCounter=read(0x561ec8),root=read(manager+4),environment=read(context+0x7d4)))
  cases.append(dict(inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms execute; old cleanup, root gameplay/query/flush, renderer, devices and heap remain interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; only old-object cleanup, root gameplay/query, renderer, devices and heap remain interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} restored frame sequences')

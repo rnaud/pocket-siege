@@ -1151,15 +1151,21 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       device:{readyForPlayback:()=>{calls.push(['ready']);return 1;},pending:()=>deviceCall(0x40),clear:()=>deviceCall(0x34),startRecording:()=>deviceCall(0x30,1),checksum:()=>deviceCall(0x48,17),startPlayback:()=>deviceCall(0x44)},
       audio:row.sound?{reset:()=>calls.push(['audioReset']),setVolume:value=>calls.push(['volume',value]),setSpeed:value=>calls.push(['speed',value]),playSound:(...args)=>calls.push(['sound',...args])}:null,
       flushTask:address=>{calls.push([0x2200200,address]);if(row.clearRoot)memory.put(0x2000804,0);},destroyTask:(address,flags)=>calls.push([0x2200210,address,flags]),
-      flushEnvironment:address=>{if(address===0x2500000){calls.push([0x2200220,address]);if(row.clearEnvironment)memory.put(0x20207d4,0);}else calls.push(['flushEnvironment',address]);},destroyEnvironment:(address,flags)=>calls.push([0x2200230,address,flags]),
+      restore:{flushEnvironment:address=>{calls.push([0x2200220,address]);if(row.clearEnvironment)memory.put(0x20207d4,0);}},destroyEnvironment:(address,flags)=>calls.push([0x2200230,address,flags]),
       constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);return args[0];},
       collectRoot:(root,queue,event,size)=>calls.push(['collect',root,event,size,queue.wrapper===0x2700000]),
       dispatchRoot:(root,event,payload)=>calls.push(['dispatch',root,event,[...payload]]),
       queryRoot:(root,event,output)=>{calls.push(['query',root,event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
-      flushRoot:root=>calls.push(['flushRoot',root]),renderFrame:()=>calls.push(['render']),
+      observeTaskCleanup:root=>calls.push(['flushRoot',root]),observeEnvironmentCleanup:address=>calls.push(['flushEnvironment',address]),renderFrame:()=>calls.push(['render']),
     }});
     pipeline.manager.globalCounter=1234;
     for(const [frame,expected] of row.frames.entries()) {
+      if(frame===16) {
+        const root=memory.get(0x2000804);memory.put(root+16,1);
+        if(memory.get(root+20)>1)memory.put(memory.get(root+24)+4,0);
+        const environment=memory.get(0x20207d4);
+        for(const offset of [0x18,0x34+2*0x1c]){const list=environment+offset;memory.put(list+8,1);if(memory.get(list+12))memory.put(memory.get(list+16),0);}
+      }
       if(frame===20)memory.put(0x203d438,1);
       calls.length=0;allocations.length=0;pipeline.tick();
       expect(calls).toEqual(expected.calls);expect(allocations).toEqual(expected.allocations);
