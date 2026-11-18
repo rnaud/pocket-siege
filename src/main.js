@@ -331,6 +331,7 @@ import {
 import { nextSeriesWins, seriesWinner } from "./series.js";
 import { applyPickup, PICKUP_KINDS } from "./pickups.js";
 import { UTILITIES, UTILITY_KINDS, AUTOMATIC_UTILITIES, freshUtilities } from "./utilities.js";
+import { nativeCrateContentsVisible, nativeSpecialCrateContent } from "./armageddon/crate-draw.js";
 import { SCHEMES } from "./schemes.js";
 import { modifierSettings } from "./modifiers.js";
 import { readSettings, writeSettings } from "./settings.js";
@@ -4986,11 +4987,11 @@ function submitQueuedSound(request) {
 }
 function updateAutomaticUtilities() {
   const loadout = utilityAmmo[team];
-  if (!worms[current] || (!loadout.doubledamage && !loadout.doubletime)) return;
+  if (!worms[current] || (!loadout.doubledamage && !loadout.cratespy && !loadout.doubletime)) return;
   const result = nativeAutomaticUtilities({
     ...automaticUtilityState, team: team + 1,
     time: Math.round(time * 1000), flags: worms[current].nativeTeamModifiers || 0,
-  }, [loadout.doubledamage, 0, loadout.doubletime, 0]);
+  }, [loadout.doubledamage, loadout.cratespy, loadout.doubletime, 0]);
   automaticUtilityState = result.body;
   time = result.body.time / 1000;
   for (const w of worms) if (w.team === team) w.nativeTeamModifiers = result.body.flags;
@@ -6397,8 +6398,12 @@ function frame(now) {
   for (const crate of crates) {
     updateOriginalCrate(crate.mesh, crate.nativeBody, {
       rank: nativeRenderOrder.orders[crate.nativeOrderId], labelMode, frame: selectionTick,
-      // Native content-display ownership is not yet connected to the host schemes.
-      showContents: false,
+      // Offline host control mapping: local humans have visibility; AI has a
+      // negative native controller byte. Full scene permission ownership remains.
+      showContents: nativeCrateContentsVisible(worms[current] ? team + 1 : 0, true,
+        team === 1 && mode === "ai" ? -1 : 0, worms[current]?.nativeTeamModifiers || 0),
+      contentName: (WEAPONS[crate.content] || UTILITIES[crate.content] || AUTOMATIC_UTILITIES[crate.content])?.label || "",
+      contentSpecial: nativeSpecialCrateContent(WEAPON_SLOTS[crate.content]),
     });
   }
   for (const mine of mines) {

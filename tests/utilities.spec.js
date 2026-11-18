@@ -1,8 +1,9 @@
+import crateVisibility from './fixtures/armageddon/crate-visibility.json' with { type: 'json' };
 import textImages from "./fixtures/armageddon/text-image.json" with { type: "json" };
 import { nativeRenderTextImage } from "../src/armageddon/text-image.js";
 import { NativeSpriteDrawQueue } from "../src/armageddon/sprite-draw-queue.js";
 import crateDraw from "./fixtures/armageddon/crate-draw.json" with { type: "json" };
-import { nativeDrawCrate } from "../src/armageddon/crate-draw.js";
+import { nativeDrawCrate, nativeCrateContentsVisible, nativeSpecialCrateContent } from "../src/armageddon/crate-draw.js";
 import poisonSettlement from "./fixtures/armageddon/poison-settlement.json" with { type: "json" };
 import { nativePoisonSettlement } from "../src/armageddon/poison-settlement.js";
 import nuclearEffect from "./fixtures/armageddon/nuclear-effect.json" with { type: "json" };
@@ -243,6 +244,10 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
   }
+  for (const row of crateVisibility.cases)
+    expect(nativeCrateContentsVisible(row.team,row.visible,row.controller,row.flags)).toBe(row.result);
+  for (const row of crateVisibility.special)
+    expect(nativeSpecialCrateContent(row.slot)).toBe(row.result);
   for (const row of automatic.cases) {
     const result = nativeAutomaticUtilities(row.input, row.available, row.bits);
     expect(result.body).toEqual(row.output);

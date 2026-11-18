@@ -55,9 +55,10 @@ export const UTILITIES = {
 
 export const UTILITY_KINDS = Object.keys(UTILITIES);
 
-// Native slots67/69 activate from inventory during team updates, not clicks.
+// Native slots67..69 activate from inventory during team updates, not clicks.
 export const AUTOMATIC_UTILITIES = {
   doubledamage: { label: "Double Damage", slot: 67 },
+  cratespy: { label: "Crate Spy", slot: 68 },
   doubletime: { label: "Double Time", slot: 69 },
 };
 

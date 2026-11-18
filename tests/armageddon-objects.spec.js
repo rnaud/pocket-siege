@@ -29,6 +29,36 @@ test("original crates descend by parachute and switch to ground idle art", async
     })
     .toMatch(/^[muw]crate1$/);
   await page.screenshot({ path: "test-results/original-world-objects.png" });
+  const spy = await page.evaluate(async () => {
+    const { captureReplayActors, restoreReplayActors } = await import('/src/armageddon/replay-actor-adapter.js');
+    const debug = window.siege.debug, saved = debug.captureReplayState();
+    const state = restoreReplayActors(saved.actors, { resolveResource: id => saved.resources.get(id) }).get('match');
+    const keys = new Map([...saved.resources].map(([id, value]) => [value, id]));
+    const install = () => debug.restoreReplayState({ ...saved,
+      actors: captureReplayActors([{ id: 'match', actor: state }], { resourceKey: value => keys.get(value) }) });
+    const render = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    state.turn.utilityAmmo[state.turn.team].cratespy = 1;
+    state.actors.crates[0].kind = 'special';
+    state.actors.crates[0].content = 'magic';
+    state.actors.crates[0].nativeBody.kind = 1;
+    install(); debug.advanceReplayFrames(1); await render();
+    const mesh = state.actors.crates[0].mesh;
+    const label = () => mesh.children.find(child => child.userData.nativeCrateLabel === 0);
+    const visible = label()?.visible;
+    const consumed = window.siege.getState().utilities.cratespy === 0;
+    const text = label()?.userData.nativeTextKey;
+    // The native human-controller gate suppresses the same team flag for AI.
+    state.turn.team = 1; state.turn.mode = 'ai';
+    state.actors.worms[state.turn.current].nativeTeamModifiers = 32;
+    install(); await render();
+    const hiddenForAI = !label()?.visible;
+    debug.restoreReplayState(saved);
+    return { visible, consumed, text, hiddenForAI };
+  });
+  expect(spy.visible).toBe(true);
+  expect(spy.consumed).toBe(true);
+  expect(spy.text).toContain('Magic bullet');
+  expect(spy.hiddenForAI).toBe(true);
   const ranks = await page.evaluate(async () => {
     const { restoreReplayActors } = await import('/src/armageddon/replay-actor-adapter.js');
     const debug = window.siege.debug, before = debug.captureReplayState();
