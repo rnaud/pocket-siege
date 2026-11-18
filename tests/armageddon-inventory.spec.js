@@ -102,6 +102,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;}};
     scene[0x4886]=row.count;memory.put(0x2300008,0x2000800);memory.put(0x230000c,row.variant%2?0x2003100:0);
+    memory.range=(at,length)=>{const [a,o]=locate(at);return a.subarray(o,o+length);};
+    for(const [offset,value] of row.words)memory.put(0x2300000+offset,value);
+    for(const [offset,value] of row.bytes)scene[offset]=value;
+    const sceneView=new DataView(scene.buffer);
+    for(const [offset,value] of row.shorts)sceneView.setInt16(offset,value,true);
     row.groups.forEach((g,i)=>scene[0x488b+i*3000]=g);
     for(let setting=1;setting<5;setting++)scene[0x11d70+setting]=row.variant&(1<<(setting-1))?255:0;
     for(const offset of [4,0x4c,0x294])memory.put(0x2000000+offset,0xdeadbeef);
@@ -115,7 +120,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),
       fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;},
       resetScene:at=>calls.push(['reset',at]),
-      createMatchRoot:(at,...args)=>{calls.push(['root',at,...args]);memory.put(at,0x2003000);return at;},
+      initializeWorld:(at,...args)=>{calls.push(['world',at,...args]);memory.put(at+0x38,args[0]);},
+      startMusic:(...args)=>calls.push(['music',...args]),
       send:(...args)=>calls.push(['send',...args]),
     });
     finalActual.push([createHash('sha256').update(heap).digest('hex'),createHash('sha256').update(scene).digest('hex'),[4,0x4c,0x294].map(o=>memory.get(0x2000000+o)),calls]);

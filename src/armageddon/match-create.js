@@ -1,3 +1,4 @@
+import {nativeCreatePanelImage,nativeCreatePanelText} from './panel-resources.js';
 import {nativeInitializeMatchResources} from './match-resources.js';
 
 //004C3A10. Any non-eliminated team with a state100 worm needs deployment.
@@ -31,4 +32,16 @@ export function nativeInitializeMatchRoot(memory,sceneMemory,setup,host) {
   nativeInitializeMatchResources(memory,sceneMemory,host);
   const music=scene.getUint32(0x14,true);
   if(setup[0xd69c]&&music)host.startMusic(music,setup.subarray(0xd65c),setup[0xd69c]);
+}
+
+//Address-backed composition used by original startup finalization.
+export function nativeCreateMatchRootAt(memory,address,scene,setup,host) {
+  nativeInitializeMatchRoot(memory.range(address,0x28c),memory.range(scene,0x20000),memory.range(setup,0xdc64),{
+    initializeWorld:()=>host.initializeWorld(address,scene,setup),
+    allocateResource:size=>host.allocate(size),renderer:memory.get(scene+8),
+    constructSurface:(at,...args)=>{nativeCreatePanelImage(memory,at,...args,host);memory.put(at,0x5249b0);},
+    constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),
+    startMusic:(at,data,count)=>host.startMusic(at,setup+0xd65c,count),
+  });
+  return address;
 }

@@ -51,23 +51,35 @@ def hook(cpu,address,size,user):
  elif address==metric:
   calls.append(['height',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);cpu.reg_write(UC_X86_REG_EAX,8+count)
 for address in [0x492550,0x4924d0,metric]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
-rootTable=owner+0x3000;resetObject=owner+0x3100;resetTable=owner+0x3200
+rootTable=0x526720;resetObject=owner+0x3100;resetTable=owner+0x3200
 resetCall=owner+0x3300;sendCall=owner+0x3400
 write(rootTable+8,sendCall);write(resetObject,resetTable);write(resetTable+4,resetCall)
-for address,code in [(0x4b2ad0,b'\xc2\x08\x00'),(resetCall,b'\xc3'),(sendCall,b'\xc2\x10\x00')]:cpu.mem_write(address,code)
+for address,code in [(0x4eaad0,b'\xc2\x08\x00'),(resetCall,b'\xc3'),(sendCall,b'\xc2\x10\x00')]:cpu.mem_write(address,code)
 def finalHook(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP);at=cpu.reg_read(UC_X86_REG_ECX)
- if address==0x4b2ad0:
-  calls.append(['root',at,read(sp+4),read(sp+8)]);write(at,rootTable);cpu.reg_write(UC_X86_REG_EAX,at)
+ if address==0x4eaad0:
+  calls.append(['world',at,read(sp+4),read(sp+8)]);write(at+0x38,read(sp+4));cpu.reg_write(UC_X86_REG_EAX,at)
  elif address==resetCall:calls.append(['reset',at])
  else:calls.append(['send',read(sp+4),read(sp+8),read(sp+12),read(read(sp+16))])
-for address in [0x4b2ad0,resetCall,sendCall]:cpu.hook_add(UC_HOOK_CODE,finalHook,begin=address,end=address)
+for address in [0x4eaad0,resetCall,sendCall]:cpu.hook_add(UC_HOOK_CODE,finalHook,begin=address,end=address)
 cases=[]
 for count in range(7):
  for variant in range(17):
   groups=[[0,1,2,3,4,5],[0,0,0,0,0,0],[2,1,2,0,1,0],[-128,127,-1,-128,127,-1]][variant%4]
   cpu.mem_write(context,bytes((i*17+5)&255 for i in range(0x20000)))
   cpu.mem_write(context+0x4886,bytes([count]));write(context+8,resource);write(context+12,resetObject if variant%2 else 0)
+  words=[[20,0],[0x1b94+0x1eb4,count],[0x1acc,variant*12345]]
+  bytewrites=[[0x114e0,count],[0x11b96,variant],[0x11d5d,variant&1],[0x11e44,0]]
+  shorts=[[0x11d4a,variant],[0x1b868,3],[0x1b8aa,3]]
+  for i in range(16):shorts.extend([[0x1b848+i*2,i-8],[0x1b86a+i*2,5-i],[0x1b88a+i*2,100+i]])
+  for team in range(6):
+   base=0x1b94+team*0x51c
+   words.extend([[base+0x510,1 if variant%3==0 else 0],[base+0x51c,8]])
+   for worm in range(8):words.append([base+0x24+worm*0x9c,100 if worm==variant%8 and team==variant%6 else 1])
+   bytewrites.append([0x114e2+team*0x11e,(team-1)&255])
+  for offset,value in words:write(context+offset,value)
+  for offset,value in shorts:cpu.mem_write(context+offset,struct.pack('<H',value&65535))
+  for offset,value in bytewrites:cpu.mem_write(context+offset,bytes([value]))
   for team,group in enumerate(groups):cpu.mem_write(context+0x488b+team*3000,bytes([group&255]))
   for setting in range(1,5):cpu.mem_write(context+0x11d70+setting,bytes([255 if variant&(1<<(setting-1)) else 0]))
   cpu.mem_write(heap,bytes((i*7+3)&255 for i in range(0x10000)))
@@ -75,6 +87,6 @@ for count in range(7):
   write(owner+4,0xdeadbeef);write(owner+0x4c,0xdeadbeef);write(owner+0x294,0xdeadbeef)
   cpu.reg_write(UC_X86_REG_ESP,stack+0xf000);cpu.reg_write(UC_X86_REG_ESI,owner)
   cpu.emu_start(0x49db9a,0x49dd00,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x49dd00
-  cases.append(dict(count=count,variant=variant,groups=groups,failure=failure,calls=list(calls),owner=[read(owner+o) for o in [4,0x4c,0x294]],sha256=hashlib.sha256(cpu.mem_read(heap,0x10000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='0049DB9A..0049DD00',method='Original startup finalization with full alliance/team/text/image constructors. Heap allocation, font metrics, optional scene interface and match-root construction/dispatch observed. Full heap and scene hashes and owner state compared.',cases=cases),separators=(',',':'))+'\n')
+  cases.append(dict(words=words,bytes=bytewrites,shorts=shorts,count=count,variant=variant,groups=groups,failure=failure,calls=list(calls),owner=[read(owner+o) for o in [4,0x4c,0x294]],sha256=hashlib.sha256(cpu.mem_read(heap,0x10000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='0049DB9A..0049DD00',method='Original startup finalization with full alliance/team/text/image constructors. Heap allocation, font metrics, optional scene interface world/base construction and root dispatch observed; original match-root constructor executes. Full heap and scene hashes and owner state compared.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'startup finalizations')
