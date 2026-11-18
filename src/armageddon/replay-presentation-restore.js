@@ -43,3 +43,15 @@ export function nativeInitializeReplayPresentation(memory, options) {
   for (const [px, py] of [[1, 1], [x - 1, 1], [1, y - 1], [x - 1, y - 1]]) draw(0x58, px, py, white);
   for (const [px, py] of [[0, 0], [x, 0], [0, y], [x, y]]) draw(0x58, px, py, 0);
 }
+
+//Shared scene-backed palette, weather and surface interfaces for fresh/restore.
+export function nativeInitializeReplayPresentationAt(memory,address,scene,host) {
+  const source=memory.get(scene+0x28),surface=memory.get(scene+0x2f0);
+  let sourceDimensions,surfaceDimensions;
+  nativeInitializeReplayPresentation(memory.range(address,0x175c),{
+    paletteSource:{get height(){return (sourceDimensions??=host.surfaceDimensions(source))[1];},readPixel:(x,y)=>host.readSurfacePixel(source,x,y)},
+    weather:{lowDetail:memory.get(scene+0x1b8ac),left:memory.get(scene+0x1b8cc)|0,right:memory.get(scene+0x1b8d0)|0,height:memory.get(scene+0x804)|0},
+    palette:Array.from({length:10},(_,i)=>memory.get(scene+0x12434+i*4)),
+    surface:{get width(){return (surfaceDimensions??=host.surfaceDimensions(surface))[0];},get height(){return surfaceDimensions[1];},draw:(method,...args)=>host.drawSurface(surface,method,args)},
+  });
+}

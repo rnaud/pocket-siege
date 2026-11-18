@@ -15,7 +15,7 @@ export function nativeInitializeWorldPresentation(memory,address,host) {
   }
   for(const [offset,font,width] of [[0xd0,23,memory.get(scene+0x1b8dc)],[0xd4,28,128]]) {
     const at=host.allocate(0x138);
-    memory.put(address+offset,at?nativeCreatePanelText(memory,at,memory.get(scene+8),font,width,host):0);
+    memory.put(address+offset,at?(host.constructText??((at,...args)=>nativeCreatePanelText(memory,at,...args,host)))(at,memory.get(scene+8),font,width):0);
   }
   for(const offset of [0x98,0x9c,0xa0,0xa4,0xa8,0xb0,0xb4,0xb8,0xc4,0xc8,0xbc,0xc0,0xac])memory.put(address+offset,0);
   const bytes=memory.range(scene,0x20000),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);

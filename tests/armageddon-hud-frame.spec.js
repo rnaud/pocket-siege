@@ -1,6 +1,6 @@
 import replayWormResources from './fixtures/armageddon/replay-worm-resources.json' with {type:'json'};
 import replayTaskMemory from './fixtures/armageddon/replay-task-memory.json' with {type:'json'};
-import {nativeReadTaskMemory,nativeReadPhysicsMemory,nativeReadWormMemory,nativeReadActorMemory} from '../src/armageddon/replay-task-memory.js';
+import {nativeReadTaskMemory,nativeReadPhysicsMemory,nativeReadWormMemory,nativeReadActorMemory,nativeReadRootMemory} from '../src/armageddon/replay-task-memory.js';
 import {nativeReadEnvironmentMemory} from '../src/armageddon/physics-memory.js';
 import {nativeDestroyEnvironmentMemory} from '../src/armageddon/physics-destroy.js';
 import replaySceneCapture from './fixtures/armageddon/replay-scene-capture.json' with {type:'json'};
@@ -1124,6 +1124,19 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
         manager: [manager.playbackError,manager.playbackFailure], copiedHash: createHash('sha256').update(sceneMemory.slice(0x1c188,0x1c188+0x950)).digest('hex') } } : {}),
     }).toEqual(row.result);
   }
+  for(const row of replayTreeRestore.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000,0x70000),env=initial.subarray(0x70000),calls=[],allocationCalls=[];
+    const locate=at=>at>=0x2500000?[env,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    let cursor=0x2400000;const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
+    const stream=NativeReplayStream.fromMemory(memory,0x2001000);
+    expect(nativeReadRootMemory(memory,0x2000000,0x2020000,stream,{
+      allocate:size=>{const pointer=allocate(size);allocationCalls.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocationCalls.push(['array',size,pool,pointer]);return pointer;},free:address=>allocationCalls.push(['free',address]),
+      constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);return args[0];},
+    })).toBe(0x2000000);
+    expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.result.calls);expect(stream.position).toBe(row.result.position);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
+  }
   for (const row of replayTreeRestore.cases) {
     const stream = new NativeReplayStream(32768), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks];
     stream.bytes.set(row.input.bytes); stream.seek(row.input.position);
@@ -1160,6 +1173,22 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
         last: new DataView(child.memory.buffer).getInt32(child.type === 13 ? 0xc3c : 0x63c, true) })),
       registry: task.registry.flatMap((bucket, index) => bucket.map(entry => [index, entry.type, entry.index, entry.task.id])),
     }).toEqual(row.result);
+  }
+  for(const row of replayPresentationRestore.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),env=initial.subarray(0x30000),requests=[];
+    const locate=at=>at>=0x2040000?[env,at-0x2040000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    let cursor=0x2007000;const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
+    const stream=NativeReplayStream.fromMemory(memory,0x2004000);
+    expect(nativeReadActorMemory(memory,28,0x2000000,0,0x2020000,stream,{
+      allocate:size=>{const pointer=allocate(size);requests.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);requests.push(['array',size,pool,pointer]);return pointer;},free:address=>requests.push(['free',address]),
+      restoreChild:()=>{throw new Error('Unexpected concrete child in presentation fixture');},
+      surfaceDimensions:address=>{requests.push(['dimensions',address]);return address===0x2045000?[1,row.input.pixels.length]:row.input.dimensions;},
+      readSurfacePixel:(address,x,y)=>{requests.push(['sample',address,x,y]);return row.input.pixels[y];},
+      drawSurface:(address,method,args)=>requests.push(['draw',address,method,...args]),
+    })).toBe(0x2000000);
+    expect(requests).toEqual(row.requests);expect(stream.position).toBe(row.result.position);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
   }
   for (const row of replayPresentationRestore.cases) {
     const stream = new NativeReplayStream(2048), calls = [], input = row.input;

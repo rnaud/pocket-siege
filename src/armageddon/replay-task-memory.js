@@ -1,6 +1,9 @@
+import {nativeInitializeWorldPresentation} from './world-presentation-create.js';
+import {nativeInitializeMatchResources} from './match-resources.js';
+import {nativeInitializeReplayPresentationAt} from './replay-presentation-restore.js';
 import {nativeCreateEventBufferMemory} from './scene-buffers.js';
 import taskTypes from './replay-task-types.json' with {type:'json'};
-import {nativeCreatePanelText} from './panel-resources.js';
+import {nativeCreatePanelText,nativeCreatePanelImage} from './panel-resources.js';
 import {nativeInitializeControllerResources} from './controller-resources.js';
 import {nativeCreateControllerPortrait,nativeCreateControllerFrame} from './controller-visual-resources.js';
 import {nativeBodyStartSound} from './body-sound.js';
@@ -61,10 +64,14 @@ export function nativeReadWormMemory(memory,address,parent,context,stream,host) 
 
 //Concrete readers include saved blocks whose writers intentionally emit nothing.
 const restoreOnlyBlocks={13:[0x3c,0xc04],16:[0x3c,0x24],22:[0x3c,0x28],27:[0x3c,0x1c],29:[0x3c,0x28]};
+function nativeReplayChildHost(memory,context,host) {
+  return host.restoreChild?host:{...host,restoreChild:(schema,child,parent,reader)=>nativeReadActorMemory(memory,schema.tag,child,parent,context,reader,host)};
+}
 export function nativeReadActorMemory(memory,tag,address,parent,context,stream,host) {
+  host=nativeReplayChildHost(memory,context,host);
   if(tag===18)return nativeReadWormMemory(memory,address,parent,context,stream,host);
   const schema=taskTypes.find(row=>row.tag===tag);
-  if(!schema||tag===28)throw new RangeError(`Addressed replay constructor not connected: ${tag}`);
+  if(!schema)throw new RangeError(`Addressed replay constructor not connected: ${tag}`);
   if(schema.physics)nativeReadPhysicsMemory(memory,address,parent,context,stream,host);
   else {
     nativeReadTaskMemory(memory,address,parent,stream,host);
@@ -100,7 +107,8 @@ export function nativeReadActorMemory(memory,tag,address,parent,context,stream,h
     if(get(0x260))increment(get(0x124)===3?0x1b8f4:0x1b8f0);increment(0x1242c);
   } else if(tag===24) {
     memory.put(context+0x4b0+get(0x80)*4,address);put(0xb0,memory.get(context+0x12430)&255);increment(0x12430);put(0xb4,0);
-  } else if(tag===29)text(0x64,23,48);
+  } else if(tag===28)nativeInitializeReplayPresentationAt(memory,address,context,host);
+  else if(tag===29)text(0x64,23,48);
   else if(tag===31) {
     put(0x2dc8,0);const queue=host.allocate(8);
     put(0x2dc4,queue?nativeCreateEventBufferMemory(memory,queue,256,host):0);
@@ -108,5 +116,24 @@ export function nativeReadActorMemory(memory,tag,address,parent,context,stream,h
     if(table){memory.put(table,0x526918);memory.put(table+8,71);memory.put(table+12,host.allocateArray(568,0x567600));memory.put(table+4,0);}
     put(0x2dcc,table);put(0x2dd0,0);
   }
+  return address;
+}
+
+//004B2D40/004EADB0: recursively restore the world before recreating its
+//transient presentation children and match resources in the original order.
+export function nativeReadRootMemory(memory,address,context,stream,host) {
+  host=nativeReplayChildHost(memory,context,host);
+  nativeReadTaskMemory(memory,address,0,stream,host);
+  memory.put(address,0x527478);stream.readByte();memory.put(address+0x38,context);
+  memory.put(address,0x527458);stream.readByte();
+  memory.range(address+0x3c,0x5c).set(stream.readBlock(0x5c));
+  nativeInitializeWorldPresentation(memory,address,host);
+  memory.put(address,0x526720);stream.readByte();
+  memory.range(address+0xd8,0x138).set(stream.readBlock(0x138));
+  nativeInitializeMatchResources(memory.range(address,0x28c),memory.range(context,0x20000),{
+    allocateResource:size=>host.allocate(size),renderer:memory.get(context+8),
+    constructText:host.constructText??((at,...args)=>nativeCreatePanelText(memory,at,...args,host)),
+    constructSurface:(at,...args)=>{(host.constructSurface??((at,...args)=>nativeCreatePanelImage(memory,at,...args,host)))(at,...args);memory.put(at,0x5249b0);},
+  });
   return address;
 }
