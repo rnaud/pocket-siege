@@ -1,3 +1,5 @@
+import speechSetup from './fixtures/armageddon/speech-setup.json' with {type:'json'};
+import {nativeResolveSetupSpeech,nativeCountrySpeech} from '../src/armageddon/speech-setup.js';
 import matchSetup from './fixtures/armageddon/match-setup.json' with {type:'json'};
 import {nativeBuildInitialMatchSetup} from '../src/armageddon/match-setup.js';
 import frontendRandom from './fixtures/armageddon/frontend-random.json' with {type:'json'};
@@ -81,7 +83,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       expect(createHash('sha256').update(memory).digest('hex')).toBe(step.sha256);
     }
   }
-  for(const row of teamSetup.cases) {
+  for(const row of speechSetup.countries) {
+    const memory=new Uint8Array(80).fill(165);
+    expect(nativeCountrySpeech(memory,4,row.country)).toBe(row.result);
+    expect(Buffer.from(memory).toString('hex')).toBe(row.bytes);
+  }
+  for(const row of [...teamSetup.cases,...speechSetup.cases]) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
     const frontend=Uint8Array.from({length:0x7000},(_,i)=>(i*13+7)&255),view=new DataView(frontend.buffer);
     for(const [offset,size,value] of row.writes) {
@@ -92,6 +99,18 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       handicapEnabled:()=>{calls.push(['handicap']);return row.handicap;},
       speechPath:cd=>{calls.push(['speech',cd]);return Buffer.from(row.paths[path++],'hex');},
     });
+    if(row.speech_fallback) {
+      const teamData=new Uint8Array(0x9000);teamData.set(frontend,0x2000);
+      const defaultSpeech=new Uint8Array(65);defaultSpeech.set(new TextEncoder().encode('English'));
+      nativeResolveSetupSpeech(memory,teamData,{
+        defaultSpeech,speechPath:cd=>{calls.push(['speech',cd]);return Buffer.from(row.paths[path++],'hex');},
+        workingDirectory:new TextEncoder().encode('C:\\WORMS\0'),
+        changeDirectory:path=>{
+          const end=path.indexOf(0),value=Buffer.from(end===-1?path:path.subarray(0,end));
+          calls.push(['directory',value.toString('hex')]);return row.directory_available||value.toString()==='C:\\WORMS'?0:1;
+        },
+      });
+    }
     if(memory[0xcd74])nativeInitializeSetupTurnOrder(memory,()=>{calls.push(['seed']);return 0xfedcba98;});
     nativeAdvanceSetupTurnOrder(memory);
     expect(calls).toEqual(row.calls);
