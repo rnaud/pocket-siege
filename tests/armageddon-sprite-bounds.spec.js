@@ -23,6 +23,9 @@ import {nativeCreateSprite,nativeCreateFont,nativeLoadArchiveSprite,nativeLoadAr
 import rendererFonts from './fixtures/armageddon/renderer-font.json' with {type:'json'};
 import {nativeLoadRendererFont,nativeDestroyFont} from '../src/armageddon/renderer-font.js';
 
+import rendererSprites from './fixtures/armageddon/renderer-sprite.json' with {type:'json'};
+import {nativeLoadRendererSprite,nativeDestroySprite} from '../src/armageddon/renderer-sprite.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
@@ -39,7 +42,7 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
     const result=c.font?nativeReadFont(memory,owner+0x3000,owner,source,0x2500000):nativeReadSprite(memory,owner+0x3000,owner,source,{allocate(size){events.push({size,state:snapshot()});return c.allocated?owner+0x4000:0;}});
     expect({events,result,state:snapshot()},`${c.path??'raw'} / ${c.pattern} / ${c.allocated} / ${c.last}`).toEqual({events:c.events??[],result:c.result,state:c.state});
   }
-  for(const c of [...archiveArt.cases,...rendererFonts.cases]) {
+  for(const c of [...archiveArt.cases,...rendererFonts.cases,...rendererSprites.cases]) {
     const raw=readFileSync(new URL(`../${c.path}`,import.meta.url));
     expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
     const owner=0x2000000,source=0x2400000,stop=0x2200000,archive=owner+0x5000,vtable=owner+0x5800,name=owner+0x7000,table=owner+0x8000,entry=owner+0x9000,obj=owner+0x3000;
@@ -58,22 +61,30 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
     const renderer=owner+0xa000;
     if(c.register) {
       write(renderer+0x4ae8,c.profile==='no_palette'?0:owner);
-      write(renderer+0x49e4+c.id*4,c.profile==='duplicate'?obj:0);
+      if(c.spriteRegistration){write(renderer+0x2864+c.id*4,c.profile==='duplicate'?obj:0);write(renderer+0x38e4+c.id*4,c.profile==='stream_duplicate'?obj:0);}
+      else write(renderer+0x49e4+c.id*4,c.profile==='duplicate'?obj:0);
       write(renderer+0x4b08,0xffffffff);
     } else if(c.font)nativeCreateFont(memory,obj);else nativeCreateSprite(memory,obj,0x497b20,0x497ba0);
     const snapshot=()=>createHash('sha256').update(arena).update(data).update(counters).update(normalized).digest('hex');
     expect(snapshot()).toBe(c.initial);
     const events=[],host={
       lookupArchiveResource(at,name){events.push(['view',at,name,snapshot()]);return c.mode==='mapped'?source:0;},
-      allocate(size){events.push(['allocate',size,snapshot()]);return c.register&&size===28?obj:size===12?owner+0x6000:c.allocated?owner+0x6100:0;},
+      allocate(size){events.push(['allocate',size,snapshot()]);return c.register&&size===(c.spriteRegistration?72:28)?obj:size===12?owner+0x6000:c.allocated?owner+0x6100:0;},
       allocateArray(size,pool){events.push(['array',size,pool,snapshot()]);return source;},
       seekArchive(at,position){events.push(['seek',at,position,snapshot()]);return 1;},
       readArchive(at,destination,size){events.push(['read',at,destination,size,snapshot()]);copy(destination,raw.subarray(0,size));return size;},
       freeSized(pointer,size){events.push(['free',pointer,size,snapshot()]);},
       freeArray(pointer){events.push(['freeArray',pointer,snapshot()]);},
+      releaseSpriteBlock(callback,pointer){events.push(['block',callback,pointer,snapshot()]);},
     };
-    const result=c.register?nativeLoadRendererFont(memory,renderer,c.bank,c.priority,c.id,archive,name,0x2500000,host):c.font?nativeLoadArchiveFont(memory,obj,owner,archive,name,0x2500000,host):nativeLoadArchiveSprite(memory,obj,owner,archive,name,host);
-    if(c.register){expect(snapshot()).toBe(c.registered);if(result)nativeDestroyFont(memory,obj,1,host);}
+    const result=c.spriteRegistration?nativeLoadRendererSprite(memory,renderer,c.bank,c.priority,c.id,archive,name,0,host):c.register?nativeLoadRendererFont(memory,renderer,c.bank,c.priority,c.id,archive,name,0x2500000,host):c.font?nativeLoadArchiveFont(memory,obj,owner,archive,name,0x2500000,host):nativeLoadArchiveSprite(memory,obj,owner,archive,name,host);
+    if(c.register){
+      expect(snapshot()).toBe(c.registered);
+      if(result){
+        if(c.spriteRegistration){const blocks=memory.byte(obj+28)|(memory.byte(obj+29)<<8);for(let i=0;i<blocks;i++)write(memory.get(obj+24)+i*12+4,i%2===0?owner+0x6200+i*16:0);}
+        (c.spriteRegistration?nativeDestroySprite:nativeDestroyFont)(memory,obj,1,host);
+      }
+    }
     expect({events,result,state:snapshot()},`${c.path} / ${c.mode} / ${c.pattern} / ${c.allocated} / ${c.last}`).toEqual({events:c.events,result:c.result,state:c.state});
   }
   const startup = new NativeGamePalette(0, 104);
