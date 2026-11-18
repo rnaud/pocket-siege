@@ -1,3 +1,4 @@
+import {nativeInitializeTerrainState} from './terrain-state.js';
 import {nativeCreateTerrainToolMasks} from './terrain-tool-mask-memory.js';
 import {nativeCreateTerrainMasks} from './terrain-crater-masks.js';
 import {nativeBitmapPixel8,nativeDestroyBitmap8} from './bitmap-storage.js';
@@ -82,4 +83,11 @@ export function nativeInitializeTerrainResources(memory,terrain,settings,scratch
   nativeLoadTerrainGrass(memory,terrain,scratch,services);
   nativePrepareTerrainMasks(memory,terrain,services);
   nativeCreateTerrainToolMasks(memory,terrain,settings.maskImage,services);
+}
+
+//004A78A0: complete original terrain construction, including the final state
+//and bitmap-backed collision shape. Host services own external resources.
+export function nativeCreateTerrain(memory,terrain,settings,scratch,host) {
+  nativeInitializeTerrainResources(memory,terrain,settings,scratch,host);
+  return nativeInitializeTerrainState(memory,terrain,host);
 }
