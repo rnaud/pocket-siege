@@ -419,12 +419,13 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     });
     bytes.set(toolSource.pixels,0x60000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
-    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200700],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200700],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x9200],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,1],[40,1]])memory.put(owner+0x9100+offset,value);
     memory.putByte(owner+0x9200,3);
     for(const bank of [1,2]) {
       const at=bank===1?0xa000:0xb000;
-      memory.put(owner+at+4,1);memory.put(owner+at+8,7);bytes.writeUInt16LE(8,at+0x90e);
+      memory.put(owner+at+4,1);memory.put(owner+at+8,254);bytes.writeUInt16LE(8,at+0x90e);bytes.writeUInt16LE(247,at+0x70c);
+      for(let i=0;i<247;i++)bytes.writeUInt16LE(254-i,at+0x70e+i*2);
       for(let i=0;i<8;i++) {
         bytes.writeUInt16LE(i,at+0x910+i*2);bytes[at+0x60c+i]=1;
         (bank===1?[43,71,97]:[17,53,91]).forEach((m,j)=>bytes.writeUInt16LE((i*m+bank*20)&255,at+12+i*6+j*2));
@@ -434,7 +435,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const colors=Uint8Array.from({length:768},(_,i)=>(Math.floor(i/3)*[43,71,97][i%3])&255);
     bytes.set(colors,0x350000+0x48a4-0x47a8);bytes.set(Uint8Array.from({length:768},(_,i)=>(Math.floor(i/24)+i%24)%12),0x350000+0x4ba4-0x47a8);
     bytes.set(colors,0x350000+0x4ea4-0x47a8);bytes.set(Uint8Array.from({length:340},(_,i)=>(Math.floor(i/20)+i%20)%12),0x350000+0x51a4-0x47a8);
-    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x821c)).digest('hex');
+    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).digest('hex');
     const record=(name,...args)=>calls.push([name,...args,snapshot()]);
     const image=(palette,archive,name)=>{record('image',palette,archive,name);return name==='masks.img'?owner+0x9000:name==='fill.img'?owner+0x9100:name.startsWith('arrow')?owner+0x10000+Number(name.slice(5,7))*0x40:owner+0xe000;};
     nativeStartScene(memory,owner,[owner+0x6000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0]},{
@@ -449,10 +450,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         for(let i=0;i<c.count;i++){memory.put(positions+i*8,100+i*30);memory.put(positions+i*8+4,200+i*20);}
         return terrain;
       },
-      initializePalette:(...args)=>record('paletteInit',...args),
       openGraphicsArchive:(...args)=>{record('archive',...args);return 1;},
-      initializePaletteBanks:(...args)=>record('banks',...args),loadStartupFonts:(...args)=>record('fonts',...args),
-      addPaletteColor:(...args)=>{record('color',...args);return 3;},
+      createRendererPalette:(...args)=>record('createPalette',...args),loadStartupFonts:(...args)=>record('fonts',...args),
       loadResourceGroup:(...args)=>record('group',...args),loadRendererSprite:(...args)=>record('sprite',...args),
       commitRendererPalette:(...args)=>record('commit',...args),
       pumpLoadingEvents:()=>record('pump'),rendererDimensions:(...args)=>{record('dimensions',...args);return [640,480];},

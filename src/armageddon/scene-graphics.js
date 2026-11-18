@@ -1,3 +1,4 @@
+import {nativeAddGamePaletteColor} from './game-palette-memory.js';
 //004A6820: clear/present all three initial surfaces using one renderer and
 //one dimension query. The original repeats the same rectangle each time.
 export function nativeClearStartupRenderer(memory, owner, host) {
@@ -14,7 +15,7 @@ export function nativeInitializeSceneTeamColors(memory, owner, palette, host) {
     [0x12444,255,255,128],[0x12448,255,128,255],[0x1244c,128,255,255],
     [0x12454,0,0,0],[0x12450,157,157,157],[0x12458,255,255,255]];
   for(const [offset,...color] of colors) {
-    const index=host.addPaletteColor(palette,color);
+    const index=host.addPaletteColor?host.addPaletteColor(palette,color):nativeAddGamePaletteColor(memory,palette,color);
     memory.put(memory.get(owner+0x5cd0)+offset,index);
   }
 }
@@ -29,7 +30,8 @@ export function nativePrepareSceneGraphics(memory,owner,frontend,initialAudio,ho
   memory.put(owner+0x2ac,archive);
   host.openGraphicsArchive(memory.get(owner+0x2ac),'data\\Gfx\\Gfx.dir');
   nativeClearStartupRenderer(memory,owner,host);
-  host.initializePaletteBanks(owner);
+  if(host.initializePaletteBanks)host.initializePaletteBanks(owner);
+  else nativeInitializeScenePaletteBanks(memory,owner,host);
   memory.put(owner+0x2bc,0);
   const progress=initialAudio?memory.byte(frontend+0xde)*0x38+0x7b:0;
   memory.put(owner+0x2c4,-100);memory.put(owner+0x5ccc,0);memory.put(owner+0x2c0,progress+0x349);
@@ -49,4 +51,11 @@ export function nativeFinishSceneGraphics(memory,owner,temporaryPalette,host) {
   nativeClearStartupRenderer(memory,owner,host);
   for(const bank of [1,2,3])host.commitRendererPalette(memory.get(owner+0x2b4),bank);
   memory.put(temporaryPalette,0x524a14);
+}
+
+//004A6A70: configure the three renderer banks, then reserve shared black.
+export function nativeInitializeScenePaletteBanks(memory,owner,host) {
+  for(const [bank,count] of [[1,105],[2,32],[3,112]])host.createRendererPalette(memory.get(owner+0x2b4),bank,count);
+  const palette=host.getRendererPalette(memory.get(owner+0x2b4),1);
+  nativeAddGamePaletteColor(memory,palette,[0,0,0]);
 }
