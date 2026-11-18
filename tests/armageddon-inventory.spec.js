@@ -1,3 +1,5 @@
+import missionLoad from './fixtures/armageddon/mission-load.json' with {type:'json'};
+import {nativeLoadMission} from '../src/armageddon/mission-load.js';
 import missionTeams from './fixtures/armageddon/mission-teams.json' with {type:'json'};
 import {nativeLoadMissionTeams} from '../src/armageddon/mission-teams.js';
 import missionWorms from './fixtures/armageddon/mission-worms.json' with {type:'json'};
@@ -137,6 +139,39 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of missionLoad.cases) {
+    const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
+    const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
+    nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
+    memory.put(0x2000880,0x2001000);memory.put(0x6f47f4,c.country);memory.putByte(0x6e6880,1);
+    if(!c.unselected){memory.put(0x2000884,1);memory.put(0x2000054,c.mutation?1:-1);}
+    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const result=nativeLoadMission(memory,0x2000000,{
+      selectScheme(...args) {calls.push(['scheme',...args,snapshot()]);if(!c.failure)memory.put(0x6f4560,0x12345678);return c.failure?-1:0;},
+      initializeSetup(receiver) {calls.push(['initialize',receiver,snapshot()]);memory.putByte(0x6e69c6,Math.max(1,Math.min(6,c.teams)));},
+      initializeMode(receiver,mode) {calls.push(['mode',receiver,mode,snapshot()]);memory.putByte(0x6f3cdc,87);},
+      finalizeSetup(receiver) {calls.push(['finalize',receiver,snapshot()]);memory.put(0x6f4500,0x12345678);},
+      setupMusic(value) {calls.push(['music',value,snapshot()]);memory.put(0x6f3e97,0x12345678);},
+      teamCount() {calls.push(['teams',snapshot()]);return memory.byte(0x6e69c6);},
+      messageBox(...args) {calls.push(['message',...args,snapshot()]);},
+      readLandFile(section,key,fallback,size,filename) {calls.push(['land',section,key,fallback,size,filename,snapshot()]);return Buffer.from(c.strings[section.toLowerCase()]?.[key.toLowerCase()]??fallback,'latin1').subarray(0,size-1);},
+      profileInt(section,key,fallback,filename) {
+        calls.push(['profile',section,key,fallback,filename,snapshot()]);
+        if(c.mutation)memory.put(0x2000880,filename===0x2001000?0x2001100:0x2001000);
+        return c.values[section.toLowerCase()]?.[key.toLowerCase()]??fallback;
+      },
+      profileString(section,key,fallback,dest,size,filename) {
+        const bytes=Buffer.from(fallback.subarray(0,fallback.indexOf(0)<0?fallback.length:fallback.indexOf(0)));
+        calls.push(['profileString',section,key,bytes.toString('hex'),dest,size,filename,snapshot()]);
+        const value=Buffer.from(c.strings[section.toLowerCase()]?.[key.toLowerCase()]??bytes.toString('latin1'),'latin1').subarray(0,size-1);
+        for(let i=0;i<value.length;i++)memory.putByte(dest+i,value[i]);memory.putByte(dest+value.length,0);
+      },
+      loadString(resource) {calls.push(['string',resource,snapshot()]);return originalResourceStringBytes(resource);},
+      loadTeamFlag(receiver,team) {calls.push(['flag',receiver,team,snapshot()]);memory.put(receiver+team*0xd7b+0x747,0x12345678);},
+    });
+    expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
+  }
   for(const c of missionTeams.cases) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
