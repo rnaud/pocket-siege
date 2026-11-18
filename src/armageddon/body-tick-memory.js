@@ -1,4 +1,7 @@
-import { nativeRefreshCollisionMemory } from "./collision-registry.js";
+import {
+  nativeRefreshCollisionMemory,
+  nativeQueryCollisionMemory,
+} from "./collision-registry.js";
 import {
   nativeWaterMotionMemory,
   nativeAirForcesMemory,
@@ -13,6 +16,22 @@ import { nativeBodyRotation } from "./motion.js";
 //original intermediate state. Lower-level motion/collision services are explicit
 //addressed interfaces; copying a host body back at the end is not equivalent.
 export function nativeBodyTickMemory(memory, environment, body, index, host) {
+  //004C9770 dispatches the body's current mask and category flags to004C97A0.
+  if (!host.collide)
+    host = {
+      ...host,
+      collide: (environment, body, x, y) =>
+        nativeQueryCollisionMemory(
+          memory,
+          environment,
+          body,
+          x,
+          y,
+          memory.get(body + 0xf0),
+          memory.get(body + 0x40),
+          host.overlap,
+        ),
+    };
   const get = (offset) => memory.get(body + offset) | 0;
   const put = (offset, value) => memory.put(body + offset, value);
   const quake = () => memory.get(memory.get(environment + 0x3c0) + 0x1ac4) | 0;

@@ -13,7 +13,9 @@ parser.add_argument('--native-forces', action='store_true')
 parser.add_argument('--native-sweep', action='store_true')
 parser.add_argument('--native-rope', action='store_true')
 parser.add_argument('--native-refresh', action='store_true')
+parser.add_argument('--native-collision', action='store_true')
 args = parser.parse_args()
+if args.native_collision:args.native_refresh=True
 if args.native_refresh:args.native_rope=True
 if args.native_rope:args.native_sweep=True
 if args.native_sweep:args.native_forces=True
@@ -51,6 +53,7 @@ if args.native_rope:
  del services[0x4ca8a0];services[stop+0x700]=('terrain',2)
 if args.native_refresh:
  del services[0x4c98e0];services[stop+0x800]=('overlap',5)
+if args.native_collision:del services[stop+0x500]
 calls=[];steps=0
 def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))).hexdigest()
 def hook(cpu,address,size,user):
@@ -94,7 +97,7 @@ def hook(cpu,address,size,user):
   if args.native_forces and mode==7:write(environment+0x3b4,170);write(owner+0x9c,800000);write(owner+0xa0,1234)
   if args.native_forces and mode==8:write(owner+0x64,0x8000);write(owner+0x9c,123456)
  elif name=='overlap':
-  result=int(mode%2==0)
+  result=int(signed(arg(0))!=100 and mode%3!=0) if args.native_collision else int(mode%2==0)
   if mode==7:write(owner+0x90,123<<16);write(owner+0xf0,owner+0x9600);write(owner+0x44,99)
   if mode==8:write(environment+0x40,2)
  elif name=='terrain':
@@ -134,10 +137,10 @@ for throughList,mode,velocity,constrained in itertools.product(range(2),range(16
    for offset,value in {0x48:1,0xf0:owner+0x9600,0x90:(105+i)<<16,0x94:180<<16,0xec:123}.items():write(other+offset,value)
   if mode==14:
    for offset,value in {4:owner,8:read(owner+0x44),12:read(owner+0x40),16:read(owner+0x90),20:read(owner+0x94)}.items():write(environment+offset,value)
- write(mt+12,stop+0x500);write(environment+0x24,3);write(environment+0x28,environment+0x800);write(environment+0x808,owner);initial=bytes(cpu.mem_read(owner,0x10000));sp=stack+0xff00
+ write(mt+12,0x4c9770 if args.native_collision else stop+0x500);write(environment+0x24,3);write(environment+0x28,environment+0x800);write(environment+0x808,owner);initial=bytes(cpu.mem_read(owner,0x10000));sp=stack+0xff00
  for i,v in enumerate([stop,owner,1]):write(sp+i*4,v)
  cpu.reg_write(UC_X86_REG_ECX,environment);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4ca750 if throughList else 0x4ca320,stop,count=100000)
  assert cpu.reg_read(UC_X86_REG_EIP)==stop
- cases.append(dict(nativeRefresh=args.native_refresh,nativeRope=args.native_rope,nativeSweep=args.native_sweep,nativeForces=args.native_forces,throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,native_forces=args.native_forces,method=f'{len(cases)} original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. With --native-refresh, original004C98E0/004C9970 also execute over sparse category lists with mutable mask-overlap callbacks and cache-hit cases. With --native-rope, original004CA8A0 also executes against five-segment ropes and an explicit terrain-point interface. With --native-sweep, original004C9AA0 also executes and the velocity matrix uses four values (256 cases). With --native-forces, original004C9F10 water and004CA110 air run without interception, including mutable collision and skim callbacks. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(nativeCollision=args.native_collision,nativeRefresh=args.native_refresh,nativeRope=args.native_rope,nativeSweep=args.native_sweep,nativeForces=args.native_forces,throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,native_forces=args.native_forces,method=f'{len(cases)} original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. With --native-collision, original004C9770/004C97A0 also execute for every movement collision, using explicit mutable mask-overlap callbacks. With --native-refresh, original004C98E0/004C9970 also execute over sparse category lists with mutable mask-overlap callbacks and cache-hit cases. With --native-rope, original004CA8A0 also executes against five-segment ropes and an explicit terrain-point interface. With --native-sweep, original004C9AA0 also executes and the velocity matrix uses four values (256 cases). With --native-forces, original004C9F10 water and004CA110 air run without interception, including mutable collision and skim callbacks. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'addressed body ticks')
