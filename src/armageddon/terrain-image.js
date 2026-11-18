@@ -1,4 +1,5 @@
-import {nativeTellArchiveEntry,nativeReadArchiveEntry} from './archive-handle.js';
+import {nativeOpenArchiveEntry} from './archive-lookup.js';
+import {nativeTellArchiveEntry,nativeReadArchiveEntry,nativeDestroyArchiveEntry} from './archive-handle.js';
 import {nativeDecodeImagePixels} from './image-decompress.js';
 import {nativeCreatePanelImage} from './panel-resources.js';
 import {nativeBitmapStorage,nativeRemapBitmap} from './bitmap-storage.js';
@@ -68,4 +69,13 @@ export function nativeLoadArchiveImage(memory,palette,handle,scratch,host) {
     readFile:(dest,size,count,entry)=>read(entry,dest,Math.imul(size,count)),
     alignImagePixels:entry=>{while(tell(entry)&3){if(host.readArchiveByte)host.readArchiveByte(entry);else read(entry,scratch+0x428,1);}},
   });
+}
+
+//00492710. The named loader owns the entry handle, including decode failure.
+export function nativeLoadNamedArchiveImage(memory,palette,archive,name,scratch,host) {
+  const handle=nativeOpenArchiveEntry(memory,archive,name,host);
+  if(!handle)return 0;
+  const bitmap=nativeLoadArchiveImage(memory,palette,handle,scratch,host);
+  nativeDestroyArchiveEntry(memory,handle,1,host);
+  return bitmap;
 }
