@@ -1,4 +1,5 @@
 import {nativeDecodeSpriteBlock} from './sprite-bitmap.js';
+import {nativeBlitIndexedBitmap} from './indexed-bitmap-blit.js';
 
 // Original SPR container: indexed palette, independently compressed blocks,
 // frame rectangles and packed block/offset addresses. No image resampling.
@@ -99,28 +100,35 @@ export function nativeSpritePaletteMap(sprite, palette) {
   return mapping;
 }
 
-export function spriteFrameRGBA(sprite, index, sharedPalette = null) {
-  const rgba = new Uint8ClampedArray(sprite.width * sprite.height * 4);
-  const frame = sprite.frames[index % sprite.frames.length];
-  let source = 0;
-  for (let y = frame.top; y < frame.bottom; y++)
-    for (let x = frame.left; x < frame.right; x++) {
-      const sourceIndex = frame.pixels[source++];
-      // circle25 includes scanline padding beyond its declared 50px canvas.
-      if (x < 0 || y < 0 || x >= sprite.width || y >= sprite.height) continue;
-      if (sharedPalette) {
-        const index = sharedPalette.mapping[sourceIndex];
-        if (index === 0) continue;
-        const offset = (y * sprite.width + x) * 4;
-        rgba.set(sharedPalette.colors[index], offset);
-        rgba[offset + 3] = 255;
-        continue;
-      }
-      const color = sourceIndex * 4;
-      rgba.set(
-        sprite.palette.subarray(color, color + 4),
-        (y * sprite.width + x) * 4,
-      );
-    }
+// Adapt decoded source pixels to the recovered indexed bitmap blitter. The
+//native crop is drawn into the full canvas; palette expansion stays at the
+//browser texture boundary. In particular, crop padding and negative origins
+//are clipped by the same routine as engine sprites.
+export function spriteFrameIndexed(sprite,index,mapping=null) {
+  const frame=sprite.frames[index%sprite.frames.length],width=frame.right-frame.left,height=frame.bottom-frame.top;
+  const sourceBase=0x10000000,arena=new Uint8Array(88+sprite.width*sprite.height),view=new DataView(arena.buffer);
+  const memory={
+    get:address=>view.getUint32(address,true),
+    put:(address,value)=>view.setUint32(address,value>>>0,true),
+    byte(address) {
+      if(address<sourceBase)return arena[address];
+      const color=frame.pixels[address-sourceBase];
+      return mapping?mapping[color]:color;
+    },
+    putByte:(address,value)=>{arena[address]=value;},
+  };
+  for(const [bitmap,pixels,w,h] of [[0,88,sprite.width,sprite.height],[44,sourceBase,width,height]])
+    for(const [offset,value] of [[8,pixels],[12,8],[16,w],[20,w],[24,h],[28,0],[32,0],[36,w],[40,h]])memory.put(bitmap+offset,value);
+  if(width>0&&height>0)nativeBlitIndexedBitmap(memory,0,frame.left,frame.top,width,height,44,0,0,0,1);
+  return arena.subarray(88);
+}
+
+export function spriteFrameRGBA(sprite,index,sharedPalette=null) {
+  const indexed=spriteFrameIndexed(sprite,index,sharedPalette?.mapping),rgba=new Uint8ClampedArray(indexed.length*4);
+  for(let pixel=0;pixel<indexed.length;pixel++) {
+    const color=indexed[pixel];if(!color)continue;
+    if(sharedPalette){rgba.set(sharedPalette.colors[color],pixel*4);rgba[pixel*4+3]=255;}
+    else rgba.set(sprite.palette.subarray(color*4,color*4+4),pixel*4);
+  }
   return rgba;
 }

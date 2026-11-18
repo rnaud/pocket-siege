@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import fixture from "./fixtures/armageddon/sprite-bounds.json" with { type: "json" };
-import { decodeSprite, nativeSpritePaletteMap, spriteFrameRGBA } from "../src/armageddon/sprite.js";
+import { decodeSprite, nativeSpritePaletteMap, spriteFrameRGBA, spriteFrameIndexed } from "../src/armageddon/sprite.js";
 import { NativeGamePalette } from "../src/armageddon/game-palette.js";
 import spritePalettes from "./fixtures/armageddon/sprite-palette.json" with { type: "json" };
 import startupPalette from "./fixtures/armageddon/startup-palette.json" with { type: "json" };
@@ -56,7 +56,15 @@ import rendererSpriteLifetime from './fixtures/armageddon/renderer-sprite-lifeti
 
 import rendererStreamedLifetime from './fixtures/armageddon/renderer-streamed-lifetime.json' with {type:'json'};
 
+import spriteRaster from './fixtures/armageddon/sprite-raster.json' with {type:'json'};
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
+  for(const c of spriteRaster.cases) {
+    const raw=readFileSync(new URL(`../${c.path}`,import.meta.url));
+    expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
+    const sprite=decodeSprite(raw);
+    for(const step of c.steps)expect(createHash('sha256').update(spriteFrameIndexed(sprite,step.frame,c.mapping)).digest('hex')).toBe(step.pixels);
+  }
   for(const c of rendererSpriteDraw.cases) {
     const owner=0x2000000,arena=Buffer.alloc(0x20000,c.pattern),scratch=Buffer.alloc(24);
     const memory={get:p=>p>=0x2100000?scratch.readUInt32LE(p-0x2100000):arena.readUInt32LE(p-owner),put:(p,v)=>p>=0x2100000?scratch.writeUInt32LE(v>>>0,p-0x2100000):arena.writeUInt32LE(v>>>0,p-owner),byte:p=>arena[p-owner],putByte:(p,v)=>{arena[p-owner]=v;}};
