@@ -98,3 +98,28 @@ export function nativeDrawCollisionRegistry(registry,surface,dx,dy,excluded,flag
     }
   }
 }
+
+//004C97A0/004C98E0/004C9970 over the original sparse memory lists.
+export function nativeQueryCollisionMemory(memory,environment,actor,x,y,mask,flags,overlap) {
+  if(!flags)return 0;
+  function* candidates(selected) {
+    for(let type=0;type<32;type++)if(selected&(1<<type)) {
+      const list=environment+0x34+type*0x1c;
+      for(let i=0;i<(memory.get(list+12)|0);i++) {
+        const body=memory.get(memory.get(list+16)+i*4);if(body)yield body;
+      }
+    }
+  }
+  const intersects=(shape,px,py,other)=>overlap(shape,px>>16,py>>16,memory.get(other+0xf0),(memory.get(other+0x90)|0)>>16,(memory.get(other+0x94)|0)>>16);
+  if(memory.get(environment+4)!==actor||memory.get(environment+16)!==memory.get(actor+0x90)||
+    memory.get(environment+20)!==memory.get(actor+0x94)||memory.get(environment+8)!==memory.get(actor+0x44)||memory.get(environment+12)!==memory.get(actor+0x40)) {
+    for(const other of candidates(memory.get(actor+0x40))) {
+      memory.put(other+0xec,0);
+      if(other!==actor&&memory.get(other+0x48)&&intersects(memory.get(actor+0xf0),memory.get(actor+0x90)|0,memory.get(actor+0x94)|0,other))memory.put(other+0xec,1);
+    }
+    memory.put(environment+4,actor);memory.put(environment+16,memory.get(actor+0x90));memory.put(environment+20,memory.get(actor+0x94));
+    memory.put(environment+8,memory.get(actor+0x44));memory.put(environment+12,memory.get(actor+0x40));
+  }
+  for(const other of candidates(flags))if(other!==actor&&memory.get(other+0x48)&&!memory.get(other+0xec)&&intersects(mask,x,y,other))return other;
+  return 0;
+}

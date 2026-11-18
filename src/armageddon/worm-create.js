@@ -1,3 +1,4 @@
+import { nativeQueryCollisionMemory } from './collision-registry.js';
 import { nativeSynchronizeWormMemory, nativeSynchronizeWormAt } from "./worm-animation-sync.js";
 import { nativeInitializeWormPlacement } from "./worm-placement.js";
 import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom, nativeSelectSpawnAt, nativeSelectSideSpawnAt, nativeReserveSpawnAt } from './spawn-pool.js';
@@ -96,7 +97,7 @@ export function nativeCreateWorm({id,parent,memory=new Uint8Array(0x390),sceneMe
 import { nativeCreatePanelText, nativeCreateWormPanel } from './panel-resources.js';
 import { nativeCreatePhysicsAt } from './physics-memory.js';
 import { nativeRegisterTaskMemory } from './task-memory.js';
-//004D5A40 address-backed factory. Gravity, placement and renderer metadata remain host interfaces.
+//004D5A40 address-backed factory. Mask overlap, renderer metadata and heap remain host interfaces.
 export function nativeCreateWormAt(memory,address,parent,team,worm,configuration,host) {
   const scene=memory.get(parent+0x38);
   nativeInitializeWorm(memory.range(address,0x390),memory.range(scene,0x20000),team,worm,memory.range(configuration,40),{
@@ -105,6 +106,8 @@ export function nativeCreateWormAt(memory,address,parent,team,worm,configuration
       nativeCreatePhysicsAt(memory,address,parent,category,shape,host);
       memory.put(address,0x526de0);memory.put(address+0x2c,type);
     },
+    gravity:host.gravity??(()=>memory.get(memory.get(scene+0x7d4)+0x3b8)|0),
+    placeWorm:host.placeWorm??((x,y)=>nativeQueryCollisionMemory(memory,memory.get(scene+0x7d4),address,x,y,memory.get(address+0xf0),memory.get(address+0x40),host.collisionOverlap)),
     randomSpawnWord:host.randomSpawnWord??(()=>nativeSpawnRandom(memory.range(scene,0x20000))),
     randomSpawn:host.randomSpawn??(random=>{const output={};if(!nativeSelectSpawnAt(memory,memory.get(scene+0x44c),random,output))throw new RangeError('No native spawn candidate');return output.value;}),
     sideSpawn:host.sideSpawn??(right=>{const output={};if(!nativeSelectSideSpawnAt(memory,memory.get(scene+0x44c),right,output))throw new RangeError('No native spawn candidate');return output.value;}),
