@@ -1,3 +1,4 @@
+import {nativeSelectSetupScheme} from './scheme-selection.js';
 //00440670 and00440860. Write the original frontend globals, retaining byte/
 //short truncation and callback order. INI access and scheme/music/team services
 //are explicit interfaces; loading these options alone does not run a mission.
@@ -21,7 +22,8 @@ const schemeFields = [
   ["WormSelect", 0, 0x4569],
 ];
 export function nativeLoadMissionScheme(memory, owner, host) {
-  if (host.selectScheme(0x6f454c, 4, 0) === -1) return -1;
+  const result = host.selectScheme ? host.selectScheme(0x6f454c, 4, 0) : nativeSelectSetupScheme(memory, 0x6f454c, 4, 0, host);
+  if (result === -1) return -1;
   for (const [key, fallback, offset] of schemeFields)
     memory.putByte(
       0x6f0000 + offset,

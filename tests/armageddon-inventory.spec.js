@@ -1,4 +1,5 @@
-import missionNativeServices from './fixtures/armageddon/mission-native-services.json' with {type:'json'};
+import missionNativeScheme from './fixtures/armageddon/mission-native-scheme.json' with {type:'json'};
+import {nativeSelectSetupScheme,originalSchemeResource} from '../src/armageddon/scheme-selection.js';
 import missionLoad from './fixtures/armageddon/mission-load.json' with {type:'json'};
 import {nativeLoadMission} from '../src/armageddon/mission-load.js';
 import missionTeams from './fixtures/armageddon/mission-teams.json' with {type:'json'};
@@ -140,7 +141,21 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of [...missionLoad.cases,...missionNativeServices.cases]) {
+  for(const c of missionNativeScheme.schemeCases) {
+    const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const memory={put:(address,value)=>globals.writeUInt32LE(value>>>0,address-0x6e0000),putByte:(address,value)=>{globals[address-0x6e0000]=value;}};
+    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const result=nativeSelectSetupScheme(memory,0x6f454c,c.selection,c.bank,{
+      setResourceString(address,id) {calls.push(['label',address,id,snapshot()]);memory.put(address,0x2500000+id*4);},
+      findResource(module,id,type) {calls.push(['findResource',module,id,type,snapshot()]);return 0x2400000+id*256;},
+      loadResource(module,handle) {calls.push(['loadResource',module,handle,snapshot()]);return originalSchemeResource((handle-0x2400000)/256);},
+      messageBox(...args) {calls.push(['message',...args,snapshot()]);},
+    });
+    expect({result,calls,state:snapshot()},`scheme ${c.selection} ${c.bank} ${c.pattern}`).toEqual({result:c.result,calls:c.calls,state:c.sha256});
+  }
+  // The deepest capture supersedes the earlier all-profile callback captures.
+  // Keep scheme rejection separately: native mission bank0 always exists.
+  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeScheme.cases]) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
@@ -152,6 +167,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const random=new NativeFrontendRandom(123+c.pattern);
     const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
     const host={
+      setResourceString(address,id) {calls.push(['label',address,id,snapshot()]);memory.put(address,0x2500000+id*4);},
+      findResource(module,id,type) {calls.push(['findResource',module,id,type,snapshot()]);return 0x2400000+id*256;},
+      loadResource(module,handle) {calls.push(['loadResource',module,handle,snapshot()]);return originalSchemeResource((handle-0x2400000)/256);},
       random:{random() {calls.push(['random',snapshot()]);return random.random();}},
       selectScheme(...args) {calls.push(['scheme',...args,snapshot()]);if(!c.failure)memory.put(0x6f4560,0x12345678);return c.failure?-1:0;},
       initializeSetup(receiver) {calls.push(['initialize',receiver,snapshot()]);memory.putByte(0x6e69c6,Math.max(1,Math.min(6,c.teams)));},
@@ -176,6 +194,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       loadTeamFlag(receiver,team) {calls.push(['flag',receiver,team,snapshot()]);memory.put(receiver+team*0xd7b+0x747,0x12345678);},
     };
     if(c.nativeServices)for(const key of ['initializeMode','finalizeSetup','setupMusic','teamCount'])delete host[key];
+    if(c.nativeScheme)delete host.selectScheme;
     const result=nativeLoadMission(memory,0x2000000,host);
     expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }

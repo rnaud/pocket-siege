@@ -10,7 +10,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
 parser.add_argument('--native-services',action='store_true')
+parser.add_argument('--native-scheme',action='store_true')
 args = parser.parse_args()
+args.native_services |= args.native_scheme
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
 if digest != '0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56':
@@ -35,6 +37,7 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 
 cpu.mem_map(0,0x1000)
 scratch=0x2300000;cpu.mem_map(scratch,0x10000)
+cpu.mem_map(0x2400000,0x40000)
 def cstring(address):
  result=bytearray()
  while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
@@ -45,6 +48,7 @@ def ret(value=0,cleanup=0):
 def setstring(obj,value):
  dest=scratch+(obj&0xfff)*8+16
  write(dest-8,len(value));cpu.mem_write(dest,value+b'\0');write(obj,dest)
+write(0x517494,stop+0x800);write(0x51745c,stop+0x900)
 write(0x5174a4,stop+0x100);write(0x5178f4,stop+0x200)
 write(0x517954,stop+0x300);write(0x517950,stop+0x400);write(0x5174a8,stop+0x500)
 def hook(cpu,address,size,user):
@@ -77,7 +81,15 @@ def hook(cpu,address,size,user):
  elif address==0x41b730:
   calls.append(['teams',snapshot()]);ret(cpu.mem_read(0x6e69c6,1)[0])
  elif address==0x503d42:
-  resource=read(sp+4);calls.append(['string',resource,snapshot()]);setstring(cpu.reg_read(UC_X86_REG_ECX),resourceStrings.get(resource,b'') if originalTables else resourceStrings.get(resource,b''));ret(1,4)
+  resource=read(sp+4);dest=cpu.reg_read(UC_X86_REG_ECX)
+  if args.native_scheme and dest==0x6f4558:
+   calls.append(['label',dest,resource,snapshot()]);write(dest,0x2500000+resource*4);ret(1,4);return
+  calls.append(['string',resource,snapshot()]);setstring(cpu.reg_read(UC_X86_REG_ECX),resourceStrings.get(resource,b'') if originalTables else resourceStrings.get(resource,b''));ret(1,4)
+ elif address==stop+0x800:
+  module,resource,kind=read(sp+4),read(sp+8),cstring(read(sp+12)).decode()
+  calls.append(['findResource',module,resource,kind,snapshot()]);ret(0x2400000+resource*256,12)
+ elif address==stop+0x900:
+  module,handle=read(sp+4),read(sp+8);calls.append(['loadResource',module,handle,snapshot()]);ret(handle,8)
  elif address==stop+0x200:
   fmt=cstring(read(sp+8));value=fmt%(read(sp+12)&255) if b'%c' in fmt else fmt%cstring(read(sp+12));cpu.mem_write(read(sp+4),value+b'\0');ret(len(value))
  elif address==stop+0x700:
@@ -98,7 +110,8 @@ def hook(cpu,address,size,user):
   if mutation:write(owner+0x880,owner+0x1100 if filename==owner+0x1000 else owner+0x1000)
   values=profile.get(section.lower(),{})
   ret(values.get(key.lower(),fallback),16)
-for address in [0x503d48,0x503d24,0x503dc0,0x503d42,0x503d2a,0x503d1e,0x503ec2,0x470a20,0x415540,0x4197d0,0x419610,0x419740,0x41b730,0x41bc40,stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600,stop+0x700]:
+for address in [0x503d48,0x503d24,0x503dc0,0x503d42,0x503d2a,0x503d1e,0x503ec2,0x470a20,0x415540,0x4197d0,0x419610,0x419740,0x41b730,0x41bc40,stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600,stop+0x700,stop+0x800,stop+0x900]:
+ if args.native_scheme and address==0x470a20:continue
  if args.native_services and address in [0x4197d0,0x419610,0x419740,0x41b730]:continue
  cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 # Read English RT_STRING bytes directly from the input PE, independently of
@@ -113,7 +126,11 @@ def walk(relative,path):
  at=root+relative;named,count=struct.unpack_from('<HH',data,at+12)
  for i in range(named+count):
   name,target=struct.unpack_from('<II',data,at+16+8*i)
+  if name&0x80000000:
+   pos=root+(name&0x7fffffff);length=struct.unpack_from('<H',data,pos)[0];name=data[pos+2:pos+2+length*2].decode('utf-16-le')
   if target&0x80000000:walk(target&0x7fffffff,path+[name])
+  elif len(path)==2 and path[0]=='SCHEMES':
+   rva,length=struct.unpack_from('<II',data,root+target);pos=fileoffset(rva);cpu.mem_write(0x2400000+path[1]*256,data[pos:pos+length])
   elif len(path)==2 and path[0]==6 and name==1033:
    rva,length=struct.unpack_from('<II',data,root+target);pos=fileoffset(rva)
    for index in range(16):
@@ -152,6 +169,7 @@ for variant in ['unselected','missing-number','few-teams','few-teams-two','many-
  profiles.append((variant,profile,strings,variant=='scheme-failure',variant=='unselected'))
 cases=[];originalTables=True
 for name,profile,strings,failure,unselected in profiles:
+ if args.native_scheme and failure:continue
  for mutation in [0,1]:
   teams=profile.get('teams',{}).get('teamsinmission',1);pattern=0xa5 if mutation else 0;country=4 if mutation else 1
   cpu.mem_write(0x6e0000,bytes([pattern])*0x20000);cpu.mem_write(owner,bytes([pattern])*0x10000)
@@ -163,6 +181,15 @@ for name,profile,strings,failure,unselected in profiles:
   rng=123+pattern
   calls=[];write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43e910,stop,count=2000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',cases=cases),separators=(',',':'))+'\n')
+  cases.append(dict(profile=name,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot()))
+schemeCases=[]
+if args.native_scheme:
+ for selection in [-1,*range(19),2147483647]:
+  for bank in [-1,0,1,3,4]:
+   for pattern in [0,0xa5]:
+    cpu.mem_write(0x6e0000,bytes([pattern])*0x20000);cpu.mem_write(owner,bytes([pattern])*0x10000);calls=[]
+    sp=stack+0xe000;write(sp,stop);write(sp+4,selection);write(sp+8,bank);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6f454c)
+    cpu.emu_start(0x470a20,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+    schemeCases.append(dict(selection=selection,bank=bank,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),calls=calls,sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',cases=cases,schemeCases=schemeCases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')
