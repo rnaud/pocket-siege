@@ -1,3 +1,4 @@
+import controllerTask from "./fixtures/armageddon/controller-task.json" with { type: "json" };
 import taskDispatch from "./fixtures/armageddon/task-dispatch.json" with { type: "json" };
 import { nativeForwardTaskEvent, nativeSendTaskEvent } from "../src/armageddon/task-dispatch.js";
 import { nativeDispatchControllerTask } from "../src/armageddon/controller-task.js";
@@ -273,6 +274,17 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerTask.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),calls=[],registry=[];
+    for(const [o,v] of Object.entries(c.fields))body.setInt32(Number(o),v,true);
+    for(const [type,index,id] of c.entries)registry[(index*17+type)&255]=[{type,index,task:id}];
+    const task={memory,registry,children:c.children.map(id=>id||null)};
+    nativeDispatchControllerTask(task,sceneMemory,123,c.event,c.size,c.payload?Uint8Array.from(c.payload):null,{
+      dispatch:(target,sender,event,size,payload)=>calls.push(["event",target,sender===task?999:sender,event,size,payload?[...payload]:null]),
+      selectionSound:(...args)=>calls.push(["sound",...args]),selectDefaultWeapon:worm=>calls.push(["default",worm]),
+    });
+    expect({calls,body:controllerTask.offsets.map(o=>body.getInt32(o,true))}).toEqual({calls:c.calls,body:c.body});
   }
   for(const c of taskDispatch.forward)for(const controller of [false,true]) {
     const task={memory:new Uint8Array(0x200),children:c.children.map(id=>id||null)},calls=[];let mutated=false;
