@@ -1,5 +1,8 @@
 import {test,expect} from '@playwright/test';
 
+// Exercise the existing display check on a Retina-density desktop.
+test.use({ deviceScaleFactor: 2 });
+
 test('desktop fills the battlefield with a finer integer pixel grid and undistorted camera', async ({page},info) => {
   test.skip(info.project.name !== 'desktop');
   await page.goto('/');
@@ -12,7 +15,8 @@ test('desktop fills the battlefield with a finer integer pixel grid and undistor
       const a=document.querySelector('#arena'),f=document.querySelector('#battlefield-frame'),c=document.querySelector('#scene canvas');
       const scale=Number(c.dataset.pixelScale),v=window.siege.getState().camera;
       return a.clientWidth===f.clientWidth && a.clientHeight===f.clientHeight && c.width>=960 &&
-        Number.isInteger(scale) && c.clientWidth===c.width*scale && c.clientHeight===c.height*scale &&
+        Number.isInteger(scale*devicePixelRatio) && c.width>=a.clientWidth*devicePixelRatio/Number(c.dataset.devicePixelScale) &&
+        Math.abs(c.getBoundingClientRect().width-c.width*scale)<0.02 && Math.abs(c.getBoundingClientRect().height-c.height*scale)<0.02 &&
         Math.abs(v.w/v.h-a.clientWidth/a.clientHeight)<0.02;
     })).toBe(true);
   }

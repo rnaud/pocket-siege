@@ -6103,6 +6103,18 @@ function screen(x, y) {
     y: ((view.y + view.h - y) / view.h) * renderer.domElement.clientHeight,
   };
 }
+// Monitor moves and browser zoom can change density without changing layout.
+let displayDensityQuery;
+function watchDisplayDensity() {
+  displayDensityQuery?.removeEventListener("change", onDisplayDensityChange);
+  displayDensityQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+  displayDensityQuery.addEventListener("change", onDisplayDensityChange, { once: true });
+}
+function onDisplayDensityChange() {
+  watchDisplayDensity();
+  resize();
+}
+watchDisplayDensity();
 function resize() {
   const stageAspect = terrain?.pixels ? W / H : 16 / 9;
   const stageWidth = Math.max(
@@ -6120,11 +6132,12 @@ function resize() {
   arena.style.width = `${fill ? battlefieldFrame.clientWidth : stageWidth}px`;
   arena.style.height = `${fill ? battlefieldFrame.clientHeight : Math.floor(stageWidth / stageAspect)}px`;
   arena.classList.toggle("portrait-camera", portrait);
-  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight, coarsePointer ? 480 : 960);
+  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight, coarsePointer ? 480 : 960, window.devicePixelRatio);
   renderer.setSize(pixels.width, pixels.height, false);
   renderer.domElement.style.width = `${pixels.width * pixels.scale}px`;
   renderer.domElement.style.height = `${pixels.height * pixels.scale}px`;
   renderer.domElement.dataset.pixelScale = pixels.scale;
+  renderer.domElement.dataset.devicePixelScale = pixels.deviceScale;
   const correction = 1;
 
   for (const w of worms) {
