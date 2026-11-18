@@ -1,3 +1,5 @@
+import { NativeSpriteDrawQueue } from "./sprite-draw-queue.js";
+import { nativeDrawWorm } from "./worm-render.js";
 import { nativeResolveWormSprite } from "./worm-sprite.js";
 import slopeSprites from "./worm-slope-sprites.json" with {type:"json"};
 import { nativeWormIdleGesture } from "./worm-idle-gesture.js";
@@ -864,25 +866,25 @@ function renderOriginalJetpack(worm) {
     ctx.drawImage(texture(name, index).image, -30, -30);
     ctx.restore();
   };
-  const host = { state: () => 0x78, position: () => ({ x, y }) };
-  // Larger native draw keys are consumed first: flames D0001, body D0000.
-  // Truncate the submitted absolute position, not its relative offset.
-  nativeDrawJetpackFlames({ ...state, rank: 0 }, {
-    ...host,
-    draw: (_order, px, py, _zero, sprite, progress) => {
-      const name = spriteIds.sprites[sprite & 0x3ffff].name;
-      const source = animations.get(name).sprite;
-      const index = nativeSpriteFrame(source.frames.length, source.metadata[2], progress);
-      if ((sprite & 0x3ffff) === 0x36) state.sideFrame = index;
-      else state.downFrame = index;
-      draw(name, index, (px >> 16) - (x >> 16), (py >> 16) - (y >> 16), Boolean(sprite & 0x40000));
-    },
+  const queue = new NativeSpriteDrawQueue();
+  const host = { state: () => 0x78, position: () => ({ x, y }),
+    draw: (...args) => queue.draw(...args) };
+  nativeDrawWorm({ rank: 0, team: worm.team ?? 0, poison: 0, hangDirection: state.lean }, {
+    ...host, teamFlags: () => 0,
+    current: () => ({ sprite: state.sprite, progress: 0 }),
   });
-  const body = nativeResolveWormSprite({ hangDirection: state.lean }, {
-    ...host, current: () => ({ sprite: state.sprite, progress: 0 }),
+  nativeDrawJetpackFlames({ ...state, rank: 0 }, host);
+  // Local composition uses native queue sorting and pixel snapping. Scene-wide
+  // ordering, team/poison palette flags and camera projection remain adapters.
+  queue.flush({ x: 0, y: 0, z: 0, distance: 65536 }, (px, py, sprite, progress) => {
+    const id = sprite & 0x3ffff, name = spriteIds.sprites[id].name;
+    const source = animations.get(name).sprite;
+    const index = nativeSpriteFrame(source.frames.length, source.metadata[2], progress);
+    if (id === 0x36) state.sideFrame = index;
+    else if (id === 0x37) state.downFrame = index;
+    else state.name = name;
+    draw(name, index, (px >> 16) - (x >> 16), (py >> 16) - (y >> 16), Boolean(sprite & 0x40000));
   });
-  state.name = spriteIds.sprites[body.sprite & 0x3ffff].name;
-  draw(state.name, 0, 0, 0, Boolean(body.sprite & 0x40000));
   state.map.needsUpdate = true;
 }
 

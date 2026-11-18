@@ -1,7 +1,18 @@
+import drawQueueFixture from "./fixtures/armageddon/sprite-draw-queue.json" with { type: "json" };
+import { NativeSpriteDrawQueue } from "../src/armageddon/sprite-draw-queue.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/jetpack.json" with { type: "json" };
 import { nativeDrawJetpackFlames, nativeJetpackInput, nativeJetpackVelocity, nativeJetpackTick } from "../src/armageddon/jetpack.js";
 test("jetpack poses, fuel and inputs match original executable ticks", { tag: "@logic" }, () => {
+  for (const c of drawQueueFixture.cases) {
+    const queue = new NativeSpriteDrawQueue(c.remaining);
+    for (const request of c.requests) queue.draw(...request);
+    const calls = [];
+    queue.flush(c.view, (...args) => calls.push(args));
+    expect(queue.available).toBe(c.available);
+    expect(queue.records).toEqual(c.records);
+    expect(calls).toEqual(c.draws);
+  }
   for (const row of fixture.cases)
     expect(nativeJetpackTick(row.input)).toEqual(row.output);
   for (const row of fixture.inputCases) {
