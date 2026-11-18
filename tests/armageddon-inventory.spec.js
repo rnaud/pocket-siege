@@ -1,3 +1,5 @@
+import matchCreate from './fixtures/armageddon/match-create.json' with {type:'json'};
+import {nativeInitializeMatchRoot} from '../src/armageddon/match-create.js';
 import matchResources from './fixtures/armageddon/match-resources.json' with {type:'json'};
 import {nativeInitializeMatchResources} from '../src/armageddon/match-resources.js';
 import finalizeSetup from './fixtures/armageddon/gameplay-finalize.json' with {type:'json'};
@@ -61,9 +63,15 @@ const fixture = JSON.parse(
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
   const resourceActual=[],resourceExpected=[];
-  for(const row of matchResources.cases) {
+  for(const row of [...matchResources.cases,...matchCreate.cases.map(row=>({...row,root:true}))]) {
     const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),sv=new DataView(scene.buffer),calls=[];
     sv.setUint32(8,0x2000800,true);view.setUint32(0x38,0x2300000,true);
+    if(row.root) {
+      sv.setUint32(20,row.variant&1?0x2003000:0,true);
+      for(const [offset,value] of row.words)sv.setInt32(offset,value,true);
+      for(const [offset,value] of row.bytes)scene[offset]=value;
+      for(let i=0x38;i<0x3c;i++)heap[i]=(i*7+3)&255;
+    }
     for(const [offset,value] of row.shorts)sv.setInt16(offset,value,true);
     let cursor=0x2401000,allocation=0;
     const memory={put:(at,v)=>view.setInt32(at-0x2400000,v,true),putByte:(at,v)=>heap[at-0x2400000]=v};
@@ -73,11 +81,17 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;
     };
     const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;}};
-    nativeInitializeMatchResources(heap.subarray(0,0x28c),scene,{
+    const resourceHost={
       allocateResource:host.allocate,renderer:0x2000800,
       constructSurface:(at,...args)=>{nativeCreatePanelImage(memory,at,...args,host);memory.put(at,0x5249b0);},
       constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),
+    };
+    if(row.root)nativeInitializeMatchRoot(heap.subarray(0,0x28c),scene,scene.subarray(0x47a8),{
+      ...resourceHost,
+      initializeWorld:()=>{calls.push(['world',0x2400000,0x2300000,0x23047a8]);view.setUint32(0x38,0x2300000,true);},
+      startMusic:(at,data,count)=>calls.push(['music',at,0x2300000+data.byteOffset,count]),
     });
+    else nativeInitializeMatchResources(heap.subarray(0,0x28c),scene,resourceHost);
     resourceActual.push([createHash('sha256').update(heap).digest('hex'),createHash('sha256').update(scene).digest('hex'),calls]);
     resourceExpected.push([row.sha256,row.scene_sha256,row.calls]);
   }
