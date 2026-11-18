@@ -100,5 +100,27 @@ for entries in [[],[dict(position=1,weight=1)],[dict(position=1,weight=1),dict(p
    cpu.emu_start(routine,stop,count=100000)
    assert cpu.reg_read(UC_X86_REG_EIP)==stop,(entries,mode,value,hex(cpu.reg_read(UC_X86_REG_EIP)))
    poolCases.append(dict(entries=entries,mode=mode,value=value,fault=fault,result=None if fault else cpu.reg_read(UC_X86_REG_EAX),output=read(owner+0x5800),remaining=[dict(position=read(owner+0x5400+i*8),weight=signed(owner+0x5404+i*8)) for i in range(read(owner+0x5004))]))
-args.output.write_text(json.dumps(dict(executableSha256=digest,routine='004D5A40 with real physics membership and004CBCD0/004CBD60/004CBD80/004CBDB0/004EE900 spawn routines',owner=owner,poolCases=poolCases,sceneOffsets=sceneOffsets,cases=cases),separators=(',',':'))+'\n')
+insertCases=[]
+for entries in [[],[dict(position=1,weight=1)],[dict(position=1,weight=1),dict(position=2,weight=2)]]:
+ for capacity in [0,1,2,64]:
+  for position in [1,3,0xffffffff]:
+   for weight in [0,1,0x7fffffff,0xffffffff]:
+    write(owner+0x5004,len(entries));write(owner+0x5008,capacity);write(owner+0x500c,owner+0x5400)
+    for i,row in enumerate(entries):write(owner+0x5400+i*8,row['position']);write(owner+0x5404+i*8,row['weight'])
+    sp=stack+0xf000
+    for i,v in enumerate([stop,position,weight]):write(sp+4*i,v)
+    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x5000)
+    cpu.emu_start(0x4cbc50,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+    insertCases.append(dict(entries=entries,capacity=capacity,position=position,weight=weight,result=cpu.reg_read(UC_X86_REG_EAX),remaining=[dict(position=signed(owner+0x5400+i*8),weight=signed(owner+0x5404+i*8)) for i in range(read(owner+0x5004))]))
+buildCases=[]
+for count in [0,1,2,32,64,70]:
+ for duplicate in [False,True]:
+  positions=[dict(x=i//2 if duplicate else i,y=2) for i in range(count)]
+  sp=stack+0xf000;write(sp+0x10,count);write(owner+0x5cd0,context);write(context+0x44c,owner+0x5000)
+  write(owner+0x5004,0);write(owner+0x5008,64);write(owner+0x500c,owner+0x5400)
+  for i,row in enumerate(positions):write(sp+0x118+i*8,row['x']);write(sp+0x11c+i*8,row['y'])
+  cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_EBX,owner)
+  cpu.emu_start(0x4a5ae5,0x4a5b1e,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4a5b1e
+  buildCases.append(dict(positions=positions,entries=[dict(position=signed(owner+0x5400+i*8),weight=signed(owner+0x5404+i*8)) for i in range(read(owner+0x5004))]))
+args.output.write_text(json.dumps(dict(executableSha256=digest,routine='004D5A40 with real physics membership and004CBCD0/004CBD60/004CBD80/004CBDB0/004EE900 spawn routines',owner=owner,buildCases=buildCases,insertCases=insertCases,poolCases=poolCases,sceneOffsets=sceneOffsets,cases=cases),separators=(',',':'))+'\n')
 print(f'Wrote {len(cases)} fresh worm cases')

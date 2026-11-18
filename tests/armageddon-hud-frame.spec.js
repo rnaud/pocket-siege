@@ -1,5 +1,5 @@
 import wormSpawnCreate from "./fixtures/armageddon/worm-spawn-create.json" with { type: "json" };
-import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn } from "../src/armageddon/spawn-pool.js";
+import { nativeAddSpawn, nativeBuildSpawnPool, nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn } from "../src/armageddon/spawn-pool.js";
 import wormEnvironmentCreate from "./fixtures/armageddon/worm-environment-create.json" with { type: "json" };
 import wormPhysicsCreate from "./fixtures/armageddon/worm-physics-create.json" with { type: "json" };
 import wormCreate from "./fixtures/armageddon/worm-create.json" with { type: "json" };
@@ -285,6 +285,12 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
   }
+  for(const c of wormSpawnCreate.insertCases) {
+    const entries=c.entries.map(entry=>({...entry}));
+    expect(nativeAddSpawn(entries,c.capacity,c.position,c.weight)).toBe(c.result);
+    expect(entries).toEqual(c.remaining);
+  }
+  for(const c of wormSpawnCreate.buildCases)expect(nativeBuildSpawnPool(c.positions)).toEqual(c.entries);
   for(const c of wormSpawnCreate.poolCases) {
     const entries=structuredClone(c.entries),output={value:777};
     const result=c.mode==="random"?nativeSelectSpawn(entries,c.value,output):c.mode==="reserve"?nativeReserveSpawn(entries,c.value):nativeSelectSideSpawn(entries,c.mode==="right",output);

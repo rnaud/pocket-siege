@@ -1,3 +1,15 @@
+//004CBC50: fixed-capacity insertion rejects nonpositive weights and duplicates.
+export function nativeAddSpawn(entries,capacity,position,weight) {
+  position|=0;weight|=0;capacity|=0;
+  if(weight<1 || entries.length>=capacity || entries.some(entry=>(entry.position|0)===position))return 0;
+  entries.push({position,weight});return 1;
+}
+//004A5350 initializes 64 slots from terrain-provided integer coordinate pairs.
+export function nativeBuildSpawnPool(positions) {
+  const entries=[];
+  for(const {x,y} of positions)nativeAddSpawn(entries,64,((x<<16)+y)|0,1);
+  return entries;
+}
 //004CBCD0: weighted thresholds use signed32-bit shifts/division, not floats.
 export function nativeSelectSpawn(entries,random,output) {
   if(!entries.length)return 0;
