@@ -59,3 +59,24 @@ export function nativeReserveSpawnAt(memory,address,position) {
   }
   return 0;
 }
+
+//004CBB90: retain allocator contents in inactive records.
+export function nativeCreateSpawnPoolAt(memory,address,capacity,host) {
+  memory.put(address,0x526918);memory.put(address+8,capacity);
+  const entries=host.allocateArray(capacity<<3,0x567600);
+  memory.put(address+12,entries);memory.put(address+4,0);
+  return address;
+}
+//004CBC50: signed capacity/weight checks and ordered packed-coordinate lookup.
+export function nativeAddSpawnAt(memory,address,position,weight) {
+  position|=0;weight|=0;
+  if(weight<1)return 0;
+  const count=memory.get(address+4)|0;
+  if(count>=(memory.get(address+8)|0))return 0;
+  const entries=memory.get(address+12);
+  for(let i=0;i<count;i++)if((memory.get(entries+i*8)|0)===position)return 0;
+  memory.put(entries+count*8,position);
+  memory.put(memory.get(address+12)+(memory.get(address+4)|0)*8+4,weight);
+  memory.put(address+4,(memory.get(address+4)+1)|0);
+  return 1;
+}

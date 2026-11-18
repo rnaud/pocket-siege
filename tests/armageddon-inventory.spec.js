@@ -1,3 +1,5 @@
+import sceneSpawnPool from './fixtures/armageddon/scene-spawn-pool.json' with {type:'json'};
+import {nativeCreateSceneSpawnPool} from '../src/armageddon/scene-spawn-pool.js';
 import sceneArrowShapes from './fixtures/armageddon/scene-arrow-shapes.json' with {type:'json'};
 import {nativeCreateSceneArrowShapes} from '../src/armageddon/scene-arrow-shapes.js';
 import sceneCollisionShapes from './fixtures/armageddon/scene-collision-shapes.json' with {type:'json'};
@@ -201,6 +203,18 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneSpawnPool.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x40000,c.pattern),calls=[];
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    sceneSpawnPool.positions.forEach((pair,i)=>pair.forEach((v,j)=>memory.put(owner+0x6000+i*8+j*4,v)));
+    memory.put(owner+0x5cd0,owner+0x8000);
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeCreateSceneSpawnPool(memory,owner,owner+0x6000,c.count,{
+      allocate:size=>{calls.push(['allocate',size,snapshot()]);return (c.failure===1&&size===44)||(c.failure===2&&size===16)?0:owner+(size===44?0x1000:0x2000);},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+(pool===0x567600?0x4000:0x10000);},
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   const toolSource=decodeImage(fs.readFileSync(new URL('../public/armageddon/media/gfx/gfx/masks.img',import.meta.url)));
   expect([toolSource.width,toolSource.height]).toEqual([toolMaskMemory.source.width,toolMaskMemory.source.height]);
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(toolMaskMemory.source.pixels);
