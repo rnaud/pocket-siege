@@ -1,3 +1,4 @@
+import {nativeRestorePhysicsMembership} from './replay-physics.js';
 import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.js";
 import shapes from "./collision-shapes.json" with { type: "json" };
 import { nativeCollisionOverlap } from "./collision-mask.js";
@@ -36,12 +37,15 @@ export class NativeCollisionScene {
     const terrainMask = {};
     this.rows[1].push({
       id: 1,
+      type: 1,
       x: 0,
       y: 0,
       mask: terrainMask,
       enabled: 1,
       overlap: 0,
     });
+    this.allBodies={capacity:16,entries:[this.rows[1][0]]};
+    this.categoryCapacity=Array(32).fill(16);
     this.manager = new NativeCollisionRegistry(
       this.rows,
       (a, ax, ay, b, bx, by) => {
@@ -59,35 +63,43 @@ export class NativeCollisionScene {
     );
   }
 
+  //004C9460 leaves holes in both lists. Fresh/body-state registration uses
+  //negative saved indices, so004C8F80 appends instead of filling those holes.
+  removeBody(body) {
+    for(const row of [this.rows[body.type],this.allBodies.entries]) {
+      const index=row?.indexOf(body) ?? -1;
+      if(index>=0)row[index]=null;
+    }
+    this.manager.cache=null;
+  }
+
+  registerBody(body,type) {
+    const result=nativeRestorePhysicsMembership({id:body,all:this.allBodies,
+      category:{capacity:this.categoryCapacity[type],entries:this.rows[type]},
+      allIndex:-1,categoryIndex:-1,links:[],linkIndex:0});
+    this.allBodies=result.all;this.rows[type]=result.category.entries;
+    this.categoryCapacity[type]=result.category.capacity;
+    body.type=type;this.manager.cache=null;
+  }
+
   syncWorms(worms) {
-    if (
-      worms.length !== this.worms.length ||
-      worms.some((w, i) => w !== this.worms[i])
-    ) {
-      this.worms = [...worms];
-      for (let type = 2; type <= 6; type++) this.rows[type] = [];
-      this.wormBodies = worms.map((w, i) => ({
-        id: i + 2,
-        type: -1,
-        shape: 3,
-        mask: shapes.shapes[3],
-        overlap: 0,
-      }));
-      // Original add/remove004C8F80/004C9460 invalidate the current actor.
-      this.manager.cache = null;
+    if(worms.length!==this.worms.length || worms.some((w,i)=>w!==this.worms[i])) {
+      const previous=new Map(this.worms.map((w,i)=>[w,this.wormBodies[i]]));
+      const retained=new Set(worms);
+      for(const [w,body] of previous)if(!retained.has(w))this.removeBody(body);
+      this.worms=[...worms];
+      this.wormBodies=worms.map((w,i)=>{
+        const body=previous.get(w)??{type:-1,shape:3,mask:shapes.shapes[3],overlap:0};
+        body.id=i+2;return body;
+      });
+      this.manager.cache=null;
     }
     worms.forEach((w, i) => {
       const body = this.wormBodies[i];
       const type = nativeWormCollisionType(nativeWormState(w));
       if (body.type !== type) {
-        if (body.type >= 0) {
-          const row = this.rows[body.type];
-          row[row.indexOf(body)] = null;
-        }
-        const row = this.rows[type], free = row.indexOf(null);
-        if (free < 0) row.push(body); else row[free] = body;
-        body.type = type;
-        this.manager.cache = null;
+        if(body.type>=0)this.removeBody(body);
+        this.registerBody(body,type);
       }
       Object.assign(body, {
         x: fixed(w.x), y: fixed(this.height - w.y), enabled: Number(w.hp > 0),
@@ -99,8 +111,7 @@ export class NativeCollisionScene {
     const live = new Set(objects);
     for (const [identity, actor] of this.objects) {
       if (live.has(identity) && identity.nativeBody) continue;
-      const row = this.rows[actor.type];
-      row[row.indexOf(actor)] = null;
+      this.removeBody(actor);
       this.objects.delete(identity);
       this.manager.cache = null;
     }
@@ -113,13 +124,8 @@ export class NativeCollisionScene {
         this.objects.set(identity, actor);
       }
       if (actor.type !== body.type) {
-        if (actor.type >= 0) {
-          const row = this.rows[actor.type];
-          row[row.indexOf(actor)] = null;
-        }
-        const row = this.rows[body.type], free = row.indexOf(null);
-        if (free < 0) row.push(actor); else row[free] = actor;
-        this.manager.cache = null;
+        if(actor.type>=0)this.removeBody(actor);
+        this.registerBody(actor,body.type);
       }
       Object.assign(actor, { type: body.type, x: body.x, y: body.y,
         shape: body.shape, mask: shapes.shapes[body.shape], enabled: body.enabled });
@@ -158,7 +164,7 @@ export class NativeCollisionScene {
   }
 
   nearest(x, y, flags) {
-    return nativeNearestBody([...this.wormBodies,...this.objects.values()],x,y,flags,{
+    return nativeNearestBody(this.allBodies.entries,x,y,flags,{
       type:body=>body.type,position:body=>body,
     });
   }

@@ -31,6 +31,24 @@ test("barrel registry respects masks, self exclusion, removal and live body posi
   const { nativeSceneCollision, nativeSceneObject } = await import("../src/armageddon/collision-scene.js");
   const { NativeCollisionScene } = await import('../src/armageddon/collision-scene.js');
   const { nativeCrateSpawnSearch } = await import('../src/armageddon/crate-spawn-search.js');
+  const ordered=new NativeCollisionScene({solid:()=>false},650);
+  const a={x:200,y:450,hp:100},b={x:200,y:450,hp:100};
+  ordered.syncWorms([a,b]);
+  expect(ordered.probe(3,200<<16,200<<16,1<<2)).toBe(2);
+  a.originalHurt={state:0x80};ordered.syncWorms([a,b]);
+  a.originalHurt=null;ordered.syncWorms([a,b]);
+  expect(ordered.rows[2].map(body=>body?.id??null)).toEqual([null,3,2]);
+  expect(ordered.probe(3,200<<16,200<<16,1<<2)).toBe(3);
+  const retained=ordered.wormBodies[1];ordered.syncWorms([b]);
+  expect(ordered.wormBodies[0]).toBe(retained);
+  expect(ordered.allBodies.entries.filter(Boolean)).toEqual([ordered.rows[1][0],retained]);
+  const object=()=>({nativeBody:{type:17,shape:9,enabled:1,x:300<<16,y:200<<16}});
+  const first=object(),second=object(),third=object();
+  ordered.syncObjects([first,second]);const secondId=ordered.objects.get(second).id;
+  ordered.syncObjects([second]);ordered.syncObjects([second,third]);
+  expect(ordered.rows[17][0]).toBeNull();
+  expect(ordered.probe(3,300<<16,200<<16,1<<17)).toBe(secondId);
+
   const ground = new NativeCollisionScene({solid:(x,y)=>x>=0 && x<1920 && y<150},650);
   const barrelAtGround={nativeBody:{type:17,shape:9,enabled:1,x:960<<16,y:480<<16}};
   ground.syncObjects([barrelAtGround]);
