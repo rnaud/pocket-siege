@@ -163,9 +163,7 @@ test("original terrain uses source pixels and preserves the destructible mask", 
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   expect(
     await page.evaluate(() => window.siege.getState().originalArtError),
   ).toBeNull();
@@ -215,9 +213,7 @@ test("original projectiles select drawn directional frames without rotating pixe
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   const result = await page.evaluate(async () => {
     const {
       createOriginalVisual,

@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
 async function ready(page) {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   expect(
     await page.evaluate(() => window.siege.getState().originalArtError),
   ).toBeNull();

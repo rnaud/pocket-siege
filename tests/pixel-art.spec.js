@@ -11,9 +11,7 @@ test("original art stays on an integer pixel grid without bitmap requests", asyn
   });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.evaluate(() => document.fonts.ready);
   expect(
     await page.evaluate(() =>

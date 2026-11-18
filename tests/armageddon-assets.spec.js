@@ -40,7 +40,7 @@ test('asset library plays and scrubs original animation and loads sound banks', 
 
 test('game loads original worm animation without asset errors', async ({page}) => {
   await page.goto('/');
-  await expect.poll(() => page.evaluate(() => window.siege?.getState().assetsReady)).toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   expect(await page.evaluate(() => window.siege.getState().originalArtError)).toBeNull();
   await page.locator('#mode').selectOption('local');
   await page.locator('#start').click();

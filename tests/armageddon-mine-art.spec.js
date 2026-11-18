@@ -22,9 +22,7 @@ test("live submerged mines use original water artwork at zero rotation", async (
     if (request.url().endsWith("/splash.wav")) splashes.push(request.url());
   });
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();

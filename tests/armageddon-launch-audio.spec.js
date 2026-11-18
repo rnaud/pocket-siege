@@ -135,7 +135,7 @@ test("browser decodes native projectile release samples without an early holy ch
       requested.push(request.url().split("/").pop());
   });
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => window.siege?.getState().assetsReady)).toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   // A cold decode must not discard a still-owned loop after500ms. A loop
   // stopped before that same decode completes must never start afterward.
   await page.evaluate(async () => {

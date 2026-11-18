@@ -15,9 +15,7 @@ test("live mine physical state detonates before its arming timer expires", async
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();

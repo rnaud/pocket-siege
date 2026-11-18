@@ -30,9 +30,7 @@ test("play a full destructive turn with responsive controls", async ({
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   // This fixed shot needs a fixed terrain fixture; the default picks an original map.
   await page.locator("#map-layout").selectOption("fern");
@@ -72,9 +70,7 @@ test("play a full destructive turn with responsive controls", async ({
 });
 test("computer takes its turn and returns control", async ({ page }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   // Test the computer's turn without a human projectile or supply-drop
@@ -110,9 +106,7 @@ test("movement, jump, and pointer aiming", async ({
   page,
 }, info) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#start").click();
   const before = await page.evaluate(() => window.siege.getState().worms[0]);
   await page.locator('[data-move="1"]').scrollIntoViewIfNeeded();
@@ -152,9 +146,7 @@ test("original art loads and character labels stay readable", async ({
     if (r.url().includes("/armageddon/") && r.status() !== 200) missing.push(r.url());
   });
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.screenshot({
     path: `test-results/${info.project.name}-art-menu.png`,
     fullPage: true,
@@ -182,9 +174,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
   page,
 }, info) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -777,9 +767,7 @@ test("match modifiers change gravity, blast size and turn length", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.selectOption("#modifier", "moon-chaos");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
@@ -950,9 +938,7 @@ test("saved settings survive a reload", async ({ page }) => {
   await page.locator("#start").click();
   await page.locator("#sound").click();
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   expect(await page.locator("#mode").inputValue()).toBe("local");
   expect(await page.locator("#difficulty").inputValue()).toBe("veteran");
   expect(await page.locator("#format").inputValue()).toBe("best3");
@@ -969,9 +955,7 @@ test("worm selection, turn pace and skip change the turn economy", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.selectOption("#turn-time", "60");
   await page.selectOption("#retreat-time", "8");
@@ -1003,9 +987,7 @@ test("worm selection, turn pace and skip change the turn economy", async ({
 
 test("sudden-death health and nuclear variants apply", async ({ page }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.selectOption("#mode", "local");
   await page.selectOption("#sudden-death", "health");
   await page.locator("#start").click();
@@ -1015,9 +997,7 @@ test("sudden-death health and nuclear variants apply", async ({ page }) => {
   expect(state.sdTriggered).toBe(true);
   expect(state.worms.every((w) => w.hp === 1)).toBe(true);
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.selectOption("#sudden-death", "nuke");
   await page.locator("#start").click();
@@ -1046,9 +1026,7 @@ test("field kit teleport and girder target the battlefield", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
@@ -1069,9 +1047,7 @@ test("field kit teleport and girder target the battlefield", async ({
   await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
 
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
@@ -1105,9 +1081,7 @@ test("field kit teleport and girder target the battlefield", async ({
 
 test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
@@ -1145,9 +1119,7 @@ test("parachute and freeze utilities resolve their effects", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
@@ -1188,9 +1160,7 @@ test("parachute and freeze utilities resolve their effects", async ({
 
 test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await openArsenal(page);
@@ -1242,9 +1212,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   expect(state.lastShot.impact.kind).toBe("shotgun");
 
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await openArsenal(page);
@@ -1257,9 +1225,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   expect(state.bombs.some((b) => b.kind === "dynamite")).toBe(true);
 
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await openArsenal(page);
@@ -1281,9 +1247,7 @@ test("cluster bomblets and native petrol flames resolve their effects", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "cluster"));
@@ -1293,9 +1257,7 @@ test("cluster bomblets and native petrol flames resolve their effects", async ({
   expect(state.ammo[0].cluster).toBe(2);
 
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
   // Capture creation before the native100ms spread can run between API calls.
@@ -1324,9 +1286,7 @@ test("scheme presets apply turn pace, sudden death and stockpile rules", async (
   expect(state.suddenDeathType).toBe("health");
   expect(state.crateRain).toBe(true);
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.selectOption("#scheme", "stockpile");
   expect(await page.locator("#format").inputValue()).toBe("best3");
   await page.locator("#start").click();

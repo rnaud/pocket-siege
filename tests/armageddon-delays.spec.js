@@ -63,17 +63,13 @@ test("delay survives worm selection and unlocks on the next own turn", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator(".weapon-delay-options summary").click();
   await page.locator("#delay-weapon").selectOption("rocket");
   await page.locator("#weapon-delay").selectOption("1");
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#start").click();
   // Isolate turn-delay progression from the randomly placed supply drop.
   await page.evaluate(() => {

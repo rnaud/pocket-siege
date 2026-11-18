@@ -27,9 +27,7 @@ for (const group of [0, 1, 2])
     page,
   }) => {
     await page.goto("/");
-    await expect
-      .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-      .toBe(true);
+    await page.waitForFunction(() => window.siege?.getState().assetsReady);
     await page.locator("#mode").selectOption("local");
     await page.locator("#start").click();
     const poses = {

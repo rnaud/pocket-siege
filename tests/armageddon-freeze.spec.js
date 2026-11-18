@@ -64,9 +64,7 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
     if (r.ok() && r.url().endsWith(".wav")) audio.add(r.url().split("/").pop());
   });
   await page.goto("/");
-  await expect
-    .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
-    .toBe(true);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
