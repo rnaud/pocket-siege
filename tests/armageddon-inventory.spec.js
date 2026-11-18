@@ -1,6 +1,7 @@
+import {nativeClearMatchTeamRecords,nativeInitializeMatchTeamRecords} from '../src/armageddon/match-team-records.js';
 import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
 import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
-import missionNativePalette from './fixtures/armageddon/mission-global-owner.json' with {type:'json'};
+import missionNativePalette from './fixtures/armageddon/mission-team-records.json' with {type:'json'};
 import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
 import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
 import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
@@ -8,7 +9,7 @@ import missionNativeFlags from './fixtures/armageddon/mission-native-flags.json'
 import missionNativeScheme from './fixtures/armageddon/mission-native-scheme.json' with {type:'json'};
 import {nativeSelectSetupScheme,originalSchemeResource} from '../src/armageddon/scheme-selection.js';
 import missionLoad from './fixtures/armageddon/mission-load.json' with {type:'json'};
-import {nativeLoadMission,nativeLoadGlobalMission} from '../src/armageddon/mission-load.js';
+import {nativeLoadMission,nativeLoadGlobalMission,nativePrepareGlobalMission} from '../src/armageddon/mission-load.js';
 import missionTeams from './fixtures/armageddon/mission-teams.json' with {type:'json'};
 import {nativeLoadMissionTeams} from '../src/armageddon/mission-teams.js';
 import missionWorms from './fixtures/armageddon/mission-worms.json' with {type:'json'};
@@ -148,6 +149,22 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of missionNativePalette.teamClearCases) {
+    const bytes=Buffer.alloc(0x10000,c.pattern),messages=[];
+    const result=nativeClearMatchTeamRecords({put:(address,value)=>bytes.writeUInt32LE(value>>>0,address-0x2900000)},0x2908000,c.bank,{messageBox:(...args)=>messages.push(['message',...args])});
+    expect({result,messages,sha256:createHash('sha256').update(bytes).digest('hex')}).toEqual({result:c.result,messages:c.messages,sha256:c.sha256});
+  }
+  for(const c of missionNativePalette.teamRecordCases) {
+    const bytes=Buffer.alloc(0x30000,c.pattern),base=0x6da000;
+    const memory={get:address=>bytes.readUInt32LE(address-base),put:(address,value)=>bytes.writeUInt32LE(value>>>0,address-base),byte:address=>bytes[address-base],putByte:(address,value)=>{bytes[address-base]=value;}};
+    for(let team=0;team<7;team++) {
+      const source=0x6e179f+team*0xd7b;
+      bytes.set(Uint8Array.from({length:17},(_,i)=>(team*29+i*7+3)&255),source-base);
+      memory.putByte(source+0x121,(c.mask&(1<<team))?1:0);memory.putByte(source+0x95,[0,1,8,127,128,255,2][team]);
+    }
+    memory.putByte(0x6e6880,c.count);nativeInitializeMatchTeamRecords(memory);
+    expect(createHash('sha256').update(bytes).update(Buffer.alloc(0x10000)).digest('hex')).toBe(c.sha256);
+  }
   for(const c of [...filePalette.cases,...filePalette.destroyCases.map(c=>({...c,destroyOnly:true}))]) {
     const heap=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={get:address=>heap.readUInt32LE(address-0x2000000),put:(address,value)=>heap.writeUInt32LE(value>>>0,address-0x2000000),byte:address=>heap[address-0x2000000],putByte:(address,value)=>{heap[address-0x2000000]=value;}};
@@ -326,7 +343,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       host.languageResource=host.loadString;
       host.readOption=(key,fallback)=>{calls.push(['option',key,fallback,snapshot()]);return key==='DetailLevel'?5:0;};
     }
-    const result=c.globalOwner?nativeLoadGlobalMission(memory,host):nativeLoadMission(memory,missionOwner,host);
+    const result=c.prepareTeams?nativePrepareGlobalMission(memory,host):c.globalOwner?nativeLoadGlobalMission(memory,host):nativeLoadMission(memory,missionOwner,host);
     if(c.nativeInitializer)expect([random.state,storedSeed]).toEqual([c.randomState,c.storedSeed]);
     expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }

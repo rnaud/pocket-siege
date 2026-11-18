@@ -1,3 +1,4 @@
+import {nativeInitializeMatchTeamRecords} from './match-team-records.js';
 import {nativeInitializeAddressedMatchSetup} from './match-setup.js';
 import {nativeConfigureSetupMode,nativeCountSetupAlliances} from './setup-mode.js';
 import {nativeSetupMusic} from './setup-metadata.js';
@@ -52,4 +53,12 @@ export function nativeLoadMission(memory, owner, host) {
 //frontend globals. Keep its storage aliased with shared match preparation.
 export function nativeLoadGlobalMission(memory,host) {
   return nativeLoadMission(memory,0x6e0484,host);
+}
+
+//443E35..443E49 /47FC0E..47FC22: the frontend prepares both match-team
+//banks immediately after mission loading, including the original error path.
+export function nativePrepareGlobalMission(memory,host) {
+  const result=nativeLoadGlobalMission(memory,host);
+  nativeInitializeMatchTeamRecords(memory);
+  return result;
 }
