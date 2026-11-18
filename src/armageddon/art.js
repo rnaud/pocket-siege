@@ -11,8 +11,7 @@ import { nativeDeathCue, nativeDeathEntry } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
 import { nativeFlightProgress } from "./flight-art.js";
-import { nativeJetpackInitialFuel, nativeJetpackInput, nativeJetpackTick } from "./jetpack.js";
-import { fixedDivide } from "./numeric.js";
+import { nativeDrawJetpackFlames, nativeJetpackInitialFuel, nativeJetpackInput, nativeJetpackTick } from "./jetpack.js";
 import {
   nativeTeleportTick,
 } from "./teleport.js";
@@ -847,6 +846,14 @@ export function stepOriginalJetpack(worm, steering, thrust) {
     fuel: state.fuel,
   });
   Object.assign(state, next);
+  renderOriginalJetpack(worm);
+  return state;
+}
+
+function renderOriginalJetpack(worm) {
+  const state = worm.originalJetpack;
+  const x = Math.round((worm.x ?? 0) * 65536);
+  const y = worm.y === undefined ? 0 : Math.round((H - worm.y) * 65536);
   const ctx = state.map.image.getContext("2d");
   ctx.clearRect(0, 0, 100, 100);
   ctx.imageSmoothingEnabled = false;
@@ -857,27 +864,26 @@ export function stepOriginalJetpack(worm, steering, thrust) {
     ctx.drawImage(texture(name, index).image, -30, -30);
     ctx.restore();
   };
-  // 004DC2C0 offsets both flame layers in the native downward-positive grid.
-  state.name = spriteIds.sprites[state.sprite].name;
-  draw(state.name, 0, 0, 0, state.lean >= 0);
-  state.sideFrame = nativeSpriteFrame(6, 1, state.side);
-  state.downFrame = nativeSpriteFrame(6, 1, state.down);
-  draw(
-    "wjetflmb",
-    state.sideFrame,
-    Math.floor(-fixedDivide(state.lean * 14, 0x38000) / 65536),
-    3,
-    state.lean > 0,
-  );
-  draw(
-    "wjetflmd",
-    state.downFrame,
-    Math.floor(-fixedDivide(state.lean * 7, 0x38000) / 65536),
-    16,
-    false,
-  );
+  const host = { state: () => 0x78, position: () => ({ x, y }) };
+  // Larger native draw keys are consumed first: flames D0001, body D0000.
+  // Truncate the submitted absolute position, not its relative offset.
+  nativeDrawJetpackFlames({ ...state, rank: 0 }, {
+    ...host,
+    draw: (_order, px, py, _zero, sprite, progress) => {
+      const name = spriteIds.sprites[sprite & 0x3ffff].name;
+      const source = animations.get(name).sprite;
+      const index = nativeSpriteFrame(source.frames.length, source.metadata[2], progress);
+      if ((sprite & 0x3ffff) === 0x36) state.sideFrame = index;
+      else state.downFrame = index;
+      draw(name, index, (px >> 16) - (x >> 16), (py >> 16) - (y >> 16), Boolean(sprite & 0x40000));
+    },
+  });
+  const body = nativeResolveWormSprite({ hangDirection: state.lean }, {
+    ...host, current: () => ({ sprite: state.sprite, progress: 0 }),
+  });
+  state.name = spriteIds.sprites[body.sprite & 0x3ffff].name;
+  draw(state.name, 0, 0, 0, Boolean(body.sprite & 0x40000));
   state.map.needsUpdate = true;
-  return state;
 }
 
 export function stepOriginalWalking(worm) {
@@ -1066,6 +1072,7 @@ function resolvedPlayerPose(worm,player,state,{aimed=false,equipped=false,water=
 
 export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   if (worm.originalJetpack && worm.hp > 0 && !worm.frozen) {
+    renderOriginalJetpack(worm);
     const state = worm.originalJetpack;
     return {
       map: state.map,

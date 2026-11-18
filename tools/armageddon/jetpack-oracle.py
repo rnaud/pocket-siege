@@ -86,5 +86,33 @@ for gravity in [0,0x1eb8,0x3d70,0x7ae0]:
    if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Jetpack input did not return')
    for offset,key in [(0x1b0,'facing'),(0x240,'side'),(0x244,'down')]:output[key]=signed(owner+offset)
    input_cases.append({'input':inp,'controls':controls,'gravity':gravity,'velocity':velocity,'output':output})
-args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004DC470 / 004DC560','method':'Original animation, input dispatch, easing and clamping execute unchanged; body impulse/getter/setter interfaces observed.','cases':cases,'inputCases':input_cases},indent=2)+'\n')
-print(f'Captured {len(cases)} jetpack ticks and {len(input_cases)} input cases')
+# Execute the complete flame draw routine, observing only virtual state/position
+# getters and final draw submission. Native fixed division remains unchanged.
+state_get,position_get=owner+0x7400,owner+0x7500
+write(bodyvt+0x7c,state_get);write(bodyvt+0x5c,position_get)
+cpu.mem_write(state_get,b'\xc3');cpu.mem_write(position_get,b'\xc2\x08\x00')
+cpu.mem_write(0x4eedf0,b'\xc2\x18\x00')
+def draw_observe(cpu,address,size,unused):
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ if address==state_get:
+  calls.append(['state']);cpu.reg_write(UC_X86_REG_EAX,draw_input['state'])
+ elif address==position_get:
+  calls.append(['position'])
+  write(read(sp+4),draw_input['x']&0xffffffff);write(read(sp+8),draw_input['y']&0xffffffff)
+ elif address==0x4eedf0:calls.append(['draw']+[signed(sp+4*i) for i in range(1,7)])
+cpu.hook_add(UC_HOOK_CODE,draw_observe)
+draw_cases=[]
+for state in [0x65,0x78,0x79]:
+ for lean in [-0x38000,-0x18001,-1,0,1,0x18001,0x38000]:
+  for x,y in [(0,0),(0x12c000,-0x34001),(-0x18000,0x234567),(0x7fffffff,-0x80000000)]:
+   for rank,side,down in [(0,0,0),(17,0x8000,0x10000),(-1,-1,0x10001)]:
+    draw_input=dict(state=state,lean=lean,x=x,y=y,rank=rank,side=side,down=down)
+    for offset,value in [(0x238,lean),(0x240,side),(0x244,down),(0x158,3)]:write(owner+offset,value&0xffffffff)
+    write(world+0x1030+3*4,rank&0xffffffff)
+    calls=[];write(stack+0xff00,stop)
+    cpu.reg_write(UC_X86_REG_ECX,owner);cpu.reg_write(UC_X86_REG_ESP,stack+0xff00)
+    cpu.emu_start(0x4dc2c0,stop,count=2000)
+    assert cpu.reg_read(UC_X86_REG_EIP)==stop
+    draw_cases.append(dict(input=draw_input,calls=calls))
+args.output.write_text(json.dumps({'executable_sha256':digest,'entry':'004DC470 / 004DC560 / 004DC2C0','method':'Original animation, input dispatch, easing, clamping and flame draw requests execute unchanged; body interfaces and final draw submission observed.','cases':cases,'inputCases':input_cases,'drawCases':draw_cases},indent=2)+'\n')
+print(f'Captured {len(cases)} jetpack ticks and {len(input_cases)} input cases; {len(draw_cases)} flame draw cases')

@@ -1,4 +1,4 @@
-import { fixedMultiply } from "./numeric.js";
+import { fixedDivide, fixedMultiply } from "./numeric.js";
 import records from "./scheme-weapon-data.json" with { type: "json" };
 // 004D7730 state78 reads the low byte of jetpack record3E +70.
 export const nativeJetpackInitialFuel =
@@ -54,4 +54,16 @@ export function nativeJetpackInput(input, { left = false, right = false, up = fa
 export function nativeJetpackVelocity(vx, vy) {
   return { vx: Math.max(-0x50000, Math.min(0x50000, vx)),
     vy: Math.max(-0x50000, Math.min(0x50000, vy)) };
+}
+
+// 004DC2C0: flame requests share the worm rank, one layer behind its body.
+export function nativeDrawJetpackFlames(body, host) {
+  if (host.state() !== 0x78) return;
+  const { x, y } = host.position();
+  const order = (Math.imul(body.rank, 4) + 0xd0001) | 0;
+  const sideX = -fixedDivide(Math.imul(body.lean, 14), 0x38000);
+  const downX = -fixedDivide(Math.imul(body.lean, 7), 0x38000);
+  host.draw(order, (x + sideX) | 0, (y + 0x30000) | 0, 0,
+    body.lean > 0 ? 0x40036 : 0x36, body.side);
+  host.draw(order, (x + downX) | 0, (y + 0x100000) | 0, 0, 0x37, body.down);
 }
