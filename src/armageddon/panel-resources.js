@@ -28,3 +28,13 @@ export function nativeCreatePanelText(memory,address,resources,font,width,host) 
   memory.putByte(address+28,0);memory.put(address+0x130,-1);
   return address;
 }
+
+//004FD5A0. Worm panel bounds and its native image buffer.
+export function nativeCreateWormPanel(memory,address,left,top,right,bottom,host) {
+  memory.put(address,0x527690);
+  for(const offset of [4,8,12,16])memory.put(address+offset,-1);
+  for(const [offset,value] of [[20,left],[24,top],[28,right],[32,bottom],[36,right-left],[40,bottom-top],[44,0]])memory.put(address+offset,value);
+  const image=host.allocate(44);
+  if(image){nativeCreatePanelImage(memory,image,((right-left)|0)+2,((bottom-top)|0)+2,8,host);memory.put(image,0x5249b0);}
+  memory.put(address+48,image);return address;
+}

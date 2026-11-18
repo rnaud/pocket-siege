@@ -93,6 +93,7 @@ export function nativeCreateWorm({id,parent,memory=new Uint8Array(0x390),sceneMe
   return task;
 }
 
+import { nativeCreatePanelText, nativeCreateWormPanel } from './panel-resources.js';
 import { nativeCreatePhysicsAt } from './physics-memory.js';
 import { nativeRegisterTaskMemory } from './task-memory.js';
 //004D5A40 address-backed factory. Spawn, resource and state services remain host interfaces.
@@ -103,6 +104,20 @@ export function nativeCreateWormAt(memory,address,parent,team,worm,configuration
     initializePhysics:(category,shape,type)=>{
       nativeCreatePhysicsAt(memory,address,parent,category,shape,host);
       memory.put(address,0x526de0);memory.put(address+0x2c,type);
+    },
+    setWormBusy:(team,worm,value)=>memory.put(scene+0x1b94+team*0x51c+worm*0x9c-0x4fc,value),
+    wormHealth:(team,worm)=>memory.get(scene+0x1b94+team*0x51c+worm*0x9c-0x538)|0,
+    allocateAnimation:size=>host.allocate(size),
+    constructAnimation:(at,renderer)=>{
+      memory.put(at,0x527670);memory.put(at+4,renderer);
+      for(let offset=8;offset<=32;offset+=4)memory.put(at+offset,0);
+      return at;
+    },
+    initializeResources:undefined,
+    resources:{allocateResource:size=>host.allocate(size),renderer:memory.get(scene+8),
+      constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),
+      constructPanel:(at,...args)=>nativeCreateWormPanel(memory,at,...args,host),
+      matchState:{get presentationValue(){return memory.get(scene+0x1b76c);},get activeCount(){return memory.get(scene+0x12460);},set activeCount(value){memory.put(scene+0x12460,value);}},
     },
     registerTask:(type,index)=>nativeRegisterTaskMemory(memory,address,type,index,host),
   });

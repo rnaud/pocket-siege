@@ -31,7 +31,7 @@ def write(address,value): cpu.mem_write(address,struct.pack('<I',value))
 def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 
 context=0x2300000;cpu.mem_map(context,0x20000);config=owner+0x1000;physics=0x2400000;cpu.mem_map(physics,0x10000);vtable=owner+0x2100
-interfaces=[(0x4924d0,0),(0x492510,0),(0x4ee900,0),(0x4cbcd0,2),(0x4cbd60,1),(0x4cbd80,1),(0x4cbdb0,1),(stop+0x100,0),(stop+0x200,3),(0x4c32e0,3),(0x4c2cc0,2),(0x4aab40,0),(0x492550,0),(0x4fd2d0,1),(0x4d64f0,0),(0x4d7730,1),(0x4f6010,0)]
+interfaces=[(0x4924d0,0),(0x492510,0),(0x4ee900,0),(0x4cbcd0,2),(0x4cbd60,1),(0x4cbd80,1),(0x4cbdb0,1),(stop+0x100,0),(stop+0x200,3),(stop+0x300,2),(0x4aab40,0),(0x492550,0),(0x4d7730,1),(0x4f6010,0)]
 for address,argc in interfaces:cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4))
 def signed(a):return struct.unpack('<i',cpu.mem_read(a,4))[0]
 def hook(cpu,address,size,user):
@@ -40,6 +40,7 @@ def hook(cpu,address,size,user):
  if address==0x4924d0:
   count=read(sp+8);result=heap;heap+=(count+15)&~15;calls.append(['array',count,result,read(sp+4)]);cpu.reg_write(UC_X86_REG_EAX,result)
  elif address==0x492510:calls.append(['free',read(sp+4)])
+ elif address==stop+0x300:calls.append(['font',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);cpu.reg_write(UC_X86_REG_EAX,8)
  elif address==0x4ee900:calls.append(['random']);cpu.reg_write(UC_X86_REG_EAX,0x12345678)
  elif address==0x4cbcd0:calls.append(['randomSpawn',read(sp+4)]);write(read(sp+8),packed)
  elif address in [0x4cbd60,0x4cbd80]:calls.append(['sideSpawn',int(address==0x4cbd80)]);write(read(sp+4),packed)
@@ -47,15 +48,11 @@ def hook(cpu,address,size,user):
  elif address==stop+0x100:calls.append(['gravity']);cpu.reg_write(UC_X86_REG_EAX,gravity)
  elif address==stop+0x200:
   calls.append(['place',signed(sp+8),signed(sp+12),signed(owner+0x40),signed(owner+0x48)]);attempts+=1;cpu.reg_write(UC_X86_REG_EAX,int(attempts>=successAt))
- elif address==0x4c32e0:calls.append(['busy']+[signed(sp+4+4*i) for i in range(3)])
- elif address==0x4c2cc0:calls.append(['health',signed(sp+4),signed(sp+8)]);cpu.reg_write(UC_X86_REG_EAX,health&0xffffffff)
  elif address==0x4aab40:cpu.mem_write(read(sp+4),str(signed(sp+8)).encode()+b'\0')
  elif address==0x492550:
   count=read(sp+4);result=0 if count==0x164 and bits&64 else heap
   if result:heap+=(count+15)&~15
   calls.append(['allocate',count,result]);cpu.reg_write(UC_X86_REG_EAX,result)
- elif address==0x4fd2d0:calls.append(['animation',cpu.reg_read(UC_X86_REG_ECX),read(sp+4)]);cpu.reg_write(UC_X86_REG_EAX,456)
- elif address==0x4d64f0:calls.append(['resources'])
  elif address==0x4d7730:calls.append(['state',signed(sp+4)])
  elif address==0x4f6010:calls.append(['settle'])
 for address,_ in interfaces:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
@@ -76,6 +73,8 @@ for bits in range(128):
  environment=dict(all=dict(capacity=2,entries=allEntries),category=dict(capacity=1,entries=categoryEntries),links=links)
  packed=((1100 if bits&64 else 500)<<16)|2;gravity=[16384,65536,0x80000][bits%3];health=[-1,0,100,10000][bits%4];successAt=[1,2,4,99][bits%4];attempts=0;calls=[]
  initial=list(cpu.mem_read(context+0x824,0xc10));configuration=list(cpu.mem_read(config,40));sp=stack+0xf000
+ write(context+8,owner+0x2000);write(owner+0x2000,owner+0x2200);write(owner+0x2228,stop+0x300)
+ write(context+0x1b94+team*0x51c+worm*0x9c-0x538,health&0xffffffff);write(context+0x1b94+team*0x51c+worm*0x9c-0x4fc,0xdeadbeef);write(context+0x1b76c,12345)
  initialWords=[[address+i,read(address+i)] for address,length in [(owner,0x10000),(physics,0x10000),(context,0x20000)] for i in range(0,length,4) if read(address+i)]
  for i,v in enumerate([stop,0]):write(sp+i*4,v)
  cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x8000);cpu.emu_start(0x4b1ae0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop

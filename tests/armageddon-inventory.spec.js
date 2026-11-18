@@ -81,9 +81,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const allocate=(kind,size,pool)=>{const value=kind==='allocate'&&size===0x164&&(c.bits&64)?0:cursor;if(value)cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
     const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),free:at=>calls.push(['free',at]),
       randomSpawnWord:()=>{calls.push(['random']);return 0x12345678;},randomSpawn:r=>{calls.push(['randomSpawn',r]);return c.packed;},sideSpawn:side=>{calls.push(['sideSpawn',side]);return c.packed;},reserveSpawn:p=>calls.push(['reserve',p]),
-      gravity:()=>{calls.push(['gravity']);return c.gravity;},setWormBusy:(...args)=>calls.push(['busy',...args]),wormHealth:(...args)=>{calls.push(['health',...args]);return c.health;},
+      gravity:()=>{calls.push(['gravity']);return c.gravity;},fontHeight:(...args)=>{calls.push(['font',...args]);return 8;},
       placeWorm:(x,y)=>{calls.push(['place',x,y,memory.get(0x2000040)|0,memory.get(0x2000048)|0]);return ++attempts>=c.successAt;},
-      allocateAnimation:size=>allocate('allocate',size),constructAnimation:(...args)=>{calls.push(['animation',...args]);return 456;},initializeResources:()=>calls.push(['resources']),changeState:state=>calls.push(['state',state]),settlePhysics:()=>calls.push(['settle']),
+      changeState:state=>calls.push(['state',state]),settlePhysics:()=>calls.push(['settle']),
     };
     nativeCreateTaskMemory(memory,0x2008000,0,host);memory.put(0x2008038,0x2300000);
     nativeCreateWormAt(memory,0x2000000,0x2008000,c.team,c.worm,0x2001000,host);
