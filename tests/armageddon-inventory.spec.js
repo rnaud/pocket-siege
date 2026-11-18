@@ -1,3 +1,5 @@
+import sceneHUDResources from './fixtures/armageddon/scene-hud-resources.json' with {type:'json'};
+import {nativeLoadSceneHUDResources} from '../src/armageddon/scene-hud-resources.js';
 import sceneThemeResources from './fixtures/armageddon/scene-theme-resources.json' with {type:'json'};
 import {nativeLoadSceneThemeResources} from '../src/armageddon/scene-theme-resources.js';
 import sceneSpawnPool from './fixtures/armageddon/scene-spawn-pool.json' with {type:'json'};
@@ -205,6 +207,19 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneHUDResources.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern),calls=[];let images=0;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),putByte:(a,v)=>{bytes[a-owner]=v;}};
+    memory.put(owner+8,owner+0x6000);memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200100);
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeLoadSceneHUDResources(memory,owner,0x11223344,{
+      getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return 0x12345678;},
+      loadNamedArchiveImage:(palette,archive,name)=>{images++;calls.push(['image',palette,archive,name,snapshot()]);return c.mode&1&&images%7===0?0:owner+0x2000+images*0x40;},
+      allocate:size=>{calls.push(['allocate',size,snapshot()]);return c.mode&2?0:owner+0x8000;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x9000;},
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of sceneThemeResources.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner]};
