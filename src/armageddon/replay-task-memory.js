@@ -1,3 +1,4 @@
+import {nativeInitializeWormResourcesAt} from './worm-resources.js';
 import {nativeRegisterPhysicsMemory} from './physics-memory.js';
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
 import {nativeReadTaskChildren} from './replay-restore.js';
@@ -30,5 +31,24 @@ export function nativeReadPhysicsMemory(memory,address,parent,context,stream,hos
     const size=memory.get(address+0xdc)<<3;memory.range(contacts,size).set(stream.readBlock(size));
   }
   memory.put(address+0xe4,-1);memory.put(address+0xe8,-1);
+  return address;
+}
+
+//004D6240/004FD330: full saved worm and animation state, team inventory
+//pointer and the same presentation resource ownership as fresh construction.
+export function nativeReadWormMemory(memory,address,parent,context,stream,host) {
+  nativeReadPhysicsMemory(memory,address,parent,context,stream,host);
+  memory.put(address,0x526de0);stream.readByte();
+  memory.range(address+0xfc,0x23c).set(stream.readBlock(0x23c));
+  const animation=host.allocate(0x164);
+  if(animation) {
+    memory.put(animation,0x527670);stream.readByte();
+    memory.range(animation+8,0x15c).set(stream.readBlock(0x15c));
+    memory.put(animation+4,memory.get(context+8));
+  }
+  memory.put(address+0x350,animation);
+  const team=memory.get(address+0x170);
+  memory.put(address+0x354,team?context+0x125bc+Math.imul(team,0x208):0);
+  nativeInitializeWormResourcesAt(memory,address,context,host);
   return address;
 }

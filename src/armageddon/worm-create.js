@@ -4,7 +4,7 @@ import { nativeSynchronizeWormMemory, nativeSynchronizeWormAt } from "./worm-ani
 import { nativeInitializeWormPlacement } from "./worm-placement.js";
 import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom, nativeSelectSpawnAt, nativeSelectSideSpawnAt, nativeReserveSpawnAt } from './spawn-pool.js';
 import { nativeInitializePhysics } from './physics-create.js';
-import { nativeInitializeWormResources } from './worm-resources.js';
+import { nativeInitializeWormResources,nativeInitializeWormResourcesAt } from './worm-resources.js';
 //004D5A40 fixed initial fields, in native order around the gravity query.
 const afterGravity=[[0x174,0x0],[0x170,0x0],[0x354,0x0],[0x2bc,0x0],[0x2c0,0x0],[0x2cc,0x0],[0x15c,0x0],[0x1cc,0x0],[0x1d0,0x0],[0x2d0,0x2],[0x2d4,0x0],[0x2fc,0x0],[0x2d8,0x3],[0x2f4,0x3c00000],[0x2f8,0x15c0000]];
 const view=m=>new DataView(m.buffer,m.byteOffset,m.byteLength);
@@ -91,7 +91,6 @@ export function nativeCreateWorm({id,parent,memory=new Uint8Array(0x390),sceneMe
   return task;
 }
 
-import { nativeCreatePanelText, nativeCreateWormPanel } from './panel-resources.js';
 import { nativeCreatePhysicsAt } from './physics-memory.js';
 import { nativeRegisterTaskMemory } from './task-memory.js';
 //004D5A40 address-backed factory. Mask overlap, renderer metadata and heap remain host interfaces.
@@ -119,12 +118,7 @@ export function nativeCreateWormAt(memory,address,parent,team,worm,configuration
     },
     changeState:host.changeState??(state=>nativeEnterFreshWormState(memory,address,state)),
     synchronizeAnimation:host.synchronizeAnimation??host.settlePhysics??(()=>nativeSynchronizeWormAt(memory,address,host)),
-    initializeResources:undefined,
-    resources:{allocateResource:size=>host.allocate(size),renderer:memory.get(scene+8),
-      constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),
-      constructPanel:(at,...args)=>nativeCreateWormPanel(memory,at,...args,host),
-      matchState:{get presentationValue(){return memory.get(scene+0x1b76c);},get activeCount(){return memory.get(scene+0x12460);},set activeCount(value){memory.put(scene+0x12460,value);}},
-    },
+    initializeResources:()=>nativeInitializeWormResourcesAt(memory,address,scene,host),
     registerTask:(type,index)=>nativeRegisterTaskMemory(memory,address,type,index,host),
   });
   return address;
