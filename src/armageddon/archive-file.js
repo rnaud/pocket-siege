@@ -12,11 +12,16 @@ export function nativeOpenFileArchive(memory,archive,path,host) {
   memory.put(archive+0x198,file);
   if(!file)return 0;
   if(host.loadArchiveDirectory)return host.loadArchiveDirectory(archive);
-  return nativeLoadArchiveDirectory(memory,archive,host.archiveScratch,{
+  return nativeLoadArchiveDirectory(memory,archive,host.archiveScratch,nativeFileArchiveServices(memory,host));
+}
+
+//Original file-backed virtual transport, shared by directory and entry reads.
+export function nativeFileArchiveServices(memory,host) {
+  return {
     ...host,
     //004CC4D0 reports the full requested count or zero, even on partial reads.
     readArchive:(at,dest,size)=>host.readFile(dest,1,size,memory.get(at+0x198))===size?size:0,
     seekArchive:(at,offset)=>Number(host.seekFile(memory.get(at+0x198),offset,0)===0),
     archiveView:()=>0, //004AD650: file archives never expose mapped memory.
-  });
+  };
 }

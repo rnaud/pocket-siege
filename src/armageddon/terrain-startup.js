@@ -1,6 +1,8 @@
+import {nativeLoadNamedArchiveImage} from './terrain-image.js';
+import {nativeCreatePanelImage} from './panel-resources.js';
 import {nativeLoadTerrainFile} from './terrain-file.js';
 import {nativeFillBitmapRect} from './bitmap-rectangle.js';
-import {nativeCreateFileArchive,nativeOpenFileArchive} from './archive-file.js';
+import {nativeCreateFileArchive,nativeOpenFileArchive,nativeFileArchiveServices} from './archive-file.js';
 
 //004A78A0..004A79C2: terrain constructor through image loading, waterline
 //clearing and palette submission. Theme archives and later setup follow this.
@@ -34,4 +36,16 @@ export function nativeLoadTerrainThemes(memory,terrain,metadata,host) {
     memory.put(terrain+slot,archive?nativeCreateFileArchive(memory,archive):0);
     nativeOpenFileArchive(memory,memory.get(terrain+slot),path,host);
   }
+}
+
+//004A7A67..004A7AC2. Original soil resource and1920x696 one-bit work mask.
+//The memory adapter exposes the original constant string at0055F7E0.
+export function nativeLoadTerrainSoil(memory,terrain,scratch,host) {
+  const archive=memory.get(terrain+0xb20);
+  const palette=host.getRendererPalette(memory.get(terrain+0x8f4),3);
+  const soil=nativeLoadNamedArchiveImage(memory,palette,archive,0x55f7e0,scratch,nativeFileArchiveServices(memory,host));
+  memory.put(terrain+0x900,soil);
+  const mask=host.allocate(44);
+  if(mask){nativeCreatePanelImage(memory,mask,1920,696,1,host);memory.put(mask,0x526328);}
+  memory.put(terrain+0x90c,mask);
 }
