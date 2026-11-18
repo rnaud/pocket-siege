@@ -1,8 +1,9 @@
+import {nativeCreateBarrelAt} from './barrel-memory.js';
 import {nativeSelectSpawnAt,nativeSelectSideSpawnAt,nativeReserveSpawnAt,nativeSpawnRandom} from './spawn-pool.js';
 import {nativeLookupTaskMemory} from './task-memory.js';
 
 //004EBA80. Reserve before invoking constructors so their RNG/pool changes are
-//observed by the next iteration. Mine/barrel construction remains explicit.
+//observed by the next iteration. Mine construction remains explicit.
 export function nativePopulateMapObjectsAt(memory,address,setup,host) {
   const scene=memory.get(address+0x38),pool=memory.get(scene+0x44c);
   const parent=nativeLookupTaskMemory(memory,memory.get(address+0x30),25,0);
@@ -26,7 +27,7 @@ export function nativePopulateMapObjectsAt(memory,address,setup,host) {
       if(storage)host.constructNaturalMine(storage,parent,[48,0,60,fuse,0,100,50,0],[0,0,x,y,0,0,0,0,0,0,0],1,0);
     } else {
       const storage=host.allocate(0x110);
-      if(storage)host.constructNaturalBarrel(storage,parent,x,y,1);
+      if(storage)(host.constructNaturalBarrel??((...args)=>nativeCreateBarrelAt(memory,...args,host)))(storage,parent,x,y,1);
     }
     ordinal++;
   }
