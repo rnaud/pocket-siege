@@ -1,3 +1,5 @@
+import {nativeReadEnvironmentMemory} from '../src/armageddon/physics-memory.js';
+import {nativeDestroyEnvironmentMemory} from '../src/armageddon/physics-destroy.js';
 import replaySceneCapture from './fixtures/armageddon/replay-scene-capture.json' with {type:'json'};
 import replayScenePipeline from './fixtures/armageddon/replay-scene-pipeline.json' with {type:'json'};
 import replaySceneInput from './fixtures/armageddon/replay-scene-input.json' with {type:'json'};
@@ -1246,7 +1248,16 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     expect(new Set([environment.all, ...environment.categories]).size).toBe(33);
     expect({ lists: [environment.all, ...environment.categories].map(list => ({ capacity: list.capacity, count: list.entries.length, cursor: list.cursor })),
       state: [...environment.state], context: environment.context, dirty: environment.dirty,
-      position: stream.position, allocations }).toEqual(row.result);
+      position: stream.position, allocations }).toEqual(Object.fromEntries(Object.entries(row.result).filter(([key])=>!['memoryHash','destroyedHash','released'].includes(key))));
+    const owner=new Uint8Array(0x3c4).fill(0xa5),heap=new Uint8Array(0x20000);let cursor=0;
+    const locate=at=>at>=0x2300000?[heap,at-0x2300000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer).setUint32(o,v,true);},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    const requests=[],released=[];stream.seek(row.input.position);
+    expect(nativeReadEnvironmentMemory(memory,0x2000000,row.input.context,stream,{allocateArray:(size,pool)=>{expect(pool).toBe(0x561f5c);requests.push(size);const address=0x2300000+cursor;cursor+=size;return address;}})).toBe(0x2000000);
+    const digest=()=>createHash('sha256').update(owner).update(heap.subarray(0,cursor)).digest('hex');
+    expect(digest()).toBe(row.result.memoryHash);expect(requests).toEqual(row.result.allocations);expect(stream.position).toBe(row.result.position);
+    nativeDestroyEnvironmentMemory(memory,0x2000000,1,{free:address=>released.push([0x492510,address]),release:(address,size)=>released.push([0x492590,address,size])});
+    expect(digest()).toBe(row.result.destroyedHash);expect(released).toEqual(row.result.released);
   }
   for (const row of replayBodyRestore.cases) {
     const input = row.input, stream = new NativeReplayStream(2048), allocations = [];

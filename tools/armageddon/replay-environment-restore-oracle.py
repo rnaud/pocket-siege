@@ -34,7 +34,7 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 stream=owner+0x1000;buffer=owner+0x2000;context=0x3456789
 heapBase=0x2300000
 cpu.mem_map(heapBase,0x20000)
-heap=heapBase;allocations=[]
+heap=heapBase;allocations=[];released=[]
 def hook(cpu,address,size,user):
  global heap
  if address==stop:cpu.emu_stop();return
@@ -44,7 +44,13 @@ def hook(cpu,address,size,user):
   cpu.mem_write(pointer,bytes(size))
   cpu.reg_write(UC_X86_REG_EAX,pointer)
   cpu.reg_write(UC_X86_REG_EIP,read(sp));cpu.reg_write(UC_X86_REG_ESP,sp+4)
+def destructionHook(cpu,address,size,user):
+ if address in [0x492510,0x492590]:
+  sp=cpu.reg_read(UC_X86_REG_ESP)
+  released.append([address,read(sp+4)] + ([read(sp+8)] if address==0x492590 else []))
+  cpu.reg_write(UC_X86_REG_EIP,read(sp));cpu.reg_write(UC_X86_REG_ESP,sp+4)
 cpu.hook_add(UC_HOOK_CODE,hook)
+cpu.hook_add(UC_HOOK_CODE,destructionHook)
 write(stream+4,buffer)
 cases=[]
 for position in range(8):
@@ -66,6 +72,13 @@ for position in range(8):
     for pointerOffset in [16,20]:
      if any(cpu.mem_read(read(owner+offset+pointerOffset),1024)):raise RuntimeError('list storage is not zeroed')
    result={'lists':lists,'state':list(cpu.mem_read(owner+0x3b4,12)),'dirty':read(owner+4),'context':read(owner+0x3c0),'position':read(stream+0x10),'allocations':list(allocations)}
+   result['memoryHash']=hashlib.sha256(bytes(cpu.mem_read(owner,0x3c4))+bytes(cpu.mem_read(heapBase,heap-heapBase))).hexdigest()
+   released.clear();write(sp,stop);write(sp+4,1)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x4c8da0,stop+1,count=100000)
+   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('destructor did not exit')
+   result['destroyedHash']=hashlib.sha256(bytes(cpu.mem_read(owner,0x3c4))+bytes(cpu.mem_read(heapBase,heap-heapBase))).hexdigest()
+   result['released']=list(released)
    cases.append({'input':{'position':position,'bytes':list(payload),'context':context},'result':result})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004C8E40 and all32 original004C8D10 list constructors, original byte/aligned block readers. Only zeroed heap allocation substituted. All66 allocated buffers checked for zero contents.','cases':cases},separators=(',',':'))+'\n')
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004C8E40 and all32 original004C8D10 list constructors, original byte/aligned block readers. Only zeroed heap allocation substituted. All66 allocated buffers checked for zero contents; complete object and allocated heap memory captured by SHA256 before and after original004C8DA0 destruction with ordered release calls.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} environment restores')

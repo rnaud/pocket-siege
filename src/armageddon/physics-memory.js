@@ -53,7 +53,7 @@ export function nativeCompactPhysicsMemory(memory,environment) {
 }
 
 //004C8BB0/004C8D10: fresh environment with two native buffers per list.
-export function nativeCreateEnvironmentMemory(memory,address,maskRegistry,host) {
+function nativeInitializeEnvironmentStorage(memory,address,maskRegistry,host) {
   memory.put(address,0x524a14);
   for(let index=0;index<33;index++) {
     const list=address+(index===0?0x18:0x34+(index-1)*0x1c);
@@ -62,6 +62,19 @@ export function nativeCreateEnvironmentMemory(memory,address,maskRegistry,host) 
     memory.put(list+20,host.allocateArray(memory.get(list+4)<<2,0x561f5c));
   }
   memory.put(address,0x5268b8);memory.put(address+0x3c0,maskRegistry);
+}
+export function nativeCreateEnvironmentMemory(memory,address,maskRegistry,host) {
+  nativeInitializeEnvironmentStorage(memory,address,maskRegistry,host);
   memory.put(address+0x3b8,0);memory.put(address+0x3bc,0);memory.put(address+4,0);
+  return address;
+}
+
+//004C8E40: restore the original owned list storage and aligned state block.
+//The stream marker is consumed without validation, just as in the executable.
+export function nativeReadEnvironmentMemory(memory,address,maskRegistry,stream,host) {
+  nativeInitializeEnvironmentStorage(memory,address,maskRegistry,host);
+  stream.readByte();
+  memory.range(address+0x3b4,12).set(stream.readBlock(12));
+  memory.put(address+4,0);
   return address;
 }
