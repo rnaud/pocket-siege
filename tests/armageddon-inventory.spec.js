@@ -1,3 +1,5 @@
+import teamAccess from './fixtures/armageddon/team-access.json' with {type:'json'};
+import {nativeInitializeTeamAccess} from '../src/armageddon/team-access.js';
 import {nativeInitializeGameplayRecords} from '../src/armageddon/gameplay-setup.js';
 import schemeWeapons from '../src/armageddon/scheme-weapons.js';
 import capturedSchemeWeapons from '../src/armageddon/scheme-weapon-data.json' with {type:'json'};
@@ -48,6 +50,16 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const accessActual=[],accessExpected=[];
+  for(const row of teamAccess.cases) {
+    const scene=new Uint8Array(accessPattern),counter=new Uint8Array([239,190,173,222]);
+    for(const [offset,value] of row.writes)scene[offset]=value;
+    nativeInitializeTeamAccess(scene,counter);
+    accessActual.push([createHash('sha256').update(scene).digest('hex'),new DataView(counter.buffer).getUint32(0,true)]);
+    accessExpected.push([row.sha256,row.counter]);
+  }
+  expect(accessActual).toEqual(accessExpected);
   expect(schemeWeapons.schemes).toEqual(capturedSchemeWeapons.schemes);
   for(const row of weaponInitialization.cases) {
     const memory=inflateSync(Buffer.from(row.input,'base64')),calls=[];
@@ -132,7 +144,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
     const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),sceneView=new DataView(scene.buffer);
     sceneView.setUint32(0x1c,0x2600800,true);sceneView.setInt32(0x20,row.gameplay_mode,true);sceneView.setInt32(0x1b8ac,row.gameplay_tall,true);
-    nativeInitializeGameplayRecords(scene,memory,()=>new Uint8Array(1));
+    const counter=new Uint8Array([239,190,173,222]);
+    nativeInitializeGameplayRecords(scene,memory,()=>new Uint8Array(1),counter);
+    expect(new DataView(counter.buffer).getUint32(0,true)).toBe(row.team_counter);
     expect(createHash('sha256').update(scene).digest('hex')).toBe(row.gameplay_sha256);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
 
