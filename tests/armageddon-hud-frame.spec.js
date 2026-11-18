@@ -1,3 +1,5 @@
+import wormRender from "./fixtures/armageddon/worm-render.json" with {type:"json"};
+import { nativeDrawWorm } from "../src/armageddon/worm-render.js";
 import wormIdleGesture from "./fixtures/armageddon/worm-idle-gesture.json" with { type: "json" };
 import { nativeWormIdleGesture } from "../src/armageddon/worm-idle-gesture.js";
 import wormAnimationPlayer from "./fixtures/armageddon/worm-animation-player.json" with { type: "json" };
@@ -290,6 +292,15 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of wormRender.cases) {
+    const calls=[];
+    nativeDrawWorm({team:2,rank:c.rank,poison:c.poison},{
+      sprite:()=>{calls.push(["sprite"]);return {x:123456,y:-765432,sprite:c.sprite,progress:c.progress};},
+      teamFlags:team=>{calls.push(["teamFlags",team]);return c.flags;},
+      state:()=>{calls.push(["state"]);return c.state;},draw:(...request)=>calls.push(["draw",...request]),
+    });
+    expect(calls).toEqual(c.calls);
   }
   for(const c of wormIdleGesture.cases) {
     const memory=new Uint8Array(0x390),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x6000),scene=new DataView(sceneMemory.buffer),calls=[];
