@@ -1,4 +1,8 @@
 import {
+  nativeBodyAwakeMemory,
+  nativeEarthquakeMemory,
+} from "./body-response-memory.js";
+import {
   nativeRefreshCollisionMemory,
   nativeQueryCollisionMemory,
 } from "./collision-registry.js";
@@ -32,14 +36,25 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
           host.overlap,
         ),
     };
+  const awake = host.awake ?? ((body) => nativeBodyAwakeMemory(memory, body));
+  const earthquake =
+    host.earthquake ??
+    ((environment, body, strength) =>
+      nativeEarthquakeMemory(
+        memory,
+        environment,
+        body,
+        strength,
+        host.impulse,
+      ));
   const get = (offset) => memory.get(body + offset) | 0;
   const put = (offset, value) => memory.put(body + offset, value);
   const quake = () => memory.get(memory.get(environment + 0x3c0) + 0x1ac4) | 0;
   if (!get(0x48) || get(0x54)) return;
   const frame = memory.get(memory.get(environment + 0x3c0) + 0x7f0) | 0;
-  if (((frame + index) | 0) % 13 === 0 || host.awake(body)) put(0xb8, 0);
+  if (((frame + index) | 0) % 13 === 0 || awake(body)) put(0xb8, 0);
   if (get(0xb8)) {
-    if (quake()) host.earthquake(environment, body, quake());
+    if (quake()) earthquake(environment, body, quake());
     return;
   }
   if (host.refresh) host.refresh(environment, body);
@@ -126,6 +141,6 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
     host.collide(environment, body, get(0x90), (get(0x94) + 65536) | 0)
   )
     put(0xc4, 0);
-  if (quake() && !get(0xc4)) host.earthquake(environment, body, quake());
-  if (!host.awake(body)) put(0xb8, 1);
+  if (quake() && !get(0xc4)) earthquake(environment, body, quake());
+  if (!awake(body)) put(0xb8, 1);
 }

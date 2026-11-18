@@ -40,6 +40,8 @@ test(
 
 // Preserve callback-visible memory: event handlers can change constraints,
 // velocities, segment lists and even scene earthquake state during a tick.
+import impulses from "./fixtures/armageddon/body-impulse-memory.json" with { type: "json" };
+import responded from "./fixtures/armageddon/body-response-memory.json" with { type: "json" };
 import collided from "./fixtures/armageddon/body-collision-memory.json" with { type: "json" };
 import refreshed from "./fixtures/armageddon/body-refresh-memory.json" with { type: "json" };
 import roped from "./fixtures/armageddon/body-rope-memory.json" with { type: "json" };
@@ -65,6 +67,8 @@ test(
       ...roped.cases,
       ...refreshed.cases,
       ...collided.cases,
+      ...responded.cases,
+      ...impulses.cases,
     ].entries()) {
       const bytes = inflateSync(Buffer.from(row.inputMemory, "base64"));
       const memory = {
@@ -150,6 +154,12 @@ test(
           }
           return row.nativeForces && mode % 2 ? 0 : 1;
         },
+        impulse: (_body, x, y) => {
+          call("impulse", [x, y]);
+          put(0x9c, get(0x9c) + x);
+          put(0xa0, get(0xa0) + y);
+          memory.put(world + 0x1ac4, 0);
+        },
         overlap: (...params) => {
           call("overlap", params);
           if (mode === 7) {
@@ -193,6 +203,11 @@ test(
       if (row.nativeRope) delete host.rope;
       if (row.nativeRefresh) delete host.refresh;
       if (row.nativeCollision) delete host.collide;
+      if (row.nativeResponse) {
+        delete host.awake;
+        delete host.earthquake;
+      }
+      if (row.nativeImpulse) delete host.impulse;
       if (row.throughList)
         nativeAdvancePhysicsListMemory(
           memory,

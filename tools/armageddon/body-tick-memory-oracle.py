@@ -14,7 +14,11 @@ parser.add_argument('--native-sweep', action='store_true')
 parser.add_argument('--native-rope', action='store_true')
 parser.add_argument('--native-refresh', action='store_true')
 parser.add_argument('--native-collision', action='store_true')
+parser.add_argument('--native-response', action='store_true')
+parser.add_argument('--native-impulse', action='store_true')
 args = parser.parse_args()
+if args.native_impulse:args.native_response=True
+if args.native_response:args.native_collision=True
 if args.native_collision:args.native_refresh=True
 if args.native_refresh:args.native_rope=True
 if args.native_rope:args.native_sweep=True
@@ -54,12 +58,16 @@ if args.native_rope:
 if args.native_refresh:
  del services[0x4c98e0];services[stop+0x800]=('overlap',5)
 if args.native_collision:del services[stop+0x500]
+if args.native_response:
+ del services[0x4ca250];del services[stop+0x100];services[stop+0x900]=('impulse',2)
+if args.native_impulse:del services[stop+0x900]
 calls=[];steps=0
 def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))).hexdigest()
 def hook(cpu,address,size,user):
  global steps
  name,argc=services[address];sp=cpu.reg_read(UC_X86_REG_ESP);arg=lambda i:read(sp+4+i*4)
  params=[]
+ if name=='impulse':params=[signed(arg(0)),signed(arg(1))]
  if name=='overlap':params=[cpu.reg_read(UC_X86_REG_ECX),signed(arg(0)),signed(arg(1)),arg(2),signed(arg(3)),signed(arg(4))]
  if name=='terrain':params=[signed(arg(0)),signed(arg(1))]
  if name=='water':params=[signed(arg(1))]
@@ -96,6 +104,8 @@ def hook(cpu,address,size,user):
   result=0 if args.native_forces and mode%2 else 1
   if args.native_forces and mode==7:write(environment+0x3b4,170);write(owner+0x9c,800000);write(owner+0xa0,1234)
   if args.native_forces and mode==8:write(owner+0x64,0x8000);write(owner+0x9c,123456)
+ elif name=='impulse':
+  write(owner+0x9c,read(owner+0x9c)+arg(0));write(owner+0xa0,read(owner+0xa0)+arg(1));write(world+0x1ac4,0)
  elif name=='overlap':
   result=int(signed(arg(0))!=100 and mode%3!=0) if args.native_collision else int(mode%2==0)
   if mode==7:write(owner+0x90,123<<16);write(owner+0xf0,owner+0x9600);write(owner+0x44,99)
@@ -114,7 +124,7 @@ def hook(cpu,address,size,user):
 for address,(name,argc) in services.items():
  cpu.mem_write(address,b'\xc2'+struct.pack('<H',argc*4));cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
-for throughList,mode,velocity,constrained in itertools.product(range(2),range(16),([0,65536,-65536,1000000] if args.native_sweep else [0,65536,-65536,0x300000,-0x300000,1000000,-2000000,0x70000000]),range(2)):
+for impulseEntry,throughList,mode,velocity,constrained in itertools.product(([0x4d12b0,0x4f4d20] if args.native_impulse else [0]),range(2),range(16),([0,65536,-65536,1000000] if args.native_sweep else [0,65536,-65536,0x300000,-0x300000,1000000,-2000000,0x70000000]),range(2)):
  cpu.mem_write(owner,bytes(0x10000));calls.clear();steps=0
  for offset,value in {0:vt,0x48:int(mode!=1),0x54:int(mode==2),0xb8:int(mode in [3,4]),0xbc:1,0xc0:1,0xc4:1,0xc8:constrained,0x90:100<<16,0x94:180<<16,0x9c:velocity,0xa0:-velocity,0x98:123,0xa4:456,0x5c:0 if mode==14 else 0x100000,0x6c:65536,0x84:60000,0x8c:0x3000,0xdc:1,0xf8:segments}.items():write(owner+offset,value)
  write(segments+4,[0,0x1000,0xf000,0x8000][mode%4]);write(environment,mt);write(environment+0x3c0,world);write(environment+0x3b8,0x3d70);write(world+0x7f0,(10 if throughList else 12) if mode==4 else 1);write(world+0x1ac4,32 if mode in [3,5] else 0)
@@ -137,10 +147,16 @@ for throughList,mode,velocity,constrained in itertools.product(range(2),range(16
    for offset,value in {0x48:1,0xf0:owner+0x9600,0x90:(105+i)<<16,0x94:180<<16,0xec:123}.items():write(other+offset,value)
   if mode==14:
    for offset,value in {4:owner,8:read(owner+0x44),12:read(owner+0x40),16:read(owner+0x90),20:read(owner+0x94)}.items():write(environment+offset,value)
+ if args.native_response:
+  write(vt+0xf4,0x4d11e0);write(vt+0x34,impulseEntry if args.native_impulse else stop+0x900)
+  write(world+0x1acc,[0,0xffffffff,0x80000000,123456789][mode%4])
+  write(world+0x1ac4,[1,65536,-65536,0x7fffffff][mode%4] if mode in [3,5,12,15] else 0)
+  if mode in [3,4]:write(owner+0xc0,0);write(owner+0xc4,0)
+  if mode==5:write(environment+0x3b8,0)
  write(mt+12,0x4c9770 if args.native_collision else stop+0x500);write(environment+0x24,3);write(environment+0x28,environment+0x800);write(environment+0x808,owner);initial=bytes(cpu.mem_read(owner,0x10000));sp=stack+0xff00
  for i,v in enumerate([stop,owner,1]):write(sp+i*4,v)
  cpu.reg_write(UC_X86_REG_ECX,environment);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4ca750 if throughList else 0x4ca320,stop,count=100000)
  assert cpu.reg_read(UC_X86_REG_EIP)==stop
- cases.append(dict(nativeCollision=args.native_collision,nativeRefresh=args.native_refresh,nativeRope=args.native_rope,nativeSweep=args.native_sweep,nativeForces=args.native_forces,throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,native_forces=args.native_forces,method=f'{len(cases)} original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. With --native-collision, original004C9770/004C97A0 also execute for every movement collision, using explicit mutable mask-overlap callbacks. With --native-refresh, original004C98E0/004C9970 also execute over sparse category lists with mutable mask-overlap callbacks and cache-hit cases. With --native-rope, original004CA8A0 also executes against five-segment ropes and an explicit terrain-point interface. With --native-sweep, original004C9AA0 also executes and the velocity matrix uses four values (256 cases). With --native-forces, original004C9F10 water and004CA110 air run without interception, including mutable collision and skim callbacks. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(nativeImpulse=args.native_impulse,nativeResponse=args.native_response,nativeCollision=args.native_collision,nativeRefresh=args.native_refresh,nativeRope=args.native_rope,nativeSweep=args.native_sweep,nativeForces=args.native_forces,throughList=throughList,mode=mode,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),calls=list(calls),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,native_forces=args.native_forces,method=f'{len(cases)} original004CA320 executions, half through original004CA750 sparse-list traversal, full64KiB memory at every service/virtual callback and after return. Native control flow, gravity, friction, rope angle/damping, rotation, clamping and sleep rules execute. Water/air/sweep/rope kernels, refresh, collision, awake, earthquake and event handlers are explicit mutable interfaces. With --native-impulse, both original004D12B0 replacement and004F4D20 additive velocity receivers execute (512 cases). With --native-response, original004D11E0 awake and004CA250 earthquake also execute with signed strengths and random seed extremes; only the impulse receiver is intercepted. With --native-collision, original004C9770/004C97A0 also execute for every movement collision, using explicit mutable mask-overlap callbacks. With --native-refresh, original004C98E0/004C9970 also execute over sparse category lists with mutable mask-overlap callbacks and cache-hit cases. With --native-rope, original004CA8A0 also executes against five-segment ropes and an explicit terrain-point interface. With --native-sweep, original004C9AA0 also executes and the velocity matrix uses four values (256 cases). With --native-forces, original004C9F10 water and004CA110 air run without interception, including mutable collision and skim callbacks. Not a full native physics integration.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'addressed body ticks')
