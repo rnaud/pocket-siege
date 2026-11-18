@@ -7,9 +7,9 @@ import {nativeBuildTeamSetup} from './team-setup.js';
 import {nativeInitializeSetupTurnOrder} from './setup-turn-order.js';
 import {nativeInitializeInventory} from './inventory-initialization.js';
 
-//00415540 followed by004C2640. Team data begins at006DE000.
+//00415540. Team data begins at006DE000.
 //Resource probing, profile storage and installed language use host interfaces.
-export function nativeBuildInitialMatchSetup(memory,inventory,schemeState,teamData,host) {
+export function nativeInitializeMatchSetup(memory,schemeState,teamData,host) {
   nativePrepareInventoryScheme(memory,schemeState);
   memory[0xd42a]=0;
   const scheme=schemeState.subarray(0x14,0xec);
@@ -24,7 +24,13 @@ export function nativeBuildInitialMatchSetup(memory,inventory,schemeState,teamDa
   nativeExpandWeaponSettings(memory,scheme);
   host.random.seed(host.seedStorage.time());
   nativeExpandSchemeEnvironment(memory,scheme,host.descriptors);
-  const result=nativeSetupMetadata(memory,host);
+  return nativeSetupMetadata(memory,host);
+}
+
+//Match startup imports inventory only after setup returns. Mission loading
+//uses00415540 alone, then applies its own options and team loadouts.
+export function nativeBuildInitialMatchSetup(memory,inventory,schemeState,teamData,host) {
+  const result=nativeInitializeMatchSetup(memory,schemeState,teamData,host);
   nativeInitializeInventory(inventory,memory.subarray(0x3c));
   return result;
 }

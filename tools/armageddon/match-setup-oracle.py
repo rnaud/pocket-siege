@@ -165,6 +165,7 @@ for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['s
   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x415540,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   result=cpu.reg_read(UC_X86_REG_EAX)
+  initializerHash=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest()
   cpu.mem_write(output,bytes(0x2c14));sp=stack+0xf000;write(sp,stop);write(sp+4,owner+0x3c)
   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,output)
   cpu.emu_start(0x4c2640,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
@@ -180,7 +181,7 @@ for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['s
   stateInputs=[[0x24,modeObject],[0x1474,0],[0x1500,0],[0x1b18,0],[0x1920,0],[0x1668,0],[0x1b8b0,templateIndex*15],[0x1b8d4,0],[0x1b8d8,0]]
   for offset,value in stateInputs:write(scene+offset,value)
   modeCalls.clear();cpu.emu_start(0x49d47a,0x49db9a,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x49db9a
-  cases.append(dict(state_inputs=stateInputs,state_calls=list(modeCalls),state_sha256=hashlib.sha256(cpu.mem_read(scene,0x20000)).hexdigest(),resource_id=scheme['resource_id'],directory_available=available,writes=writes,handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
+  cases.append(dict(initializer_sha256=initializerHash,state_inputs=stateInputs,state_calls=list(modeCalls),state_sha256=hashlib.sha256(cpu.mem_read(scene,0x20000)).hexdigest(),resource_id=scheme['resource_id'],directory_available=available,writes=writes,handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
     team_counter=read(0x561ec8),gameplay_sha256=gameplayHash,gameplay_mode=templateIndex&1,gameplay_tall=(templateIndex>>1)&1,result=result,resolution=resolution,display_flags=displayFlags,lcid=lcid,resource=resource.hex(),country=read(0x6f47f4),options=options,music_enabled=musicEnabled,music=bytes(cpu.mem_read(0x6f3ec0,0xc6)).hex(),profile=profile,random_state=read(thread+0x14),paths=paths,calls=calls,scheme=bytes(cpu.mem_read(0x6f454c,0x1c4)).hex(),
     sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest(),inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest()))
 musicCases=[]

@@ -110,7 +110,7 @@ import {nativeExpandSchemeEnvironment} from '../src/armageddon/scheme-environmen
 import speechSetup from './fixtures/armageddon/speech-setup.json' with {type:'json'};
 import {nativeResolveSetupSpeech,nativeCountrySpeech} from '../src/armageddon/speech-setup.js';
 import matchSetup from './fixtures/armageddon/match-setup.json' with {type:'json'};
-import {nativeBuildInitialMatchSetup} from '../src/armageddon/match-setup.js';
+import {nativeInitializeMatchSetup} from '../src/armageddon/match-setup.js';
 import frontendRandom from './fixtures/armageddon/frontend-random.json' with {type:'json'};
 import {NativeFrontendRandom} from '../src/armageddon/frontend-random.js';
 import turnOrder from './fixtures/armageddon/setup-turn-order.json' with {type:'json'};
@@ -809,7 +809,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const defaultSpeech=new Uint8Array(65);defaultSpeech.set(new TextEncoder().encode('English'));
     const music=Uint8Array.from({length:0xc6},(_,i)=>(i*11+5)&255);
     const localeState=new Uint8Array(8);
-    const result=nativeBuildInitialMatchSetup(memory,inventory,scheme,teamData,{
+    const result=nativeInitializeMatchSetup(memory,scheme,teamData,{
       descriptors,random,music,drive:68,musicEnabled:row.music_enabled,
       displayFlags:row.display_flags,resolution:row.resolution,
       localeState,systemLocale:()=>{calls.push(['locale']);return row.lcid;},
@@ -826,6 +826,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         calls.push(['directory',value.toString('hex')]);return row.directory_available||value.toString()==='C:\\WORMS'?0:1;
       },
     });
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.initializer_sha256);
+    nativeInitializeInventory(inventory,memory.subarray(0x3c));
     expect(new DataView(localeState.buffer).getUint32(4,true)).toBe(row.country);
     expect(result>>>0).toBe(row.result);expect(Buffer.from(music).toString('hex')).toBe(row.music);
     expect(calls).toEqual(row.calls);expect(profile).toBe(row.profile);expect(random.state).toBe(row.random_state);
