@@ -1,3 +1,5 @@
+import terrainFile from './fixtures/armageddon/terrain-file.json' with {type:'json'};
+import {nativeLoadTerrainFile} from '../src/armageddon/terrain-file.js';
 import sceneGraphics from './fixtures/armageddon/scene-graphics.json' with {type:'json'};
 import {nativePrepareSceneGraphics} from '../src/armageddon/scene-graphics.js';
 import {nativeCreateSceneContext} from '../src/armageddon/scene-context.js';
@@ -159,6 +161,26 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of terrainFile.cases) {
+    const owner=0x2000000,scratch=0x2100000,bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(20),calls=[];
+    const locate=a=>a>=scratch?[temporary,a-scratch]:[bytes,a-owner];
+    const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
+    memory.put(owner+8,0);
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const stream=Buffer.from(c.stream,'hex');let cursor=0,imageIndex=0;
+    const host={
+      openFile:(path,mode)=>{calls.push(['open',path,mode,snapshot()]);return c.variant===4?0:0x1234;},
+      readFile:(dest,n,count,file)=>{
+        calls.push(['read',dest>=scratch?'scratch':dest,n,count,file,snapshot()]);
+        const chunk=stream.subarray(cursor,cursor+n*count);cursor+=chunk.length;
+        const [b,o]=locate(dest);chunk.copy(b,o);return n?Math.floor(chunk.length/n):0;
+      },
+      loadTerrainImage:(...args)=>{calls.push(['image',...args,snapshot()]);return c.images[imageIndex++];},
+      closeFile:file=>calls.push(['close',file,snapshot()]),
+    };
+    expect(nativeLoadTerrainFile(memory,owner+0x800,0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host)).toBe(c.result);
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of sceneGraphics.cases) {
     const owner=0x2000000,scene=0x2300000,frontend=0x2500000,services=0x2600000;
     const ownerBytes=Buffer.alloc(0x10000,c.pattern),sceneBytes=Buffer.alloc(0x20000,c.pattern),frontendBytes=Buffer.alloc(0x10000,c.pattern),serviceBytes=Buffer.alloc(0x10000,c.pattern),calls=[];
