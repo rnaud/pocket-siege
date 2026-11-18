@@ -38,7 +38,7 @@ camera=owner+0x800;table=owner+0x1000;groupTable=owner+0x1100
 write(camera,table)
 virtuals={owner+0x1800:0x20,owner+0x1900:0x2c}
 write(table+0x20,owner+0x1800);write(table+0x2c,owner+0x1900);write(groupTable+0x20,owner+0x1800)
-entries={0x4d1f80:1,0x4eba80:1,0x4d5a40:4,0x500170:2,0x4ffed0:8,0x4ebe10:1,0x4eaf40:0}
+entries={0x4d1f80:1,0x4eba80:1,0x4d5a40:4,0x4ebe10:1,0x4eaf40:0}
 for entry,n in entries.items():cpu.mem_write(entry,b'\xc2'+struct.pack('<H',n*4))
 for entry in virtuals:cpu.mem_write(entry,b'\xc2\x04\x00')
 cpu.mem_write(0x492550,b'\xc3');cpu.mem_write(0x4924d0,b'\xc3');cpu.mem_write(0x492510,b'\xc3')
@@ -66,23 +66,27 @@ write(resource,resourceTable);write(resourceTable+40,fontCall);cpu.mem_write(fon
 def fontHook(cpu,entry,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP);calls.append(['height',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);cpu.reg_write(UC_X86_REG_EAX,8+count)
 cpu.hook_add(UC_HOOK_CODE,fontHook,begin=fontCall,end=fontCall)
+labelCall=owner+0x5300;write(resourceTable+64,labelCall);cpu.mem_write(labelCall,b'\xc3')
+def labelHook(cpu,entry,size,user):
+ calls.append(['label',cpu.reg_read(UC_X86_REG_ECX)]);cpu.reg_write(UC_X86_REG_EAX,0x76543210+count)
+cpu.hook_add(UC_HOOK_CODE,labelHook,begin=labelCall,end=labelCall)
 cases=[]
 for count in range(7):
  for variant in range(8):
   for failed in [-1,1,4] if count else [-1,1]:
    cpu.mem_write(context,bytes((i*17+5)&255 for i in range(0x20000)));cpu.mem_write(context+0x4886,bytes([count]))
-   words=[[8,resource],[0x7d4,camera],[0x804,[-1,0,200,700][variant%4]],[0x1b8d4,[0,100<<16,-65536,0x7fffffff][variant%4]],[0x81c,[-1,0,100,1000][variant%4]]]
+   words=[[0x1c,resource],[8,resource],[0x7d4,camera],[0x804,[-1,0,200,700][variant%4]],[0x1b8d4,[0,100<<16,-65536,0x7fffffff][variant%4]],[0x81c,[-1,0,100,1000][variant%4]]]
    for team in range(6):
     base=0x1b94+(team+1)*0x51c;words.extend([[base-12,1 if variant%3==0 else 0],[base,8]])
     for worm in range(8):words.append([base-0x49c+worm*0x9c,[0,100,200,-5,0x7fffffff][(variant+worm)%5]])
    for team in range(6):cpu.mem_write(context+0x543c+team*3000,bytes([variant%3]))
    for offset,value in words:write(context+offset,value)
    cpu.mem_write(heap,bytes((i*7+3)&255 for i in range(0x40000)))
-   cursor=heap+0x1000;allocation=0;failure=failed;calls.clear();sp=stack+0xf000
+   cursor=heap+0x1000;allocation=0;failure=failed;calls.clear();write(0x56faf8,0xdeadbeef);sp=stack+0xf000
    for i,value in enumerate([stop,context,context+0x47a8]):write(sp+i*4,value)
    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,heap)
    cpu.emu_start(0x4eaad0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-   cases.append(dict(worms=variant%3,count=count,words=words,failure=failure,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0x40000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
+   cases.append(dict(portrait_label=read(0x56faf8),worms=variant%3,count=count,words=words,failure=failure,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0x40000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
 taskCases=[]
 for children in [0,1,15,16,17,31,32,33]:
  cpu.mem_write(heap,bytes((i*7+3)&255 for i in range(0x40000)))

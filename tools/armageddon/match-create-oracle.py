@@ -62,7 +62,7 @@ camera=owner+0x4000;table=owner+0x4100;groupTable=owner+0x4200
 write(camera,table)
 virtuals={owner+0x4300:0x20,owner+0x4400:0x2c}
 write(table+0x20,owner+0x4300);write(table+0x2c,owner+0x4400);write(groupTable+0x20,owner+0x4300)
-entries={0x4d1f80:1,0x4eba80:1,0x4d5a40:4,0x500170:2,0x4ffed0:8,0x4ebe10:1,0x4eaf40:0}
+entries={0x4d1f80:1,0x4eba80:1,0x4d5a40:4,0x4ebe10:1,0x4eaf40:0}
 for entry,n in entries.items():cpu.mem_write(entry,b'\xc2'+struct.pack('<H',n*4))
 for entry in virtuals:cpu.mem_write(entry,b'\xc2\x04\x00')
 cpu.mem_write(0x492550,b'\xc3')
@@ -76,11 +76,16 @@ def worldHook(cpu,entry,size,user):
   elif entry==0x4b2670:write(at+0x28,args[0]);write(at+0x24,args[1])
   cpu.reg_write(UC_X86_REG_EAX,at)
 for entry in list(entries)+list(virtuals):cpu.hook_add(UC_HOOK_CODE,worldHook,begin=entry,end=entry)
+languageLabelTable=owner+0x1000
+labelCall=owner+0x5300;write(languageLabelTable+64,labelCall);cpu.mem_write(labelCall,b'\xc3')
+def labelHook(cpu,entry,size,user):
+ calls.append(['label',cpu.reg_read(UC_X86_REG_ECX)]);cpu.reg_write(UC_X86_REG_EAX,0x76543210+count)
+cpu.hook_add(UC_HOOK_CODE,labelHook,begin=labelCall,end=labelCall)
 cases=[]
 for count in range(7):
  for variant in range(16):
   cpu.mem_write(context,bytes((i*17+5)&255 for i in range(0x20000)));write(context+8,resource);write(context+20,music if variant&1 else 0)
-  words=[[0x7d4,camera],[0x804,[-1,0,200,700][variant%4]],[0x1b8d4,0],[0x81c,0],[0x1acc,variant*12345],[0x1b94+0x1eb4,count]]
+  words=[[0x1c,resource],[0x7d4,camera],[0x804,[-1,0,200,700][variant%4]],[0x1b8d4,0],[0x81c,0],[0x1acc,variant*12345],[0x1b94+0x1eb4,count]]
   bytewrites=[[0x4886,count],[0x114e0,count],[0x11b96,[0,1,127,255][variant%4]],[0x11d5d,(variant>>1)&1],[0x11e44,[0,1,127,255][variant%4]]]
   shorts=[[0x11d4a,[0,1,65535,60][variant%4]],[0x1b868,3],[0x1b8aa,3]]
   for i in range(16):shorts.extend([[0x1b848+i*2,i-8],[0x1b86a+i*2,5-i],[0x1b88a+i*2,100+i]])
@@ -93,10 +98,10 @@ for count in range(7):
   for offset,value in shorts:cpu.mem_write(context+offset,struct.pack('<H',value&65535))
   for offset,value in bytewrites:cpu.mem_write(context+offset,bytes([value]))
   cpu.mem_write(heap,bytes((i*7+3)&255 for i in range(0x40000)))
-  cursor=heap+0x1000;allocation=0;failure=1 if variant==0 else -1;calls.clear();sp=stack+0xf000
+  cursor=heap+0x1000;allocation=0;failure=1 if variant==0 else -1;calls.clear();write(0x56faf8,0xdeadbeef);sp=stack+0xf000
   for i,value in enumerate([stop,context,context+0x47a8]):write(sp+i*4,value)
   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,heap)
   cpu.emu_start(0x4b2ad0,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(count=count,variant=variant,words=words,bytes=bytewrites,shorts=shorts,failure=failure,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0x40000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
+  cases.append(dict(portrait_label=read(0x56faf8),count=count,variant=variant,words=words,bytes=bytewrites,shorts=shorts,failure=failure,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0x40000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
 args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004B2AD0',method='Original fresh match-root constructor with rotation, deployment inventory query/write and complete resource constructors. World initialization, event-group construction and global event subscription execute; base task attachment and registry execute; other child constructors, object population, presentation and external services remain observed interfaces.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'match root initializations')

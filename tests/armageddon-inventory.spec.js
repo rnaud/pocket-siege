@@ -133,11 +133,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     memory.range=(at,length)=>{const [a,o]=locate(at);return a.subarray(o,o+length);};
     for(let team=0;team<6;team++)scene[0x543c+team*3000]=row.worms;
     scene[0x4886]=row.count;for(const [offset,value] of row.words)memory.put(0x2300000+offset,value);
-    let cursor=0x2401000,allocation=0;
+    let cursor=0x2401000,allocation=0,portraitLabel=0xdeadbeef;
     nativeInitializeWorld(memory,0x2400000,0x2300000,0x23047a8,{
       allocate:size=>{const value=allocation++===row.failure?0:cursor;if(value)cursor+=(size+15)&~15;calls.push(['allocate',size,value]);return value;},
       allocateArray:(size,pool)=>{const value=cursor;cursor+=(size+15)&~15;calls.push(['array',size,value,pool]);return value;},
       free:at=>calls.push(['free',at]),
+      portraitLabel:at=>{calls.push(['label',at]);return 0x76543210+row.count;},setPortraitLabel:value=>portraitLabel=value,
       fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;},
       virtual:(...args)=>calls.push(['virtual',...args]),
       call:(entry,at,args)=>{
@@ -148,6 +149,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         return at;
       },
     });
+    expect(portraitLabel).toBe(row.portrait_label);
     worldActual.push([createHash('sha256').update(heap).digest('hex'),createHash('sha256').update(scene).digest('hex'),calls]);worldExpected.push([row.sha256,row.scene_sha256,row.calls]);
   }
   expect(worldActual).toEqual(worldExpected);
@@ -162,7 +164,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       for(let i=0x38;i<0x3c;i++)heap[i]=(i*7+3)&255;
     }
     for(const [offset,value] of row.shorts)sv.setInt16(offset,value,true);
-    let cursor=0x2401000,allocation=0;
+    let cursor=0x2401000,allocation=0,portraitLabel=0xdeadbeef;
     const memory={put:(at,v)=>at>=0x2400000?view.setInt32(at-0x2400000,v,true):sv.setInt32(at-0x2300000,v,true),putByte:(at,v)=>heap[at-0x2400000]=v,
       get:at=>at>=0x2400000?view.getUint32(at-0x2400000,true):sv.getUint32(at-0x2300000,true),byte:at=>at>=0x2400000?heap[at-0x2400000]:scene[at-0x2300000]};
     const allocate=(kind,size,pool)=>{
@@ -170,7 +172,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       if(value)cursor+=(size+15)&~15;if(kind==='allocate')allocation++;
       calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;
     };
-    const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;}};
+    const host={portraitLabel:at=>{calls.push(['label',at]);return 0x76543210+row.count;},setPortraitLabel:value=>portraitLabel=value,allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;}};
     const resourceHost={
       allocateResource:host.allocate,renderer:0x2000800,
       constructSurface:(at,...args)=>{nativeCreatePanelImage(memory,at,...args,host);memory.put(at,0x5249b0);},
@@ -183,6 +185,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       startMusic:(...args)=>calls.push(['music',...args]),
     });
     else nativeInitializeMatchResources(heap.subarray(0,0x28c),scene,resourceHost);
+    if(row.root)expect(portraitLabel).toBe(row.portrait_label);
     resourceActual.push([createHash('sha256').update(heap).digest('hex'),createHash('sha256').update(scene).digest('hex'),calls]);
     resourceExpected.push([row.sha256,row.scene_sha256,row.calls]);
   }

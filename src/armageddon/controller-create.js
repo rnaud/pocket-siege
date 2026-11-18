@@ -1,3 +1,4 @@
+import {nativeCreateControllerPortrait,nativeCreateControllerFrame} from './controller-visual-resources.js';
 import { nativeCreateWorm } from './worm-create.js';
 import { nativeInitializeControllerResources } from './controller-resources.js';
 import { nativeEndTargeting } from './target-input.js';
@@ -39,7 +40,7 @@ export function nativeCreateTeamController({id,parent,memory=new Uint8Array(0x12
 
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
 import {nativeCreatePanelText} from './panel-resources.js';
-//Address-backed004E4ED0. Worm, portrait and frame constructors remain interfaces.
+//Address-backed004E4ED0. Worm construction remains an interface.
 export function nativeCreateTeamControllerAt(memory,address,parent,team,configurationAddress,host) {
   const scene=memory.get(parent+0x38),sceneMemory=memory.range(scene,0x20000);
   nativeInitializeTeamController(memory.range(address,0x120),sceneMemory,team,memory.range(configurationAddress,3000),{
@@ -52,8 +53,8 @@ export function nativeCreateTeamControllerAt(memory,address,parent,team,configur
     setSelectedWeapon:(wormTeam,worm,value)=>memory.put(scene+0x1b94+wormTeam*0x51c+worm*0x9c-0x508,value),
     resources:{allocateResource:size=>host.allocate(size),context:scene,renderer:memory.get(scene+8),
       palette:Array.from({length:9},(_,i)=>memory.get(scene+0x12434+i*4)),
-      constructPortrait:(at,...args)=>host.call(0x500170,at,args),
-      constructFrame:(at,...args)=>host.call(0x4ffed0,at,args),
+      constructPortrait:(at,...args)=>nativeCreateControllerPortrait(memory,at,...args,host),
+      constructFrame:(at,...args)=>nativeCreateControllerFrame(memory,at,...args,host),
       constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),
     },
     registerTask:(type,index)=>nativeRegisterTaskMemory(memory,address,type,index,host),
