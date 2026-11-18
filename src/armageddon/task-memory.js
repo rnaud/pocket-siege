@@ -33,3 +33,28 @@ export function nativeRegisterTaskMemory(memory,address,type,index,host) {
   memory.put(node+4,memory.get(head));memory.put(node+8,type);memory.put(node+12,index);memory.put(node+16,address);memory.put(head,node);
   return 1;
 }
+
+//004B26F0. Re-read count and backing array after every receiver callback.
+export function nativeForwardTaskEventMemory(memory,address,sender,event,size,payload,dispatch) {
+  let index=0;
+  while(index<(memory.get(address+20)|0)) {
+    const child=memory.get(memory.get(address+24)+index++*4);
+    if(child)dispatch(child,sender,event,size,payload);
+  }
+}
+
+//004CCF50/004B26A0. First matching node wins, even with duplicate keys.
+export function nativeLookupTaskMemory(memory,registry,type,index) {
+  const bucket=((Math.imul(index,17)+type)|0)%256;
+  let node=memory.get(registry+4+bucket*4);
+  while(node) {
+    if((memory.get(node+8)|0)===(type|0)&&(memory.get(node+12)|0)===(index|0))return memory.get(node+16);
+    node=memory.get(node+4);
+  }
+  return 0;
+}
+export function nativeSendTaskEventMemory(memory,address,sender,type,index,event,size,payload,dispatch) {
+  const target=nativeLookupTaskMemory(memory,memory.get(address+48),type,index);
+  if(!target)return 0;
+  dispatch(target,sender,event,size,payload);return 1;
+}

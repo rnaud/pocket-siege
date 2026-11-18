@@ -1,4 +1,6 @@
-import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from '../src/armageddon/task-memory.js';
+import groupDispatch from './fixtures/armageddon/event-group-dispatch.json' with {type:'json'};
+import {nativeDispatchEventGroupChildren} from '../src/armageddon/event-group.js';
+import {nativeCreateTaskMemory,nativeRegisterTaskMemory,nativeSendTaskEventMemory} from '../src/armageddon/task-memory.js';
 import {nativeSetGroupSubscription,nativeDispatchEventGroup} from '../src/armageddon/event-group.js';
 import worldCreate from './fixtures/armageddon/world-create.json' with {type:'json'};
 import {nativeInitializeWorld} from '../src/armageddon/world-create.js';
@@ -66,6 +68,38 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  for(const row of groupDispatch.send_cases) {
+    const bytes=new Uint8Array(0x8000),view=new DataView(bytes.buffer),calls=[];
+    const memory={get:at=>at===0x2000030?0x2306000:view.getUint32(at-0x2300000,true),put:(at,v)=>view.setInt32(at-0x2300000,v,true)};
+    groupDispatch.send_keys.forEach(([type,index],i)=>{
+      const node=0x2301000+i*20,head=0x2306004+(((Math.imul(index,17)+type)|0)%256)*4;
+      memory.put(node+4,memory.get(head));memory.put(node+8,type);memory.put(node+12,index);memory.put(node+16,0x2300000+i*256);memory.put(head,node);
+    });
+    const result=nativeSendTaskEventMemory(memory,0x2000000,0x12345678,...row.key,0x3e8,4,0xdeadbeef,(...args)=>{calls.push(args);return 0;});
+    expect([result,calls]).toEqual([row.result,row.calls]);
+  }
+  const dispatchActual=[],dispatchExpected=[];
+  for(const row of groupDispatch.cases) {
+    const owner=Uint8Array.from({length:0xa0},(_,i)=>(i*7+3)&255),arena=new Uint8Array(0x8000),calls=[];
+    const locate=at=>at>=0x2300000?[arena,at-0x2300000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];}};
+    for(let i=0;i<8;i++)memory.put(0x2300000+i*256,0x2308000);
+    for(let i=0;i<row.count;i++) {
+      memory.put(0x2304000+i*4,row.mask===1||row.mask===2&&i%2===0||row.mask===3&&i%2?0:0x2300000+i*256);
+      memory.put(0x2305000+i*4,0x2300000+(7-i)*256);
+    }
+    memory.put(0x2000014,row.count);memory.put(0x2000018,0x2304000);owner[0x3c]=row.enabled;
+    nativeDispatchEventGroupChildren(memory,0x2000000,0x12345678,0x3e8,4,0xdeadbeef,(...args)=>{
+      calls.push(args);if(calls.length!==1)return;
+      if(row.mode===1)memory.put(0x2000014,0);
+      else if(row.mode===2)memory.put(0x2304004,0);
+      else if(row.mode===3)memory.put(0x2000018,0x2305000);
+      else if(row.mode===4){memory.put(0x2304000+row.count*4,0x2300700);memory.put(0x2000014,row.count+1);}
+      else if(row.mode===5)memory.put(0x2000014,1);
+    });
+    dispatchActual.push([createHash('sha256').update(owner).update(arena).digest('hex'),calls]);dispatchExpected.push([row.sha256,row.calls]);
+  }
+  expect(dispatchActual).toEqual(dispatchExpected);
   const taskActual=[],taskExpected=[];
   for(const row of worldCreate.task_cases) {
     const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];

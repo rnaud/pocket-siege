@@ -1,4 +1,4 @@
-import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
+import {nativeCreateTaskMemory,nativeRegisterTaskMemory,nativeForwardTaskEventMemory} from './task-memory.js';
 //004EA9C0 with004ED970, composed task attachment and registry insertion.
 export function nativeCreateEventGroup(memory,address,parent,type,index,host) {
   nativeCreateTaskMemory(memory,address,parent,host);
@@ -15,4 +15,9 @@ export function nativeSetGroupSubscription(memory,address,event,enabled) {
 }
 export function nativeDispatchEventGroup(memory,address,sender,event,size,payload,forward) {
   if(memory.byte(address-0x3ac+event))forward(sender,event,size,payload);
+}
+
+export function nativeDispatchEventGroupChildren(memory,address,sender,event,size,payload,dispatch) {
+  nativeDispatchEventGroup(memory,address,sender,event,size,payload,
+    (...args)=>nativeForwardTaskEventMemory(memory,address,...args,dispatch));
 }
