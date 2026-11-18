@@ -1,4 +1,3 @@
-import {originalMissionPresentation} from './mission-presentation.js';
 import missionNames from './mission-names.json' with {type:'json'};
 // Full-screen front end built around the original imported menu bitmaps.
 // Existing controls retain their IDs and native form/dialog behavior.
@@ -78,10 +77,22 @@ export function mountArmageddonFrontend() {
   campaignBody.append(list, preview);
   campaign.append(campaignTitle, notice, campaignBody);
   const modeSelect = game.querySelector('#mode');
-  function showCampaign(kind) {
+  let campaignRequest = 0;
+  async function showCampaign(kind) {
+    const request = ++campaignRequest;
     const training = kind === 'training';
     campaignTitle.textContent = training ? 'TRAINING' : 'MISSIONS';
     list.replaceChildren(); preview.replaceChildren();
+    notice.textContent = 'Loading original scenarios…';
+    let originalMissionPresentation;
+    try { ({originalMissionPresentation} = await import('./mission-presentation.js')); }
+    catch {
+      if (request === campaignRequest && menu.dataset.frontendMode === kind)
+        notice.textContent = 'Scenarios could not load. Select this mode again to retry.';
+      return;
+    }
+    if (request !== campaignRequest || menu.dataset.frontendMode !== kind) return;
+    notice.textContent = 'Not playable yet. The original objectives, scripted events and progress saving are still being connected.';
     const paths = Object.keys(missionNames).filter(path => path.startsWith(`mission/${training ? 'training' : 'mission'}`)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
     paths.forEach((path, index) => {
       const scenario = originalMissionPresentation(path);
