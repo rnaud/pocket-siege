@@ -1,3 +1,5 @@
+import setupFixture from './fixtures/armageddon/inventory-setup.json' with {type:'json'};
+import { nativeBuildInventorySetup } from '../src/armageddon/inventory-setup.js';
 import initialization from './fixtures/armageddon/inventory-initialization.json' with {type:'json'};
 import { nativeInitializeInventory } from '../src/armageddon/inventory-initialization.js';
 import { createHash } from 'node:crypto';
@@ -20,6 +22,24 @@ const fixture = JSON.parse(
 );
 
 test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+  for(const row of setupFixture.cases) {
+    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(memory.buffer);
+    for(const [offset,size,value] of row.writes) {
+      if(size===1)view.setUint8(offset,value);else if(size===2)view.setUint16(offset,value,true);else view.setInt32(offset,value,true);
+    }
+    for(const [offset,name] of row.names)memory.set(new TextEncoder().encode(name+'\0'),offset);
+    const calls=[];
+    nativeBuildInventorySetup(memory,row.scheme,row.preset,row.extras,{
+      delay:slot=>{calls.push(['delay',slot]);return row.delays[slot];},
+      count:slot=>{calls.push(['count',slot]);return row.counts[slot];},
+      saved:team=>{calls.push(['stats',team]);return row.saved[team];},
+      special:team=>{calls.push(['special',team]);return row.specials[team];},
+    });
+    expect(calls).toEqual(row.calls);
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
+    const inventory=new Uint8Array(0x2c14);nativeInitializeInventory(inventory,memory.subarray(0x3c));
+    expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
+  }
   for(const row of initialization.cases) {
     const setup=new Uint8Array(0x10000),source=new DataView(setup.buffer);
     for(const [offset,size,value] of row.writes) {
