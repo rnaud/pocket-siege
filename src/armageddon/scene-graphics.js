@@ -42,3 +42,11 @@ export function nativePrepareSceneGraphics(memory,owner,frontend,initialAudio,ho
     host.loadSpeech(owner,memory.get(memory.get(owner+0x5cd0)+12));
   }
 }
+
+//004A5C61..004A5CB7: finish scene startup, then release the temporary palette.
+export function nativeFinishSceneGraphics(memory,owner,temporaryPalette,host) {
+  host.drawRendererPrimitive(memory.get(owner+0x2b4),-0x4000000,-0x4000000,0x1000067,0);
+  nativeClearStartupRenderer(memory,owner,host);
+  for(const bank of [1,2,3])host.commitRendererPalette(memory.get(owner+0x2b4),bank);
+  memory.put(temporaryPalette,0x524a14);
+}

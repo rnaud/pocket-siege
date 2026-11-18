@@ -1,3 +1,4 @@
+import sceneFinish from './fixtures/armageddon/scene-finish.json' with {type:'json'};
 import sceneTeamGraves from './fixtures/armageddon/scene-team-graves.json' with {type:'json'};
 import {nativeCreateSceneTeamGraves} from '../src/armageddon/scene-team-graves.js';
 import sceneTeamFlags from './fixtures/armageddon/scene-team-flags.json' with {type:'json'};
@@ -51,7 +52,7 @@ import {nativeLoadTerrainImage} from '../src/armageddon/terrain-image.js';
 import terrainFile from './fixtures/armageddon/terrain-file.json' with {type:'json'};
 import {nativeLoadTerrainFile} from '../src/armageddon/terrain-file.js';
 import sceneGraphics from './fixtures/armageddon/scene-graphics.json' with {type:'json'};
-import {nativePrepareSceneGraphics} from '../src/armageddon/scene-graphics.js';
+import {nativePrepareSceneGraphics,nativeFinishSceneGraphics} from '../src/armageddon/scene-graphics.js';
 import {nativeCreateSceneContext} from '../src/armageddon/scene-context.js';
 import missionSelection from './fixtures/armageddon/mission-selection.json' with {type:'json'};
 import missionNames from '../src/armageddon/mission-names.json' with {type:'json'};
@@ -211,6 +212,20 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneFinish.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
+    for(const [offset,value] of [[0x2b4,owner+0x6000],[0x5cd0,owner+0x8000],[0x8008,owner+0x6000],[0x6000,owner+0x6100],[0x6200,owner+0x6100],[0x6104,0x2200100],[0x6144,0x2200200],[0x6160,0x2200300],[0x6148,0x2200400],[0x6154,0x2200500]])memory.put(owner+offset,value);
+    const snapshot=()=>createHash('sha256').update(bytes.subarray(0,0x17f00)).update(bytes.subarray(0x18218,0x1821c)).digest('hex');
+    nativeFinishSceneGraphics(memory,owner,owner+0x18218,{
+      drawRendererPrimitive:(...args)=>{calls.push(['draw',...args,snapshot()]);if(c.mutation)memory.put(owner+0x2b4,owner+0x6200);},
+      rendererDimensions:(...args)=>{calls.push(['dimensions',...args,snapshot()]);if(c.mutation)memory.put(owner+0x8008,owner+0x6200);return [c.width,c.height];},
+      clearRendererRect:(...args)=>calls.push(['clear',...args,snapshot()]),
+      presentRenderer:(...args)=>calls.push(['present',...args,snapshot()]),
+      commitRendererPalette:(receiver,bank)=>{calls.push(['commit',receiver,bank,snapshot()]);if(c.mutation)memory.put(owner+0x2b4,owner+(receiver===owner+0x6200?0x6000:0x6200));},
+    });
+    expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
+  }
   for(const c of sceneTeamGraves.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x40000,c.pattern),calls=[];let allocated=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
