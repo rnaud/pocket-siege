@@ -1,3 +1,5 @@
+import missionWorms from './fixtures/armageddon/mission-worms.json' with {type:'json'};
+import {nativeLoadMissionWorms} from '../src/armageddon/mission-worms.js';
 import stringResources from '../src/armageddon/string-resources.json' with {type:'json'};
 import {originalResourceStringBytes} from '../src/armageddon/string-resources.js';
 import missionOwner from './fixtures/armageddon/mission-owner.json' with {type:'json'};
@@ -133,6 +135,24 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of missionWorms.cases) {
+    const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
+    const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
+    nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
+    memory.put(0x2000880,0x2001000);memory.put(0x2000054,c.mutation?1:-1);
+    memory.putByte(0x6e1834,c.counts[0]);memory.putByte(0x6e69c6,c.counts.length);
+    for(let i=1;i<c.counts.length;i++) {memory.putByte(0x6e2518+(i-1)*0xd7b,c.groups[i-1]);memory.putByte(0x6e25af+(i-1)*0xd7b,c.counts[i]);}
+    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    nativeLoadMissionWorms(memory,0x2000000,{
+      profileInt(section,key,fallback,filename) {
+        calls.push(['profile',section,key,fallback,filename,snapshot()]);
+        if(c.mutation)memory.put(0x2000880,filename===0x2001000?0x2001100:0x2001000);
+        const values=c.values[section.toLowerCase()]??{};return values[key.toLowerCase()]??values['*']??fallback;
+      },
+    });
+    expect({count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} worms ${c.mutation}`).toEqual({count:c.callCount,calls:c.callsSha256,state:c.sha256});
+  }
   for(const block of stringResources.blocks) {
     const parts=[];
     for(const text of block.strings) {const bytes=Buffer.from(text,'utf16le'),size=Buffer.alloc(2);size.writeUInt16LE(bytes.length/2);parts.push(size,bytes);}
