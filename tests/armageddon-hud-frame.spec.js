@@ -1,3 +1,4 @@
+import {nativeWriteActorMemory,nativeWriteTaskHeaderMemory,nativeWriteMatchMemory,nativeWriteEnvironmentMemory} from '../src/armageddon/replay-write-memory.js';
 import {nativeRestoreSceneSnapshot,nativeReplaySceneEntry} from '../src/armageddon/replay-scene-restore.js';
 import replayWormResources from './fixtures/armageddon/replay-worm-resources.json' with {type:'json'};
 import replayTaskMemory from './fixtures/armageddon/replay-task-memory.json' with {type:'json'};
@@ -1169,6 +1170,10 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     })).toBe(0x2000000);
     expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.result.calls);expect(stream.position).toBe(row.result.position);
     expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
+    memory.put(0x2001004,0x2008000);memory.put(0x2001008,0x8000);stream.seek(row.input.position);stream.length=row.input.position;stream.bytes.fill(0xcc);
+    expect(nativeWriteActorMemory(memory,0x2000000,stream)).toBe(row.roundTrip.result);
+    expect([stream.position,stream.length]).toEqual([row.roundTrip.position,row.roundTrip.length]);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.roundTrip.sha256);
   }
   for (const row of replayTreeRestore.cases) {
     const stream = new NativeReplayStream(32768), calls = [], allocations = [...row.input.allocations], tasks = [...row.input.tasks];
@@ -1440,6 +1445,25 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       registry, position: stream.position, returnedSelf: task.id === 9 }).toEqual(row.result);
   }
   for (const row of replayPhysics.cases) expect(nativeRestorePhysicsMembership(row.input)).toEqual(row.result);
+  for(const row of replayChildren.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x20000),env=initial.subarray(0x20000);
+    const locate=at=>at>=0x2030000?[env,at-0x2030000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    const stream=NativeReplayStream.fromMemory(memory,0x2004000);
+    expect(nativeWriteActorMemory(memory,0x2000000,stream)).toBe(row.result);
+    expect(stream.length).toBe(row.length);expect([...stream.bytes.subarray(0,stream.position)]).toEqual(row.bytes);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
+  }
+  for(const row of replayTask.cases) {
+    const bytes=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),view=new DataView(bytes.buffer),calls=[];
+    const memory={get:at=>view.getUint32(at-0x2000000,true),put:(at,value)=>view.setUint32(at-0x2000000,value,true),range:(at,size)=>bytes.subarray(at-0x2000000,at-0x2000000+size)};
+    const stream=NativeReplayStream.fromMemory(memory,0x2001000);
+    const writeChild=address=>{const index=memory.get(address+8),child=row.input.children[index];calls.push(index);stream.bytes.set(child.bytes,stream.position);stream.position+=child.bytes.length;stream.length=stream.position;return child.result;};
+    const writer={header:nativeWriteTaskHeaderMemory,controller:nativeWriteMatchMemory,environment:nativeWriteEnvironmentMemory}[row.kind];
+    expect(writer(memory,0x2000000,stream,writeChild)).toBe(row.result);
+    expect(calls).toEqual(row.calls);expect(stream.length).toBe(row.length);expect([...stream.bytes.subarray(0,stream.position)]).toEqual(row.bytes);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(row.sha256);
+  }
   for (const row of replayChildren.cases) {
     const schema = nativeReplayTaskTypes.find(type => type.tag === row.tag);
     const memory = Uint8Array.from({ length: schema.size }, (_, i) => (i * 13 + row.tag * 7 + row.position) & 255);

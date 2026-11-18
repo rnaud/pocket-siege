@@ -31,7 +31,7 @@ def write(address,value): cpu.mem_write(address,struct.pack('<I',value&0xfffffff
 def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 def signed(v):return v if v<0x80000000 else v-0x100000000
 
-import itertools
+import itertools,base64,zlib
 stream=owner+0x1000;buffer=owner+0x2000;children=owner+0x4000
 write(stream+4,buffer);write(stream+8,2048)
 current={};calls=[]
@@ -65,8 +65,9 @@ for kind,position,typeValue,registryType in itertools.product(['header','control
    write(children+index*4,obj if child else 0)
    if child:write(obj,obj+0x20);write(obj+0x24,stop+0x100);write(obj+8,index)
   cpu.mem_write(owner+0x3c,bytes(current['presentation']));cpu.mem_write(owner+0xd8,bytes(current['controller']));cpu.mem_write(owner+0x3b4,bytes(current['environment']))
+  initial=bytes(cpu.mem_read(owner,0x10000))
   calls.clear();result=run({'header':0x4b1f50,'controller':0x4b2d80,'environment':0x4c8ee0}[kind])
   end=read(stream+0x10)
-  cases.append({'kind':kind,'position':position,'input':current,'result':result,'calls':list(calls),'bytes':list(cpu.mem_read(buffer,end)),'length':read(stream+0xc)})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004B1F50/004B2D80/004C8EE0 with original base serializers and stream writes. Child virtual serializers are explicit byte/result interfaces, captured in traversal order.','cases':cases},separators=(',',':'))+'\n')
+  cases.append({'inputMemory':base64.b64encode(zlib.compress(initial)).decode(),'sha256':hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest(),'kind':kind,'position':position,'input':current,'result':result,'calls':list(calls),'bytes':list(cpu.mem_read(buffer,end)),'length':read(stream+0xc)})
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004B1F50/004B2D80/004C8EE0 with original base serializers and stream writes. Child virtual serializers are explicit byte/result interfaces, captured in traversal order. Full64KiB owner memory captured before/after, including complete stream buffer.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} original task records')

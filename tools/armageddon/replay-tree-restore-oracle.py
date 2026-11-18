@@ -40,7 +40,7 @@ cpu.mem_map(heapBase,0x40000)
 heap=heapBase;allocations=[];taskAllocations=[];calls=[];allocationCalls=[];fail=-1
 environment=0x2500000
 cpu.mem_map(environment,0x10000)
-write(context+0x7d4,environment);write(environment,environment+0x1000);write(environment+0x1034,0x4c8f80);write(environment+0x3c0,environment+0x2000);write(environment+0x2000+0x3a4,17)
+write(context+0x7d4,environment);write(environment,environment+0x1000);write(environment+0x1034,0x4c8f80);write(environment+0x1044,0x4c9300);write(environment+0x3c0,environment+0x2000);write(environment+0x2000+0x3a4,17)
 
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value)
@@ -70,6 +70,7 @@ def node(tag,children=[]):return {'tag':tag,'children':children}
 trees=[[],[node(tag) for tag in tags],[node(7,[node(9,[node(21,[node(30)])]),node(25)])],[node(tags[i%7]) for i in range(20)],[node(23,[node(tags[i%7]) for i in range(18)])]]
 cases=[]
 for position,tree,savedIndex in itertools.product([0,1,3],trees,[-1,3]):
+ write(stream+4,buffer);write(stream+8,16384)
  heap=heapBase;allocations.clear();taskAllocations.clear();calls.clear();allocationCalls.clear();cpu.mem_write(owner,bytes([0xa5])*0x28c)
  cpu.mem_write(context+0x1b778,bytes(0x168));write(context+0x1b8dc,320)
  for offset,storage in [(0x18,environment+0x3000),(0x34+2*0x1c,environment+0x4000)]:
@@ -109,5 +110,13 @@ for position,tree,savedIndex in itertools.product([0,1,3],trees,[-1,3]):
  result={'tree':capture(owner),'registry':registry,'all':listState(0x18),'category':listState(0x34+2*0x1c),'position':read(stream+0x10),'calls':list(calls)}
  final=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(environment,0x10000))
  cases.append({'inputMemory':base64.b64encode(zlib.compress(initial)).decode(),'sha256':hashlib.sha256(final).hexdigest(),'allocationCalls':list(allocationCalls),'input':{'position':position,'bytes':list(payload),'allocations':list(allocations),'tasks':list(taskAllocations)},'result':result})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004B2D40 with original recursive004B2230, base and seven concrete actor types, physics membership, registry and fresh setup children. Only heap and rendering constructors substituted. Empty/mixed/deep/wide trees cover duplicate keys, saved-slot conflicts and list growth. Complete512KiB owner/context/heap/environment memory and ordered allocator/free requests also captured.','cases':cases},separators=(',',':'))+'\n')
+ #Serialize the reconstructed task graph through the original virtual writers.
+ write(stream+4,owner+0x8000);write(stream+8,0x8000);write(stream+16,position);write(stream+12,position)
+ cpu.mem_write(owner+0x8000,bytes([0xcc])*0x8000)
+ write(sp,stop);write(sp+4,stream);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+ cpu.emu_start(0x4b2d80,stop+1,count=1000000)
+ if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('round-trip writer did not exit')
+ written=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(environment,0x10000))
+ cases[-1]['roundTrip']={'sha256':hashlib.sha256(written).hexdigest(),'position':read(stream+16),'length':read(stream+12),'result':cpu.reg_read(UC_X86_REG_EAX)}
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004B2D40 with original recursive004B2230, base and seven concrete actor types, physics membership, registry and fresh setup children. Only heap and rendering constructors substituted. Empty/mixed/deep/wide trees cover duplicate keys, saved-slot conflicts and list growth. Complete512KiB owner/context/heap/environment memory and ordered allocator/free requests also captured. Each restored tree is then serialized by original004B2D80 and concrete virtual writers; complete memory, stream cursor and length are captured again.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} populated trees')

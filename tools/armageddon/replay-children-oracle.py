@@ -31,7 +31,7 @@ def write(address,value): cpu.mem_write(address,struct.pack('<I',value&0xfffffff
 def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 def signed(v):return v if v<0x80000000 else v-0x100000000
 
-import itertools
+import itertools,base64,zlib
 schemas=json.loads(Path('src/armageddon/replay-task-types.json').read_text())
 context=owner+0x20000;env=owner+0x30000
 cpu.mem_map(context,0x10000);cpu.mem_map(env,0x10000)
@@ -46,7 +46,7 @@ cases=[]
 for schema in schemas:
  for position,membership,count in itertools.product([0,1,3],[0,1,2],([0,2] if schema['physics'] else [0])):
   tag=schema['tag'];memory=bytes((i*13+tag*7+position)&255 for i in range(schema['size']))
-  cpu.mem_write(owner,memory);write(owner+0x14,0);write(owner+0x2c,tag);write(owner+0x28,0x115);write(owner+0x24,0x129);write(owner+0x38,context)
+  cpu.mem_write(owner,memory);write(owner,int(schema['vtable'],16));write(owner+0x14,0);write(owner+0x2c,tag);write(owner+0x28,0x115);write(owner+0x24,0x129);write(owner+0x38,context)
   if schema['physics']:
    write(owner+0x3c,2);write(owner+0xc8,1 if count else 0);write(owner+0xdc,count);write(owner+0xf8,points);write(owner+0xe4,-29);write(owner+0xe8,88)
   payload=bytes((i*17+tag)&255 for i in range(count*8));cpu.mem_write(points,payload)
@@ -59,10 +59,12 @@ for schema in schemas:
   for i,value in enumerate(allList):write(env+0x2000+4*i,value)
   for i,value in enumerate(categoryList):write(env+0x2100+4*i,value)
   cpu.mem_write(buffer,bytes([0xa5])*0x4000);write(stream+0x10,position);write(stream+0xc,position)
+  initial=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x10000))+bytes(cpu.mem_read(env,0x10000))
   sp=stack+0xf000;write(sp,stop);write(sp+4,stream);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(int(schema['writer'],16),stop+1,count=100000)
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('child serializer did not exit')
   end=read(stream+0x10)
-  cases.append(dict(tag=tag,position=position,membership=membership,count=count,result=cpu.reg_read(UC_X86_REG_EAX),length=read(stream+0xc),bytes=list(cpu.mem_read(buffer,end)),references=[signed(read(owner+0xe4)),signed(read(owner+0xe8))] if schema['physics'] else None))
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'All21 concrete serializers from004B2230, original inheritance writers,004C9300 physics reference lookup,004FD370 animation serializer and stream writes. No algorithm hooks; null child lists (tree traversal verified separately).','cases':cases},separators=(',',':'))+'\n')
+  final=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x10000))+bytes(cpu.mem_read(env,0x10000))
+  cases.append(dict(inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sha256=hashlib.sha256(final).hexdigest(),tag=tag,position=position,membership=membership,count=count,result=cpu.reg_read(UC_X86_REG_EAX),length=read(stream+0xc),bytes=list(cpu.mem_read(buffer,end)),references=[signed(read(owner+0xe4)),signed(read(owner+0xe8))] if schema['physics'] else None))
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'All21 concrete serializers from004B2230, original inheritance writers,004C9300 physics reference lookup,004FD370 animation serializer and stream writes. No algorithm hooks; null child lists (tree traversal verified separately). Complete192KiB owner/context/environment memory captured, including unwritten stream tails.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete original child records')
