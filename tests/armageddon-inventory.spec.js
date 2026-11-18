@@ -1,5 +1,5 @@
 import setupFixture from './fixtures/armageddon/inventory-setup.json' with {type:'json'};
-import { nativeBuildInventorySetup, nativeSetupWeaponValue, nativeFindSetupTeam } from '../src/armageddon/inventory-setup.js';
+import { nativeBuildInventorySetup, nativeSetupWeaponValue, nativeFindSetupTeam, nativePrepareInventoryScheme } from '../src/armageddon/inventory-setup.js';
 import initialization from './fixtures/armageddon/inventory-initialization.json' with {type:'json'};
 import { nativeInitializeInventory } from '../src/armageddon/inventory-initialization.js';
 import { createHash } from 'node:crypto';
@@ -22,6 +22,21 @@ const fixture = JSON.parse(
 );
 
 test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+  for(const row of setupFixture.preparations) {
+    const template=setupFixture.cases[0],memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(memory.buffer);
+    for(const [offset,size,value] of template.writes) {
+      if(size===1)view.setUint8(offset,value);else if(size===2)view.setUint16(offset,value,true);else view.setInt32(offset,value,true);
+    }
+    for(const [offset,name] of template.names)memory.set(new TextEncoder().encode(name+'\0'),offset);
+    const state=Uint8Array.from(Buffer.from(row.initial,'hex'));
+    nativePrepareInventoryScheme(memory,state);
+    expect(Buffer.from(state).toString('hex')).toBe(row.prepared);
+    const descriptors=new Uint8Array(0x1d8);descriptors.fill(255,0xd0);
+    nativeBuildInventorySetup(memory,state.subarray(0x14,0xec),0,[],{descriptors,teamData:new Uint8Array(0x9000)});
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.setup_sha256);
+    const inventory=new Uint8Array(0x2c14);nativeInitializeInventory(inventory,memory.subarray(0x3c));
+    expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
+  }
   for(const row of setupFixture.lookups) {
     const data=new Uint8Array(0x9000);
     for(const [offset,hex] of row.writes)data.set(Buffer.from(hex,'hex'),offset);

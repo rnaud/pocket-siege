@@ -86,3 +86,16 @@ export function nativeBuildInventorySetup(memory, scheme, preset, extras, host) 
     }
   }
 }
+
+//00415540..004156C0: reset the round, preserve the216-byte source scheme,
+//then apply the original special-weapon defaults to the working scheme.
+//schemeState begins at006F454C; its active payload starts at+14.
+export function nativePrepareInventoryScheme(memory,schemeState) {
+  new DataView(memory.buffer,memory.byteOffset,memory.byteLength).setInt32(0x38,0,true);
+  schemeState.copyWithin(0xec,0x14,0xec);
+  if(schemeState[0x36]) {
+    for(const [offset,power,delay] of [[0xb8,2,7],[0xac,2,4],[0xb4,2,1],[0xb0,2,1],
+      [0xa0,2,1],[0xa4,2,2],[0xa8,2,1],[0xbc,3,0]])
+      schemeState.set([0,power,delay,1],0x14+offset);
+  }
+}

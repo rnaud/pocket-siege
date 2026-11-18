@@ -164,5 +164,25 @@ for active in [0,1,255]:
     cpu.emu_start(entry,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     results.append(signed(cpu.reg_read(UC_X86_REG_EAX)))
    lookups.append(dict(writes=writes,name=(query+b'\0').hex(),results=results))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,lookups=lookups,entry='00417750 / 004C2640',method='Complete original loadout builder; Original scheme count/delay getters and first-match table search execute; original saved-team and special-team name searches execute, using bundled CRT strncmp. Native special-delay gate and all stockpile/preset/special arithmetic execute. Every setup byte and interface call compared; original runtime initialization executes afterward and all inventory output bytes are captured.',cases=cases),separators=(',',':'))+'\n')
+preparations=[]
+for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['schemes']:
+ for special in [0,1,2,255]:
+  initial=bytearray((i*11+5)&255 for i in range(0x1c4));initial[0x14:0xec]=bytes(scheme['bytes']);initial[0x36]=special
+  cpu.mem_write(0x6f454c,bytes(initial));write(0x6f4554,0)
+  # Preset is part of the supplied scheme-state header.
+  initial[8:12]=bytes(4)
+  cpu.mem_write(owner,bytes((i*7+3)&255 for i in range(0x10000)))
+  for off,size,value in cases[0]['writes']:cpu.mem_write(owner+off,value.to_bytes(size,'little'))
+  for offset,name in cases[0]['names']:cpu.mem_write(owner+offset,name.encode()+b'\0')
+  cpu.mem_write(0x6de000,bytes(0x9000))
+  cpu.mem_write(descriptorAddress+0xd0,b'\xff'*264);write(0x6daf94,0xffffffff)
+  sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+  cpu.emu_start(0x415540,0x4156c0,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4156c0
+  prepared=bytes(cpu.mem_read(0x6f454c,0x1c4));run()
+  cpu.mem_write(output,bytes(0x2c14));sp=stack+0xf000;write(sp,stop);write(sp+4,owner+0x3c)
+  cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,output)
+  cpu.emu_start(0x4c2640,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+  preparations.append(dict(resource_id=scheme['resource_id'],special=special,initial=bytes(initial).hex(),prepared=prepared.hex(),
+    setup_sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest(),inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,lookups=lookups,preparations=preparations,entry='00417750 / 004C2640',method='Complete original loadout builder; Original scheme count/delay getters and first-match table search execute; original saved-team and special-team name searches execute, using bundled CRT strncmp. Native special-delay gate and all stockpile/preset/special arithmetic execute. Every setup byte and interface call compared; original runtime initialization executes afterward and all inventory output bytes are captured.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} loadout builds')
