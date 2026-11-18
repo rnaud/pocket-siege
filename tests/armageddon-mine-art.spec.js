@@ -26,6 +26,7 @@ test("live submerged mines use original water artwork at zero rotation", async (
     .poll(() => page.evaluate(() => window.siege?.getState().assetsReady))
     .toBe(true);
   await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#sound").click();

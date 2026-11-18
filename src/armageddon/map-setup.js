@@ -1,3 +1,4 @@
+import schemes from "./scheme-runtime-data.json" with { type: "json" };
 import { nativeGenerateMapCandidates } from "./map-generation.js";
 import { nativeBuildSpawnPool, nativeSpawnRandom } from "./spawn-pool.js";
 import { nativeMapObjects } from "./map-objects.js";
@@ -18,3 +19,12 @@ export function nativeGenerateMapSetup(layers,generation,landgenRandom,objects,s
   const candidates=nativeGenerateMapCandidates(layers,generation,landgenRandom);
   return {...candidates,...nativePrepareMapSpawns(candidates.points,objects,sceneMemory)};
 }
+
+// Default resource195 expanded by00415540. Builder d430 maps to scene11B9C;
+// natural count/fuse at d5a7/d5a6 therefore become11D13/11D12.
+const defaultScheme=schemes.schemes.find(s=>s.resource_id===195).bytes;
+const setting=offset=>defaultScheme[offset-schemes.context_offset];
+export const nativeDefaultMapObjects=Object.freeze({
+  count:setting(0x11d13),fuse:(setting(0x11d12)<<24)>>24,
+  kind:setting(0x11d50),edges:setting(0x11d51),
+});

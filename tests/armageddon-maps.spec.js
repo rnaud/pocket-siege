@@ -1,3 +1,4 @@
+import { nativeDefaultMapObjects } from "../src/armageddon/map-setup.js";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import { OriginalMapTerrain } from "../src/armageddon/maps.js";
@@ -76,10 +77,21 @@ test("authored map is playable at full size and switching back restores the host
   await page.locator("#mode").selectOption("local");
   await page.locator("#map-layout").selectOption("original:image/artclass.img");
   await page.locator("#start").click();
-  const state = await page.evaluate(() => window.siege.getState());
+  const state = await page.evaluate(async () => { await window.siege.debug.resetSeed(42); return window.siege.getState(); });
   expect(state.mapLayout).toBe("original:image/artclass.img");
   expect(state.world).toEqual({ width: 1920, height: 696 });
   expect(state.worms).toHaveLength(6);
+  expect(state.mines.length).toBeGreaterThan(0);
+  expect(state.hazards.length).toBeGreaterThan(0);
+  expect(state.mines.length+state.hazards.length).toBeLessThanOrEqual(nativeDefaultMapObjects.count);
+  for(const mine of state.mines) {
+    expect(mine.nativeTimer.placed).toBe(0);
+    expect(mine.nativeTimer.arm).toBe(0);
+    expect(mine.nativeTimer.fuse).toBe(nativeDefaultMapObjects.fuse*1000);
+    expect(mine.team).toBe(-1);
+    expect(mine.y).toBeGreaterThan(state.waterLevel);
+    expect(mine.nativeBody.x).not.toBe(0);
+  }
   expect(state.worms.every((w) => w.hp === 100 && w.y > state.waterLevel)).toBe(
     true,
   );
@@ -109,13 +121,13 @@ test("all authored maps support six separated, grounded worm spawns including ca
     const positions = originalMapSpawns(
       terrain,
       80,
-      6,42,theme,{count:2,kind:1,edges:0,fuse:3},
+      6,42,theme,nativeDefaultMapObjects,
     );
     expect(positions, asset.id).toHaveLength(6);
-    expect(terrain.nativeSpawnSetup.objects.length).toBeLessThanOrEqual(2);
+    expect(terrain.nativeSpawnSetup.objects.length).toBeLessThanOrEqual(nativeDefaultMapObjects.count);
     for(const object of terrain.nativeSpawnSetup.objects) {
-      expect(object.kind).toBe("barrel");
-      expect(positions.some(p=>p.x===object.x/65536 && p.y===terrain.height-object.y/65536)).toBe(false);
+      const x=object.kind==="mine"?object.payload[2]:object.x,y=object.kind==="mine"?object.payload[3]:object.y;
+      expect(positions.some(p=>p.x===x/65536 && p.y===terrain.height-y/65536)).toBe(false);
     }
     const worms = positions.map((p) => ({
       ...p,

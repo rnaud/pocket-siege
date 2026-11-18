@@ -71,7 +71,7 @@ import { startOriginalAxe, stepOriginalAxe } from "./armageddon/art.js";
 import { nativeBatRequest } from "./armageddon/bat.js";
 import { nativeProdRequest } from "./armageddon/prod.js";
 import { nativeProjectileDepth } from "./armageddon/projectile-lifetime.js";
-import { nativeMineBase, nativeMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
+import { nativeMineBase, nativeMineBody, nativeSettleMineBody, NATIVE_MINE_FRICTION } from "./armageddon/mine-body.js";
 import { nativeMineBlast } from "./armageddon/mine-blast.js";
 import { nativeMineContact } from "./armageddon/mine-contact.js";
 import { nativeMineArt } from "./armageddon/mine-art.js";
@@ -85,7 +85,7 @@ import { nativeWaterSound } from "./armageddon/water-audio.js";
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from "./armageddon/motion.js";
 import { nativeContactReceiver } from "./armageddon/contact-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
-import { nativeMineTimer, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
+import { nativeMineTimer, nativeMineTimerFromRecord, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
 import { NativeCameraFraming } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
@@ -165,6 +165,7 @@ import {
 import { nativeSceneGirderPlacement } from "./armageddon/girder-placement.js";
 import { nativeClampPlacementTarget } from "./armageddon/target-placement.js";
 import { loadNativeMapTheme, preparedNativeMapTheme } from "./armageddon/map-theme.js";
+import { nativeDefaultMapObjects } from "./armageddon/map-setup.js";
 import { originalMapSpawns } from "./armageddon/map-placement.js";
 import {
   originalMapCatalog,
@@ -1118,7 +1119,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         terrain,
         waterLevel,
         slots.length,matchSeed,preparedNativeMapTheme(terrain.theme,true),
-        {count:2,kind:1,edges:0,fuse:3},
+        nativeDefaultMapObjects,
       )
     : slots.map((x) => ({ x, y: null }));
   paintTerrain(ctx, terrain, texture);
@@ -1251,7 +1252,7 @@ function spawnHazards(requests=null) {
   if (hazards.length || !terrain) return;
   if(requests) {
     for(const request of requests) {
-      if(request.kind!=="barrel")throw new Error("Natural mine constructor is not connected");
+      if(request.kind==="mine"){spawnNaturalMine(request);continue;}
       const mesh=createOriginalObject("oildrum1",-14);
       const hazard={mesh,nativeOrderId:nativeRenderOrder.allocate()};
       hazard.nativeBody=nativeBarrelBody(request.x,request.y,request.settle,
@@ -3266,6 +3267,37 @@ function placeMine() {
   nativePlacedWeaponAction("mine", worms[current], H, spawnPlacedMine,
     () => finishAction("Mine planted. Retreat!"));
 }
+function registerLiveMine(mine,color) {
+  const mineSlots = Array(24).fill(null);
+  for (const old of mines) mineSlots[old.nativeSlot] = {
+    frame: old.nativeCreatedFrame, x: old.nativeBody.x, y: old.nativeBody.y,
+  };
+  const registration = nativeMineRegistration(mineSlots, matchRandom.frame, color);
+  mine.nativeOrderId = nativeRenderOrder.allocate();
+  for (const call of registration.calls) {
+    if (call.operation === "effect") spawnNativeParticleRequest(call.request);
+    else if (call.operation === "delete") {
+      const oldIndex = mines.findIndex(old => old.nativeSlot === registration.slot);
+      if (oldIndex >= 0) removeMine(oldIndex);
+    }
+  }
+  mine.nativeSlot = registration.slot;
+  mine.nativeCreatedFrame = registration.registeredFrame;
+  mines.push(mine);
+}
+function spawnNaturalMine(request) {
+  const payload={x:request.payload[2],y:request.payload[3],vx:request.payload[4],vy:request.payload[5]};
+  const timer=nativeMineTimerFromRecord(request.record,request.placed);
+  const mine={owner:-1,team:-1,arm:timer.arm/1000,nativeTimer:timer,
+    nativeWater:{bubbleProgress:0,waterFlagsSet:0,splashActive:0},
+    mesh:createOriginalObject("mineoff",4),bob:0};
+  const collide=(x,y,body)=>nativeSceneCollision(mine,body,x/65536,H-y/65536,terrain,worms,H);
+  mine.nativeBody=nativeMineBody(nativeMineBase(NATIVE_MINE_FRICTION),payload,timer.arm,NATIVE_MINE_FRICTION,collide);
+  if(request.settle)mine.nativeBody=nativeSettleMineBody(mine.nativeBody,payload,Math.floor(H-waterLevel),collide);
+  mine.x=mine.nativeBody.x/65536;mine.y=H-mine.nativeBody.y/65536;
+  mine.mesh.position.set(mine.x,mine.y,18);group.add(mine.mesh);
+  registerLiveMine(mine,0);
+}
 function spawnPlacedMine(release) {
   const w = worms[current],
     mesh = createOriginalObject("mineoff", 4);
@@ -3288,22 +3320,7 @@ function spawnPlacedMine(release) {
   mine.y = H - mine.nativeBody.y / 65536;
   mesh.position.set(mine.x, mine.y, 18);
   group.add(mesh);
-  const mineSlots = Array(24).fill(null);
-  for (const old of mines) mineSlots[old.nativeSlot] = {
-    frame: old.nativeCreatedFrame, x: old.nativeBody.x, y: old.nativeBody.y,
-  };
-  const registration = nativeMineRegistration(mineSlots, matchRandom.frame, team === 0 ? 2 : 0);
-  mine.nativeOrderId = nativeRenderOrder.allocate();
-  for (const call of registration.calls) {
-    if (call.operation === "effect") spawnNativeParticleRequest(call.request);
-    else if (call.operation === "delete") {
-      const oldIndex = mines.findIndex(old => old.nativeSlot === registration.slot);
-      if (oldIndex >= 0) removeMine(oldIndex);
-    }
-  }
-  mine.nativeSlot = registration.slot;
-  mine.nativeCreatedFrame = registration.registeredFrame;
-  mines.push(mine);
+  registerLiveMine(mine,team === 0 ? 2 : 0);
   ammo[team].mine = spendAmmo(ammo[team].mine);
   if (ammo[team].mine === 0) setWeapon("rocket");
   charging = false;

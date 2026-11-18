@@ -80,7 +80,7 @@ test("native object strips preserve ping-pong playback and feet when changing ca
 test("planting a mine displays the original unarmed sprite", async ({
   page,
 }) => {
-  await start(page);
+  await start(page, "fern");
   if (!(await page.locator(".weapon-panel").isVisible()))
     await page.locator("#inventory-toggle").click();
   await page.locator('[data-weapon="mine"]').click();
