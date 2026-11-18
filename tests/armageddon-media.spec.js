@@ -41,7 +41,7 @@ test("every imported visual preserves its original bytes and native containers d
       expect(Buffer.from(imageRGBA(image, transparent, { mapping, colors: palette.colors })))
         .toEqual(Buffer.from(imageRGBA(image, transparent)));
   }
-  expect(catalog.assets).toHaveLength(3094);
+  expect(catalog.assets).toHaveLength(3099);
   const counts = { img: 0, spr: 0, bmp: 0 };
   let frames = 0;
   for (const asset of catalog.assets) {
@@ -75,7 +75,7 @@ test("every imported visual preserves its original bytes and native containers d
       );
     }
   }
-  expect(counts).toEqual({ spr: 961, img: 1217, bmp: 916 });
+  expect(counts).toEqual({ spr: 961, img: 1217, bmp: 921 });
   expect(frames).toBe(22473);
 });
 
@@ -110,7 +110,7 @@ test("browser decodes every original bitmap without conversion", async ({
     );
     return { decoded, errors };
   });
-  expect(result).toEqual({ decoded: 916, errors: [] });
+  expect(result).toEqual({ decoded: 921, errors: [] });
 });
 
 test("complete gallery previews terrain images, uncompressed sprites and maps", async ({
@@ -118,7 +118,7 @@ test("complete gallery previews terrain images, uncompressed sprites and maps", 
 }) => {
   await page.goto("/armageddon.html");
   await expect(page.locator("#media-count")).toContainText(
-    "3094 original visual assets",
+    "3099 original visual assets",
   );
   await page.locator("#media-group").selectOption("terrain");
   await page.locator("#media-search").fill("custom/forest/level/");

@@ -40,6 +40,10 @@ if (selection.errors?.length) {
   console.error(selection.errors); process.exit(1);
 }
 const related = new Set();
+//This existing spec reads the catalog and asset bytes through fs, so imports
+//alone cannot reveal its dependency on media and canonical sprite files.
+if (changed.some(file => /^public\/armageddon\/(?:media(?:\/|\.json$)|sprites\/)/.test(file)))
+  related.add('tests/armageddon-media.spec.js');
 function collect(suite) {
   for (const spec of suite.specs ?? []) related.add(`tests/${spec.file}`);
   for (const child of suite.suites ?? []) collect(child);
