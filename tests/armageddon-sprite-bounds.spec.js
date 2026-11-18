@@ -243,6 +243,10 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       expect(snapshot()).toBe(step.selected_state);
       expect(nativePrepareSpriteBitmap(memory,sprite)).toBe(step.result);
       expect(snapshot(),`${c.path}, cache ${c.capacity}, progress ${step.progress}`).toBe(step.state);
+      if(c.path) {
+        const live=decodeSprite(raw),frame=live.frames[memory.get(sprite+52)],pixels=memory.get(bitmap+8),mapping=memory.get(sprite+44);
+        expect(Array.from({length:frame.pixels.length},(_,i)=>memory.byte(pixels+i))).toEqual(Array.from(frame.pixels,index=>memory.byte(mapping+index)));
+      }
       const drawn=(memory.get(sprite+56)|0)>0&&(memory.get(sprite+60)|0)>0?nativeBlitIndexedBitmap(memory,owner+0x6000,step.x,24,memory.get(sprite+56),memory.get(sprite+60),bitmap,0,0,0,step.flags):0;
       expect(drawn).toBe(step.drawn);
       expect(snapshot()).toBe(step.drawn_state);

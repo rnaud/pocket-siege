@@ -1,3 +1,5 @@
+import {nativeDecodeSpriteBlock} from './sprite-bitmap.js';
+
 // Original SPR container: indexed palette, independently compressed blocks,
 // frame rectangles and packed block/offset addresses. No image resampling.
 export function decodeSprite(buffer) {
@@ -29,40 +31,44 @@ export function decodeSprite(buffer) {
   const width = u16(p + 6),
     height = u16(p + 8),
     count = u16(p + 10);
-  p += 12;
+  p = (p + 12 + 3) & ~3;
   const frames = [];
   for (let i = 0; i < count; i++, p += 12)
     frames.push({
       address: u32(p),
-      left: u16(p + 4),
-      top: u16(p + 6),
-      right: u16(p + 8),
-      bottom: u16(p + 10),
+      left: view.getInt16(p + 4, true),
+      top: view.getInt16(p + 6, true),
+      right: view.getInt16(p + 8, true),
+      bottom: view.getInt16(p + 10, true),
     });
   const blocks = descriptors.map(({ offset, size }) => {
     const result = new Uint8Array(size);
-    let src = p + offset,
-      dst = 0;
-    while (src < bytes.length) {
-      const command = bytes[src++];
-      if (!(command & 128)) {
-        if (dst >= size) throw new Error("SPR literal overflow");
-        result[dst++] = command;
-        continue;
-      }
-      const length = (command >> 3) & 15;
-      let distance = ((command & 7) << 8) | bytes[src++];
-      if (!length && !distance) break;
-      const run = length ? length + 2 : bytes[src++] + 18;
-      if (length) distance++;
-      if (distance > dst || dst + run > size)
-        throw new Error("Invalid SPR back reference");
-      for (let j = 0; j < run; j++) {
-        result[dst] = result[dst - distance];
-        dst++;
-      }
-    }
-    if (dst !== size) throw new Error("Incomplete SPR block");
+    const sourceBase=0x10000000,mappingBase=0x20000000;
+    let written=0;
+    // The recovered decoder operates on addresses. This bounded adapter keeps
+    //file validation at the browser boundary and supplies an identity palette;
+    //the shared game palette is allocated later in native descriptor order.
+    nativeDecodeSpriteBlock({
+      byte(address) {
+        if(address>=mappingBase) {
+          const index=address-mappingBase;
+          if(index>255)throw new Error("Invalid SPR palette index");
+          return index;
+        }
+        if(address>=sourceBase) {
+          const index=address-sourceBase;
+          if(index>=bytes.length)throw new Error("Incomplete SPR block");
+          return bytes[index];
+        }
+        if(address<0||address>=written)throw new Error("Invalid SPR back reference");
+        return result[address];
+      },
+      putByte(address,value) {
+        if(address<0||address>=size)throw new Error("SPR block overflow");
+        result[address]=value;written=address+1;
+      },
+    },0,sourceBase+p+offset,mappingBase);
+    if(written!==size)throw new Error("Incomplete SPR block");
     return result;
   });
   if (!compressed) blocks.push(bytes.subarray(p));
@@ -101,7 +107,7 @@ export function spriteFrameRGBA(sprite, index, sharedPalette = null) {
     for (let x = frame.left; x < frame.right; x++) {
       const sourceIndex = frame.pixels[source++];
       // circle25 includes scanline padding beyond its declared 50px canvas.
-      if (x >= sprite.width || y >= sprite.height) continue;
+      if (x < 0 || y < 0 || x >= sprite.width || y >= sprite.height) continue;
       if (sharedPalette) {
         const index = sharedPalette.mapping[sourceIndex];
         if (index === 0) continue;
