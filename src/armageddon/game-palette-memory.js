@@ -55,3 +55,20 @@ export function nativeReadGamePaletteColor(memory,palette,index,output) {
   for(let c=0;c<3;c++)output[c]=word(memory,palette+12+index*6+c*2);
   return 1;
 }
+
+//004A6ED0: copy palette state without replacing the destination vtable.
+//Preserve the original forward DWORD/WORD/byte order for overlapping storage.
+export function nativeCopyGamePalette(memory,destination,source) {
+  memory.put(destination+4,memory.get(source+4));memory.put(destination+8,memory.get(source+8));
+  for(let i=0;i<256;i++) {
+    memory.put(destination+12+i*6,memory.get(source+12+i*6));
+    putWord(memory,destination+16+i*6,word(memory,source+16+i*6));
+  }
+  for(let i=0;i<256;i++)memory.putByte(destination+0x60c+i,memory.byte(source+0x60c+i));
+  for(const [count,list] of [[0x70c,0x70e],[0x90e,0x910]]) {
+    putWord(memory,destination+count,word(memory,source+count));
+    for(let i=0;i<256;i++)putWord(memory,destination+list+i*2,word(memory,source+list+i*2));
+  }
+  for(const offset of [0xb10,0xb14])memory.put(destination+offset,memory.get(source+offset));
+  return destination;
+}

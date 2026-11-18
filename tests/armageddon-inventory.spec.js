@@ -1,3 +1,5 @@
+import sceneFonts from './fixtures/armageddon/scene-fonts.json' with {type:'json'};
+import {nativeLoadSceneFonts} from '../src/armageddon/scene-fonts.js';
 import sceneStartup from './fixtures/armageddon/scene-resource-startup.json' with {type:'json'};
 import {nativeStartScene} from '../src/armageddon/scene-resource-startup.js';
 import sceneWorldResources from './fixtures/armageddon/scene-world-resources.json' with {type:'json'};
@@ -222,6 +224,28 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneFonts.cases) {
+    const owner=0x2000000,stack=0x2100000,bytes=Buffer.alloc(0x10000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let groups=0;
+    const region=a=>a>=stack?[stackBytes,a-stack]:[bytes,a-owner];
+    const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200200],[0x5cd0,owner+0x4000],[0x4008,owner+0x6000],[0x2ac,0x11223344],[0x2b4,owner+0x6000],[0x6000,owner+0x6100],[0x6200,owner+0x6100],[0x6114,0x2200100],[0x6154,0x2200300],[0x6178,0x2200400]])memory.put(owner+offset,value);
+    for(let i=0;i<0xb18;i++){bytes[0x8000+i]=(i*13+7)&255;bytes[0x9000+i]=(i*17+3)&255;}
+    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0xe4e8,0xf000)).digest('hex');
+    const record=(name,...args)=>calls.push([name,...args,snapshot()]);
+    nativeLoadSceneFonts(memory,owner,stack+0xe4e8,{
+      getRendererPalette:(...args)=>{record('palette',...args);return owner+(c.alternate&&groups?0x9000:0x8000);},
+      loadFontResourceGroup:(...args)=>{
+        record('group',...args);groups++;
+        if(c.mutation){memory.put(owner+0x800c,0x12345678);memory.put(owner+0x2ac,0x87654321);memory.put(owner+0x2b4,owner+0x6200);memory.put(owner+0x4008,owner+0x6200);}
+      },
+      commitRendererPalette:(...args)=>record('commit',...args),
+      loadRendererFont:(...args)=>{
+        record('font',...args);
+        if(c.mutation){memory.put(owner+0x2ac,memory.get(owner+0x2ac)+1);memory.put(owner+0x2b4,owner+(args[0]===owner+0x6200?0x6000:0x6200));}
+      },
+    });
+    expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
+  }
   for(const c of sceneResourceFinish.cases) {
     const owner=0x2000000,stack=0x2100000,bytes=Buffer.alloc(0x100000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,images=0;
     for(const [offset,hex] of c.initial)Buffer.from(hex,'hex').copy(bytes,offset);
