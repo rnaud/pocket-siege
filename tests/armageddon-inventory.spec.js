@@ -1,3 +1,5 @@
+import sceneStartup from './fixtures/armageddon/scene-resource-startup.json' with {type:'json'};
+import {nativeStartScene} from '../src/armageddon/scene-resource-startup.js';
 import sceneWorldResources from './fixtures/armageddon/scene-world-resources.json' with {type:'json'};
 import {nativeCreateSceneWorldResources} from '../src/armageddon/scene-world-resources.js';
 import sceneResourceFinish from './fixtures/armageddon/scene-resource-finish.json' with {type:'json'};
@@ -407,6 +409,57 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     expect(createHash('sha256').update(image.pixels).digest('hex')).toBe(source.sha256);
     return image;
   });
+  for(const c of sceneStartup.cases) {
+    const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x400000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000;
+    const region=a=>a>=owner?[bytes,a-owner]:[stackBytes,a-stack];
+    const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
+    arrowSources.forEach((image,i)=>{
+      const at=owner+0x20000+i*0x2000;bytes.set(image.pixels,at-owner);
+      for(const [offset,value] of [[0,0x5249b0],[4,1],[8,at],[12,8],[16,60],[20,60],[24,60],[28,0],[32,0],[36,60],[40,60]])memory.put(owner+0x10000+i*0x40+offset,value);
+    });
+    bytes.set(toolSource.pixels,0x60000);
+    for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200700],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
+    for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x9200],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,1],[40,1]])memory.put(owner+0x9100+offset,value);
+    memory.putByte(owner+0x9200,3);
+    for(const bank of [1,2]) {
+      const at=bank===1?0xa000:0xb000;
+      memory.put(owner+at+4,1);memory.put(owner+at+8,7);bytes.writeUInt16LE(8,at+0x90e);
+      for(let i=0;i<8;i++) {
+        bytes.writeUInt16LE(i,at+0x910+i*2);bytes[at+0x60c+i]=1;
+        (bank===1?[43,71,97]:[17,53,91]).forEach((m,j)=>bytes.writeUInt16LE((i*m+bank*20)&255,at+12+i*6+j*2));
+      }
+    }
+    const frontend=owner+0x350000;bytes.fill(0,0x350000,0x35dc64);memory.putByte(frontend+0xde,c.count);
+    const colors=Uint8Array.from({length:768},(_,i)=>(Math.floor(i/3)*[43,71,97][i%3])&255);
+    bytes.set(colors,0x350000+0x48a4-0x47a8);bytes.set(Uint8Array.from({length:768},(_,i)=>(Math.floor(i/24)+i%24)%12),0x350000+0x4ba4-0x47a8);
+    bytes.set(colors,0x350000+0x4ea4-0x47a8);bytes.set(Uint8Array.from({length:340},(_,i)=>(Math.floor(i/20)+i%20)%12),0x350000+0x51a4-0x47a8);
+    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x821c)).digest('hex');
+    const record=(name,...args)=>calls.push([name,...args,snapshot()]);
+    const image=(palette,archive,name)=>{record('image',palette,archive,name);return name==='masks.img'?owner+0x9000:name==='fill.img'?owner+0x9100:name.startsWith('arrow')?owner+0x10000+Number(name.slice(5,7))*0x40:owner+0xe000;};
+    nativeStartScene(memory,owner,[owner+0x6000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0]},{
+      allocate:size=>{allocated++;record('allocate',size);return owner+({[0x1d44c]:0x300000,[0x19c]:0x5000,[0xb2c]:0xd0000}[size]??(0x70000+allocated*0x100));},
+      allocateArray:(size,pool)=>{record('array',size,pool);const result=pixels;pixels+=(size+15)&~15;return result;},
+      getRendererPalette:(renderer,bank)=>{record('palette',renderer,bank);return owner+(bank===2?0xb000:0xa000);},
+      loadNamedImage:image,loadNamedArchiveImage:image,freeSized:(...args)=>record('free',...args),
+      createTerrain:(terrain,settings)=>{
+        const {maskImage,renderer,mode,path,count,positions,metadata,water}=settings;
+        record('terrain',terrain,maskImage,renderer,mode,path,count,positions,metadata,water);
+        memory.put(terrain,0x526588);memory.put(terrain+0xc4,0x12345678);memory.put(terrain+0xb20,0x11111111);memory.put(terrain+0xb24,0x22222222);memory.put(count,c.count);
+        for(let i=0;i<c.count;i++){memory.put(positions+i*8,100+i*30);memory.put(positions+i*8+4,200+i*20);}
+        return terrain;
+      },
+      initializePalette:(...args)=>record('paletteInit',...args),
+      openGraphicsArchive:(...args)=>{record('archive',...args);return 1;},
+      initializePaletteBanks:(...args)=>record('banks',...args),loadStartupFonts:(...args)=>record('fonts',...args),
+      addPaletteColor:(...args)=>{record('color',...args);return 3;},
+      loadResourceGroup:(...args)=>record('group',...args),loadRendererSprite:(...args)=>record('sprite',...args),
+      commitRendererPalette:(...args)=>record('commit',...args),
+      pumpLoadingEvents:()=>record('pump'),rendererDimensions:(...args)=>{record('dimensions',...args);return [640,480];},
+      clearRendererRect:(...args)=>record('clear',...args),drawRendererPrimitive:(...args)=>record('draw',...args),presentRenderer:(...args)=>record('present',...args),
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of sceneWorldResources.cases) {
     const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x400000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000;
     const region=a=>a>=owner?[bytes,a-owner]:[stackBytes,a-stack];
