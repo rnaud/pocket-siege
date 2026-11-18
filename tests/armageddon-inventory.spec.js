@@ -1,3 +1,4 @@
+import wormMemorySpawn from './fixtures/armageddon/worm-memory-spawn.json' with {type:'json'};
 import wormMemoryAnimation from './fixtures/armageddon/worm-memory-animation.json' with {type:'json'};
 import wormMemory from './fixtures/armageddon/worm-memory.json' with {type:'json'};
 import {nativeCreateWormAt} from '../src/armageddon/worm-create.js';
@@ -73,7 +74,7 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const wormActual=[],wormExpected=[];
-  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true}))]) {
+  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true}))]) {
     const owner=new Uint8Array(0x10000),heap=new Uint8Array(0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
@@ -86,6 +87,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       placeWorm:(x,y)=>{calls.push(['place',x,y,memory.get(0x2000040)|0,memory.get(0x2000048)|0]);return ++attempts>=c.successAt;},
       changeState:state=>calls.push(['state',state]),settlePhysics:c.synchronized?undefined:()=>calls.push(['settle']),animationMetadata:(renderer,id)=>{calls.push(['metadata',renderer,id]);return {rate:id%3?25<<16:0,loop:id%2,span:5+id%7};},
     };
+    if(c.nativeSpawn)for(const key of ['randomSpawnWord','randomSpawn','sideSpawn','reserveSpawn'])delete host[key];
     nativeCreateTaskMemory(memory,0x2008000,0,host);memory.put(0x2008038,0x2300000);
     nativeCreateWormAt(memory,0x2000000,0x2008000,c.team,c.worm,0x2001000,host);
     wormActual.push([createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),calls]);wormExpected.push([c.sha256,c.calls]);

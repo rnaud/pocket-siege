@@ -1,6 +1,6 @@
 import { nativeSynchronizeWormMemory, nativeSynchronizeWormAt } from "./worm-animation-sync.js";
 import { nativeInitializeWormPlacement } from "./worm-placement.js";
-import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom } from './spawn-pool.js';
+import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom, nativeSelectSpawnAt, nativeSelectSideSpawnAt, nativeReserveSpawnAt } from './spawn-pool.js';
 import { nativeInitializePhysics } from './physics-create.js';
 import { nativeInitializeWormResources } from './worm-resources.js';
 //004D5A40 fixed initial fields, in native order around the gravity query.
@@ -105,6 +105,10 @@ export function nativeCreateWormAt(memory,address,parent,team,worm,configuration
       nativeCreatePhysicsAt(memory,address,parent,category,shape,host);
       memory.put(address,0x526de0);memory.put(address+0x2c,type);
     },
+    randomSpawnWord:host.randomSpawnWord??(()=>nativeSpawnRandom(memory.range(scene,0x20000))),
+    randomSpawn:host.randomSpawn??(random=>{const output={};if(!nativeSelectSpawnAt(memory,memory.get(scene+0x44c),random,output))throw new RangeError('No native spawn candidate');return output.value;}),
+    sideSpawn:host.sideSpawn??(right=>{const output={};if(!nativeSelectSideSpawnAt(memory,memory.get(scene+0x44c),right,output))throw new RangeError('No native spawn candidate');return output.value;}),
+    reserveSpawn:host.reserveSpawn??(position=>nativeReserveSpawnAt(memory,memory.get(scene+0x44c),position)),
     setWormBusy:(team,worm,value)=>memory.put(scene+0x1b94+team*0x51c+worm*0x9c-0x4fc,value),
     wormHealth:(team,worm)=>memory.get(scene+0x1b94+team*0x51c+worm*0x9c-0x538)|0,
     allocateAnimation:size=>host.allocate(size),
