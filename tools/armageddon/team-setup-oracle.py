@@ -34,19 +34,21 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 
 cpu.mem_map(0,0x1000)
 sprintf=stop+0x100;cpu.mem_write(sprintf,b'\xc3');write(0x5178f4,sprintf)
-cpu.mem_write(0x4703a0,b'\xc3')
+cpu.mem_write(0x4703a0,b'\xc3');cpu.mem_write(0x4190c0,b'\xc3')
 def cstring(address):
  result=bytearray()
  while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
  return bytes(result)
 def hook(cpu,address,size,user):
- if address==0x4703a0:
+ if address==0x4190c0:
+  calls.append(['seed']);cpu.reg_write(UC_X86_REG_EAX,0xfedcba98)
+ elif address==0x4703a0:
   calls.append(['handicap']);cpu.reg_write(UC_X86_REG_EAX,handicap)
  elif address==sprintf:
   sp=cpu.reg_read(UC_X86_REG_ESP);dest,fmt,arg=read(sp+4),cstring(read(sp+8)),read(sp+12)
   value=fmt%(arg if b'%c' in fmt else cstring(arg));cpu.mem_write(dest,value+b'\0')
   paths.append(value.hex()+'00');calls.append(['speech',b'%c' in fmt]);cpu.reg_write(UC_X86_REG_EAX,len(value))
-for address in [sprintf,0x4703a0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [sprintf,0x4703a0,0x4190c0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 output=owner+0x20000;cpu.mem_map(output,0x10000)
 cases=[]
 for mask in [0,1,0x15,0x2a,0x3f]:
@@ -69,9 +71,12 @@ for mask in [0,1,0x15,0x2a,0x3f]:
     cpu.mem_write(0x6f48bc,b'C:\\WORMS\0');cpu.mem_write(0x6e1178,b'D')
     sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
     paths=[];calls=[];cpu.emu_start(0x419150,0x4194cb,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4194cb
+    for entry in ([0x419840,0x4198d0] if mask else [0x4198d0]):
+     sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+     cpu.emu_start(entry,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     cpu.mem_write(output,bytes(0x2c14));sp=stack+0xf000;write(sp,stop);write(sp+4,owner+0x3c)
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,output)
     cpu.emu_start(0x4c2640,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     cases.append(dict(inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest(),writes=writes,scheme=list(scheme),handicap=handicap,paths=paths,calls=calls,sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='00419150..004194CB',method='Original player/team/worm construction and bank/count getters execute. Handicap enablement and speech-path formatting are interfaces. Stops before CString/filesystem speech fallback. Full setup bytes and boundary calls compared, then original004C2640 imports the records and all inventory output bytes are captured.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='00419150..004194CB',method='Original player/team/worm construction and bank/count getters execute. Handicap enablement and speech-path formatting are interfaces. Stops before CString/filesystem speech fallback. Full setup bytes and boundary calls compared, native initial/next-round starting-order selection follows, then original004C2640 imports the records and all inventory output bytes are captured.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} team setups')

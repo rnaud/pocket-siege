@@ -1,3 +1,5 @@
+import turnOrder from './fixtures/armageddon/setup-turn-order.json' with {type:'json'};
+import {nativeInitializeSetupTurnOrder,nativeAdvanceSetupTurnOrder} from '../src/armageddon/setup-turn-order.js';
 import teamSetup from './fixtures/armageddon/team-setup.json' with {type:'json'};
 import {nativeBuildTeamSetup} from '../src/armageddon/team-setup.js';
 import setupFixture from './fixtures/armageddon/inventory-setup.json' with {type:'json'};
@@ -24,6 +26,17 @@ const fixture = JSON.parse(
 );
 
 test("inventory matches 120 cases executed by the original x86 routines", { tag: "@logic" }, () => {
+  for(const row of turnOrder.cases) {
+    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
+    for(const [offset,value] of row.writes)memory[offset]=value;
+    let used=0;
+    for(const step of row.steps) {
+      if(step.entry==='00419840')nativeInitializeSetupTurnOrder(memory,()=>row.seeds[used++%row.seeds.length]);
+      else nativeAdvanceSetupTurnOrder(memory);
+      expect(used).toBe(step.seed_calls);
+      expect(createHash('sha256').update(memory).digest('hex')).toBe(step.sha256);
+    }
+  }
   for(const row of teamSetup.cases) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
     const frontend=Uint8Array.from({length:0x7000},(_,i)=>(i*13+7)&255),view=new DataView(frontend.buffer);
@@ -35,6 +48,8 @@ test("inventory matches 120 cases executed by the original x86 routines", { tag:
       handicapEnabled:()=>{calls.push(['handicap']);return row.handicap;},
       speechPath:cd=>{calls.push(['speech',cd]);return Buffer.from(row.paths[path++],'hex');},
     });
+    if(memory[0xcd74])nativeInitializeSetupTurnOrder(memory,()=>{calls.push(['seed']);return 0xfedcba98;});
+    nativeAdvanceSetupTurnOrder(memory);
     expect(calls).toEqual(row.calls);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
     const inventory=new Uint8Array(0x2c14);nativeInitializeInventory(inventory,memory.subarray(0x3c));

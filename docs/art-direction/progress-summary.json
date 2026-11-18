@@ -164,9 +164,10 @@
     },
     {
       "title": "Setup, missions & progression",
-      "live": "Local match setup, authored-map selection, schemes and series play are available. Native frontend team construction now reproduces active player packing, shared bank assignment, artwork/name copying and handicap-derived worm records.60 executable captures compare complete setup output and its import into native runtime inventory. Filesystem speech fallback and live frontend orchestration remain.",
+      "live": "Local match setup, authored-map selection, schemes and series play are available. Native frontend team construction now reproduces active player packing, shared bank assignment, artwork/name copying and handicap-derived worm records.60 executable captures compare complete setup output and its import into native runtime inventory. Filesystem speech fallback and live frontend orchestration remain. Native initial starting-bank/team selection and between-round rotation now match168 executable sequences and compose with60 team-construction/import captures. Persistent frontend seed service and live series wiring remain.",
       "remaining": "Reproduce native team setup, saved schemes, missions, training and campaign progression.",
       "evidence": [
+        "native_setup_turn_order",
         "native_frontend_team_setup",
         "embedded_scheme_resources",
         "scheme_runtime_expansion"
