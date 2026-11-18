@@ -54,7 +54,11 @@ test("arsenal and field kit use native icons with integer layout and disabled va
   await page.goto("/");
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
+  // Random authored terrain can kill the active worm during startup. Icon
+  // variants need a reproducible living actor, independent of spawn coverage.
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#inventory-toggle").click();
+  await expect(page.locator('[data-weapon="rocket"]')).toBeEnabled();
   const bazooka = page.locator('[data-weapon="rocket"] canvas.original-icon');
   await expect(bazooka).toHaveAttribute("data-original-icon", "hi/bazooka");
   await page.evaluate(() => window.siege.debug.setAmmo(0, "grenade", 0));
