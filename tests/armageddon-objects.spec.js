@@ -33,7 +33,7 @@ test("original crates descend by parachute and switch to ground idle art", async
 test("cluster fragments and fire use original art in live gameplay", async ({
   page,
 }) => {
-  await start(page);
+  await start(page, "fern");
   await page.evaluate(() => window.siege.debug.explodeAt(600, 500, "cluster"));
   const fragments = await page.evaluate(() => window.siege.getState().bombs);
   expect(fragments).toHaveLength(5);

@@ -1075,7 +1075,15 @@ test("field kit teleport and girder target the battlefield", async ({
   expect(state.utilities.girder).toBe(beforeGirder.utilities.girder);
   expect(state.terrainPixels).toBe(beforeGirder.terrainPixels);
   expect(state.phase).toBe("aim");
-  await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.3);
+  // Resolve world coordinates and dispatch in the same frame; camera easing
+  // must not turn a valid near-worm target into a different world position.
+  await page.evaluate(() => {
+    const state=window.siege.getState(),w=state.worms[state.current],camera=state.camera;
+    const arena=document.querySelector("#arena"),box=arena.getBoundingClientRect();
+    arena.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,pointerType:"mouse",button:0,
+      clientX:box.x+(w.x+80-camera.x)/camera.w*box.width,
+      clientY:box.y+(1-(w.y+100-camera.y)/camera.h)*box.height}));
+  });
   state = await page.evaluate(() => window.siege.getState());
   expect(state.girders).toHaveLength(1);
   expect(state.utilities.girder).toBe(0);
