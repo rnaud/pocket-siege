@@ -1,3 +1,4 @@
+import { nativeAdvanceWeaponDelays } from './weapon-delays.js';
 import { nativeAcquireInputOwner, nativeReleaseInputOwner } from './controller-ownership.js';
 import { nativeSelectDefaultWeapon } from './default-weapon.js';
 
@@ -13,7 +14,10 @@ export function nativeControllerActivation(memory,sceneMemory,payload,host) {
   if(!host.matchMode(1))put(0x60,(get(0x60)+1)|0);
   host.selfEvent(0x440,0,null);put(0x40,1);
   host.sendWorm(2,((get(0x3c)<<4)+get(0x4c))|0,0x41c,payload);
-  if(get(0x60)>1)host.advanceWeaponDelays();
+  if(get(0x60)>1) {
+    if(host.advanceWeaponDelays)host.advanceWeaponDelays();
+    else nativeAdvanceWeaponDelays(memory,host);
+  }
   if(scene.getInt8(0x11d7c)===get(0x44)) {
     put(0xf0,nativeAcquireInputOwner(scene,0x1b848));
     put(0xec,nativeAcquireInputOwner(scene,0x1b7e0));

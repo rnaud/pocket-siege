@@ -1,3 +1,5 @@
+import weaponDelays from "./fixtures/armageddon/weapon-delays.json" with { type: "json" };
+import { nativeAdvanceWeaponDelays } from "../src/armageddon/weapon-delays.js";
 import controllerShot from "./fixtures/armageddon/controller-shot.json" with { type: "json" };
 import controllerPostShot from "./fixtures/armageddon/controller-post-shot.json" with { type: "json" };
 import { nativeControllerPendingWeapon } from "../src/armageddon/controller-post-shot.js";
@@ -257,6 +259,19 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of weaponDelays.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),calls=[],delays=[...c.initial];
+    for(const [o,v] of [[0x3c,c.team],[0x54,c.priority],[0xc8,c.dirty]])body.setInt32(o,v,true);
+    nativeAdvanceWeaponDelays(memory,{
+      weaponDelay:(team,slot)=>{calls.push(["delay",team,slot]);return delays[slot-1];},
+      setWeaponDelay:(team,slot,value)=>{calls.push(["set",team,slot,value]);delays[slot-1]=value;},
+      weaponUnlockTemplates:()=>{calls.push(["templates"]);return c.texts;},random:()=>{calls.push(["random"]);return c.rng;},
+      formatTeamAnnouncement:(template,team)=>{calls.push(["format",template,team]);return template.replace("%s","TeamName");},
+      announce:(...args)=>calls.push(["announce",...args]),teamSound:(...args)=>{calls.push(["teamSound",...args]);return 123;},
+      sound:(...args)=>calls.push(["sound",...args]),
+    });
+    expect({calls,delays,resultDirty:body.getInt32(0xc8,true)}).toEqual({calls:c.calls,delays:c.delays,resultDirty:c.resultDirty});
   }
   for(const c of controllerShot.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000);
