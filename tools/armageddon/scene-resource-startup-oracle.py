@@ -67,13 +67,19 @@ def hook(cpu,address,size,user):
  elif address==stop+0x500:calls.append(['draw',receiver,*[signed(read(sp+i*4)) for i in range(1,5)],snapshot()]);ret(0,16)
  elif address==stop+0x600:calls.append(['present',receiver,snapshot()]);ret()
  elif address==0x4cc460:calls.append(['archive',receiver,cstring(read(sp+4)),snapshot()]);ret(1,4)
- elif address==0x4a6b10:calls.append(['fonts',receiver,snapshot()]);ret()
- elif address==stop+0x700:calls.append(['group',receiver,*[read(sp+i*4) for i in range(1,6)],snapshot()]);ret(0,20)
+ elif address==stop+0x700:
+  descriptor=read(sp+20)
+  if stack<=descriptor<stack+0x10000:
+   values=[read(descriptor+i*4) for i in range(6)];values[1]=cstring(values[1]);calls.append(['fontGroup',receiver,*[read(sp+i*4) for i in range(1,5)],values,snapshot()])
+   if values[0]==5:write(owner+0xa00c,0x12345678)
+  else:calls.append(['group',receiver,*[read(sp+i*4) for i in range(1,6)],snapshot()])
+  ret(0,20)
  elif address==stop+0x800:calls.append(['sprite',receiver,*[read(sp+i*4) for i in range(1,5)],cstring(read(sp+20)),read(sp+24),snapshot()]);ret(0,24)
  elif address==stop+0x900:calls.append(['commit',receiver,read(sp+4),snapshot()]);ret(0,4)
  elif address==stop+0xa00:calls.append(['createPalette',receiver,read(sp+4),read(sp+8),snapshot()]);ret(0,8)
+ elif address==stop+0xb00:calls.append(['font',receiver,*[read(sp+i*4) for i in range(1,5)],cstring(read(sp+20)),snapshot()]);ret(0,20)
 write(0x5178f4,stop+0x200)
-for a in [0x492550,0x4924d0,0x492590,0x492710,0x4a78a0,0x491fa0,0x4cc460,0x4a6b10,*[stop+i*0x100 for i in range(1,11)]]:cpu.hook_add(UC_HOOK_CODE,hook,begin=a,end=a)
+for a in [0x492550,0x4924d0,0x492590,0x492710,0x4a78a0,0x491fa0,0x4cc460,*[stop+i*0x100 for i in range(1,12)]]:cpu.hook_add(UC_HOOK_CODE,hook,begin=a,end=a)
 cases=[]
 for pattern,count in [(0,0),(0xa5,1)]:
  calls=[];allocated=0;pixels=owner+0x100000;cpu.mem_write(owner,bytes([pattern])*0x400000);cpu.mem_write(stack,bytes([pattern])*0x10000)
@@ -82,7 +88,7 @@ for pattern,count in [(0,0),(0xa5,1)]:
   for offset,v in [(0,0x5249b0),(4,1),(8,at),(12,8),(16,60),(20,60),(24,60),(28,0),(32,0),(36,60),(40,60)]:write(owner+0x10000+i*0x40+offset,v)
  cpu.mem_write(owner+0x60000,bytes(mask['pixels']))
  for offset,v in [(0,0x5249b0),(4,1),(8,owner+0x60000),(12,8),(16,512),(20,512),(24,64),(28,0),(32,0),(36,512),(40,64)]:write(owner+0x9000+offset,v)
- for offset,v in [(0,owner+0x6400),(0x6404,stop+0x700),(0x6000,owner+0x6100),(0x6114,stop+0x100),(0x6110,stop+0xa00),(0x6104,stop+0x300),(0x6144,stop+0x400),(0x6148,stop+0x500),(0x6160,stop+0x600),(0x6170,stop+0x800),(0x6154,stop+0x900),(0x2b4,owner+0x6000)]:write(owner+offset,v)
+ for offset,v in [(0,owner+0x6400),(0x6404,stop+0x700),(0x6000,owner+0x6100),(0x6114,stop+0x100),(0x6110,stop+0xa00),(0x6104,stop+0x300),(0x6144,stop+0x400),(0x6148,stop+0x500),(0x6160,stop+0x600),(0x6170,stop+0x800),(0x6178,stop+0xb00),(0x6154,stop+0x900),(0x2b4,owner+0x6000)]:write(owner+offset,v)
  for offset,v in [(0,0x5249b0),(4,1),(8,owner+0x9200),(12,8),(16,4),(20,1),(24,1),(28,0),(32,0),(36,1),(40,1)]:write(owner+0x9100+offset,v)
  cpu.mem_write(owner+0x9200,b'\x03')
  for bank in [1,2]:
@@ -103,5 +109,5 @@ for pattern,count in [(0,0),(0xa5,1)]:
  cpu.emu_start(0x4a5350,stop,count=100000000)
  assert cpu.reg_read(UC_X86_REG_EIP)==stop
  cases.append(dict(pattern=pattern,count=count,calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004A5350',method='Two complete original offline startup executions compose context creation and payload copy,graphics bootstrap,working bitmap,terrain dispatch,all fixed/arrow collision masks,spawn pool,loading updates,theme and HUD resources,custom team art and final cleanup. Full4MiB owner memory plus spawn scratch and temporary palette compare at every external callback and completion. Temporary palette construction,three-bank setup,shared black allocation and all team color insertions now execute natively within both full startup captures. Heap,archive/named image loading,terrain constructor,font backend,renderer palette creation and other renderer calls,event pump and sprintf remain interfaces. Native terrain constructor is the port default but not composed in this capture. Live browser startup remains unfinished.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004A5350',method='Two complete original offline startup executions compose context creation and payload copy,graphics bootstrap,working bitmap,terrain dispatch,all fixed/arrow collision masks,spawn pool,loading updates,theme and HUD resources,custom team art and final cleanup. Full4MiB owner memory plus spawn scratch and temporary palette compare at every external callback and completion. Temporary palette construction,three-bank setup,shared black allocation and all team color insertions now execute natively within both full startup captures. Heap,archive/named image loading,terrain constructor,font resource backend,renderer palette creation and other renderer calls,event pump and sprintf remain interfaces. Native terrain constructor is the port default but not composed in this capture. Original004A6B10 font setup and004A6ED0 palette save/restore now execute inside both complete captures; CD-ROM resource loading deliberately changes the palette to verify restoration before subsequent resources. Font resource groups and renderer font loading remain interfaces. Live browser startup remains unfinished.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete scene resource startup sequences')
