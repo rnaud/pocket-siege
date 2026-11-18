@@ -1,3 +1,4 @@
+import missionNativeBitmaps from './fixtures/armageddon/mission-native-bitmaps.json' with {type:'json'};
 import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
 import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
 import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
@@ -145,6 +146,10 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const bitmap of Object.values(missionNativeBitmaps.bitmaps)) {
+    const path=`../public/armageddon/media/${bitmap.source.slice(5).toLowerCase()}`;
+    expect(createHash('sha256').update(fs.readFileSync(new URL(path,import.meta.url))).digest('hex')).toBe(bitmap.sha256);
+  }
   for(const c of setupBitmap.cases) {
     const owner=Buffer.from(Uint8Array.from({length:0x10000},(_,i)=>(i*13+5)&255)),source=Buffer.from(Uint8Array.from({length:0x10000},(_,i)=>(i*7+11)&255)),calls=[];
     const locate=address=>address>=0x2300000?[source,address-0x2300000]:[owner,address-0x2000000];
@@ -190,10 +195,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   }
   // The deepest capture supersedes the earlier all-profile callback captures.
   // Keep scheme rejection separately: native mission bank0 always exists.
-  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeFlags.cases]) {
+  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeBitmaps.cases]) {
     const globalBase=c.nativeInitializer?0x6da000:0x6e0000;
     const globals=Buffer.alloc(c.nativeInitializer?0x30000:0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
-    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
+    const bitmapBytes=Buffer.alloc(0x10000);
+    const locate=address=>address>=0x2600000?[bitmapBytes,address-0x2600000]:address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     memory.range=(address,length)=>{const [b,o]=locate(address);return b.subarray(o,o+length);};
     if(c.nativeInitializer) {
@@ -243,6 +249,19 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     if(c.nativeFlags) {
       delete host.loadTeamFlag;
       host.loadFlagBitmap=(...args)=>{calls.push(['flagBitmap',...args,snapshot()]);memory.put(args[2],0x12345678);memory.put(args[1],0x76543210);};
+    }
+    if(c.nativeBitmaps) {
+      delete host.loadFlagBitmap;
+      let bitmap;
+      host.loadImage=(...args)=>{
+        calls.push(['loadImage',...args,snapshot()]);bitmap=missionNativeBitmaps.bitmaps[args[1].split('\\').at(-1).toLowerCase()];
+        bitmapBytes.set(Buffer.from(bitmap.pixels,'hex'));return c.mutation?0:0x1234;
+      };
+      host.getBitmap=(...args)=>{calls.push(['getBitmap',...args,snapshot()]);return {...bitmap,bits:0x2600000};};
+      host.deleteImage=(...args)=>{calls.push(['deleteImage',...args,snapshot()]);};
+      host.openPalette=(...args)=>{calls.push(['openPalette',...args,snapshot()]);return 0x5678;};
+      host.readPalette=(...args)=>{calls.push(['readPalette',...args,snapshot()]);memory.range(args[1],1024).set(Buffer.from(bitmap.palette,'hex'));};
+      host.closePalette=(...args)=>{calls.push(['closePalette',...args,snapshot()]);};
     }
     let storedSeed=null;
     if(c.nativeInitializer) {

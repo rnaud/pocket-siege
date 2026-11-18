@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import struct
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
-from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_EBP, UC_X86_REG_EDI, UC_X86_REG_ESI
+from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EAX, UC_X86_REG_EDX, UC_X86_REG_EBP, UC_X86_REG_EDI, UC_X86_REG_ESI
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
@@ -13,7 +13,9 @@ parser.add_argument('--native-services',action='store_true')
 parser.add_argument('--native-scheme',action='store_true')
 parser.add_argument('--native-initializer',action='store_true')
 parser.add_argument('--native-flags',action='store_true')
+parser.add_argument('--native-bitmaps',action='store_true')
 args = parser.parse_args()
+args.native_flags |= args.native_bitmaps
 args.native_initializer |= args.native_flags
 args.native_scheme |= args.native_initializer
 args.native_services |= args.native_scheme
@@ -57,6 +59,43 @@ def setstring(obj,value):
 write(0x517494,stop+0x800);write(0x51745c,stop+0x900)
 write(0x5174a4,stop+0x100);write(0x5178f4,stop+0x200)
 write(0x517954,stop+0x300);write(0x517950,stop+0x400);write(0x5174a8,stop+0x500)
+bitmapRecords={};activeBitmap=None
+if args.native_bitmaps:
+ cpu.mem_map(0x2600000,0x10000)
+ for name in ['AUSTRIA.BMP',*[f'CPUFLAG{i}.BWW' for i in range(1,6)]]:
+  path=args.executable.parents[2]/'DATA'/'USER'/'FLAGS'/name
+  payload=path.read_bytes();assert payload[:2]==b'BM'
+  offset=struct.unpack_from('<I',payload,10)[0];header,width,height,planes,bpp,compression=struct.unpack_from('<IiiHHI',payload,14)
+  assert header==40 and planes==1 and bpp==8 and compression==0
+  stride=((width*8+31)//32)*4
+  #DirectX2D.dll10002151..10002182 constructs RGB0 DirectDraw entries
+  #from BMP BGR0 bytes. Palette acquisition remains an explicit interface.
+  palette=bytearray(1024)
+  for i in range(256):palette[i*4:i*4+4]=bytes([payload[54+i*4+2],payload[54+i*4+1],payload[54+i*4],0])
+  bitmapRecords[name.lower()]=dict(source='DATA/USER/FLAGS/'+name,sha256=hashlib.sha256(payload).hexdigest(),width=width,height=height,stride=stride,pixels=payload[offset:offset+abs(height)*stride].hex(),palette=palette.hex())
+ for address,offset in [(0x517a28,0xd00),(0x517408,0xe00),(0x517450,0xf00),(0x712ea4,0x1000),(0x712e44,0x1100),(0x712e38,0x1200)]:write(address,stop+offset)
+def bitmapHook(cpu,address,size,user):
+ global activeBitmap
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ if address==stop+0xd00:
+  values=[read(sp+i) for i in range(4,28,4)];values[1]=cstring(values[1]).decode('cp1252')
+  calls.append(['loadImage',*values,snapshot()]);activeBitmap=bitmapRecords[values[1].replace('\\','/').split('/')[-1].lower()]
+  cpu.mem_write(0x2600000,bytes.fromhex(activeBitmap['pixels']));ret(0 if mutation else 0x1234,24)
+ elif address==stop+0xe00:
+  calls.append(['getBitmap',read(sp+4),read(sp+8),snapshot()]);dest=read(sp+12);cpu.mem_write(dest,bytes(0x54))
+  for offset,value in [(4,activeBitmap['width']),(8,activeBitmap['height']),(12,activeBitmap['stride']),(20,0x2600000)]:write(dest+offset,value)
+  ret(0x54,12)
+ elif address==stop+0xf00:
+  calls.append(['deleteImage',read(sp+4),snapshot()]);ret(1,4)
+ elif address==stop+0x1000:
+  calls.append(['openPalette',cstring(cpu.reg_read(UC_X86_REG_EDX)).decode('cp1252'),snapshot()]);write(cpu.reg_read(UC_X86_REG_ECX),0x5678);ret()
+ elif address==stop+0x1100:
+  dest=cpu.reg_read(UC_X86_REG_EDX)
+  calls.append(['readPalette',cpu.reg_read(UC_X86_REG_ECX),dest,read(sp+4),read(sp+8),snapshot()]);cpu.mem_write(dest,bytes.fromhex(activeBitmap['palette']));ret(256,8)
+ elif address==stop+0x1200:
+  calls.append(['closePalette',read(cpu.reg_read(UC_X86_REG_ECX)),snapshot()]);ret()
+if args.native_bitmaps:
+ for offset in range(0xd00,0x1300,0x100):cpu.hook_add(UC_HOOK_CODE,bitmapHook,begin=stop+offset,end=stop+offset)
 def hook(cpu,address,size,user):
  global rng,storedSeed
  sp=cpu.reg_read(UC_X86_REG_ESP)
@@ -150,6 +189,7 @@ def hook(cpu,address,size,user):
   values=profile.get(section.lower(),{})
   ret(values.get(key.lower(),fallback),16)
 for address in [0x503d48,0x503d24,0x503dc0,0x503d42,0x503d2a,0x503d1e,0x503ec2,0x470a20,0x415540,0x4197d0,0x419610,0x419740,0x41b730,0x41bc40,*([0x40f210] if args.native_flags else []),stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600,stop+0x700,stop+0x800,stop+0x900,*([0x503f10,0x503f16,0x4703a0,stop+0xa00,stop+0xb00,stop+0xc00] if args.native_initializer else [])]:
+ if args.native_bitmaps and address==0x40f210:continue
  if args.native_flags and address==0x41bc40:continue
  if args.native_initializer and address==0x415540:continue
  if args.native_scheme and address==0x470a20:continue
@@ -192,7 +232,7 @@ while read(p+12):
   i+=1
  p+=20
 countryCases=[];flagCases=[]
-if args.native_flags:
+if args.native_flags and not args.native_bitmaps:
  for country in [-2147483648,-1,*range(52),2147483647]:
   for pattern in [0,0xa5]:
    cpu.mem_write(owner,bytes([pattern])*65);sp=stack+0xe000;write(sp,stop);write(sp+4,country);write(sp+8,owner);cpu.reg_write(UC_X86_REG_ESP,sp)
@@ -230,7 +270,7 @@ cases=[];originalTables=True
 for name,profile,strings,failure,unselected in profiles:
  if args.native_scheme and failure:continue
  for mutation in [0,1]:
-  teams=profile.get('teams',{}).get('teamsinmission',1);pattern=0xa5 if mutation else 0;country=4 if mutation else 1
+  teams=profile.get('teams',{}).get('teamsinmission',1);pattern=0xa5 if mutation else 0;country=4 if mutation or args.native_bitmaps else 1
   cpu.mem_write(globalBase,bytes([pattern])*globalSize);cpu.mem_write(owner,bytes([pattern])*0x10000)
   initializing=False
   if args.native_initializer:
@@ -248,7 +288,7 @@ for name,profile,strings,failure,unselected in profiles:
   rng=123+pattern
   calls=[];initializing=True;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43e910,stop,count=2000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
+  cases.append(dict(profile=name,nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
 schemeCases=[]
 if args.native_scheme and not args.native_initializer:
  for selection in [-1,*range(19),2147483647]:
@@ -258,5 +298,5 @@ if args.native_scheme and not args.native_initializer:
     sp=stack+0xe000;write(sp,stop);write(sp+4,selection);write(sp+8,bank);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6f454c)
     cpu.emu_start(0x470a20,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     schemeCases.append(dict(selection=selection,bank=bank,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')
