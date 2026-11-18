@@ -1,3 +1,5 @@
+import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
+import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
 import missionNativeBitmaps from './fixtures/armageddon/mission-native-bitmaps.json' with {type:'json'};
 import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
 import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
@@ -146,6 +148,35 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of [...filePalette.cases,...filePalette.destroyCases.map(c=>({...c,destroyOnly:true}))]) {
+    const heap=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const memory={get:address=>heap.readUInt32LE(address-0x2000000),put:(address,value)=>heap.writeUInt32LE(value>>>0,address-0x2000000),byte:address=>heap[address-0x2000000],putByte:(address,value)=>{heap[address-0x2000000]=value;}};
+    const snapshot=()=>createHash('sha256').update(heap).digest('hex');
+    let allocated=0,entries=Buffer.alloc(1024);
+    const host={
+      device:()=>c.destroyOnly&&!c.present?0:0x2300000,
+      openFile(...args){calls.push(['openFile',...args,snapshot()]);return c.missing?0:0x5678;},
+      allocate(...args){calls.push(['allocate',...args,snapshot()]);return 0x2001000+(allocated++)*0x2000;},
+      free(...args){calls.push(['free',...args,snapshot()]);},
+      seekFile(...args){calls.push(['seekFile',...args,snapshot()]);},
+      readFile(...args){calls.push(['readFile',...args,snapshot()]);const bytes=Buffer.from(Uint8Array.from({length:1068},(_,i)=>(i*19+7)&255));bytes.writeUInt16LE(c.bits,14);heap.set(bytes.subarray(0,c.amount),args[0]-0x2000000);return c.amount;},
+      closeFile(...args){calls.push(['closeFile',...args,snapshot()]);},
+      createPalette(device,flags,bytes,dest,outer){entries=Buffer.from(bytes);calls.push(['createPalette',device,flags,entries.toString('hex'),dest,outer,snapshot()]);memory.put(dest,0x2300200);return c.createResult;},
+      getPaletteEntries(handle,flags,first,count,dest){calls.push(['getPaletteEntries',handle,flags,first,count,dest,snapshot()]);heap.set(entries.subarray(first*4,(first+count)*4),dest-0x2000000);return -123;},
+      releasePalette(...args){calls.push(['releasePalette',...args,snapshot()]);},
+    };
+    if(c.destroyOnly) {
+      memory.put(0x2000000,c.empty?0:0x2003000);memory.put(0x2003404,0x2300200);memory.put(0x200340c,c.refs);
+      expect(nativeDestroyFilePalette(memory,0x2000000,host)).toBe(c.result);
+    } else {
+      expect(nativeLoadFilePalette(memory,0x2000000,'fixture.bmp',host)).toBe(c.result);
+      expect([snapshot(),calls.length]).toEqual([c.loaded,c.loadCalls]);
+      expect(nativeGetFilePaletteEntries(memory,memory.get(0x2000000),0x2005000,0,256,host)).toBe(c.access);
+      expect([snapshot(),calls.length]).toEqual([c.accessed,c.accessCalls]);
+      expect(nativeDestroyFilePalette(memory,0x2000000,host)).toBe(c.destroyed);
+    }
+    expect({calls,sha256:snapshot()},JSON.stringify(c)).toEqual({calls:c.calls,sha256:c.sha256});
+  }
   for(const bitmap of Object.values(missionNativeBitmaps.bitmaps)) {
     const path=`../public/armageddon/media/${bitmap.source.slice(5).toLowerCase()}`;
     expect(createHash('sha256').update(fs.readFileSync(new URL(path,import.meta.url))).digest('hex')).toBe(bitmap.sha256);

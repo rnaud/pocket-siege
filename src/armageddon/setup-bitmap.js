@@ -1,4 +1,5 @@
-//0040F210. Windows bitmap acquisition and the palette backend are host services.
+import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from './file-palette.js';
+//0040F210. Windows bitmap acquisition, file IO and DirectDraw remain host services.
 //Preserve the original AND dimension guard, row orientation, stride-sized
 //copies (including padding), destination pitch and palette/cleanup ordering.
 export function nativeLoadSetupBitmap(memory,path,pixels,palette,width,height,host) {
@@ -17,9 +18,13 @@ export function nativeLoadSetupBitmap(memory,path,pixels,palette,width,height,ho
     for(;i<stride;i++)memory.putByte((pixels+i)>>>0,memory.byte((source+i)>>>0));
     source=(source+pitch)>>>0;pixels=(pixels+width)>>>0;
   }
-  const reader=host.openPalette(path);
-  host.readPalette(reader,palette,0,256);
-  host.closePalette(reader);
+  let reader;
+  if(host.openPalette)reader=host.openPalette(path);
+  else {nativeLoadFilePalette(memory,host.paletteSlot,path,host);reader=memory.get(host.paletteSlot);}
+  if(host.readPalette)host.readPalette(reader,palette,0,256);
+  else nativeGetFilePaletteEntries(memory,reader,palette,0,256,host);
+  if(host.closePalette)host.closePalette(reader);
+  else nativeDestroyFilePalette(memory,host.paletteSlot,host);
   host.deleteImage(handle);
   return 1;
 }
