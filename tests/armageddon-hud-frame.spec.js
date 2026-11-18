@@ -1,3 +1,5 @@
+import wormIdleGesture from "./fixtures/armageddon/worm-idle-gesture.json" with { type: "json" };
+import { nativeWormIdleGesture } from "../src/armageddon/worm-idle-gesture.js";
 import wormAnimationPlayer from "./fixtures/armageddon/worm-animation-player.json" with { type: "json" };
 import { NativeAnimationPlayer as WormAnimationPlayer } from "../src/armageddon/animation.js";
 import wormAnimationSync from "./fixtures/armageddon/worm-animation-sync.json" with { type: "json" };
@@ -288,6 +290,24 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of wormIdleGesture.cases) {
+    const memory=new Uint8Array(0x390),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x6000),scene=new DataView(sceneMemory.buffer),calls=[];
+    for(const [offset,value] of [[0xfc,2],[0x100,3],[0x104,c.active],[0x108,c.blocked],[0x148,Number(c.sprite===41)],[0x158,1],[0x20c,c.damage],[0x2c8,c.countdown],[0x38c,123]])body.setInt32(offset,value,true);
+    scene.setInt32(0x102c,3,true);
+    for(let i=0;i<3;i++){scene.setInt32(0xc2c+i*4,i,true);scene.setInt32(0x1030+i*4,i+1,true);}
+    let randomIndex=0;
+    nativeWormIdleGesture(memory,sceneMemory,{
+      current:()=>{calls.push(["current"]);return {sprite:c.sprite,progress:c.progress};},
+      state:()=>{calls.push(["state"]);return c.state;},
+      random:()=>{const value=c.randoms[randomIndex++];calls.push(["random",value]);return value;},
+      teamStatus:team=>{calls.push(["teamStatus",team]);return 0;},
+      health:(team,worm)=>{calls.push(["health",team,worm]);return c.health;},
+      queue:sprite=>calls.push(["queue",sprite]),stopSound:id=>calls.push(["stopSound",id]),
+      sound:(...args)=>{calls.push(["sound",...args]);return 777;},
+    });
+    expect(calls).toEqual(c.calls);
+    expect({countdown:body.getInt32(0x2c8,true),damage:body.getInt32(0x20c,true),sound:body.getInt32(0x38c,true),order:[0,1,2].map(i=>scene.getInt32(0x1030+i*4,true))}).toEqual(c.after);
   }
   for(const c of wormAnimationPlayer.cases) {
     const player=new WormAnimationPlayer().restoreReplayState(Uint8Array.from(c.before)),calls=[];
