@@ -1,3 +1,5 @@
+import controllerCreate from "./fixtures/armageddon/controller-create.json" with { type: "json" };
+import { nativeInitializeTeamController } from "../src/armageddon/controller-create.js";
 import controllerTask from "./fixtures/armageddon/controller-task.json" with { type: "json" };
 import taskDispatch from "./fixtures/armageddon/task-dispatch.json" with { type: "json" };
 import { nativeForwardTaskEvent, nativeSendTaskEvent } from "../src/armageddon/task-dispatch.js";
@@ -274,6 +276,18 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerCreate.cases) {
+    const memory=new Uint8Array(0x120).fill(0xa5),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),configuration=new Uint8Array(0xc00),calls=[];let allocations=0;
+    new DataView(configuration.buffer).setInt8(0,c.control);configuration[0xbb4]=c.count;
+    c.configs.forEach((record,i)=>configuration.set(record,0xa74+i*40));sceneMemory[c.team*3000+0x3cd1]=c.color;
+    nativeInitializeTeamController(memory,sceneMemory,c.team,configuration,{
+      initializeTask:type=>{calls.push(["base"],["type",type]);},
+      allocateWorm:size=>{const result=(allocations+c.bits)%3===0?0:100+allocations;allocations++;calls.push(["allocate",size,result]);return result;},
+      constructWorm:(allocation,team,worm,record)=>calls.push(["worm",allocation,team,worm,[...record]]),
+      setSelectedWeapon:(...args)=>calls.push(["selected",...args]),initializeResources:()=>{calls.push(["resources"]);body.setInt32(0xe8,-1,true);},registerTask:(...args)=>calls.push(["register",...args]),
+    });
+    expect({calls,body:controllerCreate.offsets.map(o=>body.getInt32(o,true))}).toEqual({calls:c.calls,body:c.body});
   }
   for(const c of controllerTask.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),calls=[],registry=[];

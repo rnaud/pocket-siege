@@ -1,3 +1,4 @@
+import { nativeInitializeControllerResources } from './controller-resources.js';
 import { nativeBodyStartSound } from './body-sound.js';
 import { nativeInitializeReplayPresentation } from './replay-presentation-restore.js';
 import { NativeReplayBuffer } from './replay-buffer.js';
@@ -176,15 +177,7 @@ export function nativeReadReplayActor(tag, stream, options) {
     options.contextState.teamSlots[get(0x100)] = task.id;
     text(0x190, 15, 16);
   } else if (tag === 10) {
-    const portrait = options.allocateResource(0x170);
-    put(0x110, portrait ? options.constructPortrait(portrait, options.context, get(0x3c)) : 0);
-    put(0x118, 0);
-    const frame = options.allocateResource(0x3c);
-    put(0x114, frame ? options.constructFrame(frame, options.context + 0x2b0, 8, 2, 2, 30, 30, options.palette[7], options.palette[8]) : 0);
-    text(0x11c, 23, 480);
-    for (const offset of [0xcc, 0xd0, 0xac, 0xbc, 0xb0, 0xb4, 0xb8, 0xe0, 0xf8, 0x104, 0xe4, 0xd4, 0xd8, 0xc8]) put(offset, 0);
-    for (const offset of [0xe8, 0xec, 0xf0, 0xf4]) put(offset, -1);
-    put(0xdc, 1);
+    nativeInitializeControllerResources(memory,options);
   } else if (tag === 11) {
     text(0x3d0, 15, 48);
     text(0x3cc, 15, 16);
