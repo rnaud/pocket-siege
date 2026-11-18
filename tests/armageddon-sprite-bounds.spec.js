@@ -11,7 +11,25 @@ import { nativeStartupPalette } from "../src/armageddon/startup-palette.js";
 import spritePaletteData from "../src/armageddon/sprite-palette-data.json" with { type: "json" };
 import { nativeSpriteBounds } from "../src/armageddon/animation.js";
 
+import spriteMemory from './fixtures/armageddon/sprite-memory.json' with {type:'json'};
+import {nativeReadSprite} from '../src/armageddon/sprite-memory.js';
+import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
+  for(const c of spriteMemory.cases) {
+    const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
+    expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
+    const owner=0x2000000,source=0x2400000;
+    const arena=Buffer.alloc(0x10000,c.pattern),data=Buffer.from(raw),counters=Buffer.alloc(16);
+    const region=p=>p>=source?[data,p-source]:p>=owner?[arena,p-owner]:[counters,p-0x5602e4];
+    const memory={get(p){const [b,o]=region(p);return b.readUInt32LE(o);},put(p,v){const [b,o]=region(p);b.writeUInt32LE(v>>>0,o);},byte(p){const [b,o]=region(p);return b[o];},putByte(p,v){const [b,o]=region(p);b[o]=v;}};
+    [0xfffffff0,17,0xfffffff0,23].forEach((v,i)=>counters.writeUInt32LE(v,i*4));
+    nativeCreateGamePalette(memory,owner,1,c.last);
+    const snapshot=()=>createHash('sha256').update(arena).update(data).update(counters).digest('hex');
+    const events=[];
+    const result=nativeReadSprite(memory,owner+0x3000,owner,source,{allocate(size){events.push({size,state:snapshot()});return c.allocated?owner+0x4000:0;}});
+    expect({events,result,state:snapshot()},`${c.path??'raw'} / ${c.pattern} / ${c.allocated} / ${c.last}`).toEqual({events:c.events,result:c.result,state:c.state});
+  }
   const startup = new NativeGamePalette(0, 104);
   startup.add([0, 0, 0]);
   const loaded = new Map();
