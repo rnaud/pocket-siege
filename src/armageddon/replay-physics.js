@@ -21,3 +21,11 @@ export function nativeRestorePhysicsMembership(input) {
     link: input.links[input.linkIndex],
   };
 }
+
+// Shared004C8F80 adapter for fresh construction and replay restoration.
+export function nativeRegisterPhysicsTask(task,environment) {
+  const view=new DataView(task.memory.buffer,task.memory.byteOffset,task.memory.byteLength),category=view.getInt32(0x3c,true);
+  const restored=nativeRestorePhysicsMembership({id:task.id,all:environment.all,category:environment.categories[category],allIndex:view.getInt32(0xe8,true),categoryIndex:view.getInt32(0xe4,true),links:environment.links,linkIndex:view.getInt32(0x44,true)});
+  environment.all=restored.all;environment.categories[category]=restored.category;environment.dirty=restored.dirty;
+  view.setUint32(0xf0,restored.link,true);
+}

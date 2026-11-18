@@ -1,3 +1,4 @@
+import { nativeCreateWorm } from './worm-create.js';
 import { nativeInitializeControllerResources } from './controller-resources.js';
 import { nativeEndTargeting } from './target-input.js';
 
@@ -30,6 +31,7 @@ export function nativeCreateTeamController({id,parent,memory=new Uint8Array(0x12
       const view=new DataView(memory.buffer,memory.byteOffset,memory.byteLength),parentView=new DataView(parent.memory.buffer,parent.memory.byteOffset,parent.memory.byteLength);
       view.setInt32(0x2c,type,true);view.setInt32(0x38,parentView.getInt32(0x38,true),true);
     },
+    constructWorm:host.constructWorm??((allocation,wormTeam,worm,record)=>nativeCreateWorm({id:allocation,parent:task,sceneMemory,environment:host.environment,team:wormTeam,worm,configuration:record,host:host.wormHost(allocation,wormTeam,worm)})),
     registerTask:(type,index)=>nativeRegisterTask(task,type,index),
   });
   return task;

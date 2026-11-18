@@ -4,9 +4,10 @@
   "areas": [
     {
       "title": "Worm movement & physics",
-      "live": "Native collision masks, jump flight, hurt motion, drowning and several recovery paths are integrated. Fresh worm initialization now matches original spawn selection, state fields, gravity-derived thresholds, labels, ownership slots and placement retry ordering against full constructor memory captures. Physics/placement/state-entry adapters still need live composition. Fresh worm construction now defaults to native physics-memory initialization and shares resource setup with replay restoration; composed constructor captures also verify the registration-time body state. Environment membership, placement and state entry still need composition.",
+      "live": "Native collision masks, jump flight, hurt motion, drowning and several recovery paths are integrated. Fresh worm initialization now matches original spawn selection, state fields, gravity-derived thresholds, labels, ownership slots and placement retry ordering against full constructor memory captures. Physics/placement/state-entry adapters still need live composition. Fresh worm construction now defaults to native physics-memory initialization and shares resource setup with replay restoration; composed constructor captures also verify the registration-time body state. Environment membership, placement and state entry still need composition. The fresh worm factory now composes task attachment/registration and native environment membership, verified with original constructor/list-insertion captures. Spawn providers, placement and state entry remain adapters.",
       "remaining": "Complete the movement/state lifecycle, ground interactions and collision ordering; compare full movement sequences with the original.",
       "evidence": [
+        "native_worm_environment_factory",
         "native_worm_physics_construction",
         "native_fresh_worm_construction",
         "live_native_worm_mask",
@@ -136,6 +137,7 @@
       "live": "The public replay remains a trajectory overlay. Native input, frame, dispatch, session, snapshot and audio routines compose into executable-verified pipelines. Development capture reads live actor, controller, terrain, palette and random state without changing the match; sound-enabled restore reproduces tested sequences for eight weapons, restores water/nuclear presentation and preserves player records and mute. Live replay entry uses native audio cleanup. Menu, movement, weapon, arsenal-pointer and targeting collectors now reproduce native command bytes and call ordering; the controller defaults to these collectors. Targeting includes shape/direction cycling, cursor bounds, packed placement coordinates and follow-up actions. Targeting teardown now clears flags and releases pointer ownership through the original routine, verified directly and inside the collector. Targeting entry also reproduces original cursor initialization, camera requests and priority ownership acquisition; its live selection adapter remains. These collectors still need browser mapping and automatic capture/playback integration. A native receiver now handles 45 movement, setting, cursor, target, weapon-selection and controller lifecycle command types against executable fixtures. Remaining lifecycle events and downstream live task dispatch are still incomplete. Native task dispatch is verified against executable captures and composes with controller fallback forwarding; actor handler integration remains.",
       "remaining": "Verify the remaining actor round trips, and connect rendering/game-state adapters; replace the overlay with deterministic replay and local saves.",
       "evidence": [
+        "native_worm_environment_factory",
         "native_worm_physics_construction",
         "native_fresh_task_construction",
         "native_controller_fresh_construction",

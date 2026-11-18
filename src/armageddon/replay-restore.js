@@ -43,7 +43,7 @@ export function nativeReadTaskChildren(stream, parent, allocate, construct) {
   }
 }
 
-import { nativeRestorePhysicsMembership } from './replay-physics.js';
+import { nativeRegisterPhysicsTask } from './replay-physics.js';
 // Full004C8E40, including its 32 calls to004C8D10. Heap storage remains
 // a host interface; list membership uses stable IDs instead of raw pointers.
 export function nativeReadPhysicsEnvironment(stream, { context, links, allocate = size => new Uint8Array(size) }) {
@@ -72,15 +72,8 @@ export function nativeReadPhysicsTask(stream, options) {
   stream.readByte(); // Physics marker3.
   memory.set(stream.readBlock(0xb0), 0x3c);
   for (const offset of [0xec, 0xf0, 0xf4, 0xf8]) view.setInt32(offset, 0, true);
-  const environment = options.environment, category = view.getInt32(0x3c, true);
-  const restored = nativeRestorePhysicsMembership({ id: task.id,
-    all: environment.all, category: environment.categories[category],
-    allIndex: view.getInt32(0xe8, true), categoryIndex: view.getInt32(0xe4, true),
-    links: environment.links, linkIndex: view.getInt32(0x44, true) });
-  environment.all = restored.all;
-  environment.categories[category] = restored.category;
-  environment.dirty = restored.dirty;
-  view.setUint32(0xf0, restored.link, true);
+  task.memory=memory;
+  nativeRegisterPhysicsTask(task,options.environment);
   task.physicsPoints = new Uint8Array(0);
   if (view.getInt32(0xc8, true)) {
     const storage = options.allocateContacts(0x200);

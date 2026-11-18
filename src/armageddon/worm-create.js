@@ -62,3 +62,22 @@ export function nativeInitializeWorm(memory,sceneMemory,team,worm,configuration,
   else {host.settlePhysics();put(0x210,0);}
   host.registerTask(2,((team<<4)+worm)|0);
 }
+
+import { nativeCreateTask, nativeRegisterTask } from './task-create.js';
+import { nativeRegisterPhysicsTask } from './replay-physics.js';
+// Logical actor factory: attach, initialize, join the environment, then register.
+export function nativeCreateWorm({id,parent,memory=new Uint8Array(0x390),sceneMemory,environment,team,worm,configuration,host}) {
+  let task;
+  nativeInitializeWorm(memory,sceneMemory,team,worm,configuration,{
+    ...host,
+    initializePhysics:undefined,
+    initializeTask:type=>{
+      task=nativeCreateTask({id,parent,memory});task.type=type;
+      const body=view(memory);body.setInt32(0x2c,type,true);body.setInt32(0x38,view(parent.memory).getInt32(0x38,true),true);
+    },
+    setTaskType:type=>{task.type=type;view(memory).setInt32(0x2c,type,true);},
+    registerPhysics:()=>nativeRegisterPhysicsTask(task,environment),
+    registerTask:(type,index)=>nativeRegisterTask(task,type,index),
+  });
+  return task;
+}
