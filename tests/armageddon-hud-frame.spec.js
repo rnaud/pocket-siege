@@ -1,3 +1,5 @@
+import controllerFrameInput from "./fixtures/armageddon/controller-frame-input.json" with { type: "json" };
+import { nativeCollectCameraInput, nativeCollectPauseInput } from "../src/armageddon/controller-frame-input.js";
 import controllerFrame from "./fixtures/armageddon/controller-frame.json" with { type: "json" };
 import weaponDelays from "./fixtures/armageddon/weapon-delays.json" with { type: "json" };
 import { nativeAdvanceWeaponDelays } from "../src/armageddon/weapon-delays.js";
@@ -260,6 +262,21 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerFrameInput.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
+    for(const [o,v] of Object.entries(c.fields))body.setInt32(Number(o),v,true);
+    scene.setInt16(0x1b8aa,c.owners.length,true);c.owners.forEach((v,i)=>scene.setInt16(0x1b88a+i*2,v,true));
+    scene.setInt32(0x12418,c.paused,true);scene.setInt32(0x1247c,111,true);scene.setInt32(0x12480,222,true);
+    const collect=c.kind==="camera"?nativeCollectCameraInput:nativeCollectPauseInput;
+    collect(memory,sceneMemory,{
+      key:key=>{calls.push(["key",key]);return c.pressed;},consume:key=>calls.push(["consume",key]),
+      wormState:(...args)=>{calls.push(["state",...args]);return c.state;},lookup:(...args)=>{calls.push(["lookup",...args]);return c.exists?1:0;},
+      wormQuery:(...args)=>{calls.push(["query",...args]);if(!c.valid)return null;const p=new Uint8Array(0x154),v=new DataView(p.buffer);v.setInt32(0,c.x,true);v.setInt32(4,c.y,true);return p;},
+      sendTask:(type,id,event,size,payload)=>calls.push(["send",type,id,event,size,[...payload]]),
+      cameraMode:mode=>calls.push(["mode",mode]),cameraPosition:(...args)=>calls.push(["position",...args]),
+    });
+    expect({calls,scene:[0x12418,0x1247c,0x12480].map(o=>scene.getInt32(o,true))}).toEqual({calls:c.calls,scene:c.scene});
   }
   for(const c of controllerFrame.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];

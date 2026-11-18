@@ -1,3 +1,4 @@
+import { nativeCollectCameraInput, nativeCollectPauseInput } from './controller-frame-input.js';
 import { fixedMultiply } from './numeric.js';
 import { nativeControllerPendingWeapon } from './controller-post-shot.js';
 import { nativeCollectControllerInput } from './controller-input.js';
@@ -21,15 +22,16 @@ export function nativeControllerCountdown(memory,sceneMemory,host) {
   put(0x80,get(0x7c));
 }
 
-//004E6810 frame branches. Presentation and camera/pause collectors remain
-// explicit adapters; selection, countdown and the default input collector are native.
+//004E6810 frame branches. Presentation remains an explicit adapter; selection, countdown and the default input collector are native.
 export function nativeControllerFrame(memory,sceneMemory,event,payload,host) {
   if(![0x3ea,0x3eb,0x3ec,0x3ed,0x3ef].includes(event))return false;
   const body=view(memory),scene=view(sceneMemory),get=o=>body.getInt32(o,true),put=(o,v)=>body.setInt32(o,v,true);
   if(event===0x3ea) {
     host.forward(event,payload);nativeControllerPendingWeapon(memory,host);
     if(get(0xb8)){host.cameraTarget(0,scene.getInt32(0x1247c,true),scene.getInt32(0x12480,true));put(0xb8,0);}
-    host.updatePresentation();host.collectCameraInput();host.collectPauseInput();
+    host.updatePresentation();
+    if(host.collectCameraInput)host.collectCameraInput();else nativeCollectCameraInput(memory,sceneMemory,host);
+    if(host.collectPauseInput)host.collectPauseInput();else nativeCollectPauseInput(memory,sceneMemory,host);
     nativeControllerCountdown(memory,sceneMemory,host);
   } else if(event===0x3eb) {
     host.drawPresentation();host.drawTargeting();host.drawCountdown();host.forward(event,payload);
