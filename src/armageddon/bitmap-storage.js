@@ -24,3 +24,22 @@ export function nativeRemapBitmap(memory,bitmap,palette) {
   } while(rows);
   return 1;
 }
+
+//0048B740.8-bit pixel lookup respects signed clipping bounds.
+export function nativeBitmapPixel8(memory,bitmap,x,y) {
+  x|=0;y|=0;
+  if(x<(memory.get(bitmap+28)|0)||x>=(memory.get(bitmap+36)|0)||y<(memory.get(bitmap+32)|0)||y>=(memory.get(bitmap+40)|0))return 0;
+  return memory.byte((memory.get(bitmap+8)+Math.imul(y,memory.get(bitmap+16))+x)>>>0);
+}
+
+//0048B7C0 +00492D30. Borrowed pixel buffers are retained; owned ones are freed
+//before the final base vtable and optional sized object deletion.
+export function nativeDestroyBitmap8(memory,bitmap,flags,host) {
+  memory.put(bitmap,0x5249b0);
+  const borrowed=memory.get(bitmap+4);
+  memory.put(bitmap,0x526390);
+  if(!borrowed)host.free(memory.get(bitmap+8));
+  memory.put(bitmap,0x524a14);
+  if(flags&1)host.freeSized(bitmap,44);
+  return bitmap;
+}

@@ -1,3 +1,4 @@
+import {nativeBitmapPixel8,nativeDestroyBitmap8} from './bitmap-storage.js';
 import {nativeLoadNamedArchiveImage} from './terrain-image.js';
 import {nativeCreatePanelImage} from './panel-resources.js';
 import {nativeLoadTerrainFile} from './terrain-file.js';
@@ -48,4 +49,14 @@ export function nativeLoadTerrainSoil(memory,terrain,scratch,host) {
   const mask=host.allocate(44);
   if(mask){nativeCreatePanelImage(memory,mask,1920,696,1,host);memory.put(mask,0x526328);}
   memory.put(terrain+0x90c,mask);
+}
+
+//004A7AC2..004A7AFC. Sample the grass image's marker color, then release the
+//temporary image. Memory exposes the original grass.img constant at0055F7D4.
+export function nativeLoadTerrainGrass(memory,terrain,scratch,host) {
+  const archive=memory.get(terrain+0xb20);
+  const palette=host.getRendererPalette(memory.get(terrain+0x8f4),3);
+  const grass=nativeLoadNamedArchiveImage(memory,palette,archive,0x55f7d4,scratch,nativeFileArchiveServices(memory,host));
+  memory.put(terrain+0x8e8,nativeBitmapPixel8(memory,grass,128,0));
+  if(grass)nativeDestroyBitmap8(memory,grass,1,host);
 }
