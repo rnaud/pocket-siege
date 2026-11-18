@@ -1,3 +1,5 @@
+import collisionShapeCreate from './fixtures/armageddon/collision-shape-create.json' with {type:'json'};
+import {nativeCreateCollisionShape} from '../src/armageddon/collision-shape-create.js';
 import terrainState from './fixtures/armageddon/terrain-state.json' with {type:'json'};
 import {nativeInitializeTerrainState} from '../src/armageddon/terrain-state.js';
 import terrainConstruction from './fixtures/armageddon/terrain-construction.json' with {type:'json'};
@@ -198,6 +200,19 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   const toolSource=decodeImage(fs.readFileSync(new URL('../public/armageddon/media/gfx/gfx/masks.img',import.meta.url)));
   expect([toolSource.width,toolSource.height]).toEqual([toolMaskMemory.source.width,toolMaskMemory.source.height]);
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(toolMaskMemory.source.pixels);
+  expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(collisionShapeCreate.source.pixels);
+  for(const c of collisionShapeCreate.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x60000,c.pattern),calls=[];let allocated=0;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    bytes.set(toolSource.pixels,0x10000);
+    for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x10000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x1000+offset,value);
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    expect(nativeCreateCollisionShape(memory,owner,c.region,owner+0x1000,{
+      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);return owner+0x2000+allocated*0x40;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x20000+allocated*0x1000;},
+    })).toBe(c.result);
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of toolMaskMemory.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x60000,c.pattern),calls=[];let allocated=0,descriptors=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
