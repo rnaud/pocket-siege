@@ -18,7 +18,9 @@ parser.add_argument('--native-palette',type=Path)
 parser.add_argument('--global-owner',action='store_true')
 parser.add_argument('--prepare-teams',action='store_true')
 parser.add_argument('--select-files',action='store_true')
+parser.add_argument('--scene-context',action='store_true')
 args = parser.parse_args()
+args.select_files |= args.scene_context
 args.prepare_teams |= args.select_files
 args.global_owner |= args.prepare_teams
 if args.global_owner and not args.native_palette:parser.error('--global-owner requires --native-palette')
@@ -28,7 +30,7 @@ args.native_initializer |= args.native_flags
 args.native_scheme |= args.native_initializer
 args.native_services |= args.native_scheme
 globalBase,globalSize=(0x6da000,0x30000) if args.native_initializer else (0x6e0000,0x20000)
-calls=[];initializing=False;clock=12345;storedSeed=None
+calls=[];initializing=False;clock=12345;storedSeed=None;sceneContextActive=False
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
 if digest != '0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56':
@@ -58,7 +60,7 @@ def cstring(address):
  result=bytearray()
  while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
  return bytes(result)
-def snapshot():return hashlib.sha256(bytes(cpu.mem_read(globalBase,globalSize))+(b'' if args.global_owner else bytes(cpu.mem_read(owner,0x10000)))+(bytes(cpu.mem_read(0x2700000,0x10000)) if args.native_palette else b'')).hexdigest()
+def snapshot():return hashlib.sha256(bytes(cpu.mem_read(globalBase,globalSize))+(b'' if args.global_owner else bytes(cpu.mem_read(owner,0x10000)))+(bytes(cpu.mem_read(0x2700000,0x10000)) if args.native_palette else b'')+(bytes(cpu.mem_read(0x3000000,0x20000))+bytes(cpu.mem_read(0x3100000,0x10000)) if sceneContextActive else b'')).hexdigest()
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value&0xffffffff)
 def setstring(obj,value):
@@ -147,7 +149,9 @@ if args.native_bitmaps:
 def hook(cpu,address,size,user):
  global rng,storedSeed
  sp=cpu.reg_read(UC_X86_REG_ESP)
- if address==0x503d48:setstring(cpu.reg_read(UC_X86_REG_ECX),b'');ret()
+ if address==0x4adac0:calls.append(['scenePalette',read(sp+4),read(sp+8),snapshot()]);ret(0,8)
+ elif address==0x492550:calls.append(['sceneAllocate',read(sp+4),snapshot()]);ret(0x3000000)
+ elif address==0x503d48:setstring(cpu.reg_read(UC_X86_REG_ECX),b'');ret()
  elif address==0x503d24:ret()
  elif address==stop+0x300:
   if initializing:calls.append(['time',clock,snapshot()])
@@ -302,6 +306,9 @@ if args.native_flags and not args.native_bitmaps:
     flagCases.append(dict(country=country,skill=skill,team=team,calls=calls,sha256=snapshot()))
 if args.select_files:
  for address in [0x503ee0,0x503eda,0x503ec8,0x503ed4]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+if args.scene_context:
+ for address,size in [(0x3000000,0x20000),(0x3100000,0x10000)]:cpu.mem_map(address,size)
+ for address in [0x4adac0,0x492550]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 selectionNames={source:path for path,source in json.loads(Path('src/armageddon/mission-names.json').read_text()).items()}
 profiles=[]
 for record in json.loads(Path('src/armageddon/mission-catalog.json').read_text())['records']:
@@ -330,6 +337,9 @@ for name,profile,strings,failure,unselected in profiles:
   teams=profile.get('teams',{}).get('teamsinmission',1);pattern=0xa5 if mutation else 0;country=4 if mutation or args.native_bitmaps else 1
   cpu.mem_write(globalBase,bytes([pattern])*globalSize);cpu.mem_write(owner,bytes([pattern])*0x10000)
   initializing=False
+  sceneContextActive=args.scene_context
+  if sceneContextActive:
+   cpu.mem_write(0x3000000,bytes([pattern])*0x20000);cpu.mem_write(0x3100000,bytes([pattern])*0x10000)
   if args.native_palette:
    cpu.mem_write(0x2700000,bytes([pattern])*0x10000);paletteAllocations=0;paletteEntries=bytes(1024)
   if args.native_initializer:
@@ -359,7 +369,14 @@ for name,profile,strings,failure,unselected in profiles:
   if args.prepare_teams:
    write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6db650)
    cpu.emu_start(0x475fa0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,selection=selection,prepareTeams=args.prepare_teams,globalOwner=args.global_owner,nativePalette=bool(args.native_palette),nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=missionResult,callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
+  bindings=[0x2800000,0,0x2800200,0x2800400,0x2800600,0x2800800,0,0x2800a00]
+  if args.scene_context:
+   write(sp,stop)
+   for i,v in enumerate([*bindings,0x6e68e8]):write(sp+4+i*4,v)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x3100000)
+   cpu.emu_start(0x4a5350,0x4a55e3,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==0x4a55e3
+  cases.append(dict(profile=name,sceneContext=args.scene_context,bindings=bindings,selection=selection,prepareTeams=args.prepare_teams,globalOwner=args.global_owner,nativePalette=bool(args.native_palette),nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=missionResult,callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
+sceneContextActive=False
 teamRecordCases=[];teamClearCases=[]
 if args.prepare_teams:
  for count in [0,1,3,6,7,128,255]:
@@ -389,5 +406,5 @@ if args.native_scheme and not args.native_initializer:
     sp=stack+0xe000;write(sp,stop);write(sp+4,selection);write(sp+8,bank);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6f454c)
     cpu.emu_start(0x470a20,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     schemeCases.append(dict(selection=selection,bank=bank,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition. Native palette mode maps the original DirectX2D DLL and executes its load/read/destroy routines; only CRT file/heap and DirectDraw calls remain intercepted. Full320KiB global/owner/palette-heap memory is compared at each observed boundary and return. Global-owner mode uses the actual006E0484 mission singleton inside frontend storage; its256KiB global/heap comparison includes the mission bytes in place, without duplicating an external owner region. Prepare-teams mode then executes00475FA0 and00475C70 as in the original frontend callers; mission return status is captured before that void preparation stage. Direct cases cover selected-team copy and clear-bank behavior. Select-files mode additionally executes original mission/training selection with real ISO-derived filename numbers before full loading and team preparation for all48 definitions; CFile/CString services remain interfaces.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords,paletteDllSha256=paletteDllHash,teamRecordCases=teamRecordCases,teamClearCases=teamClearCases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition. Native palette mode maps the original DirectX2D DLL and executes its load/read/destroy routines; only CRT file/heap and DirectDraw calls remain intercepted. Full320KiB global/owner/palette-heap memory is compared at each observed boundary and return. Global-owner mode uses the actual006E0484 mission singleton inside frontend storage; its256KiB global/heap comparison includes the mission bytes in place, without duplicating an external owner region. Prepare-teams mode then executes00475FA0 and00475C70 as in the original frontend callers; mission return status is captured before that void preparation stage. Direct cases cover selected-team copy and clear-bank behavior. Scene-context mode additionally executes004A5350..004A55E3 with the resulting real global frontend payload at6E68E8, comparing448KiB including fresh scene and scene-owner memory. Temporary palette/allocator are interfaces; graphics/terrain resources and subsequent offline scene initialization remain outside this capture. Select-files mode additionally executes original mission/training selection with real ISO-derived filename numbers before full loading and team preparation for all48 definitions; CFile/CString services remain interfaces.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords,paletteDllSha256=paletteDllHash,teamRecordCases=teamRecordCases,teamClearCases=teamClearCases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')

@@ -10,7 +10,7 @@ import {nativeMissionThumbnail,nativeMissionTerrainPath,nativeMissionWinningCond
 import {nativeClearMatchTeamRecords,nativeInitializeMatchTeamRecords} from '../src/armageddon/match-team-records.js';
 import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
 import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
-import missionNativePalette from './fixtures/armageddon/mission-selected-load.json' with {type:'json'};
+import missionNativePalette from './fixtures/armageddon/mission-scene-context.json' with {type:'json'};
 import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
 import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
 import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
@@ -340,7 +340,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const globalBase=c.nativeInitializer?0x6da000:0x6e0000;
     const globals=Buffer.alloc(c.nativeInitializer?0x30000:0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const bitmapBytes=Buffer.alloc(0x10000),paletteHeap=Buffer.alloc(0x10000,c.pattern),paletteSlot=Buffer.alloc(4);
-    const locate=address=>address>=0x2900000?[paletteSlot,address-0x2900000]:address>=0x2700000?[paletteHeap,address-0x2700000]:address>=0x2600000?[bitmapBytes,address-0x2600000]:address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
+    const contextBytes=Buffer.alloc(0x20000,c.pattern),contextOwnerBytes=Buffer.alloc(0x10000,c.pattern);
+    const locate=address=>address>=0x3100000?[contextOwnerBytes,address-0x3100000]:address>=0x3000000?[contextBytes,address-0x3000000]:address>=0x2900000?[paletteSlot,address-0x2900000]:address>=0x2700000?[paletteHeap,address-0x2700000]:address>=0x2600000?[bitmapBytes,address-0x2600000]:address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     memory.range=(address,length)=>{const [b,o]=locate(address);return b.subarray(o,o+length);};
     if(c.nativeInitializer) {
@@ -357,7 +358,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     if(!c.unselected){memory.put((missionOwner+0x884),1);memory.put((missionOwner+0x54),c.mutation?1:-1);}
     if(c.nativeServices)memory.putByte(0x6e1178,67+c.mutation);
     const random=new NativeFrontendRandom(123+c.pattern);
-    const snapshot=()=>createHash('sha256').update(globals).update(c.globalOwner?Buffer.alloc(0):owner).update(c.nativePalette?paletteHeap:Buffer.alloc(0)).digest('hex');
+    const snapshot=()=>createHash('sha256').update(globals).update(c.globalOwner?Buffer.alloc(0):owner).update(c.nativePalette?paletteHeap:Buffer.alloc(0)).update(c.sceneContext?contextBytes:Buffer.alloc(0)).update(c.sceneContext?contextOwnerBytes:Buffer.alloc(0)).digest('hex');
     const host={
       setResourceString(address,id) {calls.push(['label',address,id,snapshot()]);memory.put(address,0x2500000+id*4);},
       findResource(module,id,type) {calls.push(['findResource',module,id,type,snapshot()]);return 0x2400000+id*256;},
@@ -458,6 +459,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       expect(selected).toBe(0);
     }
     const result=c.prepareTeams?nativePrepareGlobalMission(memory,host):c.globalOwner?nativeLoadGlobalMission(memory,host):nativeLoadMission(memory,missionOwner,host);
+    if(c.sceneContext)nativeCreateSceneContext(memory,0x3100000,c.bindings,0x6e68e8,{
+      initializePalette:(...args)=>calls.push(['scenePalette',...args,snapshot()]),
+      allocate:(...args)=>{calls.push(['sceneAllocate',...args,snapshot()]);return 0x3000000;},
+    });
     if(c.nativeInitializer)expect([random.state,storedSeed]).toEqual([c.randomState,c.storedSeed]);
     expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
