@@ -1,3 +1,4 @@
+import { nativeDrawControllerCountdown } from './controller-countdown-draw.js';
 import { nativeUpdateControllerPresentation } from './controller-presentation.js';
 import { nativeCollectCameraInput, nativeCollectPauseInput } from './controller-frame-input.js';
 import { fixedMultiply } from './numeric.js';
@@ -35,7 +36,9 @@ export function nativeControllerFrame(memory,sceneMemory,event,payload,host) {
     if(host.collectPauseInput)host.collectPauseInput();else nativeCollectPauseInput(memory,sceneMemory,host);
     nativeControllerCountdown(memory,sceneMemory,host);
   } else if(event===0x3eb) {
-    host.drawPresentation();host.drawTargeting();host.drawCountdown();host.forward(event,payload);
+    host.drawPresentation();host.drawTargeting();
+    if(host.drawCountdown)host.drawCountdown();else nativeDrawControllerCountdown(memory,sceneMemory,host);
+    host.forward(event,payload);
   } else if(event===0x3ec) {
     const token=view(payload).getUint32(0,true);
     if(host.collectInput)host.collectInput(token);

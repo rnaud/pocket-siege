@@ -1,3 +1,5 @@
+import controllerCountdownDraw from "./fixtures/armageddon/controller-countdown-draw.json" with { type: "json" };
+import { nativeDrawControllerCountdown } from "../src/armageddon/controller-countdown-draw.js";
 import controllerPresentation from "./fixtures/armageddon/controller-presentation.json" with { type: "json" };
 import { nativeUpdateControllerPresentation } from "../src/armageddon/controller-presentation.js";
 import controllerFrameInput from "./fixtures/armageddon/controller-frame-input.json" with { type: "json" };
@@ -264,6 +266,17 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of controllerCountdownDraw.cases) {
+    const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];
+    for(const [o,v] of [[0x3c,c.team],[0x54,c.priority],[0x7c,c.remaining]])body.setInt32(o,v,true);
+    scene.setInt32(0x1b8ec,c.tick,true);scene.setInt32(0x1b8e0,c.viewport,true);
+    nativeDrawControllerCountdown(memory,sceneMemory,{
+      countdownSuffix:()=>{calls.push(["suffix"]);return "seconds";},teamName:team=>{calls.push(["teamName",team]);return "Team Two";},
+      palette:slot=>{calls.push(["palette",slot]);return 100+slot;},
+      renderText:(...args)=>{calls.push(["render",...args]);return {image:1234,width:c.width,height:c.height};},drawImage:(...args)=>calls.push(["draw",...args]),
+    });
+    expect(calls).toEqual(c.calls);
   }
   for(const c of controllerPresentation.cases) {
     const memory=new Uint8Array(0x200),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];

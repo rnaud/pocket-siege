@@ -87,9 +87,10 @@
     },
     {
       "title": "Sprites, animation & HUD",
-      "live": "Original media, native animation routines and many HUD elements are integrated, including the animated wind meter. Native controller presentation now reproduces panel sliding, cursor smoothing and arsenal refresh/selection state against executable fixtures, and runs by default in native frame updates. Arsenal widget rendering and live browser wiring remain.",
+      "live": "Original media, native animation routines and many HUD elements are integrated, including the animated wind meter. Native controller presentation now reproduces panel sliding, cursor smoothing and arsenal refresh/selection state against executable fixtures, and runs by default in native frame updates. Arsenal widget rendering and live browser wiring remain. Native selection-countdown drawing now matches original localized text, flashing palette, rounding and viewport placement, and is the default in the native render pass. Live font/image adapters remain.",
       "remaining": "Finish the complete animation state graph, remaining poses and HUD transitions, renderer/task visibility and native scheduling.",
       "evidence": [
+        "native_controller_countdown_drawing",
         "native_controller_presentation_update",
         "visual_media_import",
         "animation_player",
