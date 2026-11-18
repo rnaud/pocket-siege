@@ -1,4 +1,4 @@
-import {nativeApplyWorldStartupSetting} from './world-startup-setting.js';
+import {nativeApplyWorldStartupSetting,nativeDispatchStartupSetting} from './world-startup-setting.js';
 import {nativeCreateMatchRootAt} from './match-create.js';
 import {nativeCreateTeamPanelTree} from './team-panel-setup.js';
 
@@ -17,6 +17,6 @@ export function nativeFinalizeGameplaySetup(memory,owner,scene,host) {
   memory.put(owner+4,root);memory.put(owner+0x4c,-1);memory.put(owner+0x294,1);
   for(let setting=1;setting<5;setting++)if(memory.byte(scene+0x11d70+setting)) {
     if(host.send)host.send(root,0x3f6,4,setting);
-    else nativeApplyWorldStartupSetting(memory,root,setting,host.dispatchStartupSetting);
+    else nativeApplyWorldStartupSetting(memory,root,setting,host.dispatchStartupSetting??((...args)=>nativeDispatchStartupSetting(memory,...args,host.observeStartupSetting)));
   }
 }
