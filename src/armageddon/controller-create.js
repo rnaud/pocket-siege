@@ -18,3 +18,19 @@ export function nativeInitializeTeamController(memory,sceneMemory,team,configura
   nativeEndTargeting(memory,sceneMemory);
   host.registerTask(0x15,team);
 }
+
+import { nativeCreateTask, nativeRegisterTask } from './task-create.js';
+// Fresh controllers now attach and register through the native logical task tree.
+export function nativeCreateTeamController({id,parent,memory=new Uint8Array(0x120),sceneMemory,team,configuration,host}) {
+  let task;
+  nativeInitializeTeamController(memory,sceneMemory,team,configuration,{
+    ...host,
+    initializeTask:type=>{
+      task=nativeCreateTask({id,parent,memory});task.type=type;
+      const view=new DataView(memory.buffer,memory.byteOffset,memory.byteLength),parentView=new DataView(parent.memory.buffer,parent.memory.byteOffset,parent.memory.byteLength);
+      view.setInt32(0x2c,type,true);view.setInt32(0x38,parentView.getInt32(0x38,true),true);
+    },
+    registerTask:(type,index)=>nativeRegisterTask(task,type,index),
+  });
+  return task;
+}
