@@ -1,3 +1,5 @@
+import textImages from "./fixtures/armageddon/text-image.json" with { type: "json" };
+import { nativeRenderTextImage } from "../src/armageddon/text-image.js";
 import { NativeSpriteDrawQueue } from "../src/armageddon/sprite-draw-queue.js";
 import crateDraw from "./fixtures/armageddon/crate-draw.json" with { type: "json" };
 import { nativeDrawCrate } from "../src/armageddon/crate-draw.js";
@@ -155,6 +157,22 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       bounce: side => calls.push({ operation: 'bounce', side }),
     });
     expect(calls).toEqual(row.calls);
+  }
+  for (const row of textImages.cases) {
+    const state = { ...row.initial };
+    for (const step of row.sequence) {
+      const calls = [];
+      const host = Object.fromEntries(['fill', 'clear', 'horizontal', 'vertical', 'pixel', 'copy', 'mask', 'initialize']
+        .map(name => [name, (...args) => calls.push([name, ...args])]));
+      host.allocate = bytes => { calls.push(['allocate', bytes]); return 0x2003000; };
+      host.text = (...args) => {
+        calls.push(['text', ...args]);
+        return { width: row.measurement[0], height: row.measurement[1] };
+      };
+      expect(nativeRenderTextImage(state, step.request, host)).toEqual(step.result);
+      expect(calls).toEqual(step.calls);
+      expect(state).toEqual(step.state);
+    }
   }
   for (const row of crateDraw.cases) {
     const calls = [], queue = new NativeSpriteDrawQueue();
