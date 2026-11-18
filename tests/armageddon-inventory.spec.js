@@ -1,3 +1,5 @@
+import missionEvents from './fixtures/armageddon/mission-events.json' with {type:'json'};
+import {nativeLoadMissionEvents} from '../src/armageddon/mission-events.js';
 import missionInventory from './fixtures/armageddon/mission-inventory.json' with {type:'json'};
 import missionInventoryFields from '../src/armageddon/mission-inventory-keys.json' with {type:'json'};
 import {nativeLoadMissionInventory} from '../src/armageddon/mission-inventory.js';
@@ -127,6 +129,23 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for (const c of missionEvents.cases) {
+    const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
+    const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
+    memory.put(0x2000880,0x2001000);memory.put(0x200087c,c.retries);
+    for(let i=0;i<100;i++) {memory.put(0x2000004+i*4,i);memory.put(0x2000698+i*4,1000+i);memory.put(0x2000888+i*4,2000+i);}
+    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    nativeLoadMissionEvents(memory,0x2000000,{
+      profileInt(section,key,fallback,filename) {
+        calls.push(['profile',section,key,fallback,filename,snapshot()]);
+        if(c.mutation)memory.put(0x2000880,filename===0x2001000?0x2001100:0x2001000);
+        return c.values[section.toLowerCase()]?.[key.toLowerCase()]??fallback;
+      },
+      loadString(resource) {calls.push(['string',resource,snapshot()]);return c.text;},
+    });
+    expect({count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} events ${c.mutation}`).toEqual({count:c.callCount,calls:c.callsSha256,state:c.sha256});
+  }
   for(const c of missionInventory.cases) {
     const globals=Buffer.alloc(0x10000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6f0000];
