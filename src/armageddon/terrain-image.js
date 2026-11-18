@@ -1,3 +1,4 @@
+import {nativeTellArchiveEntry,nativeReadArchiveEntry} from './archive-handle.js';
 import {nativeDecodeImagePixels} from './image-decompress.js';
 import {nativeCreatePanelImage} from './panel-resources.js';
 import {nativeBitmapStorage,nativeRemapBitmap} from './bitmap-storage.js';
@@ -34,6 +35,7 @@ export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
   //The original also calls through a null bitmap after allocation failure.
   const storage=host.bitmapStorage?host.bitmapStorage(bitmap):nativeBitmapStorage(memory,bitmap);
   memory.put(scratch+8,storage.pixels);memory.put(scratch+32,storage.bits);memory.put(scratch+36,storage.pitch);
+  if(host.alignImagePixels)host.alignImagePixels(file);
   if(memory.byte(scratch+7)&64) {
     const start=memory.get(scratch+24),position=host.tellFile(file);
     const remaining=(start-position+memory.get(scratch+28))>>>0;
@@ -52,4 +54,18 @@ export function nativeLoadTerrainImage(memory,palette,file,scratch,host) {
     }
   }
   return bitmap;
+}
+
+//00492750. Archive IMG payloads start on a four-byte entry-relative boundary.
+//The transport defaults to original archive handles; bitmap/palette services
+//share the same original operations as the embedded terrain reader.
+export function nativeLoadArchiveImage(memory,palette,handle,scratch,host) {
+  const tell=host.tellArchiveEntry??(entry=>nativeTellArchiveEntry(memory,entry));
+  const read=host.readArchiveEntry??((entry,dest,size)=>nativeReadArchiveEntry(memory,entry,dest,size,host));
+  return nativeLoadTerrainImage(memory,palette,handle,scratch,{
+    ...host,
+    tellFile:tell,
+    readFile:(dest,size,count,entry)=>read(entry,dest,Math.imul(size,count)),
+    alignImagePixels:entry=>{while(tell(entry)&3){if(host.readArchiveByte)host.readArchiveByte(entry);else read(entry,scratch+0x428,1);}},
+  });
 }

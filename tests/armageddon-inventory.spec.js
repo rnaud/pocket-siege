@@ -1,3 +1,5 @@
+import archiveImage from './fixtures/armageddon/archive-image.json' with {type:'json'};
+import {nativeLoadArchiveImage} from '../src/armageddon/terrain-image.js';
 import archiveHandle from './fixtures/armageddon/archive-handle.json' with {type:'json'};
 import {nativeTellArchiveEntry,nativeReadArchiveEntry,nativeDestroyArchiveEntry} from '../src/armageddon/archive-handle.js';
 import archiveLookup from './fixtures/armageddon/archive-lookup.json' with {type:'json'};
@@ -258,7 +260,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     nativeDecodeImagePixels({byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}},destination,source,palette);
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
   }
-  for(const c of [...terrainImage.cases,...terrainLoad.cases]) {
+  for(const c of [...terrainImage.cases,...terrainLoad.cases,...archiveImage.cases.map(c=>({...c,archiveImage:true}))]) {
     const owner=0x2000000,scratch=0x2100000,compressed=0x714be0;
     const bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(0x43c,c.pattern),packed=Buffer.alloc(0x1000,c.pattern),signature=Buffer.alloc(4,c.pattern),calls=[];
     const locate=a=>a>=scratch?[temporary,a-scratch]:a>=owner?[bytes,a-owner]:a>=compressed?[packed,a-compressed]:[signature,a-0x560230];
@@ -284,6 +286,15 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       bitmapStorage:bitmap=>{calls.push(['storage',bitmap,snapshot()]);return c.composed?{pixels:owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400,bits:memory.get(bitmap+12),pitch:Math.floor((memory.get(bitmap+4)*memory.get(bitmap+12)+31)/32)*4}:{pixels:owner+0x1000,bits:c.bits,pitch:c.pitch};},
       remapBitmap:(bitmap,map)=>calls.push(['remap',bitmap,mapping(map),snapshot()]),
     };
+    if(c.archiveImage) {
+      host.tellArchiveEntry=host.tellFile;
+      host.readArchiveEntry=(entry,dest,n)=>{
+        calls.push(['read',dest>=scratch?'scratch':dest,n,entry,snapshot()]);
+        const chunk=stream.subarray(cursor,cursor+n);cursor+=chunk.length;
+        const [b,o]=locate(dest);chunk.copy(b,o);return chunk.length;
+      };
+      host.readArchiveByte=entry=>{calls.push(['byte',entry,snapshot()]);return stream[cursor++];};
+    }
     if(c.nativeBitmaps) {
       delete host.constructBitmap;delete host.bitmapStorage;delete host.remapBitmap;
       host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.nativeDirectories&&pool===0x560220?owner+0x9000+(archives-1)*0x2000:owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400;};
@@ -295,7 +306,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       host.submitRendererPalette=(...args)=>calls.push(['submit',...args,snapshot()]);
       if(!c.nativeRectangles)host.clearBitmapRect=(...args)=>calls.push(['clear',...args,snapshot()]);
     }
-    const result=c.terrainStartup?nativeLoadTerrainLayers(memory,owner+0x4000,{renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host);
+    const result=c.terrainStartup?nativeLoadTerrainLayers(memory,owner+0x4000,{renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):(c.archiveImage?nativeLoadArchiveImage:nativeLoadTerrainImage)(memory,0x4567,0x1234,scratch,host);
     if(c.themeArchives){
       if(c.nativeDirectories){host.archiveScratch=scratch;host.seekFile=(file,offset,origin)=>{calls.push(['seek',file,offset,origin,snapshot()]);archiveCursors[file-0x5001]=offset;return 0;};}
       else host.loadArchiveDirectory=archive=>{calls.push(['directory',archive,snapshot()]);return c.variant&1;};
