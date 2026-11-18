@@ -1,3 +1,5 @@
+import fullStartupCleanup from './fixtures/armageddon/full-startup-cleanup.json' with {type:'json'};
+import taskCleanup from './fixtures/armageddon/task-cleanup.json' with {type:'json'};
 import physicsCompact from './fixtures/armageddon/physics-compact.json' with {type:'json'};
 import fullStartupDispatch from './fixtures/armageddon/full-startup-dispatch.json' with {type:'json'};
 import fullStartupSettings from './fixtures/armageddon/full-startup-settings.json' with {type:'json'};
@@ -22,7 +24,7 @@ import physicsMemory from './fixtures/armageddon/physics-memory.json' with {type
 import {nativeCreatePhysicsAt,nativeRegisterPhysicsMemory,nativeCompactPhysicsMemory} from '../src/armageddon/physics-memory.js';
 import groupDispatch from './fixtures/armageddon/event-group-dispatch.json' with {type:'json'};
 import {nativeDispatchEventGroupChildren} from '../src/armageddon/event-group.js';
-import {nativeCreateTaskMemory,nativeRegisterTaskMemory,nativeSendTaskEventMemory} from '../src/armageddon/task-memory.js';
+import {nativeCreateTaskMemory,nativeRegisterTaskMemory,nativeSendTaskEventMemory,nativeCleanupTaskMemory} from '../src/armageddon/task-memory.js';
 import {nativeSetGroupSubscription,nativeDispatchEventGroup} from '../src/armageddon/event-group.js';
 import worldCreate from './fixtures/armageddon/world-create.json' with {type:'json'};
 import {nativeInitializeWorld} from '../src/armageddon/world-create.js';
@@ -89,7 +91,7 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true})),...worldMineMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true})),...worldSceneryMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true})),...worldPresentationMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true})),...fullMatchRootMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true})),...fullStartupMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true})),...fullStartupSettings.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true})),...fullStartupDispatch.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true}))]) {
+  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true})),...worldMineMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true})),...worldSceneryMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true})),...worldPresentationMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true})),...fullMatchRootMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true})),...fullStartupMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true})),...fullStartupSettings.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true})),...fullStartupDispatch.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true})),...fullStartupCleanup.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true}))]) {
     const owner=new Uint8Array(0x10000),heap=new Uint8Array(c.world?0x100000:c.controller?0x40000:0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
@@ -124,10 +126,40 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     else if(c.world)nativeInitializeWorld(memory,0x2000000,0x2300000,0x23047a8,host);
     else if(c.controller)nativeCreateTeamControllerAt(memory,0x2000000,0x2008000,c.team,0x2001000,host);
     else nativeCreateWormAt(memory,0x2000000,0x2008000,c.team,c.worm,0x2001000,host);
+    if(c.cleanup) {
+      const observed=[];
+      const cleanup=at=>{observed.push(at);nativeCleanupTaskMemory(memory,at,cleanup);};
+      cleanup(memory.get(0x2000004));nativeCompactPhysicsMemory(memory,memory.get(0x23007d4));
+      expect(observed).toEqual(c.cleanupCalls);
+    }
     if(c.controller)expect(portraitLabel).toBe(c.portraitLabel);
     const label=`constructor case ${c.bits}: world=${!!c.world}, objects=${!!c.objects}, barrels=${!!c.barrels}, mines=${!!c.mines}`;
     expect(calls,label).toEqual(c.calls);
     expect(createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),label).toBe(c.sha256);
+  }
+  for(const row of taskCleanup.cases) {
+    const {count,mode,mask,dirty}=row,owner=0x2000000,children=owner+0x4000,alternate=owner+0x5000,scratch=owner+0x6000,table=owner+0x8000;
+    const bytes=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(bytes.buffer),calls=[];
+    const memory={get:at=>view.getUint32(at-owner,true),put:(at,value)=>view.setUint32(at-owner,value,true)};
+    memory.put(table+0x18,0x2200100);
+    for(let i=0;i<8;i++)memory.put(owner+0x1000+i*0x100,table);
+    for(let i=0;i<count;i++) {
+      memory.put(children+i*4,mask===1||mask===2&&i%2===0||mask===3&&i%2?0:owner+0x1000+i*0x100);
+      memory.put(alternate+i*4,owner+0x1000+(7-i)*0x100);
+    }
+    for(const [offset,value] of [[16,dirty],[20,count],[24,children],[28,scratch],[32,0xdeadbeef]])memory.put(owner+offset,value);
+    nativeCleanupTaskMemory(memory,owner,child=>{
+      calls.push(child);if(calls.length!==1)return;
+      if(mode===1)memory.put(owner+20,0);
+      else if(mode===2){memory.put(children+4,0);memory.put(owner+16,1);}
+      else if(mode===3)memory.put(owner+24,alternate);
+      else if(mode===4){memory.put(children+count*4,owner+0x1700);memory.put(owner+20,count+1);}
+      else if(mode===5)memory.put(owner+20,1);
+      else if(mode===6){memory.put(children,0);memory.put(owner+16,1);}
+      else if(mode===7)memory.put(owner+16,0);
+    });
+    expect(calls).toEqual(row.calls);
+    expect(createHash('sha256').update(bytes).digest('hex'),`task cleanup ${count}/${mode}/${mask}/${dirty}`).toBe(row.sha256);
   }
   for(const {seed,sha256} of physicsCompact.cases) {
     const bytes=Uint8Array.from({length:0x10000},(_,i)=>(i*13+seed)&255),view=new DataView(bytes.buffer);

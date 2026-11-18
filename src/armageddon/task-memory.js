@@ -1,3 +1,4 @@
+import {nativeCompactPhysicsEntries} from './physics-compaction.js';
 //Address-backed004B1AE0. The logical task API remains in task-create.js.
 export function nativeCreateTaskMemory(memory,address,parent,host) {
   const put=(offset,value)=>memory.put(address+offset,value);
@@ -57,4 +58,20 @@ export function nativeSendTaskEventMemory(memory,address,sender,type,index,event
   const target=nativeLookupTaskMemory(memory,memory.get(address+48),type,index);
   if(!target)return 0;
   dispatch(target,sender,event,size,payload);return 1;
+}
+
+//004B2A00: children may mutate the parent list while their virtual+18 runs.
+//Only compact after all surviving/appended children have been visited.
+export function nativeCleanupTaskMemory(memory,address,cleanupChild=child=>nativeCleanupTaskMemory(memory,child)) {
+  let index=0;
+  while(index<(memory.get(address+20)|0)) {
+    const child=memory.get(memory.get(address+24)+index++*4);
+    if(child)cleanupChild(child);
+  }
+  if(!memory.get(address+16))return;
+  const source=memory.get(address+24),target=memory.get(address+28);
+  const count=nativeCompactPhysicsEntries(memory.get(address+20),
+    index=>memory.get(source+index*4),(index,child)=>memory.put(target+index*4,child));
+  memory.put(address+32,source);memory.put(address+24,target);memory.put(address+28,source);
+  memory.put(address+20,count);memory.put(address+16,0);
 }
