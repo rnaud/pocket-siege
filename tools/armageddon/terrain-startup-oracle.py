@@ -38,12 +38,21 @@ bitmap=owner;pixels=owner+0x1000
 def snapshot():return hashlib.sha256(bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(compressed,0x1000))).hexdigest()
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);cpu.reg_write(UC_X86_REG_EIP,read(sp));cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EAX,value)
+def cstring(address):
+ result=bytearray()
+ while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
+ return result.decode('latin1')
 def hook(cpu,address,size,user):
- global cursor,color_index,bitmap,pixels
+ global cursor,color_index,bitmap,pixels,archives
  sp=cpu.reg_read(UC_X86_REG_ESP);receiver=cpu.reg_read(UC_X86_REG_ECX)
- if address==stop+0x800:calls.append(['palette',receiver,read(sp+4),snapshot()]);ret(owner+0x8000,4)
+ if address==stop+0xb00:
+  value=cstring(read(sp+8)).replace('%s',cstring(read(sp+12)));cpu.mem_write(read(sp+4),value.encode('latin1')+b'\0');ret(len(value))
+ elif address==0x4ad270:calls.append(['directory',receiver,snapshot()]);ret(variant&1)
+ elif address==stop+0x800:calls.append(['palette',receiver,read(sp+4),snapshot()]);ret(owner+0x8000,4)
  elif address==stop+0x900:calls.append(['submit',receiver,read(sp+4),snapshot()]);ret(0,4)
- elif address==stop+0x600:calls.append(['open',read(sp+4),'rb',snapshot()]);ret(0x1234)
+ elif address==stop+0x600:
+  path=read(sp+4);path=path if path==owner+0x800 else cstring(path)
+  calls.append(['open',path,'rb',snapshot()]);ret(0x1234 if isinstance(path,int) else (0 if variant&(1<<(archives-1)) else 0x5000+archives))
  elif address==stop+0x700:calls.append(['close',read(sp+4),snapshot()]);ret()
  elif address==stop+0x100:calls.append(['tell',read(sp+4),snapshot()]);ret(cursor)
  elif address==stop+0x200:
@@ -54,16 +63,18 @@ def hook(cpu,address,size,user):
   ret(len(chunk)//n if n else 0)
  elif address==stop+0x300:ret(0 if bytes(cpu.mem_read(read(sp+4),4))==b'IMG\x1a' else 1)
  elif address==0x492550:
-  calls.append(['allocate',read(sp+4),snapshot()]);bitmap+=0x40;pixels=owner+0x2000+(bitmap-owner-0x1000)//0x40*0x400;ret(bitmap)
+  calls.append(['allocate',read(sp+4),snapshot()])
+  if read(sp+4)==0x19c:archives+=1;ret(owner+0x7000+(archives-1)*0x200)
+  else:bitmap+=0x40;pixels=owner+0x2000+(bitmap-owner-0x1000)//0x40*0x400;ret(bitmap)
  elif address==0x4924d0:
   calls.append(['array',read(sp+8),read(sp+4),snapshot()]);ret(pixels)
-for iat,target in [(0x51794c,stop+0x600),(0x51793c,stop+0x700),(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
-for address in [stop+0x800,stop+0x900,stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for iat,target in [(0x5178f4,stop+0xb00),(0x51794c,stop+0x600),(0x51793c,stop+0x700),(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
+for address in [stop+0xb00,0x4ad270,stop+0x800,stop+0x900,stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
 for pattern in [0,0xa5]:
  for variant in range(4):
   for count in [0,1,8,32]:
-   cursor=0;color_index=0;calls=[];bitmap=owner+0x1000;pixels=0
+   cursor=0;archives=0;color_index=0;calls=[];bitmap=owner+0x1000;pixels=0
    cpu.mem_write(owner,bytes([pattern])*0x10000);cpu.mem_write(stack,bytes([pattern])*0x10000);cpu.mem_write(compressed,bytes([pattern])*0x1000)
    first,last=[(137,248),(0,2),(254,254),(2,1)][variant]
    sp=stack+0xf000;write(sp,stop);write(sp+4,first);write(sp+8,last)
@@ -80,8 +91,8 @@ for pattern in [0,0xa5]:
    arguments=[0xabcdef,owner+0x6000,variant,owner+0x800,owner+8,owner+0x100,owner,owner+4]
    sp=stack+0xf000;write(sp,stop)
    for i,v in enumerate(arguments):write(sp+4+i*4,v)
-   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x4000);cpu.emu_start(0x4a78a0,0x4a79c2,count=100000)
-   assert cpu.reg_read(UC_X86_REG_EIP)==0x4a79c2
-   cases.append(dict(terrainStartup=True,nativeRectangles=True,composed=True,nativeBitmaps=True,nativePalette=True,first=first,last=last,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004A78A0..004A79C2',method='32 original terrain constructor prefixes compose complete file/image/bitmap/palette/decompression loading. Full68KiB memory at callbacks and completion. Renderer palette access/submission, CRT transport and heap allocation remain interfaces. Includes water percentages0/23/100/101. Native rectangle clipping and1/8-bit clearing execute. Theme archive construction and live startup remain unfinished.',cases=cases),separators=(',',':'))+'\n')
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x4000);cpu.emu_start(0x4a78a0,0x4a7a67,count=100000)
+   assert cpu.reg_read(UC_X86_REG_EIP)==0x4a7a67
+   cases.append(dict(terrainStartup=True,themeArchives=True,nativeRectangles=True,composed=True,nativeBitmaps=True,nativePalette=True,first=first,last=last,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004A78A0..004A7A67',method='32 original terrain constructor prefixes compose complete file/image/bitmap/palette/decompression loading. Full68KiB memory at callbacks and completion. Renderer palette access/submission, CRT transport and heap allocation remain interfaces. Includes water percentages0/23/100/101. Native rectangle clipping and1/8-bit clearing execute. Original theme archive constructors and004CC460 file opening execute, with both open failure and directory parse results. Directory parsing, remaining terrain construction and live startup remain unfinished.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} composed terrain sequences')

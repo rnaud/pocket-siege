@@ -1,5 +1,6 @@
 import {nativeLoadTerrainFile} from './terrain-file.js';
 import {nativeFillBitmapRect} from './bitmap-rectangle.js';
+import {nativeCreateFileArchive,nativeOpenFileArchive} from './archive-file.js';
 
 //004A78A0..004A79C2: terrain constructor through image loading, waterline
 //clearing and palette submission. Theme archives and later setup follow this.
@@ -19,4 +20,18 @@ export function nativeLoadTerrainLayers(memory,terrain,settings,scratch,host) {
     else nativeFillBitmapRect(memory,memory.get(terrain+offset),0,top,1920,696,0);
   }
   host.submitRendererPalette(renderer,3);
+}
+
+//004A79C2..004A7A67. Theme names are the byte strings from the terrain file.
+//Archive directory parsing remains a service; original open results are ignored.
+export function nativeLoadTerrainThemes(memory,terrain,metadata,host) {
+  memory.put(terrain+0x8e4,memory.get(metadata));
+  for(const [name,slot,suffix] of [[0x910,0xb20,'Level.dir'],[0xa10,0xb24,'Water.dir']]) {
+    let path='';
+    for(let i=0;memory.byte(terrain+name+i);i++)path+=String.fromCharCode(memory.byte(terrain+name+i));
+    path+='\\'+suffix;
+    const archive=host.allocate(0x19c);
+    memory.put(terrain+slot,archive?nativeCreateFileArchive(memory,archive):0);
+    nativeOpenFileArchive(memory,memory.get(terrain+slot),path,host);
+  }
 }

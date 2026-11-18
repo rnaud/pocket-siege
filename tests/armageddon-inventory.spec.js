@@ -2,7 +2,7 @@ import bitmapRectangle from './fixtures/armageddon/bitmap-rectangle.json' with {
 import {nativeFillBitmapRect} from '../src/armageddon/bitmap-rectangle.js';
 import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
 import terrainLoad from './fixtures/armageddon/terrain-startup.json' with {type:'json'};
-import {nativeLoadTerrainLayers} from '../src/armageddon/terrain-startup.js';
+import {nativeLoadTerrainLayers,nativeLoadTerrainThemes} from '../src/armageddon/terrain-startup.js';
 import imageDecompress from './fixtures/armageddon/image-decompress.json' with {type:'json'};
 import {nativeDecodeImagePixels} from '../src/armageddon/image-decompress.js';
 import terrainImage from './fixtures/armageddon/terrain-image.json' with {type:'json'};
@@ -194,9 +194,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=locate(a);return b[o];},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
     const snapshot=()=>createHash('sha256').update(bytes).update(packed).digest('hex');
     const mapping=a=>{const [b,o]=locate(a);return b.subarray(o,o+256).toString('hex');};
-    const stream=Buffer.from(c.stream,'hex');let cursor=c.composed?0:5,colorIndex=0,bitmap=owner+0x1000;
+    const stream=Buffer.from(c.stream,'hex');let cursor=c.composed?0:5,colorIndex=0,bitmap=owner+0x1000,archives=0;
     const host={
-      openFile:(path,mode)=>{calls.push(['open',path,mode,snapshot()]);return 0x1234;},
+      openFile:(path,mode)=>{calls.push(['open',path,mode,snapshot()]);return typeof path==='number'?0x1234:c.variant&(1<<(archives-1))?0:0x5000+archives;},
       closeFile:file=>calls.push(['close',file,snapshot()]),
       tellFile:file=>{calls.push(['tell',file,snapshot()]);return cursor;},
       readFile:(dest,n,count,file)=>{
@@ -205,7 +205,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         const [b,o]=locate(dest);chunk.copy(b,o);return n?Math.floor(chunk.length/n):0;
       },
       addPaletteColor:(...args)=>{calls.push(['color',...args,snapshot()]);return ++colorIndex+10;},
-      allocate:n=>{calls.push(['allocate',n,snapshot()]);if(c.composed){bitmap+=0x40;return bitmap;}return owner;},
+      allocate:n=>{calls.push(['allocate',n,snapshot()]);if(c.themeArchives&&n===0x19c)return owner+0x7000+(archives++)*0x200;if(c.composed){bitmap+=0x40;return bitmap;}return owner;},
       constructBitmap:(bitmap,width,height,bits)=>{calls.push(['construct',bitmap,width,height,bits,snapshot()]);memory.put(bitmap+4,width);memory.put(bitmap+8,height);memory.put(bitmap+12,bits);},
       bitmapStorage:bitmap=>{calls.push(['storage',bitmap,snapshot()]);return c.composed?{pixels:owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400,bits:memory.get(bitmap+12),pitch:Math.floor((memory.get(bitmap+4)*memory.get(bitmap+12)+31)/32)*4}:{pixels:owner+0x1000,bits:c.bits,pitch:c.pitch};},
       remapBitmap:(bitmap,map)=>calls.push(['remap',bitmap,mapping(map),snapshot()]),
@@ -222,6 +222,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       if(!c.nativeRectangles)host.clearBitmapRect=(...args)=>calls.push(['clear',...args,snapshot()]);
     }
     const result=c.terrainStartup?nativeLoadTerrainLayers(memory,owner+0x4000,{renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host);
+    if(c.themeArchives){host.loadArchiveDirectory=archive=>{calls.push(['directory',archive,snapshot()]);return c.variant&1;};nativeLoadTerrainThemes(memory,owner+0x4000,owner,host);}
     if(!c.terrainStartup)expect(result).toBe(c.result);
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
