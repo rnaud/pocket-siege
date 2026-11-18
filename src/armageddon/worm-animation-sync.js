@@ -52,3 +52,16 @@ export function nativeSynchronizeWormPlayer(body,team,player,metadata,queries) {
     queue:sprite=>player.enqueue(sprite,metadata(sprite)),
   });
 }
+
+import { NativeAnimationPlayer } from './animation.js';
+//004F6010 composed with the native memory-backed animation record and inventory.
+export function nativeSynchronizeWormAt(memory,address,host) {
+  const scene=memory.get(address+0x38),animation=memory.get(address+0x350);
+  const player=new NativeAnimationPlayer().restoreReplayState(memory.range(animation+8,0x15c));
+  nativeSynchronizeWormMemory(memory.range(address,0x390),memory.range(scene,0x20000),{
+    player,metadata:id=>host.animationMetadata(memory.get(animation+4),id),
+    teamStatus:team=>memory.get(scene+0x1b94+team*0x51c-12)|0,
+    health:(team,worm)=>memory.get(scene+0x1b94+team*0x51c+worm*0x9c-0x538)|0,
+  });
+  memory.range(animation+8,0x15c).set(player.replayState());
+}

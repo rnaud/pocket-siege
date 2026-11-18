@@ -1,4 +1,4 @@
-import { nativeSynchronizeWormMemory } from "./worm-animation-sync.js";
+import { nativeSynchronizeWormMemory, nativeSynchronizeWormAt } from "./worm-animation-sync.js";
 import { nativeInitializeWormPlacement } from "./worm-placement.js";
 import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom } from './spawn-pool.js';
 import { nativeInitializePhysics } from './physics-create.js';
@@ -113,6 +113,7 @@ export function nativeCreateWormAt(memory,address,parent,team,worm,configuration
       for(let offset=8;offset<=32;offset+=4)memory.put(at+offset,0);
       return at;
     },
+    synchronizeAnimation:host.synchronizeAnimation??host.settlePhysics??(()=>nativeSynchronizeWormAt(memory,address,host)),
     initializeResources:undefined,
     resources:{allocateResource:size=>host.allocate(size),renderer:memory.get(scene+8),
       constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),

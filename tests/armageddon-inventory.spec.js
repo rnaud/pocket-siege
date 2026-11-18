@@ -1,3 +1,4 @@
+import wormMemoryAnimation from './fixtures/armageddon/worm-memory-animation.json' with {type:'json'};
 import wormMemory from './fixtures/armageddon/worm-memory.json' with {type:'json'};
 import {nativeCreateWormAt} from '../src/armageddon/worm-create.js';
 import physicsMemory from './fixtures/armageddon/physics-memory.json' with {type:'json'};
@@ -72,18 +73,18 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const wormActual=[],wormExpected=[];
-  for(const c of wormMemory.cases) {
+  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true}))]) {
     const owner=new Uint8Array(0x10000),heap=new Uint8Array(0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
     for(const [at,value] of c.initialWords)memory.put(at,value);
     let cursor=0x2408000,attempts=0;
-    const allocate=(kind,size,pool)=>{const value=kind==='allocate'&&size===0x164&&(c.bits&64)?0:cursor;if(value)cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
+    const allocate=(kind,size,pool)=>{const value=kind==='allocate'&&size===0x164&&(c.bits&64)&&!c.synchronized?0:cursor;if(value)cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
     const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),free:at=>calls.push(['free',at]),
       randomSpawnWord:()=>{calls.push(['random']);return 0x12345678;},randomSpawn:r=>{calls.push(['randomSpawn',r]);return c.packed;},sideSpawn:side=>{calls.push(['sideSpawn',side]);return c.packed;},reserveSpawn:p=>calls.push(['reserve',p]),
       gravity:()=>{calls.push(['gravity']);return c.gravity;},fontHeight:(...args)=>{calls.push(['font',...args]);return 8;},
       placeWorm:(x,y)=>{calls.push(['place',x,y,memory.get(0x2000040)|0,memory.get(0x2000048)|0]);return ++attempts>=c.successAt;},
-      changeState:state=>calls.push(['state',state]),settlePhysics:()=>calls.push(['settle']),
+      changeState:state=>calls.push(['state',state]),settlePhysics:c.synchronized?undefined:()=>calls.push(['settle']),animationMetadata:(renderer,id)=>{calls.push(['metadata',renderer,id]);return {rate:id%3?25<<16:0,loop:id%2,span:5+id%7};},
     };
     nativeCreateTaskMemory(memory,0x2008000,0,host);memory.put(0x2008038,0x2300000);
     nativeCreateWormAt(memory,0x2000000,0x2008000,c.team,c.worm,0x2001000,host);
