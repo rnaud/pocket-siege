@@ -1,3 +1,4 @@
+import replayWorldReplacement from './fixtures/armageddon/replay-world-replacement.json' with {type:'json'};
 import replayRestoredFrames from './fixtures/armageddon/replay-restored-frames.json' with {type:'json'};
 import {nativeWriteActorMemory,nativeWriteTaskHeaderMemory,nativeWriteMatchMemory,nativeWriteEnvironmentMemory} from '../src/armageddon/replay-write-memory.js';
 import {nativeRestoreSceneSnapshot} from '../src/armageddon/replay-scene-restore.js';
@@ -1133,6 +1134,21 @@ test("Native replay frame and input pipeline matches original executable request
       ...(row.input.entry ? { entry: { fields: [0x12488,0x7f0,0x1d434,0x1d444].map(offset=>scene.getInt32(offset,true)),
         manager: [manager.playbackError,manager.playbackFailure], copiedHash: createHash('sha256').update(sceneMemory.slice(0x1c188,0x1c188+0x950)).digest('hex') } } : {}),
     }).toEqual(row.result);
+  }
+  for(const row of replayWorldReplacement.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000,0x70000),env=initial.subarray(0x70000),calls=[],allocationCalls=[];
+    const locate=at=>at>=0x2500000?[env,at-0x2500000]:at>=0x2400000?[heap,at-0x2400000]:at>=0x2020000?[scene,at-0x2020000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    let cursor=row.cursor;const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
+    const stream=NativeReplayStream.fromMemory(memory,0x2001000);
+    expect(nativeRestoreSceneSnapshot(memory,0x2000800,0x2001000,{
+      allocate:size=>{const pointer=allocate(size);allocationCalls.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocationCalls.push(['array',size,pool,pointer]);return pointer;},free:address=>allocationCalls.push(['free',address]),
+      release:(at,size)=>allocationCalls.push(['release',at,size]),
+      constructText:(...args)=>{calls.push([0x4c6610,...args]);memory.put(args[0],0x5268a4);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);memory.put(args[0],0x526390);return args[0];},
+    })).toBe(row.root);
+    expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.calls);expect(stream.position).toBe(row.position);
+    expect(memory.get(0x20207d4)).toBe(row.environment);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
   }
   for(const row of replaySnapshotRestore.cases) {
     const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),scene=initial.subarray(0x10000,0x30000),heap=initial.subarray(0x30000,0x70000),env=initial.subarray(0x70000),calls=[],allocationCalls=[];

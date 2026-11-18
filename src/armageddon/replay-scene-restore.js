@@ -1,16 +1,20 @@
+import {nativeCleanupTaskMemory} from './task-memory.js';
+import {nativeCompactPhysicsMemory} from './physics-memory.js';
+import {nativeDestroyWorldTaskMemory} from './world-destroy.js';
+import {nativeDestroyEnvironmentMemory} from './physics-destroy.js';
 import {nativeReplayEntry} from './replay-entry.js';
 import {NativeReplayStream} from './replay-stream.js';
 import {nativeReadEnvironmentMemory} from './physics-memory.js';
 import {nativeReadRootMemory} from './replay-task-memory.js';
 
 //004A1D20. Cleanup may replace/null the owned pointers, so reread them before
-//destruction. Allocation and old-object virtual cleanup remain host interfaces.
+//destruction. Native ownership is the default; explicit overrides support host adapters.
 export function nativeRestoreSceneSnapshot(memory,owner,streamAddress,host) {
-  host.flushTask(memory.get(owner+4));
-  const oldRoot=memory.get(owner+4);if(oldRoot)host.destroyTask(oldRoot,1);
-  host.flushEnvironment(memory.get(memory.get(owner+0x2a0)+0x7d4));
+  (host.flushTask??(at=>nativeCleanupTaskMemory(memory,at)))(memory.get(owner+4));
+  const oldRoot=memory.get(owner+4);if(oldRoot)(host.destroyTask??((at,flags)=>nativeDestroyWorldTaskMemory(memory,at,flags,host)))(oldRoot,1);
+  (host.flushEnvironment??(at=>nativeCompactPhysicsMemory(memory,at)))(memory.get(memory.get(owner+0x2a0)+0x7d4));
   const oldEnvironment=memory.get(memory.get(owner+0x2a0)+0x7d4);
-  if(oldEnvironment)host.destroyEnvironment(oldEnvironment,1);
+  if(oldEnvironment)(host.destroyEnvironment??((at,flags)=>nativeDestroyEnvironmentMemory(memory,at,flags,host)))(oldEnvironment,1);
   const stream=NativeReplayStream.fromMemory(memory,streamAddress);
   stream.seek(0);
   memory.range(memory.get(owner+0x2a0)+0x7ec,0x3fbc).set(stream.readBlock(0x3fbc));
