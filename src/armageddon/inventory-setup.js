@@ -1,5 +1,15 @@
 import tables from './inventory-setup-tables.json' with {type:'json'};
 
+//0046F4E0 /00470340 /00470370. First matching override wins.
+export function nativeSetupWeaponValue(memory, slot, delay=false) {
+  const view=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
+  for(let i=0;i<22;i++) {
+    const offset=0xd0+i*12;
+    if(view.getInt32(offset,true)===(slot|0))return view.getInt32(offset+(delay?8:4),true);
+  }
+  return 0;
+}
+
 //00417750. Frontend setup before the +3C runtime copy and004C2640 import.
 //Saved-team lookup and descriptor getters remain interfaces; setup bytes,
 //signed short stockpiles and per-team bank assignment remain authoritative.
@@ -8,12 +18,14 @@ export function nativeBuildInventorySetup(memory, scheme, preset, extras, host) 
   const signedByte=value=>value<<24>>24;
   const round=(view.getInt32(0x38,true)+1)|0;view.setInt32(0x38,round,true);
   const delays=new Int16Array(71);
+  const delay=host.delay??(slot=>nativeSetupWeaponValue(host.descriptors,slot,true));
+  const count=host.count??(slot=>nativeSetupWeaponValue(host.descriptors,slot));
   for(const [slot,kind,value] of tables.delays)
-    delays[slot]=kind==='getter'?host.delay(slot):kind==='byte'?signedByte(scheme[value]):value;
+    delays[slot]=kind==='getter'?delay(slot):kind==='byte'?signedByte(scheme[value]):value;
   if(memory[0xd5fb]===1)delays[55]=99;
   const overrides=[2,14,15].includes(preset)?[[62,2]]:preset===8?[[10,4],[30,2],[50,5]]:
     preset===9?[[31,7]]:preset===16?[[10,4]]:[];
-  for(const [slot,value] of overrides)if(!host.count(slot))delays[slot]=value;
+  for(const [slot,value] of overrides)if(!count(slot))delays[slot]=value;
   for(let bank=0;bank<6;bank++)
     for(let slot=0;slot<71;slot++)view.setInt16(0xce06+bank*0x11e+slot*2,delays[slot],true);
   const copied=new Set();

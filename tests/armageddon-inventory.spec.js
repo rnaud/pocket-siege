@@ -1,5 +1,5 @@
 import setupFixture from './fixtures/armageddon/inventory-setup.json' with {type:'json'};
-import { nativeBuildInventorySetup } from '../src/armageddon/inventory-setup.js';
+import { nativeBuildInventorySetup, nativeSetupWeaponValue } from '../src/armageddon/inventory-setup.js';
 import initialization from './fixtures/armageddon/inventory-initialization.json' with {type:'json'};
 import { nativeInitializeInventory } from '../src/armageddon/inventory-initialization.js';
 import { createHash } from 'node:crypto';
@@ -29,13 +29,18 @@ test("inventory matches 120 cases executed by the original x86 routines", { tag:
     }
     for(const [offset,name] of row.names)memory.set(new TextEncoder().encode(name+'\0'),offset);
     const calls=[];
+    const descriptors=new Uint8Array(0x1d8),descriptorView=new DataView(descriptors.buffer);
+    row.descriptors.forEach((record,i)=>record.forEach((value,j)=>descriptorView.setInt32(0xd0+i*12+j*4,value,true)));
+    row.getter_results.forEach(([count,delay],slot)=>{
+      expect(nativeSetupWeaponValue(descriptors,slot)).toBe(count);
+      expect(nativeSetupWeaponValue(descriptors,slot,true)).toBe(delay);
+    });
     nativeBuildInventorySetup(memory,row.scheme,row.preset,row.extras,{
-      delay:slot=>{calls.push(['delay',slot]);return row.delays[slot];},
-      count:slot=>{calls.push(['count',slot]);return row.counts[slot];},
+      descriptors,
       saved:team=>{calls.push(['stats',team]);return row.saved[team];},
       special:team=>{calls.push(['special',team]);return row.specials[team];},
     });
-    expect(calls).toEqual(row.calls);
+    expect(calls).toEqual(row.calls.filter(call=>!['delay','count'].includes(call[0])));
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
     const inventory=new Uint8Array(0x2c14);nativeInitializeInventory(inventory,memory.subarray(0x3c));
     expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
