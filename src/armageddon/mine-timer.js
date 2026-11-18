@@ -1,4 +1,4 @@
-import records from "./scheme-weapon-data.json" with { type: "json" };
+import records from "./scheme-weapons.js";
 import { WEAPON_SLOTS } from "./delays.js";
 const record = records.schemes.find((s) => s.resource_id === 195).weapons[
   WEAPON_SLOTS.mine

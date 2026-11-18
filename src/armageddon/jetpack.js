@@ -1,5 +1,5 @@
 import { fixedDivide, fixedMultiply } from "./numeric.js";
-import records from "./scheme-weapon-data.json" with { type: "json" };
+import records from "./scheme-weapons.js";
 // 004D7730 state78 reads the low byte of jetpack record3E +70.
 export const nativeJetpackInitialFuel =
   (records.schemes.find(s => s.resource_id === 195).weapons[62][10] & 255) << 16;

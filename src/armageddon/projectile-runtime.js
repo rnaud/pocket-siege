@@ -14,7 +14,7 @@ import { nativeProjectileContact } from "./projectile-contact.js";
 import { nativeContactReceiver } from "./contact-receiver.js";
 import { nativeDamageVariation } from "./hitscan-resolution.js";
 import { nativeWaterSound, enqueueNativeSound } from "./water-audio.js";
-import records from "./scheme-weapon-data.json" with { type: "json" };
+import records from "./scheme-weapons.js";
 import { WEAPON_SLOTS } from "./delays.js";
 import {
   nativeProjectileSelection,

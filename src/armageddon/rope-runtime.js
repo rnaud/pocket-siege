@@ -1,4 +1,4 @@
-import records from './scheme-weapon-data.json' with { type: 'json' };
+import records from './scheme-weapons.js';
 import { nativeTraversalFire } from './traversal-fire.js';
 import { nativeRopeShotTick } from './rope-shot.js';
 import { nativeRopeConstraint } from './rope-constraint.js';

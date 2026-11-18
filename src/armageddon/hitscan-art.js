@@ -1,4 +1,4 @@
-import records from "./scheme-weapon-data.json" with { type: "json" };
+import records from "./scheme-weapons.js";
 import { WEAPON_SLOTS } from "./delays.js";
 import { nativeLaunch } from "./launch.js";
 export function nativeBulletLaunch(config, worm, angle, height, random) {

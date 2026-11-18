@@ -1,3 +1,7 @@
+import schemeWeapons from '../src/armageddon/scheme-weapons.js';
+import capturedSchemeWeapons from '../src/armageddon/scheme-weapon-data.json' with {type:'json'};
+import weaponInitialization from './fixtures/armageddon/weapon-initialization.json' with {type:'json'};
+import {nativeInitializeWeaponRecords} from '../src/armageddon/weapon-initialization.js';
 import {inflateSync} from 'node:zlib';
 import weaponOverrides from './fixtures/armageddon/weapon-overrides.json' with {type:'json'};
 import {nativeApplyWeaponOverrides} from '../src/armageddon/weapon-overrides.js';
@@ -43,6 +47,18 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  expect(schemeWeapons.schemes).toEqual(capturedSchemeWeapons.schemes);
+  for(const row of weaponInitialization.cases) {
+    const memory=inflateSync(Buffer.from(row.input,'base64')),calls=[];
+    nativeInitializeWeaponRecords(memory,method=>{
+      calls.push(method);const index=method/4;
+      let name=(row.variant%2?'Weapon':'Alternate')+String(index).padStart(3,'0');
+      if(index%7===0)name='';if(index%11===0)name='X'.repeat(32);
+      return new TextEncoder().encode(name+'\0');
+    });
+    expect(calls).toEqual(row.calls);
+    expect(createHash('sha256').update(memory).digest('hex'),`initializer ${row.resource_id}/${row.variant}`).toBe(row.sha256);
+  }
   for(const row of weaponOverrides.cases) {
     const memory=inflateSync(Buffer.from(row.input,'base64'));
     nativeApplyWeaponOverrides(memory);

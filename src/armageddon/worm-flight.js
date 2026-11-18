@@ -1,5 +1,5 @@
 import { nativeWormPickupContact } from "./worm-pickup.js";
-import records from "./scheme-weapon-data.json" with { type: "json" };
+import records from "./scheme-weapons.js";
 import { nativeWormTransitionBody } from "./worm-state.js";
 import { nativeJetpackInput, nativeJetpackVelocity } from "./jetpack.js";
 import { nativeWaterSound } from "./water-audio.js";
