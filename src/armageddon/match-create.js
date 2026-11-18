@@ -1,3 +1,4 @@
+import {nativeInitializeWorld} from './world-create.js';
 import {nativeCreatePanelImage,nativeCreatePanelText} from './panel-resources.js';
 import {nativeInitializeMatchResources} from './match-resources.js';
 
@@ -37,7 +38,7 @@ export function nativeInitializeMatchRoot(memory,sceneMemory,setup,host) {
 //Address-backed composition used by original startup finalization.
 export function nativeCreateMatchRootAt(memory,address,scene,setup,host) {
   nativeInitializeMatchRoot(memory.range(address,0x28c),memory.range(scene,0x20000),memory.range(setup,0xdc64),{
-    initializeWorld:()=>host.initializeWorld(address,scene,setup),
+    initializeWorld:()=>host.initializeWorld?host.initializeWorld(address,scene,setup):nativeInitializeWorld(memory,address,scene,setup,host),
     allocateResource:size=>host.allocate(size),renderer:memory.get(scene+8),
     constructSurface:(at,...args)=>{nativeCreatePanelImage(memory,at,...args,host);memory.put(at,0x5249b0);},
     constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),

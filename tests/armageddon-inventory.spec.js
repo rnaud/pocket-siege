@@ -1,3 +1,5 @@
+import worldCreate from './fixtures/armageddon/world-create.json' with {type:'json'};
+import {nativeInitializeWorld} from '../src/armageddon/world-create.js';
 import matchCreate from './fixtures/armageddon/match-create.json' with {type:'json'};
 import {nativeInitializeMatchRoot} from '../src/armageddon/match-create.js';
 import matchResources from './fixtures/armageddon/match-resources.json' with {type:'json'};
@@ -62,6 +64,27 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const worldActual=[],worldExpected=[];
+  for(const row of worldCreate.cases) {
+    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),calls=[];
+    const locate=at=>at>=0x2400000?[heap,at-0x2400000]:[scene,at-0x2300000];
+    const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];}};
+    scene[0x4886]=row.count;for(const [offset,value] of row.words)memory.put(0x2300000+offset,value);
+    let cursor=0x2401000,allocation=0;
+    nativeInitializeWorld(memory,0x2400000,0x2300000,0x23047a8,{
+      allocate:size=>{const value=allocation++===row.failure?0:cursor;if(value)cursor+=(size+15)&~15;calls.push(['allocate',size,value]);return value;},
+      virtual:(...args)=>calls.push(['virtual',...args]),
+      call:(entry,at,args)=>{
+        calls.push(['call',entry,at,args]);
+        if(entry===0x4ed910)memory.put(at+0x38,args[0]);
+        else if(entry===0x4ea9c0)memory.put(at,0x2001100);
+        else if(entry===0x4b2670){memory.put(at+0x28,args[0]);memory.put(at+0x24,args[1]);}
+        return at;
+      },
+    });
+    worldActual.push([createHash('sha256').update(heap).digest('hex'),createHash('sha256').update(scene).digest('hex'),calls]);worldExpected.push([row.sha256,row.scene_sha256,row.calls]);
+  }
+  expect(worldActual).toEqual(worldExpected);
   const resourceActual=[],resourceExpected=[];
   for(const row of [...matchResources.cases,...matchCreate.cases.map(row=>({...row,root:true}))]) {
     const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),sv=new DataView(scene.buffer),calls=[];
