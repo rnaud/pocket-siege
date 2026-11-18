@@ -31,13 +31,13 @@ def write(address,value): cpu.mem_write(address,struct.pack('<I',value&0xfffffff
 def read(address): return struct.unpack('<I',cpu.mem_read(address,4))[0]
 def signed(v):return v if v<0x80000000 else v-0x100000000
 
-import itertools
+import itertools,base64,zlib
 stream=owner+0x1000;buffer=owner+0x2000;context=owner+0x20000
 cpu.mem_map(context,0x20000)
-write(stream+4,buffer);write(stream+0x14,context);write(context+8,0x7654321)
+write(stream+4,buffer);write(stream+8,32768);write(stream+0x14,context);write(context+8,0x7654321)
 heapBase=0x2400000
 cpu.mem_map(heapBase,0x40000)
-heap=heapBase;allocations=[];taskAllocations=[];objects=[];buffers=[];calls=[];fail=-1;mode=0;cleanupMode=0
+heap=heapBase;allocations=[];taskAllocations=[];objects=[];buffers=[];calls=[];allocationCalls=[];fail=-1;mode=0;cleanupMode=0
 manager=owner+0x800;oldRoot=owner+0x400
 environment=0x2500000
 cpu.mem_map(environment,0x10000)
@@ -57,6 +57,7 @@ def hook(cpu,address,size,user):
   elif resource and len(allocations)==fail:pointer=0
   else:
    heap+=(size+15)&~15;cpu.mem_write(pointer,bytes(size))
+  allocationCalls.append(['array',size,read(sp+4),pointer] if address==0x4924d0 else ['allocate',size,pointer])
   if objectAllocation:objects.append({'size':size,'pointer':pointer})
   if address==0x4924d0 and (0x4c8d10<=caller<0x4c8d60 or 0x4c8e40<=caller<0x4c8ee0):buffers.append(size)
   if resource:allocations.append({'size':size,'pointer':pointer})
@@ -67,7 +68,7 @@ def hook(cpu,address,size,user):
   if address==stop+0x200 and cleanupMode&1:write(manager+4,0)
   if address==stop+0x220 and cleanupMode&2:write(context+0x7d4,0)
   ret(0,4 if address in [stop+0x210,stop+0x230] else 0)
- elif address==0x492510:ret()
+ elif address==0x492510:allocationCalls.append(['free',read(sp+4)]);ret()
  elif address in [0x4c6610,0x492bc0]:
   pointer=cpu.reg_read(UC_X86_REG_ECX)
   calls.append([address,pointer]+[read(sp+4+i*4) for i in range(3)]);ret(pointer,12)
@@ -81,7 +82,7 @@ cases=[]
 combinations=[row+(0,) for row in itertools.product([0,7],trees,[0,1,2])]+[(0,trees[1],0,flag) for flag in [1,2,3]]
 for initialPosition,tree,mode,cleanupMode in combinations:
  position=0;savedIndex=-1;environment=0x2500000
- heap=heapBase;allocations.clear();taskAllocations.clear();objects.clear();buffers.clear();calls.clear();cpu.mem_write(owner,bytes([0xa5])*0x28c)
+ heap=heapBase;allocations.clear();taskAllocations.clear();objects.clear();buffers.clear();calls.clear();allocationCalls.clear();cpu.mem_write(owner,bytes([0xa5])*0x28c)
  cpu.mem_write(context+0x1b778,bytes(0x168));write(context+0x1b8dc,320)
  for offset,storage in [(0x18,environment+0x3000),(0x34+2*0x1c,environment+0x4000)]:
   write(environment+offset+4,256);write(environment+offset+12,0);write(environment+offset+16,storage);write(environment+offset+20,storage+0x800)
@@ -111,6 +112,7 @@ for initialPosition,tree,mode,cleanupMode in combinations:
  payload.extend([0,2,5]);block(bytes((i*13)&255 for i in range(0x5c)))
  payload.append(6);block(bytes((i*17)&255 for i in range(0x138)))
  cpu.mem_write(buffer,bytes(payload));write(stream+0x10,initialPosition);write(stream+0xc,len(payload))
+ initial=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))
  sp=stack+0xf000;write(sp,stop);write(sp+4,stream);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,manager)
  cpu.emu_start(0x4a1d20,stop+1,count=1000000)
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('snapshot did not exit')
@@ -125,6 +127,7 @@ for initialPosition,tree,mode,cleanupMode in combinations:
    registry.append([bucket,read(link+8),read(link+12),read(link+16)]);link=read(link+4)
  def listState(offset):return {'capacity':read(environment+offset+4),'entries':[read(read(environment+offset+16)+i*4) or None for i in range(read(environment+offset+12))]}
  result={'tree':capture(root) if root else None,'registry':registry,'environment':{'id':environment,'all':listState(0x18),'category':listState(0x34+2*0x1c),'state':list(cpu.mem_read(environment+0x3b4,12)),'context':read(environment+0x3c0),'dirty':read(environment+4)} if environment else None,'contextBytes':list(cpu.mem_read(context+0x7ec,0x3fbc)),'phase':read(context+0x12414),'position':read(stream+0x10),'calls':list(calls)}
- cases.append({'input':{'position':initialPosition,'clearRoot':bool(cleanupMode&1),'clearEnvironment':bool(cleanupMode&2),'bytes':list(payload),'allocations':list(allocations),'tasks':list(taskAllocations),'objects':list(objects),'buffers':list(buffers)},'result':result})
-args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004A1D20 with original stream seek/context read,004C8E40 environment and full recursive root constructors. Only old-object cleanup, heap and rendering interfaces substituted. Includes root allocation failure, combined environment/root allocation failure and cleanup interfaces nulling object references before destructor checks.','cases':cases},separators=(',',':'))+'\n')
+ final=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))
+ cases.append({'inputMemory':base64.b64encode(zlib.compress(initial)).decode(),'sha256':hashlib.sha256(final).hexdigest(),'allocationCalls':list(allocationCalls),'mode':mode,'input':{'position':initialPosition,'clearRoot':bool(cleanupMode&1),'clearEnvironment':bool(cleanupMode&2),'bytes':list(payload),'allocations':list(allocations),'tasks':list(taskAllocations),'objects':list(objects),'buffers':list(buffers)},'result':result})
+args.output.write_text(json.dumps({'executable_sha256':digest,'method':'Full004A1D20 with original stream seek/context read,004C8E40 environment and full recursive root constructors. Only old-object cleanup, heap and rendering interfaces substituted. Includes root allocation failure, combined environment/root allocation failure and cleanup interfaces nulling object references before destructor checks. Complete512KiB owner/context/heap/old-environment memory and ordered allocator/free calls additionally captured.','cases':cases},separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} snapshot restores')
