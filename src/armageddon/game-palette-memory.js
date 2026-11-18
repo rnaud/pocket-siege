@@ -46,3 +46,12 @@ export function nativeFindClosestGamePaletteColor(memory,palette,color,error) {
   if(selected&&error)error.value=Math.trunc(best*100/765);
   return selected;
 }
+
+//004ADC60: only active colors inside the signed palette bounds are copied.
+//Failed reads retain the caller's previous RGB storage.
+export function nativeReadGamePaletteColor(memory,palette,index,output) {
+  index|=0;
+  if(index<(memory.get(palette+4)|0)||index>(memory.get(palette+8)|0)||!memory.byte(palette+0x60c+index))return 0;
+  for(let c=0;c<3;c++)output[c]=word(memory,palette+12+index*6+c*2);
+  return 1;
+}

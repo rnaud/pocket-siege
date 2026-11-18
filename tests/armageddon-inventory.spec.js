@@ -1,3 +1,5 @@
+import sceneTeamGraves from './fixtures/armageddon/scene-team-graves.json' with {type:'json'};
+import {nativeCreateSceneTeamGraves} from '../src/armageddon/scene-team-graves.js';
 import sceneTeamFlags from './fixtures/armageddon/scene-team-flags.json' with {type:'json'};
 import {nativeCreateSceneTeamFlags} from '../src/armageddon/scene-team-flags.js';
 import sceneHUDResources from './fixtures/armageddon/scene-hud-resources.json' with {type:'json'};
@@ -209,6 +211,35 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneTeamGraves.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x40000,c.pattern),calls=[];let allocated=0;
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    const word=(at,value)=>bytes.writeUInt16LE(value&65535,at-owner);
+    memory.put(owner+0x5cd0,owner+0x10000);memory.put(owner+0x10008,owner+0x6000);memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200100);
+    memory.putByte(owner+0x14886,c.count);memory.put(owner+0x2245c,c.mode===3?20:3);
+    for(const bank of [1,2]) {
+      const palette=owner+0x7000+bank*0x1000;memory.put(palette+4,1);memory.put(palette+8,7);word(palette+0x90e,8);
+      for(let i=0;i<8;i++) {
+        word(palette+0x910+i*2,i);memory.putByte(palette+0x60c+i,1);
+        (bank===1?[43,71,97]:[17,53,91]).forEach((m,j)=>word(palette+12+i*6+j*2,(i*m+bank*20)&255));
+      }
+    }
+    for(let team=0;team<6;team++) {
+      memory.put(owner+0x148a0+team*3000,c.mode===1&&team%2?2:0);
+      for(let i=0;i<768;i++) {
+        memory.putByte(owner+0x148a4+team*3000+i,(Math.floor(i/3)*[43,71,97][i%3]+team)&255);
+        memory.putByte(owner+0x14ba4+team*3000+i,c.mode===2?0:(Math.floor(i/24)+i%24+team*7)%12);
+      }
+    }
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const waterColor=Array(3).fill((c.pattern*257)<<16>>16);
+    nativeCreateSceneTeamGraves(memory,owner,waterColor,{
+      getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return owner+0x7000+bank*0x1000;},
+      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);return c.mode===2&&allocated<=2?0:owner+0x1000+allocated*0x40;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x30000+allocated*0x400;},
+    });
+    expect(waterColor).toEqual(c.waterColor);expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of sceneTeamFlags.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x40000,c.pattern),calls=[];let allocated=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
