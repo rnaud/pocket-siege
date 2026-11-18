@@ -69,7 +69,7 @@ test(`live ${kind} adapter releases five original missile bodies on consecutive 
   }
 });
 
-for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl", 30], ["postal", "postbox", "letter1", 50]])
+for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl", 30], ["postal", "postbox", "letter1", 50], ["napalmstrike", "airjeto", "airmisl", 15]])
 test(`live ${kind} aircraft releases original missiles and resolves its strike`, async ({
   page,
 }) => {
@@ -134,7 +134,51 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
     true,
   );
   expect(samples.some((s) => s.missiles && s.focus)).toBe(true);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus))
-    .toBeNull();
+  if (kind === "napalmstrike") {
+    expect(
+      await page.evaluate(() => window.siege.getState().nativeFlames.length),
+    ).toBeGreaterThan(0);
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus), {
+        timeout: 20000,
+      })
+      .toBeNull();
+  } else {
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus))
+      .toBeNull();
+  }
+});
+
+import {
+  nativeProjectileDetonationEvents,
+} from "../src/armageddon/projectile-runtime.js";
+test("native napalm strike releases record-driven fire missiles", { tag: "@logic" }, () => {
+  const strike = createNativeAirstrike(600, 300, 1, 0, 650, 1, "napalmstrike");
+  expect(strike.sprite).toBe(674);
+  expect(strike.sound).toBe(52);
+  expect(strike.config).toMatchObject({
+    count: 5, spacing: 48, speed: 100, kind: 2,
+  });
+  const missiles = [];
+  let removed = false;
+  for (let tick = 0; tick < 300 && !removed; tick++) {
+    const result = stepNativeAirstrike(strike, 650);
+    missiles.push(...result.missiles);
+    removed = result.removed;
+  }
+  expect(removed).toBe(true);
+  expect(missiles).toHaveLength(5);
+  const missile = missiles[0];
+  expect(missile.nativeBody.sprite).toBe(649);
+  expect(missile.nativeDetonation).toMatchObject({
+    push: 40, damage: 15, secondary: 2, offset: 0,
+  });
+  expect(missile.nativeFire).toEqual({
+    count: 60, delay: 66, lifetime: 6250, persistent: 0,
+  });
+  expect(nativeProjectileDetonationEvents(missile, () => 0)).toEqual([
+    { operation: "blast", request: [1, 16252928, -13631488, 40, 15, 1] },
+    { operation: "fire", request: [16252928, -13631488] },
+  ]);
 });

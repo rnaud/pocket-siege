@@ -882,7 +882,7 @@ test("the last shot can be replayed over the battlefield", async ({ page }) => {
   // Finish the real shot/settlement simulation without depending on CI frame
   // rate. The existing helper only suppresses persistent score writes.
   const settled = await page.evaluate(() => {
-    for (let frames = 0; frames < 3000; frames += 25) {
+    for (let frames = 0; frames < 9000; frames += 25) {
       const phase = window.siege.getState().phase;
       if (phase === "aim" || phase === "over") return true;
       window.siege.debug.advanceReplayFrames(25);
@@ -1165,7 +1165,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(26);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(27);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {

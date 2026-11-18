@@ -23,6 +23,7 @@ export const WEAPON_SLOTS = Object.freeze({
   dynamite: 21,
   mine: 22,
   airstrike: 27,
+  napalmstrike: 28,
   postal: 29,
   bat: 35,
   holy: 43,

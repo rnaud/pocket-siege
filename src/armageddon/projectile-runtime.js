@@ -50,6 +50,7 @@ const kinds = new Set([
   "dynamite",
   "mine",
   "airstrike",
+  "napalmstrike",
   "postal",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser

@@ -2,7 +2,7 @@
   "source": "WA 3.0.0.0 0043F2E0 mission inventory names/slots; resource195 constructor records; current src/weapons.js and src/utilities.js routing. No entry is asserted fully ported.",
   "host_only_variants": [
     "sticky",
-    "napalm (not native NapalmStrike or PetrolBomb behavior)"
+    "napalm (host Petrol Bomb variant; native PetrolBomb slot47 remains unconnected)"
   ],
   "slots": [
     {
@@ -232,8 +232,8 @@
     {
       "slot": 28,
       "native_name": "NapalmStrike",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "napalmstrike",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 70
     },
