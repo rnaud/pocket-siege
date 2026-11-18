@@ -9,6 +9,7 @@ from unicorn.x86_const import UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_ESP, UC
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
+parser.add_argument('--physics',action='store_true')
 args = parser.parse_args()
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -90,7 +91,10 @@ def hook(cpu,address,size,user):
  elif address in childHandlers and read(sp+8)==0x3e9:
   calls.append(['child',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8),read(sp+12)]);ret(0,16)
  elif address==0x4ca320:
-  calls.append(['body',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);ret(0,8)
+  calls.append(['body',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)])
+  if not args.physics:ret(0,8)
+ elif args.physics and address in [0x4f4fe0,0x4f4fc0]:
+  calls.append(['waterChanged' if address==0x4f4fe0 else 'skim',cpu.reg_read(UC_X86_REG_ECX)]);ret()
  elif address==0x4b4ce0:
   root=cpu.reg_read(UC_X86_REG_ECX);event,length,pointer=read(sp+8),read(sp+12),read(sp+16)
   if event==0x3ec:calls.append(['collect',root,event,length,read(pointer)==inputQueue])
@@ -142,9 +146,10 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
  write(environment+0x1018,stop+0x220);write(environment+0x1000,stop+0x230)
  write(context+0x3a4,17)
  payload=bytearray((i*17+len(tree))&255 for i in range(0x3fbc))
+ if args.physics:struct.pack_into("<I",payload,0x1ac4-0x7ec,0)
  payload.append(33)
  while len(payload)%4:payload.append(255)
- payload.extend(range(12));payload.extend([6,1,6,26,0])
+ payload.extend(struct.pack("<iii",179,0x3d70,0x1000) if args.physics else bytes(range(12)));payload.extend([6,1,6,26,0])
  def block(data):
   while len(payload)%4:payload.append(255)
   payload.extend(data)
@@ -156,6 +161,11 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
   if schema['physics']:
    payload.append(3);body=bytearray((i*13+tag)&255 for i in range(0xb0))
    for offset,value in [(0x3c,2),(0x44,0),(0xc8,0),(0xdc,0),(0xe4,savedIndex),(0xe8,savedIndex)]:struct.pack_into('<I',body,offset-0x3c,value&0xffffffff)
+   if args.physics:
+    fields={0x40:0x400000,0x48:1,0x54:0,0x58:65536,0x5c:65536,0x60:0xcccc,0x64:0xf000,0x68:65536,0x6c:65536,
+      0x90:(100+tag)<<16,0x94:(180 if tag in [9,21] else 160)<<16,0x98:0,0x9c:1000000 if tag==9 else 65536,0xa0:10000 if tag==9 else -65536,
+      0xa4:0,0xb4:65536,0xb8:0,0xbc:0,0xc0:0,0xc4:0}
+    for offset,value in fields.items():struct.pack_into('<I',body,offset-0x3c,value&0xffffffff)
    block(body)
   payload.append(tag);block(bytes((i*11+tag)&255 for i in range(schema['block'][1])))
  for item in tree:emit(item)
@@ -181,6 +191,6 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
    print('fault',frame,hex(cpu.reg_read(UC_X86_REG_EIP)),hex(cpu.reg_read(UC_X86_REG_ECX)),calls[-5:]);raise
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('frame did not exit')
   frames.append(dict(sha256=hashlib.sha256(snapshot()).hexdigest(),calls=list(calls),allocations=list(allocationCalls),globalCounter=read(0x561ec8),root=read(manager+4),environment=read(context+0x7d4)))
- cases.append(dict(inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
+ cases.append(dict(physics=args.physics,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. With --physics, valid moving bodies are restored and original004CA320 executes with original water, air, sweep, collision cache/query and awake routines across all frames and recapture. Water/skim virtual responses remain explicit interfaces; category22 is empty so these scenes do not exercise shape overlap or bounce. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} restored frame sequences')

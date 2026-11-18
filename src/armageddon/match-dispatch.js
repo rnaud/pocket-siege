@@ -40,8 +40,16 @@ export function nativeBeginMatchFrame(
     memory,
     environment,
     host.advanceBody ??
-      ((environment, body, index) =>
-        nativeBodyTickMemory(memory, environment, body, index, host.physics)),
+      ((environment, body, index) => {
+        host.observeBodyStep?.(environment, body, index);
+        return nativeBodyTickMemory(
+          memory,
+          environment,
+          body,
+          index,
+          host.physics,
+        );
+      }),
   );
 }
 //Recovered root routes; unported event semantics must be supplied explicitly.
