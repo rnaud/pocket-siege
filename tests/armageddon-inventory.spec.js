@@ -438,6 +438,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const packed=Buffer.alloc(0x10000,c.pattern),signature=Buffer.alloc(4,c.pattern),nameBytes=Buffer.alloc(256,c.pattern);
     const stream=Buffer.from(c.stream,'hex'),archiveCursors=[0,0,0];
     const archiveData=[sceneStartup.graphics_source,...terrainConstruction.archive_sources].map(source=>{if(source.bytes)return Buffer.from(source.bytes,'hex');const header=Buffer.from(source.header,'hex'),data=Buffer.alloc(header.readUInt32LE(4));header.copy(data);Buffer.from(source.index,'hex').copy(data,source.offset);return data;});
+    for(const entry of sceneStartup.archive_images) {
+      const prefix=['gfx/gfx','custom/snow/level','water/blue/water'][entry.archive];
+      const image=fs.readFileSync(new URL(`../public/armageddon/media/${prefix}/${entry.name.replaceAll('\\','/')}`,import.meta.url));
+      expect(image.length).toBe(entry.size);expect(createHash('sha256').update(image).digest('hex')).toBe(entry.sha256);
+      image.copy(archiveData[entry.archive],entry.offset);
+    }
     const region=a=>a>=owner?[bytes,a-owner]:a>=stack?[stackBytes,a-stack]:a>=0x7d6058?[nameBytes,a-0x7d6058]:a>=0x714be0?[packed,a-0x714be0]:a>=0x560230?[signature,a-0x560230]:[Buffer.from('grass.img\0\0\0soil.img\0'),a-0x55f7d4];
     const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
     arrowSources.forEach((image,i)=>{
@@ -464,12 +470,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     bytes.set(colors,0x350000+0x4ea4-0x47a8);bytes.set(Uint8Array.from({length:340},(_,i)=>(Math.floor(i/20)+i%20)%12),0x350000+0x51a4-0x47a8);
     const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).update(packed).update(signature).update(nameBytes).digest('hex');
     const record=(name,...args)=>calls.push([name,...args,snapshot()]);
-    const image=(palette,archive,name)=>{record('image',palette,archive,name);return name==='masks.img'?owner+0x9000:name==='fill.img'?owner+0x9100:name.startsWith('arrow')?owner+0x10000+Number(name.slice(5,7))*0x40:owner+0xe000;};
-    nativeStartScene(memory,owner,[owner+0x6000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,terrainScratch:stack+0x4000,archiveScratch:stack+0x6000},{
+    nativeStartScene(memory,owner,[owner+0x6000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,terrainScratch:stack+0x4000,archiveScratch:stack+0x6000,imageName:stack+0x1000,imageScratch:stack+0x2000},{
       allocate:size=>{allocated++;record('allocate',size);let result;if(size===0x1d44c)result=owner+0x300000;else if(size===0xb2c)result=owner+0xd0000;else{result=headers;headers+=(size+15)&~15;}if(size===0x19c)archives++;return result;},
       allocateArray:(size,pool)=>{record('array',size,pool);const result=pixels;pixels+=(size+15)&~15;return result;},
       getRendererPalette:(renderer,bank)=>{record('palette',renderer,bank);return owner+(bank===2?0xb000:0xa000);},
-      loadNamedImage:image,loadNamedArchiveImage:image,freeSized:(...args)=>record('free',...args),
+      freeSized:(...args)=>record('free',...args),
       free:(...args)=>record('arrayFree',...args),
       openFile:(path,mode)=>{record('open',path,mode);return typeof path==='number'?0x1234:0x5000+archives;},
       closeFile:(...args)=>record('close',...args),tellFile:file=>{record('tell',file);return cursor;},
