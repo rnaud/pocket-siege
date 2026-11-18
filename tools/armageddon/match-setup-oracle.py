@@ -102,7 +102,10 @@ while read(p+12):
  lookup=base+(read(p) or read(p+16));iat=base+read(p+16);i=0
  while read(lookup+i*4):
   item=read(lookup+i*4)
-  if not item&0x80000000 and cstring(base+item+2)==b'strncpy':write(iat+i*4,copyString)
+  if not item&0x80000000:
+   name=cstring(base+item+2)
+   if name==b'strncpy':write(iat+i*4,copyString)
+   if name==b'GetSystemDefaultLCID':localeSlot=iat+i*4
   i+=1
  p+=20
 def speechHook(cpu,address,size,user):
@@ -118,10 +121,17 @@ def speechHook(cpu,address,size,user):
   cpu.mem_write(dest,value+bytes(count-len(value)));cpu.reg_write(UC_X86_REG_EAX,dest)
 for address in [0x503d48,0x503dc0,directory,copyString]:cpu.hook_add(UC_HOOK_CODE,speechHook,begin=address,end=address)
 templates=[r for r in json.loads(Path('tests/fixtures/armageddon/team-setup.json').read_text())['cases'] if next(v for o,n,v in r['writes'] if o==0x6880)==3 and r['scheme'][0x15]==100]
-cpu.mem_write(0x44d500,b'\xc3')
+localeStub=stop+0x600
+cpu.mem_write(localeStub,b'\xc3');write(localeSlot,localeStub)
+cpu.mem_write(0x503d42,b'\xc2\x04\x00')
 def languageHook(cpu,address,size,user):
- calls.append(['language']);cpu.reg_write(UC_X86_REG_EAX,language)
-cpu.hook_add(UC_HOOK_CODE,languageHook,begin=0x44d500,end=0x44d500)
+ if address==localeStub:
+  calls.append(['locale']);cpu.reg_write(UC_X86_REG_EAX,lcid)
+ else:
+  calls.append(['resource',read(cpu.reg_read(UC_X86_REG_ESP)+4)])
+  cpu.mem_write(formatString,resource+b'\0');write(cpu.reg_read(UC_X86_REG_ECX),formatString);cpu.reg_write(UC_X86_REG_EAX,1)
+for address in [localeStub,0x503d42]:cpu.hook_add(UC_HOOK_CODE,languageHook,begin=address,end=address)
+german=cstring(0x540be4)
 cases=[]
 for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['schemes']:
  for templateIndex,template in enumerate(templates):
@@ -136,7 +146,7 @@ for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['s
   cpu.mem_write(0x6f48bc,b'C:\\WORMS\0');handicap=template['handicap'];clock=0x80000000;profile=None if templateIndex%2 else 0xffffffff
   cpu.mem_write(0x6f4839,b'English'+bytes(58))
   resolution=[0,1,2,3,-1,1,2,0][templateIndex];displayFlags=templateIndex*37
-  language=templateIndex;options={'DetailLevel':templateIndex-2,'EnergyBar':templateIndex*129}
+  lcid=[0x409,0x407,0x40c,0x410,0x416,0x413,0x41d,0x80a][templateIndex];resource=german if templateIndex%3==0 else b'Connection not initialized';write(0x6f47f4,0x12345678);options={'DetailLevel':templateIndex-2,'EnergyBar':templateIndex*129}
   musicEnabled=templateIndex%2;musicInitial=bytes((i*11+5)&255 for i in range(0xc6))
   cpu.mem_write(0x6f3ec0,musicInitial);write(0x6f49cc,resolution);write(0x6f49ec,displayFlags);cpu.mem_write(0x6f49c4,bytes([musicEnabled]))
   initialProfile=profile;calls=[];paths=[];write(thread+0x14,1)
@@ -147,7 +157,7 @@ for scheme in json.loads(Path('src/armageddon/scheme-data.json').read_text())['s
   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,output)
   cpu.emu_start(0x4c2640,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   cases.append(dict(resource_id=scheme['resource_id'],directory_available=available,writes=writes,handicap=handicap,initial_scheme=bytes(initial).hex(),clock=clock,initial_profile=initialProfile,
-    result=result,resolution=resolution,display_flags=displayFlags,language=language,options=options,music_enabled=musicEnabled,music=bytes(cpu.mem_read(0x6f3ec0,0xc6)).hex(),profile=profile,random_state=read(thread+0x14),paths=paths,calls=calls,scheme=bytes(cpu.mem_read(0x6f454c,0x1c4)).hex(),
+    result=result,resolution=resolution,display_flags=displayFlags,lcid=lcid,resource=resource.hex(),country=read(0x6f47f4),options=options,music_enabled=musicEnabled,music=bytes(cpu.mem_read(0x6f3ec0,0xc6)).hex(),profile=profile,random_state=read(thread+0x14),paths=paths,calls=calls,scheme=bytes(cpu.mem_read(0x6f454c,0x1c4)).hex(),
     sha256=hashlib.sha256(cpu.mem_read(owner,0x10000)).hexdigest(),inventory_sha256=hashlib.sha256(cpu.mem_read(output,0x2c14)).hexdigest()))
 musicCases=[]
 for selection in [0,-1,1,11,2147483647,-2147483648]:
@@ -158,5 +168,12 @@ for selection in [0,-1,1,11,2147483647,-2147483648]:
    sp=stack+0xf000;write(sp,stop);write(sp+4,selection);cpu.reg_write(UC_X86_REG_ESP,sp)
    cpu.emu_start(0x419740,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
    musicCases.append(dict(selection=selection,enabled=enabled,seed=seed,state=read(thread+0x14),memory=bytes(cpu.mem_read(0x6f3ec0,0xc6)).hex()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='00415540 /004C2640',method='Original scheme preparation, team records, persistent seed/CRT, starting order, loadouts, weapon settings, CRT reseed, environment expansion and inventory import compose. Speech fallback and country selection execute; resource probes, CString/bounded-copy interfaces, speech formatting, handicap enablement, time/profile and CRT thread data are interfaces. Full function now includes final seed, speech defaults, original music playlist, map path, display/profile settings and return value. Installed language is a boundary interface; locale detection remains separate. Complete setup, inventory, scheme, music, seed state and ordered boundary calls compared.',cases=cases,music_cases=musicCases),separators=(',',':'))+'\n')
+localeCases=[]
+for lcid in list(range(0x400))+[primary+(sub<<10) for primary in range(55) for sub in range(1,64)]+[0xffffffff,0x12340407]:
+ for resource in [german,b'Connection not initialized']:
+  calls=[];write(owner,0x11223344);write(owner+4,0xdeadbeef)
+  sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+  cpu.emu_start(0x44d500,stop,count=10000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+  localeCases.append([lcid,resource==german,read(owner),read(owner+4),cpu.reg_read(UC_X86_REG_EAX),calls])
+args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='00415540 /004C2640',method='Original scheme preparation, team records, persistent seed/CRT, starting order, loadouts, weapon settings, CRT reseed, environment expansion and inventory import compose. Speech fallback and country selection execute; resource probes, CString/bounded-copy interfaces, speech formatting, handicap enablement, time/profile and CRT thread data are interfaces. Full function now includes final seed, speech defaults, original music playlist, map path, display/profile settings and return value. Original country and language selection execute; only Windows LCID and CString resource loading are interfaces. Complete setup, inventory, scheme, music, seed state and ordered boundary calls compared.',cases=cases,music_cases=musicCases,german_resource=german.hex(),locale_cases=localeCases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} initial match setups')

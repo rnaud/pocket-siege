@@ -1,3 +1,4 @@
+import {nativeSetupLanguage} from '../src/armageddon/setup-language.js';
 import {nativeSetupMusic} from '../src/armageddon/setup-metadata.js';
 import weaponSettings from './fixtures/armageddon/weapon-settings.json' with {type:'json'};
 import {nativeExpandWeaponSettings} from '../src/armageddon/weapon-settings.js';
@@ -37,6 +38,15 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  const localeActual=[],localeExpected=[];
+  for(const [lcid,german,first,country,language,calls] of matchSetup.locale_cases) {
+    const memory=new Uint8Array(8),view=new DataView(memory.buffer),seen=[];
+    view.setUint32(0,0x11223344,true);view.setUint32(4,0xdeadbeef,true);
+    const resource=german?Buffer.from(matchSetup.german_resource,'hex'):new TextEncoder().encode('Connection not initialized');
+    const result=nativeSetupLanguage(memory,()=>{seen.push(['locale']);return lcid;},id=>{seen.push(['resource',id]);return resource;});
+    localeActual.push([result,view.getUint32(0,true),view.getUint32(4,true),seen]);localeExpected.push([language,first,country,calls]);
+  }
+  expect(localeActual).toEqual(localeExpected);
   for(const row of matchSetup.music_cases) {
     const memory=Uint8Array.from({length:0xc6},(_,i)=>(i*11+5)&255),random=new NativeFrontendRandom(row.seed);
     nativeSetupMusic(memory,row.selection,90,row.enabled,random);
@@ -68,10 +78,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const calls=[];let path=0,profile=row.initial_profile;
     const defaultSpeech=new Uint8Array(65);defaultSpeech.set(new TextEncoder().encode('English'));
     const music=Uint8Array.from({length:0xc6},(_,i)=>(i*11+5)&255);
+    const localeState=new Uint8Array(8);
     const result=nativeBuildInitialMatchSetup(memory,inventory,scheme,teamData,{
       descriptors,random,music,drive:68,musicEnabled:row.music_enabled,
       displayFlags:row.display_flags,resolution:row.resolution,
-      language:()=>{calls.push(['language']);return row.language;},
+      localeState,systemLocale:()=>{calls.push(['locale']);return row.lcid;},
+      languageResource:id=>{calls.push(['resource',id]);return Buffer.from(row.resource,'hex');},
       readOption:(key,fallback)=>{calls.push(['option',key,fallback]);return row.options[key];},
       seedStorage:{time:()=>{calls.push(['time',row.clock]);return row.clock;},
         readSeed:fallback=>{calls.push(['read',fallback]);return profile??fallback;},
@@ -84,6 +96,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
         calls.push(['directory',value.toString('hex')]);return row.directory_available||value.toString()==='C:\\WORMS'?0:1;
       },
     });
+    expect(new DataView(localeState.buffer).getUint32(4,true)).toBe(row.country);
     expect(result>>>0).toBe(row.result);expect(Buffer.from(music).toString('hex')).toBe(row.music);
     expect(calls).toEqual(row.calls);expect(profile).toBe(row.profile);expect(random.state).toBe(row.random_state);
     expect(Buffer.from(scheme).toString('hex')).toBe(row.scheme);

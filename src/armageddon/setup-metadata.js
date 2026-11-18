@@ -1,3 +1,4 @@
+import {nativeSetupLanguage} from './setup-language.js';
 // Original00419740. State is the global window006F3EC0..006F3F86.
 export function nativeSetupMusic(memory, selection, drive, enabled, random) {
   const view=new DataView(memory.buffer,memory.byteOffset,memory.byteLength);
@@ -24,7 +25,7 @@ export function nativeSetupMetadata(memory,host) {
   view.setInt16(0xd742,0,true);
   const [width,height]=host.resolution===1?[800,600]:host.resolution===2?[1024,768]:[640,480];
   view.setInt32(0xd744,width,true);view.setInt32(0xd748,height,true);
-  view.setInt32(0xd74c,host.language(),true);
+  view.setInt32(0xd74c,(host.language?host.language():nativeSetupLanguage(host.localeState,host.systemLocale,host.languageResource)),true);
   memory[0xd740]=host.readOption('EnergyBar',0);
   return -1;
 }
