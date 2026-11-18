@@ -1,3 +1,5 @@
+import schemeEnvironment from './fixtures/armageddon/scheme-environment.json' with {type:'json'};
+import {nativeExpandSchemeEnvironment} from '../src/armageddon/scheme-environment.js';
 import speechSetup from './fixtures/armageddon/speech-setup.json' with {type:'json'};
 import {nativeResolveSetupSpeech,nativeCountrySpeech} from '../src/armageddon/speech-setup.js';
 import matchSetup from './fixtures/armageddon/match-setup.json' with {type:'json'};
@@ -32,6 +34,12 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const row of schemeEnvironment.cases) {
+    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),descriptors=new Uint8Array(0xd0),view=new DataView(descriptors.buffer);
+    view.setInt32(0xc8,row.handicap,true);view.setInt32(0xc0,-row.handicap,true);
+    nativeExpandSchemeEnvironment(memory,row.scheme,descriptors);
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
+  }
   for(const row of matchSetup.cases) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),inventory=new Uint8Array(0x2c14);
     const teamData=new Uint8Array(0x9000),frontend=teamData.subarray(0x2000),view=new DataView(frontend.buffer,frontend.byteOffset,frontend.byteLength);
