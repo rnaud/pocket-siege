@@ -1,7 +1,7 @@
 import worldCreate from './fixtures/armageddon/world-create.json' with {type:'json'};
 import {nativeInitializeWorld} from '../src/armageddon/world-create.js';
 import matchCreate from './fixtures/armageddon/match-create.json' with {type:'json'};
-import {nativeInitializeMatchRoot} from '../src/armageddon/match-create.js';
+import {nativeCreateMatchRootAt} from '../src/armageddon/match-create.js';
 import matchResources from './fixtures/armageddon/match-resources.json' with {type:'json'};
 import {nativeInitializeMatchResources} from '../src/armageddon/match-resources.js';
 import finalizeSetup from './fixtures/armageddon/gameplay-finalize.json' with {type:'json'};
@@ -97,7 +97,8 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     }
     for(const [offset,value] of row.shorts)sv.setInt16(offset,value,true);
     let cursor=0x2401000,allocation=0;
-    const memory={put:(at,v)=>view.setInt32(at-0x2400000,v,true),putByte:(at,v)=>heap[at-0x2400000]=v};
+    const memory={put:(at,v)=>at>=0x2400000?view.setInt32(at-0x2400000,v,true):sv.setInt32(at-0x2300000,v,true),putByte:(at,v)=>heap[at-0x2400000]=v,
+      get:at=>at>=0x2400000?view.getUint32(at-0x2400000,true):sv.getUint32(at-0x2300000,true),byte:at=>at>=0x2400000?heap[at-0x2400000]:scene[at-0x2300000]};
     const allocate=(kind,size,pool)=>{
       const value=kind==='allocate'&&allocation===row.failure?0:cursor;
       if(value)cursor+=(size+15)&~15;if(kind==='allocate')allocation++;
@@ -109,10 +110,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       constructSurface:(at,...args)=>{nativeCreatePanelImage(memory,at,...args,host);memory.put(at,0x5249b0);},
       constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),
     };
-    if(row.root)nativeInitializeMatchRoot(heap.subarray(0,0x28c),scene,scene.subarray(0x47a8),{
-      ...resourceHost,
-      initializeWorld:()=>{calls.push(['world',0x2400000,0x2300000,0x23047a8]);view.setUint32(0x38,0x2300000,true);},
-      startMusic:(at,data,count)=>calls.push(['music',at,0x2300000+data.byteOffset,count]),
+    memory.range=(at,length)=>at>=0x2400000?heap.subarray(at-0x2400000,at-0x2400000+length):scene.subarray(at-0x2300000,at-0x2300000+length);
+    if(row.root)nativeCreateMatchRootAt(memory,0x2400000,0x2300000,0x23047a8,{
+      ...host,virtual:(...args)=>calls.push(['virtual',...args]),
+      call:(entry,at,args)=>{calls.push(['call',entry,at,args]);if(entry===0x4ed910)memory.put(at+0x38,args[0]);else if(entry===0x4ea9c0)memory.put(at,0x2004200);else if(entry===0x4b2670){memory.put(at+0x28,args[0]);memory.put(at+0x24,args[1]);}return at;},
+      startMusic:(...args)=>calls.push(['music',...args]),
     });
     else nativeInitializeMatchResources(heap.subarray(0,0x28c),scene,resourceHost);
     resourceActual.push([createHash('sha256').update(heap).digest('hex'),createHash('sha256').update(scene).digest('hex'),calls]);

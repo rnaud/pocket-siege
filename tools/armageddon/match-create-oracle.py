@@ -51,36 +51,52 @@ def hook(cpu,address,size,user):
  elif address==metric:
   calls.append(['height',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);cpu.reg_write(UC_X86_REG_EAX,8+count)
 for address in [0x492550,0x4924d0,metric]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
-cpu.mem_write(0x4eaad0,b'\xc2\x08\x00')
+
 music=owner+0x3000;musicTable=owner+0x3100;musicCall=owner+0x3200
 write(music,musicTable);write(musicTable+16,musicCall);cpu.mem_write(musicCall,b'\xc2\x08\x00')
 def rootHook(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP);at=cpu.reg_read(UC_X86_REG_ECX)
- if address==0x4eaad0:
-  calls.append(['world',at,read(sp+4),read(sp+8)]);write(at+0x38,read(sp+4))
- else:calls.append(['music',at,read(sp+4),read(sp+8)])
-for address in [0x4eaad0,musicCall]:cpu.hook_add(UC_HOOK_CODE,rootHook,begin=address,end=address)
+ calls.append(['music',at,read(sp+4),read(sp+8)])
+cpu.hook_add(UC_HOOK_CODE,rootHook,begin=musicCall,end=musicCall)
+camera=owner+0x4000;table=owner+0x4100;groupTable=owner+0x4200
+write(camera,table)
+virtuals={owner+0x4300:0x20,owner+0x4400:0x2c}
+write(table+0x20,owner+0x4300);write(table+0x2c,owner+0x4400);write(groupTable+0x20,owner+0x4300)
+entries={0x4ed910:1,0x4d1f80:1,0x4ea9c0:3,0x4eba80:1,0x4e4ed0:3,0x4ebe10:1,0x4eaf40:0,0x4b2670:2}
+for entry,n in entries.items():cpu.mem_write(entry,b'\xc2'+struct.pack('<H',n*4))
+for entry in virtuals:cpu.mem_write(entry,b'\xc2\x04\x00')
+cpu.mem_write(0x492550,b'\xc3')
+def worldHook(cpu,entry,size,user):
+ sp=cpu.reg_read(UC_X86_REG_ESP);at=cpu.reg_read(UC_X86_REG_ECX)
+ if entry in virtuals:calls.append(['virtual',at,virtuals[entry],[read(sp+4)]])
+ else:
+  args=[read(sp+4+i*4) for i in range(entries[entry])];calls.append(['call',entry,at,args])
+  if entry==0x4ed910:write(at+0x38,args[0])
+  elif entry==0x4ea9c0:write(at,groupTable)
+  elif entry==0x4b2670:write(at+0x28,args[0]);write(at+0x24,args[1])
+  cpu.reg_write(UC_X86_REG_EAX,at)
+for entry in list(entries)+list(virtuals):cpu.hook_add(UC_HOOK_CODE,worldHook,begin=entry,end=entry)
 cases=[]
 for count in range(7):
  for variant in range(16):
   cpu.mem_write(context,bytes((i*17+5)&255 for i in range(0x20000)));write(context+8,resource);write(context+20,music if variant&1 else 0)
-  words=[[0x1acc,variant*12345],[0x1b94+0x1eb4,count]]
+  words=[[0x7d4,camera],[0x804,[-1,0,200,700][variant%4]],[0x1b8d4,0],[0x81c,0],[0x1acc,variant*12345],[0x1b94+0x1eb4,count]]
   bytewrites=[[0x4886,count],[0x114e0,count],[0x11b96,[0,1,127,255][variant%4]],[0x11d5d,(variant>>1)&1],[0x11e44,[0,1,127,255][variant%4]]]
   shorts=[[0x11d4a,[0,1,65535,60][variant%4]],[0x1b868,3],[0x1b8aa,3]]
   for i in range(16):shorts.extend([[0x1b848+i*2,i-8],[0x1b86a+i*2,5-i],[0x1b88a+i*2,100+i]])
   for team in range(6):
    base=0x1b94+team*0x51c
    words.extend([[base+0x510,1 if variant%3==0 else 0],[base+0x51c,8]])
-   for worm in range(8):words.append([base+0x24+worm*0x9c,100 if worm==(variant%8) and team==variant%6 else 1])
+   for worm in range(8):words.extend([[base+0x24+worm*0x9c,100 if worm==(variant%8) and team==variant%6 else 1],[base+0x80+worm*0x9c,(variant+1)*10]])
    bytewrites.append([0x114e2+team*0x11e,[-128,-1,0,1,5,127][team]&255])
   for offset,value in words:write(context+offset,value)
   for offset,value in shorts:cpu.mem_write(context+offset,struct.pack('<H',value&65535))
   for offset,value in bytewrites:cpu.mem_write(context+offset,bytes([value]))
   cpu.mem_write(heap,bytes((i*7+3)&255 for i in range(0x10000)))
-  cursor=heap+0x1000;allocation=0;failure=variant//2-1;calls.clear();sp=stack+0xf000
+  cursor=heap+0x1000;allocation=0;failure=0 if variant==0 else count+4+(variant-1)%7;calls.clear();sp=stack+0xf000
   for i,value in enumerate([stop,context,context+0x47a8]):write(sp+i*4,value)
   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,heap)
   cpu.emu_start(0x4b2ad0,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   cases.append(dict(count=count,variant=variant,words=words,bytes=bytewrites,shorts=shorts,failure=failure,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0x10000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004B2AD0',method='Original fresh match-root constructor with rotation, deployment inventory query/write and complete resource constructors. World/base initialization, allocation, font metrics and music interface observed.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004B2AD0',method='Original fresh match-root constructor with rotation, deployment inventory query/write and complete resource constructors. World initialization and global event subscription execute; base/child constructors, object population, presentation, registration and external services remain observed interfaces.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'match root initializations')
