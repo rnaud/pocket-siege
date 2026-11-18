@@ -4,7 +4,7 @@ import {resolveMissionDefinition,missionFileServices} from '../src/armageddon/mi
 import {resolveOriginalMapId} from '../src/armageddon/maps.js';
 import {nativeSelectMission,nativeSelectTraining} from '../src/armageddon/mission-selection.js';
 import missionResources from './fixtures/armageddon/mission-resources.json' with {type:'json'};
-import {nativeMissionThumbnail,nativeMissionTerrainPath,nativeMissionWinningCondition,nativeMissionSelection} from '../src/armageddon/mission-resources.js';
+import {nativeMissionThumbnail,nativeMissionTerrainPath,nativeMissionWinningCondition,nativeMissionSelection,nativeMissionTitle,nativeMissionBriefing} from '../src/armageddon/mission-resources.js';
 import {nativeClearMatchTeamRecords,nativeInitializeMatchTeamRecords} from '../src/armageddon/match-team-records.js';
 import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
 import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
@@ -163,6 +163,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     expect(resolveMissionDefinition(`mission/${source}`)).toBe(record);
     const owner=0x2000000,bytes=Buffer.alloc(0x10000),strings=new Map(),messages=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:()=>68};
+    nativeCreateMissionOwner(memory,owner,{initializeString:a=>memory.put(a,0),time:()=>0,seedRandom:()=>{}});
     const host={...missionFileServices({
       assignString:(address,value)=>{memory.put(address,owner+0x1000);strings.set(owner+0x1000,value);},
       readString:address=>strings.get(address),
@@ -177,6 +178,15 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       return value===undefined?fallback:parseInt(value,10);
     };
     expect(resolveOriginalMapId(nativeMissionTerrainPath(memory,owner,host))).not.toBeNull();
+    if(name==='mission/training16.wam') {
+      //Original resource tables point this definition at blank placeholders.
+      expect(nativeMissionTitle(memory,owner,host)).toBe('  ');
+      expect(nativeMissionBriefing(memory,owner,host)).toBe(' ');
+    } else {
+      expect(nativeMissionTitle(memory,owner,host).trim().length).toBeGreaterThan(0);
+      expect(nativeMissionBriefing(memory,owner,host).trim().length).toBeGreaterThan(0);
+    }
+    if(name==='mission/mission1.wam')expect(nativeMissionTitle(memory,owner,host)).toBe('Operation Market Garden. ');
     memory.put(owner+0x884,7);memory.put(owner+0x54,-1);
     expect(nativeSelectMission(memory,owner,999,0,host)).toBe(-1);
     expect(memory.get(owner+0x884)).toBe(7);
@@ -202,13 +212,17 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   }
   for(const c of missionResources.cases) {
     const owner=0x2000000, fields=new Map([[owner+0x884,c.mission],[owner+0x54,c.training],[owner+0x880,owner+0x1000],[0x6e1178,68]]),calls=[];
+    if(['0043E620','0043E7F0'].includes(c.entry)) {
+      for(let offset=0;offset<0x800;offset+=4)fields.set(owner+offset,0x4000+offset);
+      fields.set(owner+0x54,c.training);
+    }
     const memory={get:address=>fields.get(address)>>>0,byte:address=>fields.get(address)};
-    const host={profileInt:(...args)=>{
+    const host={loadText:resource=>{calls.push(['string',resource]);return `resource:${resource}`;},profileInt:(...args)=>{
       calls.push(args);
       if(c.mutation){fields.set(owner+0x884,c.mission===-1?0:-1);fields.set(0x6e1178,90);fields.set(owner+0x880,owner+0x1100);}
       return c.value;
     }};
-    const fn={'00441E50':nativeMissionThumbnail,'00441F10':nativeMissionTerrainPath,'00442000':nativeMissionWinningCondition,'00442020':nativeMissionSelection}[c.entry];
+    const fn={'00441E50':nativeMissionThumbnail,'00441F10':nativeMissionTerrainPath,'00442000':nativeMissionWinningCondition,'00442020':nativeMissionSelection,'0043E620':nativeMissionTitle,'0043E7F0':nativeMissionBriefing}[c.entry];
     expect({result:fn(memory,owner,host),calls}).toEqual({result:c.result,calls:c.calls});
   }
   for(const c of missionNativePalette.teamClearCases) {

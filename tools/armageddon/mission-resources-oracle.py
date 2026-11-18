@@ -53,6 +53,11 @@ def hook(cpu,address,size,user):
    write(owner+0x884,0 if mission==-1 else -1);cpu.mem_write(0x6e1178,b'Z');write(owner+0x880,owner+0x1100)
   ret(value,16)
  elif address==0x503d48:setstring(obj,'');ret(obj)
+ elif address==0x503d2a:setstring(obj,cstring(read(sp+4)));ret(obj,4)
+ elif address==0x503d4e:setstring(obj,cstring(read(read(sp+4))));ret(obj,4)
+ elif address==0x503d42:
+  resource=read(sp+4);calls.append(['string',resource]);setstring(obj,f'resource:{resource}');ret(1,4)
+ elif address==0x503f04:setstring(obj,cstring(read(obj))+cstring(read(sp+4)));ret(obj,4)
  elif address==0x503d54:setstring(obj,cstring(read(sp+4)));ret(obj,4)
  elif address==0x503d1e:setstring(obj,cstring(read(read(sp+4))));ret(obj,4)
  elif address==0x503d24:ret()
@@ -60,17 +65,20 @@ def hook(cpu,address,size,user):
   dest=read(sp+4);fmt=cstring(read(sp+8))
   values=(chr(read(sp+12)&255),signed(read(sp+16))) if '%c' in fmt else (signed(read(sp+12)),)
   setstring(dest,fmt%values);ret()
-for address in [stop+0x100,0x503d48,0x503d54,0x503d1e,0x503d24,0x503dc0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [stop+0x100,0x503d48,0x503d54,0x503d1e,0x503d24,0x503dc0,0x503d2a,0x503d4e,0x503d42,0x503f04]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
-for entry in [0x441e50,0x441f10,0x442000,0x442020]:
+for entry in [0x441e50,0x441f10,0x442000,0x442020,0x43e620,0x43e7f0]:
  for mission,training in [(-1,-1),(-1,0),(0,-1),(7,3)]:
   for value in [0,3,33,-1,-2147483648,2147483647]:
    for mutation in [False,True]:
-    cursor=0;calls=[];cpu.mem_write(owner,bytes(0x10000));write(owner+0x884,mission);write(owner+0x54,training);write(owner+0x880,owner+0x1000);cpu.mem_write(0x6e1178,b'D')
+    cursor=0;calls=[];cpu.mem_write(owner,bytes(0x10000))
+    if entry in [0x43e620,0x43e7f0]:
+     for offset in range(0,0x800,4):write(owner+offset,0x4000+offset)
+    write(owner+0x884,mission);write(owner+0x54,training);write(owner+0x880,owner+0x1000);cpu.mem_write(0x6e1178,b'D')
     sp=stack+0xf000;write(sp,stop);write(sp+4,owner+0x2000)
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner);cpu.emu_start(entry,stop,count=10000)
     assert cpu.reg_read(UC_X86_REG_EIP)==stop
     result=cstring(read(owner+0x2000)) if entry<0x442000 else signed(cpu.reg_read(UC_X86_REG_EAX))
     cases.append(dict(entry=f'{entry:08X}',mission=mission,training=training,value=value,mutation=mutation,calls=calls,result=result))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original441E50/441F10/442000/442020 execute with CString and profile interfaces. Includes profile callbacks mutating selection, filename and drive before the original post-read branch. String transport is Latin1; drive cases use ASCII D/Z. Tests resource selection, not live mission startup.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original441E50/441F10/442000/442020/43E620/43E7F0 execute with CString and profile interfaces. Includes profile callbacks mutating selection, filename and drive before the original post-read branch. String transport is Latin1; drive cases use ASCII D/Z. Text cases initialize deterministic owner table words and substitute resource text while preserving original resource IDs and profile callback order. Tests resource selection, not live mission startup.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} original mission resource getter executions')
