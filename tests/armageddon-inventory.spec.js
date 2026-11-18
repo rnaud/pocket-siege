@@ -1,3 +1,5 @@
+import missionOwner from './fixtures/armageddon/mission-owner.json' with {type:'json'};
+import {nativeCreateMissionOwner} from '../src/armageddon/mission-owner.js';
 import missionEvents from './fixtures/armageddon/mission-events.json' with {type:'json'};
 import {nativeLoadMissionEvents} from '../src/armageddon/mission-events.js';
 import missionInventory from './fixtures/armageddon/mission-inventory.json' with {type:'json'};
@@ -129,12 +131,24 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for (const c of missionOwner.cases) {
+    const owner=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const memory={put:(address,value)=>owner.writeUInt32LE(value>>>0,address-0x2000000)};
+    const snapshot=()=>createHash('sha256').update(owner).digest('hex');
+    const result=nativeCreateMissionOwner(memory,0x2000000,{
+      initializeString(address) {calls.push(['string',address,snapshot()]);memory.put(address,0x2400000);},
+      time(pointer) {calls.push(['time',pointer,snapshot()]);if(c.mutation)memory.put(0x2000054,123456);return c.timestamp;},
+      seedRandom(seed) {calls.push(['seed',seed,snapshot()]);if(c.mutation){memory.put(0x2000884,789);memory.put(0x200087c,321);memory.put(0x2000880,0x2400100);}},
+    });
+    expect({result,calls,state:snapshot()},`mission owner ${c.pattern} ${c.timestamp} ${c.mutation}`).toEqual({result:c.result,calls:c.calls,state:c.sha256});
+  }
   for (const c of missionEvents.cases) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
+    if(c.originalTables) nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
+    else for(let i=0;i<100;i++) {memory.put(0x2000004+i*4,i);memory.put(0x2000698+i*4,1000+i);memory.put(0x2000888+i*4,2000+i);}
     memory.put(0x2000880,0x2001000);memory.put(0x200087c,c.retries);
-    for(let i=0;i<100;i++) {memory.put(0x2000004+i*4,i);memory.put(0x2000698+i*4,1000+i);memory.put(0x2000888+i*4,2000+i);}
     const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
     nativeLoadMissionEvents(memory,0x2000000,{
       profileInt(section,key,fallback,filename) {

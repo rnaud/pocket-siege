@@ -45,10 +45,11 @@ def setstring(obj,value):
  dest=scratch+(obj&0xfff)*8+16
  write(dest-8,len(value));cpu.mem_write(dest,value+b'\0');write(obj,dest)
 write(0x5174a4,stop+0x100);write(0x5178f4,stop+0x200)
+write(0x517954,stop+0x300);write(0x517950,stop+0x400)
 def hook(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP)
  if address==0x503d48:setstring(cpu.reg_read(UC_X86_REG_ECX),b'');ret()
- elif address==0x503d24:ret()
+ elif address in [0x503d24,stop+0x300,stop+0x400]:ret()
  elif address==0x503dc0:
   setstring(read(sp+4),cstring(read(sp+8))%signed(read(sp+12)));ret()
  elif address==0x503d42:
@@ -61,7 +62,7 @@ def hook(cpu,address,size,user):
   if mutation:write(owner+0x880,owner+0x1100 if filename==owner+0x1000 else owner+0x1000)
   values=profile.get(section.lower(),{})
   ret(values.get(key.lower(),fallback),16)
-for address in [0x503d48,0x503d24,0x503dc0,0x503d42,stop+0x100,stop+0x200]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [0x503d48,0x503d24,0x503dc0,0x503d42,stop+0x100,stop+0x200,stop+0x300,stop+0x400]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 profiles=[]
 for record in json.loads(Path('src/armageddon/mission-catalog.json').read_text())['records']:
  profile={}
@@ -82,16 +83,21 @@ for kind in range(20):
    profile[prefix+'0002']={'eventend':1,'typeofevent':kind,'retries':-1}
   profiles.append((f'type-{kind}-text-{length}',profile,0xffffffff,[65]*length))
 profiles.append(('missing-end',{},0,[]))
+profiles=[(*p,False) for p in profiles]+[(*p,True) for p in profiles[:48]]
 cases=[]
-for name,profile,retries,text in profiles:
+for name,profile,retries,text,originalTables in profiles:
  for mutation in [0,1]:
   pattern=0xa5 if mutation else 0
   cpu.mem_write(0x6e0000,bytes([pattern])*0x20000);cpu.mem_write(owner,bytes([pattern])*0x10000)
+  if originalTables:
+   sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+   cpu.emu_start(0x43d6c0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+  else:
+   for i in range(100):
+    write(owner+4+i*4,i);write(owner+0x698+i*4,1000+i);write(owner+0x888+i*4,2000+i)
   write(owner+0x880,owner+0x1000);write(owner+0x87c,retries)
-  for i in range(100):
-   write(owner+4+i*4,i);write(owner+0x698+i*4,1000+i);write(owner+0x888+i*4,2000+i)
   calls=[];sp=stack+0xf000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x440eb0,stop,count=1000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,values=profile,retries=retries,text=text,mutation=mutation,pattern=pattern,callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot()))
+  cases.append(dict(profile=name,originalTables=originalTables,values=profile,retries=retries,text=text,mutation=mutation,pattern=pattern,callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot()))
 args.output.write_text(json.dumps(dict(executableSha256=digest,cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} mission event loads')
