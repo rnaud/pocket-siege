@@ -2,6 +2,8 @@ import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalet
 //0040F210. Windows bitmap acquisition, file IO and DirectDraw remain host services.
 //Preserve the original AND dimension guard, row orientation, stride-sized
 //copies (including padding), destination pitch and palette/cleanup ordering.
+//Without palette overrides, host.paletteSlot supplies four bytes of caller-owned
+//scratch memory, corresponding to the original stack slot.
 export function nativeLoadSetupBitmap(memory,path,pixels,palette,width,height,host) {
   const handle=host.loadImage(0,path,0,0,0,0x2010);
   if(!handle)return 0;

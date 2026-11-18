@@ -14,7 +14,9 @@ parser.add_argument('--native-scheme',action='store_true')
 parser.add_argument('--native-initializer',action='store_true')
 parser.add_argument('--native-flags',action='store_true')
 parser.add_argument('--native-bitmaps',action='store_true')
+parser.add_argument('--native-palette',type=Path)
 args = parser.parse_args()
+args.native_bitmaps |= bool(args.native_palette)
 args.native_flags |= args.native_bitmaps
 args.native_initializer |= args.native_flags
 args.native_scheme |= args.native_initializer
@@ -50,7 +52,7 @@ def cstring(address):
  result=bytearray()
  while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
  return bytes(result)
-def snapshot():return hashlib.sha256(bytes(cpu.mem_read(globalBase,globalSize))+bytes(cpu.mem_read(owner,0x10000))).hexdigest()
+def snapshot():return hashlib.sha256(bytes(cpu.mem_read(globalBase,globalSize))+bytes(cpu.mem_read(owner,0x10000))+(bytes(cpu.mem_read(0x2700000,0x10000)) if args.native_palette else b'')).hexdigest()
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value&0xffffffff)
 def setstring(obj,value):
@@ -59,7 +61,7 @@ def setstring(obj,value):
 write(0x517494,stop+0x800);write(0x51745c,stop+0x900)
 write(0x5174a4,stop+0x100);write(0x5178f4,stop+0x200)
 write(0x517954,stop+0x300);write(0x517950,stop+0x400);write(0x5174a8,stop+0x500)
-bitmapRecords={};activeBitmap=None
+bitmapRecords={};activeBitmap=None;paletteAllocations=0;paletteEntries=bytes(1024);paletteDllHash=None
 if args.native_bitmaps:
  cpu.mem_map(0x2600000,0x10000)
  for name in ['AUSTRIA.BMP',*[f'CPUFLAG{i}.BWW' for i in range(1,6)]]:
@@ -72,8 +74,48 @@ if args.native_bitmaps:
   #from BMP BGR0 bytes. Palette acquisition remains an explicit interface.
   palette=bytearray(1024)
   for i in range(256):palette[i*4:i*4+4]=bytes([payload[54+i*4+2],payload[54+i*4+1],payload[54+i*4],0])
-  bitmapRecords[name.lower()]=dict(source='DATA/USER/FLAGS/'+name,sha256=hashlib.sha256(payload).hexdigest(),width=width,height=height,stride=stride,pixels=payload[offset:offset+abs(height)*stride].hex(),palette=palette.hex())
+  bitmapRecords[name.lower()]=dict(source='DATA/USER/FLAGS/'+name,sha256=hashlib.sha256(payload).hexdigest(),width=width,height=height,stride=stride,pixels=payload[offset:offset+abs(height)*stride].hex(),palette=palette.hex(),**({'header':payload[14:14+1068].hex()} if args.native_palette else {}))
  for address,offset in [(0x517a28,0xd00),(0x517408,0xe00),(0x517450,0xf00),(0x712ea4,0x1000),(0x712e44,0x1100),(0x712e38,0x1200)]:write(address,stop+offset)
+
+if args.native_palette:
+ runtime=args.native_palette.read_bytes();paletteDllHash=hashlib.sha256(runtime).hexdigest()
+ assert paletteDllHash=='520ed7e2900c30735f52732e6921ca804c88992b4632c13968f95e236635ad8c'
+ rpe=struct.unpack_from('<I',runtime,60)[0];ropt=rpe+24;rbase=struct.unpack_from('<I',runtime,ropt+28)[0];rsize=struct.unpack_from('<I',runtime,ropt+56)[0]
+ cpu.mem_map(rbase,(rsize+0xfff)&~0xfff);cpu.mem_write(rbase,runtime[:struct.unpack_from('<I',runtime,ropt+60)[0]])
+ rh=ropt+struct.unpack_from('<H',runtime,rpe+20)[0]
+ for i in range(struct.unpack_from('<H',runtime,rpe+6)[0]):
+  _,rva,n,off=struct.unpack_from('<IIII',runtime,rh+40*i+8)
+  if n:cpu.mem_write(rbase+rva,runtime[off:off+n])
+ for address in [0x2700000,0x2800000]:cpu.mem_map(address,0x10000)
+ write(0x2800000,0x2800100);write(0x2800114,stop+0x1300)
+ write(0x2800200,0x2800300);write(0x2800308,stop+0x1400);write(0x2800310,stop+0x1500)
+ write(0x1002a7c8,0x2800000)
+ for address,target in [(0x712ea4,0x10002070),(0x712e44,0x100022a0),(0x712e38,0x10002250)]:write(address,target)
+def paletteHook(cpu,address,size,user):
+ global paletteAllocations,paletteEntries
+ sp=cpu.reg_read(UC_X86_REG_ESP)
+ if address==0x10003f80:
+  calls.append(['openFile',cstring(read(sp+4)).decode('cp1252'),cstring(read(sp+8)).decode(),snapshot()]);ret(0x5678)
+ elif address==0x10003a30:
+  calls.append(['allocate',read(sp+4),snapshot()]);value=0x2700000+paletteAllocations*0x1000;paletteAllocations+=1;ret(value)
+ elif address==0x10003a40:
+  calls.append(['free',read(sp+4),snapshot()]);ret()
+ elif address==0x10003e60:
+  calls.append(['seekFile',read(sp+4),read(sp+8),read(sp+12),snapshot()]);ret()
+ elif address==0x10003ce0:
+  dest,size,count,file=[read(sp+i) for i in [4,8,12,16]];calls.append(['readFile',dest,size,count,file,snapshot()]);payload=bytes.fromhex(activeBitmap['header']);cpu.mem_write(dest,payload);ret(len(payload))
+ elif address==0x10003c30:
+  calls.append(['closeFile',read(sp+4),snapshot()]);ret()
+ elif address==stop+0x1300:
+  handle,flags,data,dest,outer=[read(sp+i) for i in [4,8,12,16,20]];paletteEntries=bytes(cpu.mem_read(data,1024))
+  calls.append(['createPalette',handle,flags,paletteEntries.hex(),dest,outer,snapshot()]);write(dest,0x2800200);ret(0,20)
+ elif address==stop+0x1400:
+  calls.append(['releasePalette',read(sp+4),snapshot()]);ret(0,4)
+ elif address==stop+0x1500:
+  values=[read(sp+i) for i in [4,8,12,16,20]];calls.append(['getPaletteEntries',*values,snapshot()]);cpu.mem_write(values[4],paletteEntries[values[2]*4:(values[2]+values[3])*4]);ret(0,20)
+if args.native_palette:
+ for address in [0x10003f80,0x10003a30,0x10003a40,0x10003e60,0x10003ce0,0x10003c30,stop+0x1300,stop+0x1400,stop+0x1500]:cpu.hook_add(UC_HOOK_CODE,paletteHook,begin=address,end=address)
+
 def bitmapHook(cpu,address,size,user):
  global activeBitmap
  sp=cpu.reg_read(UC_X86_REG_ESP)
@@ -273,6 +315,8 @@ for name,profile,strings,failure,unselected in profiles:
   teams=profile.get('teams',{}).get('teamsinmission',1);pattern=0xa5 if mutation else 0;country=4 if mutation or args.native_bitmaps else 1
   cpu.mem_write(globalBase,bytes([pattern])*globalSize);cpu.mem_write(owner,bytes([pattern])*0x10000)
   initializing=False
+  if args.native_palette:
+   cpu.mem_write(0x2700000,bytes([pattern])*0x10000);paletteAllocations=0;paletteEntries=bytes(1024)
   if args.native_initializer:
    cpu.mem_write(0x6de000,bytes(0x9000));cpu.mem_write(0x6daf90,bytes(0x1d8));write(0x6daf94,-1);cpu.mem_write(0x6db060,b'\xff'*264)
    if mutation:
@@ -288,7 +332,7 @@ for name,profile,strings,failure,unselected in profiles:
   rng=123+pattern
   calls=[];initializing=True;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43e910,stop,count=2000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
+  cases.append(dict(profile=name,nativePalette=bool(args.native_palette),nativeBitmaps=args.native_bitmaps,nativeFlags=args.native_flags,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
 schemeCases=[]
 if args.native_scheme and not args.native_initializer:
  for selection in [-1,*range(19),2147483647]:
@@ -298,5 +342,5 @@ if args.native_scheme and not args.native_initializer:
     sp=stack+0xe000;write(sp,stop);write(sp+4,selection);write(sp+8,bank);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6f454c)
     cpu.emu_start(0x470a20,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     schemeCases.append(dict(selection=selection,bank=bank,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared. Native flag mode additionally executes0041BC40 and0044C7B0; only bitmap loading remains intercepted, including deterministic pixel/palette writes. Native bitmap mode also executes0040F210 inside the full mission load, using original BMP pixel data and RGB0 palette entries at explicit Windows/DirectDraw service boundaries, with successful/failed image acquisition. Native palette mode maps the original DirectX2D DLL and executes its load/read/destroy routines; only CRT file/heap and DirectDraw calls remain intercepted. Full320KiB global/owner/palette-heap memory is compared at each observed boundary and return.',cases=cases,schemeCases=schemeCases,countryCases=countryCases,flagCases=flagCases,bitmaps=bitmapRecords,paletteDllSha256=paletteDllHash),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')

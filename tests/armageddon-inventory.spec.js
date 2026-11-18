@@ -1,6 +1,6 @@
 import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
 import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
-import missionNativeBitmaps from './fixtures/armageddon/mission-native-bitmaps.json' with {type:'json'};
+import missionNativePalette from './fixtures/armageddon/mission-native-palette.json' with {type:'json'};
 import setupBitmap from './fixtures/armageddon/setup-bitmap.json' with {type:'json'};
 import {nativeLoadSetupBitmap} from '../src/armageddon/setup-bitmap.js';
 import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
@@ -177,7 +177,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     }
     expect({calls,sha256:snapshot()},JSON.stringify(c)).toEqual({calls:c.calls,sha256:c.sha256});
   }
-  for(const bitmap of Object.values(missionNativeBitmaps.bitmaps)) {
+  for(const bitmap of Object.values(missionNativePalette.bitmaps)) {
     const path=`../public/armageddon/media/${bitmap.source.slice(5).toLowerCase()}`;
     expect(createHash('sha256').update(fs.readFileSync(new URL(path,import.meta.url))).digest('hex')).toBe(bitmap.sha256);
   }
@@ -226,11 +226,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   }
   // The deepest capture supersedes the earlier all-profile callback captures.
   // Keep scheme rejection separately: native mission bank0 always exists.
-  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeBitmaps.cases]) {
+  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativePalette.cases]) {
     const globalBase=c.nativeInitializer?0x6da000:0x6e0000;
     const globals=Buffer.alloc(c.nativeInitializer?0x30000:0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
-    const bitmapBytes=Buffer.alloc(0x10000);
-    const locate=address=>address>=0x2600000?[bitmapBytes,address-0x2600000]:address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
+    const bitmapBytes=Buffer.alloc(0x10000),paletteHeap=Buffer.alloc(0x10000,c.pattern),paletteSlot=Buffer.alloc(4);
+    const locate=address=>address>=0x2900000?[paletteSlot,address-0x2900000]:address>=0x2700000?[paletteHeap,address-0x2700000]:address>=0x2600000?[bitmapBytes,address-0x2600000]:address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     memory.range=(address,length)=>{const [b,o]=locate(address);return b.subarray(o,o+length);};
     if(c.nativeInitializer) {
@@ -247,7 +247,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     if(!c.unselected){memory.put(0x2000884,1);memory.put(0x2000054,c.mutation?1:-1);}
     if(c.nativeServices)memory.putByte(0x6e1178,67+c.mutation);
     const random=new NativeFrontendRandom(123+c.pattern);
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=()=>createHash('sha256').update(globals).update(owner).update(c.nativePalette?paletteHeap:Buffer.alloc(0)).digest('hex');
     const host={
       setResourceString(address,id) {calls.push(['label',address,id,snapshot()]);memory.put(address,0x2500000+id*4);},
       findResource(module,id,type) {calls.push(['findResource',module,id,type,snapshot()]);return 0x2400000+id*256;},
@@ -285,7 +285,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       delete host.loadFlagBitmap;
       let bitmap;
       host.loadImage=(...args)=>{
-        calls.push(['loadImage',...args,snapshot()]);bitmap=missionNativeBitmaps.bitmaps[args[1].split('\\').at(-1).toLowerCase()];
+        calls.push(['loadImage',...args,snapshot()]);bitmap=missionNativePalette.bitmaps[args[1].split('\\').at(-1).toLowerCase()];
         bitmapBytes.set(Buffer.from(bitmap.pixels,'hex'));return c.mutation?0:0x1234;
       };
       host.getBitmap=(...args)=>{calls.push(['getBitmap',...args,snapshot()]);return {...bitmap,bits:0x2600000};};
@@ -293,6 +293,20 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       host.openPalette=(...args)=>{calls.push(['openPalette',...args,snapshot()]);return 0x5678;};
       host.readPalette=(...args)=>{calls.push(['readPalette',...args,snapshot()]);memory.range(args[1],1024).set(Buffer.from(bitmap.palette,'hex'));};
       host.closePalette=(...args)=>{calls.push(['closePalette',...args,snapshot()]);};
+      if(c.nativePalette) {
+        for(const key of ['openPalette','readPalette','closePalette'])delete host[key];
+        let allocations=0,entries=Buffer.alloc(1024);host.paletteSlot=0x2900000;
+        host.device=()=>0x2800000;
+        host.openFile=(...args)=>{calls.push(['openFile',...args,snapshot()]);return 0x5678;};
+        host.allocate=(...args)=>{calls.push(['allocate',...args,snapshot()]);return 0x2700000+(allocations++)*0x1000;};
+        host.free=(...args)=>{calls.push(['free',...args,snapshot()]);};
+        host.seekFile=(...args)=>{calls.push(['seekFile',...args,snapshot()]);};
+        host.readFile=(...args)=>{calls.push(['readFile',...args,snapshot()]);const bytes=Buffer.from(bitmap.header,'hex');memory.range(args[0],bytes.length).set(bytes);return bytes.length;};
+        host.closeFile=(...args)=>{calls.push(['closeFile',...args,snapshot()]);};
+        host.createPalette=(device,flags,bytes,dest,outer)=>{entries=Buffer.from(bytes);calls.push(['createPalette',device,flags,entries.toString('hex'),dest,outer,snapshot()]);memory.put(dest,0x2800200);return 0;};
+        host.getPaletteEntries=(handle,flags,first,count,dest)=>{calls.push(['getPaletteEntries',handle,flags,first,count,dest,snapshot()]);memory.range(dest,count*4).set(entries.subarray(first*4,(first+count)*4));return 0;};
+        host.releasePalette=(...args)=>{calls.push(['releasePalette',...args,snapshot()]);};
+      }
     }
     let storedSeed=null;
     if(c.nativeInitializer) {
