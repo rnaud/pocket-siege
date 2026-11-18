@@ -434,8 +434,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     return image;
   });
   for(const c of sceneStartup.cases) {
-    const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x400000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000;
-    const region=a=>a>=owner?[bytes,a-owner]:[stackBytes,a-stack];
+    const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x800000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000,headers=owner+0x400000,archives=-1,cursor=0;
+    const packed=Buffer.alloc(0x10000,c.pattern),signature=Buffer.alloc(4,c.pattern),nameBytes=Buffer.alloc(256,c.pattern);
+    const stream=Buffer.from(c.stream,'hex'),archiveCursors=[0,0];
+    const archiveData=terrainConstruction.archive_sources.map(source=>{if(source.bytes)return Buffer.from(source.bytes,'hex');const header=Buffer.from(source.header,'hex'),data=Buffer.alloc(header.readUInt32LE(4));header.copy(data);Buffer.from(source.index,'hex').copy(data,source.offset);return data;});
+    const region=a=>a>=owner?[bytes,a-owner]:a>=stack?[stackBytes,a-stack]:a>=0x7d6058?[nameBytes,a-0x7d6058]:a>=0x714be0?[packed,a-0x714be0]:a>=0x560230?[signature,a-0x560230]:[Buffer.from('grass.img\0\0\0soil.img\0'),a-0x55f7d4];
     const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
     arrowSources.forEach((image,i)=>{
       const at=owner+0x20000+i*0x2000;bytes.set(image.pixels,at-owner);
@@ -443,7 +446,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     });
     bytes.set(toolSource.pixels,0x60000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
-    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200700],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6178,0x2200b00],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200700],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6110,0x2200a00],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x6170,0x2200800],[0x6178,0x2200b00],[0x6180,0x2200c00],[0x6154,0x2200900],[0x2b4,owner+0x6000]])memory.put(owner+offset,value);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x9200],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,1],[40,1]])memory.put(owner+0x9100+offset,value);
     memory.putByte(owner+0x9200,3);
     for(const bank of [1,2]) {
@@ -459,21 +462,25 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const colors=Uint8Array.from({length:768},(_,i)=>(Math.floor(i/3)*[43,71,97][i%3])&255);
     bytes.set(colors,0x350000+0x48a4-0x47a8);bytes.set(Uint8Array.from({length:768},(_,i)=>(Math.floor(i/24)+i%24)%12),0x350000+0x4ba4-0x47a8);
     bytes.set(colors,0x350000+0x4ea4-0x47a8);bytes.set(Uint8Array.from({length:340},(_,i)=>(Math.floor(i/20)+i%20)%12),0x350000+0x51a4-0x47a8);
-    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).digest('hex');
+    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).update(packed).update(signature).update(nameBytes).digest('hex');
     const record=(name,...args)=>calls.push([name,...args,snapshot()]);
     const image=(palette,archive,name)=>{record('image',palette,archive,name);return name==='masks.img'?owner+0x9000:name==='fill.img'?owner+0x9100:name.startsWith('arrow')?owner+0x10000+Number(name.slice(5,7))*0x40:owner+0xe000;};
-    nativeStartScene(memory,owner,[owner+0x6000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4},{
-      allocate:size=>{allocated++;record('allocate',size);return owner+({[0x1d44c]:0x300000,[0x19c]:0x5000,[0xb2c]:0xd0000}[size]??(0x70000+allocated*0x100));},
+    nativeStartScene(memory,owner,[owner+0x6000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,terrainScratch:stack+0x4000},{
+      allocate:size=>{allocated++;record('allocate',size);let result;if(size===0x1d44c)result=owner+0x300000;else if(size===0xb2c)result=owner+0xd0000;else{result=headers;headers+=(size+15)&~15;}if(size===0x19c)archives++;return result;},
       allocateArray:(size,pool)=>{record('array',size,pool);const result=pixels;pixels+=(size+15)&~15;return result;},
       getRendererPalette:(renderer,bank)=>{record('palette',renderer,bank);return owner+(bank===2?0xb000:0xa000);},
       loadNamedImage:image,loadNamedArchiveImage:image,freeSized:(...args)=>record('free',...args),
-      createTerrain:(terrain,settings)=>{
-        const {maskImage,renderer,mode,path,count,positions,metadata,water}=settings;
-        record('terrain',terrain,maskImage,renderer,mode,path,count,positions,metadata,water);
-        memory.put(terrain,0x526588);memory.put(terrain+0xc4,0x12345678);memory.put(terrain+0xb20,0x11111111);memory.put(terrain+0xb24,0x22222222);memory.put(count,c.count);
-        for(let i=0;i<c.count;i++){memory.put(positions+i*8,100+i*30);memory.put(positions+i*8+4,200+i*20);}
-        return terrain;
+      free:(...args)=>record('arrayFree',...args),
+      openFile:(path,mode)=>{record('open',path,mode);return typeof path==='number'?0x1234:0x5000+archives;},
+      closeFile:(...args)=>record('close',...args),tellFile:file=>{record('tell',file);return cursor;},
+      seekFile:(file,offset,origin)=>{record('seek',file,offset,origin);archiveCursors[file-0x5001]=offset;return 0;},
+      readFile:(dest,n,count,file)=>{
+        record('read',dest>=stack&&dest<stack+0x10000?'scratch':dest,n,count,file);
+        let chunk;if(file===0x1234){chunk=stream.subarray(cursor,cursor+n*count);cursor+=chunk.length;}
+        else{const index=file-0x5001,position=archiveCursors[index];chunk=archiveData[index].subarray(position,position+n*count);archiveCursors[index]+=chunk.length;}
+        const [buffer,offset]=region(dest);chunk.copy(buffer,offset);return n?Math.floor(chunk.length/n):0;
       },
+      bindTerrainLayers:(...args)=>record('bind',...args),submitRendererPalette:(...args)=>record('commit',...args),
       openGraphicsArchive:(...args)=>{record('archive',...args);return 1;},
       createRendererPalette:(...args)=>record('createPalette',...args),
       loadFontResourceGroup:(...args)=>{record('fontGroup',...args);if(args[5][0]===5)memory.put(owner+0xa00c,0x12345678);},
