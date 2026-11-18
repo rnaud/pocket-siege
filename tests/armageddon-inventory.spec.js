@@ -1,3 +1,5 @@
+import sceneThemeResources from './fixtures/armageddon/scene-theme-resources.json' with {type:'json'};
+import {nativeLoadSceneThemeResources} from '../src/armageddon/scene-theme-resources.js';
 import sceneSpawnPool from './fixtures/armageddon/scene-spawn-pool.json' with {type:'json'};
 import {nativeCreateSceneSpawnPool} from '../src/armageddon/scene-spawn-pool.js';
 import sceneArrowShapes from './fixtures/armageddon/scene-arrow-shapes.json' with {type:'json'};
@@ -203,6 +205,28 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneThemeResources.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner]};
+    for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200300],[0x2b0,owner+0x1000],[0x1b20,0x11111111],[0x1b24,0x22222222],[0x2ac,0x33333333],[0x2b4,owner+0x6000],[0x5cd0,owner+0x8000],[0x8008,owner+0x6000],[0xa008,owner+0x6200],[0x6000,owner+0x6100],[0x6200,owner+0x6300],[0x6114,0x2200100],[0x6314,0x2200100],[0x6170,0x2200200],[0x6370,0x2200200]])memory.put(owner+offset,value);
+    for(const [offset,value] of [[0,0x5249b0],[4,(c.mode>>1)&1],[8,owner+0x4000],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,c.mode&1?0:1],[40,1]])memory.put(owner+0x3000+offset,value);
+    bytes[0x4000]=17+c.mode;
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    nativeLoadSceneThemeResources(memory,owner,{
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return 0;},
+      loadResourceGroup:(...args)=>calls.push(['group',...args,snapshot()]),
+      getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return owner+0x5000+bank*0x100;},
+      loadNamedArchiveImage:(palette,archive,name)=>{
+        calls.push(['image',palette,archive,name,snapshot()]);
+        if(name==='gradient.img'&&c.mode&1)memory.put(owner+0x5cd0,owner+0xa000);
+        return owner+(name==='gradient.img'?0x3200:0x3000);
+      },
+      loadRendererSprite:(...args)=>{calls.push(['sprite',...args,snapshot()]);if(c.mode&2)memory.put(owner+0x2b4,owner+(args[0]===owner+0x6000?0x6200:0x6000));},
+      free:at=>calls.push(['arrayFree',at,snapshot()]),
+      freeSized:(at,size)=>calls.push(['free',at,size,snapshot()]),
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of sceneSpawnPool.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x40000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
