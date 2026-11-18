@@ -99,7 +99,7 @@ test("live teleport shows the dissolve before moving and holds the turn until it
     .poll(() =>
       page.evaluate(() => window.siege.getState().worms[0].originalSprite),
     )
-    .toBe("wteldsv");
+    .toMatch(/^wteldsv[ud]?$/);
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.worms[0].x).toBe(before.worms[0].x);
   expect(state.team).toBe(0);
@@ -111,14 +111,14 @@ test("live teleport shows the dissolve before moving and holds the turn until it
       return {
         moved: state.worms[0].x !== previousX,
         team: state.team,
-        sprite: state.worms[0].originalSprite,
+        dissolving: /^wteldsv[ud]?$/.test(state.worms[0].originalSprite),
       };
     }, before.worms[0].x), { intervals: [16] })
-    .toEqual({ moved: true, team: 0, sprite: "wteldsv" });
+    .toEqual({ moved: true, team: 0, dissolving: true });
   await page.screenshot({ path: info.outputPath("original-teleport.png") });
   await expect
     .poll(() =>
       page.evaluate(() => window.siege.getState().worms[0].originalSprite),
     )
-    .not.toBe("wteldsv");
+    .not.toMatch(/^wteldsv[ud]?$/);
 });

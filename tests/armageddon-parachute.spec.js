@@ -114,19 +114,19 @@ test("live falling worm deploys original canopy, slows continuously and folds on
         function sample() {
           const w = window.siege.getState().worms[0];
           sprites.add(w.originalSprite);
-          if (w.originalSprite === "wparbak" || performance.now() > deadline)
+          if (/^wparbak[ud]?$/.test(w.originalSprite) || performance.now() > deadline)
             resolve([...sprites]);
           else requestAnimationFrame(sample);
         }
         sample();
       }),
   );
-  expect(seen).toContain("wparbak");
+  expect(seen.some(name=>/^wparbak[ud]?$/.test(name))).toBe(true);
   await expect
     .poll(() =>
       page.evaluate(() => window.siege.getState().worms[0].originalSprite),
     )
-    .not.toBe("wparbak");
+    .not.toMatch(/^wparbak[ud]?$/);
   expect(await page.evaluate(() => window.siege.getState().worms[0].hp)).toBe(
     100,
   );

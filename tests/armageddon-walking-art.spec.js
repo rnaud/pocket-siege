@@ -77,10 +77,13 @@ test("original walking strips preserve pixels, follow slopes and stop/reset with
     };
     const names = [];
     for (const rise of [0, 1, -1]) {
-      worm.walkRise = rise;
+      worm.nativeGroundPose={variant:-rise};
       stepOriginalWalking(worm);
       names.push(originalWormFrame(worm, "walk", 0, 45, "rocket", true).name);
     }
+    worm.x=12.75;worm.nativeWalkingBody={anchorX:10.25*65536};
+    const offsetX=originalWormFrame(worm,"walk",0,45,"rocket",true).offsetX;
+    worm.nativeWalkingBody=null;
     const a = originalWormFrame(worm, "walk", 0, 45, "rocket", true).index;
     const b = originalWormFrame(worm, "walk", 1000, 45, "rocket", true).index;
     worm.moving = false;
@@ -92,7 +95,7 @@ test("original walking strips preserve pixels, follow slopes and stop/reset with
     worm.walkDirection = -1;
     stepOriginalWalking(worm);
     return {
-      mismatch,
+      mismatch,offsetX,
       names,
       a,
       b,
@@ -103,6 +106,7 @@ test("original walking strips preserve pixels, follow slopes and stop/reset with
     };
   });
   expect(result.mismatch).toBe(0);
+  expect(result.offsetX).toBe(-2);
   expect(result.names).toEqual(["wwalk", "wwalku", "wwalkd"]);
   expect(result.a).toBe(result.b);
   expect(result.cleared).toBe(true);

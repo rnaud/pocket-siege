@@ -10,12 +10,11 @@ import { nativeHurtEntry } from "./hurt-entry.js";
 import { nativeDeathCue, nativeDeathEntry } from "./death-cue.js";
 import { nativeWalkingTick, nativeWalkingSprite } from "./walking-art.js";
 import { H } from "../physics.js";
-import { nativeFlightSprite, nativeFlightProgress } from "./flight-art.js";
+import { nativeFlightProgress } from "./flight-art.js";
 import { nativeJetpackInitialFuel, nativeJetpackInput, nativeJetpackTick } from "./jetpack.js";
 import { fixedDivide } from "./numeric.js";
 import {
   nativeTeleportTick,
-  nativeTeleportRenderProgress,
 } from "./teleport.js";
 import {
   nativeWormJumpLandingEntry,
@@ -901,7 +900,7 @@ export function stepOriginalWalking(worm) {
   Object.assign(state, worm.nativeWalkingBody
     ? { progress: worm.nativeWalkingBody.progress, cycle: worm.nativeWalkingBody.cycle }
     : nativeWalkingTick(state.progress));
-  state.sprite = nativeWalkingSprite(-Math.sign(worm.walkRise || 0));
+  state.sprite = nativeWalkingSprite(worm.nativeGroundPose?.variant??0);
   worm.originalWalking = state;
 }
 
@@ -1048,16 +1047,18 @@ export function stepOriginalIdle(worm, frame, memory, sceneMemory, host) {
   worm.originalPlayerFrame=frame;
 }
 
-function resolvedPlayerPose(worm,player,state,{aimed=false,equipped=false}={}) {
+function resolvedPlayerPose(worm,player,state,{aimed=false,equipped=false,water=false,facing=worm.facing??1}={}) {
   const torch=worm.originalBlowtorch?.body;
-  const x=torch?.x??0,y=torch?.y??0;
+  const x=torch?.x??Math.round((worm.x??0)*65536),y=torch?.y??(worm.y===undefined?0:Math.round((H-worm.y)*65536));
   const resolved=nativeResolveWormSprite({
-    slope:worm.nativeGroundPose?.variant??0,facing:worm.facing??1,
-    toolAngle:torch?.aim??0x8000,xOverride:torch?.field1fc??x,
+    slope:worm.nativeGroundPose?.variant??0,facing,
+    toolAngle:torch?.aim??0x8000,xOverride:torch?.field1fc??worm.nativeWalkingBody?.anchorX??x,
+    teleportProgress:worm.originalTeleport?.progress??0,
   },{
     position:()=>({x,y}),current:()=>({sprite:player.current.id,progress:player.current.progress}),state:()=>state,
   });
-  const name=spriteIds.sprites[resolved.sprite&0x3ffff].name,sprite=animations.get(name).sprite;
+  const id=resolved.sprite&0x3ffff;
+  const name=water?`water/${waterSpriteIds.sprites[id].name}`:spriteIds.sprites[id].name,sprite=animations.get(name).sprite;
   const index=nativeSpriteFrame(sprite.frames.length,sprite.metadata[2],resolved.progress);
   return {map:texture(name,index),name,index,aimed,equipped,facing:resolved.sprite&0x40000?1:-1,
     offsetX:(resolved.x>>16)-(x>>16)};
@@ -1076,38 +1077,14 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     };
   }
   if (worm.originalTeleport && worm.hp > 0) {
-    const animation = animations.get("wteldsv");
-    const index = nativeSpriteFrame(
-      animation.sprite.frames.length,
-      animation.sprite.metadata[2],
-      nativeTeleportRenderProgress(worm.originalTeleport.progress),
-    );
-    return {
-      map: texture("wteldsv", index),
-      name: "wteldsv",
-      index,
-      aimed: false,
-      equipped: false,
-    };
+    return resolvedPlayerPose(worm,worm.originalTeleport.player,0x6f);
   }
   if (worm.originalRope && worm.hp > 0 && !worm.frozen && !worm.knocked) {
-    const name = worm.nativeRopeBody?.state === 0x7c ? "wbungee" : "wbatrope";
-    const animation = animations.get(name);
-    if (animation) {
-      const index = nativeSpriteFrame(
-        animation.sprite.frames.length,
-        animation.sprite.metadata[2],
-        worm.originalRope.progress,
-      );
-      return {
-        map: texture(name, index),
-        name,
-        index,
-        aimed: false,
-        equipped: false,
-      };
-    }
+    const state=worm.nativeRopeBody?.state===0x7c?0x7c:0x7b;
+    const id=spriteIdByName.get(state===0x7c?"wbungee":"wbatrope");
+    return resolvedPlayerPose(worm,{current:{id,progress:worm.originalRope.progress}},state);
   }
+
 
   if (
     worm.originalParachute &&
@@ -1116,73 +1093,20 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     !worm.knocked &&
     !worm.ground
   ) {
-    const player = worm.originalParachute;
-    const name = spriteIds.sprites[player.current.id].name;
-    const sprite = animations.get(name).sprite;
-    const index = nativeSpriteFrame(
-      sprite.frames.length,
-      sprite.metadata[2],
-      player.current.progress,
-    );
-    return {
-      map: texture(name, index),
-      name,
-      index,
-      aimed: false,
-      equipped: false,
-    };
+    return resolvedPlayerPose(worm,worm.originalParachute,0x7d);
   }
 
   if (worm.drowned && worm.originalDrowning) {
-    const { name, player } = worm.originalDrowning;
-    const sprite = animations.get(name).sprite;
-    const index = nativeSpriteFrame(
-      sprite.frames.length,
-      sprite.metadata[2],
-      player.current.progress,
-    );
-    return {
-      map: texture(name, index),
-      name,
-      index,
-      aimed: false,
-      equipped: false,
-    };
+    return resolvedPlayerPose(worm,worm.originalDrowning.player,0x87,{water:true});
   }
 
   // An explicit native jump queue takes precedence over the host panic pose.
   if (worm.originalDeath && !worm.drowned) {
-    const animation = animations.get("wdie");
-    const index = nativeSpriteFrame(
-      animation.sprite.frames.length,
-      animation.sprite.metadata[2],
-      worm.originalDeath.current.progress,
-    );
-    return {
-      map: texture("wdie", index),
-      name: "wdie",
-      index,
-      aimed: false,
-      equipped: false,
-    };
+    return resolvedPlayerPose(worm,worm.originalDeath,0x84);
   }
 
   if (worm.originalRecovery?.player.current.id && !worm.frozen && (worm.hp > 0 || worm.deathPending)) {
-    const current = worm.originalRecovery.player.current;
-    const name = spriteIds.sprites[current.id].name;
-    const sprite = animations.get(name).sprite;
-    const index = nativeSpriteFrame(
-      sprite.frames.length,
-      sprite.metadata[2],
-      current.progress,
-    );
-    return {
-      map: texture(name, index),
-      name,
-      index,
-      aimed: false,
-      equipped: false,
-    };
+    return resolvedPlayerPose(worm,worm.originalRecovery.player,0x76);
   }
 
   const preparingJump = worm.originalJumpPreparation;
@@ -1197,20 +1121,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     !worm.originalPreparation &&
     !worm.originalRecoil && !worm.originalAxe && !worm.originalFirePunch && !worm.originalDrill && !worm.originalBlowtorch
   ) {
-    const name = spriteIds.sprites[jumping.current.id].name;
-    const sprite = animations.get(name).sprite;
-    const index = nativeSpriteFrame(
-      sprite.frames.length,
-      sprite.metadata[2],
-      jumping.current.progress,
-    );
-    return {
-      map: texture(name, index),
-      name,
-      index,
-      aimed: false,
-      equipped: false,
-    };
+    return resolvedPlayerPose(worm,jumping,preparingJump?0x77:0x79);
   }
 
   if (
@@ -1226,8 +1137,6 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       worm.originalHurt?.state === 0x7f
     ) {
       const hurt = worm.originalHurt;
-      const name = spriteIds.sprites[hurt.sprite].name;
-      const animation = animations.get(name);
       // 004DDBD0 state 0x80: rolling pose follows the low word of body angle, mirrored
       // by facing.
       const progress =
@@ -1237,71 +1146,20 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
               worm.facing,
             )
           : 0;
-      const index = nativeSpriteFrame(
-        animation.sprite.frames.length,
-        animation.sprite.metadata[2],
-        progress,
-      );
-      return {
-        map: texture(name, index),
-        name,
-        index,
-        aimed: false,
-        equipped: false,
-      };
+      return resolvedPlayerPose(worm,{current:{id:hurt.sprite,progress}},hurt.state);
     }
     // Host velocities are per second and upward-positive; native bodies use
     // downward-positive fixed point per 50 Hz tick.
     const vx = Math.round(((worm.vx || 0) * 65536) / 50) | 0;
     const vy = Math.round((-(worm.vy || 0) * 65536) / 50) | 0;
-    const id = nativeFlightSprite(
-      Math.round(worm.x * 65536),
-      Math.round((H - worm.y) * 65536),
-    );
-    const name = spriteIds.sprites[id].name;
-    const animation = animations.get(name);
-    if (animation) {
-      worm.originalFlightProgress = nativeFlightProgress(
-        vx,
-        vy,
-        worm.originalFlightProgress ?? 0,
-      );
-      const index = nativeSpriteFrame(
-        animation.sprite.frames.length,
-        animation.sprite.metadata[2],
-        worm.originalFlightProgress,
-      );
-      const facing = vx < -0x6666 ? -1 : vx > 0x6666 ? 1 : worm.facing;
-      return {
-        map: texture(name, index),
-        name,
-        index,
-        facing,
-        aimed: false,
-        equipped: false,
-      };
-    }
+    worm.originalFlightProgress=nativeFlightProgress(vx,vy,worm.originalFlightProgress??0);
+    const facing=vx< -0x6666?-1:vx>0x6666?1:worm.facing;
+    return resolvedPlayerPose(worm,{current:{id:13,progress:worm.originalFlightProgress}},0x81,{facing});
   }
 
   if (worm.originalWalking && pose.startsWith("walk")) {
-    const state = worm.originalWalking;
-    const name = spriteIds.sprites[state.sprite].name;
-    const animation = animations.get(name);
-    if (animation) {
-      const index = nativeSpriteFrame(
-        animation.sprite.frames.length,
-        animation.sprite.metadata[2],
-        state.progress,
-      );
-      return {
-        map: texture(name, index),
-        name,
-        index,
-        facing: state.facing,
-        aimed: false,
-        equipped: false,
-      };
-    }
+    const state=worm.originalWalking;
+    return resolvedPlayerPose(worm,{current:{id:0x20,progress:state.progress}},0x66,{facing:state.facing});
   }
 
   const landing = worm.originalLanding;
@@ -1316,20 +1174,7 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
     !worm.originalPreparation &&
     !worm.originalRecoil && !worm.originalAxe && !worm.originalFirePunch && !worm.originalDrill && !worm.originalBlowtorch
   ) {
-    const name = spriteIds.sprites[landing.current.id].name;
-    const sprite = animations.get(name).sprite;
-    const index = nativeSpriteFrame(
-      sprite.frames.length,
-      sprite.metadata[2],
-      landing.current.progress,
-    );
-    return {
-      map: texture(name, index),
-      name,
-      index,
-      aimed: false,
-      equipped: false,
-    };
+    return resolvedPlayerPose(worm,landing,0x7a);
   }
 
   if (worm.originalPreparation || worm.originalAxe || worm.originalFirePunch || worm.originalDrill || worm.originalBlowtorch) {
