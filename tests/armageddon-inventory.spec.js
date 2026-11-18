@@ -1,3 +1,5 @@
+import missionResources from './fixtures/armageddon/mission-resources.json' with {type:'json'};
+import {nativeMissionThumbnail,nativeMissionTerrainPath,nativeMissionWinningCondition,nativeMissionSelection} from '../src/armageddon/mission-resources.js';
 import {nativeClearMatchTeamRecords,nativeInitializeMatchTeamRecords} from '../src/armageddon/match-team-records.js';
 import filePalette from './fixtures/armageddon/file-palette.json' with {type:'json'};
 import {nativeLoadFilePalette,nativeGetFilePaletteEntries,nativeDestroyFilePalette} from '../src/armageddon/file-palette.js';
@@ -149,6 +151,17 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of missionResources.cases) {
+    const owner=0x2000000, fields=new Map([[owner+0x884,c.mission],[owner+0x54,c.training],[owner+0x880,owner+0x1000],[0x6e1178,68]]),calls=[];
+    const memory={get:address=>fields.get(address)>>>0,byte:address=>fields.get(address)};
+    const host={profileInt:(...args)=>{
+      calls.push(args);
+      if(c.mutation){fields.set(owner+0x884,c.mission===-1?0:-1);fields.set(0x6e1178,90);fields.set(owner+0x880,owner+0x1100);}
+      return c.value;
+    }};
+    const fn={'00441E50':nativeMissionThumbnail,'00441F10':nativeMissionTerrainPath,'00442000':nativeMissionWinningCondition,'00442020':nativeMissionSelection}[c.entry];
+    expect({result:fn(memory,owner,host),calls}).toEqual({result:c.result,calls:c.calls});
+  }
   for(const c of missionNativePalette.teamClearCases) {
     const bytes=Buffer.alloc(0x10000,c.pattern),messages=[];
     const result=nativeClearMatchTeamRecords({put:(address,value)=>bytes.writeUInt32LE(value>>>0,address-0x2900000)},0x2908000,c.bank,{messageBox:(...args)=>messages.push(['message',...args])});
