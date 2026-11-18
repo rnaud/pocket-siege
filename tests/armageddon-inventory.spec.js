@@ -1,3 +1,5 @@
+import archiveHandle from './fixtures/armageddon/archive-handle.json' with {type:'json'};
+import {nativeTellArchiveEntry,nativeReadArchiveEntry,nativeDestroyArchiveEntry} from '../src/armageddon/archive-handle.js';
 import archiveLookup from './fixtures/armageddon/archive-lookup.json' with {type:'json'};
 import {nativeOpenArchiveEntry} from '../src/armageddon/archive-lookup.js';
 import archiveDirectory from './fixtures/armageddon/archive-directory.json' with {type:'json'};
@@ -174,6 +176,34 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of archiveHandle.cases) {
+    const owner=0x2000000,handle=owner+0x8000,bytes=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
+    memory.put(owner,owner+0x6000);memory.put(owner+0x6008,0x2200200);memory.put(owner+0x600c,0x2200100);
+    memory.put(handle,0x5265d4);memory.put(handle+4,c.slot);memory.put(handle+8,owner);
+    memory.put(owner+0x190,3);memory.put(owner+0x18c,13);
+    [7,3,15].forEach((slot,i)=>{
+      memory.put(owner+0x14c+i*4,slot);memory.put(owner+slot*16+12,handle);
+      memory.put(owner+slot*16+16,100);memory.put(owner+slot*16+20,120);
+      memory.put(owner+slot*16+24,[100,118,120,125][c.mode]);
+    });
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const host={
+      seekArchive:(archive,position)=>{calls.push(['seek',archive,position,snapshot()]);return c.mode===1?0:1;},
+      readArchive:(archive,dest,count)=>{
+        calls.push(['read',archive,dest,count,snapshot()]);
+        if((count>>>0)<0x1000)for(let i=0;i<count;i++)bytes[dest-owner+i]=(i*17)&255;
+        if(c.mode===3)memory.put(owner+c.slot*16+24,111);
+        return c.mode===2?count-1:count;
+      },
+      freeSized:(at,size)=>calls.push(['free',at,size,snapshot()]),
+    };
+    expect(nativeTellArchiveEntry(memory,handle)>>>0).toBe(c.before);
+    expect(nativeReadArchiveEntry(memory,handle,owner+0x7000,c.size,host)>>>0).toBe(c.result);
+    expect(nativeTellArchiveEntry(memory,handle)>>>0).toBe(c.after);
+    expect(nativeDestroyArchiveEntry(memory,handle,c.mode&1,host)>>>0).toBe(c.destroyed);
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of archiveLookup.cases) {
     const owner=0x2000000,nameBuffer=0x7d6058,bytes=Buffer.alloc(0x10000,c.pattern),nameBytes=Buffer.alloc(256,c.pattern);
     const locate=a=>a>=owner?[bytes,a-owner]:[nameBytes,a-nameBuffer];
