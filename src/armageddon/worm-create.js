@@ -1,3 +1,4 @@
+import { nativeSynchronizeWormMemory } from "./worm-animation-sync.js";
 import { nativeInitializeWormPlacement } from "./worm-placement.js";
 import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom } from './spawn-pool.js';
 import { nativeInitializePhysics } from './physics-create.js';
@@ -64,7 +65,12 @@ export function nativeInitializeWorm(memory,sceneMemory,team,worm,configuration,
   if(host.initializeResources)host.initializeResources();else nativeInitializeWormResources(memory,host.resources);
   host.changeState(deployment?100:101);
   if(deployment){put(0x210,1);put(0x54,1);}
-  else {host.settlePhysics();put(0x210,0);}
+  else {
+    if(host.synchronizeAnimation)host.synchronizeAnimation();
+    else if(host.settlePhysics)host.settlePhysics(); // Compatibility for existing constructor probes.
+    else nativeSynchronizeWormMemory(memory,sceneMemory,host.animation);
+    put(0x210,0);
+  }
   host.registerTask(2,((team<<4)+worm)|0);
 }
 

@@ -1,3 +1,5 @@
+import wormAnimationSync from "./fixtures/armageddon/worm-animation-sync.json" with { type: "json" };
+import { nativeSynchronizeWormAnimation } from "../src/armageddon/worm-animation-sync.js";
 import wormSpawnCreate from "./fixtures/armageddon/worm-spawn-create.json" with { type: "json" };
 import { nativeAddSpawn, nativeBuildSpawnPool, nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn } from "../src/armageddon/spawn-pool.js";
 import wormEnvironmentCreate from "./fixtures/armageddon/worm-environment-create.json" with { type: "json" };
@@ -284,6 +286,16 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of wormAnimationSync.cases) {
+    const calls=[];
+    nativeSynchronizeWormAnimation({field14c:c.bits&1,field148:(c.bits>>2)&1,team:2,worm:3},{color:c.color,marked:c.marked},{
+      current:()=>{calls.push(["current"]);return {sprite:c.current,progress:c.progress};},
+      teamStatus:team=>{calls.push(["teamStatus",team]);return c.status;},
+      health:(team,worm)=>{calls.push(["health",team,worm]);return c.health;},
+      progress:value=>calls.push(["progress",value]),queue:sprite=>calls.push(["queue",sprite]),reset:()=>calls.push(["reset"]),
+    });
+    expect(calls).toEqual(c.calls);
   }
   for(const c of wormSpawnCreate.insertCases) {
     const entries=c.entries.map(entry=>({...entry}));
