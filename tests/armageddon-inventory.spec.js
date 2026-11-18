@@ -1,3 +1,4 @@
+import runtimeActorDestroy from './fixtures/armageddon/runtime-actor-destroy.json' with {type:'json'};
 import eventBuffer from './fixtures/armageddon/event-buffer.json' with {type:'json'};
 import {nativeAppendSceneEvent,nativeResetEventBuffer,nativeEventBufferCount,nativeEventBufferUsage,nativeConsumeEventRecord,nativeCopyEventBuffer,nativeContainsEventRecord,nativeReadSceneEvent} from '../src/armageddon/scene-buffers.js';
 import fullSceneLifecycle from './fixtures/armageddon/full-scene-lifecycle.json' with {type:'json'};
@@ -289,6 +290,16 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     }
     nativeCompactPhysicsMemory(memory,0x2000000);
     expect(createHash('sha256').update(bytes).digest('hex'),`registry compaction ${seed}`).toBe(sha256);
+  }
+  for(const row of runtimeActorDestroy.cases) {
+    const bytes=inflateSync(Buffer.from(row.inputMemory,'base64')),calls=[];
+    const offset=at=>at>=0x2400000?0x10000+at-0x2400000:at>=0x2300000?0x20000+at-0x2300000:at-0x2000000;
+    const memory={get:at=>bytes.readUInt32LE(offset(at)),put:(at,value)=>bytes.writeUInt32LE(value>>>0,offset(at))};
+    nativeDestroyWorldTaskMemory(memory,0x2400100,row.flags,{
+      free:at=>calls.push(['free',at]),release:(at,size)=>calls.push(['release',at,size]),stopSound:(...args)=>calls.push(['stopSound',...args]),
+    });
+    expect(calls,`actor teardown ${row.tag}/${row.flags}/${row.variant}`).toEqual(row.calls);
+    expect(createHash('sha256').update(bytes).digest('hex'),`actor teardown memory ${row.tag}/${row.flags}/${row.variant}`).toBe(row.sha256);
   }
   for(const row of [...physicsMemory.cases,...physicsDestroy.cases.map(row=>({...row,destroy:true}))]) {
     const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),owner=Uint8Array.from({length:row.destroy?0x10000:0x3c},(_,i)=>(i*11+5)&255),scene=new Uint8Array(0x20000),calls=[];
