@@ -34,3 +34,22 @@ export function nativeBuildInitialMatchSetup(memory,inventory,schemeState,teamDa
   nativeInitializeInventory(inventory,memory.subarray(0x3c));
   return result;
 }
+
+//The mission loader calls00415540 against the global setup object. Keep these
+//views aliased: metadata and music overlap the same original global storage.
+export function nativeInitializeAddressedMatchSetup(memory,host) {
+  const extras={*[Symbol.iterator]() {
+    for(let address=0x6daf94;(memory.get(address)|0)!==-1;address+=8)
+      yield [memory.get(address)|0,memory.get(address+4)|0];
+  }};
+  return nativeInitializeMatchSetup(memory.range(0x6e68ac,0x10000),
+    memory.range(0x6f454c,0x1c4),memory.range(0x6de000,0x9000),{
+      ...host,extras,descriptors:memory.range(0x6daf90,0x1d8),
+      music:memory.range(0x6f3ec0,0xc6),localeState:memory.range(0x6f47f0,8),
+      defaultSpeech:memory.range(0x6f4839,65),workingDirectory:memory.range(0x6f48bc,260),
+      get drive(){return memory.byte(0x6e1178);},
+      get musicEnabled(){return memory.byte(0x6f49c4)!==0;},
+      get displayFlags(){return memory.get(0x6f49ec);},
+      get resolution(){return memory.get(0x6f49cc)|0;},
+    });
+}

@@ -1,3 +1,4 @@
+import {nativeInitializeAddressedMatchSetup} from './match-setup.js';
 import {nativeConfigureSetupMode,nativeCountSetupAlliances} from './setup-mode.js';
 import {nativeSetupMusic} from './setup-metadata.js';
 import {nativeLoadMissionScheme, nativeLoadMissionOptions} from './mission-options.js';
@@ -6,7 +7,7 @@ import {nativeLoadMissionEvents} from './mission-events.js';
 import {nativeLoadMissionWorms} from './mission-worms.js';
 
 //0043E910. Compose original mission validation, team creation, options, events,
-//and placement. Shared match initialization/finalization remain explicit hosts.
+//and placement. Resource/profile services remain explicit host interfaces.
 export function nativeLoadMission(memory, owner, host) {
   const read = (section, key, fallback = 0) => host.profileInt(section, key, fallback, memory.get(owner + 0x880)) | 0;
   const fail = text => {host.messageBox(text, 0, 0); return -1;};
@@ -21,7 +22,8 @@ export function nativeLoadMission(memory, owner, host) {
   if (nativeLoadMissionScheme(memory, owner, host) === -1)
     return fail('ERROR: Could not load Mission scheme');
   nativeLoadMissionTeams(memory, owner, teams, host);
-  host.initializeSetup(0x6e68ac);
+  if(host.initializeSetup)host.initializeSetup(0x6e68ac);
+  else nativeInitializeAddressedMatchSetup(memory,host);
   if (host.initializeMode) host.initializeMode(0x6e68ac, 2);
   else nativeConfigureSetupMode(memory, 0x6e68ac, 2);
   nativeLoadMissionOptions(memory, owner, {

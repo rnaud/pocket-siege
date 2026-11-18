@@ -11,8 +11,12 @@ parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
 parser.add_argument('--native-services',action='store_true')
 parser.add_argument('--native-scheme',action='store_true')
+parser.add_argument('--native-initializer',action='store_true')
 args = parser.parse_args()
+args.native_scheme |= args.native_initializer
 args.native_services |= args.native_scheme
+globalBase,globalSize=(0x6da000,0x30000) if args.native_initializer else (0x6e0000,0x20000)
+calls=[];initializing=False;clock=12345;storedSeed=None
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
 if digest != '0bf49876be886c8d213b8e28c761dbbfa5e030da38344cb6af9a2f162186ab56':
@@ -42,7 +46,7 @@ def cstring(address):
  result=bytearray()
  while cpu.mem_read(address,1)!=b'\0':result+=cpu.mem_read(address,1);address+=1
  return bytes(result)
-def snapshot():return hashlib.sha256(bytes(cpu.mem_read(0x6e0000,0x20000))+bytes(cpu.mem_read(owner,0x10000))).hexdigest()
+def snapshot():return hashlib.sha256(bytes(cpu.mem_read(globalBase,globalSize))+bytes(cpu.mem_read(owner,0x10000))).hexdigest()
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value&0xffffffff)
 def setstring(obj,value):
@@ -52,12 +56,38 @@ write(0x517494,stop+0x800);write(0x51745c,stop+0x900)
 write(0x5174a4,stop+0x100);write(0x5178f4,stop+0x200)
 write(0x517954,stop+0x300);write(0x517950,stop+0x400);write(0x5174a8,stop+0x500)
 def hook(cpu,address,size,user):
- global rng
+ global rng,storedSeed
  sp=cpu.reg_read(UC_X86_REG_ESP)
  if address==0x503d48:setstring(cpu.reg_read(UC_X86_REG_ECX),b'');ret()
- elif address in [0x503d24,stop+0x300,stop+0x400]:ret()
+ elif address==0x503d24:ret()
+ elif address==stop+0x300:
+  if initializing:calls.append(['time',clock,snapshot()])
+  ret(clock)
+ elif address==stop+0x400:
+  rng=read(sp+4);ret()
+ elif address==0x503f10:
+  key=cstring(read(sp+8)).decode();fallback=read(sp+12)
+  if key in ['DetailLevel','EnergyBar']:
+   calls.append(['option',key,fallback,snapshot()]);ret(5 if key=='DetailLevel' else 0,12)
+  else:
+   calls.append(['readSeed',fallback,snapshot()]);ret(fallback if storedSeed is None else storedSeed,12)
+ elif address==0x503f16:
+  storedSeed=read(sp+12);calls.append(['writeSeed',storedSeed,snapshot()]);ret(1,12)
+ elif address==0x4703a0:
+  calls.append(['handicap',snapshot()]);ret(0)
+ elif address==stop+0xa00:
+  value=cstring(read(sp+4));calls.append(['directory',value.hex(),snapshot()]);ret(int(mutation and value!=b'C:\\WORMS'))
+ elif address==stop+0xb00:
+  calls.append(['locale',snapshot()]);ret(0x409)
+ elif address==stop+0xc00:
+  a,b,n=read(sp+4),read(sp+8),read(sp+12);result=0
+  for i in range(n):
+   x,y=cpu.mem_read(a+i,1)[0],cpu.mem_read(b+i,1)[0]
+   if x!=y:result=x-y;break
+   if not x:break
+  ret(result)
  elif address==0x503dc0:
-  fmt=cstring(read(sp+8));value=fmt%(cstring(read(sp+12)),signed(read(sp+16))) if fmt==b'%s %d' else fmt%signed(read(sp+12))
+  fmt=cstring(read(sp+8));value=fmt%(cstring(read(sp+12)),signed(read(sp+16))) if fmt==b'%s %d' else fmt%(cstring(read(sp+12)),cstring(read(sp+16))) if fmt==b'%s\\%s' else fmt%signed(read(sp+12))
   setstring(read(sp+4),value);ret()
  elif address==0x503d2a:
   dest=cpu.reg_read(UC_X86_REG_ECX);setstring(dest,cstring(read(sp+4)));ret(dest,4)
@@ -91,7 +121,9 @@ def hook(cpu,address,size,user):
  elif address==stop+0x900:
   module,handle=read(sp+4),read(sp+8);calls.append(['loadResource',module,handle,snapshot()]);ret(handle,8)
  elif address==stop+0x200:
-  fmt=cstring(read(sp+8));value=fmt%(read(sp+12)&255) if b'%c' in fmt else fmt%cstring(read(sp+12));cpu.mem_write(read(sp+4),value+b'\0');ret(len(value))
+  fmt=cstring(read(sp+8));value=fmt%(read(sp+12)&255) if b'%c' in fmt else fmt%cstring(read(sp+12))
+  if args.native_initializer and initializing and b'speech' in fmt:calls.append(['speech',b'%c' in fmt,(value+b'\0').hex(),snapshot()])
+  cpu.mem_write(read(sp+4),value+b'\0');ret(len(value))
  elif address==stop+0x700:
   calls.append(['random',snapshot()]);rng=(rng*214013+2531011)&0xffffffff;ret((rng>>16)&32767)
  elif address==0x41bc40:
@@ -110,7 +142,8 @@ def hook(cpu,address,size,user):
   if mutation:write(owner+0x880,owner+0x1100 if filename==owner+0x1000 else owner+0x1000)
   values=profile.get(section.lower(),{})
   ret(values.get(key.lower(),fallback),16)
-for address in [0x503d48,0x503d24,0x503dc0,0x503d42,0x503d2a,0x503d1e,0x503ec2,0x470a20,0x415540,0x4197d0,0x419610,0x419740,0x41b730,0x41bc40,stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600,stop+0x700,stop+0x800,stop+0x900]:
+for address in [0x503d48,0x503d24,0x503dc0,0x503d42,0x503d2a,0x503d1e,0x503ec2,0x470a20,0x415540,0x4197d0,0x419610,0x419740,0x41b730,0x41bc40,stop+0x100,stop+0x200,stop+0x300,stop+0x400,stop+0x500,stop+0x600,stop+0x700,stop+0x800,stop+0x900,*([0x503f10,0x503f16,0x4703a0,stop+0xa00,stop+0xb00,stop+0xc00] if args.native_initializer else [])]:
+ if args.native_initializer and address==0x415540:continue
  if args.native_scheme and address==0x470a20:continue
  if args.native_services and address in [0x4197d0,0x419610,0x419740,0x41b730]:continue
  cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
@@ -145,6 +178,9 @@ while read(p+12):
   item=read(lookup+i*4)
   if not item&0x80000000 and cstring(base+item+2)==b'strncpy':write(iat+i*4,stop+0x600)
   if not item&0x80000000 and cstring(base+item+2)==b'rand':write(iat+i*4,stop+0x700)
+  if args.native_initializer and not item&0x80000000:
+   stub={b'_chdir':0xa00,b'GetSystemDefaultLCID':0xb00,b'strncmp':0xc00}.get(cstring(base+item+2))
+   if stub:write(iat+i*4,stop+stub)
   i+=1
  p+=20
 profiles=[]
@@ -172,24 +208,32 @@ for name,profile,strings,failure,unselected in profiles:
  if args.native_scheme and failure:continue
  for mutation in [0,1]:
   teams=profile.get('teams',{}).get('teamsinmission',1);pattern=0xa5 if mutation else 0;country=4 if mutation else 1
-  cpu.mem_write(0x6e0000,bytes([pattern])*0x20000);cpu.mem_write(owner,bytes([pattern])*0x10000)
+  cpu.mem_write(globalBase,bytes([pattern])*globalSize);cpu.mem_write(owner,bytes([pattern])*0x10000)
+  initializing=False
+  if args.native_initializer:
+   cpu.mem_write(0x6de000,bytes(0x9000));cpu.mem_write(0x6daf90,bytes(0x1d8));write(0x6daf94,-1);cpu.mem_write(0x6db060,b'\xff'*264)
+   if mutation:
+    for offset,value in [(4,2),(8,-1),(12,3),(16,5),(20,-1)]:write(0x6daf90+offset,value)
+   cpu.mem_write(0x6e11f8,b'\1');cpu.mem_write(0x6e18c0,b'\1')
+   cpu.mem_write(0x6f4839,b'English'+bytes(58));cpu.mem_write(0x6f48bc,b'C:\\WORMS\0')
+   write(0x6f49cc,2);write(0x6f49ec,0);write(0x6f49c4,1);storedSeed=None
   sp=stack+0xe000;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43d6c0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
   write(owner+0x880,owner+0x1000);write(0x6f47f4,country);cpu.mem_write(0x6e6880,b'\1')
   if not unselected:write(owner+0x884,1);write(owner+0x54,1 if mutation else -1)
   if args.native_services:cpu.mem_write(0x6e1178,bytes([67+mutation]))
   rng=123+pattern
-  calls=[];write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
+  calls=[];initializing=True;write(sp,stop);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner)
   cpu.emu_start(0x43e910,stop,count=2000000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
-  cases.append(dict(profile=name,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot()))
+  cases.append(dict(profile=name,nativeInitializer=args.native_initializer,nativeScheme=args.native_scheme,nativeServices=args.native_services,values=profile,strings=strings,teams=teams,country=country,failure=failure,unselected=unselected,mutation=mutation,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),callCount=len(calls),callsSha256=hashlib.sha256(json.dumps(calls,separators=(',',':')).encode()).hexdigest(),sha256=snapshot(),**({'randomState':rng,'storedSeed':storedSeed} if args.native_initializer else {})))
 schemeCases=[]
-if args.native_scheme:
+if args.native_scheme and not args.native_initializer:
  for selection in [-1,*range(19),2147483647]:
   for bank in [-1,0,1,3,4]:
    for pattern in [0,0xa5]:
-    cpu.mem_write(0x6e0000,bytes([pattern])*0x20000);cpu.mem_write(owner,bytes([pattern])*0x10000);calls=[]
+    cpu.mem_write(globalBase,bytes([pattern])*globalSize);cpu.mem_write(owner,bytes([pattern])*0x10000);calls=[]
     sp=stack+0xe000;write(sp,stop);write(sp+4,selection);write(sp+8,bank);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,0x6f454c)
     cpu.emu_start(0x470a20,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
     schemeCases.append(dict(selection=selection,bank=bank,pattern=pattern,result=signed(cpu.reg_read(UC_X86_REG_EAX)),calls=calls,sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',cases=cases,schemeCases=schemeCases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executableSha256=digest,entry='0043E910',method='Full mission loader; native initializer mode composes00415540 against aliased globals with original scheme resources, teams, inventory settings, speech fallback, turn order, metadata, mission options/events and worm records. Profile/resource/flag, CString/CRT string, clock, directory and CRT random services remain interfaces. Full256KiB snapshots at every observed callback and after return, plus persisted seed and random state, are compared.',cases=cases,schemeCases=schemeCases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} complete mission loads')

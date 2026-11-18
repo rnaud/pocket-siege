@@ -1,3 +1,4 @@
+import missionNativeInitializer from './fixtures/armageddon/mission-native-initializer.json' with {type:'json'};
 import missionNativeScheme from './fixtures/armageddon/mission-native-scheme.json' with {type:'json'};
 import {nativeSelectSetupScheme,originalSchemeResource} from '../src/armageddon/scheme-selection.js';
 import missionLoad from './fixtures/armageddon/mission-load.json' with {type:'json'};
@@ -155,11 +156,21 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   }
   // The deepest capture supersedes the earlier all-profile callback captures.
   // Keep scheme rejection separately: native mission bank0 always exists.
-  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeScheme.cases]) {
-    const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
-    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
+  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeInitializer.cases]) {
+    const globalBase=c.nativeInitializer?0x6da000:0x6e0000;
+    const globals=Buffer.alloc(c.nativeInitializer?0x30000:0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
+    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     memory.range=(address,length)=>{const [b,o]=locate(address);return b.subarray(o,o+length);};
+    if(c.nativeInitializer) {
+      memory.range(0x6de000,0x9000).fill(0);memory.range(0x6daf90,0x1d8).fill(0);
+      memory.put(0x6daf94,-1);memory.range(0x6db060,264).fill(255);
+      if(c.mutation)for(const [offset,value] of [[4,2],[8,-1],[12,3],[16,5],[20,-1]])memory.put(0x6daf90+offset,value);
+      memory.putByte(0x6e11f8,1);memory.putByte(0x6e18c0,1);
+      memory.range(0x6f4839,65).fill(0);memory.range(0x6f4839,7).set(Buffer.from('English'));
+      memory.range(0x6f48bc,9).set(Buffer.from('C:\\WORMS\0'));
+      memory.put(0x6f49cc,2);memory.put(0x6f49ec,0);memory.put(0x6f49c4,1);
+    }
     nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
     memory.put(0x2000880,0x2001000);memory.put(0x6f47f4,c.country);memory.putByte(0x6e6880,1);
     if(!c.unselected){memory.put(0x2000884,1);memory.put(0x2000054,c.mutation?1:-1);}
@@ -195,7 +206,25 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     };
     if(c.nativeServices)for(const key of ['initializeMode','finalizeSetup','setupMusic','teamCount'])delete host[key];
     if(c.nativeScheme)delete host.selectScheme;
+    let storedSeed=null;
+    if(c.nativeInitializer) {
+      delete host.initializeSetup;
+      const draw=random.random.bind(random);random.random=()=>{calls.push(['random',snapshot()]);return draw();};host.random=random;
+      host.seedStorage={time:()=>{calls.push(['time',12345,snapshot()]);return 12345;},
+        readSeed:fallback=>{calls.push(['readSeed',fallback,snapshot()]);return storedSeed??fallback;},
+        writeSeed:value=>{storedSeed=value;calls.push(['writeSeed',value,snapshot()]);}};
+      host.handicapEnabled=()=>{calls.push(['handicap',snapshot()]);return 0;};
+      host.changeDirectory=bytes=>{const end=bytes.indexOf(0),value=Buffer.from(end<0?bytes:bytes.subarray(0,end));calls.push(['directory',value.toString('hex'),snapshot()]);return c.mutation&&value.toString()!=='C:\\WORMS'?1:0;};
+      host.speechPath=cd=>{
+        const bytes=Buffer.from(cd?`${String.fromCharCode(memory.byte(0x6e1178))}:\\data\\user\\speech\0`:'C:\\WORMS\\user\\speech\0');
+        calls.push(['speech',cd,bytes.toString('hex'),snapshot()]);return bytes;
+      };
+      host.systemLocale=()=>{calls.push(['locale',snapshot()]);return 0x409;};
+      host.languageResource=host.loadString;
+      host.readOption=(key,fallback)=>{calls.push(['option',key,fallback,snapshot()]);return key==='DetailLevel'?5:0;};
+    }
     const result=nativeLoadMission(memory,0x2000000,host);
+    if(c.nativeInitializer)expect([random.state,storedSeed]).toEqual([c.randomState,c.storedSeed]);
     expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
   for(const c of missionTeams.cases) {
