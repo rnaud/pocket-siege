@@ -7,6 +7,9 @@ test('slow loading shows only the loading screen until current art is ready',asy
   await page.route('**/sprites/wblink1.spr',async route=>{await gate;await route.continue();});
   await page.goto('/');
   await expect(page.locator('#asset-loading')).toBeVisible();
+  await expect(page.getByRole('progressbar',{name:'Game loading progress'})).toHaveAttribute('max','12');
+  await expect.poll(()=>page.locator('#asset-progress').evaluate(bar=>bar.value)).toBeGreaterThan(0);
+  expect(await page.locator('#asset-progress').evaluate(bar=>bar.value)).toBeLessThan(12);
   await expect(page.locator('#app')).toBeHidden();
   await expect(page.locator('body')).toHaveClass(/assets-loading/);
   expect(await page.evaluate(()=>window.siege?.getState().assetsReady)).toBe(false);

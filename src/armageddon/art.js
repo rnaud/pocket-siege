@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import { nativeDrawCrate } from "./crate-draw.js";
 import { createNativeTextRenderer, paintNativeTextImage } from "./text-image-art.js";
 import { NativeSpriteDrawQueue } from "./sprite-draw-queue.js";

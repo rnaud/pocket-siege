@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import { nativeProjectileSoundTick } from "./projectile-timer.js";
 import soundSlots from "./sound-slots.json";
 import { nativeSoundVolume, nativeSoundPan, nativeAttenuationGain } from "./sound-mix.js";

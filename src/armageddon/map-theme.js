@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import themes from "./terrain-themes.js";
 import { decodeImage } from "./image.js";
 import { NativeMapPalette } from "./map-palette.js";

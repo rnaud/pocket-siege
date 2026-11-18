@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import names from "./hud-icon-names.json";
 import { decodeImage, imageRGBA } from "./image.js";

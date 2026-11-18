@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import definitions from "./terrain-objects.json";
 import { decodeImage, imageRGBA } from "./image.js";
 import {

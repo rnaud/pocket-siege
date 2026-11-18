@@ -1,7 +1,8 @@
+import {assetManifestPlugin} from "./scripts/asset-manifest.mjs";
 import { defineConfig } from "vite";
 import { progressPagePlugin } from "./scripts/progress-page.mjs";
 export default defineConfig({
-  plugins: [progressPagePlugin()],
+  plugins: [progressPagePlugin(),assetManifestPlugin()],
   build: {
     target: "esnext",
     rollupOptions: {

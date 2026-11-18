@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import { nativeWindMeter, nativeWindMeterTick, nativeWindMeterPhase, nativeWindMeterVisibility } from "./wind-meter.js";
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { decodeImage, imageRGBA } from "./image.js";

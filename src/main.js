@@ -1,3 +1,4 @@
+import {observeAssetCache} from './asset-cache.js';
 import { OriginalMusic } from "./armageddon/music.js";
 import {nativeInitializeWormSpawnFields} from './armageddon/worm-spawn-fields.js';
 import {nativeBodyBelowWater} from './armageddon/motion.js';
@@ -556,24 +557,25 @@ let lastShot = null,
   lastResult = null;
 let assetsReady = false;
 let originalArtError = null;
+let loadingSteps=0,loadingFiles={files:0,cachedFiles:0};
+function updateLoadingProgress() {
+  const bar=$('#asset-progress');if(!bar)return;
+  bar.value=loadingSteps;
+  $('#asset-loading-label').textContent=loadingSteps<11?'Loading game assets…':'Preparing battlefield…';
+  $('#asset-loading-detail').textContent=`${loadingSteps} of 12 steps · ${loadingFiles.files} files ready${loadingFiles.cachedFiles?` · ${loadingFiles.cachedFiles} from device cache`:''}`;
+}
+const stopAssetProgress=observeAssetCache(stats=>{loadingFiles=stats;updateLoadingProgress();});
+const loadingStep=promise=>promise.then(value=>{loadingSteps++;updateLoadingProgress();return value;});
 const originalAssets = Promise.all([
-  loadOriginalArt(),
-  loadOriginalTerrain(),
-  loadOriginalWater(),
-  loadOriginalHUDIcons(),
-  loadOriginalWindHUD(),
-  loadOriginalNumbers(),
-  loadNativeAnnouncementArt(),
-  loadOriginalWormLabels(),
-  loadOriginalGirders(),
-])
-  .then(() =>
-    Promise.all([
-      loadOriginalDecorations($("#terrain-theme").value),
-      loadNativeMapTheme($("#terrain-theme").value,true),
-      loadOriginalDecorations("forest"),
-    ]),
-  )
+  loadOriginalArt,loadOriginalTerrain,loadOriginalWater,loadOriginalHUDIcons,
+  loadOriginalWindHUD,loadOriginalNumbers,loadNativeAnnouncementArt,
+  loadOriginalWormLabels,loadOriginalGirders,
+].map(load=>loadingStep(load())))
+  .then(() => loadingStep(Promise.all([
+    loadOriginalDecorations($("#terrain-theme").value),
+    loadNativeMapTheme($("#terrain-theme").value,true),
+    loadOriginalDecorations("forest"),
+  ])))
   .then(() => {
     updateOriginalHUDIcons();
     mountCurrentMenuArt();
@@ -6921,22 +6923,25 @@ $("#map-layout").addEventListener("change", prepareDecorations);
 async function bootCurrentArt() {
   try {
     await originalAssets;
-    await prepareDecorations();
+    await loadingStep(prepareDecorations());
     if (originalArtError) throw new Error(originalArtError);
     const firstMapSeed = preparedRandomSeed;
     syncMenuOptions(); updateRecordUI(); await reset({ seed: firstMapSeed });
     // The first match uses the map already loaded behind the setup screen.
     preparedRandomSeed = firstMapSeed;
     menu.showModal(); resetMenuScroll(); updateUI(); resize(); prewarmShaders();
+    loadingSteps=12;updateLoadingProgress();
     last = performance.now();
     requestAnimationFrame(now => {
       frame(now);
       assetsReady = true;
       document.body.classList.remove("assets-loading");
+      stopAssetProgress();
       $("#asset-loading").remove();
     });
   } catch (error) {
     originalArtError = error.message;
+    stopAssetProgress();
     $("#asset-loading").textContent = "Game assets could not load. Reload to retry.";
     $("#asset-loading").setAttribute("role", "alert");
   }

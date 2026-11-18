@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import catalog from "./map-catalog.json" with { type: "json" };
 import mapNames from "./map-names.json" with { type: "json" };
 import { decodeImage, imageRGBA, nativeImagePaletteMap } from "./image.js";

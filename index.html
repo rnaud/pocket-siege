@@ -45,9 +45,21 @@
     body.assets-loading { margin:0; background:#181818; }
     body.assets-loading #app { visibility:hidden; }
     #asset-loading { position:fixed; inset:0; display:grid; place-items:center; color:#eee; background:#181818; font:16px monospace; z-index:9999; }
+    .asset-loading-panel { width:min(420px,82vw); text-align:center; }
+    .asset-loading-title { font-size:28px; color:#f3ce71; letter-spacing:3px; margin-bottom:28px; }
+    #asset-progress { display:block; width:100%; height:22px; margin:18px 0 12px; border:3px solid #786a45; border-radius:0; background:#25251f; appearance:none; }
+    #asset-progress::-webkit-progress-bar { background:#25251f; }
+    #asset-progress::-webkit-progress-value { background:#ddba59; }
+    #asset-progress::-moz-progress-bar { background:#ddba59; }
+    #asset-loading-detail { color:#aaa99c; font-size:12px; min-height:2em; }
   </style>
   <body class="assets-loading">
-    <div id="asset-loading" role="status">Loading game assets…</div>
+    <div id="asset-loading" role="status"><div class="asset-loading-panel">
+      <div class="asset-loading-title">POCKET SIEGE</div>
+      <div id="asset-loading-label">Loading game assets…</div>
+      <progress id="asset-progress" max="12" value="0" aria-label="Game loading progress"></progress>
+      <div id="asset-loading-detail">Preparing original artwork</div>
+    </div></div>
     <div id="app">
       <header>
         <a class="brand" href="./"

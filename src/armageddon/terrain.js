@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import { nativeRimPixel } from "./crater-mask.js";
 import * as THREE from "three";
 import { decodeImage, imageRGBA } from "./image.js";

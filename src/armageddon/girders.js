@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import { decodeImage, imageRGBA } from "./image.js";
 
 const girders = new Map();

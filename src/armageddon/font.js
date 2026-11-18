@@ -1,3 +1,4 @@
+import {fetchGameAsset as fetch} from '../asset-cache.js';
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { nativeSpritePaletteMap } from "./sprite.js";
 
