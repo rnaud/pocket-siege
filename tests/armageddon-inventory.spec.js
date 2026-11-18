@@ -1,3 +1,5 @@
+import archiveDirectory from './fixtures/armageddon/archive-directory.json' with {type:'json'};
+import {nativeLoadArchiveDirectory} from '../src/armageddon/archive-directory.js';
 import bitmapRectangle from './fixtures/armageddon/bitmap-rectangle.json' with {type:'json'};
 import {nativeFillBitmapRect} from '../src/armageddon/bitmap-rectangle.js';
 import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
@@ -170,6 +172,25 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of archiveDirectory.cases) {
+    const owner=0x2000000,scratch=0x2100000,bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(8),signature=Buffer.alloc(4,c.pattern),calls=[];
+    const locate=a=>a>=scratch?[temporary,a-scratch]:a>=owner?[bytes,a-owner]:[signature,a-0x560230];
+    const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);}};
+    memory.put(owner,owner+0x1000);for(const [o,v] of [[8,0x2200100],[12,0x2200200],[16,0x2200300]])memory.put(owner+0x1000+o,v);
+    const directory=Buffer.alloc(0x1040);if(c.chain){directory.writeUInt32LE(0x1004,12);directory.writeUInt32LE(0x1024,0x1000);}
+    const header=Buffer.alloc(12);header.write(c.variant===6?'BAD!':'DIR\x1a');header.writeUInt32LE(0x104c,4);header.writeUInt32LE(8,8);
+    const stream=Buffer.concat([header,directory]);if(c.mapped)directory.copy(bytes,0x2000);
+    const snapshot=()=>createHash('sha256').update(bytes).update(signature).digest('hex');let cursor=0,reads=0;
+    const host={
+      readArchive:(at,dest,n)=>{calls.push(['read',at,dest>=scratch?'scratch':dest,n,snapshot()]);let chunk=stream.subarray(cursor,cursor+n);cursor+=chunk.length;if(++reads===c.variant)chunk=chunk.subarray(0,-1);const [b,o]=locate(dest);chunk.copy(b,o);return chunk.length;},
+      seekArchive:(at,offset)=>{cursor=offset;calls.push(['seek',at,offset,snapshot()]);},
+      archiveView:(at,offset)=>{calls.push(['view',at,offset,snapshot()]);return c.mapped?owner+0x2000:0;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.variant===5?0:owner+0x2000;},
+      free:at=>calls.push(['free',at,snapshot()]),
+    };
+    expect(nativeLoadArchiveDirectory(memory,owner,scratch,host)).toBe(c.result);
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of bitmapRectangle.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern);
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
