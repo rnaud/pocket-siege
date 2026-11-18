@@ -32,6 +32,9 @@ import {nativeCreateStreamedSprite,nativeDestroyStreamedSprite} from '../src/arm
 import spriteBitmap from './fixtures/armageddon/sprite-bitmap.json' with {type:'json'};
 import {nativeSelectSpriteFrame,nativePrepareSpriteBitmap} from '../src/armageddon/sprite-bitmap.js';
 
+import indexedBlits from './fixtures/armageddon/indexed-bitmap-blit.json' with {type:'json'};
+import {nativeBlitIndexedBitmap} from '../src/armageddon/indexed-bitmap-blit.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
@@ -116,6 +119,7 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
     [0xfffffff0,17,0xfffffff0,23].forEach((v,i)=>counters.writeUInt32LE(v,i*4));cacheCounters.writeUInt32LE(0xfffffff0,0);cacheCounters.writeUInt32LE(123,4);
     memory.put(0x55e3c4,buffer);memory.put(buffer,0x5266a0);memory.put(buffer+4,owner+0x10000);memory.put(buffer+8,c.capacity);
     for(const offset of [12,16,20,24,28])memory.put(buffer+offset,0);
+    for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x20000],[12,8],[16,192],[20,192],[24,192],[28,5],[32,3],[36,187],[40,189]])memory.put(owner+0x6000+offset,value);
     nativeCreateGamePalette(memory,owner,1,c.last);nativeCreateSprite(memory,sprite,0x497b20,0x497ba0);nativeReadSprite(memory,sprite,owner,source,{allocate:()=>bitmap});
     const snapshot=()=>createHash('sha256').update(bytes).update(data).update(counters).update(cacheCounters).digest('hex');
     expect(snapshot()).toBe(c.initial);
@@ -124,7 +128,21 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       expect(snapshot()).toBe(step.selected_state);
       expect(nativePrepareSpriteBitmap(memory,sprite)).toBe(step.result);
       expect(snapshot(),`${c.path}, cache ${c.capacity}, progress ${step.progress}`).toBe(step.state);
+      const drawn=(memory.get(sprite+56)|0)>0&&(memory.get(sprite+60)|0)>0?nativeBlitIndexedBitmap(memory,owner+0x6000,step.x,24,memory.get(sprite+56),memory.get(sprite+60),bitmap,0,0,0,step.flags):0;
+      expect(drawn).toBe(step.drawn);
+      expect(snapshot()).toBe(step.drawn_state);
     }
+  }
+  const blend=Buffer.from(Array.from({length:65536},(_,i)=>((i&255)*3+(i>>>8)*5)&255));
+  for(const c of indexedBlits.cases) {
+    const owner=0x2000000,destination=owner+0x1000,source=owner+0x1100,bytes=Buffer.alloc(0x10000,165);
+    const region=p=>p>=0x2500000?[blend,p-0x2500000]:[bytes,p-owner];
+    const memory={get(p){const [b,o]=region(p);return b.readUInt32LE(o);},put(p,v){const [b,o]=region(p);b.writeUInt32LE(v>>>0,o);},byte(p){const [b,o]=region(p);return b[o];},putByte(p,v){const [b,o]=region(p);b[o]=v;}};
+    for(const [bitmap,pixels,width,height,clip] of [[destination,owner+0x2000,20,14,[1,1,19,13]],[source,c.alias?owner+0x2020:owner+0x3000,16,12,[2,1,14,10]]])
+      for(const [offset,value] of [[0,0x5249b0],[4,1],[8,pixels],[12,8],[16,24],[20,width],[24,height],[28,clip[0]],[32,clip[1]],[36,clip[2]],[40,clip[3]]])memory.put(bitmap+offset,value);
+    for(let i=0;i<1024;i++){bytes[0x2000+i]=i%5===0?0:(i*13+7)&255;bytes[0x3000+i]=i%3===0?0:(i*17+3)&255;}
+    const result=nativeBlitIndexedBitmap(memory,destination,...c.rect,source,4,3,c.table?0x2500000:0,c.mode|c.reflection);
+    expect({result,state:createHash('sha256').update(bytes).digest('hex')},JSON.stringify(c)).toEqual({result:c.result,state:c.state});
   }
   const startup = new NativeGamePalette(0, 104);
   startup.add([0, 0, 0]);

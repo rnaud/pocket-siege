@@ -53,12 +53,15 @@ for path in ['public/armageddon/sprites/phone.spr','public/armageddon/sprites/cd
     cpu.mem_write(0x5602e4,struct.pack('<4I',0xfffffff0,17,0xfffffff0,23));cpu.mem_write(0x7d54e8,struct.pack('<2I',0xfffffff0,123))
     write(0x55e3c4,buffer);write(buffer,0x5266a0);write(buffer+4,owner+0x10000);write(buffer+8,capacity)
     for offset in [12,16,20,24,28]:write(buffer+offset,0)
+    for offset,value in [(0,0x5249b0),(4,1),(8,owner+0x20000),(12,8),(16,192),(20,192),(24,192),(28,5),(32,3),(36,187),(40,189)]:write(owner+0x6000+offset,value)
     call(0x4adac0,[1,last],owner);call(0x4af5c0,[0x497b20,0x497ba0],sprite);call(0x4af790,[owner,source,0],sprite)
     initial=snapshot();steps=[]
     for progress in [0,0,1000,32768,65535,0,65535,32768,0]:
      selected=call(0x4afb00,[progress]+[owner+0x5000+i*4 for i in range(6)],sprite)
      selected_state=snapshot();result=call(0x4afa30,[],sprite)
-     steps.append(dict(progress=progress,selected=selected,selected_state=selected_state,result=result,state=snapshot()))
+     prepared=snapshot();x=-8 if progress==0 else 32;flags=0x10001 if progress==32768 else 1
+     drawn=call(0x4933c0,[x,24,read(sprite+56),read(sprite+60),bitmap,0,0,0,flags],owner+0x6000) if 0<read(sprite+56)<0x80000000 and 0<read(sprite+60)<0x80000000 else 0
+     steps.append(dict(progress=progress,selected=selected,selected_state=selected_state,result=result,state=prepared,x=x,flags=flags,drawn=drawn,drawn_state=snapshot()))
     cases.append(dict(path=path,raw=None if path else raw.hex(),sha256=hashlib.sha256(raw).hexdigest(),pattern=pattern,capacity=capacity,last=last,initial=initial,steps=steps))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004AFB00/004AFA30/004AB3C9/00497B20',method='Original SPR parsing, frame selection, lazy block decompression, palette remapping, cache allocation/eviction and borrowed bitmap rebinding execute unchanged. Only parser bitmap allocation is supplied. Full256KiB owner memory,source and resource/cache counters match after each selection and bitmap preparation.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004AFB00/004AFA30/004AB3C9/00497B20',method='Original SPR parsing, frame selection, lazy block decompression, palette remapping, cache allocation/eviction borrowed bitmap rebinding and clipped indexed blitting execute unchanged. Only parser bitmap allocation is supplied. Full256KiB owner memory,source and resource/cache counters match after each selection and bitmap preparation and drawing.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} sprite bitmap/cache sequences')
