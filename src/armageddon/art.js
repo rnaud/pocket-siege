@@ -1,3 +1,5 @@
+import { nativeResolveWormSprite } from "./worm-sprite.js";
+import slopeSprites from "./worm-slope-sprites.json" with {type:"json"};
 import { nativeWormIdleGesture } from "./worm-idle-gesture.js";
 import { nativeSynchronizeWormMemory, nativeSynchronizeWormPlayer } from "./worm-animation-sync.js";
 import { nativeAxeTick } from "./axe.js";
@@ -191,6 +193,7 @@ const names = [
     "wjetflmd",
   ]),
 ];
+const slopeNames=slopeSprites.filter(id=>names.includes(spriteIds.sprites[id].name)).flatMap(id=>[1,2].map(offset=>spriteIds.sprites[id+offset].name));
 const animations = new Map();
 async function loadSpriteBytes(name, url) {
   let failure;
@@ -208,7 +211,7 @@ async function loadSpriteBytes(name, url) {
 }
 export async function loadOriginalArt() {
   const fonts = new Map();
-  const pending = [...new Set([...names, "cdrom", "phone"]), ...nativeStartupFonts.map(([, name]) => `font/${name}`), ...Object.values(waterSpriteIds.sprites).map(
+  const pending = [...new Set([...names, ...slopeNames, "cdrom", "phone"]), ...nativeStartupFonts.map(([, name]) => `font/${name}`), ...Object.values(waterSpriteIds.sprites).map(
     ({ name }) => `water/${name}`,
   )];
   let cursor = 0, failed = false;
@@ -1455,17 +1458,20 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       ),
     );
   }
-  const index = nativeSpriteFrame(
-    count,
-    sprite.metadata[2],
-    player.current.progress,
-  );
+  const resolved=nativeResolveWormSprite({slope:worm.nativeGroundPose?.variant??0,facing:worm.facing??1}, {
+    position:()=>({x:0,y:0}),current:()=>({sprite:player.current.id,progress:player.current.progress}),
+    state:()=>frozen?0x88:equipped?0x66:0x65,
+  });
+  name=spriteIds.sprites[resolved.sprite&0x3ffff].name;
+  const resolvedSprite=animations.get(name).sprite;
+  const index = nativeSpriteFrame(resolvedSprite.frames.length,resolvedSprite.metadata[2],resolved.progress);
   worm.originalAnimation = name;
   return {
     map: texture(name, index),
     name,
     index,
     aimed,
+    facing:resolved.sprite&0x40000?1:-1,
     equipped: equipped && !frozen,
   };
 }

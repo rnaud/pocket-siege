@@ -1,3 +1,5 @@
+import slopeSprites from "../src/armageddon/worm-slope-sprites.json" with {type:"json"};
+import spriteIds from "../src/armageddon/sprite-ids.json" with {type:"json"};
 import { captureReplayActors, restoreReplayActors } from "../src/armageddon/replay-actor-adapter.js";
 import replayAnimation from "./fixtures/armageddon/replay-animation.json" with { type: "json" };
 import { test, expect } from "@playwright/test";
@@ -50,18 +52,30 @@ for (const group of [0, 1, 2])
       await page.locator("#inventory-toggle").click();
       const button = page.locator(`[data-weapon="${weapon}"]`);
       await button.click();
+      const baseId=Number(Object.keys(spriteIds.sprites).find(id=>spriteIds.sprites[id].name===sprite));
+      const expectedNames=(slopeSprites.includes(baseId)?[baseId,baseId+1,baseId+2]:[baseId]).map(id=>spriteIds.sprites[id].name);
       await expect
         .poll(
           () =>
-            page.evaluate(() => {
+            page.evaluate(expectedNames => {
               const state = window.siege.getState();
-              return state.worms[state.current].originalSprite;
-            }),
+              return expectedNames.includes(state.worms[state.current].originalSprite);
+            },expectedNames),
           { message: weapon },
         )
-        .toBe(sprite);
+        .toBe(true);
     }
     if(group===0) {
+      const slopes=await page.evaluate(async()=>{
+        const {originalWormFrame}=await import("/src/armageddon/art.js");
+        return [-1,0,1].flatMap(variant=>[-1,1].map(facing=>{
+          const worm={hp:100,team:0,nativePoison:{amount:0},nativeGroundPose:{variant},facing};
+          const pose=originalWormFrame(worm,"idle",0,0,"rocket",false);
+          return {name:pose.name,facing:pose.facing};
+        }));
+      });
+      expect(slopes).toEqual(["wbrth1u","wbrth1","wbrth1d"].flatMap(name=>[-1,1].map(facing=>({name,facing}))));
+
       const breathing=await page.evaluate(async()=>{
         const {originalWormFrame}=await import("/src/armageddon/art.js");
         const worm={hp:100,team:0,nativePoison:{amount:0}},names=[];

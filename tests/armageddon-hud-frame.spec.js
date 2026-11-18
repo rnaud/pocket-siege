@@ -1,3 +1,5 @@
+import wormSlope from "./fixtures/armageddon/worm-slope.json" with {type:"json"};
+import { nativeWormSlopeTick } from "../src/armageddon/worm-slope.js";
 import wormSprite from "./fixtures/armageddon/worm-sprite.json" with {type:"json"};
 import { nativeResolveWormSprite } from "../src/armageddon/worm-sprite.js";
 import wormRender from "./fixtures/armageddon/worm-render.json" with {type:"json"};
@@ -294,6 +296,14 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     });
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
+  }
+  for(const c of wormSlope.cases) {
+    const calls=[];
+    const result=nativeWormSlopeTick({pending:c.pending,slope:c.slope,variant:c.variant},c.facing,123456,-765432,{
+      airborne:()=>{calls.push(["airborne"]);return c.airborne;},
+      sample:(...args)=>{calls.push(["sample",...args]);return c.sample;},
+    });
+    expect({result,calls}).toEqual({result:c.result,calls:c.calls});
   }
   for(const c of wormSprite.cases) {
     const calls=[];

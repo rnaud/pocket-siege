@@ -1,3 +1,5 @@
+import { nativeWormSlopeTick } from "./armageddon/worm-slope.js";
+import { nativeSurfaceSlope } from "./armageddon/surface-slope.js";
 import { nativePlaceWormAt } from "./armageddon/worm-placement.js";
 import { nativeTeleportPlacement } from "./armageddon/teleport-placement.js";
 import { captureReplayResources, restoreReplayResources } from "./armageddon/replay-render-adapter.js";
@@ -696,6 +698,8 @@ function createWorm(t, i, x, spawnY = null) {
     nativePickupState: 0x65,
     nativePoison: { amount: 0, latched: 0 },
     nativeIdleMemory,
+    nativeGroundPose:{pending:1,slope:0,variant:0},
+    nativeGroundPosition:null,
     nativeOrderId: nativeRenderOrder.allocate(),
     nativeHealthDisplay: { value: 100 << 16, target: 100 << 16, progress: 0, active: 0, pending: 0 },
     x,
@@ -4992,6 +4996,19 @@ function updateAutomaticUtilities() {
 // Transient native scene projection; authoritative ranks remain in the shared
 // render registry and per-worm bytes are included in actor replay snapshots.
 const idleSceneMemory=new Uint8Array(0x6000);
+function stepGroundPoses() {
+  for(const w of worms) {
+    if(w.hp<=0)continue;
+    const x=Math.round(w.x*65536)|0,y=Math.round((H-w.y)*65536)|0;
+    if(!w.nativeGroundPosition || w.nativeGroundPosition.x!==x || w.nativeGroundPosition.y!==y || terrainDirty)w.nativeGroundPose.pending=1;
+    w.nativeGroundPosition={x,y};
+    w.nativeGroundPose=nativeWormSlopeTick(w.nativeGroundPose,w.facing,x,y,{
+      airborne:()=>!w.ground,
+      sample:(px,py,limit)=>nativeSurfaceSlope({type:2,shape:3,flags:0x420cc6,enabled:1},px,py,limit,
+        (qx,qy,body)=>nativeSceneCollision(w,body,qx/65536,H-qy/65536,terrain,worms,H)),
+    });
+  }
+}
 function stepIdleGestures() {
   const scene=new DataView(idleSceneMemory.buffer);
   scene.setInt32(0x102c,nativeRenderOrder.active.length,true);
@@ -6049,6 +6066,7 @@ function stepFrame(dt) {
     nativeCameraFocus = null;
     nativeCameraFraming = null;
   }
+  stepGroundPoses();
   stepIdleGestures();
   matchRandom.finishFrame();
 }
