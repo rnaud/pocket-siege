@@ -1,4 +1,5 @@
-import missionNativeInitializer from './fixtures/armageddon/mission-native-initializer.json' with {type:'json'};
+import {nativeCountryFlag,nativeLoadSetupFlag} from '../src/armageddon/team-flags.js';
+import missionNativeFlags from './fixtures/armageddon/mission-native-flags.json' with {type:'json'};
 import missionNativeScheme from './fixtures/armageddon/mission-native-scheme.json' with {type:'json'};
 import {nativeSelectSetupScheme,originalSchemeResource} from '../src/armageddon/scheme-selection.js';
 import missionLoad from './fixtures/armageddon/mission-load.json' with {type:'json'};
@@ -142,6 +143,22 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of missionNativeFlags.countryCases) {
+    const buffer=new Uint8Array(65).fill(c.pattern);
+    expect(nativeCountryFlag(buffer,c.country)).toBe(c.result);
+    expect(Buffer.from(buffer).toString('hex')).toBe(c.bytes);
+  }
+  for(const c of missionNativeFlags.flagCases) {
+    const globals=Buffer.alloc(0x30000),owner=Buffer.alloc(0x10000),calls=[];
+    const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6da000];
+    const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},byte:address=>{const [b,o]=locate(address);return b[o];}};
+    globals.writeUInt32LE(c.country,0x6f47f4-0x6da000);globals[0x6e1178-0x6da000]=67+c.team;owner[0x620+c.team*0xd7b]=c.skill;
+    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    nativeLoadSetupFlag(memory,0x2000000,c.team,{loadFlagBitmap(...args){
+      calls.push(['flagBitmap',...args,snapshot()]);owner.writeUInt32LE(0x12345678,args[2]-0x2000000);owner.writeUInt32LE(0x76543210,args[1]-0x2000000);
+    }});
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of missionNativeScheme.schemeCases) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={put:(address,value)=>globals.writeUInt32LE(value>>>0,address-0x6e0000),putByte:(address,value)=>{globals[address-0x6e0000]=value;}};
@@ -156,7 +173,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   }
   // The deepest capture supersedes the earlier all-profile callback captures.
   // Keep scheme rejection separately: native mission bank0 always exists.
-  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeInitializer.cases]) {
+  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativeFlags.cases]) {
     const globalBase=c.nativeInitializer?0x6da000:0x6e0000;
     const globals=Buffer.alloc(c.nativeInitializer?0x30000:0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-globalBase];
@@ -206,6 +223,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     };
     if(c.nativeServices)for(const key of ['initializeMode','finalizeSetup','setupMusic','teamCount'])delete host[key];
     if(c.nativeScheme)delete host.selectScheme;
+    if(c.nativeFlags) {
+      delete host.loadTeamFlag;
+      host.loadFlagBitmap=(...args)=>{calls.push(['flagBitmap',...args,snapshot()]);memory.put(args[2],0x12345678);memory.put(args[1],0x76543210);};
+    }
     let storedSeed=null;
     if(c.nativeInitializer) {
       delete host.initializeSetup;

@@ -1,3 +1,4 @@
+import {nativeLoadSetupFlag} from './team-flags.js';
 import {nativeCountrySpeech} from './speech-setup.js';
 
 //0043E910 block0043EB22..0043ED7A. Selection/scheme validation precedes this
@@ -26,7 +27,8 @@ export function nativeLoadMissionTeams(memory, owner, teamCount, host) {
     memory.putByte(base + 0x122, 255);
     memory.putByte(base + 0x123, 1);
     memory.putByte(base + 0x99, read(section, 'MissionVital'));
-    host.loadTeamFlag(0x6e117c, team);
+    if(host.loadTeamFlag)host.loadTeamFlag(0x6e117c, team);
+    else nativeLoadSetupFlag(memory,0x6e117c,team,host);
     const name = read(section, 'TeamNameNumber');
     copyString(base + 2, host.loadString(memory.get((owner + 0x508 + Math.imul(name, 4)) >>> 0)));
     for (let worm = 1; worm <= (memory.byte(base + 0x97) << 24 >> 24); worm++) {
