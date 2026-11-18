@@ -34,7 +34,7 @@ def signed(v):return v if v<0x80000000 else v-0x100000000
 import itertools,base64,zlib
 stream=owner+0x1000;buffer=owner+0x2000;context=owner+0x20000
 cpu.mem_map(context,0x20000)
-write(stream+4,buffer);write(stream+8,32768);write(stream+0x14,context);write(context+8,0x7654321)
+write(stream+4,buffer);write(stream+8,0xc000);write(stream+0x14,context);write(context+8,0x7654321)
 heapBase=0x2400000
 cpu.mem_map(heapBase,0x40000)
 heap=heapBase;allocations=[];taskAllocations=[];objects=[];buffers=[];calls=[];allocationCalls=[];fail=-1;mode=0;cleanupMode=0
@@ -43,6 +43,10 @@ environment=0x2500000
 cpu.mem_map(environment,0x10000)
 write(context+0x7d4,environment);write(environment,environment+0x1000);write(environment+0x1034,0x4c8f80);write(environment+0x3c0,environment+0x2000);write(environment+0x2000+0x3a4,17)
 
+paletteObject=owner+0xe000;surface=owner+0xe400
+write(context+0x28,paletteObject);write(paletteObject,paletteObject+0x100);write(paletteObject+0x114,stop+0x400)
+write(context+0x2f0,surface);write(surface,surface+0x100)
+for offset in [0x14,0x34,0x38,0x3c,0x58]:write(surface+0x100+offset,stop+0x500+offset)
 def ret(value=0,cleanup=0):
  sp=cpu.reg_read(UC_X86_REG_ESP);target=read(sp);cpu.reg_write(UC_X86_REG_ESP,sp+4+cleanup);cpu.reg_write(UC_X86_REG_EIP,target);cpu.reg_write(UC_X86_REG_EAX,value)
 def hook(cpu,address,size,user):
@@ -70,6 +74,14 @@ def hook(cpu,address,size,user):
   ret(0,4 if address in [stop+0x210,stop+0x230] else 0)
  elif address==0x492510:allocationCalls.append(['free',read(sp+4)]);ret()
  elif address==0x492590:allocationCalls.append(['release',read(sp+4),read(sp+8)]);ret()
+ elif address in [stop+0x400,stop+0x514]:
+  pointer=cpu.reg_read(UC_X86_REG_ECX);calls.append(['dimensions',pointer]);write(read(sp+4),1 if address==stop+0x400 else 2);write(read(sp+8),0 if address==stop+0x400 else 2);ret(0,8)
+ elif address in [stop+0x534,stop+0x538,stop+0x53c,stop+0x558]:
+  method=address-stop-0x500;count={0x34:4,0x38:4,0x3c:5,0x58:3}[method]
+  calls.append(['draw',cpu.reg_read(UC_X86_REG_ECX),method,[signed(read(sp+4+i*4)) for i in range(count)]]);ret(0,count*4)
+ elif address in [0x4fd5a0,0x500170,0x4ffed0]:
+  pointer=cpu.reg_read(UC_X86_REG_ECX);count={0x4fd5a0:4,0x500170:2,0x4ffed0:8}[address]
+  calls.append([address,pointer]+[read(sp+4+i*4) for i in range(count)]);write(pointer,{0x4fd5a0:0x527690,0x500170:0x5277c8,0x4ffed0:0x5277c0}[address]);ret(pointer,count*4)
  elif address in [0x4c6610,0x492bc0]:
   pointer=cpu.reg_read(UC_X86_REG_ECX)
   calls.append([address,pointer]+[read(sp+4+i*4) for i in range(3)]);write(pointer,0x5268a4 if address==0x4c6610 else 0x526390);ret(pointer,12)
@@ -79,6 +91,8 @@ schemas={row['tag']:row for row in json.loads(Path('src/armageddon/replay-task-t
 tags=[7,9,21,23,25,26,30]
 def node(tag,children=[]):return {'tag':tag,'children':children}
 trees=[[],[node(tag) for tag in tags],[node(7,[node(9,[node(21,[node(30)])]),node(25)])],[node(tags[i%7]) for i in range(20)],[node(23,[node(tags[i%7]) for i in range(18)])]]
+trees.append([node(tag) for tag in schemas])
+extraBlocks={13:(0x3c,0xc04),16:(0x3c,0x24),22:(0x3c,0x28),27:(0x3c,0x1c),29:(0x3c,0x28)}
 cases=[]
 combinations=[row+(0,0) for row in itertools.product([0,7],trees)]
 for initialPosition,tree,mode,cleanupMode in combinations:
@@ -108,7 +122,8 @@ for initialPosition,tree,mode,cleanupMode in combinations:
    payload.append(3);body=bytearray((i*13+tag)&255 for i in range(0xb0))
    for offset,value in [(0x3c,2),(0x44,0),(0xc8,0),(0xdc,0),(0xe4,savedIndex),(0xe8,savedIndex)]:struct.pack_into('<I',body,offset-0x3c,value&0xffffffff)
    block(body)
-  payload.append(tag);block(bytes(schema['block'][1]))
+  payload.append(tag);block(bytes(extraBlocks.get(tag,schema['block'])[1]))
+  if tag==18:payload.append(32);block(bytes(0x15c))
  for item in tree:emit(item)
  payload.extend([0,2,5]);block(bytes((i*13)&255 for i in range(0x5c)))
  payload.append(6);block(bytes((i*17)&255 for i in range(0x138)))
@@ -118,7 +133,7 @@ for initialPosition,tree,mode,cleanupMode in combinations:
  cpu.emu_start(0x4a1d20,stop+1,count=1000000)
  if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('snapshot did not exit')
  #Replace the real restored world twice; original cleanup/destruction runs.
- for cycle in range(2):
+ for cycle in range(1 if len(tree)==21 else 2):
   write(stream+16,initialPosition)
   before=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))
   cursor=heap;calls.clear();allocationCalls.clear()
@@ -127,5 +142,5 @@ for initialPosition,tree,mode,cleanupMode in combinations:
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('replacement did not exit')
   after=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))
   cases.append(dict(cycle=cycle,cursor=cursor,inputMemory=base64.b64encode(zlib.compress(before)).decode(),sha256=hashlib.sha256(after).hexdigest(),calls=list(calls),allocationCalls=list(allocationCalls),root=read(manager+4),environment=read(context+0x7d4),position=read(stream+16)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='20 original004A1D20 replacements: two consecutive replacements of each restored empty/mixed/deep/wide seven-kind tree at two stream offsets. Real recursive cleanup, world destruction, environment compaction/destruction and reconstruction execute. Full512KiB memory, pointers, stream cursor and ordered heap/render requests match. Text/image construction is a minimal resource interface; destruction executes original routines. Heap/render services remain interfaces, and all21-kind runtime worlds are not covered.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='22 original004A1D20 replacements: two consecutive replacements of each restored empty/mixed/deep/wide seven-kind tree at two stream offsets. Real recursive cleanup, world destruction, environment compaction/destruction and reconstruction execute. Two cases additionally replace a flat world containing all21 recovered concrete actor kinds, including worm animation, controller resources, terrain history and weather presentation. Full512KiB memory, pointers, stream cursor and ordered heap/render requests match. Text/image/panel/frame/portrait construction and surface drawing are minimal resource interfaces; destruction executes original routines. Heap/render services remain interfaces, and full runtime gameplay states/browser integration are not covered.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'native world replacements')

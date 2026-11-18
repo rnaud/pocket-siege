@@ -1144,6 +1144,12 @@ test("Native replay frame and input pipeline matches original executable request
     expect(nativeRestoreSceneSnapshot(memory,0x2000800,0x2001000,{
       allocate:size=>{const pointer=allocate(size);allocationCalls.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocationCalls.push(['array',size,pool,pointer]);return pointer;},free:address=>allocationCalls.push(['free',address]),
       release:(at,size)=>allocationCalls.push(['release',at,size]),
+      constructPanel:(...args)=>{calls.push([0x4fd5a0,...args]);memory.put(args[0],0x527690);return args[0];},
+      constructPortrait:(...args)=>{calls.push([0x500170,...args]);memory.put(args[0],0x5277c8);return args[0];},
+      constructFrame:(...args)=>{calls.push([0x4ffed0,...args]);memory.put(args[0],0x5277c0);return args[0];},
+      surfaceDimensions:at=>{calls.push(['dimensions',at]);return at===0x200e000?[1,0]:[2,2];},
+      drawSurface:(...args)=>calls.push(['draw',...args]),
+
       constructText:(...args)=>{calls.push([0x4c6610,...args]);memory.put(args[0],0x5268a4);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);memory.put(args[0],0x526390);return args[0];},
     })).toBe(row.root);
     expect(allocationCalls).toEqual(row.allocationCalls);expect(calls).toEqual(row.calls);expect(stream.position).toBe(row.position);
