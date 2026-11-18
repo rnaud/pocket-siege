@@ -73,6 +73,14 @@ export class NativeCollisionRegistry {
     }
     return null;
   }
+
+  //004C9650: standalone shape probe. Unlike movement queries this has no
+  // query actor, self exclusion, cached overlaps or overlap-marker writes.
+  probe(mask, x, y, flags) {
+    for(const body of this.candidates(flags))
+      if(body.enabled && this.intersects(mask,x,y,body))return body;
+    return null;
+  }
 }
 
 // Full004C9500, manager virtual+30. Raster operations remain explicit mask

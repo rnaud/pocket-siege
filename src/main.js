@@ -1,3 +1,5 @@
+import { NativeCollisionScene } from './armageddon/collision-scene.js';
+import { nativeCrateSpawnSearch } from './armageddon/crate-spawn-search.js';
 import { nativeWormSlopeTick } from "./armageddon/worm-slope.js";
 import { nativeSurfaceSlope } from "./armageddon/surface-slope.js";
 import { nativePlaceWormAt } from "./armageddon/worm-placement.js";
@@ -1230,45 +1232,50 @@ function queueCrateSound(request) {
 }
 function spawnCrate(announceDrop = false) {
   if (!terrain) return;
-  for (let tries = 0; tries < 40; tries++) {
-    const x = 150 + logicRandom() * (W - 300),
-      ground = terrain.surface(x);
-    if (ground < waterLevel + 30) continue;
-    if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 60)) continue;
-    const kind = PICKUP_KINDS[Math.floor(logicRandom() * PICKUP_KINDS.length)],
-      mesh =
-        createOriginalObject(crateOpeningSprite(kind), -10);
-    mesh.position.set(x, H + 34, 18);
-    group.add(mesh);
-    const crate = {
-      nativeOrderId: nativeRenderOrder.allocate(),
-      content: chooseCrateContent(kind),
-      quantity: kind === "health" ? 25 : 1,
-      x,
-      y: H + 34,
-      kind,
-      mesh,
-      falling: true,
-      vy: 0,
-    };
-    crate.nativeBody = createNativeCrateBody({
-      kind: nativeCrateKind(kind), x: Math.round(x * 65536), y: -34 * 65536,
-    }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), NATIVE_MINE_FRICTION, {
-      shape: (body, shape) => { body.shape = shape; },
-      collide: (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H),
-      sound: queueCrateSound,
-    });
-    crates.push(crate);
-    if (announceDrop) {
-      const message = nativeCrateDropAnnouncement(kind, () => matchRandom.logicUint());
-      queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
-      if (sound && kind !== "health") {
-        audio ??= new (window.AudioContext || window.webkitAudioContext)();
-        audio.resume();
-        nativeSoundQueue.enqueue([81, 8, 65536, 65536, 0]);
-      }
+  const scene = new NativeCollisionScene(terrain,H);
+  scene.syncWorms(worms);
+  scene.syncObjects([...mines,...crates,...hazards]);
+  // Native normal-drop search004B7D00 uses falling placement and actor clearance.
+  // Browser-only map bounds and height classification remain scene adapters.
+  const position=nativeCrateSpawnSearch(Math.floor(H-waterLevel),H>960,0,1,{
+    random:()=>matchRandom.logicUint(),
+    collide:(shape,x,y,flags)=>x<0 || x>=(W<<16) ? 1 : scene.probe(shape,x,y,flags),
+    nearest:(...args)=>scene.nearest(...args),
+  });
+  if(!position.success)return;
+  const x=position.x/65536,y=H-position.y/65536;
+  const kind = PICKUP_KINDS[Math.floor(logicRandom() * PICKUP_KINDS.length)],
+    mesh =
+      createOriginalObject(crateOpeningSprite(kind), -10);
+  mesh.position.set(x, y, 18);
+  group.add(mesh);
+  const crate = {
+    nativeOrderId: nativeRenderOrder.allocate(),
+    content: chooseCrateContent(kind),
+    quantity: kind === "health" ? 25 : 1,
+    x,
+    y,
+    kind,
+    mesh,
+    falling: true,
+    vy: 0,
+  };
+  crate.nativeBody = createNativeCrateBody({
+    kind: nativeCrateKind(kind), x: position.x, y: position.y,
+  }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), NATIVE_MINE_FRICTION, {
+    shape: (body, shape) => { body.shape = shape; },
+    collide: (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H),
+    sound: queueCrateSound,
+  });
+  crates.push(crate);
+  if (announceDrop) {
+    const message = nativeCrateDropAnnouncement(kind, () => matchRandom.logicUint());
+    queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
+    if (sound && kind !== "health") {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      nativeSoundQueue.enqueue([81, 8, 65536, 65536, 0]);
     }
-    return;
   }
 }
 function spawnHazards(requests=null) {

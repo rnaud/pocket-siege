@@ -2,6 +2,7 @@ import { nativeWormState, nativeWormCollisionType } from "./worm-collision-type.
 import shapes from "./collision-shapes.json" with { type: "json" };
 import { nativeCollisionOverlap } from "./collision-mask.js";
 import { NativeCollisionRegistry } from "./collision-registry.js";
+import { nativeNearestBody } from "./nearest-body.js";
 
 const fixed = (value) => Math.round(value * 65536) | 0;
 const scenes = new WeakMap();
@@ -149,6 +150,17 @@ export class NativeCollisionScene {
         actor.flags,
       )?.id ?? 0
     );
+  }
+
+  //Placement queries already use native Y-down signed16.16 coordinates.
+  probe(shape, x, y, flags) {
+    return this.manager.probe(shapes.shapes[shape],x,y,flags)?.id ?? 0;
+  }
+
+  nearest(x, y, flags) {
+    return nativeNearestBody([...this.wormBodies,...this.objects.values()],x,y,flags,{
+      type:body=>body.type,position:body=>body,
+    });
   }
 
   // Snapshot the same ordered bodies used by movement into primary bitmaps
