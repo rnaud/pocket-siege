@@ -1,3 +1,5 @@
+import bitmapRectangle from './fixtures/armageddon/bitmap-rectangle.json' with {type:'json'};
+import {nativeFillBitmapRect} from '../src/armageddon/bitmap-rectangle.js';
 import {nativeCreateGamePalette} from '../src/armageddon/game-palette-memory.js';
 import terrainLoad from './fixtures/armageddon/terrain-startup.json' with {type:'json'};
 import {nativeLoadTerrainLayers} from '../src/armageddon/terrain-startup.js';
@@ -168,6 +170,13 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of bitmapRectangle.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern);
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
+    for(const [offset,value] of [[0,c.bits===1?0x526328:0x5249b0],[8,owner+0x1000],[12,c.bits],[16,c.bits===1?8:36],[20,32],[24,8],...c.clip.map((v,i)=>[28+i*4,v])])memory.put(owner+offset,value);
+    expect(nativeFillBitmapRect(memory,owner,...c.rect,c.value)).toBe(c.result);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
+  }
   for(const c of imageDecompress.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern),palette=owner+0x100,source=owner+0x2000,destination=owner+0x8000;
     for(let i=0;i<256;i++)bytes[0x100+i]=(c.mapping===0?i:c.mapping===1?255-i:i*37)&255;
@@ -210,7 +219,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200800);memory.put(owner+0x6154,0x2200900);
       host.getRendererPalette=(...args)=>{calls.push(['palette',...args,snapshot()]);return owner+0x8000;};
       host.submitRendererPalette=(...args)=>calls.push(['submit',...args,snapshot()]);
-      host.clearBitmapRect=(...args)=>calls.push(['clear',...args,snapshot()]);
+      if(!c.nativeRectangles)host.clearBitmapRect=(...args)=>calls.push(['clear',...args,snapshot()]);
     }
     const result=c.terrainStartup?nativeLoadTerrainLayers(memory,owner+0x4000,{renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):nativeLoadTerrainImage(memory,0x4567,0x1234,scratch,host);
     if(!c.terrainStartup)expect(result).toBe(c.result);

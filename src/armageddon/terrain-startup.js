@@ -1,4 +1,5 @@
 import {nativeLoadTerrainFile} from './terrain-file.js';
+import {nativeFillBitmapRect} from './bitmap-rectangle.js';
 
 //004A78A0..004A79C2: terrain constructor through image loading, waterline
 //clearing and palette submission. Theme archives and later setup follow this.
@@ -13,7 +14,9 @@ export function nativeLoadTerrainLayers(memory,terrain,settings,scratch,host) {
     names:[terrain+0x910,terrain+0xa10],
   },scratch,host);
   const top=Math.trunc(Math.imul((100-memory.get(water))|0,696)/100)|0;
-  for(const offset of [0x8fc,0x908,0x904])
-    host.clearBitmapRect(memory.get(terrain+offset),0,top,1920,696,0);
+  for(const offset of [0x8fc,0x908,0x904]) {
+    if(host.clearBitmapRect)host.clearBitmapRect(memory.get(terrain+offset),0,top,1920,696,0);
+    else nativeFillBitmapRect(memory,memory.get(terrain+offset),0,top,1920,696,0);
+  }
   host.submitRendererPalette(renderer,3);
 }

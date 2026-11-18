@@ -43,7 +43,6 @@ def hook(cpu,address,size,user):
  sp=cpu.reg_read(UC_X86_REG_ESP);receiver=cpu.reg_read(UC_X86_REG_ECX)
  if address==stop+0x800:calls.append(['palette',receiver,read(sp+4),snapshot()]);ret(owner+0x8000,4)
  elif address==stop+0x900:calls.append(['submit',receiver,read(sp+4),snapshot()]);ret(0,4)
- elif address==stop+0xa00:calls.append(['clear',receiver,*[signed(read(sp+i*4)) for i in range(1,6)],snapshot()]);ret(0,20)
  elif address==stop+0x600:calls.append(['open',read(sp+4),'rb',snapshot()]);ret(0x1234)
  elif address==stop+0x700:calls.append(['close',read(sp+4),snapshot()]);ret()
  elif address==stop+0x100:calls.append(['tell',read(sp+4),snapshot()]);ret(cursor)
@@ -59,8 +58,7 @@ def hook(cpu,address,size,user):
  elif address==0x4924d0:
   calls.append(['array',read(sp+8),read(sp+4),snapshot()]);ret(pixels)
 for iat,target in [(0x51794c,stop+0x600),(0x51793c,stop+0x700),(0x517940,stop+0x100),(0x517930,stop+0x200),(0x51796c,stop+0x300)]:write(iat,target)
-for vtable in [0x526328,0x5249b0]:write(vtable+0x3c,stop+0xa00)
-for address in [stop+0x800,stop+0x900,stop+0xa00,stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
+for address in [stop+0x800,stop+0x900,stop+0x100,stop+0x200,stop+0x300,stop+0x600,stop+0x700,0x492550,0x4924d0]:cpu.hook_add(UC_HOOK_CODE,hook,begin=address,end=address)
 cases=[]
 for pattern in [0,0xa5]:
  for variant in range(4):
@@ -84,6 +82,6 @@ for pattern in [0,0xa5]:
    for i,v in enumerate(arguments):write(sp+4+i*4,v)
    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,owner+0x4000);cpu.emu_start(0x4a78a0,0x4a79c2,count=100000)
    assert cpu.reg_read(UC_X86_REG_EIP)==0x4a79c2
-   cases.append(dict(terrainStartup=True,composed=True,nativeBitmaps=True,nativePalette=True,first=first,last=last,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004A78A0..004A79C2',method='32 original terrain constructor prefixes compose complete file/image/bitmap/palette/decompression loading. Full68KiB memory at callbacks and completion. Renderer palette access/submission, waterline rectangle clearing, CRT transport and heap allocation remain interfaces. Includes water percentages0/23/100/101. Theme archive construction and live startup remain unfinished.',cases=cases),separators=(',',':'))+'\n')
+   cases.append(dict(terrainStartup=True,nativeRectangles=True,composed=True,nativeBitmaps=True,nativePalette=True,first=first,last=last,pattern=pattern,variant=variant,count=count,stream=stream.hex(),calls=calls,result=cpu.reg_read(UC_X86_REG_EAX),sha256=snapshot()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004A78A0..004A79C2',method='32 original terrain constructor prefixes compose complete file/image/bitmap/palette/decompression loading. Full68KiB memory at callbacks and completion. Renderer palette access/submission, CRT transport and heap allocation remain interfaces. Includes water percentages0/23/100/101. Native rectangle clipping and1/8-bit clearing execute. Theme archive construction and live startup remain unfinished.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} composed terrain sequences')
