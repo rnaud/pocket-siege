@@ -1,3 +1,5 @@
+import sceneWorldResources from './fixtures/armageddon/scene-world-resources.json' with {type:'json'};
+import {nativeCreateSceneWorldResources} from '../src/armageddon/scene-world-resources.js';
 import sceneResourceFinish from './fixtures/armageddon/scene-resource-finish.json' with {type:'json'};
 import {nativeFinishSceneResources} from '../src/armageddon/scene-resource-finish.js';
 import sceneTerrain from './fixtures/armageddon/scene-terrain.json' with {type:'json'};
@@ -405,6 +407,37 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     expect(createHash('sha256').update(image.pixels).digest('hex')).toBe(source.sha256);
     return image;
   });
+  for(const c of sceneWorldResources.cases) {
+    const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x400000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000;
+    const region=a=>a>=owner?[bytes,a-owner]:[stackBytes,a-stack];
+    const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
+    arrowSources.forEach((image,i)=>{
+      const at=owner+0x20000+i*0x2000;bytes.set(image.pixels,at-owner);
+      for(const [offset,value] of [[0,0x5249b0],[4,1],[8,at],[12,8],[16,60],[20,60],[24,60],[28,0],[32,0],[36,60],[40,60]])memory.put(owner+0x10000+i*0x40+offset,value);
+    });
+    bytes.set(toolSource.pixels,0x60000);
+    for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
+    for(const [offset,value] of [[0x5cd0,owner+0x300000],[0x2ac,owner+0x7000],[0x300008,owner+0x6000],[0x30000c,0],[0x300020,0],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x2b4,owner+0x6000],[0x2bc,0],[0x2c0,841],[0x2c4,-100]])memory.put(owner+offset,value);
+    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).digest('hex');
+    const record=(name,...args)=>calls.push([name,...args,snapshot()]);
+    const image=(palette,archive,name)=>{record('image',palette,archive,name);return name==='masks.img'?owner+0x9000:owner+0x10000+Number(name.slice(5,7))*0x40;};
+    nativeCreateSceneWorldResources(memory,owner,owner+0x6000,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118},{
+      allocate:size=>{allocated++;record('allocate',size);return owner+0x70000+allocated*0x100;},
+      allocateArray:(size,pool)=>{record('array',size,pool);const result=pixels;pixels+=(size+15)&~15;return result;},
+      getRendererPalette:(...args)=>{record('palette',...args);return owner+0x9000;},
+      loadNamedImage:image,loadNamedArchiveImage:image,freeSized:(...args)=>record('free',...args),
+      createTerrain:(terrain,settings)=>{
+        const {maskImage,renderer,mode,path,count,positions,metadata,water}=settings;
+        record('terrain',terrain,maskImage,renderer,mode,path,count,positions,metadata,water);
+        memory.put(terrain,0x526588);memory.put(terrain+0xc4,0x12345678);memory.put(count,c.count);
+        for(let i=0;i<c.count;i++){memory.put(positions+i*8,100+i*30);memory.put(positions+i*8+4,200+i*20);}
+        return terrain;
+      },
+      pumpLoadingEvents:()=>record('pump'),rendererDimensions:(...args)=>{record('dimensions',...args);return [640,480];},
+      clearRendererRect:(...args)=>record('clear',...args),drawRendererPrimitive:(...args)=>record('draw',...args),presentRenderer:(...args)=>record('present',...args),
+    });
+    expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
+  }
   for(const c of sceneArrowShapes.cases) {
     const owner=0x3000000,bytes=Buffer.alloc(0x200000,c.pattern),calls=[];let allocated=0,descriptors=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};

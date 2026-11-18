@@ -12,7 +12,7 @@ export function nativeCreateSceneSpawnPool(memory,owner,positions,count,host) {
   const pool=host.allocate(16);
   const result=pool?nativeCreateSpawnPoolAt(memory,pool,64,host):0;
   memory.put(memory.get(owner+0x5cd0)+0x44c,result);
-  for(let i=0;i<(count|0);i++) {
+  for(let i=0;i<((typeof count==='function'?count():count)|0);i++) {
     const x=memory.get(positions+i*8),y=memory.get(positions+i*8+4);
     nativeAddSpawnAt(memory,memory.get(memory.get(owner+0x5cd0)+0x44c),((x<<16)+y)|0,1);
   }
