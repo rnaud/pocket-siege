@@ -35,6 +35,11 @@ import {nativeSelectSpriteFrame,nativePrepareSpriteBitmap} from '../src/armagedd
 import indexedBlits from './fixtures/armageddon/indexed-bitmap-blit.json' with {type:'json'};
 import {nativeBlitIndexedBitmap} from '../src/armageddon/indexed-bitmap-blit.js';
 
+import streamedDraws from './fixtures/armageddon/streamed-sprite-draw.json' with {type:'json'};
+import {nativeSelectStreamedSpriteFrame,nativeBlitRendererSurface,nativeDrawRendererStreamedSprite} from '../src/armageddon/streamed-sprite-draw.js';
+
+import rendererStreamedDraws from './fixtures/armageddon/renderer-streamed-draw.json' with {type:'json'};
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
@@ -143,6 +148,29 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
     for(let i=0;i<1024;i++){bytes[0x2000+i]=i%5===0?0:(i*13+7)&255;bytes[0x3000+i]=i%3===0?0:(i*17+3)&255;}
     const result=nativeBlitIndexedBitmap(memory,destination,...c.rect,source,4,3,c.table?0x2500000:0,c.mode|c.reflection);
     expect({result,state:createHash('sha256').update(bytes).digest('hex')},JSON.stringify(c)).toEqual({result:c.result,state:c.state});
+  }
+  for(const c of [...streamedDraws.cases,...rendererStreamedDraws.cases]) {
+    const owner=0x2000000,sprite=owner+0x1000,renderer=owner+0x2000,table=owner+0x3000,target=owner+0x4000,alternate=owner+0x4100,vtable=owner+0x5000;
+    const outputs=Array.from({length:6},(_,i)=>owner+0x6000+i*4),bytes=Buffer.alloc(0x10000,c.pattern);
+    const scratch=Buffer.alloc(24),region=p=>p>=0x2100000?[scratch,p-0x2100000]:[bytes,p-owner];
+    const memory={get(p){const [b,o]=region(p);return b.readUInt32LE(o);},put(p,v){const [b,o]=region(p);b.writeUInt32LE(v>>>0,o);},byte(p){const [b,o]=region(p);return b[o];},putByte(p,v){const [b,o]=region(p);b[o]=v;}};
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    for(const [offset,value] of [[104,c.flags],[106,3],[108,c.pattern?-161:160],[110,c.pattern?-81:80]])bytes.writeInt16LE(value,sprite-owner+offset);
+    memory.put(sprite+112,table);
+    [[-4,-3,12,9],[2,1,14,8],[1,-2,13,10]].forEach((rect,i)=>{rect.forEach((v,j)=>bytes.writeInt16LE(v,table-owner+i*12+j*2));memory.put(table+i*12+8,owner+0x7000+i*64);});
+    for(const [offset,value] of [[20,0],[24,0],[28,20],[32,16],[0x48,target],[0x454,c.locked]])memory.put(renderer+offset,value);
+    memory.put(target,vtable);memory.put(alternate,vtable);memory.put(vtable+0x80,0x2200100);memory.put(vtable+0x1c,0x2200200);
+    if(c.dispatch){memory.put(renderer+36,c.pattern?-80:80);memory.put(renderer+40,c.pattern?-40:40);memory.put(renderer+0x2864+7*4,0);memory.put(renderer+0x38e4+7*4,sprite);}
+    let selected;
+    if(!c.dispatch){selected=nativeSelectStreamedSpriteFrame(memory,sprite,c.progress,outputs);expect(selected).toBe(c.selected);expect(snapshot()).toBe(c.selection);}
+    const events=[];
+    const host={
+      unlockSurface(surface,flags){events.push(['unlock',surface,flags,snapshot()]);if(c.mutate){memory.put(renderer+0x48,alternate);memory.put(renderer+0x454,99);}},
+      blitSurface(surface,x,y,source,rect,flags){events.push(['blit',surface,x,y,source,rect,flags,snapshot()]);},
+    };
+    if(c.dispatch)nativeDrawRendererStreamedSprite(memory,renderer,4<<16,3<<16,c.encoded,c.progress,0x2100000,host);
+    else nativeBlitRendererSurface(memory,renderer,[-3,5,30,19][c.flags],c.locked?-2:3,memory.get(outputs[0]),memory.get(outputs[1]),selected,memory.get(outputs[4]),memory.get(outputs[5]),c.flags,host);
+    expect({events,state:snapshot()}).toEqual({events:c.events,state:c.state});
   }
   const startup = new NativeGamePalette(0, 104);
   startup.add([0, 0, 0]);
