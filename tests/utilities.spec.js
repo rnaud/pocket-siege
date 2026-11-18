@@ -1,3 +1,5 @@
+import crateContentPool from './fixtures/armageddon/crate-content-pool.json' with { type: 'json' };
+import { nativeCrateContentPool } from '../src/armageddon/crate-content-pool.js';
 import crateShowerNearest from './fixtures/armageddon/crate-shower-nearest.json' with { type: 'json' };
 import nearestBody from './fixtures/armageddon/nearest-body.json' with { type: 'json' };
 import { nativeNearestBody } from '../src/armageddon/nearest-body.js';
@@ -251,6 +253,8 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
   }
+  for (const row of crateContentPool.cases)
+    expect(nativeCrateContentPool(row.initial,row.scene,slot=>row.descriptors[slot])).toEqual(row.output);
   for (const row of nearestBody.cases) {
     const calls=[];
     expect(nativeNearestBody(row.bodies,row.x,row.y,row.flags,{
