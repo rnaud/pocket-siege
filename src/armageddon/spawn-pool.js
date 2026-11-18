@@ -1,0 +1,28 @@
+//004CBCD0: weighted thresholds use signed32-bit shifts/division, not floats.
+export function nativeSelectSpawn(entries,random,output) {
+  if(!entries.length)return 0;
+  let total=0,cumulative=0;
+  for(const entry of entries)total=(total+entry.weight)|0;
+  for(const entry of entries) {
+    cumulative=(cumulative+entry.weight)|0;const numerator=cumulative<<16;
+    if(!total || (numerator===-2147483648 && total===-1))throw new RangeError('Native spawn weight division fault');
+    if((random&65535)<Math.trunc(numerator/total)){output.value=entry.position;return 1;}
+  }
+  return 0;
+}
+//004CBD60/004CBD80 retain output on an empty list.
+export function nativeSelectSideSpawn(entries,right,output) {
+  if(!entries.length)return 0;
+  output.value=entries[right?entries.length-1:0].position;return 1;
+}
+//004CBDB0 removes only the first matching packed coordinate, preserving order.
+export function nativeReserveSpawn(entries,position) {
+  const index=entries.findIndex(entry=>(entry.position|0)===(position|0));
+  if(index<0)return 0;entries.splice(index,1);return 1;
+}
+//004EE900 uses the scene's spawn stream, without the simulation-frame addend.
+export function nativeSpawnRandom(sceneMemory) {
+  const scene=new DataView(sceneMemory.buffer,sceneMemory.byteOffset,sceneMemory.byteLength);
+  const next=(Math.imul(scene.getInt32(0x1241c,true),0x19660d)+0x3c6ef35f)>>>0;
+  scene.setUint32(0x1241c,next,true);return next;
+}

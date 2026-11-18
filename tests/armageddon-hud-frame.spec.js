@@ -1,3 +1,5 @@
+import wormSpawnCreate from "./fixtures/armageddon/worm-spawn-create.json" with { type: "json" };
+import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn } from "../src/armageddon/spawn-pool.js";
 import wormEnvironmentCreate from "./fixtures/armageddon/worm-environment-create.json" with { type: "json" };
 import wormPhysicsCreate from "./fixtures/armageddon/worm-physics-create.json" with { type: "json" };
 import wormCreate from "./fixtures/armageddon/worm-create.json" with { type: "json" };
@@ -283,7 +285,12 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     const events=[];for(let e=queue.readEvent();e;e=queue.readEvent())events.push([e.event,e.payload]);
     expect({calls,events,body:controllerPointerInput.bodyOffsets.map(o=>body.getInt32(o,true)),scene:controllerPointerInput.sceneOffsets.map(o=>scene.getInt32(o,true)),ownership:[...sceneMemory.slice(0x1b778,0x1b7dc)]}).toEqual({calls:c.calls,events:c.events,body:c.body,scene:c.scene,ownership:c.ownership});
   }
-  for(const c of [...wormCreate.cases,...wormPhysicsCreate.cases.map(c=>({...c,composed:true})),...wormEnvironmentCreate.cases.map(c=>({...c,composed:true,factory:true}))]) {
+  for(const c of wormSpawnCreate.poolCases) {
+    const entries=structuredClone(c.entries),output={value:777};
+    const result=c.mode==="random"?nativeSelectSpawn(entries,c.value,output):c.mode==="reserve"?nativeReserveSpawn(entries,c.value):nativeSelectSideSpawn(entries,c.mode==="right",output);
+    expect({result,output:output.value,remaining:entries}).toEqual({result:c.result,output:c.output,remaining:c.remaining});
+  }
+  for(const c of [...wormCreate.cases,...wormPhysicsCreate.cases.map(c=>({...c,composed:true})),...wormEnvironmentCreate.cases.map(c=>({...c,composed:true,factory:true})),...wormSpawnCreate.cases.map(c=>({...c,composed:true,factory:true,spawn:true}))]) {
     const memory=new Uint8Array(0x390).fill(0xa5),body=new DataView(memory.buffer),sceneMemory=new Uint8Array(0x20000),scene=new DataView(sceneMemory.buffer),calls=[];let attempts=0;
     sceneMemory[0x11ba0]=c.bits*2;sceneMemory.set(c.initial,0x824);scene.setInt8(c.team*3000+0x3cd0,c.bits&2?-1:0);scene.setUint8(c.team*3000+0x3cd1,3);scene.setUint8(c.team*3000+0x3cd3,(c.bits>>4)&1);
     sceneMemory.set(new TextEncoder().encode("TeamName\0"),c.team*3000+0x3cd6);scene.setUint8(0x11d3e,(c.bits>>2)&1);scene.setUint8(0x11d51,(c.bits>>3)&1);
@@ -299,6 +306,10 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       allocateAnimation:size=>{calls.push(["allocate",size]);return c.bits&64?0:123;},constructAnimation:(...args)=>{calls.push(["animation",...args]);return 456;},
       initializeResources:()=>calls.push(["resources"]),changeState:state=>calls.push(["state",state]),settlePhysics:()=>calls.push(["settle"]),registerTask:(...args)=>calls.push(["register",...args]),
     };
+    if(c.spawn) {
+      delete host.randomSpawnWord;delete host.randomSpawn;delete host.sideSpawn;delete host.reserveSpawn;
+      host.spawnPool=structuredClone(c.spawnPool);scene.setUint32(0x1241c,c.spawnSeed,true);
+    }
     if(c.factory) {
       const environment={all:structuredClone(c.environment.all),categories:{2:structuredClone(c.environment.category)},links:c.environment.links,dirty:77};
       const parent=nativeCreateTask({id:1,memory:new Uint8Array(0x3c)});
@@ -306,6 +317,7 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
       expect({all:environment.all,category:environment.categories[2],dirty:environment.dirty}).toEqual(c.environmentResult);
       expect(parent.children[0]).toBe(task);expect(task.registry[(((c.team<<4)+c.worm)*17+2)&255][0].task).toBe(task);
     } else nativeInitializeWorm(memory,sceneMemory,c.team,c.worm,Uint8Array.from(c.configuration),host);
+    if(c.spawn)expect({pool:host.spawnPool,seed:scene.getUint32(0x1241c,true)}).toEqual({pool:c.remainingPool,seed:c.finalSeed});
     const expectedCalls=c.factory?c.calls.filter(call=>!["base","type","register"].includes(call[0])):c.calls;
     expect({calls,body:[...memory.slice(0x3c)],scene:wormCreate.sceneOffsets.map(o=>scene.getInt32(o,true))}).toEqual({calls:expectedCalls,body:c.body,scene:c.scene});
   }

@@ -1,3 +1,4 @@
+import { nativeSelectSpawn, nativeSelectSideSpawn, nativeReserveSpawn, nativeSpawnRandom } from './spawn-pool.js';
 import { nativeInitializePhysics } from './physics-create.js';
 import { nativeInitializeWormResources } from './worm-resources.js';
 //004D5A40 fixed initial fields, in native order around the gravity query.
@@ -20,8 +21,18 @@ export function nativeInitializeWorm(memory,sceneMemory,team,worm,configuration,
   if(config.getUint8(0x1e)) {deployment=false;x=config.getInt32(0x20,true)<<16;y=config.getInt32(0x24,true)<<16;}
   else if(deployment){x=0x3c00000;y=-0x27100000;}
   else {
-    const packed=scene.getUint8(0x11d51)?host.sideSpawn(scene.getUint8(base+0x3cd3)&1):host.randomSpawn(host.randomSpawnWord()>>>8);
-    host.reserveSpawn(packed);x=packed&0xffff0000;y=packed<<16;
+    let packed;
+    if(scene.getUint8(0x11d51)) {
+      const side=scene.getUint8(base+0x3cd3)&1;
+      if(host.sideSpawn)packed=host.sideSpawn(side);
+      else {const output={};if(!nativeSelectSideSpawn(host.spawnPool,side,output))throw new RangeError('No native spawn candidate');packed=output.value;}
+    } else {
+      const random=(host.randomSpawnWord?host.randomSpawnWord():nativeSpawnRandom(sceneMemory))>>>8;
+      if(host.randomSpawn)packed=host.randomSpawn(random);
+      else {const output={};if(!nativeSelectSpawn(host.spawnPool,random,output))throw new RangeError('No native spawn candidate');packed=output.value;}
+    }
+    if(host.reserveSpawn)host.reserveSpawn(packed);else nativeReserveSpawn(host.spawnPool,packed);
+    x=packed&0xffff0000;y=packed<<16;
   }
   for(const [o,v] of initial)put(o,v);
   put(0x148,config.getUint16(0x1c,true));put(0xfc,team);put(0x100,worm);put(0x10c,scene.getUint8(base+0x3cd1));
