@@ -1,3 +1,5 @@
+import finalizeSetup from './fixtures/armageddon/gameplay-finalize.json' with {type:'json'};
+import {nativeFinalizeGameplaySetup} from '../src/armageddon/gameplay-finalize.js';
 import {nativeCreatePanelImage} from '../src/armageddon/panel-resources.js';
 import panelSetup from './fixtures/armageddon/team-panel-setup.json' with {type:'json'};
 import {nativeCreateTeamPanelTree} from '../src/armageddon/team-panel-setup.js';
@@ -56,6 +58,32 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const finalActual=[],finalExpected=[];
+  for(const row of finalizeSetup.cases) {
+    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),owner=new Uint8Array(0x10000),calls=[];
+    const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;}};
+    scene[0x4886]=row.count;memory.put(0x2300008,0x2000800);memory.put(0x230000c,row.variant%2?0x2003100:0);
+    row.groups.forEach((g,i)=>scene[0x488b+i*3000]=g);
+    for(let setting=1;setting<5;setting++)scene[0x11d70+setting]=row.variant&(1<<(setting-1))?255:0;
+    for(const offset of [4,0x4c,0x294])memory.put(0x2000000+offset,0xdeadbeef);
+    let cursor=0x2401000,allocation=0;
+    const allocate=(kind,size,pool)=>{
+      const value=kind==='allocate'&&allocation===row.failure?0:cursor;
+      if(value)cursor+=(size+15)&~15;if(kind==='allocate')allocation++;
+      calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;
+    };
+    nativeFinalizeGameplaySetup(memory,0x2000000,0x2300000,{
+      allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),
+      fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;},
+      resetScene:at=>calls.push(['reset',at]),
+      createMatchRoot:(at,...args)=>{calls.push(['root',at,...args]);memory.put(at,0x2003000);return at;},
+      send:(...args)=>calls.push(['send',...args]),
+    });
+    finalActual.push([createHash('sha256').update(heap).digest('hex'),createHash('sha256').update(scene).digest('hex'),[4,0x4c,0x294].map(o=>memory.get(0x2000000+o)),calls]);
+    finalExpected.push([row.sha256,row.scene_sha256,row.owner,row.calls]);
+  }
+  expect(finalActual).toEqual(finalExpected);
   const imageActual=[],imageExpected=[];
   for(const row of panelSetup.image_cases) {
     const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
