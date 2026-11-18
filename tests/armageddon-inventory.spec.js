@@ -1,3 +1,5 @@
+import sceneLoadingProgress from './fixtures/armageddon/scene-loading-progress.json' with {type:'json'};
+import {nativeAdvanceSceneLoading} from '../src/armageddon/scene-loading-progress.js';
 import sceneFinish from './fixtures/armageddon/scene-finish.json' with {type:'json'};
 import sceneTeamGraves from './fixtures/armageddon/scene-team-graves.json' with {type:'json'};
 import {nativeCreateSceneTeamGraves} from '../src/armageddon/scene-team-graves.js';
@@ -212,6 +214,22 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sceneLoadingProgress.cases) {
+    const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
+    const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
+    for(const [offset,value] of [[0x2bc,c.total],[0x2c0,c.maximum],[0x2c4,c.last],[0x2b4,owner+0x6000],[0x5cd0,owner+0x8000],[0x800c,c.sound?owner+0x7000:0],[0x8020,0],[0x7000,owner+0x7100],[0x710c,0x2200500],[0x6000,owner+0x6100],[0x6200,owner+0x6100],[0x6104,0x2200100],[0x6144,0x2200200],[0x6160,0x2200300],[0x6148,0x2200400]])memory.put(owner+offset,value);
+    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const switchRenderer=()=>{if(c.mutation)memory.put(owner+0x2b4,owner+(memory.get(owner+0x2b4)===owner+0x6000?0x6200:0x6000));};
+    nativeAdvanceSceneLoading(memory,owner,c.amount,{
+      pumpLoadingEvents:()=>{calls.push(['pump',snapshot()]);if(c.mutation)memory.put(owner+0x2bc,memory.get(owner+0x2bc)+1);},
+      rendererDimensions:(...args)=>{calls.push(['dimensions',...args,snapshot()]);switchRenderer();return [c.width,c.height];},
+      clearRendererRect:(...args)=>{calls.push(['clear',...args,snapshot()]);switchRenderer();if(c.mutation)memory.put(owner+0x2bc,memory.get(owner+0x2bc)+2);},
+      drawRendererPrimitive:(...args)=>{calls.push(['draw',...args,snapshot()]);switchRenderer();},
+      presentRenderer:(...args)=>{calls.push(['present',...args,snapshot()]);switchRenderer();},
+      playLoadingSound:(...args)=>calls.push(['sound',...args,snapshot()]),
+    });
+    expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
+  }
   for(const c of sceneFinish.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
