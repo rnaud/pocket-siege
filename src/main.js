@@ -2396,7 +2396,7 @@ function tryBungee(w) {
       if (sound) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
-        queueControllerSpeech(request);
+        queueControllerSpeech(request,w);
       }
     },
     launchSetup: body => nativeLaunch({ '0x68': 4, '0x6c': 7 },
@@ -4805,7 +4805,7 @@ function playSkipTurnSpeech() {
   if (speech && sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    queueControllerSpeech(speech.request);
+    queueControllerSpeech(speech.request,worms.find(w=>w.team+1===speech.team));
   }
 }
 function consumeDamageReaction(reveal = false) {
@@ -4826,7 +4826,7 @@ function consumeDamageReaction(reveal = false) {
   if (reaction.speech && sound) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    queueControllerSpeech(reaction.speech.request);
+    queueControllerSpeech(reaction.speech.request,worms.find(w=>w.team+1===reaction.speech.team));
   }
 }
 function selectNativeMatchTeam() {
@@ -5193,7 +5193,10 @@ function stepFrame(dt) {
   if (sound && clockSounds.length) {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     audio.resume();
-    for (const request of clockSounds) nativeSoundQueue.enqueue(request);
+    for (const request of clockSounds) {
+      if(request[0]&0x10000)queueControllerSpeech(request);
+      else nativeSoundQueue.enqueue(request);
+    }
   }
   if (canMove() && move && !rope.attached && !jetpack.active && !worms[current].originalParachute) {
     const w = worms[current];

@@ -159,6 +159,11 @@ test("browser decodes native projectile release samples without an early holy ch
   await expect.poll(()=>page.evaluate(()=>window.siege?.getState().assetsReady)).toBe(true);
   await page.locator('#mode').selectOption('local');await page.locator('#start').click();
   expect(await page.evaluate(()=>window.siege.getState().worms.map(w=>w.nativeSpeechBank).sort())).toEqual(['austra~1','austra~1','austra~1','danish~1','danish~1','danish~1']);
+  const activeTeam=await page.evaluate(()=>window.siege.getState().team);
+  await page.locator('#sound').click();await page.locator('#skip').click();
+  const reactionBank=activeTeam===0?'danish~1':'austra~1';
+  await expect.poll(()=>voices.includes(`${reactionBank}/coward.wav`)).toBe(true);
+
 
 
 });
