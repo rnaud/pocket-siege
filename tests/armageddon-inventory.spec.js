@@ -1,3 +1,4 @@
+import {nativeInitializeGameplayRecords} from '../src/armageddon/gameplay-setup.js';
 import schemeWeapons from '../src/armageddon/scheme-weapons.js';
 import capturedSchemeWeapons from '../src/armageddon/scheme-weapon-data.json' with {type:'json'};
 import weaponInitialization from './fixtures/armageddon/weapon-initialization.json' with {type:'json'};
@@ -129,6 +130,12 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     expect(Buffer.from(scheme).toString('hex')).toBe(row.scheme);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
     expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
+    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),sceneView=new DataView(scene.buffer);
+    sceneView.setUint32(0x1c,0x2600800,true);sceneView.setInt32(0x20,row.gameplay_mode,true);sceneView.setInt32(0x1b8ac,row.gameplay_tall,true);
+    nativeInitializeGameplayRecords(scene,memory,()=>new Uint8Array(1));
+    expect(createHash('sha256').update(scene).digest('hex')).toBe(row.gameplay_sha256);
+    expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
+
   }
   for(const row of frontendRandom.cases) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
