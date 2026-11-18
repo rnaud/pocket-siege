@@ -1,3 +1,5 @@
+import panelSetup from './fixtures/armageddon/team-panel-setup.json' with {type:'json'};
+import {nativeCreateTeamPanelTree} from '../src/armageddon/team-panel-setup.js';
 import matchState from './fixtures/armageddon/match-state.json' with {type:'json'};
 import {nativeInitializeMatchState} from '../src/armageddon/match-state.js';
 import teamAccess from './fixtures/armageddon/team-access.json' with {type:'json'};
@@ -53,6 +55,28 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const panelActual=[],panelExpected=[];
+  for(const row of panelSetup.cases) {
+    const scene=new Uint8Array(0x20000),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
+    scene[0x4886]=row.count;const sceneView=new DataView(scene.buffer);sceneView.setUint32(8,0x2000800,true);
+    row.groups.forEach((group,team)=>scene[0x488b+team*3000]=group);
+    let cursor=0x2401000,allocation=0;
+    const memory={byte:at=>scene[at-0x2300000],get:at=>at<0x2400000?sceneView.getUint32(at-0x2300000,true):view.getUint32(at-0x2400000,true),put:(at,value)=>at<0x2400000?sceneView.setInt32(at-0x2300000,value,true):view.setInt32(at-0x2400000,value,true)};
+    const allocate=(kind,size)=>{
+      const value=kind==='allocate'&&allocation===row.failure?0:cursor;
+      if(value)cursor+=(size+15)&~15;
+      if(kind==='allocate')allocation++;
+      calls.push([kind,size,value]);return value;
+    };
+    nativeCreateTeamPanelTree(memory,0x2400000,0x2300000,{
+      allocate:size=>allocate('allocate',size),allocateArray:size=>allocate('array',size),
+      fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;},
+      createText:(at,...args)=>{calls.push(['text',at,...args]);args.forEach((v,i)=>memory.put(at+4+i*4,v));return at;},
+      createImage:(at,...args)=>{calls.push(['image',at,...args]);args.forEach((v,i)=>memory.put(at+4+i*4,v));return at;},
+    });
+    panelActual.push([createHash('sha256').update(heap).digest('hex'),calls,createHash('sha256').update(scene).digest('hex')]);panelExpected.push([row.sha256,row.calls,row.scene_sha256]);
+  }
+  expect(panelActual).toEqual(panelExpected);
   const stateActual=[],stateExpected=[];
   for(const row of matchState.cases) {
     const scene=new Uint8Array(accessPattern),view=new DataView(scene.buffer),calls=[];
