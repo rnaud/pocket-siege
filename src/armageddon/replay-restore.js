@@ -1,3 +1,4 @@
+import {nativeInitializeMatchResources} from './match-resources.js';
 import { nativeInitializeWormResources } from './worm-resources.js';
 import { nativeInitializeControllerResources } from './controller-resources.js';
 import { nativeBodyStartSound } from './body-sound.js';
@@ -263,14 +264,7 @@ export function nativeReadReplayRoot(stream, options) {
   put(0xcc, claim(0x1b778, 0));
   stream.readByte(); //004B2D40 marker6
   memory.set(stream.readBlock(0x138), 0xd8);
-  const surface = options.allocateResource(0x2c);
-  if (surface) options.constructSurface(surface, 56, 42, 8);
-  put(0x21c, surface);
-  text(0x210, 25, 64);
-  text(0x214, 15, 64);
-  text(0x218, 15, 80);
-  put(0x284, claim(0x1b848, 1));
-  put(0x288, 0);
+  nativeInitializeMatchResources(memory,options.sceneMemory,options);
   task.memory = memory;
   return task;
 }
