@@ -1,3 +1,5 @@
+import replayTaskMemory from './fixtures/armageddon/replay-task-memory.json' with {type:'json'};
+import {nativeReadTaskMemory} from '../src/armageddon/replay-task-memory.js';
 import {nativeReadEnvironmentMemory} from '../src/armageddon/physics-memory.js';
 import {nativeDestroyEnvironmentMemory} from '../src/armageddon/physics-destroy.js';
 import replaySceneCapture from './fixtures/armageddon/replay-scene-capture.json' with {type:'json'};
@@ -1238,6 +1240,19 @@ test("HUD frame drawing matches original executable requests", { tag: "@logic" }
     expect(allocations).toEqual([]);
     expect({ animationRenderer: task.animationRenderer, body: [...task.memory.slice(0x3c)], animation: [...task.animation], position: stream.position, calls,
       activeCount: matchState.activeCount }).toEqual(row.result);
+  }
+  for(const row of replayTaskMemory.cases) {
+    const initial=Uint8Array.from(inflateSync(Buffer.from(row.inputMemory,'base64'))),owner=initial.subarray(0,0x10000),heap=initial.subarray(0x10000),calls=[];
+    const locate=at=>at>=0x2400000?[heap,at-0x2400000]:[owner,at-0x2000000];
+    const memory={get:at=>{const [bytes,o]=locate(at);return new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(o,true);},put:(at,v)=>{const [bytes,o]=locate(at);new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).setUint32(o,v,true);},byte:at=>{const [bytes,o]=locate(at);return bytes[o];},putByte:(at,v)=>{const [bytes,o]=locate(at);bytes[o]=v;},range:(at,size)=>{const [bytes,o]=locate(at);return bytes.subarray(o,o+size);}};
+    let cursor=0;const allocate=size=>{const address=0x2400000+cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
+    const stream=NativeReplayStream.fromMemory(memory,0x2005000);
+    expect(nativeReadTaskMemory(memory,0x2000000,row.root?0:0x2001000,stream,{
+      allocate:size=>{calls.push(['allocate',size]);return allocate(size);},allocateArray:(size,pool)=>{calls.push(['array',size,pool]);return allocate(size);},free:address=>calls.push(['free',address]),
+      restoreChild:()=>{throw new Error('Unexpected concrete child in base task fixture');},
+    })).toBe(0x2000000);
+    expect(calls).toEqual(row.calls);expect(stream.position).toBe(row.position);
+    expect(createHash('sha256').update(initial).digest('hex')).toBe(row.sha256);
   }
   for (const row of replayEnvironmentRestore.cases) {
     const stream = new NativeReplayStream(64), allocations = [], links = [17];
