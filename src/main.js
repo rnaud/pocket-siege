@@ -24,7 +24,7 @@ import { playNativeNuclearLoop } from "./armageddon/audio.js";
 let nativeNuclearEffect = null;
 const nuclearPlaybacks = new Map();
 import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage, nativeWormPoisonTurnReset } from "./armageddon/worm-poison.js";
-import { nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
+import { nativeCrateTransfer, nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
 import { nativeBarrelBody } from "./armageddon/barrel-body.js";
 import { stepNativeBarrelBody } from "./armageddon/barrel-runtime.js";
@@ -331,7 +331,7 @@ import {
   writeRecord,
 } from "./progress.js";
 import { nextSeriesWins, seriesWinner } from "./series.js";
-import { applyPickup, PICKUP_KINDS } from "./pickups.js";
+import { PICKUP_KINDS } from "./pickups.js";
 import { UTILITIES, UTILITY_KINDS, AUTOMATIC_UTILITIES, freshUtilities } from "./utilities.js";
 import { nativeCrateContentsVisible, nativeSpecialCrateContent } from "./armageddon/crate-draw.js";
 import { SCHEMES } from "./schemes.js";
@@ -1557,20 +1557,19 @@ function collectCrate(w, crate = crates[0]) {
   if (!crate || !crates.includes(crate)) return;
   const { kind, mesh, quantity } = crate;
   let label;
-  if (kind === "utility") {
-    const utility = crate.content;
-    utilityAmmo[w.team][utility] = addAmmo(utilityAmmo[w.team][utility], quantity);
-    label = `+${quantity} ${(UTILITIES[utility] || AUTOMATIC_UTILITIES[utility]).label}`;
-  } else if (kind === "special") {
-    const special = crate.content;
-    ammo[w.team][special] = addAmmo(ammo[w.team][special], quantity);
-    label = `+${quantity} ${WEAPONS[special].label}`;
-  } else {
-    const result = applyPickup(kind, w.hp, ammo[w.team], quantity);
-    w.hp = result.hp;
-    ammo[w.team] = result.loadout;
-    label = kind === "health" ? `+${quantity} HP` : `+${quantity} ${WEAPONS[kind].label}`;
-  }
+  // Content keys adapt the current host inventory to native transfer callbacks;
+  // numeric slot ownership and donor inventories remain separate integration work.
+  const inventory = kind === "utility" ? utilityAmmo : ammo;
+  nativeCrateTransfer({kind:crate.nativeBody.kind,weapon:crate.content,quantity,health:quantity},
+    w.team,worms.indexOf(w),{
+      addAmmo:(team,key,amount)=>{inventory[team][key]=addAmmo(inventory[team][key],amount);},
+      weaponMessage:(_team,key,amount)=>{
+        label=`+${amount} ${(WEAPONS[key] || UTILITIES[key] || AUTOMATIC_UTILITIES[key]).label}`;
+      },
+      health:(_team,index)=>worms[index].hp,
+      setHealth:(_team,index,hp)=>{worms[index].hp=hp;},
+      healthMessage:(_team,amount)=>{label=`+${amount} HP`;},
+    });
   pickupLabel(w, label);
   $("#status").textContent = `${w.name} grabs a supply crate: ${label}.`;
   nativeRenderOrder.release(crate.nativeOrderId);

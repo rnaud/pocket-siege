@@ -73,6 +73,23 @@ test("original crates descend by parachute and switch to ground idle art", async
       restored: JSON.stringify(restored) === JSON.stringify(first.controllers.renderOrder) };
   });
   expect(ranks).toEqual({ allocated: true, released: true, restored: true });
+  const pickups=await page.evaluate(()=>{
+    const debug=window.siege.debug,snapshot=debug.captureReplayState(),results=[];
+    for(const kind of ['health','grenade','utility']) {
+      debug.restoreReplayState(snapshot);debug.setCrateKind(kind);
+      const before=window.siege.getState(),content=before.crate.content,quantity=before.crate.quantity;
+      debug.collectCrate();const after=window.siege.getState();
+      const value=state=>kind==='health'?state.worms[state.current].hp:
+        kind==='utility'?state.utilities[content]:state.ammo[state.team][content];
+      results.push({kind,quantity,before:value(before),after:value(after),removed:after.crate===null});
+    }
+    debug.restoreReplayState(snapshot);return results;
+  });
+  for(const pickup of pickups) {
+    expect(pickup.after).toBe(pickup.before+pickup.quantity);
+    expect(pickup.removed).toBe(true);
+  }
+
 });
 test("cluster fragments and fire use original art in live gameplay", async ({
   page,
