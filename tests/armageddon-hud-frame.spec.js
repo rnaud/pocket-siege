@@ -1142,10 +1142,16 @@ test("Native replay frame and input pipeline matches original executable request
     let cursor=row.cursor;const allocate=size=>{const address=cursor;cursor+=(size+15)&~15;memory.range(address,size).fill(0);return address;};
     const stream=NativeReplayStream.fromMemory(memory,0x2001000);
     if(row.captured) {
-      stream.reset();stream.writeBlock(memory.range(0x20207ec,0x3fbc));
-      nativeWriteEnvironmentMemory(memory,memory.get(0x20207d4),stream);
-      nativeWriteMatchMemory(memory,memory.get(0x2000804),stream);
-      expect({sha256:createHash('sha256').update(initial).digest('hex'),length:stream.length,position:stream.position}).toEqual(row.captured);
+      const writeActors=writer=>{nativeWriteEnvironmentMemory(memory,memory.get(0x20207d4),writer);nativeWriteMatchMemory(memory,memory.get(0x2000804),writer);};
+      const manager={globalCounter:1234};
+      if(row.captured.mode===2) {
+        for(const [key,offset] of [['captureFrame',0x15c],['checksum',0x160],['hasSnapshot',0x164],['playbackError',0x270],['playbackFailure',0x26c]])Object.defineProperty(manager,key,{get:()=>memory.get(0x2000800+offset)|0,set:value=>memory.put(0x2000800+offset,value)});
+        const deviceCall=(method,result=0)=>{calls.push(['device',method]);return result;};
+        const started=stream.position?1:0;
+        nativeReplaySessionTick(scene,manager,{stream,recording:NativeReplayBuffer.fromMemory(memory,0x200e800,0),writeActors,
+          device:{pending:()=>deviceCall(0x40,started),clear:()=>deviceCall(0x34),startRecording:()=>deviceCall(0x30,started),checksum:()=>deviceCall(0x48,17),startPlayback:()=>deviceCall(0x44)}});
+      } else {stream.reset();stream.writeBlock(memory.range(0x20207ec,0x3fbc));writeActors(stream);}
+      expect({mode:row.captured.mode,globalCounter:manager.globalCounter,sha256:createHash('sha256').update(initial).digest('hex'),length:stream.length,position:stream.position}).toEqual(row.captured);
     }
     expect(nativeRestoreSceneSnapshot(memory,0x2000800,0x2001000,{
       allocate:size=>{const pointer=allocate(size);allocationCalls.push(['allocate',size,pointer]);return pointer;},allocateArray:(size,pool)=>{const pointer=allocate(size);allocationCalls.push(['array',size,pool,pointer]);return pointer;},free:address=>allocationCalls.push(['free',address]),

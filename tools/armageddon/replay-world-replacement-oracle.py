@@ -74,6 +74,8 @@ def hook(cpu,address,size,user):
   ret(0,4 if address in [stop+0x210,stop+0x230] else 0)
  elif address==0x492510:allocationCalls.append(['free',read(sp+4)]);ret()
  elif address==0x492590:allocationCalls.append(['release',read(sp+4),read(sp+8)]);ret()
+ elif stop+0x630<=address<=stop+0x648:
+  method=address-stop-0x600;calls.append(['device',method]);ret(17 if method==0x48 else int(bool(initialPosition)) if method in [0x30,0x40] else 0)
  elif address in [stop+0x400,stop+0x514]:
   pointer=cpu.reg_read(UC_X86_REG_ECX);calls.append(['dimensions',pointer]);write(read(sp+4),1 if address==stop+0x400 else 2);write(read(sp+8),0 if address==stop+0x400 else 2);ret(0,8)
  elif address in [stop+0x534,stop+0x538,stop+0x53c,stop+0x558]:
@@ -94,7 +96,7 @@ trees=[[],[node(tag) for tag in tags],[node(7,[node(9,[node(21,[node(30)])]),nod
 trees.append([node(tag) for tag in schemas])
 extraBlocks={13:(0x3c,0xc04),16:(0x3c,0x24),22:(0x3c,0x28),27:(0x3c,0x1c),29:(0x3c,0x28)}
 cases=[]
-combinations=[row+(0,0,captureMode) for row in itertools.product([0,7],trees) for captureMode in [False,True]]
+combinations=[row+(0,0,captureMode) for row in itertools.product([0,7],trees) for captureMode in [0,1,2]]
 for initialPosition,tree,mode,cleanupMode,captureMode in combinations:
  position=0;savedIndex=-1;environment=0x2500000
  heap=heapBase;allocations.clear();taskAllocations.clear();objects.clear();buffers.clear();calls.clear();allocationCalls.clear();cpu.mem_write(owner,bytes([0xa5])*0x28c)
@@ -135,6 +137,14 @@ for initialPosition,tree,mode,cleanupMode,captureMode in combinations:
  #Replace the real restored world twice; original cleanup/destruction runs.
  for cycle in range(1 if len(tree)==21 else 2):
   write(stream+16,initialPosition)
+  write(0x561ec8,1234)
+  if captureMode==2:
+   write(manager+8,stream);write(manager+0x34,owner+0xe800)
+   write(owner+0xe800,0x526544);write(owner+0xe804,owner+0xe820);write(owner+0xe820,0x5266a0);write(owner+0xe824,owner+0xe900);write(owner+0xe828,256)
+   for offset in [12,16,20,24,28]:write(owner+0xe820+offset,17)
+   write(context+0x24,owner+0xf000);write(owner+0xf000,owner+0xf100)
+   for method in [0x30,0x34,0x40,0x44,0x48]:write(owner+0xf100+method,stop+0x600+method)
+   for offset,value in [(0x1d438,1),(0x1d43c,0),(0x1d444,0),(0x1d428,0),(0x1d42c,0),(0x1d440,0)]:write(context+offset,value)
   before=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))
   cursor=heap;calls.clear();allocationCalls.clear();captured=None
   if captureMode:
@@ -142,14 +152,16 @@ for initialPosition,tree,mode,cleanupMode,captureMode in combinations:
     for i,value in enumerate([stop]+values):write(sp+i*4,value)
     cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,at);cpu.emu_start(entry,stop+1,count=1000000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('capture did not exit')
-   invoke(0x4c7370,stream);invoke(0x4c7480,stream,[context+0x7ec,0x3fbc])
-   env=read(context+0x7d4);invoke(read(read(env)+0x10),env,[stream]);invoke(0x4b2d80,read(manager+4),[stream])
+   if captureMode==2:invoke(0x4a1e10,manager)
+   else:
+    invoke(0x4c7370,stream);invoke(0x4c7480,stream,[context+0x7ec,0x3fbc])
+    env=read(context+0x7d4);invoke(read(read(env)+0x10),env,[stream]);invoke(0x4b2d80,read(manager+4),[stream])
    saved=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))
-   captured=dict(sha256=hashlib.sha256(saved).hexdigest(),length=read(stream+12),position=read(stream+16))
+   captured=dict(mode=captureMode,globalCounter=read(0x561ec8),sha256=hashlib.sha256(saved).hexdigest(),length=read(stream+12),position=read(stream+16))
   write(sp,stop);write(sp+4,stream);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,manager)
   cpu.emu_start(0x4a1d20,stop+1,count=1000000)
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('replacement did not exit')
   after=bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))
   cases.append(dict(cycle=cycle,captured=captured,cursor=cursor,inputMemory=base64.b64encode(zlib.compress(before)).decode(),sha256=hashlib.sha256(after).hexdigest(),calls=list(calls),allocationCalls=list(allocationCalls),root=read(manager+4),environment=read(context+0x7d4),position=read(stream+16)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='44 original004A1D20 replacements: two consecutive replacements of each restored empty/mixed/deep/wide seven-kind tree at two stream offsets. Real recursive cleanup, world destruction, environment compaction/destruction and reconstruction execute. Four cases additionally replace a flat world containing all21 recovered concrete actor kinds, including worm animation, controller resources, terrain history and weather presentation. Half of cases first serialize current scene, environment and concrete root through original stream and virtual writers, then replace from that generated snapshot; intermediate capture memory and length also compared. Full512KiB memory, pointers, stream cursor and ordered heap/render requests match. Text/image/panel/frame/portrait construction and surface drawing are minimal resource interfaces; destruction executes original routines. Heap/render services remain interfaces, and full runtime gameplay states/browser integration are not covered.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='66 original004A1D20 replacements: two consecutive replacements of each restored empty/mixed/deep/wide seven-kind tree at two stream offsets. Real recursive cleanup, world destruction, environment compaction/destruction and reconstruction execute. Six cases additionally replace a flat world containing all21 recovered concrete actor kinds, including worm animation, controller resources, terrain history and weather presentation. Two thirds of cases first serialize current scene, environment and concrete root through original stream and virtual writers, then replace from that generated snapshot; intermediate capture memory and length also compared.22 cases execute the full004A1E10 session routine, including recording queue clear, pending-device handling, successful/failed recording start, sparse presentation copies and checksum; global counter and ordered device calls are captured. Full512KiB memory, pointers, stream cursor and ordered heap/render requests match. Text/image/panel/frame/portrait construction and surface drawing are minimal resource interfaces; destruction executes original routines. Heap/render services remain interfaces, and full runtime gameplay states/browser integration are not covered.',cases=cases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'native world replacements')
