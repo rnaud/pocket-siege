@@ -34,7 +34,7 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET") return;
+  if (request.method !== "GET" || request.headers.has("Range")) return;
   if (new URL(request.url).origin !== location.origin) return;
   event.respondWith(
     (async () => {

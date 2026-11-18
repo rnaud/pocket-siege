@@ -1,0 +1,165 @@
+{
+  "encoding": "AAC 96 kbps; original full-length stereo streams",
+  "tracks": {
+    "title": {
+      "file": "title.m4a",
+      "source": "TITLE.WAV",
+      "sourceSha256": "fc1b3a90984a1d53cf4e8d10160409de92ec6f63d5e628ae40bab9e207dce863",
+      "sha256": "6cb40790f68007c5f7003adb7d0d5fc42675db1d41e76535af95df71dca26eb9",
+      "duration": 338.88364285714283,
+      "bytes": 4136533
+    },
+    "stats": {
+      "file": "stats.m4a",
+      "source": "STATS.WAV",
+      "sourceSha256": "6cf47bf8627294a756c765f8cd7c352e3b61747c4fba6233adafe3a84169f6ff",
+      "sha256": "11c95618bbe3bac95d3b9e47bca92e61659820617499950302684aa851184ff8",
+      "duration": 477.43710714285714,
+      "bytes": 5873581
+    },
+    "lose": {
+      "file": "lose.m4a",
+      "source": "NEW-LOSE.WAV",
+      "sourceSha256": "4fbeda78a0257386fa9aa68485c25abf2d1be77d798e6ecba490fc21755b654e",
+      "sha256": "9a15d96114173df77132c590d37a8d4352e328b55bbae5f1d8e1428d6a848c7e",
+      "duration": 4.4872108843537415,
+      "bytes": 57975
+    },
+    "win-1": {
+      "file": "win-1.m4a",
+      "source": "NEW-WI~1.WAV",
+      "sourceSha256": "500114045331e48caddbd471e17e4eecd3e1d4d61069f8f9fba5654b7d8553cb",
+      "sha256": "b9a4abe65cc4af3a757208253c2f685aec21660fbf5f16a51e2dd96084231391",
+      "duration": 4.643945578231293,
+      "bytes": 60407
+    },
+    "win-2": {
+      "file": "win-2.m4a",
+      "source": "NEW-WI~2.WAV",
+      "sourceSha256": "3b6fbaf4085af030187544e2f2597add4173ff33fa0c63c667074d447e6e0ce6",
+      "sha256": "393ae68805e140715ab2f3779ee62e64848150ada17b44bcfea588a79f77ba29",
+      "duration": 5.509614512471655,
+      "bytes": 72336
+    },
+    "win-3": {
+      "file": "win-3.m4a",
+      "source": "NEW-WI~3.WAV",
+      "sourceSha256": "b6b67405f99938099656f786ceea82d7a09f18d5bf589cad322d36a7b0608044",
+      "sha256": "52d89e23e7f5c2ee45538283ae16c2dec10bee834f89a90924dc3a274f9c5500",
+      "duration": 3.6977324263038547,
+      "bytes": 51643
+    },
+    "win-4": {
+      "file": "win-4.m4a",
+      "source": "NEW-WI~4.WAV",
+      "sourceSha256": "dc03d6e21331ab4fef1f9c36eabe2113a85d8b75af5cb1734435f6504966e3f5",
+      "sha256": "2141c015d48850e38d4a86d26c751cd75c52d21cb05922b600d5cb157521b3d8",
+      "duration": 5.841950113378685,
+      "bytes": 76758
+    },
+    "sudden-1": {
+      "file": "sudden-1.m4a",
+      "source": "SUDDEN~1.WAV",
+      "sourceSha256": "0d2f44b9487ab4d9fdc6a1f62cc94515d3be9656a1e7d0b157983324bcfa17bc",
+      "sha256": "140c3fd8ac4c65c750b0f90c000818dac8f5e908a16a3ebd998e9e749bafb37c",
+      "duration": 128.0231875,
+      "bytes": 1576941
+    },
+    "sudden-2": {
+      "file": "sudden-2.m4a",
+      "source": "SUDDEN~2.WAV",
+      "sourceSha256": "93596b3fd07ac41c88d6908662ab999228697aadbadc8eaab6c54c12ea6cb960",
+      "sha256": "5e17f6de17e2e3795c2e07ce5442505c3df15a2b86c84d9ce20610e1bb15ba80",
+      "duration": 132.9699375,
+      "bytes": 1636567
+    },
+    "ingame-1": {
+      "file": "ingame-1.m4a",
+      "source": "INGAME~1.WAV",
+      "sourceSha256": "55dabda56ff6efe5b02304f8d2d094a77fe75d4ce1168c15869c0e008da95e95",
+      "sha256": "22b05cd99def4bace3f92a834f144e699210175c8a75b6dced4e9f9b18199f75",
+      "duration": 250.9845,
+      "bytes": 3073797
+    },
+    "ingame-2": {
+      "file": "ingame-2.m4a",
+      "source": "INGAME~2.WAV",
+      "sourceSha256": "f47cc4f7da9df3e1f8ffa65435927bb38fd0fae001e8089444626590da1d4980",
+      "sha256": "242e0b3811f8d82e21472e49a10d1922a8c47da655a725bdd1e70300aa2f1c86",
+      "duration": 267.7184375,
+      "bytes": 3259156
+    },
+    "ingame-3": {
+      "file": "ingame-3.m4a",
+      "source": "INGAME~3.WAV",
+      "sourceSha256": "d90497c9cd9d9ec668b842ef785256f1aefbfdfb43a508e13180f622b496812b",
+      "sha256": "eeba2fb339f0ee3d782c7d806c139a1b952a81ef57ffe34cf44a3abc2797df35",
+      "duration": 254.9725,
+      "bytes": 3122708
+    },
+    "ingame-4": {
+      "file": "ingame-4.m4a",
+      "source": "INGAME~4.WAV",
+      "sourceSha256": "6ba718ae25c6cfb2a087a7360e82fcf6faa1b1dc34b2e5c21ab6092739c88510",
+      "sha256": "b87fbeb71fcb1a07f67f758bb7cb9b9b6d2c940a758b5c361f11622ba0a7793c",
+      "duration": 266.3328888888889,
+      "bytes": 3219481
+    },
+    "ingame-5": {
+      "file": "ingame-5.m4a",
+      "source": "INGAME~5.WAV",
+      "sourceSha256": "c13205c34374dca338cc04ee0d3aa9be78b59559c5c9c0ce583891d349adbb49",
+      "sha256": "07a9c78e1f6fa900cf28f79701a4819f648cd53f20f84e4f20fb22a63a9fc523",
+      "duration": 254.6068125,
+      "bytes": 3115335
+    },
+    "ingame-6": {
+      "file": "ingame-6.m4a",
+      "source": "INGAME~6.WAV",
+      "sourceSha256": "e55e7d8c68932c9faa6727f7353e78d197f3e79767788f34d3f780a71bd99c22",
+      "sha256": "f9bd3e8757c1af7c53817e3040d318e7efe2d1e30fb7715ce26ceba3275a732f",
+      "duration": 256.7894375,
+      "bytes": 3146176
+    },
+    "ingame-7": {
+      "file": "ingame-7.m4a",
+      "source": "INGAME~7.WAV",
+      "sourceSha256": "bfafe0cfdbfaf542b523278617373fb8878127f60fb893c17d5e9cef8e912df7",
+      "sha256": "540eaa868acb63283f22b6c5f68f04f5ee357d3e0986e02258a671b0e162065a",
+      "duration": 257.8605,
+      "bytes": 3132563
+    },
+    "ingame-8": {
+      "file": "ingame-8.m4a",
+      "source": "INGAME~8.WAV",
+      "sourceSha256": "45b151e742d1c6cf6379e281a7a16c07a1a1cc5ffd6bc7ca0d91a7da696d9343",
+      "sha256": "b132d189d766dde061066cdf03972295318e56f6f2a4de24d37fe70d5866b0a9",
+      "duration": 252.2615625,
+      "bytes": 3087295
+    },
+    "ingame-9": {
+      "file": "ingame-9.m4a",
+      "source": "INGAME~9.WAV",
+      "sourceSha256": "c16ac3e1e64f48f4bdc8628cb6bb6297daba2e2bc41425d3a7839b099d01b132",
+      "sha256": "567907dd781bd0ebe0d7228590a203c0b8369847b6d2e0858580a854bbf7c1ca",
+      "duration": 241.4875,
+      "bytes": 2962026
+    },
+    "ingame-10": {
+      "file": "ingame-10.m4a",
+      "source": "INGAM~10.WAV",
+      "sourceSha256": "862c677e26d6f3c1a081ea6ef1d952c755ee6f6f13943d11c998670097e80d83",
+      "sha256": "ca2d2d2fff1c1abf6ee667911f733500c90aa2c2a4402ed3562e943ad5709516",
+      "duration": 255.36144444444443,
+      "bytes": 3040108
+    },
+    "ingame-11": {
+      "file": "ingame-11.m4a",
+      "source": "INGAM~11.WAV",
+      "sourceSha256": "62f50280e6170b47be05f9653956408e9d71e5a385b2dce000b4cac55e8baf55",
+      "sha256": "674f4b8f813a5bffc28ed1f76797fced5de60990842af23c98d1160aeb53621b",
+      "duration": 270.48925,
+      "bytes": 3323611
+    }
+  }
+}

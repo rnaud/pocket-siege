@@ -651,6 +651,7 @@ test("daily island starts a seeded clear-weather solo match", async ({
   await expect(page.locator("#menu")).not.toBeVisible();
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.daily).not.toBeNull();
+  expect(state.mapLayout).toMatch(/^original:(image|mission)\//);
   expect(state.daily.seed).toBeGreaterThanOrEqual(100);
   expect(state.daily.seed).toBeLessThan(1000);
   expect(state.format).toBe("single");
@@ -733,6 +734,7 @@ test("daily island records today's result in the local record book", async ({
 }) => {
   await page.goto("/");
   await page.locator("#daily").click();
+  await expect(page.locator("#menu")).not.toBeVisible();
   await page.evaluate(() => window.siege.debug.knockout(1));
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().phase))
@@ -1053,6 +1055,8 @@ test("field kit teleport and girder target the battlefield", async ({
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().worms[0].y))
     .toBeGreaterThan(300);
+  // Finish rematerialization and the fall using simulation ticks, not a wall-clock deadline.
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(350));
   await expect.poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
 
   await page.reload();

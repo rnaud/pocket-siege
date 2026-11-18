@@ -1,3 +1,4 @@
+import { OriginalMusic } from "./armageddon/music.js";
 import {nativeInitializeWormSpawnFields} from './armageddon/worm-spawn-fields.js';
 import {speechBankOptions,speechRequestId} from './armageddon/speech-resources.js';
 import { NativeCollisionScene } from './armageddon/collision-scene.js';
@@ -837,6 +838,7 @@ function announceWormDeath(worm) {
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 function announceMatchResult(winner) {
+  music.result(winner, mode);
   if (winner !== null && sound) {
     const request = nativeVictorySpeech(worms.filter(w => w.team === winner).map(w => w.matchStats.damageReceived));
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -846,6 +848,14 @@ function announceMatchResult(winner) {
   const message = nativeMatchResultAnnouncement(winner ? "CORAL CREW" : "MOSS COMPANY", winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
+const music = new OriginalMusic();
+function syncMusic() {
+  music.update({enabled:sound,hidden:document.hidden,seed:matchRandom.seed,
+    scene:menu.open ? "title" : phase === "over" || phase === "break" ? "result" : suddenDeath ? "sudden" : "battle"});
+}
+for (const event of ["pointerdown", "keydown"])
+  document.addEventListener(event, () => { syncMusic(); music.unlock(); }, {passive:true});
+document.addEventListener("visibilitychange", syncMusic);
 const soundTimes = new Map();
 function sfx(kind) {
   if (!sound) return;
@@ -904,7 +914,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
-  const layout = isDaily ? "fern" : selectedLayout === "random"
+  const layout = isDaily || selectedLayout === "random"
     ? randomOriginalMap(matchSeed) : selectedLayout;
   if (layout.startsWith("original:") && !originalMapLoaded(layout)) {
     mapLoading = true;
@@ -6144,6 +6154,7 @@ new ResizeObserver(() => requestAnimationFrame(resize)).observe(
 function frame(now) {
   requestAnimationFrame(frame);
   if (renderedDisplayDensity !== window.devicePixelRatio) resize();
+  syncMusic();
   const frameDt = Math.min((now - last) / 1000, 0.1);
   const slow = slowMo > 0 && !reducedMotion;
   if (slowMo > 0) slowMo = Math.max(0, slowMo - frameDt);
@@ -6755,7 +6766,7 @@ $("#restart").onclick = () => {
   resetMenuScroll();
   updateUI();
 };
-$("#daily").addEventListener("click", () => {
+$("#daily").addEventListener("click", async () => {
   const { key, seed } = dailySeed();
   daily = { date: key, seed };
   $("#mode").value = "ai";
@@ -6766,11 +6777,12 @@ $("#daily").addEventListener("click", () => {
   syncMenuOptions();
   saveSettings();
   matchStarted = true;
-  reset({ seed, isDaily: true });
+  if (await reset({ seed, isDaily: true }) === false) return;
   menu.close();
 });
 $("#sound").onclick = () => {
   sound = !sound;
+  syncMusic(); music.unlock();
   if (!sound) stopNativeNuclearAudio();
   if (!sound) { stopBurstSound(); stopProjectileSound(); }
   if (!sound) for (const b of bombs) {
