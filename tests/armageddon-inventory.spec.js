@@ -1,3 +1,6 @@
+import {inflateSync} from 'node:zlib';
+import weaponOverrides from './fixtures/armageddon/weapon-overrides.json' with {type:'json'};
+import {nativeApplyWeaponOverrides} from '../src/armageddon/weapon-overrides.js';
 import runtimeSchemes from '../src/armageddon/scheme-runtime.js';
 import capturedRuntimeSchemes from '../src/armageddon/scheme-runtime-data.json' with {type:'json'};
 import {nativeSetupLanguage} from '../src/armageddon/setup-language.js';
@@ -40,6 +43,11 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const row of weaponOverrides.cases) {
+    const memory=inflateSync(Buffer.from(row.input,'base64'));
+    nativeApplyWeaponOverrides(memory);
+    expect(createHash('sha256').update(memory).digest('hex'),`scheme ${row.resource_id} variant ${row.variant}`).toBe(row.sha256);
+  }
   expect(runtimeSchemes.schemes.map(s=>({...s,bytes:[...s.bytes]}))).toEqual(capturedRuntimeSchemes.schemes);
   const localeActual=[],localeExpected=[];
   for(const [lcid,german,first,country,language,calls] of matchSetup.locale_cases) {
