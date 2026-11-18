@@ -1,3 +1,5 @@
+import impactSoundFixture from "./fixtures/armageddon/body-impact-sound.json" with { type: "json" };
+import { nativeBodyContactMemory } from "../src/armageddon/body-response-memory.js";
 import {readFileSync} from 'node:fs';
 import bankData from '../src/armageddon/speech-bank-data.json' with {type:'json'};
 import {originalSpeechClip,resolveOriginalSpeechBank} from '../src/armageddon/speech-resources.js';
@@ -24,6 +26,34 @@ test("weapon release audio and casing choices match all original records", { tag
   expect(resolveOriginalSpeechBank('Missing bank','Missing fallback')).toBeNull();
   expect(originalSpeechClip(1,'Australian')).toBe('voices/austra~1/amazing.wav');
   expect(originalSpeechClip(999,'English')).toBeNull();
+  for (const c of impactSoundFixture.cases) {
+    const owner = 0x2000000, context = 0x2300000;
+    const actorBytes = Buffer.alloc(0x10000), sceneBytes = Buffer.alloc(0x40000);
+    const region = address => address >= context ? [sceneBytes, address-context] : [actorBytes, address-owner];
+    const memory = {
+      get(address) { const [bytes, offset] = region(address); return bytes.readUInt32LE(offset); },
+      put(address, value) { const [bytes, offset] = region(address); bytes.writeUInt32LE(value >>> 0, offset); },
+    };
+    for (const [address, value] of c.words) memory.put(address, value);
+    const state = () => createHash("sha256").update(actorBytes).update(sceneBytes).digest("hex");
+    const calls = [];
+    const invoke = (name, receiver, values) => {
+      calls.push([name, receiver, values, state()]);
+      if (name === "stop" && c.mutation) {
+        memory.put(owner+0x38, context+0x20000); memory.put(owner+0xf4, 77);
+      }
+      if (name === "start") { memory.put(owner+0xf4, 88); memory.put(owner+0x9c, 54321); }
+      if (name === "respond") memory.put(owner+0xa0, 98765);
+      return name === "accept" ? c.accepted : name === "start" ? -9 : 1;
+    };
+    nativeBodyContactMemory(memory, owner, owner+0x4000, c.side, {
+      startSound: (receiver, ...values) => invoke("start", receiver, values),
+      stopSound: (receiver, ...values) => invoke("stop", receiver, values),
+      acceptContact: (receiver, ...values) => invoke("accept", receiver, values),
+      respondContact: (receiver, ...values) => invoke("respond", receiver, values),
+    });
+    expect({ calls, sha256: state() }).toEqual({ calls: c.calls, sha256: c.sha256 });
+  }
   for (const c of bodySoundFixture.cases) {
     const calls = [];
     const backend = c.present ? Object.fromEntries(["start","finished","stop"].map(name => [name, (...args) => { calls.push([name,args]); return c.backendResult; }])) : null;

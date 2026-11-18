@@ -1,3 +1,4 @@
+import { nativeBodyImpactSoundMemory } from "./body-sound.js";
 import { nativeBodyCollision } from "./body-collision.js";
 import { nativeBodyVirtualEntry } from "./body-virtuals.js";
 import { fixedMultiply } from "./numeric.js";
@@ -115,11 +116,29 @@ export function nativeRopeBounceMemory(memory, body) {
   );
 }
 
-//004F4C30: the contacted actor's +28 handler gets first refusal. Only a zero
+//Actor-specific impact audio precedes004F4C30. The contacted actor's +28
+//handler gets first refusal. Only a zero
 //return invokes the moving actor's +24 response; keep both identities intact.
 export function nativeBodyContactMemory(memory, body, other, side, host) {
   const entry = nativeBodyVirtualEntry(memory, body, 0x2c);
-  if (entry !== 0x4f4c30)
+  const impact = { 0x4e8ba0: 0x6b, 0x4d5570: 0x6d, 0x4d15f0: 0x72 }[entry];
+  if (impact !== undefined) {
+    const velocityEntry = nativeBodyVirtualEntry(memory, body, 0x60);
+    if (velocityEntry !== 0x4d0f70)
+      throw new RangeError(
+        `Native impact velocity handler not connected: ${velocityEntry.toString(16)}`,
+      );
+    const abs = (value) => ((value ^ (value >> 31)) - (value >> 31)) | 0;
+    const speed =
+      (abs(memory.get(body + 0x9c) | 0) + abs(memory.get(body + 0xa0) | 0)) | 0;
+    if (entry === 0x4e8ba0 || !memory.get(memory.get(body + 0x38) + 0x1ac4))
+      nativeBodyImpactSoundMemory(
+        memory,
+        body,
+        [impact, 65536, Math.trunc(speed / 5) | 0, 0],
+        host,
+      );
+  } else if (entry !== 0x4f4c30)
     throw new RangeError(
       `Native contact handler not connected: ${entry.toString(16)}`,
     );
