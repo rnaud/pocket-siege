@@ -1,3 +1,4 @@
+import {nativeSetGroupSubscription,nativeDispatchEventGroup} from '../src/armageddon/event-group.js';
 import worldCreate from './fixtures/armageddon/world-create.json' with {type:'json'};
 import {nativeInitializeWorld} from '../src/armageddon/world-create.js';
 import matchCreate from './fixtures/armageddon/match-create.json' with {type:'json'};
@@ -64,11 +65,22 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const groupActual=[],groupExpected=[];
+  for(const row of worldCreate.event_cases) {
+    const bytes=Uint8Array.from({length:0xa0},(_,i)=>(i*7+3)&255),calls=[];
+    const memory={byte:at=>bytes[at-0x2400000],putByte:(at,v)=>bytes[at-0x2400000]=v};
+    memory.putByte(0x2400000-0x3ac+row.event,row.initial);
+    if(row.action>=0)nativeSetGroupSubscription(memory,0x2400000,row.event,row.action);
+    nativeDispatchEventGroup(memory,0x2400000,0x12345678,row.event,4,0xdeadbeef,(...args)=>calls.push(args));
+    groupActual.push([createHash('sha256').update(bytes).digest('hex'),calls]);groupExpected.push([row.sha256,row.calls]);
+  }
+  expect(groupActual).toEqual(groupExpected);
   const worldActual=[],worldExpected=[];
   for(const row of worldCreate.cases) {
     const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:[scene,at-0x2300000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];}};
+    memory.putByte=(at,v)=>{const [a,o]=locate(at);a[o]=v;};
     scene[0x4886]=row.count;for(const [offset,value] of row.words)memory.put(0x2300000+offset,value);
     let cursor=0x2401000,allocation=0;
     nativeInitializeWorld(memory,0x2400000,0x2300000,0x23047a8,{
@@ -77,7 +89,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
       call:(entry,at,args)=>{
         calls.push(['call',entry,at,args]);
         if(entry===0x4ed910)memory.put(at+0x38,args[0]);
-        else if(entry===0x4ea9c0)memory.put(at,0x2001100);
+        else if(entry===0x4b1ae0)memory.put(at+4,args[0]);
         else if(entry===0x4b2670){memory.put(at+0x28,args[0]);memory.put(at+0x24,args[1]);}
         return at;
       },
@@ -113,7 +125,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     memory.range=(at,length)=>at>=0x2400000?heap.subarray(at-0x2400000,at-0x2400000+length):scene.subarray(at-0x2300000,at-0x2300000+length);
     if(row.root)nativeCreateMatchRootAt(memory,0x2400000,0x2300000,0x23047a8,{
       ...host,virtual:(...args)=>calls.push(['virtual',...args]),
-      call:(entry,at,args)=>{calls.push(['call',entry,at,args]);if(entry===0x4ed910)memory.put(at+0x38,args[0]);else if(entry===0x4ea9c0)memory.put(at,0x2004200);else if(entry===0x4b2670){memory.put(at+0x28,args[0]);memory.put(at+0x24,args[1]);}return at;},
+      call:(entry,at,args)=>{calls.push(['call',entry,at,args]);if(entry===0x4ed910)memory.put(at+0x38,args[0]);else if(entry===0x4b1ae0)memory.put(at+4,args[0]);else if(entry===0x4b2670){memory.put(at+0x28,args[0]);memory.put(at+0x24,args[1]);}return at;},
       startMusic:(...args)=>calls.push(['music',...args]),
     });
     else nativeInitializeMatchResources(heap.subarray(0,0x28c),scene,resourceHost);

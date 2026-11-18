@@ -1,3 +1,4 @@
+import {nativeCreateEventGroup,nativeSetGroupSubscription} from './event-group.js';
 //004EAAD0 orchestration. Uncomposed child/world constructors use their original
 //addressed interfaces; scene state, creation order and inventory health run here.
 export function nativeInitializeWorld(memory,address,scene,setup,host) {
@@ -17,8 +18,8 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
   const landscape=host.allocate(0x175c);
   if(landscape)call(0x4d1f80,[address],landscape);
   const group=(type,events)=>{
-    const storage=host.allocate(0xa0),task=storage?call(0x4ea9c0,[address,type,0],storage):0;
-    for(const event of events)host.virtual(task,0x20,[event]);
+    const storage=host.allocate(0xa0),task=storage?nativeCreateEventGroup(memory,storage,address,type,0,host):0;
+    for(const event of events)nativeSetGroupSubscription(memory,task,event,true);
   };
   //004EB970 original global event group.
   group(25,[0x433,0x404,0x3e9,0x3ea,0x3eb,0x3ed,0x414,0x415,0x416,0x3ec,0x3f6,0x3fd,0x3ff]);

@@ -38,7 +38,7 @@ camera=owner+0x800;table=owner+0x1000;groupTable=owner+0x1100
 write(camera,table)
 virtuals={owner+0x1800:0x20,owner+0x1900:0x2c}
 write(table+0x20,owner+0x1800);write(table+0x2c,owner+0x1900);write(groupTable+0x20,owner+0x1800)
-entries={0x4ed910:1,0x4d1f80:1,0x4ea9c0:3,0x4eba80:1,0x4e4ed0:3,0x4ebe10:1,0x4eaf40:0,0x4b2670:2}
+entries={0x4ed910:1,0x4d1f80:1,0x4b1ae0:1,0x4eba80:1,0x4e4ed0:3,0x4ebe10:1,0x4eaf40:0,0x4b2670:2}
 for entry,n in entries.items():cpu.mem_write(entry,b'\xc2'+struct.pack('<H',n*4))
 for entry in virtuals:cpu.mem_write(entry,b'\xc2\x04\x00')
 cpu.mem_write(0x492550,b'\xc3')
@@ -54,7 +54,7 @@ def hook(cpu,entry,size,user):
  else:
   args=[read(sp+4+i*4) for i in range(entries[entry])];calls.append(['call',entry,at,args])
   if entry==0x4ed910:write(at+0x38,args[0])
-  elif entry==0x4ea9c0:write(at,groupTable)
+  elif entry==0x4b1ae0:write(at+4,args[0])
   elif entry==0x4b2670:write(at+0x28,args[0]);write(at+0x24,args[1])
   cpu.reg_write(UC_X86_REG_EAX,at)
 for entry in list(entries)+list(virtuals)+[0x492550]:cpu.hook_add(UC_HOOK_CODE,hook,begin=entry,end=entry)
@@ -74,5 +74,23 @@ for count in range(7):
    cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,heap)
    cpu.emu_start(0x4eaad0,stop,count=100000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
    cases.append(dict(count=count,words=words,failure=failure,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0x10000)).hexdigest(),scene_sha256=hashlib.sha256(cpu.mem_read(context,0x20000)).hexdigest()))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004EAAD0',method='Original world constructor orchestration and global event group plus inventory health execute. Base/child constructors, object population, presentation setup, allocator, virtual services and registry are observed interfaces.',cases=cases),separators=(',',':'))+'\n')
+eventCases=[]
+cpu.mem_write(0x4b26f0,b'\xc2\x10\x00')
+def forwardHook(cpu,entry,size,user):
+ sp=cpu.reg_read(UC_X86_REG_ESP);calls.append([read(sp+4+i*4) for i in range(4)])
+cpu.hook_add(UC_HOOK_CODE,forwardHook,begin=0x4b26f0,end=0x4b26f0)
+for event in range(0x3e8,0x44c):
+ for initial in [0,1,255]:
+  for action in [-1,0,1]:
+   cpu.mem_write(heap,bytes((i*7+3)&255 for i in range(0xa0)))
+   cpu.mem_write(heap-0x3ac+event,bytes([initial]));calls.clear();sp=stack+0xf000
+   if action>=0:
+    write(sp,stop);write(sp+4,event);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,heap)
+    cpu.emu_start(0x4ea940 if action else 0x4ea950,stop,count=100)
+   eventArgs=[0x12345678,event,4,0xdeadbeef]
+   for i,value in enumerate([stop]+eventArgs):write(sp+i*4,value)
+   cpu.reg_write(UC_X86_REG_ESP,sp);cpu.reg_write(UC_X86_REG_ECX,heap)
+   cpu.emu_start(0x4eaaa0,stop,count=1000);assert cpu.reg_read(UC_X86_REG_EIP)==stop
+   eventCases.append(dict(event=event,initial=initial,action=action,calls=list(calls),sha256=hashlib.sha256(cpu.mem_read(heap,0xa0)).hexdigest()))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,entry='004EAAD0',method='Original world constructor orchestration and global event group plus inventory health execute. Event-group construction, context inheritance and subscriptions also execute; base/other child constructors, object population, presentation setup, allocator, virtual services and registry are observed interfaces.',cases=cases,event_cases=eventCases),separators=(',',':'))+'\n')
 print('Captured',len(cases),'world initializations')
