@@ -59,3 +59,50 @@ export function nativeAppendSceneEvent(memory,wrapper,event,payload) {
   if(!record)return 0;memory.put(record,event);
   for(let i=0;i<payload.length;i++)memory.putByte(record+4+i,payload[i]);return 1;
 }
+
+//004AF390/004AF3B0/004AF3C0: reset preserves allocation bytes and capacity.
+export function nativeResetEventBuffer(memory,buffer) {
+  for(const offset of [28,24,20,16,12])memory.put(buffer+offset,0);
+}
+export function nativeEventBufferCount(memory,buffer){return memory.get(buffer+28);}
+export function nativeEventBufferUsage(memory,buffer) {
+  const write=memory.get(buffer+12)|0,read=memory.get(buffer+16)|0,capacity=memory.get(buffer+8)|0;
+  const used=write<read?((write-read+capacity)|0):((write-read)|0);
+  return Math.trunc(Math.imul(used,100)/capacity)|0;
+}
+//004AF3F0: empty reads leave the size destination untouched.
+export function nativePeekEventRecord(memory,buffer,sizeOut) {
+  const head=memory.get(buffer+24);if(!head)return 0;
+  memory.put(sizeOut,memory.get(head));return head+8;
+}
+//004AF410: draining the final record also resets both circular cursors.
+export function nativeConsumeEventRecord(memory,buffer) {
+  const head=memory.get(buffer+24);if(!head)return 0;
+  const next=memory.get(head+4);memory.put(buffer+24,next);
+  if(!next){memory.put(buffer+20,0);memory.put(buffer+16,0);memory.put(buffer+12,0);}
+  else memory.put(buffer+16,next-memory.get(buffer+4));
+  memory.put(buffer+28,memory.get(buffer+28)-1);return 1;
+}
+//004AF440 searches only active linked records, not stale backing bytes.
+export function nativeContainsEventRecord(memory,buffer,payload) {
+  for(let record=memory.get(buffer+24);record;record=memory.get(record+4))if(((record-payload)|0)===-8)return 1;
+  return 0;
+}
+//004AF4F0: partial copies remain committed when the destination fills.
+export function nativeCopyEventBuffer(memory,destination,source) {
+  for(let record=memory.get(source+24);record;record=memory.get(record+4)) {
+    const size=memory.get(record),target=nativeAllocateEventRecord(memory,destination,size);
+    if(!target)return 0;
+    for(let i=0;i<size;i++)memory.putByte(target+i,memory.byte(record+8+i));
+  }
+  return 1;
+}
+//0049C720/0049C780: oversized records update sizeOut but are not consumed.
+export function nativeReadSceneEvent(memory,wrapper,eventOut,sizeOut,payloadOut,consume=false) {
+  const buffer=memory.get(wrapper+4),record=nativePeekEventRecord(memory,buffer,sizeOut);
+  if(!record||(memory.get(sizeOut)|0)>0x128)return 0;
+  const size=(memory.get(sizeOut)-4)>>>0;memory.put(sizeOut,size);
+  for(let i=0;i<size;i++)memory.putByte(payloadOut+i,memory.byte(record+4+i));
+  memory.put(eventOut,memory.get(record));
+  if(consume)nativeConsumeEventRecord(memory,buffer);return 1;
+}

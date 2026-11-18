@@ -1,3 +1,5 @@
+import eventBuffer from './fixtures/armageddon/event-buffer.json' with {type:'json'};
+import {nativeAppendSceneEvent,nativeResetEventBuffer,nativeEventBufferCount,nativeEventBufferUsage,nativeConsumeEventRecord,nativeCopyEventBuffer,nativeContainsEventRecord,nativeReadSceneEvent} from '../src/armageddon/scene-buffers.js';
 import fullSceneLifecycle from './fixtures/armageddon/full-scene-lifecycle.json' with {type:'json'};
 import {nativeDestroyOfflineScene} from '../src/armageddon/scene-shutdown.js';
 import fullOfflineScene from './fixtures/armageddon/full-offline-scene.json' with {type:'json'};
@@ -212,6 +214,28 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     if(c.completeScene){expect(calls.length,label).toBe(c.callCount);expect(createHash('sha256').update(JSON.stringify(calls)).digest('hex'),label).toBe(c.callsSha256);}
     else expect(calls,label).toEqual(c.calls);
     expect(createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),label).toBe(c.sha256);
+  }
+  for(const row of eventBuffer.cases) {
+    const bytes=Uint8Array.from({length:0x8000},(_,i)=>(i*13+row.seed)&255),view=new DataView(bytes.buffer),base=0x2000000;
+    const memory={get:at=>view.getUint32(at-base,true),put:(at,v)=>view.setInt32(at-base,v,true),byte:at=>bytes[at-base],putByte:(at,v)=>bytes[at-base]=v};
+    for(let q=0;q<2;q++) {
+      const buffer=base+0x100+q*0x40;memory.put(base+q*8,0x526544);memory.put(base+q*8+4,buffer);
+      for(const [o,v] of [[0,0x5266a0],[4,base+0x1000+q*0x2000],[8,row.capacities[q]],[12,0],[16,0],[20,0],[24,0],[28,0]])memory.put(buffer+o,v);
+    }
+    const checks=[];
+    for(const op of row.operations) {
+      const wrapper=base+op.q*8,buffer=memory.get(wrapper+4);let result;
+      if(op.kind==='append'){bytes.set(op.args[1],0x7000);result=nativeAppendSceneEvent(memory,wrapper,op.args[0],op.args[1]);}
+      else if(op.kind==='peek'||op.kind==='read')result=nativeReadSceneEvent(memory,wrapper,base+0x6000,base+0x6004,base+0x6100,op.kind==='read');
+      else if(op.kind==='consume')result=nativeConsumeEventRecord(memory,buffer);
+      else if(op.kind==='copy')result=nativeCopyEventBuffer(memory,buffer,memory.get(base+op.args[0]*8+4));
+      else if(op.kind==='contains')result=nativeContainsEventRecord(memory,buffer,op.args[0]);
+      else if(op.kind==='reset'){nativeResetEventBuffer(memory,buffer);result=null;}
+      else if(op.kind==='usage')result=nativeEventBufferUsage(memory,buffer);
+      else result=nativeEventBufferCount(memory,buffer);
+      checks.push([result===null?null:result>>>0,createHash('sha256').update(bytes).digest('hex')]);
+    }
+    expect(checks,`event buffer ${row.seed}`).toEqual(row.operations.map(op=>[op.result,op.sha256]));
   }
   for(const {count,flags,mode,calls:expected,sha256} of taskDestroy.cases) {
     const owner=Uint8Array.from({length:0x10000},(_,i)=>(i*11+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),calls=[];
