@@ -48,11 +48,12 @@ write(0x5178bc,0x78022f30)
 queue=0x3000000;cpu.mem_map(queue,0x20000)
 renderer=owner;vt=owner+0x1000;camera=owner+0x2000;draw=stop+0x100
 write(renderer,vt);write(vt+0x48,draw);cpu.mem_write(draw,b'\xc2\x10\x00')
+write(vt+0x4c,draw+0x100);cpu.mem_write(draw+0x100,b'\xc2\x20\x00')
 def hook(cpu,address,size,user):
- if address==draw:
+ if address in [draw,draw+0x100]:
   sp=cpu.reg_read(UC_X86_REG_ESP)
-  draws.append([signed(read(sp+i*4)) for i in range(1,5)])
-cpu.hook_add(UC_HOOK_CODE,hook,begin=draw,end=draw)
+  draws.append([signed(read(sp+i*4)) for i in range(1,5 if address==draw else 9)])
+cpu.hook_add(UC_HOOK_CODE,hook,begin=draw,end=draw+0x100)
 def call(entry,this,args):
  sp=stack+0xf000;write(sp,stop)
  for i,value in enumerate(args):write(sp+4+i*4,value)
@@ -61,20 +62,22 @@ def call(entry,this,args):
  assert cpu.reg_read(UC_X86_REG_EIP)==stop
 import random
 rng=random.Random(42);cases=[]
-for count in [0,1,2,7,8,9,16,31,64,128,1024,1025]:
- for mode in range(4):
-  remaining=65536 if mode!=3 else min(65536,max(0,count*36-1))
-  cpu.mem_write(queue,bytes(0x20000));write(queue+4,remaining)
-  requests=[]
-  for i in range(count):
-   order=([0xd0000]*count if mode==0 else list(range(count)) if mode==1 else [rng.choice([-2147483648,-1,0,0xc0000,0xd0000,2147483647]) for _ in range(count)])[i]
-   request=[order,rng.randint(-0x400000,0x400000),rng.randint(-0x400000,0x400000),rng.choice([-0x10000,0,0x10000]),i,rng.randint(-65536,131072)]
-   requests.append(request);call(0x4c3fa0,queue,request)
-  view=dict(x=rng.choice([-65537,32768,123456]),y=rng.choice([-32768,65535,234567]),z=rng.choice([-65536,0,65536,0x40000,0x80000]),distance=0x40000)
-  for i,key in enumerate(['x','y','z','distance']):write(camera+4+i*4,view[key])
-  draws=[];call(0x4c42d0,queue,[renderer,camera])
-  n=read(queue+0x10008)
-  records=[[signed(read(read(queue+0x1000c+i*4)+j*4)) for j in range(9)] for i in range(n)]
-  cases.append(dict(remaining=remaining,requests=requests,view=view,available=read(queue+4),records=records,draws=draws))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='004C3FA0 / 004C42D0 / 004C5190 / MSVCRT78022F30',method='Original insertion, comparator, bundled CRT sort and sprite projection execute unchanged; only renderer vtable48 is observed.',cases=cases),separators=(',',':'))+'\n')
+for composition in [0,1]:
+ for count in [0,1,2,7,8,9,16,31,64,128,1024,1025]:
+  for mode in range(4):
+   remaining=65536 if mode!=3 else min(65536,max(0,count*36-1))
+   cpu.mem_write(queue,bytes(0x20000));write(queue+4,remaining)
+   requests=[]
+   for i in range(count):
+    order=([0xd0000]*count if mode==0 else list(range(count)) if mode==1 else [rng.choice([-2147483648,-1,0,0xc0000,0xd0000,2147483647]) for _ in range(count)])[i]
+    request=[order,rng.randint(-0x400000,0x400000),rng.randint(-0x400000,0x400000),rng.choice([-0x10000,0,0x10000]),i,rng.randint(-65536,131072)]
+    if composition and i%2:request += [7,19,23,i%4]
+    requests.append(request);call(0x4c4180 if len(request)==10 else 0x4c3fa0,queue,request)
+   view=dict(x=rng.choice([-65537,32768,123456]),y=rng.choice([-32768,65535,234567]),z=rng.choice([-65536,0,65536,0x40000,0x80000]),distance=0x40000)
+   for i,key in enumerate(['x','y','z','distance']):write(camera+4+i*4,view[key])
+   draws=[];call(0x4c42d0,queue,[renderer,camera])
+   n=read(queue+0x10008)
+   records=[[signed(read(read(queue+0x1000c+i*4)+j*4)) for j in range(13 if read(read(queue+0x1000c+i*4))==2 else 9)] for i in range(n)]
+   cases.append(dict(remaining=remaining,requests=requests,view=view,available=read(queue+4),records=records,draws=draws))
+args.output.write_text(json.dumps(dict(executable_sha256=digest,runtime_sha256=runtime_digest,entry='004C3FA0 / 004C4180 / 004C42D0 / 004C5190 / MSVCRT78022F30',method='Original insertion, comparator, bundled CRT sort and sprite/image projection execute unchanged; only renderer vtable48/4C are observed.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} native sprite queue sequences')

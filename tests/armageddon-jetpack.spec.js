@@ -6,9 +6,10 @@ import { nativeDrawJetpackFlames, nativeJetpackInput, nativeJetpackVelocity, nat
 test("jetpack poses, fuel and inputs match original executable ticks", { tag: "@logic" }, () => {
   for (const c of drawQueueFixture.cases) {
     const queue = new NativeSpriteDrawQueue(c.remaining);
-    for (const request of c.requests) queue.draw(...request);
+    for (const request of c.requests)
+      queue[request.length === 10 ? "image" : "draw"](...request);
     const calls = [];
-    queue.flush(c.view, (...args) => calls.push(args));
+    queue.flush(c.view, (...args) => calls.push(args), (...args) => calls.push(args));
     expect(queue.available).toBe(c.available);
     expect(queue.records).toEqual(c.records);
     expect(calls).toEqual(c.draws);

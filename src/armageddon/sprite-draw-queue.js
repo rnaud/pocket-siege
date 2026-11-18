@@ -35,7 +35,7 @@ export function nativeDrawSort(entries) {
   return entries;
 }
 
-//004C3FA0 and the type4 branch of004C42D0. Other primitive types remain separate.
+//004C3FA0/004C4180 and type4/type2 branches of004C42D0. Other primitives remain separate.
 export class NativeSpriteDrawQueue {
   constructor(available = 0x10000) {
     this.available = available;
@@ -49,7 +49,16 @@ export class NativeSpriteDrawQueue {
     this.records.push([4, order | 0, 0, x & 0xffff0000, y & 0xffff0000,
       z & 0xffff0000, 0, sprite | 0, progress | 0]);
   }
-  flush(view, draw) {
+  image(order, x, y, z, image, sourceX, sourceY, width, height, flags) {
+    if (this.records.length >= 0x400) return;
+    const remaining = (this.available - 0x34) | 0;
+    if (remaining < 0) return;
+    this.available = remaining;
+    this.records.push([2, order | 0, 0, x & 0xffff0000, y & 0xffff0000,
+      z & 0xffff0000, 0, image | 0, sourceX | 0, sourceY | 0,
+      width | 0, height | 0, flags | 0]);
+  }
+  flush(view, draw, image) {
     nativeDrawSort(this.records);
     const cameraX = (view.x + 0x8000) & 0xffff0000;
     const cameraY = (view.y + 0x8000) & 0xffff0000;
@@ -63,7 +72,8 @@ export class NativeSpriteDrawQueue {
       // The original computes an unused secondary scale here too.
       if (r[5] !== depth) fixedMultiply(scale,
         fixedDivide((view.distance + r[5]) | 0, view.distance));
-      draw(x, y, r[7], r[8]);
+      if (r[0] === 2) image(x, y, ...r.slice(7));
+      else draw(x, y, r[7], r[8]);
     }
   }
 }

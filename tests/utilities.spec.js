@@ -1,3 +1,4 @@
+import { NativeSpriteDrawQueue } from "../src/armageddon/sprite-draw-queue.js";
 import crateDraw from "./fixtures/armageddon/crate-draw.json" with { type: "json" };
 import { nativeDrawCrate } from "../src/armageddon/crate-draw.js";
 import poisonSettlement from "./fixtures/armageddon/poison-settlement.json" with { type: "json" };
@@ -156,7 +157,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(calls).toEqual(row.calls);
   }
   for (const row of crateDraw.cases) {
-    const calls = [];
+    const calls = [], queue = new NativeSpriteDrawQueue();
     nativeDrawCrate(row.body, row.scene, {
       position: () => { calls.push(['position']); return row.body; },
       submerged: () => { calls.push(['submerged']); return row.body.submerged; },
@@ -168,10 +169,15 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
         calls.push(['raster', ...args]);
         return { image: 0x5000 + args[0], width: args[1].length * 8, height: 16 };
       },
-      image: (...args) => calls.push(['image', ...args]),
-      sprite: (...args) => calls.push(['sprite', ...args]),
+      image: (...args) => { calls.push(['image', ...args]); queue.image(...args); },
+      sprite: (...args) => { calls.push(['sprite', ...args]); queue.draw(...args); },
     });
     expect(calls).toEqual(row.calls);
+    const rendered = [];
+    queue.flush({ x: 0, y: 0, z: 0, distance: 65536 },
+      (...args) => rendered.push(['sprite', ...args]),
+      (...args) => rendered.push(['image', ...args]));
+    expect(rendered).toEqual(row.rendered);
   }
   for (const row of crateState.cases) {
     expect(nativeCrateState(row.input, row.state)).toEqual(row.output);
