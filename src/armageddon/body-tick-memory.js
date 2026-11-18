@@ -1,3 +1,4 @@
+import { nativeCollisionOverlapMemory } from "./collision-mask-memory.js";
 import {
   nativeBodyAwakeMemory,
   nativeRopeBounceMemory,
@@ -23,6 +24,11 @@ import { nativeBodyRotation } from "./motion.js";
 //original intermediate state. Lower-level motion/collision services are explicit
 //addressed interfaces; copying a host body back at the end is not equivalent.
 export function nativeBodyTickMemory(memory, environment, body, index, host) {
+  if (!host.overlap)
+    host = {
+      ...host,
+      overlap: (...args) => nativeCollisionOverlapMemory(memory, ...args, host),
+    };
   //004C9770 dispatches the body's current mask and category flags to004C97A0.
   if (!host.collide)
     host = {

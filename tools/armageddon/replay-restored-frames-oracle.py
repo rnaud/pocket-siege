@@ -12,7 +12,9 @@ parser.add_argument('output', type=Path)
 parser.add_argument('--physics',action='store_true')
 parser.add_argument('--water-sounds',action='store_true')
 parser.add_argument('--contacts',action='store_true')
+parser.add_argument('--masks',action='store_true')
 args = parser.parse_args()
+if args.masks:args.contacts=True
 if args.contacts:args.water_sounds=True
 if args.water_sounds:args.physics=True
 data = args.executable.read_bytes()
@@ -103,6 +105,13 @@ def hook(cpu,address,size,user):
  elif args.physics and address in [0x4f4fe0,0x4f4fc0]:
   if not args.water_sounds:
    calls.append(['waterChanged' if address==0x4f4fe0 else 'skim',cpu.reg_read(UC_X86_REG_ECX)]);ret()
+ elif args.masks and address==0x4cc310:contactCounts['overlap']+=1
+ elif args.masks and address in [stop+0x500,stop+0x510]:
+  bitmap=cpu.reg_read(UC_X86_REG_ECX);dimensions=address==stop+0x500
+  calls.append(['dimensions' if dimensions else 'storage',bitmap])
+  values=[read(bitmap+4),read(bitmap+8)] if dimensions else [read(bitmap+12),1,read(bitmap+16)]
+  for i,value in enumerate(values):write(read(sp+4+i*4),value)
+  ret(0,len(values)*4)
  elif args.contacts and address in [0x4f4c30,0x4f4860,0x4d1260]:
   contactCounts[{0x4f4c30:'contact',0x4f4860:'bounce',0x4d1260:'step'}[address]]+=1
  elif args.contacts and address==stop+0x400:
@@ -194,6 +203,17 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
  payload.append(6);block(bytes((i*17)&255 for i in range(0x138)))
  cpu.mem_write(buffer,bytes(payload));write(stream+0x10,initialPosition);write(stream+0xc,len(payload))
  def snapshot():return bytes(cpu.mem_read(owner,0x10000))+bytes(cpu.mem_read(context,0x20000))+bytes(cpu.mem_read(heapBase,0x40000))+bytes(cpu.mem_read(0x2500000,0x10000))+bytes(cpu.mem_read(devices,0x10000))+bytes(cpu.mem_read(channels,0x10000))
+ if args.masks:
+  shape=next(row for row in json.loads(Path('tests/fixtures/armageddon/collision-mask.json').read_text())['cases'] if row['shape']==3)
+  cpu.mem_write(owner+0xa000,bytes(0x3000))
+  for offset,value in {0:owner+0xa180,4:1,12:shape['width'],16:shape['height'],20:shape['anchorX'],24:shape['anchorY']}.items():write(owner+0xa000+offset,value)
+  write(owner+0xa18c,0x4cc310);write(owner+0xa114,stop+0x500);write(owner+0xa120,stop+0x510)
+  for i,plane in enumerate(shape['planes']):
+   bitmap=owner+0xa200+i*32;storage=owner+0xa600+i*256;stride=((plane['width']+31)//32)*4
+   write(owner+0xa01c+i*4,bitmap)
+   for offset,value in {0:owner+0xa100,4:plane['width'],8:plane['height'],12:storage,16:stride}.items():write(bitmap+offset,value)
+   for x,y in plane['points']:
+    address=storage+y*stride+(x//32)*4;write(address,read(address)|(1<<(x%32)))
  if args.contacts:write(devices+0x400,100)
  initial=snapshot();frames=[]
  for frame in range(23):
@@ -206,13 +226,13 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
     entry=restoredEnvironment+offset;write(entry+8,1)
     if read(entry+12):write(read(entry+16),0)
   if args.contacts and frame==16:
-   write(owner+0xb00c,stop+0x400)
+   if not args.masks:write(owner+0xb00c,stop+0x400)
    listing=read(context+0x7d4)+0x18
    for i in range(read(listing+12)):
     actor=read(read(listing+16)+i*4)
     if not actor:continue
-    mask=owner+0xa000+i*16
-    write(mask,owner+0xb000);write(mask+4,100+i*8);write(mask+8,160)
+    mask=owner+0xa000 if args.masks else owner+0xa000+i*16
+    if not args.masks:write(mask,owner+0xb000);write(mask+4,100+i*8);write(mask+8,160)
     for offset,value in {0x40:4,0x4c:i%2,0x78:0x8000,0x7c:0x6000,0x80:0xc000,0x88:0x8000,
       0x90:(100+i*8)<<16,0x94:160<<16,0x9c:4<<16,0xa0:1<<16,0xf0:mask}.items():write(actor+offset,value)
   if args.water_sounds and initialPosition==7 and frame==17:
@@ -227,9 +247,9 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
    print('fault',frame,hex(cpu.reg_read(UC_X86_REG_EIP)),hex(cpu.reg_read(UC_X86_REG_ECX)),calls[-5:]);raise
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('frame did not exit')
   frames.append(dict(sha256=hashlib.sha256(snapshot()).hexdigest(),calls=list(calls),allocations=list(allocationCalls),globalCounter=read(0x561ec8),root=read(manager+4),environment=read(context+0x7d4)))
- cases.append(dict(contacts=args.contacts,waterSounds=args.water_sounds,primedSounds=args.water_sounds and initialPosition==7,physics=args.physics,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
+ cases.append(dict(masks=args.masks,contacts=args.contacts,waterSounds=args.water_sounds,primedSounds=args.water_sounds and initialPosition==7,physics=args.physics,inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
 if args.contacts:
  assert all(contactCounts.values()),contactCounts
  print(contactCounts)
-args.output.write_text(json.dumps(dict(executable_sha256=digest,contactCounts=contactCounts if args.contacts else None,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. With --water-sounds, original water/skim handlers and004EDC90 sound enqueue also execute through frame flush/playback and recapture, including seeded near-capacity queues in half the ordinary sequences. With --physics, valid moving bodies are restored and original004CA320 executes with original water, air, sweep, collision cache/query and awake routines across all frames and recapture. Water/skim virtual responses remain explicit interfaces; category22 is empty so these scenes do not exercise shape overlap or bounce. With --contacts, frame16 seeds restored body masks, motion and category2 collision flags; shape overlap alone is substituted while contact entry, receiver momentum, bounce/step, sound replacement and recapture execute. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,contactCounts=contactCounts if args.contacts else None,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native frame-begin child forwarding, sparse physics traversal, match-status queries and nested panel lookup also execute; only old-object cleanup, child gameplay/body stepping, other root events, renderer, devices and heap remain interfaces. With --water-sounds, original water/skim handlers and004EDC90 sound enqueue also execute through frame flush/playback and recapture, including seeded near-capacity queues in half the ordinary sequences. With --physics, valid moving bodies are restored and original004CA320 executes with original water, air, sweep, collision cache/query and awake routines across all frames and recapture. Water/skim virtual responses remain explicit interfaces; category22 is empty so these scenes do not exercise shape overlap or bounce. With --contacts, frame16 seeds restored body masks, motion and category2 collision flags; shape overlap alone is substituted while contact entry, receiver momentum, bounce/step, sound replacement and recapture execute. With --masks, original shape3 packed planes replace controlled overlap; original004CC310/004CC0C0 execute, leaving only bitmap dimension/storage getters as interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} restored frame sequences')

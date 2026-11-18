@@ -15,6 +15,7 @@ parser.add_argument('executable', type=Path)
 parser.add_argument('output', type=Path)
 parser.add_argument('--shape', type=int, default=3)
 parser.add_argument('--include-worm', action='store_true')
+parser.add_argument('--addressed', action='store_true')
 args = parser.parse_args()
 data = args.executable.read_bytes()
 digest = hashlib.sha256(data).hexdigest()
@@ -44,7 +45,7 @@ heap=0x3000000;cpu.mem_map(heap,0x400000)
 bitmap_vtable=owner+0x1000;dimensions=owner+0x1100;storage=owner+0x1200
 write(bitmap_vtable+0x14,dimensions);write(bitmap_vtable+0x20,storage)
 cpu.mem_write(dimensions,b'\xc2\x08\x00');cpu.mem_write(storage,b'\xc2\x0c\x00')
-bitmaps={}
+bitmaps={};getterCalls=[]
 def bitmap(width,height,points):
  global heap
  obj=heap;heap+=0x100;address=heap;stride=((width+31)//32)*4;heap+=(stride*height+0xff)&~0xff
@@ -60,6 +61,7 @@ def mask(row,shifted=True):
  for i,plane in enumerate(row['planes'] if shifted else row['planes'][:1]):write(obj+28+4*i,bitmap(plane['width'],plane['height'],plane['points']))
  return obj
 def observe(cpu,address,size,user):
+ if args.addressed:getterCalls.append(['dimensions' if address==dimensions else 'storage',cpu.reg_read(UC_X86_REG_ECX)])
  sp=cpu.reg_read(UC_X86_REG_ESP);w,h,data,stride=bitmaps[cpu.reg_read(UC_X86_REG_ECX)]
  values=[w,h] if address==dimensions else [data,1,stride]
  for i,v in enumerate(values):write(read(sp+4+4*i),v)
@@ -79,10 +81,15 @@ for pattern in range(7 if args.include_worm else 6):
   for x in [-12,-4,0,1,4,15,27,28,29,30,31,32,33,34,35,60,63,64,68,76]:
    for y in [-20,-9,-1,0,8,9,10,17,23,24,25,39,47,48,57,60]:
     a,ax,ay,b,bx,by=(terrain,0,0,worm_object,x,y) if reverse else (worm_object,x,y,terrain,0,0)
+    getterCalls.clear()
     sp=stack+0xf000
     for i,v in enumerate([stop,ax,ay,b,bx,by]):write(sp+4*i,v&0xffffffff)
     cpu.reg_write(UC_X86_REG_ECX,a);cpu.reg_write(UC_X86_REG_ESP,sp);cpu.emu_start(0x4cc310,stop,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('Overlap did not return')
-    cases.append(dict(pattern=pattern,reverse=reverse,x=x,y=y,result=cpu.reg_read(UC_X86_REG_EAX)))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original 004CC310 dispatch and 004CC0C0 bit-plane overlap; bitmap dimension/storage getters supplied; original-mask points from constructor capture, six synthetic terrain planes.' + (' Includes original shape3 worm target; source shape='+str(args.shape)+'.' if args.include_worm else ''),terrains=terrains,cases=cases),separators=(',',':'))+'\n')
+    cases.append(dict(pattern=pattern,reverse=reverse,x=x,y=y,result=cpu.reg_read(UC_X86_REG_EAX),**(dict(a=a,b=b,calls=list(getterCalls)) if args.addressed else {})))
+extra={}
+if args.addressed:
+ import base64,zlib
+ extra=dict(memory=base64.b64encode(zlib.compress(bytes(cpu.mem_read(0x3000000,heap-0x3000000)))).decode(),bitmaps=bitmaps)
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='Original 004CC310 dispatch and 004CC0C0 bit-plane overlap; bitmap dimension/storage getters supplied; original-mask points from constructor capture, six synthetic terrain planes.' + (' Includes original shape3 worm target; source shape='+str(args.shape)+'.' if args.include_worm else ''),terrains=terrains,cases=cases,**extra),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} native mask overlaps')
