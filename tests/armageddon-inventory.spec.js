@@ -1,3 +1,5 @@
+import archiveLookup from './fixtures/armageddon/archive-lookup.json' with {type:'json'};
+import {nativeOpenArchiveEntry} from '../src/armageddon/archive-lookup.js';
 import archiveDirectory from './fixtures/armageddon/archive-directory.json' with {type:'json'};
 import {nativeLoadArchiveDirectory} from '../src/armageddon/archive-directory.js';
 import bitmapRectangle from './fixtures/armageddon/bitmap-rectangle.json' with {type:'json'};
@@ -172,6 +174,24 @@ const fixture = JSON.parse(
 );
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of archiveLookup.cases) {
+    const owner=0x2000000,nameBuffer=0x7d6058,bytes=Buffer.alloc(0x10000,c.pattern),nameBytes=Buffer.alloc(256,c.pattern);
+    const locate=a=>a>=owner?[bytes,a-owner]:[nameBytes,a-nameBuffer];
+    const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=locate(a);return b[o];},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
+    memory.put(owner+4,owner+0x1000);memory.put(owner+0x18c,16);memory.put(owner+0x190,0);
+    for(let i=0;i<16;i++)memory.put(owner+0x10c+i*4,i);
+    Buffer.from(archiveLookup.sources[c.source].index,'hex').copy(bytes,0x1000);
+    for(let i=0;i<1024;i++) {
+      const at=owner+0x1000+i*4,relative=memory.get(at);
+      if(relative){let node=owner+0x1000+relative-4;memory.put(at,node);while(memory.get(node)){const next=owner+0x1000+memory.get(node)-4;memory.put(node,next);node=next;}}
+    }
+    const snapshot=()=>createHash('sha256').update(bytes).update(nameBytes).digest('hex');let allocations=0;
+    for(const step of c.steps) {
+      Buffer.from(step.name+'\0','latin1').copy(bytes,0x5000);const calls=[];
+      const result=nativeOpenArchiveEntry(memory,owner,owner+0x5000,{allocate:size=>{allocations++;const result=c.failure&&allocations%3===0?0:owner+0x6000+allocations*16;calls.push(['allocate',size,snapshot(),result]);return result;}});
+      expect(result).toBe(step.result);expect(calls).toEqual(step.calls);expect(snapshot()).toBe(step.sha256);
+    }
+  }
   for(const c of archiveDirectory.cases) {
     const owner=0x2000000,scratch=0x2100000,bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(8),signature=Buffer.alloc(4,c.pattern),calls=[];
     const locate=a=>a>=scratch?[temporary,a-scratch]:a>=owner?[bytes,a-owner]:[signature,a-0x560230];
