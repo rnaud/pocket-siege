@@ -1,3 +1,4 @@
+import {nativeQueryMatchMemory} from './match-status.js';
 import {nativeCleanupTaskMemory} from './task-memory.js';
 import {nativeCompactPhysicsMemory} from './physics-memory.js';
 import {nativeRestoreSceneSnapshot} from './replay-scene-restore.js';
@@ -57,6 +58,7 @@ export function createNativeSceneReplayPipeline({memory,owner,scratch,host,strea
   const addressed=root===undefined&&environment===undefined;
   const cleanup=address=>{host.observeTaskCleanup?.(address);nativeCleanupTaskMemory(memory,address,host.cleanupChild??cleanup);};
   const nativeHost=addressed?{...host,
+    queryRoot:host.queryRoot??((root,event,output)=>{host.observeRootQuery?.(root,event,output.length);return nativeQueryMatchMemory(memory,root,event,output,host.queryPanelStatus);}),
     flushRoot:host.flushRoot??cleanup,
     flushEnvironment:host.flushEnvironment??(address=>{host.observeEnvironmentCleanup?.(address);nativeCompactPhysicsMemory(memory,address);}),
   }:host;

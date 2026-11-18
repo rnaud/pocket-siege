@@ -1,3 +1,5 @@
+import matchStatus from './fixtures/armageddon/match-status.json' with {type:'json'};
+import {nativeQueryMatchMemory} from '../src/armageddon/match-status.js';
 import replayWorldReplacement from './fixtures/armageddon/replay-world-replacement.json' with {type:'json'};
 import replayRestoredFrames from './fixtures/armageddon/replay-restored-frames.json' with {type:'json'};
 import {nativeWriteActorMemory,nativeWriteTaskHeaderMemory,nativeWriteMatchMemory,nativeWriteEnvironmentMemory} from '../src/armageddon/replay-write-memory.js';
@@ -1200,7 +1202,7 @@ test("Native replay resumed frames matches original executable requests", {tag:"
       constructText:(...args)=>{calls.push([0x4c6610,...args]);return args[0];},constructSurface:(...args)=>{calls.push([0x492bc0,...args]);return args[0];},
       collectRoot:(root,queue,event,size)=>calls.push(['collect',root,event,size,queue.wrapper===0x2700000]),
       dispatchRoot:(root,event,payload)=>calls.push(['dispatch',root,event,[...payload]]),
-      queryRoot:(root,event,output)=>{calls.push(['query',root,event,output.length]);new DataView(output.buffer).setInt32(4,0,true);},
+      observeRootQuery:(root,event,size)=>calls.push(['query',root,event,size]),
       observeTaskCleanup:root=>calls.push(['flushRoot',root]),observeEnvironmentCleanup:address=>calls.push(['flushEnvironment',address]),renderFrame:()=>calls.push(['render']),
     }});
     pipeline.manager.globalCounter=1234;
@@ -1615,6 +1617,13 @@ test("Native replay resumed frames matches original executable requests", {tag:"
   for (const row of replayControl.playback) expect(nativeReplayPlaybackRequest(row.input)).toEqual(row.result);
 });
 test("Native turn presentation and HUD matches original executable requests", {tag:"@logic"}, () => {
+  for(const row of matchStatus.cases) {
+    const bytes=inflateSync(Buffer.from(row.inputMemory,'base64'));
+    const offset=at=>at>=0x2300000?0x10000+at-0x2300000:at-0x2000000;
+    const memory={get:at=>bytes.readUInt32LE(offset(at)),byte:at=>bytes[offset(at)]};
+    expect(nativeQueryMatchMemory(memory,0x2000000,row.event,bytes.subarray(0xa000,0xa154))).toBe(row.result);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(row.sha256);
+  }
   for (const row of actionBusy.writer) expect(nativeActionBusyWrite(row.input)).toEqual(row.result);
   for (const row of actionBusy.clear) expect(nativeActionBusyClear(row.input)).toEqual(row.result);
   for (const row of actionBusy.gate) expect(nativeActionGate(row.input)).toEqual(row.result);

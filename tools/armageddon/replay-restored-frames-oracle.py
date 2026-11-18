@@ -92,7 +92,7 @@ def hook(cpu,address,size,user):
   else:calls.append(['dispatch',root,event,list(cpu.mem_read(pointer,length)) if length else []])
   ret(0,16)
  elif address==0x4b7970:
-  calls.append(['query',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)]);write(read(sp+12)+4,0);ret(0,12)
+  calls.append(['query',cpu.reg_read(UC_X86_REG_ECX),read(sp+4),read(sp+8)])
  elif address in [0x4b2a00,0x4ca7e0]:calls.append(['flushRoot' if address==0x4b2a00 else 'flushEnvironment',cpu.reg_read(UC_X86_REG_ECX)])
  elif address==0x49fc60:calls.append(['render']);ret()
  elif address==0x492510:allocationCalls.append(['free',read(sp+4)]);ret()
@@ -131,6 +131,7 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
  write(context+0x12488,61604);write(context+0x7f0,12345678);write(context+0x1d434,99);write(context+0x1d444,0)
  cpu.mem_write(context+0x1c188,bytes([0xa5])*0x950)
  cpu.mem_write(context+0x1cad8,bytes((i*17+31)&255 for i in range(0x950)))
+ write(context+0x7dc,owner+0xf000);write(owner+0xf000,0x526828);write(owner+0xf004,0)
  write(context+0x1d424,0) #Saved presentation has no queued sound requests.
  write(oldRoot,owner+0x500);write(owner+0x518,stop+0x200);write(owner+0x500,stop+0x210)
  write(environment+0x1018,stop+0x220);write(environment+0x1000,stop+0x230)
@@ -176,5 +177,5 @@ for initialPosition,tree,mode,cleanupMode,sound in [row+(sound,) for row in comb
   if cpu.reg_read(UC_X86_REG_EIP)!=stop:raise RuntimeError('frame did not exit')
   frames.append(dict(sha256=hashlib.sha256(snapshot()).hexdigest(),calls=list(calls),allocations=list(allocationCalls),globalCounter=read(0x561ec8),root=read(manager+4),environment=read(context+0x7d4)))
  cases.append(dict(inputMemory=base64.b64encode(zlib.compress(initial)).decode(),sound=sound,clearRoot=bool(cleanupMode&1),clearEnvironment=bool(cleanupMode&2),frames=frames))
-args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; only old-object cleanup, root gameplay/query, renderer, devices and heap remain interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
+args.output.write_text(json.dumps(dict(executable_sha256=digest,method='26 original004A30A0 sequences of23 frames: populated snapshot reconstruction, fade completion, queued playback events, ordinary input/dispatch and recapture. Full640KiB memory and ordered allocator/root/device/render/audio calls every frame. Real stream/queue/serializer/constructor/frame algorithms plus recursive task cleanup and environment compaction execute. Dirty task/physics lists are seeded with holes on frame16; native match-status queries and nested panel lookup also execute; only old-object cleanup, root gameplay, renderer, devices and heap remain interfaces. Root task simulation itself is not exercised.',cases=cases),separators=(',',':'))+'\n')
 print(f'Captured {len(cases)} restored frame sequences')
