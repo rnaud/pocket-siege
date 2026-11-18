@@ -1,3 +1,4 @@
+import worldWormMemory from './fixtures/armageddon/world-worm-memory.json' with {type:'json'};
 import controllerWormMemory from './fixtures/armageddon/controller-worm-memory.json' with {type:'json'};
 import {nativeCreateTeamControllerAt} from '../src/armageddon/controller-create.js';
 import wormMemoryPlacement from './fixtures/armageddon/worm-memory-placement.json' with {type:'json'};
@@ -78,11 +79,12 @@ const fixture = JSON.parse(
 
 test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
   const wormActual=[],wormExpected=[];
-  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true}))]) {
-    const owner=new Uint8Array(0x10000),heap=new Uint8Array(c.controller?0x40000:0x10000),scene=new Uint8Array(0x20000),calls=[];
+  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true}))]) {
+    const owner=new Uint8Array(0x10000),heap=new Uint8Array(c.world?0x100000:c.controller?0x40000:0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
-    for(const [at,value] of c.initialWords)memory.put(at,value);
+    if(c.world){const input=inflateSync(Buffer.from(c.input,'base64'));for(let i=0;i<input.length;i+=8)memory.put(input.readUInt32LE(i),input.readUInt32LE(i+4));}
+    else for(const [at,value] of c.initialWords)memory.put(at,value);
     let cursor=0x2408000,attempts=0,portraitLabel=0xdeadbeef;
     const allocate=(kind,size,pool)=>{const value=kind==='allocate'&&size===0x164&&(c.bits&64)&&!c.synchronized?0:cursor;if(value)cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
     const host={allocate:size=>allocate('allocate',size),allocateArray:(size,pool)=>allocate('array',size,pool),free:at=>calls.push(['free',at]),
@@ -94,8 +96,11 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     host.portraitLabel=at=>{calls.push(['label',at]);return 0x76543210+c.bits;};host.setPortraitLabel=value=>portraitLabel=value;
     if(c.nativePlacement){delete host.gravity;delete host.placeWorm;host.collisionOverlap=(...args)=>{calls.push(['overlap',...args]);return +(args[2]>=2+c.bits%4&&(args[3]===0x2007300||args[1]>=800));};}
     if(c.nativeSpawn)for(const key of ['randomSpawnWord','randomSpawn','sideSpawn','reserveSpawn'])delete host[key];
-    nativeCreateTaskMemory(memory,0x2008000,0,host);memory.put(0x2008038,0x2300000);
-    if(c.controller)nativeCreateTeamControllerAt(memory,0x2000000,0x2008000,c.team,0x2001000,host);
+    host.call=(entry,at,args)=>{calls.push(['call',entry,at,args]);return at;};
+    host.virtual=(at,method,args)=>{calls.push(['virtual',at,method,args]);if(method===0x20)memory.put(at+0x3b8,args[0]);};
+    if(!c.world){nativeCreateTaskMemory(memory,0x2008000,0,host);memory.put(0x2008038,0x2300000);}
+    if(c.world)nativeInitializeWorld(memory,0x2000000,0x2300000,0x23047a8,host);
+    else if(c.controller)nativeCreateTeamControllerAt(memory,0x2000000,0x2008000,c.team,0x2001000,host);
     else nativeCreateWormAt(memory,0x2000000,0x2008000,c.team,c.worm,0x2001000,host);
     if(c.controller)expect(portraitLabel).toBe(c.portraitLabel);
     wormActual.push([createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),calls]);wormExpected.push([c.sha256,c.calls]);
