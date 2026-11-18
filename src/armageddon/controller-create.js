@@ -36,3 +36,27 @@ export function nativeCreateTeamController({id,parent,memory=new Uint8Array(0x12
   });
   return task;
 }
+
+import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
+import {nativeCreatePanelText} from './panel-resources.js';
+//Address-backed004E4ED0. Worm, portrait and frame constructors remain interfaces.
+export function nativeCreateTeamControllerAt(memory,address,parent,team,configurationAddress,host) {
+  const scene=memory.get(parent+0x38),sceneMemory=memory.range(scene,0x20000);
+  nativeInitializeTeamController(memory.range(address,0x120),sceneMemory,team,memory.range(configurationAddress,3000),{
+    initializeTask:type=>{
+      nativeCreateTaskMemory(memory,address,parent,host);memory.put(address,0x5271b8);
+      memory.put(address+0x2c,type);memory.put(address+0x38,scene);
+    },
+    allocateWorm:size=>host.allocate(size),
+    constructWorm:(at,wormTeam,worm)=>host.call(0x4d5a40,at,[address,wormTeam,worm,configurationAddress+0xa74+(worm-1)*40]),
+    setSelectedWeapon:(wormTeam,worm,value)=>memory.put(scene+0x1b94+wormTeam*0x51c+worm*0x9c-0x508,value),
+    resources:{allocateResource:size=>host.allocate(size),context:scene,renderer:memory.get(scene+8),
+      palette:Array.from({length:9},(_,i)=>memory.get(scene+0x12434+i*4)),
+      constructPortrait:(at,...args)=>host.call(0x500170,at,args),
+      constructFrame:(at,...args)=>host.call(0x4ffed0,at,args),
+      constructText:(at,...args)=>nativeCreatePanelText(memory,at,...args,host),
+    },
+    registerTask:(type,index)=>nativeRegisterTaskMemory(memory,address,type,index,host),
+  });
+  return address;
+}

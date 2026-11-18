@@ -1,3 +1,4 @@
+import {nativeCreateTeamControllerAt} from './controller-create.js';
 import {nativeCreateTaskMemory,nativeRegisterTaskMemory} from './task-memory.js';
 import {nativeCreateEventGroup,nativeSetGroupSubscription} from './event-group.js';
 //004EAAD0 orchestration. Uncomposed child/world constructors use their original
@@ -27,7 +28,7 @@ export function nativeInitializeWorld(memory,address,scene,setup,host) {
   call(0x4eba80,[setup]);
   for(let team=1;team<=memory.byte(setup+0xde);team++) {
     const storage=host.allocate(0x120);
-    if(storage)call(0x4e4ed0,[address,team,setup+0xe0+(team-1)*3000],storage);
+    if(storage)nativeCreateTeamControllerAt(memory,storage,address,team,setup+0xe0+(team-1)*3000,host);
   }
   group(24,[0x3e9,0x3ea,0x3eb,0x3ed]);
   group(23,[0x404,0x3e9,0x3ea,0x3eb,0x3ed,0x3fd,0x400]);

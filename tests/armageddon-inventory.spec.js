@@ -102,7 +102,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   expect(dispatchActual).toEqual(dispatchExpected);
   const taskActual=[],taskExpected=[];
   for(const row of worldCreate.task_cases) {
-    const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
+    const heap=Uint8Array.from({length:0x40000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
     const memory={get:at=>view.getUint32(at-0x2400000,true),put:(at,v)=>view.setInt32(at-0x2400000,v,true),byte:at=>heap[at-0x2400000],putByte:(at,v)=>heap[at-0x2400000]=v};
     let cursor=0x2404000;
     const allocate=(kind,size,pool)=>{const value=cursor;cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
@@ -126,16 +126,19 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   expect(groupActual).toEqual(groupExpected);
   const worldActual=[],worldExpected=[];
   for(const row of worldCreate.cases) {
-    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),calls=[];
+    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x40000},(_,i)=>(i*7+3)&255),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:[scene,at-0x2300000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];}};
     memory.putByte=(at,v)=>{const [a,o]=locate(at);a[o]=v;};
+    memory.range=(at,length)=>{const [a,o]=locate(at);return a.subarray(o,o+length);};
+    for(let team=0;team<6;team++)scene[0x543c+team*3000]=row.worms;
     scene[0x4886]=row.count;for(const [offset,value] of row.words)memory.put(0x2300000+offset,value);
     let cursor=0x2401000,allocation=0;
     nativeInitializeWorld(memory,0x2400000,0x2300000,0x23047a8,{
       allocate:size=>{const value=allocation++===row.failure?0:cursor;if(value)cursor+=(size+15)&~15;calls.push(['allocate',size,value]);return value;},
       allocateArray:(size,pool)=>{const value=cursor;cursor+=(size+15)&~15;calls.push(['array',size,value,pool]);return value;},
       free:at=>calls.push(['free',at]),
+      fontHeight:(...args)=>{calls.push(['height',...args]);return 8+row.count;},
       virtual:(...args)=>calls.push(['virtual',...args]),
       call:(entry,at,args)=>{
         calls.push(['call',entry,at,args]);
@@ -150,7 +153,7 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
   expect(worldActual).toEqual(worldExpected);
   const resourceActual=[],resourceExpected=[];
   for(const row of [...matchResources.cases,...matchCreate.cases.map(row=>({...row,root:true}))]) {
-    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),sv=new DataView(scene.buffer),calls=[];
+    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:row.root?0x40000:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),sv=new DataView(scene.buffer),calls=[];
     sv.setUint32(8,0x2000800,true);view.setUint32(0x38,0x2300000,true);
     if(row.root) {
       sv.setUint32(20,row.variant&1?0x2003000:0,true);
