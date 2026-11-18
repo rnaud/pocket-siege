@@ -40,7 +40,40 @@ import {nativeSelectStreamedSpriteFrame,nativeBlitRendererSurface,nativeDrawRend
 
 import rendererStreamedDraws from './fixtures/armageddon/renderer-streamed-draw.json' with {type:'json'};
 
+import rendererBlend from './fixtures/armageddon/renderer-blend.json' with {type:'json'};
+import {nativeBuildRendererBlendTable} from '../src/armageddon/renderer-blend.js';
+import {nativeAddGamePaletteColor} from '../src/armageddon/game-palette-memory.js';
+
 test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
+  for(const c of rendererBlend.cases) {
+    const owner=0x2000000,arena=Buffer.alloc(0x20000,c.pattern);
+    const memory={get:p=>arena.readUInt32LE(p-owner),put:(p,v)=>arena.writeUInt32LE(v>>>0,p-owner),byte:p=>arena[p-owner],putByte:(p,v)=>{arena[p-owner]=v;}};
+    for(let bank=0;bank<8;bank++)memory.put(owner+0x4ae4+bank*4,0);
+    for(const {bank,first,colors} of c.palettes) {
+      const palette=owner+0x16000+bank*0x1000;
+      nativeCreateGamePalette(memory,palette,first,first+colors.length-1);
+      for(const color of colors)nativeAddGamePaletteColor(memory,palette,color);
+      memory.put(owner+0x4ae4+bank*4,palette);memory.put(palette+0xb14,123);
+    }
+    memory.put(owner+0x14b2c,c.dirty);
+    const snapshot=()=>createHash('sha256').update(arena).digest('hex');
+    expect(snapshot()).toBe(c.initial);
+    nativeBuildRendererBlendTable(memory,owner);
+    expect(snapshot()).toBe(c.state);
+    if(c.draws.length) {
+      const destination=owner+0x1000,source=owner+0x1100;
+      for(const [bitmap,pixels,width,height,clip] of [[destination,owner+0x2000,20,14,[1,1,19,13]],[source,owner+0x3000,16,12,[2,1,14,10]]])
+        for(const [offset,value] of [[0,0x5249b0],[4,1],[8,pixels],[12,8],[16,24],[20,width],[24,height],[28,clip[0]],[32,clip[1]],[36,clip[2]],[40,clip[3]]])memory.put(bitmap+offset,value);
+      for(let i=0;i<1024;i++) {
+        memory.putByte(owner+0x2000+i,i%5===0?0:(i*13+7)&255);
+        memory.putByte(owner+0x3000+i,i%3===0?0:(i*17+3)&255);
+      }
+      for(const draw of c.draws) {
+        expect(nativeBlitIndexedBitmap(memory,destination,-3,-2,11,7,source,4,3,owner+0x4b2c,1|draw.reflection)).toBe(draw.result);
+        expect(snapshot()).toBe(draw.state);
+      }
+    }
+  }
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
     expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
