@@ -40,6 +40,7 @@ test(
 
 // Preserve callback-visible memory: event handlers can change constraints,
 // velocities, segment lists and even scene earthquake state during a tick.
+import refreshed from "./fixtures/armageddon/body-refresh-memory.json" with { type: "json" };
 import roped from "./fixtures/armageddon/body-rope-memory.json" with { type: "json" };
 import swept from "./fixtures/armageddon/body-sweep-memory.json" with { type: "json" };
 import forces from "./fixtures/armageddon/body-forces-memory.json" with { type: "json" };
@@ -61,6 +62,7 @@ test(
       ...forces.cases,
       ...swept.cases,
       ...roped.cases,
+      ...refreshed.cases,
     ].entries()) {
       const bytes = inflateSync(Buffer.from(row.inputMemory, "base64"));
       const memory = {
@@ -146,6 +148,16 @@ test(
           }
           return row.nativeForces && mode % 2 ? 0 : 1;
         },
+        overlap: (...params) => {
+          call("overlap", params);
+          if (mode === 7) {
+            put(0x90, 123 << 16);
+            put(0xf0, body + 0x9600);
+            put(0x44, 99);
+          }
+          if (mode === 8) memory.put(environment + 0x40, 2);
+          return Number(mode % 2 === 0);
+        },
         terrain: (_terrain, x, y) => {
           call("terrain", [x, y]);
           if (mode === 11) {
@@ -175,6 +187,7 @@ test(
       }
       if (row.nativeSweep) delete host.sweep;
       if (row.nativeRope) delete host.rope;
+      if (row.nativeRefresh) delete host.refresh;
       if (row.throughList)
         nativeAdvancePhysicsListMemory(
           memory,

@@ -1,3 +1,4 @@
+import { nativeRefreshCollisionMemory } from "./collision-registry.js";
 import {
   nativeWaterMotionMemory,
   nativeAirForcesMemory,
@@ -22,7 +23,8 @@ export function nativeBodyTickMemory(memory, environment, body, index, host) {
     if (quake()) host.earthquake(environment, body, quake());
     return;
   }
-  host.refresh(environment, body);
+  if (host.refresh) host.refresh(environment, body);
+  else nativeRefreshCollisionMemory(memory, environment, body, host.overlap);
   const submerged = get(0xbc);
   put(0xbc, 0);
   put(0xc0, 0);
