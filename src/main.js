@@ -1301,6 +1301,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.matchStats.hp = config.energy;
         worm.artillery = config.artillery;
         worm.fixedWeapon = config.fixedWeapon;
+        worm.actionRadius = config.actionRadius;
         if (currentScenario.teamGraves?.[teamIndex]) worm.graveStyle = currentScenario.teamGraves[teamIndex];
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
@@ -5702,7 +5703,7 @@ function startAiTurn() {
     updateUI();
     return;
   }
-  const reposition = planMove({
+  const reposition = w.actionRadius === 0 ? null : planMove({
     terrain,
     me: w,
     waterLevel,
@@ -8079,6 +8080,7 @@ window.siege = {
         artillery,
         graveStyle,
         fixedWeapon,
+        actionRadius,
         nativePoison,
         originalRecovery,
         invisible,
@@ -8092,6 +8094,7 @@ window.siege = {
         artillery,
         graveStyle,
         fixedWeapon,
+        actionRadius,
         nativeTeamModifiers,
         x,
         y,

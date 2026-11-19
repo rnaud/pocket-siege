@@ -74,6 +74,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission0.wam").difficulty).toBe(1);
   expect(resolveScenarioMatch("mission/mission0.wam").teamSkill).toBe(80);
   expect(resolveScenarioMatch("mission/mission0.wam").teamWorms[1][0].fixedWeapon).toBe("earthquake");
+  expect(resolveScenarioMatch("mission/mission0.wam").teamWorms[1][0].actionRadius).toBe(0);
   expect(resolveScenarioMatch("mission/mission0.wam").teamNames[1]).toBe("Patrol");
   expect(resolveScenarioMatch("mission/mission12.wam").wormSelectDisabled).toBe(false);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
@@ -847,4 +848,19 @@ test("authored fixed weapon reaches the live CPU worm", async ({ page }) => {
     })
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().worms[3].fixedWeapon)).toBe("earthquake");
+});
+
+
+test("authored action radius reaches the live worm", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().worms[3].actionRadius)).toBe(0);
 });
