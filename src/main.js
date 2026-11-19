@@ -5114,8 +5114,15 @@ function walkingUnitGrounded(x, y) {
 function stepWalkingUnit(p) {
   if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
   if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
-  if (!walkingUnitGrounded(p.x, p.y)) return;
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
+  if (!walkingUnitGrounded(p.x, p.y)) {
+    if (p.kind !== "supersheep") return;
+    p.x += p.walkFacing * 1.6;
+    p.nativeBody.x = Math.round(p.x * 65536);
+    p.nativeBody.vx = 0;
+    if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
+    return;
+  }
   const step = p.walkFacing * (WALKING_UNIT_SPEED[p.kind] ?? 0.8);
   const aheadX = p.x + step * 4;
   if (!walkingUnitGrounded(aheadX, p.y) ||
