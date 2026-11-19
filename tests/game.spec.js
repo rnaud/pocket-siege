@@ -1599,21 +1599,22 @@ test("skunk detonation infects nearby worms with poison", async ({ page }) => {
     .toBe(true);
 });
 
-test("sheep-family units walk along the ground", async ({ page }) => {
+test("released units walk along the ground", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.spawnUnitAt("sheep", 600));
-  const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
-  expect(before).not.toBeNull();
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(120));
-  const after = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
-  expect(after).not.toBeNull();
-  expect(after).not.toBe(before);
+  for (const kind of ["sheep", "supersheep", "aquasheep", "donkey"]) {
+    await page.evaluate(kind => window.siege.debug.spawnUnitAt(kind, 600), kind);
+    const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
+    expect(before, kind).not.toBeNull();
+    await page.evaluate(frames => window.siege.debug.advanceReplayFrames(frames),
+      kind === "donkey" ? 20 : 80);
+    const after = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
+    expect(after, `${kind}:${before}->${after}`).not.toBeNull();
+    expect(after, `${kind}:${before}->${after}`).not.toBe(before);
+  }
 });
-
-
 
 test("donkey units use the released-unit walking path", async ({ page }) => {
   await page.goto("/");

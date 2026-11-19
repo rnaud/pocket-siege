@@ -4979,8 +4979,7 @@ function detonateNativeProjectile(p) {
   }
 }
 const WALKING_UNIT_KINDS = new Set([
-  "sheep", "supersheep", "aquasheep",
-  "donkey", "oldwoman", "sallyarmy", "skunk", "madcow", "molebomb",
+  "sheep", "supersheep", "aquasheep", "donkey",
 ]);
 function stepWalkingUnit(p) {
   if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
@@ -5002,13 +5001,6 @@ function stepWalkingUnit(p) {
     p.nativeBody.y = Math.round(p.y * 65536);
   }
   if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
-  if (p.kind === "skunk" || p.kind === "molebomb") {
-    p.walkPoisonFrame = (p.walkPoisonFrame ?? 0) + 1;
-    if (p.walkPoisonFrame >= 50) {
-      p.walkPoisonFrame = 0;
-      infectPoisonCloud(p.x, p.y, 45, 2);
-    }
-  }
 }
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
