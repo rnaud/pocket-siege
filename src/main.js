@@ -1300,6 +1300,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.hp = config.energy;
         worm.matchStats.hp = config.energy;
         worm.artillery = config.artillery;
+        worm.fixedWeapon = config.fixedWeapon;
         if (currentScenario.teamGraves?.[teamIndex]) worm.graveStyle = currentScenario.teamGraves[teamIndex];
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
@@ -5724,21 +5725,21 @@ function startAiTurn() {
 function aiAim() {
   const w = worms[current];
   const started = performance.now();
-  const plan = planTurn({
-    terrain,
-    worms,
-    me: w,
-    wind,
-    waterLevel,
-    difficulty,
-    ammo: ammo[1],
-    delays: weaponDelays[1],
-    fuse: 2,
-    bounce: 0.55,
-    gravityScale,
-    blastScale,
-    random: logicRandom,
-  });
+  const fixed = w.fixedWeapon;
+  const fixedAmmo = fixed && (ammo[1][fixed] ?? 0) !== 0
+    ? Object.fromEntries(Object.entries(ammo[1]).map(([kind, count]) =>
+        [kind, kind === fixed ? count : 0]))
+    : null;
+  const planOptions = {
+    terrain, worms, me: w, wind, waterLevel, difficulty,
+    ammo: fixedAmmo ?? ammo[1], delays: weaponDelays[1],
+    fuse: 2, bounce: 0.55, gravityScale, blastScale, random: logicRandom,
+  };
+  let plan = planTurn(planOptions);
+  if (!plan && fixedAmmo) {
+    planOptions.ammo = ammo[1];
+    plan = planTurn(planOptions);
+  }
   lastAiPlanMs = performance.now() - started;
   if (!plan) {
     time = 0;
@@ -8077,6 +8078,7 @@ window.siege = {
         nativeTeamModifiers,
         artillery,
         graveStyle,
+        fixedWeapon,
         nativePoison,
         originalRecovery,
         invisible,
@@ -8089,6 +8091,7 @@ window.siege = {
         nativePoison: { ...nativePoison },
         artillery,
         graveStyle,
+        fixedWeapon,
         nativeTeamModifiers,
         x,
         y,
