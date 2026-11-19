@@ -369,3 +369,22 @@ test("scenario mine fuse feeds the live mine timer", async ({ page }) => {
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().mineFuse)).toBe(4);
 });
+
+test("scenario health-only crate drops produce health crates", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission26.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), {
+      timeout: 30000,
+    })
+    .toBe("aim");
+  await expect
+    .poll(() => page.evaluate(() => {
+      const crates = window.siege.getState().crates.filter((crate) => !crate.scenario);
+      return crates[0] ? `${crates[0].kind}:${crates[0].quantity}` : null;
+    }), { timeout: 30000 })
+    .toBe("health:20");
+});

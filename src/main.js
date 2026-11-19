@@ -1372,7 +1372,12 @@ function spawnCrate(announceDrop = false) {
   });
   if(!position.success)return;
   const x=position.x/65536,y=H-position.y/65536;
-  const kind = PICKUP_KINDS[Math.floor(logicRandom() * PICKUP_KINDS.length)],
+  const allowed = [];
+  if (currentScenario?.crateDrops?.weapon > 0) allowed.push("special");
+  if (currentScenario?.crateDrops?.health > 0) allowed.push("health");
+  if (currentScenario?.crateDrops?.utility > 0) allowed.push("utility");
+  const pool = allowed.length ? allowed : PICKUP_KINDS;
+  const kind = pool[Math.floor(logicRandom() * pool.length)],
     mesh =
       createOriginalObject(crateOpeningSprite(kind), -10);
   mesh.position.set(x, y, 18);
