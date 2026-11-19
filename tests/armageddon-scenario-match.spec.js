@@ -28,6 +28,7 @@ test("every mission and training resolves its original landscape and turn rules"
   });
   expect(mission0.objects.filter((object) => object.kind === "mine")).toHaveLength(8);
   expect(mission0.objects.filter((object) => object.kind === "drum")).toHaveLength(1);
+  expect(resolveScenarioMatch("mission/mission5.wam").objects.filter((object) => object.kind === "health")).toHaveLength(2);
   expect(resolveScenarioMatch("mission/training1.wam")).toMatchObject({
     training: true,
     terrain: "mission/train~11.img",

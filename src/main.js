@@ -1359,7 +1359,7 @@ function spawnCrate(announceDrop = false) {
   }
 }
 function spawnShowerCrate(record, mapping, quantity) {
-  const kind = mapping.type === "utility" ? "utility" : "special";
+  const kind = mapping.type === "health" ? "health" : mapping.type === "utility" ? "utility" : "special";
   const x = record.x / 65536, y = H - record.y / 65536;
   const mesh = createOriginalObject(crateOpeningSprite(kind), -10);
   mesh.position.set(x, y, 18);
@@ -1367,7 +1367,7 @@ function spawnShowerCrate(record, mapping, quantity) {
   const crate = {
     nativeOrderId: nativeRenderOrder.allocate(),
     content: mapping.kind,
-    quantity: mapping.type === "weapon" ? Math.max(1, quantity | 0) : 1,
+    quantity: mapping.type === "health" ? Math.max(1, quantity | 0) : mapping.type === "weapon" ? Math.max(1, quantity | 0) : 1,
     x, y, kind, mesh, falling: true, vy: 0,
   };
   crate.nativeBody = createNativeCrateBody({
@@ -1403,6 +1403,13 @@ function spawnScenarioObjects() {
       continue;
     }
     if (object.kind === "drum") { spawnScenarioBarrel(object); continue; }
+    if (object.kind === "health") {
+      spawnShowerCrate({
+        x: Math.round(object.x * 65536),
+        y: Math.round(object.y * 65536),
+      }, { kind: "health", type: "health" }, object.health ?? 15).scenario = object;
+      continue;
+    }
     const mapping = crateShowerSlotKind(object.content);
     if (!mapping) continue;
     spawnShowerCrate({
