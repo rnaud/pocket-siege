@@ -46,6 +46,9 @@ test("every mission and training resolves its original landscape and turn rules"
   });
   expect(resolveScenarioMatch("mission/mission15.wam").friction).toBe(40);
   expect(resolveScenarioMatch("mission/training13.wam").fallDamage).toBe(3);
+  expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
+    weapon: 0, health: 0, utility: 0,
+  });
   expect(resolveScenarioMatch("mission/mission10.wam")).toMatchObject({
     indestructibleLandscape: true,
   });
@@ -101,6 +104,9 @@ test("campaign scenario starts on its original landscape and turn rules", async 
       () => window.siege.getState().crates.filter((crate) => crate.scenario).length,
     ))
     .toBeGreaterThan(0);
+  expect(await page.evaluate(
+    () => window.siege.getState().crates.filter((crate) => !crate.scenario).length,
+  )).toBe(0);
   await expect
     .poll(() => page.evaluate(
       () => window.siege.getState().mines.filter((mine) => mine.scenario).length,

@@ -1348,6 +1348,9 @@ function queueCrateSound(request) {
 }
 function spawnCrate(announceDrop = false) {
   if (!terrain) return;
+  if (currentScenario && !currentScenario.crateDrops?.weapon &&
+      !currentScenario.crateDrops?.health && !currentScenario.crateDrops?.utility)
+    return;
   const scene = new NativeCollisionScene(terrain,H);
   scene.syncWorms(worms);
   scene.syncObjects([...mines,...crates,...hazards]);
