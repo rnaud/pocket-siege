@@ -723,11 +723,12 @@ function createWorm(t, i, x, spawnY = null) {
   shadow.scale.y = 0.22;
   shadow.position.set(0, -9, 2);
   g.add(shadow);
+  const wormName = names[t][i] ?? `Worm ${i + 1}`;
   const label = document.createElement("div");
   label.className = "worm-label";
   label.style.setProperty("--worm-color", t ? "#ef9d89" : "#b7c86a");
   label.style.color = t ? "#a94a3d" : "#4d6b3a";
-  label.innerHTML = `<span class="worm-label-name">${names[t][i]}</span><strong>100</strong>`;
+  label.innerHTML = `<span class="worm-label-name">${wormName}</span><strong>100</strong>`;
   $("#labels").appendChild(label);
   group.add(g);
   const y =
@@ -741,7 +742,7 @@ function createWorm(t, i, x, spawnY = null) {
   return {
     team: t,
     nativeSpeechBank:$('#team-voice-'+t)?.value||'english',
-    name: names[t][i],
+    name: wormName,
     hp: 100,
     nativePickupFlag: 0,
     nativePickupState: 0x65,
@@ -1294,7 +1295,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   if (currentScenario?.teamWorms) {
     for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {
       const activeRoster = roster.filter((config) => config.place !== false);
-      for (let index = 3; index < activeRoster.length && index < 6; index++) {
+      for (let index = 3; index < activeRoster.length && index < 12; index++) {
         const config = activeRoster[index];
         if (!config || config.x === null || config.y === null) continue;
         const worm = createWorm(teamIndex, index, config.x, H - config.y);
