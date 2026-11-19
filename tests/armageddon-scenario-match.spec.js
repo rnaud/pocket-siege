@@ -57,6 +57,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission0.wam").utilityLoadouts[0]).toMatchObject({
     girder: 3, rope: 4, laser: 1,
   });
+  expect(resolveScenarioMatch("mission/training1.wam").roundTime).toBe(-50);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
@@ -489,4 +490,21 @@ test("scenario utility loadout replaces unused field-kit ammo", async ({ page })
   expect(utilityAmmo.rope).toBe(4);
   expect(utilityAmmo.laser).toBe(1);
   expect(utilityAmmo.bungee).toBe(0);
+});
+
+
+test("scenario round time expires into sudden death", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator('[data-scenario="mission/training1.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().roundTimeSeconds)).toBe(50);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(2800));
+  expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(true);
 });

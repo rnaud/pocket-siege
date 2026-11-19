@@ -490,6 +490,7 @@ let currentScenario = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
+let matchElapsed = 0;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1292,6 +1293,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     scenarioTimed = [...(currentScenario.timedObjects ?? [])];
     scenarioTurn = 0;
     suddenDeathDamageTurn = -1;
+    matchElapsed = 0;
     scenarioProgress = {
       collected: 0,
       score: 0,
@@ -1303,7 +1305,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     };
   } else {
     scenarioSequence = []; scenarioSequenceIndex = 0;
-    scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1;
+    scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0;
   }
   spawnScenarioObjects();
   spawnNextScenarioSequence();
@@ -5536,6 +5538,7 @@ function stepIdleGestures() {
 
 function step(dt) {
   const advancing=!mapLoading && !menu.open && !document.hidden && !replaying && hitStop<=0;
+  if(advancing) matchElapsed += dt;
   stepFrame(dt);
   if(advancing)nativeFinishSceneCollisionFrame(terrain,worms,[...mines,...crates,...hazards]);
   if (!mapLoading && !menu.open && !document.hidden)
@@ -5544,8 +5547,19 @@ function step(dt) {
   // sounds keep their separate playback handles and never enter this queue.
   nativeSoundQueue.flush(audio ? submitQueuedSound : null, !sound);
 }
+function scenarioRoundTimeSeconds() {
+  const value = currentScenario?.roundTime | 0;
+  return value < 0 ? -value : value * 60;
+}
+function checkScenarioRoundTime() {
+  if (!currentScenario || sdTriggered || phase === "over") return;
+  if (currentScenario?.suddenDeath?.disabled) return;
+  const limit = scenarioRoundTimeSeconds();
+  if (limit > 0 && matchElapsed >= limit) applySuddenDeath();
+}
 function stepFrame(dt) {
   if (mapLoading) return;
+  checkScenarioRoundTime();
   if (menu.open || document.hidden) {
     stopBurstSound(); stopProjectileSound();
     stopNativeNuclearAudio();
@@ -7663,6 +7677,8 @@ window.siege = {
     fallDamageScale,
     mineFuse: currentScenario?.mineFuse ?? null,
     randomSeed: matchRandom.seed,
+    matchElapsed,
+    roundTimeSeconds: scenarioRoundTimeSeconds(),
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,
