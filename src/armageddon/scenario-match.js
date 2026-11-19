@@ -41,6 +41,7 @@ export function resolveScenarioMatch(path) {
     windStrength: read(record, "Enviroment", "Wind", null),
     fixedWind: read(record, "Enviroment", "FixedWind", null),
     friction: read(record, "Enviroment", "Friction", null),
+    fallDamage: read(record, "Options", "FallDamage", null),
     indestructibleBorder: read(record, "Enviroment", "IndestructableBorder", 0) === 1,
     indestructibleLandscape: read(record, "Enviroment", "IndestructableLandscape", 0) === 1,
     objects: scenarioInitialObjects(record),

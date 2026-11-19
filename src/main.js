@@ -475,6 +475,7 @@ const NATIVE_UTILITY_SLOTS = {
   67: "doubledamage", 68: "cratespy", 69: "doubletime", 70: "crateshower",
 };
 let matchFriction = NATIVE_MINE_FRICTION;
+let fallDamageScale = 1;
 const NATIVE_WEAPON_KINDS = Object.fromEntries(
   Object.entries(WEAPON_SLOTS).map(([kind, slot]) => [slot, kind]),
 );
@@ -981,6 +982,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
   matchFriction = currentScenario?.friction ?? NATIVE_MINE_FRICTION;
+  fallDamageScale = currentScenario?.fallDamage == null ? 1 : currentScenario.fallDamage / 100;
   const layout = isDaily || selectedLayout === "random"
     ? randomOriginalMap(matchSeed) : selectedLayout;
   if (layout.startsWith("original:") && !originalMapLoaded(layout)) {
@@ -5837,7 +5839,7 @@ function stepFrame(dt) {
         w.nativeHitVoicePlayback = playNativeLandingSound(audio, landingSound, w.nativeHitVoicePlayback);
       } else if (!landingSound) sfx("land");
     }
-    if (result.fallDamage) injure(w, result.fallDamage);
+    if (result.fallDamage) injure(w, Math.max(0, Math.round(result.fallDamage * fallDamageScale)));
     if (
       w === worms[current] &&
       w.ground &&
@@ -7532,6 +7534,7 @@ window.siege = {
     scenario: scenarioProgress ? { ...scenarioProgress } : null,
     invisibleTeam,
     friction: matchFriction,
+    fallDamageScale,
     activeUtility,
     targetUtility,
     rope: {
