@@ -69,7 +69,7 @@ test(`live ${kind} adapter releases five original missile bodies on consecutive 
   }
 });
 
-for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl", 30], ["postal", "postbox", "letter1", 50], ["napalmstrike", "airjeto", "airmisl", 15], ["carpetbomb", "cpttruck", "carpet2", 30]])
+for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl", 30], ["postal", "postbox", "letter1", 50], ["napalmstrike", "airjeto", "airmisl", 15], ["carpetbomb", "cpttruck", "carpet2", 30], ["sheepstrike", "shptruck", "sheepbrn", 50]])
 test(`live ${kind} aircraft releases original missiles and resolves its strike`, async ({
   page,
 }) => {
@@ -211,5 +211,32 @@ test("native carpet bomb releases record-driven bomb payloads", { tag: "@logic" 
   expect(missile.nativeTimer.remaining).toBe(9000);
   expect(nativeProjectileDetonationEvents(missile, () => 0)).toEqual([
     { operation: "blast", request: [1, 16252928, -13631488, 100, 30, 1] },
+  ]);
+});
+
+test("native sheep strike releases record-driven sheep bombs", { tag: "@logic" }, () => {
+  const strike = createNativeAirstrike(600, 300, 1, 0, 650, 1, "sheepstrike");
+  expect(strike.sprite).toBe(681);
+  expect(strike.sound).toBe(6);
+  expect(strike.config).toMatchObject({
+    count: 5, spacing: 32, speed: 100, kind: 2,
+  });
+  const missiles = [];
+  let removed = false;
+  for (let tick = 0; tick < 300 && !removed; tick++) {
+    const result = stepNativeAirstrike(strike, 650);
+    missiles.push(...result.missiles);
+    removed = result.removed;
+  }
+  expect(removed).toBe(true);
+  expect(missiles).toHaveLength(5);
+  const missile = missiles[0];
+  expect(missile.nativeBody).toMatchObject({ sprite: 683, hitMask: 0 });
+  expect(missile.nativeDetonation).toMatchObject({
+    push: 100, damage: 50, secondary: 0, offset: 0,
+  });
+  expect(missile.nativeTimer.remaining).toBe(9000);
+  expect(nativeProjectileDetonationEvents(missile, () => 0)).toEqual([
+    { operation: "blast", request: [1, 16252928, -13631488, 100, 50, 1] },
   ]);
 });

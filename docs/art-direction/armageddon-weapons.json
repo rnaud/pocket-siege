@@ -408,8 +408,8 @@
     {
       "slot": 50,
       "native_name": "SheepStrike",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "sheepstrike",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 0
     },

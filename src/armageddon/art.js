@@ -131,6 +131,8 @@ const names = [
     "letter1",
     "cpttruck",
     "carpet2",
+    "shptruck",
+    "sheepbrn",
     "clustlet",
     "petrolbm",
     ...Object.values(weaponSprites)
