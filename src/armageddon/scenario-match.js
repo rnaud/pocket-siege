@@ -200,6 +200,9 @@ export function resolveScenarioMatch(path) {
       type: read(record, "Options", "SuddenDeathType", null),
       waterRise: read(record, "Options", "SuddenDeathWaterRise", null),
       wormDamage: read(record, "Options", "SuddenDeathWormDamage", null),
+      // 00417278: setup 0xd5f1 (scene 0x11d5d) is set unless SuddenDeathType is
+      // 1-3, so round time-out ends the game instead of starting sudden death.
+      roundEnds: ![1, 2, 3].includes(read(record, "Options", "SuddenDeathType", 0)),
       disabled: read(record, "Options", "SuddenDeathType", null) === 0 &&
         read(record, "Options", "SuddenDeathWaterRise", null) === 0 &&
         read(record, "Options", "SuddenDeathWormDamage", null) === 0,

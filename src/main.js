@@ -6099,7 +6099,8 @@ function nextTurn() {
     ) {
       spawnCrate(true);
     }
-    if (!sdTriggered && round >= 6 && !currentScenario?.suddenDeath?.disabled) {
+    if (!sdTriggered && round >= 6 && !currentScenario?.suddenDeath?.disabled &&
+        !currentScenario?.suddenDeath?.roundEnds) {
       if (applySuddenDeath()) return;
     }
   }
@@ -6326,11 +6327,12 @@ function scenarioRoundTimeSeconds() {
 function checkScenarioRoundTime() {
   if (!currentScenario || sdTriggered || phase === "over") return;
   const limit = scenarioRoundTimeSeconds();
-  // S+0x11d5d: without sudden death, round time-out ends the game after the turn.
-  if (currentScenario?.suddenDeath?.disabled) {
+  // S+0x11d5d (004B39A0): round time-out ends the game once the turn is over.
+  if (currentScenario?.suddenDeath?.roundEnds) {
     if (missionState && limit > 0 && matchElapsed >= limit) missionRoundExpired = true;
     return;
   }
+  if (currentScenario?.suddenDeath?.disabled) return;
   if (limit > 0 && matchElapsed >= limit) applySuddenDeath();
 }
 function stepFrame(dt) {
@@ -8351,6 +8353,9 @@ window.siege = {
     wind,
     explosions,
     armageddon: nativeArmageddon ? { ...nativeArmageddon } : null,
+    mission: missionState ? { ...missionState, timedCount: missionScript.timed.length,
+      sequenceCount: missionScript.sequence.length,
+      lastTimedTurn: missionScript.timed.reduce((max, event) => Math.max(max, event.turn), 0) } : null,
     graves: graves.map((g) => ({
       x: g.x,
       y: g.y,

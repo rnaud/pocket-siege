@@ -172,9 +172,13 @@ async function openScenario(page, path) {
 }
 // Targets are destroyed by native blast packets; worms cannot collect them.
 async function destroyTarget(page) {
+  // The sequence places the next target on a later frame.
+  await expect
+    .poll(() => page.evaluate(() =>
+      Boolean(window.siege.getState().crates.find((crate) => crate.mission?.target))), { timeout: 10000 })
+    .toBe(true);
   const target = await page.evaluate(() =>
     window.siege.getState().crates.find((crate) => crate.mission?.target));
-  expect(target).toBeTruthy();
   await page.evaluate(([x, y]) => window.siege.debug.nativeBlastAt(x, y), [target.x, target.y]);
 }
 
@@ -512,19 +516,27 @@ test("scenario utility loadout replaces unused field-kit ammo", async ({ page })
 });
 
 
-test("scenario round time expires into sudden death", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="training"]').click();
-  await page.locator('[data-scenario="mission/training1.wam"]').click();
-  await page.locator(".frontend-play-scenario").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
-      timeout: 30000,
-    })
-    .toBeGreaterThan(0);
+test("training round time-out ends the run after the turn", async ({ page }) => {
+  // Trainings omit SuddenDeathType, so 00417278 sets scene 0x11d5d.
+  await openScenario(page, "mission/training1.wam");
   expect(await page.evaluate(() => window.siege.getState().roundTimeSeconds)).toBe(50);
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(2800));
+  expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(false);
+  for (let i = 0; i < 4; i++) await page.evaluate(() => window.siege.debug.finishTurn());
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 10000 })
+    .toBe("over");
+  expect(await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("pocket-siege-scenario-attempts-v1") ?? "{}")["mission/training1.wam"],
+  )).toBe(1);
+});
+
+test("mission round time with a sudden-death event expires into sudden death", async ({ page }) => {
+  // Mission 0 sets SuddenDeathType 1 with a three-minute round.
+  await openScenario(page, "mission/mission0.wam");
+  expect(await page.evaluate(() => window.siege.getState().roundTimeSeconds)).toBe(180);
+  for (const frames of [3000, 3000, 3100])
+    await page.evaluate((count) => window.siege.debug.advanceReplayFrames(count), frames);
   expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(true);
 });
 

@@ -100,3 +100,11 @@ test("mission end and success rules follow the original frontend", { tag: "@logi
   expect(result(3, 5, [human], true)).toBe(false);
   expect([missionMedal(0, 0), missionMedal(0, 2), missionMedal(0, 7), missionMedal(3, 7)]).toEqual([3, 2, 1, 3]);
 });
+
+test("SuddenDeathType 0 makes round time-out end the game", { tag: "@logic" }, async () => {
+  const { resolveScenarioMatch } = await import("../src/armageddon/scenario-match.js");
+  // 00417278: setup 0xd5f1 is cleared only for Sudden Death Event 1-3.
+  expect(resolveScenarioMatch("mission/training1.wam").suddenDeath.roundEnds).toBe(true);
+  expect(resolveScenarioMatch("mission/training8.wam").suddenDeath.roundEnds).toBe(true);
+  expect(resolveScenarioMatch("mission/mission0.wam").suddenDeath.roundEnds).toBe(false);
+});
