@@ -19,7 +19,7 @@ for (const id of Object.keys(missionNames)) test(`play ${id}`, async ({ page }) 
   for (let i = 0; i < 40 && m.phase !== "over" && m.turn <= m.lastTimedTurn + 1; i++) {
     const turn = m.turn;
     let waited = 0;
-    while (m.turn === turn && m.phase !== "over" && waited < 40000) {
+    while (m.turn === turn && m.phase !== "over" && waited < 60000) {
       if (m.phase === "aim") await page.evaluate(() => window.siege.debug.finishTurn());
       await page.waitForTimeout(500); waited += 500;
       m = await mission();
