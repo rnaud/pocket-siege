@@ -60,6 +60,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/training1.wam").roundTime).toBe(-50);
   expect(resolveScenarioMatch("mission/training11.wam").turnEndFinishesGame).toBe(true);
   expect(resolveScenarioMatch("mission/training11.wam").lossOfControlDoesntEndTurn).toBe(true);
+  expect(resolveScenarioMatch("mission/mission12.wam").enableActionReplay).toBe(false);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
@@ -572,4 +573,19 @@ test("scenario loss of control keeps the team active with another worm", async (
   await page.evaluate(() => window.siege.debug.finishTurn());
   expect(await page.evaluate(() => window.siege.getState().team)).toBe(before.team);
   expect(await page.evaluate(() => window.siege.getState().current)).not.toBe(before.current);
+});
+
+
+test("scenario replay option disables the replay control", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission12.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().replayEnabled)).toBe(false);
 });

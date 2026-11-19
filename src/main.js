@@ -3332,7 +3332,7 @@ function restoreMatchReplayState(snapshot) {
   updateSliders(); updateUI(); applyView();
 }
 function startReplay() {
-  if (replaying || !lastShot || lastShot.points.length < 2) return;
+  if (replaying || currentScenario?.enableActionReplay === false || !lastShot || lastShot.points.length < 2) return;
   replaying = true;
   if (audio) cleanupOriginalReplayAudio(audio);
   cameraSnap = true; manualCamera = null;
@@ -6779,6 +6779,7 @@ function frame(now) {
   const canReplay =
     !replaying &&
     !menu.open &&
+    currentScenario?.enableActionReplay !== false &&
     (phase === "aim" || phase === "over") &&
     (lastShot?.points?.length ?? 0) > 1;
   if (canReplay !== replayReady) {
@@ -7710,6 +7711,7 @@ window.siege = {
     matchElapsed,
     roundTimeSeconds: scenarioRoundTimeSeconds(),
     lastLossOfControl,
+    replayEnabled: currentScenario?.enableActionReplay !== false,
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,

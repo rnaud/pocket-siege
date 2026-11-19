@@ -81,6 +81,7 @@ export function resolveScenarioMatch(path) {
     retreatTime: read(record, "Options", "LandRetreatTime", 3),
     roundTime: read(record, "Options", "RoundTime", 0),
     displayRoundTime: read(record, "Options", "DisplayRoundTime", 0) === 1,
+    enableActionReplay: read(record, "Options", "EnableActionReplay", 1) === 1,
     teams,
     worms,
     difficulty: read(record, "Description", "Difficulty", 0),
