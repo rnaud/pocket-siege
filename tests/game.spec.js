@@ -1715,3 +1715,14 @@ test("aqua sheep swims at the water surface", async ({ page }) => {
   expect(x).not.toBe(600);
 });
 
+
+test("mole bomb burrows while host-walking", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  const depth = await page.evaluate(() => window.siege.getState().projectile?.burrowDepth ?? 0);
+  expect(depth).toBeGreaterThan(0);
+});

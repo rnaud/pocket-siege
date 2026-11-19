@@ -5141,6 +5141,7 @@ function stepWalkingUnit(p) {
   }
   p.x += step;
   p.walkTicks = (p.walkTicks ?? 0) + 1;
+  if (p.kind === "molebomb") p.burrowDepth = Math.min(12, (p.burrowDepth ?? 0) + 0.12);
   p.nativeBody.x = Math.round(p.x * 65536);
   p.nativeBody.vx = 0;
   const surface = terrain.surface(p.x);
@@ -5148,7 +5149,7 @@ function stepWalkingUnit(p) {
     p.y = surface + 2;
     p.nativeBody.y = Math.round(p.y * 65536);
   }
-  if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
+  if (p.mesh) p.mesh.position.set(p.x, p.y - (p.burrowDepth ?? 0), 40);
   if (p.kind === "skunk" || p.kind === "molebomb") {
     p.walkPoisonFrame = (p.walkPoisonFrame ?? 0) + 1;
     if (p.walkPoisonFrame >= 20) {
@@ -8456,6 +8457,7 @@ window.siege = {
           nativeTimer: projectile.nativeTimer ? { ...projectile.nativeTimer } : null,
           nativeGuidance: projectile.nativeGuidance ? { ...projectile.nativeGuidance } : null,
           walkTicks: projectile.walkTicks ?? 0,
+          burrowDepth: Math.round((projectile.burrowDepth ?? 0) * 10) / 10,
           target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,
