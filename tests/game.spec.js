@@ -1535,7 +1535,7 @@ test("sheep launcher fires a native sheep projectile", async ({ page }) => {
     .toBe("sheep");
 });
 
-test("armageddon damages every living worm", async ({ page }) => {
+test("armageddon rains native meteors that damage worms", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
@@ -1545,10 +1545,15 @@ test("armageddon damages every living worm", async ({ page }) => {
   await page.keyboard.down("Space");
   await page.waitForTimeout(250);
   await page.keyboard.up("Space");
+  // 004ED41F stores 0x443 {100, 0xa6, 56}; 004EB110 then spawns meteors.
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().armageddon?.count ?? 100), { timeout: 10000 })
+    .toBeLessThan(95);
+  expect(await page.evaluate(() => window.siege.getState().armageddon))
+    .toMatchObject({ interval: 0xa6, weapon: 56 });
   await expect
     .poll(() => page.evaluate(() =>
-      window.siege.getState().worms.every((worm) => worm.hp <= 0)),
-    { timeout: 10000 })
+      window.siege.getState().worms.some((worm) => worm.hp < 100)), { timeout: 20000 })
     .toBe(true);
 });
 

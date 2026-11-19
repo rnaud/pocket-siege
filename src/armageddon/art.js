@@ -125,6 +125,8 @@ const names = [
     "flame1",
     ...Array.from({ length: 10 }, (_, i) => spriteIds.sprites[0x2f9 + i].name),
     spriteIds.sprites[626].name,
+    // 004EB110 Armageddon meteors use weapon 56 block sprite 640.
+    spriteIds.sprites[640].name,
     "dynamite",
     "airmisl",
     "airjetg",

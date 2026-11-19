@@ -43,7 +43,8 @@ import { nativeCrateHit, nativeCrateDirectHit } from "./armageddon/crate-hit.js"
 import { nativeCrateDetonation } from "./armageddon/crate-detonation.js";
 import { nativeCrateContents } from "./armageddon/crate-contents.js";
 import crateProjectileData from "./armageddon/crate-projectile-data.json";
-import { attachNativeProjectileBlock } from "./armageddon/projectile-runtime.js";
+import { attachNativeProjectileBlock, nativeWeaponSlotBlock } from "./armageddon/projectile-runtime.js";
+import { nativeArmageddonStart, nativeArmageddonTick } from "./armageddon/armageddon.js";
 import { nativeFlameBody } from "./armageddon/flame-body.js";
 import { registerNativeFlame } from "./armageddon/flame-spread.js";
 import { stepNativeFlame } from "./armageddon/flame-runtime.js";
@@ -500,6 +501,8 @@ let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
 // Original mission script (00440EB0 records) and turn-game mission state.
 let missionScript = null, missionState = null, missionRoundExpired = false, missionSurrendered = false;
+// Root +0x84..+0x90 meteor shower started by message 0x443.
+let nativeArmageddon = null;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
@@ -1442,6 +1445,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     scenarioSequence = []; scenarioSequenceIndex = 0;
     scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0; scenarioClockSecond = -1; lastWaterRiseRound = 0;
   }
+  nativeArmageddon = null;
   // 004B75F4/004B7617: turn-0 timed events, then one sequence pass, run
   // between turns before the first turn starts.
   runMissionBetweenTurns();
@@ -1830,12 +1834,32 @@ function missionEarthquake() {
     if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
   earthquakeShake = 0x8000;
 }
-// 0x443: Armageddon meteor fall. The host approximates the shower with
-// airstrike runs across the landscape; camera request matches 004EEB70.
+// 004EF6B0 type 10: 0x443 {100, 0xa6, 56} plus the 004EEB70 camera request.
 function missionArmageddon() {
-  for (let i = 0; i < 4; i++)
-    spawnAirstrike(64 + (matchRandom.logicUint() % Math.max(1, W - 128)), H * 0.5, "airstrike");
+  startNativeArmageddon([100, 0xa6, 0x38]);
   pendingEnvironmentCamera = [0x3c00000, 0x15c0000];
+}
+function startNativeArmageddon(record) {
+  nativeArmageddon = nativeArmageddonStart(record);
+}
+// 004EB110: one meteor per timer expiry, launched through 004E1830 with the
+// weapon's projectile block at entry +0x70.
+function stepNativeArmageddon() {
+  if (!nativeArmageddon?.count) return;
+  const result = nativeArmageddonTick(nativeArmageddon, () => matchRandom.logicUint());
+  nativeArmageddon = result.state;
+  if (result.sound) queueGameSound(result.sound);
+  if (result.meteor) spawnArmageddonMeteor(result.meteor, nativeArmageddon.weapon);
+  nativeBusy.wake();
+}
+function spawnArmageddonMeteor(payload, weapon) {
+  const p = { kind: "barrel", owner: -1, age: 0, x: payload[2] / 65536,
+    y: H - payload[3] / 65536, vx: payload[4] / 65536 * 50,
+    vy: -payload[5] / 65536 * 50, fuse: 0, bounce: 0, nativeArmageddonMeteor: true };
+  attachNativeProjectileBlock(p, H, nativeWeaponSlotBlock(weapon, 0x70), payload);
+  p.mesh = createNativeProjectileVisual(p.nativeRender);
+  if (p.mesh) { p.mesh.position.set(p.x, p.y, 40); group.add(p.mesh); }
+  bombs.push(p);
 }
 // Types 3/4/5 through 004DFBA0. Negative X asks 004B7C00 for a drop point;
 // failure leaves the event pending so the runner retries it.
@@ -4750,10 +4774,9 @@ function useArmageddon() {
   ammo[team].armageddon = spendAmmo(ammo[team].armageddon);
   shotCount++;
   recordReactionWeaponUse("armageddon");
-  startNativeNuclearEffect(8);
-  infectPoisonCloud(W / 2, H / 2, Math.max(W, H), 20);
-  for (const w of worms) if (w.hp > 0) injure(w, 100);
-  $("#status").textContent = "Armageddon. The island burns.";
+  // 004FC870: the weapon sends the same 0x443 meteor shower request.
+  startNativeArmageddon([100, 0xa6, WEAPON_SLOTS.armageddon ?? 0x38]);
+  $("#status").textContent = "Armageddon. The sky is falling.";
   finishAction("Armageddon. Retreat!");
 }
 function useEarthquake() {
@@ -6332,6 +6355,7 @@ function stepFrame(dt) {
   if (phase !== "over" && phase !== "break" && phase !== "menu") {
     updateAutomaticUtilities();
     stepCrateShower();
+    stepNativeArmageddon();
     stepMissionFrame();
   }
   nativeAnnouncementTick(nativeAnnouncements);
@@ -8323,6 +8347,7 @@ window.siege = {
     round,
     wind,
     explosions,
+    armageddon: nativeArmageddon ? { ...nativeArmageddon } : null,
     graves: graves.map((g) => ({
       x: g.x,
       y: g.y,

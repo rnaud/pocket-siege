@@ -165,6 +165,14 @@ export function attachNativeProjectile(p, height) {
   return attachNativeProjectileBlock(p, height, block);
 }
 
+// 94-word projectile block read from a default-scheme weapon entry. Callers
+// pass the native entry offset (004EDAD0(slot) + offset), e.g. Armageddon
+// meteors use weapon56 + 0x70 in 004EB28E.
+export function nativeWeaponSlotBlock(slot, offset) {
+  const words = baseline[slot];
+  return Array.from({ length: 94 }, (_, i) => words[(offset - 0x48) / 4 + i] ?? 0);
+}
+
 // Shared004E1830 constructor adapter for an explicit native projectile block.
 // Contents effects supply the original11-word payload without weapon release.
 export function attachNativeProjectileBlock(p, height, block, nativePayload = null) {
