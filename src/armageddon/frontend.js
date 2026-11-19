@@ -1,6 +1,6 @@
 import missionNames from './mission-names.json' with {type:'json'};
 import { resolveScenarioMatch } from './scenario-match.js';
-import { isScenarioComplete } from './scenario-progress.js';
+import { isScenarioComplete, readScenarioScores } from './scenario-progress.js';
 // Full-screen front end built around the original imported menu bitmaps.
 // Existing controls retain their IDs and native form/dialog behavior.
 export function mountArmageddonFrontend(host = {}) {
@@ -119,7 +119,8 @@ export function mountArmageddonFrontend(host = {}) {
         if (composition) {
           const meta = document.createElement('p');
           meta.className = 'frontend-scenario-meta';
-          meta.textContent = `${composition.teams} team${composition.teams === 1 ? '' : 's'} · ${composition.worms} worm${composition.worms === 1 ? '' : 's'} · ${composition.turnTime}s turns`;
+          const best = readScenarioScores().get(path);
+          meta.textContent = `${composition.teams} team${composition.teams === 1 ? '' : 's'} · ${composition.worms} worm${composition.worms === 1 ? '' : 's'} · ${composition.turnTime}s turns${best === undefined ? '' : ` · best ${best}`}`;
           preview.append(meta);
         }
         const play = document.createElement('button');

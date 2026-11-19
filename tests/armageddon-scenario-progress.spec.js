@@ -3,6 +3,8 @@ import {
   readScenarioProgress,
   isScenarioComplete,
   recordScenarioCompletion,
+  readScenarioScores,
+  recordScenarioScore,
 } from "../src/armageddon/scenario-progress.js";
 
 function memoryStorage(initial = null) {
@@ -26,4 +28,14 @@ test("scenario completion persists locally and ignores malformed storage", { tag
   const malformed = memoryStorage("{");
   expect(readScenarioProgress(malformed)).toEqual(new Set());
   expect(recordScenarioCompletion("", storage)).toBe(false);
+});
+
+test("scenario best scores persist and only improve", { tag: "@logic" }, () => {
+  const storage = memoryStorage();
+  expect(readScenarioScores(storage).size).toBe(0);
+  expect(recordScenarioScore("mission/mission0.wam", 4, storage)).toBe(true);
+  expect(recordScenarioScore("mission/mission0.wam", 3, storage)).toBe(false);
+  expect(recordScenarioScore("mission/mission0.wam", 7, storage)).toBe(true);
+  expect(readScenarioScores(storage).get("mission/mission0.wam")).toBe(7);
+  expect(recordScenarioScore("", 1, storage)).toBe(false);
 });

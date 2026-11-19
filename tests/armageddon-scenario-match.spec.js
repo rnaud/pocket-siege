@@ -167,6 +167,9 @@ test("completing a training course resolves the match as a win", async ({ page }
   const completed = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"));
   expect(completed.length).toBeGreaterThan(0);
+  expect(await page.evaluate(() =>
+    Object.keys(JSON.parse(localStorage.getItem("pocket-siege-scenario-scores-v1") ?? "{}")).length,
+  )).toBeGreaterThan(0);
   const result = await page.evaluate(() => window.siege.getState().lastResult);
   expect(result.scenario).toMatchObject({ complete: true, collected: 2, total: 2 });
   await expect(page.locator("#turn-label")).toHaveText("SCENARIO COMPLETE");
