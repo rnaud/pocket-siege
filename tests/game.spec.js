@@ -1552,3 +1552,27 @@ test("nuclear bomb targets a nuclear strike", async ({ page }) => {
     })
     .toBeGreaterThan(0);
 });
+
+test("scales of justice caps health at 100 with uneven survivors", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase))
+    .toBe("aim");
+  await page.evaluate(() => {
+    window.siege.debug.setWormHp(4, 0);
+    window.siege.debug.setWormHp(5, 0);
+  });
+  await page.locator('[data-weapon="scales"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() =>
+      Math.max(...window.siege.getState().worms.map((worm) => worm.hp))),
+    { timeout: 10000 })
+    .toBeLessThanOrEqual(100);
+});

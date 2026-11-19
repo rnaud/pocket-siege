@@ -4382,7 +4382,7 @@ function useScales() {
     const base = Math.floor(average / roster.length);
     const remainder = average % roster.length;
     roster.forEach((w, index) => {
-      w.hp = base + (index < remainder ? 1 : 0);
+      w.hp = Math.min(100, base + (index < remainder ? 1 : 0));
       revealWormHealth(w);
     });
   }
@@ -8149,6 +8149,12 @@ if (import.meta.env.DEV) {
     setUtility(teamIndex = 0, kind = "crateshower", value = 1) {
       utilityAmmo[teamIndex][kind] = value;
       updateUI();
+    },
+    setWormHp(index = 0, hp = 100) {
+      if (worms[index]) {
+        worms[index].hp = Math.max(0, Math.min(100, Math.round(hp)));
+        updateUI();
+      }
     },
     setTeamModifier(value = 0, teamIndex = 0) {
       for (const w of worms) if (w.team === teamIndex) w.nativeTeamModifiers = value;
