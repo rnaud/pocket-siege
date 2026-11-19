@@ -193,7 +193,7 @@ export function scoreBlast(
     const dx = w.x - point.x,
       dy = w.y + BODY.cy - point.y,
       distance = Math.hypot(dx, dy);
-    if (w.team !== me.team) nearest = Math.min(nearest, distance);
+    if (hostile(w, me)) nearest = Math.min(nearest, distance);
     if (distance >= radius) continue;
     const exposure = terrain
       ? blastExposure(terrain, point.x, point.y, w.x, w.y + BODY.cy)
@@ -213,7 +213,7 @@ export function scoreBlast(
       terrain &&
       !terrain.solid(projectedX, waterLevel + 12) &&
       Math.abs(projectedX - w.x) > 22;
-    if (w.team === me.team) {
+    if (!hostile(w, me)) {
       score -= damage * (w === me ? 2 : 1.8);
       if (waterPush) score -= w.hp * 0.8;
       if (damage >= w.hp) score -= 40;
@@ -298,7 +298,7 @@ export function planTurn({
   random = Math.random,
 }) {
   const profile = DIFFICULTIES[difficulty] ?? DIFFICULTIES.regular;
-  if (!worms.some((w) => w.hp > 0 && w.team !== me.team)) return null;
+  if (!worms.some((w) => w.hp > 0 && hostile(w, me))) return null;
   const kinds = WEAPON_ORDER.filter((kind) => ammoFor(ammo, kind, delays) > 0);
   if (!kinds.length) return null;
   const context = {
@@ -429,7 +429,7 @@ export function planRetreat({
   danger = null,
 }) {
   if (!me.ground || me.hp <= 0) return null;
-  const enemies = worms.filter((w) => w.hp > 0 && w.team !== me.team);
+  const enemies = worms.filter((w) => w.hp > 0 && hostile(w, me));
   const initial = positionScore(terrain, me, enemies, waterLevel, danger);
   let best = null;
   for (const direction of [-1, 1]) {

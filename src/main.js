@@ -1337,6 +1337,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.artillery = config.artillery;
         worm.fixedWeapon = config.fixedWeapon;
         worm.actionRadius = config.actionRadius;
+        worm.alliance = config.alliance;
         if (currentScenario.teamGraves?.[teamIndex]) worm.graveStyle = currentScenario.teamGraves[teamIndex];
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
@@ -8132,6 +8133,7 @@ window.siege = {
         graveStyle,
         fixedWeapon,
         actionRadius,
+        alliance,
         nativePoison,
         originalRecovery,
         invisible,
@@ -8147,6 +8149,7 @@ window.siege = {
         graveStyle,
         fixedWeapon,
         actionRadius,
+        alliance,
         nativeTeamModifiers,
         x,
         y,

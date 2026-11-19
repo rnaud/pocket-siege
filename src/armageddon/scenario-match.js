@@ -83,6 +83,7 @@ function scenarioTeamWorms(record) {
       const energy = Number.parseInt(entries[`worm${worm}_energy`], 10);
       if (!Number.isFinite(energy)) continue;
       const disease = Number.parseInt(entries[`worm${worm}_deseasepoints`], 10);
+      const alliance = Number.parseInt(entries.alliedgroup, 10);
       const actionRadius = Number.parseInt(entries[`worm${worm}_actionradius`], 10);
       const fixedSlot = Number.parseInt(entries[`worm${worm}_fixedweapon`], 10);
       const fixedWeapon = fixedSlot > 0 ? (HOST_WEAPON_BY_SLOT.get(fixedSlot) ?? null) : null;
@@ -96,6 +97,7 @@ function scenarioTeamWorms(record) {
         nameNumber: Number.isFinite(nameNumber) ? nameNumber : null,
         fixedWeapon,
         actionRadius: Number.isFinite(actionRadius) ? actionRadius : null,
+        alliance: Number.isFinite(alliance) ? alliance : null,
         x: Number.isFinite(x) ? x : null,
         y: Number.isFinite(y) ? y : null,
         place: entries[`worm${worm}_placeworm`] === "1",
