@@ -7045,7 +7045,28 @@ async function bootCurrentArt() {
     $("#asset-loading").setAttribute("role", "alert");
   }
 }
-mountArmageddonFrontend();
+mountArmageddonFrontend({
+  playScenario: async (scenario) => {
+    if (!scenario?.terrain) return;
+    $("#mode").value = "ai";
+    syncMenuOptions();
+    $("#scheme").value = "custom";
+    $("#format").value = "single";
+    $("#weather").value = "clear";
+    $("#modifier").value = "standard";
+    $("#turn-time").value = String(scenario.turnTime);
+    $("#retreat-time").value = String(scenario.retreatTime);
+    $("#map-layout").value = `original:${scenario.terrain}`;
+    matchStarted = true;
+    await prepareDecorations();
+    if (await reset() === false) {
+      announce("SCENARIO LANDSCAPE COULD NOT LOAD");
+      return;
+    }
+    menu.close();
+    announce(`${scenario.title}${scenario.briefing ? `: ${scenario.briefing}` : ""}`);
+  },
+});
 bootCurrentArt();
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   const registerServiceWorker = () =>

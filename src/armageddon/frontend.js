@@ -1,7 +1,8 @@
 import missionNames from './mission-names.json' with {type:'json'};
+import { resolveScenarioMatch } from './scenario-match.js';
 // Full-screen front end built around the original imported menu bitmaps.
 // Existing controls retain their IDs and native form/dialog behavior.
-export function mountArmageddonFrontend() {
+export function mountArmageddonFrontend(host = {}) {
   const menu = document.querySelector("#menu"),
     form = menu.querySelector("form");
   const grid = form.querySelector(".menu-grid");
@@ -67,7 +68,7 @@ export function mountArmageddonFrontend() {
   const campaignTitle = document.createElement('h2');
   const notice = document.createElement('p');
   notice.className = 'frontend-availability';
-  notice.textContent = 'Not playable yet. The original objectives, scripted events and progress saving are still being connected.';
+  notice.textContent = 'Objectives, scripted events and progression are not connected yet. PLAY opens the original landscape and turn rules as a skirmish.';
   const campaignBody = document.createElement('div');
   campaignBody.className = 'frontend-campaign-body';
   const list = document.createElement('div');
@@ -92,7 +93,7 @@ export function mountArmageddonFrontend() {
       return;
     }
     if (request !== campaignRequest || menu.dataset.frontendMode !== kind) return;
-    notice.textContent = 'Not playable yet. The original objectives, scripted events and progress saving are still being connected.';
+    notice.textContent = 'Objectives, scripted events and progression are not connected yet. PLAY opens the original landscape and turn rules as a skirmish.';
     const paths = Object.keys(missionNames).filter(path => path.startsWith(`mission/${training ? 'training' : 'mission'}`)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
     paths.forEach((path, index) => {
       const scenario = originalMissionPresentation(path);
@@ -111,6 +112,19 @@ export function mountArmageddonFrontend() {
           preview.append(image);
         }
         preview.append(note);
+        const play = document.createElement('button');
+        play.type = 'button';
+        play.className = 'frontend-play-scenario';
+        play.textContent = 'PLAY SCENARIO';
+        play.addEventListener('click', () => {
+          const match = resolveScenarioMatch(path);
+          if (!match?.terrain || !host.playScenario) {
+            notice.textContent = 'This scenario cannot start yet.';
+            return;
+          }
+          host.playScenario({ ...match, title: button.textContent, briefing: scenario.briefing });
+        });
+        preview.append(play);
       });
       list.append(button);
     });
