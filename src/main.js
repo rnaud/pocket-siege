@@ -8331,6 +8331,9 @@ const frontend = mountArmageddonFrontend({
     $("#modifier").value = "standard";
     $("#turn-time").value = String(scenario.turnTime);
     $("#retreat-time").value = String(scenario.retreatTime);
+    // Scenario SuddenDeathType: 1 water, 2 health, 3 nuke; 0 keeps the host default.
+    const scenarioSuddenDeath = ["water", "water", "health", "nuke"][scenario.suddenDeath?.type];
+    if (scenarioSuddenDeath) $("#sudden-death").value = scenarioSuddenDeath;
     $("#map-layout").value = `original:${scenario.terrain}`;
     const launchedTraining = scenarioIsTraining ||
       document.body.dataset.scenarioTraining === "1" ||

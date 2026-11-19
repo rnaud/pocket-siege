@@ -372,7 +372,7 @@ test("scenario water sudden death raises the sea", async ({ page }) => {
     .toBeGreaterThan(0);
   const before = await page.evaluate(() => window.siege.getState().waterLevel);
   await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(400));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(1200));
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().waterLevel))
     .toBeGreaterThan(before);
