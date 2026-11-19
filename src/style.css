@@ -2870,3 +2870,6 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 @media (max-width: 520px) {
   #menu#menu .frontend-home-extras { flex-direction: column; text-align: center; }
 }
+#menu#menu .frontend-mission-list button { display: flex; align-items: center; gap: 10px; }
+#menu#menu .frontend-medal { width: 24px; height: 24px; flex: none; image-rendering: pixelated; }
+#menu#menu .frontend-mission-preview .frontend-medal-big { display: block; width: 48px; height: auto; margin: 4px auto 0; image-rendering: pixelated; }

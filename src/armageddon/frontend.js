@@ -1,6 +1,10 @@
 import missionNames from './mission-names.json' with {type:'json'};
 import { resolveScenarioMatch } from './scenario-match.js';
-import { isScenarioComplete, readScenarioProgress, readScenarioScores } from './scenario-progress.js';
+import { isScenarioComplete, readScenarioProgress, readScenarioScores, readScenarioMedal, readScenarioAttempts } from './scenario-progress.js';
+// Medal status 1-3 (0x6f528c) uses the original mission-menu medal bitmaps.
+const MEDALS = ['none', 'bronze', 'silver', 'gold'];
+const medalArt = (medal, big = false) =>
+  `${import.meta.env.BASE_URL}armageddon/media/graphics/missionmenu/missionmedal${MEDALS[medal] ?? 'none'}${big ? 'big' : ''}.bmp`;
 // Full-screen front end built around the original imported menu bitmaps.
 // Screens: "home" picks a mode, "mode" shows that mode's setup or scenario
 // list, "help" shows controls. Existing controls retain their IDs.
@@ -108,11 +112,19 @@ export function mountArmageddonFrontend(host = {}) {
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.scenario = path;
-      button.textContent = `${scenario.title || `${training ? 'Training' : 'Mission'} ${index + 1}`}${isScenarioComplete(path) ? ' ✓' : ''}`;
+      const label = scenario.title || `${training ? 'Training' : 'Mission'} ${index + 1}`;
+      const medal = readScenarioMedal(path);
+      const icon = document.createElement('img');
+      icon.className = 'frontend-medal'; icon.alt = medal ? `${MEDALS[medal]} medal` : '';
+      icon.src = medalArt(medal);
+      const text = document.createElement('span');
+      // Completions recorded before medal status existed keep their check mark.
+      text.textContent = `${label}${!medal && isScenarioComplete(path) ? ' ✓' : ''}`;
+      button.append(icon, text);
       if (isScenarioComplete(path)) button.classList.add('completed');
       button.addEventListener('click', () => {
         for (const item of list.children) item.setAttribute('aria-pressed', String(item === button));
-        const title = document.createElement('h3');title.textContent = button.textContent;
+        const title = document.createElement('h3');title.textContent = label;
         const note = document.createElement('p');note.className = 'frontend-briefing';
         note.textContent = scenario.briefing || 'This original scenario has no briefing text.';
         preview.replaceChildren(title);
@@ -127,8 +139,15 @@ export function mountArmageddonFrontend(host = {}) {
           const meta = document.createElement('p');
           meta.className = 'frontend-scenario-meta';
           const best = readScenarioScores().get(path);
-          meta.textContent = `${composition.teams} team${composition.teams === 1 ? '' : 's'} · ${composition.worms} worm${composition.worms === 1 ? '' : 's'} · ${composition.turnTime}s turns${best === undefined ? '' : ` · best ${best}`}`;
+          const failed = readScenarioAttempts(path);
+          meta.textContent = `${composition.teams} team${composition.teams === 1 ? '' : 's'} · ${composition.worms} worm${composition.worms === 1 ? '' : 's'} · ${composition.turnTime}s turns${best === undefined ? '' : ` · best ${best}`}${failed ? ` · ${failed} failed attempt${failed === 1 ? '' : 's'}` : ''}`;
           preview.append(meta);
+          if (medal) {
+            const award = document.createElement('img');
+            award.className = 'frontend-medal-big'; award.alt = `${MEDALS[medal]} medal`;
+            award.src = medalArt(medal, true);
+            preview.append(award);
+          }
         }
         const play = document.createElement('button');
         play.type = 'button';
@@ -144,7 +163,7 @@ export function mountArmageddonFrontend(host = {}) {
           document.body.dataset.scenarioTraining = training ? "1" : "0";
           host.setScenarioTraining?.(training);
           await host.playScenario({ ...match, training: training || match.training,
-            title: button.textContent, briefing: scenario.briefing });
+            title: label, briefing: scenario.briefing });
           if (training) host.applyTrainingRoster?.();
         });
         preview.append(play);

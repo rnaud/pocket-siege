@@ -1173,3 +1173,20 @@ test("repeated WAM keys keep their first profile value", { tag: "@logic" }, () =
   expect(resolveScenarioMatch("mission/training8.wam").teamWorms[0][0]).toMatchObject({ x: 328, y: 630 });
   expect(resolveScenarioMatch("mission/training5.wam").teamWorms[0][0]).toMatchObject({ x: 63, y: 615 });
 });
+
+test("the campaign list shows earned medals and failed attempts", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("pocket-siege-scenario-medals-v1", JSON.stringify({ "mission/training1.wam": 3, "mission/training2.wam": 1 }));
+    localStorage.setItem("pocket-siege-scenario-attempts-v1", JSON.stringify({ "mission/training1.wam": 2 }));
+  });
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  const medals = page.locator(".frontend-mission-list .frontend-medal");
+  await expect(medals.nth(0)).toHaveAttribute("src", /missionmedalgold\.bmp$/);
+  await expect(medals.nth(1)).toHaveAttribute("src", /missionmedalbronze\.bmp$/);
+  await expect(medals.nth(2)).toHaveAttribute("src", /missionmedalnone\.bmp$/);
+  await page.locator('[data-scenario="mission/training1.wam"]').click();
+  await expect(page.locator(".frontend-scenario-meta")).toContainText("2 failed attempts");
+  await expect(page.locator(".frontend-medal-big")).toHaveAttribute("src", /missionmedalgoldbig\.bmp$/);
+});
