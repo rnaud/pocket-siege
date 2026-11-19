@@ -1,5 +1,6 @@
 import missionNames from './mission-names.json' with {type:'json'};
 import { resolveScenarioMatch } from './scenario-match.js';
+import { isScenarioComplete } from './scenario-progress.js';
 // Full-screen front end built around the original imported menu bitmaps.
 // Existing controls retain their IDs and native form/dialog behavior.
 export function mountArmageddonFrontend(host = {}) {
@@ -99,7 +100,8 @@ export function mountArmageddonFrontend(host = {}) {
       const scenario = originalMissionPresentation(path);
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = scenario.title || `${training ? 'Training' : 'Mission'} ${index + 1}`;
+      button.textContent = `${scenario.title || `${training ? 'Training' : 'Mission'} ${index + 1}`}${isScenarioComplete(path) ? ' ✓' : ''}`;
+      if (isScenarioComplete(path)) button.classList.add('completed');
       button.addEventListener('click', () => {
         for (const item of list.children) item.setAttribute('aria-pressed', String(item === button));
         const title = document.createElement('h3');title.textContent = button.textContent;

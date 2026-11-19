@@ -140,6 +140,9 @@ test("completing a training course resolves the match as a win", async ({ page }
       timeout: 10000,
     })
     .toBe("over");
+  const completed = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"));
+  expect(completed.length).toBeGreaterThan(0);
 });
 
 test("completing a target-condition mission resolves the match as a win", async ({
@@ -167,4 +170,7 @@ test("completing a target-condition mission resolves the match as a win", async 
       timeout: 10000,
     })
     .toBe("over");
+  const completed = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"));
+  expect(completed.length).toBeGreaterThan(0);
 });

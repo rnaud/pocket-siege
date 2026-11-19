@@ -2777,3 +2777,4 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #menu#menu .frontend-mission-preview .frontend-briefing { white-space: pre-line; text-align: left; font-family: system-ui, sans-serif; line-height: 1.6; text-transform: none; }
 #menu#menu .frontend-play-scenario { margin-top: 18px; padding: 8px 18px; }
 #menu#menu .frontend-scenario-meta { color: #b5b2d6; font: 13px/1.4 monospace; text-transform: uppercase; letter-spacing: 1px; margin: 8px auto; }
+#menu#menu .frontend-mission-list button.completed { color: #9ee29e; }

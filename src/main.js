@@ -55,6 +55,7 @@ import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
 import { nativeAutomaticUtilities } from "./armageddon/automatic-utilities.js";
 import { createNativeCrateScheme } from "./armageddon/crate-scheme.js";
 import { nativeCrateShowerTick } from "./armageddon/crate-shower.js";
+import { recordScenarioCompletion } from "./armageddon/scenario-progress.js";
 import { nativePickupCandidate } from "./armageddon/crate-pickup.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
@@ -1764,8 +1765,10 @@ function advanceScenarioProgress(crate) {
   if (scenarioProgress.complete) {
     // 00442000 groups WinningCondition1/3 into the objective mode; 0/2 keep
     // the ordinary elimination end conditions.
-    if (currentScenario?.training || [1, 3].includes(currentScenario?.winningCondition))
+    if (currentScenario?.training || [1, 3].includes(currentScenario?.winningCondition)) {
+      recordScenarioCompletion(currentScenario.path);
       finishMatch(0, false);
+    }
   } else spawnNextScenarioSequence();
 }
 function collectCrate(w, crate = crates[0]) {
