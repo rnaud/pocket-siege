@@ -3018,7 +3018,11 @@ function applySuddenDeath() {
     audio.resume();
     nativeSoundQueue.enqueue([94, 8, 65536, 65536, 0]);
   }
-  if (suddenDeathType === "water") return false;
+  if (suddenDeathType === "water") {
+    const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
+    startNativeWaterRise(waterLevel + rise, 8);
+    return false;
+  }
   if (suddenDeathType === "health") {
     for (const w of worms)
       if (w.hp > 0) {
@@ -3033,8 +3037,9 @@ function applySuddenDeath() {
   if (suddenDeathType === "nuke") {
     // The original controller emits these requests in order. Host rules still
     // supply the rise/dose until the scheme's environmental fields are live.
+    const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
     const calls = nativeSuddenDeathActivation({ waterY: Math.floor(H - waterLevel),
-      rise: WATER_RISE, dose: 5 });
+      rise, dose: 5 });
     for (const call of calls) {
       if (call.operation === "camera") pendingEnvironmentCamera = call.point;
       else if (call.operation === "sound") queueGameSound(call.request);

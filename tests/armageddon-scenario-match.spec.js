@@ -309,3 +309,23 @@ test("scenario sudden-death options disable the host round-six trigger", async (
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().suddenDeathDisabled)).toBe(true);
 });
+
+
+test("scenario water sudden death raises the sea", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const before = await page.evaluate(() => window.siege.getState().waterLevel);
+  await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(400));
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().waterLevel))
+    .toBeGreaterThan(before);
+});
