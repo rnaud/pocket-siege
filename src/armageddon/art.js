@@ -136,6 +136,7 @@ const names = [
     "sheepwlk",
     "donkey",
     "woman",
+    "arrow",
     "sally",
     "skunk1",
     "cowwalk",
@@ -316,6 +317,7 @@ export const projectileSprites = {
   banana: "banana",
   holy: "hgrenade",
   napalm: "petrolbm",
+  longbow: "arrow",
 };
 export function createNativeProjectileVisual(render) {
   const name = spriteIds.sprites[render?.sprite]?.name;
