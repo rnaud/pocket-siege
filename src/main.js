@@ -4280,6 +4280,24 @@ function syncTorchPosition(w, body) {
   if(w.originalBlowtorch)w.originalBlowtorch.body=body;
   w.x = body.x/65536; w.y = H-body.y/65536;
 }
+function useSelfDestruct(kind) {
+  if (!canAct() || availableAmmo(ammo[team], kind) <= 0) return;
+  const w = worms[current];
+  ammo[team][kind] = spendAmmo(ammo[team][kind]);
+  shotCount++;
+  recordReactionWeaponUse(kind);
+  w.hp = 0;
+  w.deathPending = true;
+  w.dying = 1;
+  w.nativeDeathRequest = 0;
+  startOriginalDeath(w);
+  phase = "settle";
+  retreat = retreatSeconds;
+  shotWait = 0;
+  wormLocked = true;
+  $("#status").textContent = `${w.name} self-destructs.`;
+  updateUI();
+}
 function useScales() {
   if (!canAct() || availableAmmo(ammo[team], "scales") <= 0) return;
   const totals = [0, 1].map((t) => worms
@@ -4537,6 +4555,10 @@ function fire() {
   const w = worms[current],
     kind = weapon,
     meta = WEAPONS[kind];
+  if (kind === "kamikaze" || kind === "suicidebomber") {
+    useSelfDestruct(kind);
+    return;
+  }
   if (kind === "mine") {
     placeMine();
     return;

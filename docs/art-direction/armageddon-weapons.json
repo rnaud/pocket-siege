@@ -152,16 +152,16 @@
     {
       "slot": 18,
       "native_name": "Kamikaze",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "kamikaze",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 4
     },
     {
       "slot": 19,
       "native_name": "SuicideBomber",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "suicidebomber",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 5
     },

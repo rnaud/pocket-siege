@@ -1166,7 +1166,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(45);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(47);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1406,7 +1406,25 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
   await openArsenal(page);
   for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
     "aquasheep", "donkey", "oldwoman", "molesquadron", "mingvase",
-    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb"]) {
+    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb", "kamikaze", "suicidebomber"]) {
     await expect(page.locator(`[data-weapon="${kind}"]`)).toBeVisible();
   }
+});
+
+test("kamikaze self-destructs the active worm", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  await page.locator('[data-weapon="kamikaze"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() => {
+      const state = window.siege.getState();
+      return state.worms[state.current].hp;
+    }), { timeout: 10000 })
+    .toBe(0);
 });
