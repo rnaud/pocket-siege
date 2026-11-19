@@ -488,7 +488,7 @@ let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
 let currentScenario = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
-let scenarioTimed = [], scenarioTurn = 0;
+let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1273,6 +1273,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     scenarioSequenceIndex = 0;
     scenarioTimed = [...(currentScenario.timedObjects ?? [])];
     scenarioTurn = 0;
+    suddenDeathDamageTurn = -1;
     scenarioProgress = {
       collected: 0,
       score: 0,
@@ -1284,7 +1285,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     };
   } else {
     scenarioSequence = []; scenarioSequenceIndex = 0;
-    scenarioTimed = []; scenarioTurn = 0;
+    scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1;
   }
   spawnScenarioObjects();
   spawnNextScenarioSequence();
@@ -1468,6 +1469,14 @@ function spawnScenarioObject(object) {
 function spawnScenarioObjects() {
   if (!currentScenario) return;
   for (const object of currentScenario.objects ?? []) spawnScenarioObject(object);
+}
+function applyScenarioSuddenDeathDamage() {
+  const amount = currentScenario?.suddenDeath?.wormDamage | 0;
+  if (!suddenDeath || amount <= 0 || suddenDeathDamageTurn === scenarioTurn) return false;
+  suddenDeathDamageTurn = scenarioTurn;
+  for (const w of worms) if (w.hp > 0) injure(w, amount);
+  updateUI();
+  return true;
 }
 function stepScenarioTimedEvents() {
   if (!currentScenario) return;
@@ -1972,6 +1981,7 @@ function beginTurn() {
   wormLocked = false;
   time = turnSeconds;
   stepScenarioTimedEvents();
+  applyScenarioSuddenDeathDamage();
   updateAutomaticUtilities();
   nativeClockPresentation.displayed = turnSeconds * 1000;
   nativeClockPresentation.warned = 0;
@@ -7730,6 +7740,9 @@ if (import.meta.env.DEV) {
     },
     triggerSuddenDeath() {
       return applySuddenDeath();
+    },
+    applySuddenDeathDamage() {
+      return applyScenarioSuddenDeathDamage();
     },
     dropWormForRecovery(index = current) {
       const w = worms[index];

@@ -331,3 +331,24 @@ test("scenario water sudden death raises the sea", async ({ page }) => {
     .poll(() => page.evaluate(() => window.siege.getState().waterLevel))
     .toBeGreaterThan(before);
 });
+
+
+test("scenario sudden-death worm damage drains health each turn", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
+  const before = await page.evaluate(() =>
+    window.siege.getState().worms.map((worm) => worm.hp));
+  expect(await page.evaluate(() => window.siege.debug.applySuddenDeathDamage())).toBe(true);
+  const after = await page.evaluate(() =>
+    window.siege.getState().worms.map((worm) => worm.hp));
+  expect(after.some((hp, index) => hp < before[index])).toBe(true);
+});
