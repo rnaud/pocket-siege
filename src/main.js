@@ -493,6 +493,7 @@ let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
 let earthquakeShake = 0;
+let teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -916,7 +917,7 @@ function announceMatchResult(winner) {
     audio.resume();
     queueControllerSpeech(request,worms.find(w=>w.team===winner));
   }
-  const message = nativeMatchResultAnnouncement(winner ? "CORAL CREW" : "MOSS COMPANY", winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
+  const message = nativeMatchResultAnnouncement(teamDisplayNames[winner ?? 0], winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 const music = new OriginalMusic();
@@ -987,6 +988,13 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
   matchFriction = currentScenario?.friction ?? NATIVE_MINE_FRICTION;
+  teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
+  if (currentScenario?.teamNames) {
+    teamDisplayNames[0] = currentScenario.teamNames[0] ?? teamDisplayNames[0];
+    teamDisplayNames[1] = currentScenario.teamNames[1] ?? teamDisplayNames[1];
+  }
+  $("#team0-name").textContent = teamDisplayNames[0];
+  $("#team1-name").textContent = teamDisplayNames[1];
   fallDamageScale = currentScenario?.fallDamage == null ? 1 : currentScenario.fallDamage / 100;
   const layout = isDaily || selectedLayout === "random"
     ? randomOriginalMap(matchSeed) : selectedLayout;
@@ -2134,7 +2142,7 @@ function beginTurn() {
     : `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}${weatherNote}`;
   bannerTime = 1.8;
   $("#turn-banner").textContent =
-    `${team ? "CORAL CREW" : "MOSS COMPANY"} · ${active.name.toUpperCase()}`;
+    `${teamDisplayNames[team]} · ${active.name.toUpperCase()}`;
   updateUI();
 }
 function updateUI() {
@@ -3215,9 +3223,9 @@ async function shareResultCard() {
   }
   const result =
     lastResult.winner === 0
-      ? "MOSS COMPANY WINS"
+      ? `${teamDisplayNames[0]} WINS`
       : lastResult.winner === 1
-        ? "CORAL CREW WINS"
+        ? `${teamDisplayNames[1]} WINS`
         : "MUTUAL DESTRUCTION";
   ctx.fillStyle = "#efc58b";
   ctx.font = '24px "Siege Pixel"';
@@ -5849,7 +5857,7 @@ function stepFrame(dt) {
   }
   if (pendingEliminationTeam !== null) {
     const id = pendingEliminationTeam;
-    const message = nativeTeamEliminationAnnouncement(id ? "CORAL CREW" : "MOSS COMPANY", id ? 0 : 2, () => matchRandom.logicUint());
+    const message = nativeTeamEliminationAnnouncement(teamDisplayNames[id ?? 0], id ? 0 : 2, () => matchRandom.logicUint());
     queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
     pendingEliminationTeam = null;
   }

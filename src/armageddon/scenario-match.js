@@ -2,6 +2,7 @@ import mapNames from "./map-names.json" with { type: "json" };
 import { resolveMissionDefinition } from "./mission-files.js";
 import inventoryKeys from "./mission-inventory-keys.json" with { type: "json" };
 import { WEAPON_SLOTS } from "./delays.js";
+import { originalResourceString } from "./string-resources.js";
 
 const section = (record, name) =>
   record.sections.find((entry) => entry.name.toLowerCase() === name.toLowerCase());
@@ -43,6 +44,19 @@ function scenarioUtilityLoadouts(record) {
     }
   }
   return loadouts;
+}
+function scenarioTeamNames(record) {
+  const names = [null, null];
+  for (const team of record.sections) {
+    const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
+    if (!match) continue;
+    const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
+    if (index === 1 && Number(match[1].replace(/\D/g, "")) !== 1) continue;
+    const value = team.entries.find(([key]) => key.toLowerCase() === "teamnamenumber")?.[1];
+    const number = Number.parseInt(value, 10);
+    if (Number.isFinite(number)) names[index] = originalResourceString(712 + number);
+  }
+  return names;
 }
 function scenarioTeamWorms(record) {
   const teams = [[], []];
@@ -123,6 +137,7 @@ export function resolveScenarioMatch(path) {
     lossOfControlDoesntEndTurn: read(record, "Options", "LossOfControlDoesntEndTurn", 0) === 1,
     enableSecretWeapons: read(record, "Options", "EnableSecretWeapons", 1) === 1,
     teamWorms: scenarioTeamWorms(record),
+    teamNames: scenarioTeamNames(record),
     loadouts: scenarioLoadouts(record),
     utilityLoadouts: scenarioUtilityLoadouts(record),
     healthCrateEnergy: read(record, "Options", "HealthCrateEnergy", null),
