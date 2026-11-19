@@ -4980,15 +4980,21 @@ function detonateNativeProjectile(p) {
 }
 const WALKING_UNIT_KINDS = new Set([
   "sheep", "supersheep", "aquasheep", "donkey",
+  "oldwoman", "sallyarmy", "skunk", "madcow", "molebomb",
 ]);
+function walkingUnitGrounded(x, y) {
+  for (const offset of [-8, -4, 0, 4]) if (terrain.solid(x, y + offset)) return true;
+  return false;
+}
 function stepWalkingUnit(p) {
   if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
   if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
-  if (!terrain.solid(p.x, p.y + 2)) return;
+  if (!walkingUnitGrounded(p.x, p.y)) return;
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
   const step = p.walkFacing * 0.8;
   const aheadX = p.x + step * 4;
-  if (!terrain.solid(aheadX, p.y + 2) || terrain.solid(aheadX, p.y - 4)) {
+  if (!walkingUnitGrounded(aheadX, p.y) ||
+      (terrain.solid(aheadX, p.y - 4) && !terrain.solid(p.x, p.y - 4))) {
     p.walkFacing = -p.walkFacing;
     return;
   }

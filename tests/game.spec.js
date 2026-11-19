@@ -1604,7 +1604,8 @@ test("released units walk along the ground", async ({ page }) => {
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator("#mode").selectOption("local");
   await page.locator("#start").click();
-  for (const kind of ["sheep", "supersheep", "aquasheep", "donkey"]) {
+  for (const kind of ["sheep", "supersheep", "aquasheep", "donkey", "oldwoman",
+    "sallyarmy", "skunk", "madcow", "molebomb"]) {
     await page.evaluate(kind => window.siege.debug.spawnUnitAt(kind, 600), kind);
     const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
     expect(before, kind).not.toBeNull();
