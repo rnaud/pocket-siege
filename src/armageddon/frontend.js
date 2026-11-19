@@ -1,6 +1,6 @@
 import missionNames from './mission-names.json' with {type:'json'};
 import { resolveScenarioMatch } from './scenario-match.js';
-import { isScenarioComplete, readScenarioScores } from './scenario-progress.js';
+import { isScenarioComplete, readScenarioProgress, readScenarioScores } from './scenario-progress.js';
 // Full-screen front end built around the original imported menu bitmaps.
 // Existing controls retain their IDs and native form/dialog behavior.
 export function mountArmageddonFrontend(host = {}) {
@@ -96,6 +96,9 @@ export function mountArmageddonFrontend(host = {}) {
     if (request !== campaignRequest || menu.dataset.frontendMode !== kind) return;
     notice.textContent = 'Objectives, scripted events and progression are not connected yet. PLAY opens the original landscape and turn rules as a skirmish.';
     const paths = Object.keys(missionNames).filter(path => path.startsWith(`mission/${training ? 'training' : 'mission'}`)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
+    const completedPaths = readScenarioProgress();
+    const completedCount = paths.filter((path) => completedPaths.has(path)).length;
+    campaignTitle.textContent = `${training ? 'TRAINING' : 'MISSIONS'} · ${completedCount}/${paths.length} COMPLETE`;
     paths.forEach((path, index) => {
       const scenario = originalMissionPresentation(path);
       const button = document.createElement('button');

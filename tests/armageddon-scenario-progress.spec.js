@@ -39,3 +39,15 @@ test("scenario best scores persist and only improve", { tag: "@logic" }, () => {
   expect(readScenarioScores(storage).get("mission/mission0.wam")).toBe(7);
   expect(recordScenarioScore("", 1, storage)).toBe(false);
 });
+
+test("campaign header reports locally completed scenario counts", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("pocket-siege-scenario-progress-v1",
+      JSON.stringify(["mission/training1.wam"]));
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await expect(page.locator(".frontend-campaign h2")).toContainText("1/15 COMPLETE");
+});
