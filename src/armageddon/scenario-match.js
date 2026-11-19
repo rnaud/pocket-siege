@@ -82,6 +82,7 @@ function scenarioTeamWorms(record) {
     const teamSkill = Number.parseInt(entries.teamskill, 10);
     const flag = Number.parseInt(entries.flag, 10);
     const soundBank = Number.parseInt(entries.soundbank, 10);
+    const graveStone = Number.parseInt(entries.gravestone, 10);
     for (let worm = 1; worm <= 16; worm++) {
       const energy = Number.parseInt(entries[`worm${worm}_energy`], 10);
       if (!Number.isFinite(energy)) continue;
@@ -98,6 +99,7 @@ function scenarioTeamWorms(record) {
         teamSkill: Number.isFinite(teamSkill) ? teamSkill : null,
         flag: Number.isFinite(flag) ? flag : null,
         soundBank: Number.isFinite(soundBank) ? soundBank : null,
+        graveStyle: Number.isFinite(graveStone) ? graveStone : null,
         energy,
         disease: Number.isFinite(disease) ? disease : 0,
         nameNumber: Number.isFinite(nameNumber) ? nameNumber : null,

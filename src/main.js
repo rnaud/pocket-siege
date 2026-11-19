@@ -1341,6 +1341,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.teamSkill = config.teamSkill;
         worm.flag = config.flag;
         worm.soundBank = config.soundBank;
+        if (config.graveStyle !== null && config.graveStyle !== undefined)
+          worm.graveStyle = config.graveStyle;
         if (currentScenario.teamGraves?.[teamIndex]) worm.graveStyle = currentScenario.teamGraves[teamIndex];
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
