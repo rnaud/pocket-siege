@@ -1166,7 +1166,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(49);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(50);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1406,7 +1406,7 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
   await openArsenal(page);
   for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
     "aquasheep", "donkey", "oldwoman", "molesquadron", "mingvase",
-    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb", "longbow", "earthquake", "kamikaze", "suicidebomber"]) {
+    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb", "sheeplauncher", "longbow", "earthquake", "kamikaze", "suicidebomber"]) {
     await expect(page.locator(`[data-weapon="${kind}"]`)).toBeVisible();
   }
 });
@@ -1498,4 +1498,21 @@ test("unit weapons fire without missing projectile art", async ({ page }) => {
     })
     .toBe("sheep");
   expect(errors).toEqual([]);
+});
+
+test("sheep launcher fires a native sheep projectile", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  await page.locator('[data-weapon="sheeplauncher"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(500);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().projectile?.kind ?? null), {
+      timeout: 10000,
+    })
+    .toBe("sheep");
 });

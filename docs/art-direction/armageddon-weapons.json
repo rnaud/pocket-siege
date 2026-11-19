@@ -48,8 +48,8 @@
     {
       "slot": 5,
       "native_name": "SheepLauncher",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "sheeplauncher",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 8
     },

@@ -4297,6 +4297,29 @@ function syncTorchPosition(w, body) {
   if(w.originalBlowtorch)w.originalBlowtorch.body=body;
   w.x = body.x/65536; w.y = H-body.y/65536;
 }
+function fireSheepLauncher() {
+  if (!canAct() || availableAmmo(ammo[team], "sheeplauncher") <= 0) return;
+  const w = worms[current], origin = launchGeometry(w, angle, "sheep", terrain);
+  const v = launch(angle, power);
+  const p = {
+    ...origin.muzzle, ...v, target: null,
+    launchX: origin.muzzle.x, launchY: origin.muzzle.y, age: 0,
+    fuse: 2, bounce: 0, owner: current, kind: "sheep", sleeping: false,
+    stuck: false, attached: null, mesh: projectileMesh("sheep"),
+    blocked: false,
+  };
+  attachNativeProjectile(p, H);
+  p.mesh.position.set(p.x, p.y, 40);
+  group.add(p.mesh);
+  projectile = p;
+  ammo[team].sheeplauncher = spendAmmo(ammo[team].sheeplauncher);
+  shotCount++;
+  recordReactionWeaponUse("sheeplauncher");
+  phase = "flight";
+  retreat = retreatSeconds;
+  $("#status").textContent = "Sheep launched!";
+  updateUI();
+}
 function useEarthquake() {
   if (!canAct() || availableAmmo(ammo[team], "earthquake") <= 0) return;
   const w = worms[current];
@@ -4584,6 +4607,10 @@ function fire() {
   const w = worms[current],
     kind = weapon,
     meta = WEAPONS[kind];
+  if (kind === "sheeplauncher") {
+    fireSheepLauncher();
+    return;
+  }
   if (kind === "earthquake") {
     useEarthquake();
     return;

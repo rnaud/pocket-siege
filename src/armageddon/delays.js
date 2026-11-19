@@ -40,6 +40,7 @@ export const WEAPON_SLOTS = Object.freeze({
   bat: 35,
   holy: 43,
   scales: 41,
+  sheeplauncher: 5,
   earthquake: 10,
   longbow: 15,
   kamikaze: 18,
