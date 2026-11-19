@@ -18,6 +18,7 @@ export class NativeCollisionRegistry {
   }
 
   intersects(mask, x, y, other) {
+    if (!mask || !other.mask) return false;
     return this.overlap(
       mask,
       x >> 16,

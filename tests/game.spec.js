@@ -1614,3 +1614,17 @@ test("sheep-family units walk along the ground", async ({ page }) => {
 });
 
 
+
+test("donkey units use the released-unit walking path", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 600));
+  const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
+  expect(before).not.toBeNull();
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(20));
+  const after = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
+  expect(after).not.toBeNull();
+  expect(after).not.toBe(before);
+});
