@@ -17,6 +17,7 @@ test('slow loading shows only the loading screen until current art is ready',asy
   await expect(page.locator('#asset-loading')).toHaveCount(0,{timeout:20000});
   await expect(page.locator('#menu')).toBeVisible();
   await expect(page.locator('#app')).toBeHidden();
+  await page.locator('[data-mode="ai"]').click();
   await page.locator('#start').click();
   await expect(page.locator('#app')).toBeVisible();
   expect(await page.evaluate(()=>window.siege.getState().worms.every(w=>w.originalSprite))).toBe(true);

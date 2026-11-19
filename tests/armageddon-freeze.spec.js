@@ -65,7 +65,7 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
   });
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   // Fix terrain/object placement so random settling does not time the Freeze check.

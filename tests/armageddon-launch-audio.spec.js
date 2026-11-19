@@ -207,13 +207,15 @@ test("browser decodes native projectile release samples without an early holy ch
   });
   await expect.poll(()=>page.evaluate(()=>window.releasePlayback.length)).toBe(9);
   expect(voices.sort()).toEqual(['austra~1/amazing.wav','danish~1/amazing.wav','english/amazing.wav']);
+  await page.locator('[data-mode="ai"]').click();
   await page.locator('#team-voice-0').selectOption('austra~1');
   await page.locator('#team-voice-1').selectOption('danish~1');
   await page.reload();
+  await page.locator('[data-mode="ai"]').click();
   await expect(page.locator('#team-voice-0')).toHaveValue('austra~1');
   await expect(page.locator('#team-voice-1')).toHaveValue('danish~1');
   await expect.poll(()=>page.evaluate(()=>window.siege?.getState().assetsReady)).toBe(true);
-  await page.locator('#mode').selectOption('local');await page.locator('#start').click();
+  await page.locator('[data-mode="local"]').click();await page.locator('#start').click();
   expect(await page.evaluate(()=>window.siege.getState().worms.map(w=>w.nativeSpeechBank).sort())).toEqual(['austra~1','austra~1','austra~1','danish~1','danish~1','danish~1']);
   const activeTeam=await page.evaluate(()=>window.siege.getState().team);
   await page.locator('#sound').click();await page.locator('#skip').click();

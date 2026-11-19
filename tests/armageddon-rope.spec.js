@@ -51,7 +51,7 @@ test("rope poses and attachments preserve every source pixel and clear on releas
     return { mismatches, frames: frames.size };
   });
   expect(result).toEqual({ mismatches: 0, frames: 64 });
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));

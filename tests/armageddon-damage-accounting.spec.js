@@ -64,7 +64,7 @@ test("health, cumulative/displayed damage and events match original damage routi
 test("live native damage totals reveal after settlement and lethal accounting stays capped", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   // Damage reveal waits for all tasks, including the unrelated initial supply drop.

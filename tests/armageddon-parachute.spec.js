@@ -81,7 +81,7 @@ test("live falling worm deploys original canopy, slows continuously and folds on
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(async () => {

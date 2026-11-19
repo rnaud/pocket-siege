@@ -30,7 +30,7 @@ for (const interrupt of [false, true])
 test(`live Prod ${interrupt ? 'cancels on damage without spending' : 'waits for preparation and consumes one action'}`, async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('#mode').selectOption('local');
+  await page.locator('[data-mode="local"]').click();
   await page.locator('#start').click();
   await page.evaluate(async () => { await window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, 'prod', 2); });
   await page.locator('#inventory-toggle').click();

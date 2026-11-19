@@ -4,7 +4,7 @@ test("original wind strips retain source pixels and clip left/right strength wit
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const result = await page.evaluate(async () => {
     const { updateOriginalWindHUD, originalWindStrip } =

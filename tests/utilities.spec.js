@@ -655,7 +655,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
 
 test("crate shower drops native supply crates", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.setUtility(0, "crateshower", 1));
   await expect
@@ -672,7 +672,7 @@ test("laser sight draws the native aim ray until it is toggled off", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="laser"]').click();
@@ -698,7 +698,7 @@ test("laser sight draws the native aim ray until it is toggled off", async ({
 
 test("invisibility cloaks the active squad until the next turn", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="invisibility"]').click();
@@ -713,7 +713,7 @@ test("invisibility cloaks the active squad until the next turn", async ({ page }
 test("bridge kit spends its own inventory on native placement", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -737,7 +737,7 @@ test("bridge kit spends its own inventory on native placement", async ({ page })
 test("girder targeting cycles the original shape strips", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -761,7 +761,7 @@ test("girder targeting cycles the original shape strips", async ({ page }) => {
 test("girder targeting switches between short and long original strips", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -785,7 +785,7 @@ test("girder targeting switches between short and long original strips", async (
 test("teleport validates a target and relocates the active worm", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));

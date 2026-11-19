@@ -65,7 +65,7 @@ test("live team names use original colored glyphs on the pixel grid", async ({
   });
   expect(textImages).toEqual({ glyphMismatch: 0, unchanged: true, changedUsesBase: true, partialFade: true,
     clipped: [8, 4], border: [157,157,157,255], corner: [0,0,0,0], liveBorder: [157,157,157,255] });
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator(".team-lime b")).toHaveAttribute(
     "data-native-font",

@@ -42,7 +42,7 @@ test('game loads original worm animation without asset errors', async ({page}) =
   await page.goto('/');
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   expect(await page.evaluate(() => window.siege.getState().originalArtError)).toBeNull();
-  await page.locator('#mode').selectOption('local');
+  await page.locator('[data-mode="local"]').click();
   await page.locator('#start').click();
   await page.screenshot({path:'test-results/armageddon-game.png'});
 });

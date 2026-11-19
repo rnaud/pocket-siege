@@ -200,8 +200,9 @@ test("original terrain uses source pixels and preserves the destructible mask", 
   });
   expect(result.actual).toEqual(result.expected);
   expect(result.alpha).toBe(0);
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#terrain-theme").selectOption("snow");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   expect(await page.evaluate(() => window.siege.getState().terrainTheme)).toBe(
     "snow",

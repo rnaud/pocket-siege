@@ -44,7 +44,7 @@ test("rolling hurt frames advance from native velocity rather than render time",
 test("live blast advances the original rolling frames", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   // Random terrain can immediately select sliding instead of rolling.

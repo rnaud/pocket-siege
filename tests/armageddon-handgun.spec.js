@@ -13,7 +13,7 @@ test("handgun reads original resource195 bullet and burst fields", { tag: "@logi
 async function start(page) {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   // Burst/retreat timing must not depend on a randomly selected authored map.
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();

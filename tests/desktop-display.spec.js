@@ -7,7 +7,7 @@ test('desktop fills the battlefield with a finer integer pixel grid and undistor
   test.skip(info.project.name !== 'desktop');
   await page.goto('/');
   await page.waitForFunction(()=>window.siege?.getState().assetsReady);
-  await page.locator('#mode').selectOption('local');
+  await page.locator('[data-mode="local"]').click();
   await page.locator('#start').click();
   for (const size of [{width:1440,height:900},{width:1920,height:1080},{width:2560,height:1440}]) {
     await page.setViewportSize(size);

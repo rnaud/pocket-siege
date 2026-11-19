@@ -22,7 +22,7 @@ test("live rocket emits original exhaust pixels instead of a vector trail and ex
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await page.locator("#angle").evaluate((el) => {

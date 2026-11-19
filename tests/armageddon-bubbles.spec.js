@@ -19,7 +19,7 @@ for (const frozen of [false, true])
     page,
   }, info) => {
     await page.goto("/");
-    await page.locator("#mode").selectOption("local");
+    await page.locator('[data-mode="local"]').click();
     await page.locator("#start").click();
     const before = await page.evaluate(() => window.siege.getState().worms[0]);
     await page.evaluate(

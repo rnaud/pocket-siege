@@ -102,8 +102,9 @@ test("every terrain theme renders its original backdrop at native resolution", a
     return { count: themes.length, failures };
   });
   expect(result).toEqual({ count: 29, failures: [] });
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#terrain-theme").selectOption("forest");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().backdropTheme))
@@ -145,8 +146,9 @@ test("explosions render native debris for the selected terrain and release it", 
     return result;
   });
   expect(pixelCheck).toEqual({ same: true, width: 60, scale: 1 });
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#terrain-theme").selectOption("snow");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   const { debris, explosions } = await page.evaluate(async () => {

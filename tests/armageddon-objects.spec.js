@@ -5,7 +5,7 @@ async function start(page, map) {
   expect(
     await page.evaluate(() => window.siege.getState().originalArtError),
   ).toBeNull();
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   if (map) await page.locator("#map-layout").selectOption(map);
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));

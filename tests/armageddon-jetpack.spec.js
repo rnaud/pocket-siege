@@ -34,7 +34,7 @@ test("jetpack turns through original poses and renders thrust flames", async ({
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="jetpack"]').click();

@@ -52,7 +52,7 @@ test("arsenal and field kit use native icons with integer layout and disabled va
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   // Random authored terrain can kill the active worm during startup. Icon
   // variants need a reproducible living actor, independent of spawn coverage.

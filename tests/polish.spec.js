@@ -23,7 +23,7 @@ test("compact arsenal, overview and charge work across layouts", async ({
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator(".weapon-panel")).not.toBeVisible();
   await page.locator("#inventory-toggle").click();

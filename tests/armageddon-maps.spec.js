@@ -79,7 +79,7 @@ test("authored map is playable at full size and switching back restores the host
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("original:image/artclass.img");
   await page.locator("#start").click();
   const state = await page.evaluate(async () => { await window.siege.debug.resetSeed(42); return window.siege.getState(); });

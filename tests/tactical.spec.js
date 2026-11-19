@@ -39,7 +39,7 @@ test("homing selects a fixed world target through the current camera", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("highlands");
   await page.locator("#start").click();
   await expect
@@ -92,7 +92,7 @@ for (const kind of ["cluster", "napalm", "holy"]) {
   }) => {
     await page.goto("/");
     await page.waitForFunction(() => window.siege?.getState().assetsReady);
-    await page.locator("#mode").selectOption("local");
+    await page.locator('[data-mode="local"]').click();
     await page.locator("#start").click();
     // Keep the landing surface fixed: holy's native delay waits for rest.
     await page.evaluate(() => window.siege.debug.resetSeed(42));

@@ -1883,7 +1883,7 @@ test("live native team bars update with damage and keep HUD controls usable", as
   });
   expect(palettePixels).toBe(576);
 
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   // Keep damage accounting independent of random-map ledges and drowning.
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();

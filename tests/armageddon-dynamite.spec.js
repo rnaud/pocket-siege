@@ -46,7 +46,7 @@ test("live dynamite moves, advances its native fuse strip and stops the original
   page.on("request",r=>{ if(/\/(fuse|laugh)\.wav$/.test(r.url())) samples.push(r.url().split("/").pop()); });
   await page.goto("/");
   await page.waitForFunction(()=>window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(()=>window.siege.debug.resetSeed(42));
   await page.locator("#sound").click();

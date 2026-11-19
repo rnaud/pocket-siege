@@ -4,7 +4,7 @@ test("original aiming crosshairs retain all palette frames and mirrored pixels",
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator(".original-crosshair")).toHaveAttribute(
     "data-original-sprite",

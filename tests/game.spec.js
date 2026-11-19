@@ -31,7 +31,7 @@ test("play a full destructive turn with responsive controls", async ({
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   // This fixed shot needs a fixed terrain fixture; the default picks an original map.
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
@@ -71,6 +71,7 @@ test("play a full destructive turn with responsive controls", async ({
 test("computer takes its turn and returns control", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   // Test the computer's turn without a human projectile or supply-drop
@@ -107,6 +108,7 @@ test("movement, jump, and pointer aiming", async ({
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#start").click();
   const before = await page.evaluate(() => window.siege.getState().worms[0]);
   await page.locator('[data-move="1"]').scrollIntoViewIfNeeded();
@@ -151,6 +153,7 @@ test("original art loads and character labels stay readable", async ({
     path: `test-results/${info.project.name}-art-menu.png`,
     fullPage: true,
   });
+  await page.locator('[data-mode="ai"]').click();
   await expect(page.locator("#start")).toBeInViewport();
   await page.locator("#start").click();
   await expect(page.locator(".worm-label")).toHaveCount(6);
@@ -175,7 +178,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await expect(page.locator("#aim-reticle")).toBeVisible();
@@ -231,7 +234,7 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -259,7 +262,7 @@ test("Space charges until release, arrows only aim, and no shot prediction exist
   page,
 }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator("#fire")).toBeEnabled();
   await expect(page.locator("#power")).toHaveCount(0);
@@ -311,7 +314,7 @@ test("holding fire caps at one full-power shot and canceled input does not shoot
   page,
 }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator("#fire")).toBeEnabled();
   const b = page.locator("#fire");
@@ -343,7 +346,7 @@ test("grenade fuse selection and retreat movement work without granting another 
   page,
 }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator("#fire")).toBeEnabled();
   await openArsenal(page);
@@ -383,7 +386,7 @@ test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", a
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator(".aim-panel")).toBeVisible();
   await expect(page.locator("#power-meter")).toHaveAttribute(
@@ -458,7 +461,7 @@ test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", a
 for (const weapon of ["mortar", "sticky"])
   test(`${weapon} fires with its own impact behavior`, async ({ page }) => {
     await page.goto("/");
-    await page.locator("#mode").selectOption("local");
+    await page.locator('[data-mode="local"]').click();
     await page.locator("#start").click();
     await openArsenal(page);
     await page.locator(`[data-weapon="${weapon}"]`).click();
@@ -487,7 +490,7 @@ for (const weapon of ["mortar", "sticky"])
 
 test("limited weapons spend ammo and update their counts", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator('[data-weapon="grenade"] small')).toHaveText("3");
   await openArsenal(page);
@@ -505,6 +508,7 @@ test("computer skill is selectable and hidden for local play", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await expect(page.locator("#difficulty-row")).toBeVisible();
   await page.selectOption("#difficulty", "veteran");
   await page.locator("#start").click();
@@ -512,13 +516,13 @@ test("computer skill is selectable and hidden for local play", async ({
     "veteran",
   );
   await page.locator("#restart").click();
-  await page.selectOption("#mode", "local");
+  await page.locator('[data-mode="local"]').click();
   await expect(page.locator("#difficulty-row")).toBeHidden();
 });
 
 test("worm labels retain original world anchors while aiming", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await expect(page.locator("#aim-reticle")).toBeVisible();
@@ -575,7 +579,7 @@ test("desktop fills the window without page scrolling", async ({
   test.skip(info.project.name !== "desktop", "desktop layout");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator("#fire")).toBeEnabled();
   const layout = await page.evaluate(() => {
@@ -603,6 +607,7 @@ test("best-of-three, storm weather and a supply crate start together", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await page.selectOption("#format", "best3");
   await page.selectOption("#weather", "storm");
   await page.locator("#start").click();
@@ -689,6 +694,7 @@ test("best-of-three advances islands and records the series", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await page.selectOption("#format", "best3");
   await page.locator("#start").click();
   await expect(page.locator("#series")).toContainText("0–0");
@@ -741,7 +747,7 @@ test("supply crate and a killing blow feed the pickup and slow-motion systems", 
   page,
 }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const before = await page.evaluate(() => window.siege.getState());
   expect(before.crate).not.toBeNull();
@@ -768,8 +774,9 @@ test("match modifiers change gravity, blast size and turn length", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="ai"]').click();
   await page.selectOption("#modifier", "moon-chaos");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.modifier).toBe("moon-chaos");
@@ -782,7 +789,7 @@ test("action camera follows the shot and snaps back for the next turn", async ({
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.locator("#angle").evaluate((el) => {
     el.value = "45";
@@ -813,7 +820,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   const mineSounds = [];
   page.on("request", r => { if (/\/(minearm|minetick|mineimpact)\.wav$/.test(r.url())) mineSounds.push(r.url().split("/").pop()); });
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -866,7 +873,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
 
 test("the last shot can be replayed over the battlefield", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.locator("#angle").evaluate((el) => {
     el.value = "45";
@@ -906,6 +913,7 @@ test("the last shot can be replayed over the battlefield", async ({ page }) => {
 
 test("a finished match enables the result card", async ({ page }, info) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.knockout(1));
   await expect
@@ -927,8 +935,9 @@ test("a finished match enables the result card", async ({ page }, info) => {
 
 test("saved settings survive a reload", async ({ page }) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#difficulty").selectOption("veteran");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.selectOption("#format", "best3");
   await page.selectOption("#weather", "storm");
   await page.selectOption("#modifier", "low-gravity");
@@ -941,6 +950,7 @@ test("saved settings survive a reload", async ({ page }) => {
   await page.reload();
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   expect(await page.locator("#mode").inputValue()).toBe("local");
+  await page.locator('[data-mode="local"]').click();
   expect(await page.locator("#difficulty").inputValue()).toBe("veteran");
   expect(await page.locator("#format").inputValue()).toBe("best3");
   expect(await page.locator("#weather").inputValue()).toBe("storm");
@@ -957,7 +967,7 @@ test("worm selection, turn pace and skip change the turn economy", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.selectOption("#turn-time", "60");
   await page.selectOption("#retreat-time", "8");
   await page.locator("#map-layout").selectOption("fern");
@@ -989,7 +999,7 @@ test("worm selection, turn pace and skip change the turn economy", async ({
 test("sudden-death health and nuclear variants apply", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.selectOption("#mode", "local");
+  await page.locator('[data-mode="local"]').click();
   await page.selectOption("#sudden-death", "health");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
@@ -999,7 +1009,7 @@ test("sudden-death health and nuclear variants apply", async ({ page }) => {
   expect(state.worms.every((w) => w.hp === 1)).toBe(true);
   await page.reload();
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.selectOption("#sudden-death", "nuke");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
@@ -1009,7 +1019,7 @@ test("sudden-death health and nuclear variants apply", async ({ page }) => {
 
 test("surrender ends a live match from the menu", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator("#surrender")).toBeHidden();
   await page.locator("#restart").click();
@@ -1028,7 +1038,7 @@ test("field kit teleport and girder target the battlefield", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -1049,7 +1059,7 @@ test("field kit teleport and girder target the battlefield", async ({
 
   await page.reload();
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -1083,7 +1093,7 @@ test("field kit teleport and girder target the battlefield", async ({
 test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   let attached = false;
@@ -1121,7 +1131,7 @@ test("parachute and freeze utilities resolve their effects", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   // Turn-control checks exclude unrelated supply-drop settlement.
@@ -1162,7 +1172,7 @@ test("parachute and freeze utilities resolve their effects", async ({
 test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
 
@@ -1214,7 +1224,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
 
   await page.reload();
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
 
@@ -1227,7 +1237,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
 
   await page.reload();
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
 
@@ -1249,7 +1259,7 @@ test("cluster bomblets and native petrol flames resolve their effects", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "cluster"));
   let state = await page.evaluate(() => window.siege.getState());
@@ -1259,7 +1269,7 @@ test("cluster bomblets and native petrol flames resolve their effects", async ({
 
   await page.reload();
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   // Capture creation before the native100ms spread can run between API calls.
   state = await page.evaluate(() => {
@@ -1275,6 +1285,7 @@ test("scheme presets apply turn pace, sudden death and stockpile rules", async (
   page,
 }) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await page.selectOption("#scheme", "blitz");
   expect(await page.locator("#turn-time").inputValue()).toBe("30");
   expect(await page.locator("#retreat-time").inputValue()).toBe("5");
@@ -1288,6 +1299,7 @@ test("scheme presets apply turn pace, sudden death and stockpile rules", async (
   expect(state.crateRain).toBe(true);
   await page.reload();
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="ai"]').click();
   await page.selectOption("#scheme", "stockpile");
   expect(await page.locator("#format").inputValue()).toBe("best3");
   await page.locator("#start").click();
@@ -1301,6 +1313,7 @@ test("stockpile keeps ammo and utilities across series islands", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await page.selectOption("#scheme", "stockpile");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.setAmmo(0, "grenade", 7));
@@ -1319,7 +1332,7 @@ test("stockpile keeps ammo and utilities across series islands", async ({
 
 test("special and utility crates stock the field kit", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const specialKinds = await page.locator('.weapons [data-weapon]').evaluateAll(buttons => buttons.slice(5).map(button => button.dataset.weapon));
   await page.evaluate(kinds => {
@@ -1337,7 +1350,7 @@ test("special and utility crates stock the field kit", async ({ page }) => {
   expect(specialTotal(beforeSpecial)).toBe(0);
 
   await page.reload();
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.setCrateKind("utility"));
   await page.evaluate(() => window.siege.debug.collectCrate());
@@ -1353,7 +1366,7 @@ test("special and utility crates stock the field kit", async ({ page }) => {
 test("flame thrower emits native flames and spends its stream", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -1376,7 +1389,7 @@ test("flame thrower emits native flames and spends its stream", async ({ page })
 test("scales of justice balances team health", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
@@ -1401,7 +1414,7 @@ test("scales of justice balances team health", async ({ page }) => {
 test("all special weapons are reachable from the arsenal sheet", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
@@ -1414,7 +1427,7 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
 test("kamikaze self-destructs the active worm", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="kamikaze"]').click();
@@ -1432,7 +1445,7 @@ test("kamikaze self-destructs the active worm", async ({ page }) => {
 test("crate spy reveals the current crate contents", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().crates.length), { timeout: 10000 })
@@ -1445,7 +1458,7 @@ test("crate spy reveals the current crate contents", async ({ page }) => {
 test("earthquake damages grounded worms", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await expect
@@ -1468,7 +1481,7 @@ test("earthquake damages grounded worms", async ({ page }) => {
 test("longbow fires a host arrow projectile", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="longbow"]').click();
@@ -1487,7 +1500,7 @@ test("unit weapons fire without missing projectile art", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="sheep"]').click();
@@ -1505,7 +1518,7 @@ test("unit weapons fire without missing projectile art", async ({ page }) => {
 test("sheep launcher fires a native sheep projectile", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="sheeplauncher"]').click();
@@ -1522,7 +1535,7 @@ test("sheep launcher fires a native sheep projectile", async ({ page }) => {
 test("armageddon damages every living worm", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="armageddon"]').click();
@@ -1539,7 +1552,7 @@ test("armageddon damages every living worm", async ({ page }) => {
 test("nuclear bomb targets a nuclear strike", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="nuclearbomb"]').click();
@@ -1561,7 +1574,7 @@ test("nuclear bomb targets a nuclear strike", async ({ page }) => {
 test("scales of justice caps health at 100 with uneven survivors", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await openArsenal(page);
   await expect
@@ -1585,7 +1598,7 @@ test("scales of justice caps health at 100 with uneven survivors", async ({ page
 test("skunk detonation infects nearby worms with poison", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const target = await page.evaluate(() => {
     const state = window.siege.getState();
@@ -1602,7 +1615,7 @@ test("skunk detonation infects nearby worms with poison", async ({ page }) => {
 test("released units walk along the ground", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   for (const kind of ["sheep", "supersheep", "aquasheep", "donkey", "oldwoman",
     "sallyarmy", "skunk", "madcow", "molebomb"]) {
@@ -1620,7 +1633,7 @@ test("released units walk along the ground", async ({ page }) => {
 test("donkey units use the released-unit walking path", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 600));
   const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
@@ -1634,7 +1647,7 @@ test("donkey units use the released-unit walking path", async ({ page }) => {
 test("walking skunk leaves a poison trail", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
   await page.evaluate(() => window.siege.debug.spawnUnitAt("skunk", 600));
@@ -1649,7 +1662,7 @@ test("walking skunk leaves a poison trail", async ({ page }) => {
 test("sally army detonation emits sheep payloads", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.detonateAt("sallyarmy", 600, 350));
   const kids = await page.evaluate(() =>

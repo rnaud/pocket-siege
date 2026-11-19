@@ -20,7 +20,7 @@ test("live native labels blink and repaint health after damage", async ({
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(page.locator(".native-worm-text")).toHaveCount(6);
   const active = page.locator(".worm-label.active");

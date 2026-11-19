@@ -52,7 +52,7 @@ test("live death plays past the old cutoff before its explosion", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   await expect

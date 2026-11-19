@@ -5,7 +5,7 @@ test("original team selection arrows preserve all frames and follow simulation p
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await expect(
     page.locator(".worm-label.active .original-selection"),
@@ -72,6 +72,7 @@ test("original team selection arrows preserve all frames and follow simulation p
   await expect(
     page.locator(".worm-label.active .original-selection"),
   ).toHaveAttribute("data-frame", frame);
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.screenshot({ path: info.outputPath("original-selection.png") });
 });

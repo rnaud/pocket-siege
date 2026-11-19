@@ -26,7 +26,7 @@ test("sight overlay stops changing while the menu pauses simulation", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.locator("#restart").click();
   const read = () =>

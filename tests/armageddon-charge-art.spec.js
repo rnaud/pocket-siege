@@ -12,7 +12,7 @@ test("original charge sprites appear while charging and clear on release", async
 }, info) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const mismatch = await page.evaluate(async () => {
     const { originalVisual } = await import("/src/armageddon/art.js");

@@ -2836,3 +2836,37 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #weapon-tray #special-toggle { display: none !important; }
 
 .crate-spy-label { position: absolute; transform: translate(-50%, -100%); color: #9fe7ff; font: 10px/1.2 monospace; letter-spacing: 1px; text-shadow: 0 1px 2px #000; pointer-events: none; }
+
+/* Two-step front end: home picks a mode, the mode screen holds its setup. */
+#menu#menu .frontend-header { position: relative; }
+#menu#menu .frontend-back { position: absolute; left: 0; top: 6px; min-height: 32px; padding: 4px 12px; font-size: 12px; }
+#menu#menu .frontend-back[hidden], #menu#menu [hidden] { display: none !important; }
+#menu#menu[data-frontend-screen="home"] form { justify-content: center; gap: 28px; }
+#menu#menu[data-frontend-screen="home"] .frontend-modes { gap: 20px; }
+#menu#menu[data-frontend-screen="home"] .frontend-modes button { padding: 22px 12px 18px; min-height: 230px; justify-content: center; }
+#menu#menu[data-frontend-screen="home"] .frontend-modes img { height: 120px; }
+#menu#menu[data-frontend-screen="home"] .frontend-modes strong { font-size: 17px; }
+#menu#menu[data-frontend-screen="home"] .frontend-footer { margin-top: 0; }
+#menu#menu[data-frontend-screen="mode"] .frontend-modes { gap: 10px; }
+#menu#menu[data-frontend-screen="mode"] .frontend-modes button { flex-direction: row; justify-content: center; gap: 10px; padding: 6px 10px; min-height: 0; }
+#menu#menu[data-frontend-screen="mode"] .frontend-modes img { height: 32px; }
+#menu#menu[data-frontend-screen="mode"] .frontend-modes span { display: none; }
+#menu#menu .frontend-home-extras { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; }
+#menu#menu .frontend-home-extras #record-summary:empty { display: none; }
+#menu#menu .frontend-help { max-width: 760px; width: 100%; margin: 0 auto; }
+#menu#menu .frontend-help p { color: #d5d3f0; font: 14px/1.65 monospace; margin: 0 0 14px; }
+#menu#menu .frontend-help b { color: #ffe982; }
+#menu#menu .frontend-availability:empty { display: none; }
+@media (max-width: 850px) {
+  #menu#menu[data-frontend-screen="home"] .frontend-modes button { min-height: 150px; }
+  #menu#menu[data-frontend-screen="home"] .frontend-modes img { height: 72px; }
+  #menu#menu[data-frontend-screen="mode"] .frontend-modes { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  #menu#menu[data-frontend-screen="mode"] .frontend-modes strong { font-size: 10px; }
+  #menu#menu[data-frontend-screen="mode"] .frontend-modes img { display: none; }
+  #menu#menu .frontend-back { position: static; margin-bottom: 8px; }
+}
+#menu#menu .frontend-home-extras #share:disabled { display: none; }
+#menu#menu .frontend-home-extras > * { margin: 0; }
+@media (max-width: 520px) {
+  #menu#menu .frontend-home-extras { flex-direction: column; text-align: center; }
+}

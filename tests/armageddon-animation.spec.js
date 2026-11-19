@@ -28,7 +28,7 @@ for (const group of [0, 1, 2])
   }) => {
     await page.goto("/");
     await page.waitForFunction(() => window.siege?.getState().assetsReady);
-    await page.locator("#mode").selectOption("local");
+    await page.locator('[data-mode="local"]').click();
     await page.locator("#start").click();
     const poses = {
       rocket: "wbaz",

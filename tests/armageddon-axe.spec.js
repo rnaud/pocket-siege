@@ -19,7 +19,7 @@ test('Axe percentage damage matches original receiver including 1HP and immunity
 async function prepare(page) {
   await page.goto('/');
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('#mode').selectOption('local');
+  await page.locator('[data-mode="local"]').click();
   await page.locator('#map-layout').selectOption('fern');
   await page.locator('#start').click();
   const targets = await page.evaluate(async () => { await window.siege.debug.resetSeed(42); return window.siege.debug.stageMeleeTargets(); });

@@ -28,7 +28,7 @@ test("live radial blast emits the original wormhit particle", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const result = await page.evaluate(() => {
     const w = window.siege.getState().worms[0];

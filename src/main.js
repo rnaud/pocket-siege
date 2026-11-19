@@ -2173,6 +2173,9 @@ function updateRecordUI() {
   const surrender = $("#surrender");
   if (surrender)
     surrender.hidden = !matchStarted || phase === "menu" || phase === "over";
+  // Before the first match there is no game to return to.
+  const close = $(".close-help");
+  if (close) close.hidden = !matchStarted;
 }
 function dispatchWormEntryAudio(worm, calls) {
   if (!sound) return;
@@ -7838,7 +7841,7 @@ document.addEventListener("visibilitychange", () => {
 });
 $("#help").onclick = () => {
   releaseInputs();
-  $(".instructions").open = true;
+  frontend.showHelp();
   updateRecordUI();
   menu.showModal();
   resetMenuScroll();
@@ -7846,7 +7849,7 @@ $("#help").onclick = () => {
 };
 $("#restart").onclick = () => {
   releaseInputs();
-  $(".instructions").open = false;
+  frontend.showHome();
   updateRecordUI();
   menu.showModal();
   resetMenuScroll();
@@ -8032,7 +8035,7 @@ async function bootCurrentArt() {
     $("#asset-loading").setAttribute("role", "alert");
   }
 }
-mountArmageddonFrontend({
+const frontend = mountArmageddonFrontend({
   setScenarioTraining: (value) => { scenarioIsTraining = Boolean(value); },
   applyTrainingRoster: () => {
     scenarioIsTraining = true;

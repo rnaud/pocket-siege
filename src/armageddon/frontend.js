@@ -2,7 +2,8 @@ import missionNames from './mission-names.json' with {type:'json'};
 import { resolveScenarioMatch } from './scenario-match.js';
 import { isScenarioComplete, readScenarioProgress, readScenarioScores } from './scenario-progress.js';
 // Full-screen front end built around the original imported menu bitmaps.
-// Existing controls retain their IDs and native form/dialog behavior.
+// Screens: "home" picks a mode, "mode" shows that mode's setup or scenario
+// list, "help" shows controls. Existing controls retain their IDs.
 export function mountArmageddonFrontend(host = {}) {
   const menu = document.querySelector("#menu"),
     form = menu.querySelector("form");
@@ -15,7 +16,9 @@ export function mountArmageddonFrontend(host = {}) {
   const header = document.createElement("header");
   header.className = "frontend-header";
   header.innerHTML =
-    '<div class="frontend-title">POCKET SIEGE</div><div class="frontend-subtitle">MATCH SETUP</div>';
+    '<button type="button" class="frontend-back">← MODES</button><div class="frontend-title">POCKET SIEGE</div><div class="frontend-subtitle"></div>';
+  const back = header.querySelector(".frontend-back");
+  const subtitle = header.querySelector(".frontend-subtitle");
   const content = document.createElement("div");
   content.className = "frontend-panels";
   const panel = (title, className) => {
@@ -27,23 +30,22 @@ export function mountArmageddonFrontend(host = {}) {
     content.append(el);
     return el;
   };
-  const game = panel("GAME", "frontend-game");
-  const art = document.createElement("img");
-  art.className = "frontend-game-art";
-  art.alt = "";
-  const updateArt = () => {
-    art.src = `${import.meta.env.BASE_URL}armageddon/media/graphics/mainmenu/${game.querySelector("#mode").value === "local" ? "multiplayer" : "singleplayer"}.bmp`;
-  };
   const field = id => fields.find(el => el.querySelector(id));
-  game.append(art, field('#mode'), field('#difficulty'), field('#team-voice-0'), field('#team-voice-1'), portrait);
+  // The mode cards choose the mode; the select stays as the settings source.
+  const modeField = field('#mode');
+  modeField.hidden = true;
+  const game = panel("TEAMS", "frontend-game");
+  game.append(modeField, field('#difficulty'), field('#team-voice-0'), field('#team-voice-1'), portrait);
   const terrain = panel("LANDSCAPE", "frontend-terrain");
-  const terrainArt = document.createElement("img");
-  terrainArt.className = "frontend-terrain-art";
-  terrainArt.alt = "";
-  terrainArt.src = `${import.meta.env.BASE_URL}armageddon/media/graphics/multiplay/custterrain.bmp`;
-  terrain.append(terrainArt, field("#map-layout"));
+  terrain.append(field("#map-layout"));
   const rules = panel("GAME OPTIONS", "frontend-rules");
   rules.append(...fields.filter(el => el.parentElement === grid), delays);
+  // Delay options lived inside the manual; the manual itself is help-only.
+  manual.querySelector("summary")?.remove();
+  manual.open = true;
+  const help = document.createElement("section");
+  help.className = "frontend-help frontend-panel";
+  help.append(...manual.children);
   const footer = document.createElement("div");
   footer.className = "frontend-footer";
   const actions = document.createElement("div");
@@ -53,15 +55,17 @@ export function mountArmageddonFrontend(host = {}) {
   start.textContent = "START GAME";
   close.textContent = "RETURN TO GAME";
   actions.append(close, form.querySelector("#surrender"), start);
-  footer.append(meta, manual, actions);
+  meta.querySelector(".progress-link")?.remove();
+  meta.classList.add("frontend-home-extras");
+  footer.append(actions);
   const navigation = document.createElement('nav');
   navigation.className = 'frontend-modes';
   navigation.setAttribute('aria-label', 'Game mode');
   const modes = [
     ['ai', 'Single player', 'Play against the computer', 'mainmenu/singleplayer'],
     ['local', 'Multiplayer', 'Play together on this device', 'mainmenu/multiplayer'],
-    ['missions', 'Missions', 'Browse the original campaign', '1upmenu/missions0'],
-    ['training', 'Training', 'Browse the original challenges', '1upmenu/training0'],
+    ['missions', 'Missions', 'The original campaign', '1upmenu/missions0'],
+    ['training', 'Training', 'Original weapon challenges', '1upmenu/training0'],
   ];
   const campaign = document.createElement('section');
   campaign.className = 'frontend-campaign frontend-panel';
@@ -69,7 +73,6 @@ export function mountArmageddonFrontend(host = {}) {
   const campaignTitle = document.createElement('h2');
   const notice = document.createElement('p');
   notice.className = 'frontend-availability';
-  notice.textContent = 'Objectives, scripted events and progression are not connected yet. PLAY opens the original landscape and turn rules as a skirmish.';
   const campaignBody = document.createElement('div');
   campaignBody.className = 'frontend-campaign-body';
   const list = document.createElement('div');
@@ -79,12 +82,13 @@ export function mountArmageddonFrontend(host = {}) {
   campaignBody.append(list, preview);
   campaign.append(campaignTitle, notice, campaignBody);
   const modeSelect = game.querySelector('#mode');
-  let campaignRequest = 0;
+  let campaignRequest = 0, mode = modeSelect.value, screen = "home";
   async function showCampaign(kind) {
     const request = ++campaignRequest;
     const training = kind === 'training';
     campaignTitle.textContent = training ? 'TRAINING' : 'MISSIONS';
     list.replaceChildren(); preview.replaceChildren();
+    notice.hidden = false;
     notice.textContent = 'Loading original scenarios…';
     let originalMissionPresentation;
     try { ({originalMissionPresentation} = await import('./mission-presentation.js')); }
@@ -94,7 +98,7 @@ export function mountArmageddonFrontend(host = {}) {
       return;
     }
     if (request !== campaignRequest || menu.dataset.frontendMode !== kind) return;
-    notice.textContent = 'Objectives, scripted events and progression are not connected yet. PLAY opens the original landscape and turn rules as a skirmish.';
+    notice.hidden = true;
     const paths = Object.keys(missionNames).filter(path => path.startsWith(`mission/${training ? 'training' : 'mission'}`)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
     const completedPaths = readScenarioProgress();
     const completedCount = paths.filter((path) => completedPaths.has(path)).length;
@@ -133,6 +137,7 @@ export function mountArmageddonFrontend(host = {}) {
         play.addEventListener('click', async () => {
           const match = resolveScenarioMatch(path);
           if (!match?.terrain || !host.playScenario) {
+            notice.hidden = false;
             notice.textContent = 'This scenario cannot start yet.';
             return;
           }
@@ -148,16 +153,35 @@ export function mountArmageddonFrontend(host = {}) {
     });
     list.firstElementChild?.click();
   }
+  function render() {
+    const isCampaign = mode === 'missions' || mode === 'training';
+    menu.dataset.frontendMode = mode;
+    menu.dataset.frontendScreen = screen;
+    back.hidden = screen === "home";
+    navigation.hidden = screen === "help";
+    meta.hidden = screen !== "home";
+    content.hidden = screen !== "mode" || isCampaign;
+    campaign.hidden = screen !== "mode" || !isCampaign;
+    help.hidden = screen !== "help";
+    start.hidden = screen !== "mode" || isCampaign;
+    subtitle.textContent = screen === "help" ? "HOW TO PLAY"
+      : screen === "home" ? "CHOOSE A MODE" : modes.find(entry => entry[0] === mode)[1].toUpperCase();
+    for (const button of navigation.children)
+      button.setAttribute('aria-pressed', String(screen === "mode" && button.dataset.mode === mode));
+  }
   function selectMode(kind, update = false) {
-    const isCampaign = kind === 'missions' || kind === 'training';
-    menu.dataset.frontendMode = kind;
-    content.hidden = isCampaign; campaign.hidden = !isCampaign;
-    start.hidden = isCampaign; manual.hidden = isCampaign; meta.hidden = isCampaign;
-    header.querySelector('.frontend-subtitle').textContent = modes.find(mode => mode[0] === kind)[1].toUpperCase();
-    for (const button of navigation.children) button.setAttribute('aria-pressed', String(button.dataset.mode === kind));
-    if (isCampaign) showCampaign(kind);
-    else if (update) {modeSelect.value = kind; modeSelect.dispatchEvent(new Event('change', {bubbles:true}));}
-    updateArt();
+    const changed = kind !== mode || menu.dataset.frontendMode !== kind;
+    mode = kind;
+    render();
+    if (kind === 'missions' || kind === 'training') { if (changed || !list.children.length) showCampaign(kind); }
+    else if (update && modeSelect.value !== kind) {
+      modeSelect.value = kind; modeSelect.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+  }
+  function showScreen(next) {
+    screen = next;
+    render();
+    menu.scrollTop = 0;
   }
   for (const [kind, label, description, asset] of modes) {
     const button = document.createElement('button');
@@ -165,13 +189,21 @@ export function mountArmageddonFrontend(host = {}) {
     const image = document.createElement('img');image.alt = '';image.src = `${import.meta.env.BASE_URL}armageddon/media/graphics/${asset}.bmp`;
     const title = document.createElement('strong');title.textContent = label;
     const hint = document.createElement('span');hint.textContent = description;
-    button.append(image, title, hint);button.addEventListener('click', () => selectMode(kind,true));
+    button.append(image, title, hint);
+    button.addEventListener('click', () => { screen = "mode"; selectMode(kind, true); menu.scrollTop = 0; });
     navigation.append(button);
   }
-  modeSelect.addEventListener('change', () => selectMode(modeSelect.value));
-  selectMode(modeSelect.value);
-  form.replaceChildren(header, navigation, content, campaign, footer);
+  back.addEventListener("click", () => showScreen("home"));
+  modeSelect.addEventListener('change', () => {
+    if (mode === 'missions' || mode === 'training') return;
+    selectMode(modeSelect.value);
+  });
+  form.replaceChildren(header, navigation, meta, content, campaign, help, footer);
   menu.setAttribute("aria-label", "Match setup");
-  game.querySelector("#mode").addEventListener("change", updateArt);
-  updateArt();
+  selectMode(modeSelect.value);
+  showScreen("home");
+  return {
+    showHome: () => showScreen("home"),
+    showHelp: () => showScreen("help"),
+  };
 }

@@ -16,7 +16,7 @@ for (const [kind, sprite, damage] of [["cluster", "clustlet", 20], ["banana", "b
 test(`live ${kind} children use native secondary sprites, damage and lifecycle`, async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));

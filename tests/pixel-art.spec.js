@@ -23,7 +23,7 @@ test("original art stays on an integer pixel grid without bitmap requests", asyn
   await page.screenshot({
     path: `test-results/${info.project.name}-pixel-menu.png`,
   });
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.waitForTimeout(2200);
   await expect(page.locator("#announcement")).toBeHidden({

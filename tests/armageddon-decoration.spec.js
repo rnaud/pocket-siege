@@ -86,6 +86,7 @@ test("selected theme loads before starting the decorated match", async ({
   page,
 }, testInfo) => {
   await page.goto("/");
+  await page.locator('[data-mode="ai"]').click();
   await page.locator("#terrain-theme").selectOption("forest");
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();

@@ -95,7 +95,7 @@ test("live jump returns through the recovered landing animation", async ({
 }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   // A fixed map keeps this landing-animation check away from random tree
   // edges that can turn a jump into a damaging fall or drowning.

@@ -150,7 +150,7 @@ for (const layout of ["caverns", "bridges"])
   }) => {
     await page.goto("/");
     await page.waitForFunction(() => window.siege?.getState().assetsReady);
-    await page.locator("#mode").selectOption("local");
+    await page.locator('[data-mode="local"]').click();
     await page.locator("#map-layout").selectOption(layout);
     await page.locator("#start").click();
     expect(

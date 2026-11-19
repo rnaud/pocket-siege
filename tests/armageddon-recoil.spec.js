@@ -93,7 +93,7 @@ for (const [weapon, sprite] of [
   }) => {
     await page.goto("/");
     await page.waitForFunction(() => window.siege?.getState().assetsReady);
-    await page.locator("#mode").selectOption("local");
+    await page.locator('[data-mode="local"]').click();
     await page.locator("#map-layout").selectOption("fern");
     await page.locator("#start").click();
     // Fix landscape and object placement before staging the firing-art fixture.

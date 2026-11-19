@@ -87,7 +87,7 @@ test("live teleport shows the dissolve before moving and holds the turn until it
   page,
 }, info) => {
   await page.goto("/");
-  await page.locator("#mode").selectOption("local");
+  await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   const before = await page.evaluate(() => window.siege.getState());
