@@ -5255,9 +5255,10 @@ function finishMatch(winner, series) {
     mode,
   };
   if (lastResult.scenario) {
-    $("#turn-label").textContent = "SCENARIO COMPLETE";
+    const completed = lastResult.scenario.complete && winner === 0;
+    $("#turn-label").textContent = completed ? "SCENARIO COMPLETE" : "SCENARIO OVER";
     $("#status").textContent =
-      `${lastResult.scenario.title ?? "Scenario"} complete · targets ${lastResult.scenario.collected}/${lastResult.scenario.total} · score ${lastResult.scenario.score}.`;
+      `${lastResult.scenario.title ?? "Scenario"} ${completed ? "complete" : "ended"} · targets ${lastResult.scenario.collected}/${lastResult.scenario.total} · score ${lastResult.scenario.score}.`;
   }
   if (!replaySimulation && (mode === "ai" || daily)) {
     record = applyMatchResult(record, {

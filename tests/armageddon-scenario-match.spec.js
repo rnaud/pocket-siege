@@ -638,3 +638,19 @@ test("scenario pause-between-turns value reaches the live settle delay", async (
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().pauseBetweenTurns)).toBe(0);
 });
+
+test("an eliminated scenario does not report objective completion", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  await page.evaluate(() => window.siege.debug.knockout(1));
+  await expect(page.locator("#turn-label")).toHaveText("SCENARIO OVER");
+  expect(await page.evaluate(() => window.siege.getState().lastResult.scenario.complete)).toBe(false);
+});
