@@ -61,6 +61,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/training11.wam").turnEndFinishesGame).toBe(true);
   expect(resolveScenarioMatch("mission/training11.wam").lossOfControlDoesntEndTurn).toBe(true);
   expect(resolveScenarioMatch("mission/mission12.wam").enableActionReplay).toBe(false);
+  expect(resolveScenarioMatch("mission/mission17.wam").jetpackTimeLimit).toBe(10);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
@@ -588,4 +589,19 @@ test("scenario replay option disables the replay control", async ({ page }) => {
     })
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().replayEnabled)).toBe(false);
+});
+
+
+test("scenario jetpack time limit sets the live fuel tank", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission17.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().jetpackFuel)).toBe(10);
 });

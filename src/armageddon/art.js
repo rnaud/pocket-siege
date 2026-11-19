@@ -891,7 +891,7 @@ export function stopOriginalJetpack(worm) {
   worm.originalJetpack?.map.dispose();
   worm.originalJetpack = null;
 }
-export function stepOriginalJetpack(worm, steering, thrust) {
+export function stepOriginalJetpack(worm, steering, thrust, initialFuel = nativeJetpackInitialFuel) {
   let state = worm.originalJetpack;
   if (!state) {
     const canvas = document.createElement("canvas");
@@ -904,7 +904,7 @@ export function stepOriginalJetpack(worm, steering, thrust) {
       lean: worm.facing * 0x38000,
       side: 0,
       down: 0,
-      fuel: nativeJetpackInitialFuel,
+      fuel: initialFuel,
       map,
     };
     worm.originalJump = worm.originalLanding = worm.originalParachute = null;

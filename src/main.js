@@ -534,7 +534,7 @@ let format = "single",
   rope = { attached: false, anchor: null, length: 0, mesh: null },
   jetpack = {
     active: false,
-    fuel: nativeJetpackInitialFuel / 65536,
+    fuel: scenarioJetpackFuel() / 65536,
     owner: null,
     pulse: 0,
     pulseTime: 0,
@@ -2366,7 +2366,7 @@ function stopJetpack() {
   }
   jetpack = {
     active: false,
-    fuel: nativeJetpackInitialFuel / 65536,
+    fuel: scenarioJetpackFuel() / 65536,
     owner: null,
     pulse: 0,
     pulseTime: 0,
@@ -2654,7 +2654,7 @@ function stepJetpack(w, dt) {
   dispatchNativeWormMotionEvents(w, result);
   if (result.body.state !== 0x78) { stopJetpack(); return; }
   w.moving = Boolean(move);
-  const jetpackState = stepOriginalJetpack(w, move, thrust);
+  const jetpackState = stepOriginalJetpack(w, move, thrust, scenarioJetpackFuel());
   jetpack.fuel = jetpackState.fuel / 65536;
   if (jetpackState.target === 0x65) stopJetpack();
 }
@@ -2759,6 +2759,10 @@ function attachRope(w, hit, length, body) {
     body.state === 0x7c ? "Bungee attached. Arrows swing and stretch; jump or R releases." :
       "Rope attached. Left/right swing; up/down shorten; R release.";
   updateUI();
+}
+function scenarioJetpackFuel() {
+  const limit = currentScenario?.jetpackTimeLimit;
+  return Math.round((limit > 0 ? limit : nativeJetpackInitialFuel / 65536) * 65536);
 }
 function tryBungee(w) {
   if (displayAmmo(utilityAmmo[team].bungee ?? 0) <= 0) return;
@@ -7711,6 +7715,7 @@ window.siege = {
     matchElapsed,
     roundTimeSeconds: scenarioRoundTimeSeconds(),
     lastLossOfControl,
+    jetpackFuel: jetpack.fuel,
     replayEnabled: currentScenario?.enableActionReplay !== false,
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
