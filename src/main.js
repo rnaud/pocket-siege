@@ -1418,12 +1418,34 @@ function dispose(obj) {
     if (o.material) o.material.dispose();
   });
 }
+const scenarioFlagUrls = new Map();
+async function scenarioFlagUrl(flag) {
+  if (!flag) return null;
+  if (scenarioFlagUrls.has(flag)) return scenarioFlagUrls.get(flag);
+  const level = Math.max(1, Math.min(5, flag));
+  const response = await fetch(`/armageddon/media/user/flags/cpuflag${level}.bww`);
+  if (!response.ok) return null;
+  const url = URL.createObjectURL(new Blob([await response.arrayBuffer()], { type: "image/bmp" }));
+  scenarioFlagUrls.set(flag, url);
+  return url;
+}
 function updateScenarioTeamNames() {
   const el = $("#scenario-team-names");
   if (!el) return;
   el.hidden = !currentScenario;
-  el.textContent = currentScenario
+  const text = $("#scenario-team-names-text");
+  if (text) text.textContent = currentScenario
     ? `${teamDisplayNames[0]} vs ${teamDisplayNames[1]}` : "";
+  for (const team of [0, 1]) {
+    const image = $(`#scenario-flag-${team}`);
+    if (!image) continue;
+    image.hidden = !currentScenario;
+    if (!currentScenario) { image.removeAttribute("src"); continue; }
+    const flag = currentScenario.teamWorms[team]?.find((worm) => worm.place !== false)?.flag ?? 1;
+    scenarioFlagUrl(flag).then((url) => {
+      if (url && currentScenario) image.src = url;
+    });
+  }
 }
 function updateCrateSpyHUD() {
   const el = $("#crate-spy");

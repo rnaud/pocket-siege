@@ -1002,3 +1002,20 @@ test("authored team flag and sound bank are retained", async ({ page }) => {
   expect(worm.flag).toBe(1);
   expect(worm.soundBank).toBe(1);
 });
+
+test("authored team flags render in the scenario label", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  for (const flag of await page.locator(".scenario-team-flag").all()) {
+    await expect(flag).toBeVisible();
+    await expect.poll(() => flag.evaluate((image) => image.naturalWidth)).toBe(20);
+  }
+});
