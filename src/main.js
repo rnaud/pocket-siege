@@ -179,6 +179,7 @@ import { nativeSceneGirderPlacement } from "./armageddon/girder-placement.js";
 import { nativeClampPlacementTarget } from "./armageddon/target-placement.js";
 import { loadNativeMapTheme, preparedNativeMapTheme } from "./armageddon/map-theme.js";
 import { nativeDefaultMapObjects } from "./armageddon/map-setup.js";
+import { nativeScenarioWaterLevel } from "./armageddon/scenario-water.js";
 import { originalMapSpawns } from "./armageddon/map-placement.js";
 import {
   originalMapCatalog,
@@ -1249,6 +1250,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     cameraZoom = 1;
     cameraSnap = true; manualCamera = null;
   }
+  // Scenario land.dat files carry Landgen's default0% water.
+  if (authored && currentScenario) waterLevel = nativeScenarioWaterLevel(H);
   terrain =
     authored ??
     new Terrain(matchSeed, layout.startsWith("original:") ? "fern" : layout);

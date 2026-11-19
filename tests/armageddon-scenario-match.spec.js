@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import missionNames from "../src/armageddon/mission-names.json" with { type: "json" };
 import mapCatalog from "../src/armageddon/map-catalog.json" with { type: "json" };
 import { resolveScenarioMatch } from "../src/armageddon/scenario-match.js";
+import { nativeInitialWaterY, nativeScenarioWaterLevel } from "../src/armageddon/scenario-water.js";
 import { originalResourceString } from "../src/armageddon/string-resources.js";
 
 test("every mission and training resolves its original landscape and turn rules", { tag: "@logic" }, () => {
@@ -1139,4 +1140,27 @@ test("ObjectType 0 scenarios start with only authored objects", async ({ page })
   expect(state.explosions).toBe(0);
   expect(state.worms.filter((worm) => worm.team === 1).map((worm) => worm.hp))
     .toEqual([45, 45, 45, 100, 45, 45]);
+});
+
+test("scenario waterline follows Landgen's default water percentage", { tag: "@logic" }, () => {
+  expect(nativeInitialWaterY(0)).toBe(696);
+  expect(nativeInitialWaterY(50)).toBe(348);
+  expect(nativeScenarioWaterLevel(696)).toBe(0);
+});
+
+test("training 1 starts its low ledge worm above the scenario waterline", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator('[data-scenario="mission/training1.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), { timeout: 30000 })
+    .toBeGreaterThan(0);
+  await page.waitForTimeout(1000);
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.waterLevel).toBe(0);
+  expect(state.phase).toBe("aim");
+  expect(state.worms[0]).toMatchObject({ team: 0, hp: 1 });
+  expect(state.worms[0].y).toBeGreaterThan(state.waterLevel);
 });
