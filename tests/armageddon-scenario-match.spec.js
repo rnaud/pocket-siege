@@ -1036,3 +1036,19 @@ test("eliminating the player leaves hostile CPU groups fighting", async ({ page 
   expect(state.phase).not.toBe("over");
   expect(state.team).toBe(1);
 });
+
+test("hostile CPU alliance groups show separate health", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission23.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const text = await page.locator("#scenario-alliance-health").textContent();
+  expect(text).toContain("Cannon Fodder");
+  expect(text).toContain("Patrol");
+});

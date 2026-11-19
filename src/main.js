@@ -1341,6 +1341,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.actionRadius = config.actionRadius;
         worm.alliance = config.alliance;
         worm.teamSkill = config.teamSkill;
+        worm.allianceName = config.teamName;
         worm.flag = config.flag;
         worm.soundBank = config.soundBank;
         if (config.graveStyle !== null && config.graveStyle !== undefined)
@@ -1452,6 +1453,25 @@ function updateScenarioTeamNames() {
       if (url && currentScenario) image.src = url;
     });
   }
+}
+function updateScenarioAllianceHealth() {
+  const el = $("#scenario-alliance-health");
+  if (!el) return;
+  const groups = new Map();
+  for (const worm of worms) {
+    if (worm.team !== 1 || worm.hp <= 0) continue;
+    const key = worm.alliance ?? null;
+    const group = groups.get(key) ?? { name: worm.allianceName ?? "CPU", hp: 0 };
+    group.hp += worm.hp;
+    groups.set(key, group);
+  }
+  if (!currentScenario || groups.size < 2) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  el.hidden = false;
+  el.textContent = [...groups.values()].map((group) => `${group.name} ${group.hp}`).join(" · ");
 }
 function updateCrateSpyHUD() {
   const el = $("#crate-spy");
@@ -2254,6 +2274,7 @@ function beginTurn() {
   updateScenarioObjectiveHUD();
   updateCrateSpyHUD();
   updateScenarioTeamNames();
+  updateScenarioAllianceHealth();
   const weatherNote =
     weather === "storm"
       ? " Storm winds."

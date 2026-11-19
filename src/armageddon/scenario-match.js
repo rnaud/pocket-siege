@@ -80,6 +80,9 @@ function scenarioTeamWorms(record) {
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
     const entries = Object.fromEntries(team.entries.map(([key, value]) => [key.toLowerCase(), value]));
     const teamSkill = Number.parseInt(entries.teamskill, 10);
+    const teamNameNumber = Number.parseInt(entries.teamnamenumber, 10);
+    const teamName = Number.isFinite(teamNameNumber)
+      ? originalResourceString(712 + teamNameNumber) : null;
     const flag = Number.parseInt(entries.flag, 10);
     const soundBank = Number.parseInt(entries.soundbank, 10);
     const graveStone = Number.parseInt(entries.gravestone, 10);
@@ -97,6 +100,7 @@ function scenarioTeamWorms(record) {
       teams[index].push({
         artillery: entries[`worm${worm}_artilerymode`] === "1",
         teamSkill: Number.isFinite(teamSkill) ? teamSkill : null,
+        teamName,
         flag: Number.isFinite(flag) ? flag : null,
         soundBank: Number.isFinite(soundBank) ? soundBank : null,
         graveStyle: Number.isFinite(graveStone) ? graveStone : null,
