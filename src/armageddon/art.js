@@ -140,6 +140,7 @@ const names = [
     "skunk1",
     "cowwalk",
     "molewalk",
+    "mbbomb",
     "shptruck",
     "sheepbrn",
     "clustlet",

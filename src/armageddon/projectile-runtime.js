@@ -64,6 +64,7 @@ const kinds = new Set([
   "donkey",
   "oldwoman",
   "molebomb",
+  "mbbomb",
   "sallyarmy",
   "skunk",
   "madcow",
@@ -159,7 +160,7 @@ export function attachNativeProjectile(p, height) {
   });
   const block = Array.from(
     { length: 94 },
-    (_, i) => record["0x" + ((p.nativeBlockOffset ?? ((p.nativeWeaponKind ?? p.kind) === "donkey" ? 0x88 : 0x74)) + i * 4).toString(16)],
+    (_, i) => record["0x" + ((p.nativeBlockOffset ?? ((p.nativeWeaponKind ?? p.kind) === "donkey" || (p.nativeWeaponKind ?? p.kind) === "mbbomb" ? 0x88 : 0x74)) + i * 4).toString(16)],
   );
   return attachNativeProjectileBlock(p, height, block);
 }

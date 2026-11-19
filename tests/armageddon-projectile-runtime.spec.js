@@ -421,3 +421,12 @@ test("native mole bomb uses the recovered slot-26 payload", { tag: "@logic" }, (
     sprite: 620, damage: 0, push: 100, secondary: 1,
   });
 });
+
+test("native MB bomb uses the recovered slot-46 payload", { tag: "@logic" }, () => {
+  const bomb = projectile("mbbomb", { x: 200, y: 400, fuse: 2 });
+  expect(bomb.nativeBody).toMatchObject({ sprite: 680, mode: 2 });
+  expect(bomb.nativeTimer.remaining).toBe(9000);
+  expect(bomb.nativeDetonation).toMatchObject({
+    sprite: 680, damage: 100, push: 100, offset: 0,
+  });
+});

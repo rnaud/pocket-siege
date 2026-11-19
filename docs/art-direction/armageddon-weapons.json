@@ -376,8 +376,8 @@
     {
       "slot": 46,
       "native_name": "MBBomb",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "mbbomb",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 260
     },
