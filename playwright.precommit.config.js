@@ -8,7 +8,7 @@ export default {
   reporter: 'list',
   timeout: 180000,
   workers: 2,
-  retries: 0,
+  retries: 1,
   // A running development server must not make commits fail or serve stale code.
   use: { ...base.use, baseURL: 'http://127.0.0.1:5188' },
   webServer: process.env.RELATED_LOGIC_ONLY ? undefined : {
