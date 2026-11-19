@@ -387,7 +387,7 @@ export function planMove({
   const crateDistance = crate ? Math.abs(crate.x - me.x) : Infinity;
   if (!nearWater && !nearEdge && crateDistance > 150) {
     return random() <= profile.moveChance
-      ? planRetreat({ terrain, me, worms, waterLevel })
+      ? planRetreat({ terrain, me, worms, waterLevel, radius })
       : null;
   }
   if (random() > profile.moveChance) return null;
@@ -433,6 +433,7 @@ export function planRetreat({
   worms = [],
   waterLevel = WATER,
   danger = null,
+  radius = 0,
 }) {
   if (!me.ground || me.hp <= 0) return null;
   const enemies = worms.filter((w) => w.hp > 0 && hostile(w, me));
@@ -441,6 +442,7 @@ export function planRetreat({
   for (const direction of [-1, 1]) {
     const probe = { ...me, vx: 0, vy: 0, knocked: false };
     for (let i = 1; i <= 72; i++) {
+      if (radius > 0 && Math.abs(probe.x - me.x) > radius) break;
       const old = { x: probe.x, y: probe.y };
       if (
         !walkWorm(probe, terrain, direction, STEP) ||

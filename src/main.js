@@ -4887,6 +4887,7 @@ function fire() {
       danger: worms
         .filter((t) => t.hp > 0 && hostileWorm(t, w))
         .sort((a, b) => Math.abs(a.x - w.x) - Math.abs(b.x - w.x))[0],
+      radius: w.actionRadius > 0 ? w.actionRadius : 0,
     });
     aiRetreatTime = route?.time ?? 0;
     aiRetreatDirection = route?.direction ?? 0;
