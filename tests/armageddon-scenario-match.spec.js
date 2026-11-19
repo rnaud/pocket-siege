@@ -54,6 +54,11 @@ test("campaign scenario starts on its original landscape and turn rules", async 
       timeout: 30000,
     })
     .toMatch(/^original:mission\/.+\.img$/);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.phase).toBe("aim");
   expect(state.turnTime).toBe(45);
@@ -73,4 +78,10 @@ test("campaign scenario starts on its original landscape and turn rules", async 
       () => window.siege.getState().hazards.filter((hazard) => hazard.scenario).length,
     ))
     .toBeGreaterThan(0);
+  expect(state.scenario).toMatchObject({ collected: 0 });
+  expect(state.scenario.total).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
+    .toBe(1);
 });

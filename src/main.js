@@ -482,6 +482,7 @@ function crateShowerSlotKind(slot) {
 }
 let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
 let currentScenario = null;
+let scenarioProgress = null;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1252,6 +1253,12 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   applyWeather();
   spawnCrate();
   spawnScenarioObjects();
+  if (currentScenario) scenarioProgress = {
+    collected: 0,
+    total: (currentScenario.objects ?? []).filter(
+      (object) => object.kind === "weapon" || object.kind === "target").length,
+    complete: false,
+  };
   if(!authored)spawnHazards();
   beginTurn();
   updateRecordUI();
@@ -1749,6 +1756,14 @@ function collectCrate(w, crate = crates[0]) {
     { ...target.nativePoison, team: target.team }, [w.team, worms.indexOf(w), nativePickupCategory(crate.nativeBody.kind)]);
   poisoned = worms.some(target => target.nativePoison.amount !== 0);
   nativeRecordPickup(w.matchStats, nativePickupCategory(crate.nativeBody.kind));
+  if (crate.scenario && scenarioProgress && scenarioProgress.total > 0 &&
+      (crate.scenario.kind === "weapon" || crate.scenario.kind === "target")) {
+    scenarioProgress.collected = (scenarioProgress.collected + 1) | 0;
+    scenarioProgress.complete = scenarioProgress.collected >= scenarioProgress.total;
+    announce(scenarioProgress.complete
+      ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}`
+      : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}`);
+  }
   w.matchStats.hp = w.hp;
   updateUI();
 }
@@ -6972,6 +6987,7 @@ $("#daily").addEventListener("click", async () => {
   $("#modifier").value = "standard";
   $("#scheme").value = "classic";
   currentScenario = null;
+  scenarioProgress = null;
   syncMenuOptions();
   saveSettings();
   matchStarted = true;
@@ -6994,6 +7010,7 @@ $("#sound").onclick = () => {
 $("#start").onclick = async event => {
   event.preventDefault();
   currentScenario = null;
+  scenarioProgress = null;
   $("#start").textContent = "LET’S MAKE TROUBLE ↗";
   matchStarted = true;
   try {
@@ -7347,6 +7364,7 @@ window.siege = {
     })),
     utilities: { ...utilityAmmo[team] },
     laserSight,
+    scenario: scenarioProgress ? { ...scenarioProgress } : null,
     activeUtility,
     targetUtility,
     rope: {
@@ -7507,6 +7525,13 @@ if (import.meta.env.DEV) {
     },
     collectCrate() {
       collectCrate(worms[current]);
+    },
+    collectScenarioCrate() {
+      const crate = crates.find((entry) => entry.scenario &&
+        (entry.scenario.kind === "weapon" || entry.scenario.kind === "target"));
+      if (!crate) return false;
+      collectCrate(worms[current], crate);
+      return true;
     },
     hit(teamIndex = 1, damage = 200) {
       for (const w of worms) if (w.team === teamIndex) injure(w, damage, 1);
