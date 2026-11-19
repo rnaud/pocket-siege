@@ -1,5 +1,7 @@
 import mapNames from "./map-names.json" with { type: "json" };
 import { resolveMissionDefinition } from "./mission-files.js";
+import inventoryKeys from "./mission-inventory-keys.json" with { type: "json" };
+import { WEAPON_SLOTS } from "./delays.js";
 
 const section = (record, name) =>
   record.sections.find((entry) => entry.name.toLowerCase() === name.toLowerCase());
@@ -14,6 +16,29 @@ function read(record, sectionName, key, fallback) {
 
 // Maps a selected WAM to the original landscape long name and the turn rules
 // stored in its Options section. Objective/event execution remains separate.
+const AMMO_SLOT_BY_NAME = new Map(
+  inventoryKeys.entries.filter(([kind]) => kind === "ammo").map(([, slot, name]) => [name, slot]),
+);
+const HOST_WEAPON_BY_SLOT = new Map(
+  Object.entries(WEAPON_SLOTS).map(([kind, slot]) => [slot, kind]),
+);
+function scenarioLoadouts(record) {
+  const loadouts = [{}, {}];
+  for (const team of record.sections) {
+    const match = /^(HumanTeam|CPUTeam(\d+))$/i.exec(team.name);
+    if (!match) continue;
+    const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
+    if (index < 0 || index > 1) continue;
+    for (const [key, value] of team.entries) {
+      if (!/^Ammo_/i.test(key)) continue;
+      const slot = AMMO_SLOT_BY_NAME.get(key);
+      const kind = slot === undefined ? null : HOST_WEAPON_BY_SLOT.get(slot);
+      const amount = Number.parseInt(value, 10);
+      if (kind && Number.isFinite(amount)) loadouts[index][kind] = amount;
+    }
+  }
+  return loadouts;
+}
 export function resolveScenarioMatch(path) {
   const record = resolveMissionDefinition(path);
   const match = path.match(/^mission\/(mission|training)(\d+)\.wam$/i);
@@ -46,6 +71,7 @@ export function resolveScenarioMatch(path) {
     mineFuse: read(record, "Options", "MineFuse", null),
     weaponsDontEndTurn: read(record, "Options", "WeaponsDontEndTurn", 0) === 1,
     enableSecretWeapons: read(record, "Options", "EnableSecretWeapons", 1) === 1,
+    loadouts: scenarioLoadouts(record),
     healthCrateEnergy: read(record, "Options", "HealthCrateEnergy", null),
     suddenDeath: {
       type: read(record, "Options", "SuddenDeathType", null),

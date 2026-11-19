@@ -51,6 +51,9 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission24.wam").weaponsDontEndTurn).toBe(true);
   expect(resolveScenarioMatch("mission/mission0.wam").enableSecretWeapons).toBe(false);
   expect(resolveScenarioMatch("mission/mission17.wam").enableSecretWeapons).toBe(true);
+  expect(resolveScenarioMatch("mission/mission0.wam").loadouts[0]).toMatchObject({
+    shotgun: 3, uzi: 2,
+  });
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
@@ -446,4 +449,22 @@ test("scenario secret-weapon option clears the starting secret ammo", async ({ p
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().ammo[0].superbanana)).toBe(0);
   expect(await page.evaluate(() => window.siege.getState().ammo[0].sheep)).toBe(0);
+});
+
+
+test("scenario starting loadout replaces unused live ammo", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const ammo = await page.evaluate(() => window.siege.getState().ammo[0]);
+  expect(ammo.shotgun).toBe(3);
+  expect(ammo.uzi).toBe(2);
+  expect(ammo.grenade).toBe(0);
 });

@@ -1081,6 +1081,12 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const carriedAmmo = keepSeries && stockpile ? ammo : null;
   const carriedUtilities = keepSeries && stockpile ? utilityAmmo : null;
   ammo = carriedAmmo ?? [freshAmmo(), freshAmmo()];
+  if (currentScenario?.loadouts) {
+    for (const [index, loadout] of currentScenario.loadouts.entries()) {
+      for (const kind of Object.keys(WEAPONS)) if (kind !== "rocket") ammo[index][kind] = 0;
+      Object.assign(ammo[index], loadout);
+    }
+  }
   if (currentScenario && currentScenario.enableSecretWeapons === false) {
     for (const teamAmmo of ammo)
       for (const kind of SECRET_WEAPONS) teamAmmo[kind] = 0;
