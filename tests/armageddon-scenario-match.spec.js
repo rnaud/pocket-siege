@@ -224,6 +224,12 @@ test("completing a training course resolves the match as a win", async ({ page }
 test("collecting a mission's vital crate completes WinningCondition 3", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("seeded")) {
+      sessionStorage.setItem("seeded", "1");
+      localStorage.setItem("pocket-siege-scenario-attempts-v1", JSON.stringify({ "mission/mission0.wam": 2 }));
+    }
+  });
   await openScenario(page, "mission/mission0.wam");
   expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
   await expect
@@ -232,6 +238,11 @@ test("collecting a mission's vital crate completes WinningCondition 3", async ({
   const completed = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"));
   expect(completed).toContain("mission/mission0.wam");
+  // 004441C7/00444209: 1-3 failed attempts earn silver, then the counter clears.
+  expect(await page.evaluate(() => ({
+    medal: JSON.parse(localStorage.getItem("pocket-siege-scenario-medals-v1") ?? "{}")["mission/mission0.wam"],
+    attempts: JSON.parse(localStorage.getItem("pocket-siege-scenario-attempts-v1") ?? "{}")["mission/mission0.wam"],
+  }))).toEqual({ medal: 2 });
 });
 
 test("destroying a vital crate fails the mission and counts an attempt", async ({ page }) => {
@@ -532,12 +543,15 @@ test("training round time-out ends the run after the turn", async ({ page }) => 
 });
 
 test("mission round time with a sudden-death event expires into sudden death", async ({ page }) => {
-  // Mission 0 sets SuddenDeathType 1 with a three-minute round.
-  await openScenario(page, "mission/mission0.wam");
-  expect(await page.evaluate(() => window.siege.getState().roundTimeSeconds)).toBe(180);
-  for (const frames of [3000, 3000, 3100])
+  // Mission 30 sets SuddenDeathType 3 with a two-minute round and no vital objects.
+  await openScenario(page, "mission/mission30.wam");
+  expect(await page.evaluate(() => window.siege.getState().roundTimeSeconds)).toBe(120);
+  for (const frames of [2100, 2100, 2100])
     await page.evaluate((count) => window.siege.debug.advanceReplayFrames(count), frames);
-  expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(true);
+  expect(await page.evaluate(() => {
+    const state = window.siege.getState();
+    return { suddenDeath: state.suddenDeath, over: state.phase === "over" };
+  })).toEqual({ suddenDeath: true, over: false });
 });
 
 
@@ -1235,4 +1249,22 @@ test("mission and training runtime smoke without opt-in playthrough", async ({ p
     expect(errors, path).toEqual([]);
     page.removeAllListeners("pageerror");
   }
+});
+
+test("missions unlock one at a time from the first unfinished mission", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem("pocket-siege-unlock-all-missions");
+    localStorage.setItem("pocket-siege-scenario-medals-v1", JSON.stringify({ "mission/mission0.wam": 2 }));
+  });
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  // Mission 0 is done, so mission 1 is the current mission and mission 2 is locked.
+  await expect(page.locator('[data-scenario="mission/mission0.wam"]')).toBeEnabled();
+  await expect(page.locator('[data-scenario="mission/mission1.wam"]')).toBeEnabled();
+  await expect(page.locator('[data-scenario="mission/mission1.wam"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-scenario="mission/mission2.wam"]')).toBeDisabled();
+  await expect(page.locator('[data-scenario="mission/mission2.wam"]')).toContainText("LOCKED");
+  await page.locator('[data-mode="training"]').click();
+  await expect(page.locator('[data-scenario="mission/training16.wam"]')).toBeEnabled();
 });

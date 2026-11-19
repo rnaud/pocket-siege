@@ -1,0 +1,7 @@
+{
+  "cookies": [],
+  "origins": [
+    { "origin": "http://127.0.0.1:5187", "localStorage": [{ "name": "pocket-siege-unlock-all-missions", "value": "1" }] },
+    { "origin": "http://127.0.0.1:5188", "localStorage": [{ "name": "pocket-siege-unlock-all-missions", "value": "1" }] }
+  ]
+}

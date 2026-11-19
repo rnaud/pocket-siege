@@ -85,3 +85,23 @@ export function recordScenarioMedal(path, medal, storage = globalThis.localStora
   storage.setItem(MEDAL_KEY, JSON.stringify(medals));
   return medals[path];
 }
+
+// 00444209: a successful mission clears its failed-attempt counter.
+export function resetScenarioAttempts(path, storage = globalThis.localStorage) {
+  const attempts = readNumberMap(ATTEMPT_KEY, storage);
+  if (!(path in attempts)) return;
+  delete attempts[path];
+  storage.setItem(ATTEMPT_KEY, JSON.stringify(attempts));
+}
+
+// 0044359D/00444F7A: the mission menu reaches mission 0 through the first
+// mission whose status is still 0 (00478BB0); completing it raises the bound.
+// Trainings use their own menu and stay open.
+export const UNLOCK_ALL_KEY = "pocket-siege-unlock-all-missions";
+export function scenarioMissionBound(paths, storage = globalThis.localStorage) {
+  if (storage.getItem(UNLOCK_ALL_KEY) === "1") return Infinity;
+  const completed = readScenarioProgress(storage);
+  const medals = readNumberMap(MEDAL_KEY, storage);
+  const index = paths.findIndex(path => !completed.has(path) && !(medals[path] > 0));
+  return index < 0 ? paths.length - 1 : index;
+}

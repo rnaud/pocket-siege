@@ -1,6 +1,6 @@
 import missionNames from './mission-names.json' with {type:'json'};
 import { resolveScenarioMatch } from './scenario-match.js';
-import { isScenarioComplete, readScenarioProgress, readScenarioScores, readScenarioMedal, readScenarioAttempts } from './scenario-progress.js';
+import { isScenarioComplete, readScenarioProgress, readScenarioScores, readScenarioMedal, readScenarioAttempts, scenarioMissionBound } from './scenario-progress.js';
 // Medal status 1-3 (0x6f528c) uses the original mission-menu medal bitmaps.
 const MEDALS = ['none', 'bronze', 'silver', 'gold'];
 const medalArt = (medal, big = false) =>
@@ -107,6 +107,7 @@ export function mountArmageddonFrontend(host = {}) {
     const completedPaths = readScenarioProgress();
     const completedCount = paths.filter((path) => completedPaths.has(path)).length;
     campaignTitle.textContent = `${training ? 'TRAINING' : 'MISSIONS'} · ${completedCount}/${paths.length} COMPLETE`;
+    const bound = training ? Infinity : scenarioMissionBound(paths);
     paths.forEach((path, index) => {
       const scenario = originalMissionPresentation(path);
       const button = document.createElement('button');
@@ -122,6 +123,14 @@ export function mountArmageddonFrontend(host = {}) {
       text.textContent = `${label}${!medal && isScenarioComplete(path) ? ' ✓' : ''}`;
       button.append(icon, text);
       if (isScenarioComplete(path)) button.classList.add('completed');
+      if (index > bound) {
+        // Beyond the menu's reachable bound: visible, but not playable yet.
+        button.disabled = true;
+        button.classList.add('locked');
+        text.textContent = `${label} · LOCKED`;
+        list.append(button);
+        return;
+      }
       button.addEventListener('click', () => {
         for (const item of list.children) item.setAttribute('aria-pressed', String(item === button));
         const title = document.createElement('h3');title.textContent = label;
@@ -170,7 +179,8 @@ export function mountArmageddonFrontend(host = {}) {
       });
       list.append(button);
     });
-    list.firstElementChild?.click();
+    // Open on the furthest reachable entry, as the original selects the current mission.
+    (Number.isFinite(bound) ? list.children[bound] : list.firstElementChild)?.click();
   }
   function render() {
     const isCampaign = mode === 'missions' || mode === 'training';

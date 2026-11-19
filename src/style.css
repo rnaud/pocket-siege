@@ -2873,3 +2873,4 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #menu#menu .frontend-mission-list button { display: flex; align-items: center; gap: 10px; }
 #menu#menu .frontend-medal { width: 24px; height: 24px; flex: none; image-rendering: pixelated; }
 #menu#menu .frontend-mission-preview .frontend-medal-big { display: block; width: 48px; height: auto; margin: 4px auto 0; image-rendering: pixelated; }
+#menu#menu .frontend-mission-list button.locked { opacity: 0.45; cursor: not-allowed; }

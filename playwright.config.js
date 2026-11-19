@@ -5,6 +5,8 @@ export default defineConfig({
   reporter: process.env.CI ? [["line"], ["json"]] : "list",
   use: {
     baseURL: "http://127.0.0.1:5187",
+    // Tests open any scenario directly; the unlock test clears this flag.
+    storageState: "tests/fixtures/unlocked-campaign.json",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

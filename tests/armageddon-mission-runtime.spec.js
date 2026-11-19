@@ -108,3 +108,13 @@ test("SuddenDeathType 0 makes round time-out end the game", { tag: "@logic" }, a
   expect(resolveScenarioMatch("mission/training8.wam").suddenDeath.roundEnds).toBe(true);
   expect(resolveScenarioMatch("mission/mission0.wam").suddenDeath.roundEnds).toBe(false);
 });
+
+test("mission bound reaches the first unfinished mission", { tag: "@logic" }, async () => {
+  const { scenarioMissionBound } = await import("../src/armageddon/scenario-progress.js");
+  const store = values => ({ getItem: key => values[key] ?? null });
+  const paths = ["m0", "m1", "m2"];
+  expect(scenarioMissionBound(paths, store({}))).toBe(0);
+  expect(scenarioMissionBound(paths, store({ "pocket-siege-scenario-medals-v1": JSON.stringify({ m0: 1 }) }))).toBe(1);
+  expect(scenarioMissionBound(paths, store({ "pocket-siege-scenario-progress-v1": JSON.stringify(["m0", "m1", "m2"]) }))).toBe(2);
+  expect(scenarioMissionBound(paths, store({ "pocket-siege-unlock-all-missions": "1" }))).toBe(Infinity);
+});

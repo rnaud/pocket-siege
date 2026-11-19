@@ -58,7 +58,7 @@ import { createNativeCrateScheme } from "./armageddon/crate-scheme.js";
 import { nativeCrateShowerTick } from "./armageddon/crate-shower.js";
 import { recordScenarioCompletion, recordScenarioScore } from "./armageddon/scenario-progress.js";
 import { originalResourceString } from "./armageddon/string-resources.js";
-import { readScenarioAttempts, recordScenarioFailure, readScenarioMedal, recordScenarioMedal } from "./armageddon/scenario-progress.js";
+import { readScenarioAttempts, recordScenarioFailure, readScenarioMedal, recordScenarioMedal, resetScenarioAttempts } from "./armageddon/scenario-progress.js";
 import { loadMissionScript } from "./armageddon/mission-script.js";
 import { createMissionState, runMissionTimed, runMissionSequence, missionMode, missionGameOver, missionSucceeded, missionMedal } from "./armageddon/mission-runtime.js";
 import { resolveMissionDefinition } from "./armageddon/mission-files.js";
@@ -1427,7 +1427,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   if (currentScenario) {
     const definition = resolveMissionDefinition(currentScenario.path);
     missionScript = definition ? loadMissionScript(definition, {
-      attempts: readScenarioAttempts(currentScenario.path),
+      // 00440590: trainings load with attempts 999999, so every Retries event is kept.
+      attempts: currentScenario.training ? 999999 : readScenarioAttempts(currentScenario.path),
       text: index => originalResourceString(1715 + index) ?? "",
     }) : { timed: [], sequence: [] };
     missionState = createMissionState();
@@ -1980,6 +1981,7 @@ function finishMission() {
     recordScenarioCompletion(path);
     recordScenarioScore(path, scenarioProgress.score);
     recordScenarioMedal(path, missionMedal(readScenarioMedal(path), readScenarioAttempts(path)));
+    resetScenarioAttempts(path);
   } else recordScenarioFailure(path);
   finishMatch(success ? 0 : null, false);
 }
