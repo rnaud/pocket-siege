@@ -45,6 +45,7 @@ export function resolveScenarioMatch(path) {
     fallDamage: read(record, "Options", "FallDamage", null),
     mineFuse: read(record, "Options", "MineFuse", null),
     weaponsDontEndTurn: read(record, "Options", "WeaponsDontEndTurn", 0) === 1,
+    enableSecretWeapons: read(record, "Options", "EnableSecretWeapons", 1) === 1,
     healthCrateEnergy: read(record, "Options", "HealthCrateEnergy", null),
     suddenDeath: {
       type: read(record, "Options", "SuddenDeathType", null),

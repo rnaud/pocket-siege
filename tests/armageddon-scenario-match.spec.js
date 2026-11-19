@@ -49,6 +49,8 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission1.wam").mineFuse).toBe(4);
   expect(resolveScenarioMatch("mission/mission17.wam").healthCrateEnergy).toBe(15);
   expect(resolveScenarioMatch("mission/mission24.wam").weaponsDontEndTurn).toBe(true);
+  expect(resolveScenarioMatch("mission/mission0.wam").enableSecretWeapons).toBe(false);
+  expect(resolveScenarioMatch("mission/mission17.wam").enableSecretWeapons).toBe(true);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
@@ -428,4 +430,20 @@ test("scenario logic random seed drives the live match RNG", async ({ page }) =>
     })
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().randomSeed)).toBe(3482743);
+});
+
+
+test("scenario secret-weapon option clears the starting secret ammo", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().ammo[0].superbanana)).toBe(0);
+  expect(await page.evaluate(() => window.siege.getState().ammo[0].sheep)).toBe(0);
 });

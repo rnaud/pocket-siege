@@ -429,6 +429,10 @@ export const WEAPONS = {
   },
 };
 
+export const SECRET_WEAPONS = new Set([
+  "superbanana", "mingvase", "holy", "molesquadron", "sheep", "supersheep",
+  "aquasheep", "oldwoman", "donkey", "flamethrower",
+]);
 export const SPECIAL_WEAPONS = [
   "blowtorch",
   "drill",

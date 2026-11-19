@@ -325,6 +325,7 @@ import {
   WEAPON_ORDER,
   SPECIAL_WEAPONS,
   freshAmmo,
+  SECRET_WEAPONS,
   ammoFor,
   WATER_RISE,
 } from "./weapons.js";
@@ -1080,6 +1081,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const carriedAmmo = keepSeries && stockpile ? ammo : null;
   const carriedUtilities = keepSeries && stockpile ? utilityAmmo : null;
   ammo = carriedAmmo ?? [freshAmmo(), freshAmmo()];
+  if (currentScenario && currentScenario.enableSecretWeapons === false) {
+    for (const teamAmmo of ammo)
+      for (const kind of SECRET_WEAPONS) teamAmmo[kind] = 0;
+  }
   weaponDelays = [0, 1].map(() =>
     createWeaponDelays(isDaily ? {} : configuredDelays),
   );
