@@ -256,8 +256,8 @@
     {
       "slot": 31,
       "native_name": "MoleSquadron",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "molesquadron",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 0
     },

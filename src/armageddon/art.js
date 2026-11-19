@@ -132,6 +132,7 @@ const names = [
     "cpttruck",
     "carpet2",
     "vase",
+    "lshpwlk",
     "shptruck",
     "sheepbrn",
     "clustlet",

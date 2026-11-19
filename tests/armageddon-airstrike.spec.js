@@ -305,3 +305,23 @@ test("live mine strike aircraft places five native mines", async ({ page }) => {
     })
     .toBe(0);
 });
+
+test("native mole squadron releases five mode-4 mole payloads", { tag: "@logic" }, () => {
+  const strike = createNativeAirstrike(600, 300, 1, 0, 650, 1, "molesquadron");
+  expect(strike.sprite).toBe(673);
+  expect(strike.config).toMatchObject({ count: 5, spacing: 50, speed: 100, kind: 2 });
+  const missiles = [];
+  let removed = false;
+  for (let tick = 0; tick < 400 && !removed; tick++) {
+    const result = stepNativeAirstrike(strike, 650);
+    missiles.push(...result.missiles);
+    removed = result.removed;
+  }
+  expect(removed).toBe(true);
+  expect(missiles).toHaveLength(5);
+  expect(missiles[0].nativeBody).toMatchObject({ sprite: 625, mode: 4 });
+  expect(missiles[0].nativeTimer.remaining).toBe(60000);
+  expect(missiles[0].nativeDetonation).toMatchObject({
+    push: 100, damage: 30, secondary: 0,
+  });
+});

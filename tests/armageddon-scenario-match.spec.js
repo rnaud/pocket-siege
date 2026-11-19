@@ -73,8 +73,12 @@ test("campaign scenario starts on its original landscape and turn rules", async 
       timeout: 30000,
     })
     .toBeGreaterThan(0);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), {
+      timeout: 30000,
+    })
+    .toBe("aim");
   const state = await page.evaluate(() => window.siege.getState());
-  expect(state.phase).toBe("aim");
   expect(state.turnTime).toBe(45);
   expect(state.retreatSeconds).toBe(3);
   await expect
