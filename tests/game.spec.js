@@ -1780,3 +1780,16 @@ test("mole bomb detonates below its burrow depth", async ({ page }) => {
   expect(blastY).not.toBeNull();
   expect(blastY).toBeLessThan(before);
 });
+
+test("walking units reverse at the map edge", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 1850));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  const state = await page.evaluate(() => window.siege.getState().projectile);
+  expect(state).not.toBeNull();
+  expect(state.walkTicks).toBeGreaterThan(0);
+  expect(state.x).toBeLessThan(1850);
+});
