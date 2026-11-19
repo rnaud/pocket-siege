@@ -1482,20 +1482,7 @@ function updateScenarioTeamNames() {
   }
 }
 function soloScenario() {
-  if (document.body.dataset.scenarioTraining === "1") return true;
-  if (scenarioIsTraining) return true;
-  if (/train/i.test(terrain?.layout ?? "")) return true;
-  if (soloMatch) return true;
-  if (/train/i.test($("#map-layout")?.value ?? "")) return true;
-  if (!currentScenario) return false;
-  if (Object.keys(currentScenario).length === 0) return true;
-  if (/\/training\d+\.wam$/i.test(currentScenario.path ?? "")) return true;
-  if (currentScenario.training || currentScenario.teams === 1) return true;
-  const rosters = currentScenario.teamWorms;
-  if (!rosters || rosters.length <= 1) return true;
-  const cpuRoster = rosters[1];
-  return !cpuRoster ||
-    cpuRoster.filter((config) => config.place !== false).length === 0;
+  return scenarioIsTraining || document.body.dataset.scenarioTraining === "1";
 }
 function disableSoloCpuWorms() {
   if (!soloScenario()) return;
@@ -8058,9 +8045,9 @@ mountArmageddonFrontend({
     $("#turn-time").value = String(scenario.turnTime);
     $("#retreat-time").value = String(scenario.retreatTime);
     $("#map-layout").value = `original:${scenario.terrain}`;
-    const launchedTraining = document.body.dataset.scenarioTraining === "1" || Boolean(scenario.training ||
-      /train/i.test(scenario.path ?? "") || /train/i.test(scenario.terrain ?? "") ||
-      /train/i.test(scenario.title ?? ""));
+    const launchedTraining = scenarioIsTraining ||
+      document.body.dataset.scenarioTraining === "1" ||
+      /train/i.test(scenario.title ?? "");
     scenarioIsTraining = launchedTraining;
     currentScenario = { ...scenario };
     matchStarted = true;
@@ -8070,6 +8057,7 @@ mountArmageddonFrontend({
       return;
     }
     if (launchedTraining || soloScenario()) {
+      scenarioIsTraining = true;
       disableSoloCpuWorms();
       nativeTeamList = createNativeTeamList([0]);
       if (team === 1) {
