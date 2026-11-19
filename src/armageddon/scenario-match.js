@@ -42,6 +42,14 @@ export function resolveScenarioMatch(path) {
     fixedWind: read(record, "Enviroment", "FixedWind", null),
     friction: read(record, "Enviroment", "Friction", null),
     fallDamage: read(record, "Options", "FallDamage", null),
+    suddenDeath: {
+      type: read(record, "Options", "SuddenDeathType", null),
+      waterRise: read(record, "Options", "SuddenDeathWaterRise", null),
+      wormDamage: read(record, "Options", "SuddenDeathWormDamage", null),
+      disabled: read(record, "Options", "SuddenDeathType", null) === 0 &&
+        read(record, "Options", "SuddenDeathWaterRise", null) === 0 &&
+        read(record, "Options", "SuddenDeathWormDamage", null) === 0,
+    },
     crateDrops: {
       weapon: read(record, "Options", "WeaponCrateDrops", 0),
       health: read(record, "Options", "HealthCrateDrops", 0),

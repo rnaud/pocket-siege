@@ -5240,7 +5240,7 @@ function nextTurn() {
     ) {
       spawnCrate(true);
     }
-    if (!sdTriggered && round >= 6) {
+    if (!sdTriggered && round >= 6 && !currentScenario?.suddenDeath?.disabled) {
       if (applySuddenDeath()) return;
     }
   }
@@ -7539,6 +7539,7 @@ window.siege = {
     invisibleTeam,
     friction: matchFriction,
     fallDamageScale,
+    suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,
     targetUtility,
     rope: {

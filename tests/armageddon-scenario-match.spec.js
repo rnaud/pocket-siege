@@ -49,6 +49,8 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
+  expect(resolveScenarioMatch("mission/training1.wam").suddenDeath.disabled).toBe(false);
+  expect(resolveScenarioMatch("mission/mission10.wam").suddenDeath.disabled).toBe(true);
   expect(resolveScenarioMatch("mission/mission10.wam")).toMatchObject({
     indestructibleLandscape: true,
   });
@@ -289,4 +291,21 @@ test("scenario fall damage option scales live fall damage", async ({ page }) => 
     })
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().fallDamageScale)).toBeCloseTo(0.03);
+});
+
+
+test("scenario sudden-death options disable the host round-six trigger", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission10.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().suddenDeathDisabled)).toBe(true);
 });
