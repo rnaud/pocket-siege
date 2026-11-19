@@ -1260,6 +1260,16 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         nativeDefaultMapObjects,
       )
     : slots.map((x) => ({ x, y: null }));
+  if (currentScenario?.teamWorms) {
+    for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {
+      for (const [index, config] of roster.entries()) {
+        const spawn = spawns[teamIndex * 3 + index];
+        if (!spawn || !config.place || config.x === null || config.y === null) continue;
+        spawn.x = config.x;
+        spawn.y = H - config.y;
+      }
+    }
+  }
   paintTerrain(ctx, terrain, texture);
   updateOriginalBackdrop();
   terrainDirty = false;

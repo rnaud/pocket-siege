@@ -70,9 +70,14 @@ function scenarioTeamWorms(record) {
       const energy = Number.parseInt(entries[`worm${worm}_energy`], 10);
       if (!Number.isFinite(energy)) continue;
       const disease = Number.parseInt(entries[`worm${worm}_deseasepoints`], 10);
+      const x = Number.parseInt(entries[`worm${worm}_xposition`], 10);
+      const y = Number.parseInt(entries[`worm${worm}_yposition`], 10);
       teams[index].push({
         energy,
         disease: Number.isFinite(disease) ? disease : 0,
+        x: Number.isFinite(x) ? x : null,
+        y: Number.isFinite(y) ? y : null,
+        place: entries[`worm${worm}_placeworm`] === "1",
       });
     }
   }
