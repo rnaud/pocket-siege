@@ -4896,6 +4896,25 @@ function detonateNativeProjectile(p) {
       });
   }
 }
+const WALKING_UNIT_KINDS = new Set([
+  "sheep", "supersheep", "aquasheep",
+  "donkey", "oldwoman", "sallyarmy", "skunk", "madcow", "molebomb",
+]);
+function stepWalkingUnit(p) {
+  if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
+  if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
+  if (!terrain.solid(p.x, p.y + 2)) return;
+  if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
+  const step = p.walkFacing * 0.8;
+  if (!terrain.solid(p.x + step * 4, p.y + 2)) {
+    p.walkFacing = -p.walkFacing;
+    return;
+  }
+  p.x += step;
+  p.nativeBody.x = Math.round(p.x * 65536);
+  p.nativeBody.vx = 0;
+  if (p.mesh) p.mesh.position.x = p.x;
+}
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
   const distance = Math.hypot(p.x - p.launchX, p.y - p.launchY);
@@ -6536,6 +6555,7 @@ function stepFrame(dt) {
             return nativeProjectileCollision(p, x, y, terrain, worms, H, body);
           },
         );
+        stepWalkingUnit(p);
         if (sound && nativeContact.sounds.length) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();
@@ -8217,6 +8237,23 @@ if (import.meta.env.DEV) {
       w.x = 8;
       w.frozen = frozen;
       w.ground = false;
+    },
+    spawnUnitAt(kind = "sheep", x = 600, y = null) {
+      const groundY = y ?? Math.max(0, terrain.surface(x)) + 2;
+      const p = {
+        x, y: groundY, vx: 0, vy: 0, kind, target: null,
+        launchX: x, launchY: groundY, age: 0, fuse: 2, bounce: 0,
+        owner: 0, sleeping: false, stuck: false, attached: null,
+        mesh: projectileMesh(kind), blocked: false,
+      };
+      attachNativeProjectile(p, H);
+      p.mesh.position.set(p.x, p.y, 40);
+      group.add(p.mesh);
+      projectile = p;
+      phase = "flight";
+      shotWait = 0;
+      updateUI();
+      return true;
     },
     explodeAt(x = 600, y = 350, kind = "cluster") {
       if (kind === "napalm") {
