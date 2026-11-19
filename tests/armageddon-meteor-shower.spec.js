@@ -40,3 +40,12 @@ test("meteor projectile block comes from weapon 56 entry +0x70", { tag: "@logic"
 test("Nuclear Test reads its water rise and dose from weapon 55", { tag: "@logic" }, () => {
   expect(nativeWeaponSlotBlock(55, 0x70).slice(0, 2)).toEqual([120, 2]);
 });
+
+test("default scheme loadout comes from the recovered inventory setup", { tag: "@logic" }, async () => {
+  const { nativeSchemeLoadouts } = await import("../src/armageddon/scheme-loadout.js");
+  const [first, second] = nativeSchemeLoadouts(195, 2);
+  // Slots: 1 bazooka, 3 mortar, 6 grenade, 7 cluster, 24 super sheep, 37 rope.
+  expect([1, 3, 6, 7, 24, 37].map(slot => first.counts[slot])).toEqual([-1, 5, -1, 3, 0, 5]);
+  expect(second.counts).toEqual(first.counts);
+  expect(first.delays[2]).toBe(1);
+});

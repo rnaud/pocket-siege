@@ -35,6 +35,8 @@ test("jetpack turns through original poses and renders thrust flames", async ({
 }, info) => {
   await page.goto("/");
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="jetpack"]').click();

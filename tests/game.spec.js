@@ -491,6 +491,8 @@ for (const weapon of ["mortar", "sticky"])
 test("limited weapons spend ammo and update their counts", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await expect(page.locator('[data-weapon="grenade"] small')).toHaveText("3");
   await openArsenal(page);
@@ -1176,6 +1178,8 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await openArsenal(page);
 
@@ -1263,6 +1267,8 @@ test("cluster bomblets and native petrol flames resolve their effects", async ({
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "cluster"));
   let state = await page.evaluate(() => window.siege.getState());
@@ -1462,6 +1468,8 @@ test("earthquake damages grounded worms", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await openArsenal(page);
   await expect
@@ -1522,6 +1530,8 @@ test("sheep launcher fires a native sheep projectile", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="sheeplauncher"]').click();
@@ -1539,6 +1549,8 @@ test("armageddon rains native meteors that damage worms", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="armageddon"]').click();
@@ -1561,6 +1573,8 @@ test("nuclear bomb targets a nuclear strike", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await openArsenal(page);
   await page.locator('[data-weapon="nuclearbomb"]').click();
@@ -1583,6 +1597,8 @@ test("scales of justice caps health at 100 with uneven survivors", async ({ page
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await openArsenal(page);
   await expect
@@ -1792,4 +1808,20 @@ test("walking units reverse at the map edge", async ({ page }) => {
   expect(state).not.toBeNull();
   expect(state.walkTicks).toBeGreaterThan(0);
   expect(state.x).toBeLessThan(1850);
+});
+
+test("classic duel starts with the original default scheme kit", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  // Resource 195 through 00415540/00417750/004C2640.
+  expect(await page.evaluate(() => {
+    const { ammo, utilities } = window.siege.getState();
+    const [kit, kitUtilities] = [ammo[0], utilities];
+    return { grenade: kit.grenade === Infinity, shotgun: kit.shotgun === Infinity,
+      mortar: kit.mortar, cluster: kit.cluster, homing: kit.homing, supersheep: kit.supersheep,
+      holy: kit.holy, rope: kitUtilities.rope, girder: kitUtilities.girder, jetpack: kitUtilities.jetpack };
+  })).toEqual({ grenade: true, shotgun: true, mortar: 5, cluster: 3, homing: 1, supersheep: 0,
+    holy: 0, rope: 5, girder: 3, jetpack: 0 });
 });

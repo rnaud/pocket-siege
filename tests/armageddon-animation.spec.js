@@ -29,6 +29,8 @@ for (const group of [0, 1, 2])
     await page.goto("/");
     await page.waitForFunction(() => window.siege?.getState().assetsReady);
     await page.locator('[data-mode="local"]').click();
+    // Custom keeps the host kit; Classic duel starts with the original default kit.
+    await page.selectOption("#scheme", "custom");
     await page.locator("#start").click();
     const poses = {
       rocket: "wbaz",

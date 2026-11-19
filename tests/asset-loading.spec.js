@@ -27,7 +27,8 @@ test('slow loading shows only the loading screen until current art is ready',asy
 test('failed assets do not enable play or reveal fallback graphics',async({page})=>{
   await page.route('**/sprites/wblink1.spr',route=>route.abort());
   await page.goto('/');
-  await expect(page.locator('#asset-loading')).toHaveAttribute('role','alert');
+  // Under parallel load the aborted fetch can take a while to surface.
+  await expect(page.locator('#asset-loading')).toHaveAttribute('role','alert',{timeout:15000});
   await expect(page.locator('#asset-loading')).toContainText('Reload to retry');
   await expect(page.locator('#app')).toBeHidden();
   expect(await page.evaluate(()=>window.siege.getState().assetsReady)).toBe(false);

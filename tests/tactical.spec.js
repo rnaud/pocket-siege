@@ -93,6 +93,8 @@ for (const kind of ["cluster", "napalm", "holy"]) {
     await page.goto("/");
     await page.waitForFunction(() => window.siege?.getState().assetsReady);
     await page.locator('[data-mode="local"]').click();
+    // Custom keeps the host kit; Classic duel starts with the original default kit.
+    await page.selectOption("#scheme", "custom");
     await page.locator("#start").click();
     // Keep the landing surface fixed: holy's native delay waits for rest.
     await page.evaluate(() => window.siege.debug.resetSeed(42));

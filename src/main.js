@@ -45,6 +45,7 @@ import { nativeCrateContents } from "./armageddon/crate-contents.js";
 import crateProjectileData from "./armageddon/crate-projectile-data.json";
 import { attachNativeProjectileBlock, nativeWeaponSlotBlock } from "./armageddon/projectile-runtime.js";
 import { nativeArmageddonStart, nativeArmageddonTick } from "./armageddon/armageddon.js";
+import { nativeSchemeLoadouts } from "./armageddon/scheme-loadout.js";
 import { nativeFlameBody } from "./armageddon/flame-body.js";
 import { registerNativeFlame } from "./armageddon/flame-spread.js";
 import { stepNativeFlame } from "./armageddon/flame-runtime.js";
@@ -1132,6 +1133,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     createWeaponDelays(isDaily ? {} : configuredDelays),
   );
   utilityAmmo = carriedUtilities ?? [freshUtilities(), freshUtilities()];
+  if (!currentScenario && !carriedAmmo && $("#scheme").value === "classic")
+    applyOriginalSchemeLoadout(isDaily ? {} : configuredDelays);
   if (currentScenario?.utilityLoadouts) {
     for (const [index, loadout] of currentScenario.utilityLoadouts.entries()) {
       for (const kind of Object.keys(utilityAmmo[index])) utilityAmmo[index][kind] = 0;
@@ -1984,6 +1987,20 @@ function finishMission() {
     resetScenarioAttempts(path);
   } else recordScenarioFailure(path);
   finishMatch(success ? 0 : null, false);
+}
+// Classic duel starts from the original default scheme (resource 195): the
+// recovered 00415540/00417750/004C2640 setup supplies counts and delays.
+function applyOriginalSchemeLoadout(configured) {
+  const loadouts = nativeSchemeLoadouts(195, 2);
+  const count = value => value === -1 ? Infinity : value;
+  loadouts.forEach(({ counts, delays }, index) => {
+    for (const [kind, slot] of Object.entries(WEAPON_SLOTS)) ammo[index][kind] = count(counts[slot]);
+    for (const [slot, kind] of Object.entries(NATIVE_UTILITY_SLOTS))
+      if (kind in utilityAmmo[index]) utilityAmmo[index][kind] = count(counts[slot]);
+    // Menu weapon delays still override the scheme's own delays.
+    const state = createWeaponDelays(configured);
+    weaponDelays[index] = { ...state, delays: delays.map((delay, slot) => state.delays[slot] || delay) };
+  });
 }
 function applyScenarioSuddenDeathDamage() {
   const amount = currentScenario?.suddenDeath?.wormDamage | 0;

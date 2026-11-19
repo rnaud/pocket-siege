@@ -673,6 +673,8 @@ test("laser sight draws the native aim ray until it is toggled off", async ({
 }) => {
   await page.goto("/");
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="laser"]').click();
@@ -699,6 +701,8 @@ test("laser sight draws the native aim ray until it is toggled off", async ({
 test("invisibility cloaks the active squad until the next turn", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host kit; Classic duel starts with the original default kit.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="invisibility"]').click();
