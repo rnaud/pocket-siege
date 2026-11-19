@@ -913,6 +913,15 @@ function announceWormDeath(worm) {
   const message = nativeWormDeathAnnouncement(worm.name, worm.team ? 0 : 2, worm.drowned, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
+function winningSideName(winner) {
+  if (winner === 1) {
+    const names = [...new Set(worms
+      .filter((w) => w.team === 1 && w.hp > 0 && w.allianceName)
+      .map((w) => w.allianceName))];
+    if (names.length === 1) return names[0];
+  }
+  return teamDisplayNames[winner ?? 0];
+}
 function announceMatchResult(winner) {
   music.result(winner, mode);
   if (winner !== null && sound) {
@@ -921,7 +930,7 @@ function announceMatchResult(winner) {
     audio.resume();
     queueControllerSpeech(request,worms.find(w=>w.team===winner));
   }
-  const message = nativeMatchResultAnnouncement(teamDisplayNames[winner ?? 0], winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
+  const message = nativeMatchResultAnnouncement(winningSideName(winner), winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 const music = new OriginalMusic();
@@ -3379,9 +3388,9 @@ async function shareResultCard() {
   }
   const result =
     lastResult.winner === 0
-      ? `${teamDisplayNames[0]} WINS`
+      ? `${lastResult.winnerName ?? teamDisplayNames[0]} WINS`
       : lastResult.winner === 1
-        ? `${teamDisplayNames[1]} WINS`
+        ? `${lastResult.winnerName ?? teamDisplayNames[1]} WINS`
         : "MUTUAL DESTRUCTION";
   ctx.fillStyle = "#efc58b";
   ctx.font = '24px "Siege Pixel"';
@@ -5595,6 +5604,7 @@ function finishMatch(winner, series) {
   );
   lastResult = {
     winner,
+    winnerName: winningSideName(winner),
     scenario: currentScenario && scenarioProgress ? {
       path: currentScenario.path,
       title: currentScenario.title ?? null,
@@ -8348,6 +8358,15 @@ if (import.meta.env.DEV) {
       }
       updateUI();
       endGame();
+    },
+    knockoutAlliance(alliance = 0) {
+      for (const w of worms) {
+        if (w.team !== 1 || (w.alliance ?? null) !== alliance) continue;
+        w.hp = 0;
+        w.deathPending = false;
+        w.dying = 0;
+      }
+      updateUI();
     },
     skipBreak() {
       if (phase === "break") breakTimer = 0;
