@@ -412,3 +412,12 @@ test("native sally army, skunk and mad cow use their recovered unit payloads", {
     expect(unit.nativeDetonation).toMatchObject({ sprite, damage, secondary });
   }
 });
+
+test("native mole bomb uses the recovered slot-26 payload", { tag: "@logic" }, () => {
+  const mole = projectile("molebomb", { x: 200, y: 400, fuse: 2 });
+  expect(mole.nativeBody).toMatchObject({ sprite: 620, mode: 3 });
+  expect(mole.nativeTimer.remaining).toBe(10000);
+  expect(mole.nativeDetonation).toMatchObject({
+    sprite: 620, damage: 0, push: 100, secondary: 1,
+  });
+});

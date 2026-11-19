@@ -63,6 +63,7 @@ const kinds = new Set([
   "aquasheep",
   "donkey",
   "oldwoman",
+  "molebomb",
   "sallyarmy",
   "skunk",
   "madcow",

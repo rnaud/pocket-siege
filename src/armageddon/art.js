@@ -139,6 +139,7 @@ const names = [
     "sally",
     "skunk1",
     "cowwalk",
+    "molewalk",
     "shptruck",
     "sheepbrn",
     "clustlet",

@@ -216,8 +216,8 @@
     {
       "slot": 26,
       "native_name": "MoleBomb",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "molebomb",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 0
     },

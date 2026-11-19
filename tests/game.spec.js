@@ -1166,7 +1166,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(43);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(44);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1406,7 +1406,7 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
   await openArsenal(page);
   for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
     "aquasheep", "donkey", "oldwoman", "molesquadron", "mingvase",
-    "sallyarmy", "skunk", "madcow"]) {
+    "sallyarmy", "skunk", "madcow", "molebomb"]) {
     await expect(page.locator(`[data-weapon="${kind}"]`)).toBeVisible();
   }
 });
