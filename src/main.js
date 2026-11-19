@@ -5117,6 +5117,7 @@ function stepWalkingUnit(p) {
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
   if (p.kind === "aquasheep" && p.y <= waterLevel + 12) {
     p.x += p.walkFacing * 1.0;
+    p.walkTicks = (p.walkTicks ?? 0) + 1;
     p.nativeBody.x = Math.round(p.x * 65536);
     p.nativeBody.vx = 0;
     if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
@@ -5125,6 +5126,7 @@ function stepWalkingUnit(p) {
   if (!walkingUnitGrounded(p.x, p.y)) {
     if (p.kind !== "supersheep") return;
     p.x += p.walkFacing * 1.6;
+    p.walkTicks = (p.walkTicks ?? 0) + 1;
     p.nativeBody.x = Math.round(p.x * 65536);
     p.nativeBody.vx = 0;
     if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
@@ -5138,6 +5140,7 @@ function stepWalkingUnit(p) {
     return;
   }
   p.x += step;
+  p.walkTicks = (p.walkTicks ?? 0) + 1;
   p.nativeBody.x = Math.round(p.x * 65536);
   p.nativeBody.vx = 0;
   const surface = terrain.surface(p.x);
@@ -8452,6 +8455,7 @@ window.siege = {
           fuse: projectile.fuse,
           nativeTimer: projectile.nativeTimer ? { ...projectile.nativeTimer } : null,
           nativeGuidance: projectile.nativeGuidance ? { ...projectile.nativeGuidance } : null,
+          walkTicks: projectile.walkTicks ?? 0,
           target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,

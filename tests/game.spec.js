@@ -1627,6 +1627,8 @@ test("released units walk along the ground", async ({ page }) => {
     const after = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
     expect(after, `${kind}:${before}->${after}`).not.toBeNull();
     expect(after, `${kind}:${before}->${after}`).not.toBe(before);
+    expect(await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0), kind)
+      .toBeGreaterThan(0);
   }
 });
 
@@ -1712,3 +1714,4 @@ test("aqua sheep swims at the water surface", async ({ page }) => {
   expect(x).not.toBeNull();
   expect(x).not.toBe(600);
 });
+
