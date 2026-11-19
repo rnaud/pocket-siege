@@ -1645,3 +1645,14 @@ test("walking skunk leaves a poison trail", async ({ page }) => {
     { timeout: 10000 })
     .toBe(true);
 });
+
+test("sally army detonation emits sheep payloads", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.detonateAt("sallyarmy", 600, 350));
+  const kids = await page.evaluate(() =>
+    window.siege.getState().bombs.filter((bomb) => bomb.kind === "sheep").length);
+  expect(kids).toBe(4);
+});

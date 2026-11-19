@@ -5023,6 +5023,26 @@ function fire() {
   }
   updateUI();
 }
+function spawnSallyArmyChildren(p) {
+  for (let index = 0; index < 4; index++) {
+    const child = {
+      x: p.x + (index - 1.5) * 8, y: p.y,
+      vx: (index - 1.5) * 55, vy: 80,
+      kind: "sheep", owner: p.owner, fuse: 4, bounce: 0.55,
+      age: 0, sleeping: false, stuck: false, attached: null,
+    };
+    attachNativeProjectile(child, H);
+    if (nativeProjectilePlacementHit(child, terrain, worms, H)) {
+      detonateNativeProjectile(child);
+      continue;
+    }
+    child.mesh = createNativeProjectileVisual(child.nativeRender);
+    if (!child.mesh) continue;
+    child.mesh.position.set(child.x, child.y, 40);
+    group.add(child.mesh);
+    bombs.push(child);
+  }
+}
 // Dispatch all original detonation events in order, including placement failures.
 function detonateNativeProjectile(p) {
   const events = nativeProjectileDetonationEvents(p, () => matchRandom.logicUint());
@@ -5043,11 +5063,13 @@ function detonateNativeProjectile(p) {
           return;
         }
         child.mesh = createNativeProjectileVisual(child.nativeRender);
+        if (!child.mesh) return;
         child.mesh.position.set(child.x, child.y, 40);
         group.add(child.mesh);
         bombs.push(child);
       });
   }
+  if (p.kind === "sallyarmy") spawnSallyArmyChildren(p);
 }
 const WALKING_UNIT_KINDS = new Set([
   "sheep", "supersheep", "aquasheep", "donkey",
@@ -8508,6 +8530,12 @@ if (import.meta.env.DEV) {
       phase = "flight";
       shotWait = 0;
       updateUI();
+      return true;
+    },
+    detonateAt(kind = "sallyarmy", x = 600, y = 350) {
+      const p = { x, y, vx: 0, vy: 0, kind, owner: 0, fuse: 3, bounce: 0 };
+      attachNativeProjectile(p, H);
+      detonateNativeProjectile(p);
       return true;
     },
     explodeAt(x = 600, y = 350, kind = "cluster") {
