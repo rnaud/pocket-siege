@@ -864,3 +864,23 @@ test("authored action radius reaches the live worm", async ({ page }) => {
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().worms[3].actionRadius)).toBe(0);
 });
+
+
+test("teams with fewer authored worms leave the extra live worms disabled", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const hp = await page.evaluate(() => window.siege.getState().worms.map((worm) => worm.hp));
+  expect(hp[0]).toBe(150);
+  expect(hp.slice(1, 3)).toEqual([0, 0]);
+  expect(hp.slice(3, 6)).toEqual([45, 45, 45]);
+});
