@@ -1812,20 +1812,17 @@ function executeMissionEvent(event, timed) {
   }
   return false;
 }
-// Weapon 55's water-rise and poison fields; host rules supply the values,
-// matching the sudden-death nuclear path until scheme weapon fields are live.
+// 004EF6B0 type 8 (as 004FC8D0 without its trailing sound): weapon 55 entry
+// +0x70 water rise and +0x74 poison dose from the default scheme record.
 function missionNuclearTest() {
-  const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
-  for (const call of nativeSuddenDeathActivation({ waterY: Math.floor(H - waterLevel), rise, dose: 5 })) {
-    if (call.operation === "sound") queueGameSound(call.request);
-    else if (call.event === 0x441) startNativeWaterRise(waterLevel + call.record[0], call.record[1]);
-    else if (call.event === 0x442) startNativeNuclearEffect(call.record[0]);
-    else if (call.event === 0x439) {
-      for (const w of worms) if (w.hp > 0) w.nativePoison = nativeWormPoisonInfect(
-        { ...w.nativePoison, team: w.matchStats.team, worm: w.matchStats.worm, state: nativeWormState(w) },
-        call.record[0], { announce: () => {} });
-    }
-  }
+  const [rise, dose] = nativeWeaponSlotBlock(55, 0x70);
+  startNativeWaterRise(waterLevel + rise, 8);
+  startNativeNuclearEffect(8);
+  queueGameSound([7, 8, 0x10000, 0x10000, 0]);
+  // The 0x439 dose is sent without the sudden-death path's >0 check.
+  for (const w of worms) if (w.hp > 0) w.nativePoison = nativeWormPoisonInfect(
+    { ...w.nativePoison, team: w.matchStats.team, worm: w.matchStats.worm, state: nativeWormState(w) },
+    dose, { announce: () => {} });
   poisoned = worms.some(w => w.nativePoison.amount !== 0);
 }
 // 0x445 {8}: the same host effect as the Earthquake utility, without a user.
@@ -8819,6 +8816,11 @@ if (import.meta.env.DEV) {
       attachNativeProjectile(p, H);
       detonateNativeProjectile(p);
       return true;
+    },
+    // Runs one mission script event (004EF6B0 when timed) in the live match.
+    missionEvent(event) {
+      if (!missionState) return false;
+      return executeMissionEvent(event, event.timed ?? true);
     },
     // Native blast packet {1, x, y, push, strength, 0} at host coordinates.
     nativeBlastAt(x = 600, y = 350, push = 100, strength = 50) {

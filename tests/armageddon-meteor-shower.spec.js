@@ -36,3 +36,7 @@ test("meteor projectile block comes from weapon 56 entry +0x70", { tag: "@logic"
   expect(block[0]).toBe(2);
   expect(block[9]).toBe(640);
 });
+
+test("Nuclear Test reads its water rise and dose from weapon 55", { tag: "@logic" }, () => {
+  expect(nativeWeaponSlotBlock(55, 0x70).slice(0, 2)).toEqual([120, 2]);
+});

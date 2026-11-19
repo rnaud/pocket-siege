@@ -1190,3 +1190,16 @@ test("the campaign list shows earned medals and failed attempts", async ({ page 
   await expect(page.locator(".frontend-scenario-meta")).toContainText("2 failed attempts");
   await expect(page.locator(".frontend-medal-big")).toHaveAttribute("src", /missionmedalgoldbig\.bmp$/);
 });
+
+test("mission Nuclear Test raises the sea by weapon 55's water rise and poisons worms", async ({ page }) => {
+  await openScenario(page, "mission/mission1.wam");
+  const before = await page.evaluate(() => window.siege.getState().waterLevel);
+  expect(await page.evaluate(() => window.siege.debug.missionEvent({ type: 8 }))).toBe(true);
+  // 004FC8D0 / 004EF6B0 type 8: 0x441 {entry +0x70 = 120, 8}, 0x439 {entry +0x74 = 2}.
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().waterLevel), { timeout: 20000 })
+    .toBeGreaterThanOrEqual(before + 119);
+  expect(await page.evaluate(() =>
+    window.siege.getState().worms.filter((worm) => worm.hp > 0).every((worm) => worm.nativePoison.amount >= 2)))
+    .toBe(true);
+});
