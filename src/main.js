@@ -454,6 +454,7 @@ let terrain,
   selectedNativeTeam = null,
   lastSelectedWormAlliance = new Map(),
   soloMatch = false,
+  lastExplosion = null,
   scenarioIsTraining = false,
   mode = "ai",
   weapon = "rocket",
@@ -5282,9 +5283,8 @@ function detonateNativeProjectile(p) {
       });
   }
   if (p.kind === "sallyarmy") spawnSallyArmyChildren(p);
-  if (p.kind === "molebomb") {
-    infectPoisonCloud(p.x, p.y - (p.burrowDepth ?? 0), 60, 2);
-  }
+  if (p.kind === "molebomb")
+    explode(p.x, p.y - (p.burrowDepth ?? 0), "molebomb", p.owner);
 }
 const WALKING_UNIT_KINDS = new Set([
   "sheep", "supersheep", "aquasheep", "donkey",
@@ -5378,6 +5378,7 @@ function carveScenarioTool(data, width, height, mask, x, y, rim) {
 }
 function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   const sourceX = x, sourceY = y;
+  lastExplosion = { x, y, kind };
   if (nativePacket) {
     x = nativePacket[1] / 65536;
     y = H - nativePacket[2] / 65536;
@@ -8313,6 +8314,7 @@ window.siege = {
   getState: () => !assetsReady ? { assetsReady, originalArtError } : ({
     assetsReady,
     originalArtError,
+    lastExplosion,
     mapLayout: terrain.layout,
     world: { width: W, height: H },
     terrainTheme: terrain.theme,
@@ -8802,6 +8804,14 @@ if (import.meta.env.DEV) {
       phase = "flight";
       shotWait = 0;
       updateUI();
+      return true;
+    },
+    detonateCurrent() {
+      if (!projectile) return false;
+      const current = projectile;
+      detonateNativeProjectile(current);
+      releaseProjectileMesh(current.mesh);
+      projectile = null;
       return true;
     },
     detonateCurrent() {

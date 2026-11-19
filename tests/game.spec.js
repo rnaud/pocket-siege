@@ -1765,3 +1765,18 @@ test("land units do not swim while aqua sheep does", async ({ page }) => {
   const aquaTicks = await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0);
   expect(aquaTicks).toBeGreaterThan(0);
 });
+
+test("mole bomb detonates below its burrow depth", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  const before = await page.evaluate(() => window.siege.getState().projectile?.y ?? null);
+  expect(before).not.toBeNull();
+  await page.evaluate(() => window.siege.debug.detonateCurrent());
+  const blastY = await page.evaluate(() => window.siege.getState().lastExplosion?.y ?? null);
+  expect(blastY).not.toBeNull();
+  expect(blastY).toBeLessThan(before);
+});
