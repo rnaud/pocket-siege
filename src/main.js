@@ -5802,6 +5802,7 @@ function startAiTurn() {
       !nearest || Math.abs(crate.x - w.x) < Math.abs(nearest.x - w.x) ? crate : nearest, null),
     worms,
     random: logicRandom,
+    radius: w.actionRadius > 0 ? w.actionRadius : 0,
   });
   if (reposition && w.ground) {
     aiMoveTime = reposition.time;

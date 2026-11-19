@@ -377,11 +377,13 @@ export function planMove({
   crate = null,
   worms = [],
   random = Math.random,
+  radius = 0,
 }) {
   const profile = DIFFICULTIES[difficulty] ?? DIFFICULTIES.regular;
   if (!me.ground || me.hp <= 0 || !terrain) return null;
   const nearWater = me.y - 10 < waterLevel + 55,
     nearEdge = me.x < 110 || me.x > W - 110;
+  if (radius > 0 && crate && Math.abs(crate.x - me.x) > radius) crate = null;
   const crateDistance = crate ? Math.abs(crate.x - me.x) : Infinity;
   if (!nearWater && !nearEdge && crateDistance > 150) {
     return random() <= profile.moveChance
@@ -403,6 +405,7 @@ export function planMove({
   const probe = { ...me, vx: 0, vy: 0, knocked: false, ground: true };
   for (let i = 0; i < 30; i++) walkWorm(probe, terrain, direction, STEP);
   if (Math.abs(probe.x - me.x) < 4) return null;
+  if (radius > 0 && Math.abs(probe.x - me.x) > radius) return null;
   const climbed = probe.y > me.y + 2,
     leftEdge = Math.abs(probe.x - W / 2) < Math.abs(me.x - W / 2) - 4;
   // Near the water, only climb. Walking toward the middle downhill is a trap.
