@@ -1734,3 +1734,18 @@ test("mole bomb burrows while host-walking", async ({ page }) => {
   const depth = await page.evaluate(() => window.siege.getState().projectile?.burrowDepth ?? 0);
   expect(depth).toBeGreaterThan(0);
 });
+
+test("mole bomb detonation poisons nearby worms", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  await page.evaluate(() => window.siege.debug.detonateCurrent());
+  await expect
+    .poll(() => page.evaluate(() =>
+      window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0)))
+    .toBe(true);
+});

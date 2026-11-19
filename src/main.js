@@ -5285,6 +5285,9 @@ function detonateNativeProjectile(p) {
       });
   }
   if (p.kind === "sallyarmy") spawnSallyArmyChildren(p);
+  if (p.kind === "molebomb") {
+    infectPoisonCloud(p.x, p.y - (p.burrowDepth ?? 0), 60, 2);
+  }
 }
 const WALKING_UNIT_KINDS = new Set([
   "sheep", "supersheep", "aquasheep", "donkey",
@@ -8801,6 +8804,14 @@ if (import.meta.env.DEV) {
       phase = "flight";
       shotWait = 0;
       updateUI();
+      return true;
+    },
+    detonateCurrent() {
+      if (!projectile) return false;
+      const current = projectile;
+      detonateNativeProjectile(current);
+      releaseProjectileMesh(current.mesh);
+      projectile = null;
       return true;
     },
     detonateAt(kind = "sallyarmy", x = 600, y = 350) {
