@@ -490,7 +490,7 @@ let currentScenario = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
-let matchElapsed = 0, scenarioClockSecond = -1;
+let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -2011,6 +2011,7 @@ function beginTurn() {
   cameraSnap = true; manualCamera = null;
   wormLocked = false;
   time = turnSeconds;
+  lastLossOfControl = false;
   stepScenarioTimedEvents();
   applyScenarioSuddenDeathDamage();
   updateAutomaticUtilities();
@@ -3628,6 +3629,7 @@ function accountWormDamage(w, damage, options = {}) {
   return accounting;
 }
 function injure(w, damage, direction = 0, native = false) {
+  if (damage > 0 && w === worms[current] && phase !== "over") lastLossOfControl = true;
   // Frozen state 0x88 bypasses weapon damage in events 0x404/0x433.
   if (w.hp <= 0 || damage <= 0) return;
   if (w.frozen > 0) {
@@ -5326,6 +5328,18 @@ function selectNativeMatchTeam() {
 }
 function nextTurn() {
   if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
+  if (currentScenario?.lossOfControlDoesntEndTurn && lastLossOfControl) {
+    lastLossOfControl = false;
+    const roster = worms.filter((w) => w.team === team && w.hp > 0);
+    if (roster.length > 1) {
+      const index = roster.indexOf(worms[current]);
+      const next = roster[(index + 1) % roster.length];
+      current = worms.indexOf(next);
+      lastSelectedWorm[team] = roster.indexOf(next) + 1;
+      beginTurn();
+      return;
+    }
+  }
   if (currentScenario?.turnEndFinishesGame && !scenarioProgress?.complete) {
     finishMatch(null, false);
     return;
@@ -7695,6 +7709,7 @@ window.siege = {
     randomSeed: matchRandom.seed,
     matchElapsed,
     roundTimeSeconds: scenarioRoundTimeSeconds(),
+    lastLossOfControl,
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,
@@ -7877,6 +7892,8 @@ if (import.meta.env.DEV) {
       return applyScenarioSuddenDeathDamage();
     },
     finishTurn() {
+      pendingTurnStart = false;
+      shotWait = 1;
       if (phase !== "over") nextTurn();
     },
     dropWormForRecovery(index = current) {
