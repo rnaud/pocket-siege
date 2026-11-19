@@ -1669,3 +1669,20 @@ test("sally army detonation emits sheep payloads", async ({ page }) => {
     window.siege.getState().bombs.filter((bomb) => bomb.kind === "sheep").length);
   expect(kids).toBe(4);
 });
+
+test("released units walk at different speeds", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  const travel = async (kind) => {
+    await page.evaluate(kind => window.siege.debug.spawnUnitAt(kind, 600), kind);
+    await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+    return page.evaluate(() => Math.abs(window.siege.getState().projectile?.x - 600));
+  };
+  const sheep = await travel("sheep");
+  const oldWoman = await travel("oldwoman");
+  expect(sheep).toBeGreaterThan(0);
+  expect(oldWoman).toBeGreaterThan(0);
+  expect(oldWoman).toBeLessThan(sheep);
+});
