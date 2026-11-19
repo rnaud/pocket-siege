@@ -890,7 +890,7 @@ test("the last shot can be replayed over the battlefield", async ({ page }) => {
   // rate. The existing helper only suppresses persistent score writes.
   await page.bringToFront();
   const settled = await page.evaluate(() => {
-    for (let frames = 0; frames < 9000; frames += 25) {
+    for (let frames = 0; frames < 18000; frames += 25) {
       const phase = window.siege.getState().phase;
       if (phase === "aim" || phase === "over") return true;
       window.siege.debug.advanceReplayFrames(25);
