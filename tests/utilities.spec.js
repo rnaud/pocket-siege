@@ -781,3 +781,39 @@ test("girder targeting switches between short and long original strips", async (
   expect(state.girders[0].sprite).toBe("grdl3");
   expect(state.girders[0].angle).toBe(22.5);
 });
+
+test("teleport validates a target and relocates the active worm", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase))
+    .toBe("aim");
+  await expect(page.locator("#menu")).not.toBeVisible();
+  const before = await page.evaluate(() => {
+    const state = window.siege.getState();
+    return { x: state.worms[state.current].x, y: state.worms[state.current].y };
+  });
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="teleport"]').click();
+  const point = await page.evaluate(() => {
+    const state = window.siege.getState(), camera = state.camera;
+    const arena = document.querySelector("#arena"), box = arena.getBoundingClientRect();
+    const x = 400;
+    const y = 200;
+    return {
+      x: box.x + (x - camera.x) / camera.w * box.width,
+      y: box.y + (1 - (y - camera.y) / camera.h) * box.height,
+    };
+  });
+  await page.mouse.click(point.x, point.y);
+  await expect
+    .poll(() => page.evaluate(() => {
+      const state = window.siege.getState();
+      return { x: state.worms[state.current].x, y: state.worms[state.current].y };
+    }), { timeout: 10000 })
+    .not.toEqual(before);
+});

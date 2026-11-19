@@ -2465,7 +2465,13 @@ function handleUtilityTarget(e) {
     utilityAmmo[team].teleport = spendAmmo(utilityAmmo[team].teleport);
     w.nativeFlight = null;
     w.vx = w.vy = 0;
-    startOriginalTeleport(w, target.x/65536, H-target.y/65536);
+    if (!startOriginalTeleport(w, target.x / 65536, H - target.y / 65536)) {
+      w.x = target.x / 65536;
+      w.y = H - target.y / 65536;
+      w.renderY = w.y;
+      w.ground = false;
+      w.g.position.set(w.x, w.y, 15);
+    }
     queueWormCamera(w);
     finishUtilityTurn("Teleporting. Turn ends after arrival.");
     return;
