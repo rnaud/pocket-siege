@@ -1266,6 +1266,17 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     }
     worms.push(worm);
   }
+  if (currentScenario?.teamWorms) {
+    for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {
+      const teamWorms = worms.filter((w) => w.team === teamIndex);
+      for (const [index, config] of roster.entries()) {
+        const worm = teamWorms[index];
+        if (!worm) continue;
+        worm.hp = config.energy;
+        worm.matchStats.hp = config.energy;
+      }
+    }
+  }
   if(!authored)for (let i = 0; i < 240; i++)
     for (const w of worms) stepWorm(w, terrain, 1 / 120, gravityScale);
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
@@ -8082,6 +8093,7 @@ if (import.meta.env.DEV) {
     finishTurn() {
       pendingTurnStart = false;
       shotWait = 1;
+      nativeAnnouncements = createNativeAnnouncements();
       if (phase !== "over") nextTurn();
     },
     dropWormForRecovery(index = current) {

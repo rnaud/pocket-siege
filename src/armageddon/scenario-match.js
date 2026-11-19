@@ -44,6 +44,26 @@ function scenarioUtilityLoadouts(record) {
   }
   return loadouts;
 }
+function scenarioTeamWorms(record) {
+  const teams = [[], []];
+  for (const team of record.sections) {
+    const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
+    if (!match) continue;
+    const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
+    if (index === 1 && Number(match[1].replace(/\D/g, "")) !== 1) continue;
+    const entries = Object.fromEntries(team.entries.map(([key, value]) => [key.toLowerCase(), value]));
+    for (let worm = 1; worm <= 16; worm++) {
+      const energy = Number.parseInt(entries[`worm${worm}_energy`], 10);
+      if (!Number.isFinite(energy)) continue;
+      const disease = Number.parseInt(entries[`worm${worm}_deseasepoints`], 10);
+      teams[index].push({
+        energy,
+        disease: Number.isFinite(disease) ? disease : 0,
+      });
+    }
+  }
+  return teams;
+}
 function scenarioLoadouts(record) {
   const loadouts = [{}, {}];
   for (const team of record.sections) {
@@ -101,6 +121,7 @@ export function resolveScenarioMatch(path) {
     turnEndFinishesGame: read(record, "Options", "TurnEndFinishesGame", 0) === 1,
     lossOfControlDoesntEndTurn: read(record, "Options", "LossOfControlDoesntEndTurn", 0) === 1,
     enableSecretWeapons: read(record, "Options", "EnableSecretWeapons", 1) === 1,
+    teamWorms: scenarioTeamWorms(record),
     loadouts: scenarioLoadouts(record),
     utilityLoadouts: scenarioUtilityLoadouts(record),
     healthCrateEnergy: read(record, "Options", "HealthCrateEnergy", null),

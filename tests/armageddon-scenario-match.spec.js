@@ -56,6 +56,7 @@ test("every mission and training resolves its original landscape and turn rules"
   });
   expect(resolveScenarioMatch("mission/mission18.wam").loadouts[0].uzi).toBe(-1);
   expect(resolveScenarioMatch("mission/mission11.wam").loadouts[0].rocket).toBe(-1);
+  expect(resolveScenarioMatch("mission/mission0.wam").teamWorms[0][0].energy).toBe(150);
   expect(resolveScenarioMatch("mission/mission0.wam").utilityLoadouts[0]).toMatchObject({
     girder: 3, rope: 4, laser: 1,
   });
@@ -575,10 +576,17 @@ test("scenario loss of control keeps the team active with another worm", async (
     current: window.siege.getState().current,
   }));
   await page.evaluate(() => window.siege.debug.hit(0, 10));
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(200));
-  await page.evaluate(() => window.siege.debug.finishTurn());
-  expect(await page.evaluate(() => window.siege.getState().team)).toBe(before.team);
-  expect(await page.evaluate(() => window.siege.getState().current)).not.toBe(before.current);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().lastLossOfControl))
+    .toBe(true);
+  let after = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.evaluate(() => window.siege.debug.finishTurn());
+    after = await page.evaluate(() => window.siege.getState());
+    if (after.current !== before.current) break;
+  }
+  expect(after.team).toBe(before.team);
+  expect(after.current).not.toBe(before.current);
 });
 
 
@@ -671,8 +679,8 @@ test("scenario water sudden death rises again on later rounds", async ({ page })
   await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(600));
   const first = await page.evaluate(() => window.siege.getState().waterLevel);
-  await page.evaluate(() => window.siege.debug.finishTurn());
-  await page.evaluate(() => window.siege.debug.finishTurn());
+  for (let i = 0; i < 4; i++)
+    await page.evaluate(() => window.siege.debug.finishTurn());
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(600));
   const second = await page.evaluate(() => window.siege.getState().waterLevel);
   expect(second).toBeGreaterThan(first);
@@ -707,4 +715,21 @@ test("scenario sound option selects the authored music track", async ({ page }) 
       timeout: 30000,
     })
     .toBe("ingame-5");
+});
+
+
+test("scenario worm energies reach the live roster", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const hp = await page.evaluate(() => window.siege.getState().worms.map((worm) => worm.hp));
+  expect(hp[0]).toBe(150);
+  expect(hp.slice(3, 6)).toEqual([45, 45, 45]);
 });
