@@ -1268,3 +1268,25 @@ test("missions unlock one at a time from the first unfinished mission", async ({
   await page.locator('[data-mode="training"]').click();
   await expect(page.locator('[data-scenario="mission/training16.wam"]')).toBeEnabled();
 });
+
+test("scenario sudden death types 2 and 3 reach health and nuclear modes", async ({
+  page,
+}) => {
+  for (const [path, mode] of [
+    ["mission/mission1.wam", "health"],
+    ["mission/mission18.wam", "nuke"],
+  ]) {
+    await page.goto("/");
+    await page.waitForFunction(() => window.siege?.getState().assetsReady);
+    await page.locator('[data-mode="missions"]').click();
+    await page.locator(`[data-scenario="${path}"]`).click();
+    await page.locator(".frontend-play-scenario").click();
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
+        timeout: 30000,
+      })
+      .toBeGreaterThan(0);
+    expect(await page.evaluate(() => window.siege.getState().suddenDeathType))
+      .toBe(mode);
+  }
+});
