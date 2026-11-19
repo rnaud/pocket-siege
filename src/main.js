@@ -1295,6 +1295,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         if (!worm) continue;
         worm.hp = config.energy;
         worm.matchStats.hp = config.energy;
+        worm.artillery = config.artillery;
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
           if (name) {
@@ -2345,7 +2346,8 @@ function canMove() {
     !worms[current]?.knocked &&
     !worms[current]?.originalJumpPreparation &&
     !worms[current]?.originalRecovery &&
-    !worms[current]?.nativeHurtBody
+    !worms[current]?.nativeHurtBody &&
+    !worms[current]?.artillery
   );
 }
 function canSelectWorm() {
@@ -8013,6 +8015,7 @@ window.siege = {
         deathPending,
         nativeHurtBody,
         nativeTeamModifiers,
+        artillery,
         nativePoison,
         originalRecovery,
         invisible,
@@ -8023,6 +8026,7 @@ window.siege = {
         damageTaken,
         matchStats: { ...matchStats, hp },
         nativePoison: { ...nativePoison },
+        artillery,
         nativeTeamModifiers,
         x,
         y,

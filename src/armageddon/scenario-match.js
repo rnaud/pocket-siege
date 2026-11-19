@@ -74,6 +74,7 @@ function scenarioTeamWorms(record) {
       const x = Number.parseInt(entries[`worm${worm}_xposition`], 10);
       const y = Number.parseInt(entries[`worm${worm}_yposition`], 10);
       teams[index].push({
+        artillery: entries[`worm${worm}_artilerymode`] === "1",
         energy,
         disease: Number.isFinite(disease) ? disease : 0,
         nameNumber: Number.isFinite(nameNumber) ? nameNumber : null,
