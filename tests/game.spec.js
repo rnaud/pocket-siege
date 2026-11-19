@@ -1166,7 +1166,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(50);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(52);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1406,7 +1406,7 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
   await openArsenal(page);
   for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
     "aquasheep", "donkey", "oldwoman", "molesquadron", "mingvase",
-    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb", "sheeplauncher", "longbow", "earthquake", "kamikaze", "suicidebomber"]) {
+    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb", "nuclearbomb", "armageddon", "sheeplauncher", "longbow", "earthquake", "kamikaze", "suicidebomber"]) {
     await expect(page.locator(`[data-weapon="${kind}"]`)).toBeVisible();
   }
 });
@@ -1515,4 +1515,40 @@ test("sheep launcher fires a native sheep projectile", async ({ page }) => {
       timeout: 10000,
     })
     .toBe("sheep");
+});
+
+test("armageddon damages every living worm", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  await page.locator('[data-weapon="armageddon"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() =>
+      window.siege.getState().worms.every((worm) => worm.hp <= 0)),
+    { timeout: 10000 })
+    .toBe(true);
+});
+
+test("nuclear bomb targets a nuclear strike", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  await page.locator('[data-weapon="nuclearbomb"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.up("Space");
+  const box = await page.locator("#arena").boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().explosions), {
+      timeout: 10000,
+    })
+    .toBeGreaterThan(0);
 });

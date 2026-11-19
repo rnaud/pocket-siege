@@ -448,16 +448,16 @@
     {
       "slot": 55,
       "native_name": "NuclearBomb",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "nuclearbomb",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 16
     },
     {
       "slot": 56,
       "native_name": "Armageddon",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "armageddon",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 24
     },

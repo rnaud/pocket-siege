@@ -2465,6 +2465,16 @@ function handleUtilityTarget(e) {
     finishUtilityTurn(`${WEAPONS[strikeKind].label} called. Bombs away!`);
     return;
   }
+  if (targetUtility === "nuclearbomb") {
+    if ((availableAmmo(ammo[team], "nuclearbomb") ?? 0) <= 0) return;
+    ammo[team].nuclearbomb = spendAmmo(ammo[team].nuclearbomb);
+    targetUtility = null;
+    activeUtility = null;
+    startNativeNuclearEffect(8);
+    explode(x, y, "nuclearbomb", team);
+    finishAction("Nuclear bomb! Retreat!");
+    return;
+  }
   if (targetUtility === "teleport") {
     const memory = new Uint8Array(0x194), placement = new DataView(memory.buffer);
     // 004D5A40 supplies the placement mask at190. Current authored maps use
@@ -4320,6 +4330,16 @@ function fireSheepLauncher() {
   $("#status").textContent = "Sheep launched!";
   updateUI();
 }
+function useArmageddon() {
+  if (!canAct() || availableAmmo(ammo[team], "armageddon") <= 0) return;
+  ammo[team].armageddon = spendAmmo(ammo[team].armageddon);
+  shotCount++;
+  recordReactionWeaponUse("armageddon");
+  startNativeNuclearEffect(8);
+  for (const w of worms) if (w.hp > 0) injure(w, 100);
+  $("#status").textContent = "Armageddon. The island burns.";
+  finishAction("Armageddon. Retreat!");
+}
 function useEarthquake() {
   if (!canAct() || availableAmmo(ammo[team], "earthquake") <= 0) return;
   const w = worms[current];
@@ -4607,6 +4627,18 @@ function fire() {
   const w = worms[current],
     kind = weapon,
     meta = WEAPONS[kind];
+  if (kind === "nuclearbomb") {
+    if (!canAct() || availableAmmo(ammo[team], "nuclearbomb") <= 0) return;
+    targetUtility = "nuclearbomb";
+    activeUtility = "nuclearbomb";
+    $("#status").textContent = "Click or tap to drop the nuclear bomb.";
+    updateUI();
+    return;
+  }
+  if (kind === "armageddon") {
+    useArmageddon();
+    return;
+  }
   if (kind === "sheeplauncher") {
     fireSheepLauncher();
     return;
