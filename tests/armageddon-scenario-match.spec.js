@@ -1019,3 +1019,20 @@ test("authored team flags render in the scenario label", async ({ page }) => {
     await expect.poll(() => flag.evaluate((image) => image.naturalWidth)).toBe(20);
   }
 });
+
+test("eliminating the player leaves hostile CPU groups fighting", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission23.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  await page.evaluate(() => window.siege.debug.knockout(0));
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.phase).not.toBe("over");
+  expect(state.team).toBe(1);
+});

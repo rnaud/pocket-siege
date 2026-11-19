@@ -445,6 +445,8 @@ let terrain,
   time = 45,
   shotWait = 0,
   lastSelectedWorm = [0, 0],
+  selectedNativeTeam = null,
+  lastSelectedWormAlliance = new Map(),
   mode = "ai",
   weapon = "rocket",
   move = 0,
@@ -1363,10 +1365,12 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
   nativeTeamRotation = nativeTeamRotationReset({ groups: 2,
     initialGroup: keepSeries ? (seriesRound - 1) % 2 : 0,
-    cursors: Array(worms.length).fill(1), starts: [0, 0] });
+    cursors: Array(nativeTeamCandidates().length).fill(1), starts: [0, 0] });
   team = selectNativeMatchTeam();
   round = 1;
   lastSelectedWorm = [0, 0];
+  selectedNativeTeam = null;
+  lastSelectedWormAlliance = new Map();
   explosions = 0;
   announcementPlayback?.stop(); announcementPlayback = null; announcementVolume = 0;
   nativeAnnouncements = createNativeAnnouncements();
@@ -2161,11 +2165,16 @@ function beginTurn() {
   // 004B64B0 schedules426 for settlement after this team finishes.
   pendingPoisonSettlement = 1;
   pendingEnvironmentSettlement = Number(suddenDeath && ["water", "health", "nuke"].includes(suddenDeathType));
-  const roster = worms.filter((w) => w.team === team);
+  const alliance = selectedNativeTeam?.team === team ? selectedNativeTeam.alliance : undefined;
+  const roster = worms.filter((w) => w.team === team &&
+    (alliance === undefined || (w.alliance ?? null) === alliance));
   if (!roster.some((w) => w.hp > 0)) return endGame();
-  const selection = nativeWormRotation({ health: roster.map(w => w.hp), previous: lastSelectedWorm[team] });
+  const selectionKey = `${team}:${alliance ?? ""}`;
+  const previous = lastSelectedWormAlliance.get(selectionKey) ?? lastSelectedWorm[team];
+  const selection = nativeWormRotation({ health: roster.map(w => w.hp), previous });
   if (!selection.selected) return endGame();
   lastSelectedWorm[team] = selection.selected;
+  lastSelectedWormAlliance.set(selectionKey, selection.selected);
   const active = roster[selection.selected - 1];
   current = worms.indexOf(active);
   reactionOrigin = { x: Math.round(active.x * 65536) | 0, y: Math.round((H - active.y) * 65536) | 0 };
@@ -5608,6 +5617,19 @@ function endGame() {
   nativePaletteDisplay.update();
   const a = worms.some((w) => w.team === 0 && w.hp > 0),
     b = worms.some((w) => w.team === 1 && w.hp > 0);
+  if (!a && b) {
+    const groups = new Set(worms.filter((w) => w.team === 1 && w.hp > 0)
+      .map((w) => w.alliance ?? null));
+    const candidates = nativeTeamCandidates().filter((candidate) =>
+      candidate.team === 1 && candidate.worms.some((w) => w.hp > 0));
+    if (groups.size > 1 && candidates.length) {
+      selectedNativeTeam = candidates[0];
+      nativeTeamRotation = { ...nativeTeamRotation, group: 1 };
+      team = 1;
+      beginTurn();
+      return;
+    }
+  }
   const winner = a && !b ? 0 : b && !a ? 1 : null;
   if (format === "best3" && winner !== null) {
     seriesWins = nextSeriesWins(seriesWins, winner);
@@ -5676,16 +5698,32 @@ function consumeDamageReaction(reveal = false) {
     queueControllerSpeech(reaction.speech.request,worms.find(w=>w.team+1===reaction.speech.team));
   }
 }
+function nativeTeamCandidates() {
+  const candidates = [{
+    team: 0, alliance: null, group: 0,
+    worms: worms.filter((w) => w.team === 0),
+  }];
+  const groups = new Map();
+  for (const worm of worms) {
+    if (worm.team !== 1) continue;
+    const alliance = worm.alliance ?? null;
+    if (!groups.has(alliance)) groups.set(alliance, []);
+    groups.get(alliance).push(worm);
+  }
+  for (const [alliance, groupWorms] of groups)
+    candidates.push({ team: 1, alliance, group: 1, worms: groupWorms });
+  return candidates;
+}
 function selectNativeMatchTeam() {
-  // Current frontend has two opposing alliances. Retain original per-alliance
-  // cursors and health eligibility instead of toggling the host team index.
+  const candidates = nativeTeamCandidates();
   const selected = nativeSelectNextTeam({ ...nativeTeamRotation, groups: 2,
-    deployment: false, teams: [0, 1].map(id => ({ group: id,
+    deployment: false, teams: candidates.map((candidate) => ({ group: candidate.group,
       unavailable: 0, eliminated: 0,
-      worms: worms.filter(w => w.team === id).map(w => ({ hp: w.hp, state: nativeWormState(w) })),
+      worms: candidate.worms.map(w => ({ hp: w.hp, state: nativeWormState(w) })),
     })) });
   nativeTeamRotation = { group: selected.group, cursors: selected.cursors };
-  return selected.team - 1;
+  selectedNativeTeam = candidates[selected.team - 1] ?? null;
+  return selectedNativeTeam?.team ?? -1;
 }
 function nextTurn() {
   if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
@@ -5714,7 +5752,11 @@ function nextTurn() {
   }
   consumeDamageReaction();
   showNativeTeamPanel(nativeTeamPanel);
-  if ([0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
+  const playerAlive = worms.some((w) => w.team === 0 && w.hp > 0);
+  const cpuGroups = new Set(worms.filter((w) => w.team === 1 && w.hp > 0)
+    .map((w) => w.alliance ?? null));
+  if (!(playerAlive === false && cpuGroups.size > 1) &&
+      [0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
   matchDamageSourceActive = false;
   if (!advanceNativePoisonSettlement()) return;
