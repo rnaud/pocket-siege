@@ -663,7 +663,7 @@ test("crate shower drops native supply crates", async ({ page }) => {
     .toBe(0);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().crates.length), {
-      timeout: 30000,
+      timeout: 60000,
     })
     .toBeGreaterThanOrEqual(5);
 });

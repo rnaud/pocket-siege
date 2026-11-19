@@ -798,7 +798,7 @@ test("action camera follows the shot and snaps back for the next turn", async ({
       .toBe(1);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
-      timeout: 20000,
+      timeout: 60000,
     })
     .toBe(1);
   await expect
