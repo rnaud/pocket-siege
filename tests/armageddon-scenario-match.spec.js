@@ -1192,3 +1192,8 @@ test("single-team trainings field no CPU worms and keep the player's turn", asyn
   await page.evaluate(() => window.siege.debug.knockout(0));
   await expect.poll(() => page.evaluate(() => window.siege.getState().phase)).toBe("over");
 });
+
+test("repeated WAM keys keep their first profile value", { tag: "@logic" }, () => {
+  expect(resolveScenarioMatch("mission/training8.wam").teamWorms[0][0]).toMatchObject({ x: 328, y: 630 });
+  expect(resolveScenarioMatch("mission/training5.wam").teamWorms[0][0]).toMatchObject({ x: 63, y: 615 });
+});

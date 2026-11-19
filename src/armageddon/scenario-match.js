@@ -4,6 +4,13 @@ import inventoryKeys from "./mission-inventory-keys.json" with { type: "json" };
 import { WEAPON_SLOTS } from "./delays.js";
 import { originalResourceString } from "./string-resources.js";
 
+// GetPrivateProfileString returns the first matching key in a section, so a
+// repeated key (TRAINI~8 and TRAIN~11 repeat Worm1 positions) keeps its first value.
+function profileEntries(entries) {
+  const result = {};
+  for (const [key, value] of entries) result[key.toLowerCase()] ??= value;
+  return result;
+}
 const section = (record, name) =>
   record.sections.find((entry) => entry.name.toLowerCase() === name.toLowerCase());
 function read(record, sectionName, key, fallback) {
@@ -78,7 +85,7 @@ function scenarioTeamWorms(record) {
     const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
     if (!match) continue;
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
-    const entries = Object.fromEntries(team.entries.map(([key, value]) => [key.toLowerCase(), value]));
+    const entries = profileEntries(team.entries);
     const teamSkill = Number.parseInt(entries.teamskill, 10);
     const teamNameNumber = Number.parseInt(entries.teamnamenumber, 10);
     const teamName = Number.isFinite(teamNameNumber)
@@ -260,9 +267,7 @@ function objectsInSections(record, pattern, sort = false) {
   if (sort) sections.sort((a, b) => Number(a.name.replace(/\D/g, "")) - Number(b.name.replace(/\D/g, "")));
   const objects = [];
   for (const section of sections) {
-    const raw = Object.fromEntries(
-      section.entries.map(([key, value]) => [key.toLowerCase(), value]),
-    );
+    const raw = profileEntries(section.entries);
     const entries = new Proxy(raw, {
       get: (target, key) => target[String(key).toLowerCase()],
     });
@@ -283,9 +288,7 @@ function eventObjects(record, initial) {
   const objects = [];
   for (const section of record.sections) {
     if (!/^Event\d+$/i.test(section.name)) continue;
-    const raw = Object.fromEntries(
-      section.entries.map(([key, value]) => [key.toLowerCase(), value]),
-    );
+    const raw = profileEntries(section.entries);
     const entries = new Proxy(raw, {
       get: (target, key) => target[String(key).toLowerCase()],
     });
