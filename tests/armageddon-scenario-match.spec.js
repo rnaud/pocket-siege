@@ -414,3 +414,18 @@ test("scenario weapons-dont-end-turn keeps the same worm active", async ({ page 
     .toBe("aim");
   expect(await page.evaluate(() => window.siege.getState().current)).toBe(before);
 });
+
+
+test("scenario logic random seed drives the live match RNG", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator('[data-scenario="mission/training1.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().randomSeed)).toBe(3482743);
+});

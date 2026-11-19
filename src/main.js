@@ -978,7 +978,7 @@ let mapLoading = false;
 let preparedRandomSeed = null;
 const nativeSoundQueue = new NativeSoundQueue();
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
-  const matchSeed = seed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
+  const matchSeed = seed ?? currentScenario?.logicRandomSeed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
   matchFriction = currentScenario?.friction ?? NATIVE_MINE_FRICTION;
@@ -7644,6 +7644,7 @@ window.siege = {
     friction: matchFriction,
     fallDamageScale,
     mineFuse: currentScenario?.mineFuse ?? null,
+    randomSeed: matchRandom.seed,
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,
