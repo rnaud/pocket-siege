@@ -1339,6 +1339,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.actionRadius = config.actionRadius;
         worm.alliance = config.alliance;
         worm.teamSkill = config.teamSkill;
+        worm.flag = config.flag;
+        worm.soundBank = config.soundBank;
         if (currentScenario.teamGraves?.[teamIndex]) worm.graveStyle = currentScenario.teamGraves[teamIndex];
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
@@ -8145,6 +8147,8 @@ window.siege = {
         actionRadius,
         alliance,
         teamSkill,
+        flag,
+        soundBank,
         nativePoison,
         originalRecovery,
         invisible,
@@ -8162,6 +8166,8 @@ window.siege = {
         actionRadius,
         alliance,
         teamSkill,
+        flag,
+        soundBank,
         nativeTeamModifiers,
         x,
         y,
