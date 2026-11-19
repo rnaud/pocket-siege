@@ -908,6 +908,7 @@ dialog h1 {
   overflow: hidden;
   z-index: 3;
 }
+.laser-sight { stroke: #ff4b4b; stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
 #aim-overlay .arc-shadow {
   fill: none;
   stroke: #152b31;

@@ -342,12 +342,14 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     "freeze",
     "fastwalk",
     "lowgravity",
+    "laser",
   ]);
   expect(loadout.rope).toBe(Infinity);
   expect(loadout.jetpack).toBe(1);
   expect(loadout.freeze).toBe(1);
   expect(loadout.fastwalk).toBe(0);
   expect(loadout.lowgravity).toBe(0);
+  expect(loadout.laser).toBe(1);
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
@@ -660,4 +662,32 @@ test("crate shower drops native supply crates", async ({ page }) => {
       timeout: 30000,
     })
     .toBeGreaterThanOrEqual(5);
+});
+
+test("laser sight draws the native aim ray until it is toggled off", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="laser"]').click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().utilities.laser))
+    .toBe(0);
+  await expect.poll(() => page.evaluate(() => window.siege.getState().laserSight)).toBe(true);
+  const line = page.locator(".laser-sight");
+  await expect
+    .poll(() => line.evaluate((el) => el.style.display))
+    .toBe("");
+  const lineState = await line.evaluate((el) => ({
+    x1: Number(el.getAttribute("x1")), y1: Number(el.getAttribute("y1")),
+    x2: Number(el.getAttribute("x2")), y2: Number(el.getAttribute("y2")),
+    stroke: getComputedStyle(el).stroke,
+  }));
+  expect(Object.values(lineState).slice(0, 4).every(Number.isFinite)).toBe(true);
+  expect(lineState.stroke).toBe("rgb(255, 75, 75)");
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="laser"]').click();
+  await expect.poll(() => line.evaluate((el) => el.style.display)).toBe("none");
 });

@@ -51,6 +51,12 @@ export const UTILITIES = {
     fresh: 0,
     help: "Halve gravity for this turn",
   },
+  laser: {
+    label: "Laser Sight",
+    icon: "⊹",
+    fresh: 1,
+    help: "Show the exact aim line until you fire",
+  },
 };
 
 export const UTILITY_KINDS = Object.keys(UTILITIES);

@@ -469,7 +469,7 @@ const availableAmmo = (loadout, kind) =>
 // Native pickup slots for utilities that are not part of WEAPON_SLOTS.
 const NATIVE_UTILITY_SLOTS = {
   34: "girder", 37: "rope", 38: "bungee", 39: "parachute", 40: "teleport",
-  60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk",
+  60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk", 65: "laser",
   67: "doubledamage", 68: "cratespy", 69: "doubletime", 70: "crateshower",
 };
 const NATIVE_WEAPON_KINDS = Object.fromEntries(
@@ -531,6 +531,7 @@ let format = "single",
   },
   parachuteArmed = false,
   bungeeArmed = false,
+  laserSight = false,
   turnSeconds = 45,
   turnTime = 45,
   retreatSeconds = 3,
@@ -772,6 +773,40 @@ function shot(w, a = angle, kind = weapon) {
     kind,
   );
 }
+function updateLaserSight(visible) {
+  const line = aimHUD.laser;
+  if (!line) return;
+  const worm = worms[current];
+  if (!laserSight || !visible || !worm || worm.hp <= 0) {
+    line.style.display = "none";
+    return;
+  }
+  const config = nativeHitscanWeapon("handgun");
+  const launch = nativeBulletLaunch(config, worm, angle, H, () => 0);
+  const ray = nativeHitscanRays(
+    [worm.team, current, launch.x, launch.y, launch.vx, launch.vy, 0, 0, 0, 0, 0],
+    1, 0, () => 0,
+  )[0];
+  const targets = [...nativeWormHitscanBodies(worms, worm, H),
+    ...nativeMineHitBodies(mines), ...nativeCrateHitBodies(), ...nativeBarrelHitBodies()]
+    .sort((a, b) => a.type - b.type);
+  const bodyHit = nativeHitscanBody(targets, ray[2] >> 16, ray[3] >> 16,
+    ray[4], ray[5], config.ray.range, config.ray.collisionMask);
+  const terrainHit = nativeHitscanTerrain(ray[2] >> 16, ray[3] >> 16,
+    ray[4], ray[5], config.ray.range, (x, y) => terrain.solid(x, H - y));
+  const distance = bodyHit.distance >= 0 && (terrainHit < 0 || bodyHit.distance < terrainHit)
+    ? bodyHit.distance : terrainHit >= 0 ? terrainHit : config.ray.range;
+  if (distance < 0) { line.style.display = "none"; return; }
+  const endX = (ray[2] + Math.imul(ray[4], distance)) >> 16;
+  const endY = (ray[3] + Math.imul(ray[5], distance)) >> 16;
+  const start = screen(ray[2] >> 16, H - (ray[3] >> 16));
+  const end = screen(endX, H - endY);
+  line.setAttribute("x1", String(start.x));
+  line.setAttribute("y1", String(start.y));
+  line.setAttribute("x2", String(end.x));
+  line.setAttribute("y2", String(end.y));
+  line.style.display = "";
+}
 function updateAimHUD() {
   const visible =
     phase === "aim" &&
@@ -833,6 +868,7 @@ function updateAimHUD() {
       nativeSight: nativeGeometry,
     };
   }
+  updateLaserSight(visible);
   aimHUD.tag.hidden = !projectile;
   if (projectile) {
     const p = screen(projectile.x, projectile.y);
@@ -1020,6 +1056,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   targetUtility = null;
   parachuteArmed = false;
   bungeeArmed = false;
+  laserSight = false;
   stopRope();
   stopJetpack();
   $("#replay").disabled = true;
@@ -1743,6 +1780,7 @@ function beginTurn() {
   activeUtility = null;
   parachuteArmed = false;
   bungeeArmed = false;
+  laserSight = false;
   utilitiesOpen = false;
   specialOpen = false;
   // Native team event 0x41C broadcasts thaw (0x412) before turn setup.
@@ -2250,7 +2288,7 @@ function useUtility(kind) {
     return;
   }
   const count = displayAmmo(utilityAmmo[team]?.[kind] ?? 0);
-  if (count <= 0) {
+  if (count <= 0 && !(kind === "laser" && laserSight)) {
     $("#utility-status").textContent = "None left. Find a field-kit crate.";
     return;
   }
@@ -2286,6 +2324,19 @@ function useUtility(kind) {
     utilitiesOpen = false;
     $("#utility-status").textContent =
       "Parachute armed. It deploys automatically on a hard fall.";
+    updateUI();
+    return;
+  }
+  if (kind === "laser") {
+    laserSight = !laserSight;
+    if (laserSight) {
+      utilityAmmo[team].laser = spendAmmo(utilityAmmo[team].laser);
+      activeUtility = "laser";
+    } else activeUtility = null;
+    utilitiesOpen = false;
+    $("#utility-status").textContent = laserSight
+      ? "Laser sight active. The red line follows your aim."
+      : "Laser sight off.";
     updateUI();
     return;
   }
@@ -7247,6 +7298,7 @@ window.siege = {
       delays: [...state.delays],
     })),
     utilities: { ...utilityAmmo[team] },
+    laserSight,
     activeUtility,
     targetUtility,
     rope: {
