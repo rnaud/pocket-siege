@@ -1351,6 +1351,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.alliance = config.alliance;
         worm.teamSkill = config.teamSkill;
         worm.allianceName = config.teamName;
+        worm.allianceFlag = config.flag;
         worm.flag = config.flag;
         worm.soundBank = config.soundBank;
         if (config.graveStyle !== null && config.graveStyle !== undefined)
@@ -1470,7 +1471,8 @@ function updateScenarioAllianceHealth() {
   for (const worm of worms) {
     if (worm.team !== 1 || worm.hp <= 0) continue;
     const key = worm.alliance ?? null;
-    const group = groups.get(key) ?? { name: worm.allianceName ?? "CPU", hp: 0 };
+    const group = groups.get(key) ??
+      { name: worm.allianceName ?? "CPU", hp: 0, flag: worm.allianceFlag ?? null };
     group.hp += worm.hp;
     groups.set(key, group);
   }
@@ -1485,13 +1487,19 @@ function updateScenarioAllianceHealth() {
   el.replaceChildren(...values.map((group) => {
     const row = document.createElement("span");
     row.className = "scenario-alliance-row";
+    const flag = document.createElement("img");
+    flag.className = "scenario-alliance-flag";
+    flag.alt = "";
+    scenarioFlagUrl(group.flag ?? 1).then((url) => {
+      if (url) flag.src = url;
+    });
     const name = document.createElement("b");
     name.textContent = group.name;
     const bar = document.createElement("i");
     bar.style.width = `${Math.min(100, group.hp / maximum * 100)}%`;
     const hp = document.createElement("span");
     hp.textContent = group.hp;
-    row.append(name, bar, hp);
+    row.append(flag, name, bar, hp);
     return row;
   }));
 }

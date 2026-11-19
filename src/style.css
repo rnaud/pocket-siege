@@ -2779,6 +2779,7 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #scenario-objective { display: block; color: #ffe982; font: 11px/1.2 monospace; letter-spacing: 1px; }
 #scenario-alliance-health { display: flex; flex-direction: column; gap: 1px; color: #efc7a4; font: 10px/1.2 monospace; letter-spacing: 1px; }
 .scenario-alliance-row { display: flex; align-items: center; gap: 4px; }
+.scenario-alliance-flag { width: 14px; height: 12px; image-rendering: pixelated; }
 .scenario-alliance-row b { min-width: 74px; font-weight: normal; }
 .scenario-alliance-row i { height: 3px; background: #efc7a4; }
 .scenario-alliance-row span { min-width: 18px; text-align: right; }
@@ -2786,6 +2787,7 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 .scenario-team-flag { width: 20px; height: 17px; image-rendering: pixelated; }
 #scenario-alliance-health { display: flex; flex-direction: column; gap: 1px; color: #efc7a4; font: 10px/1.2 monospace; letter-spacing: 1px; }
 .scenario-alliance-row { display: flex; align-items: center; gap: 4px; }
+.scenario-alliance-flag { width: 14px; height: 12px; image-rendering: pixelated; }
 .scenario-alliance-row b { min-width: 74px; font-weight: normal; }
 .scenario-alliance-row i { height: 3px; background: #efc7a4; }
 .scenario-alliance-row span { min-width: 18px; text-align: right; }
