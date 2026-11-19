@@ -160,6 +160,7 @@ export function resolveScenarioMatch(path) {
     teamWorms: scenarioTeamWorms(record),
     teamNames: scenarioTeamNames(record),
     teamGraves: scenarioTeamGraves(record),
+    teamSkill: read(record, "CPUTeam1", "TeamSkill", null),
     loadouts: scenarioLoadouts(record),
     utilityLoadouts: scenarioUtilityLoadouts(record),
     healthCrateEnergy: read(record, "Options", "HealthCrateEnergy", null),

@@ -72,6 +72,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission0.wam").pauseBetweenTurns).toBe(0);
   expect(resolveScenarioMatch("mission/mission0.wam").girderRadius).toBe(1000);
   expect(resolveScenarioMatch("mission/mission0.wam").difficulty).toBe(1);
+  expect(resolveScenarioMatch("mission/mission0.wam").teamSkill).toBe(80);
   expect(resolveScenarioMatch("mission/mission0.wam").teamNames[1]).toBe("Patrol");
   expect(resolveScenarioMatch("mission/mission12.wam").wormSelectDisabled).toBe(false);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
@@ -752,7 +753,7 @@ test("mission difficulty reaches the live AI setting", async ({ page }) => {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.siege.getState().difficulty)).toBe("rookie");
+  expect(await page.evaluate(() => window.siege.getState().difficulty)).toBe("veteran");
 });
 
 
