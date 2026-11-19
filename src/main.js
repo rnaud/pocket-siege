@@ -537,6 +537,7 @@ let format = "single",
   laserSight = false,
   invisibleTeam = null,
   girderAngle = 0,
+  girderLength = 64,
   turnSeconds = 45,
   turnTime = 45,
   retreatSeconds = 3,
@@ -1064,6 +1065,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   laserSight = false;
   invisibleTeam = null;
   girderAngle = 0;
+  girderLength = 64;
   stopRope();
   stopJetpack();
   $("#replay").disabled = true;
@@ -1860,6 +1862,7 @@ function beginTurn() {
     for (const w of worms) w.invisible = false;
     invisibleTeam = null;
   girderAngle = 0;
+  girderLength = 64;
   }
   // 004B3210 resets the shared environment before the next team's turn.
   // Preserve the selected browser match modifier as the baseline.
@@ -2363,7 +2366,7 @@ function handleUtilityTarget(e) {
     return;
   }
   if (targetUtility === "girder") {
-    const sprite = girderSprite();
+    const sprite = girderSprite(girderAngle, girderLength);
     if (!sprite) return;
     const target = nativeClampPlacementTarget(Math.round(x*65536),Math.round((H-y)*65536),
       sprite.width,sprite.height,0);
@@ -2374,7 +2377,7 @@ function handleUtilityTarget(e) {
       return;
     }
     // Convert the validated native bitmap row to the same host terrain row.
-    if (!addGirder(px, H-1-py, girderAngle, 64)) return;
+    if (!addGirder(px, H-1-py, girderAngle, girderLength)) return;
     const placedKind = activeUtility === "bridgekit" ? "bridgekit" : "girder";
     utilityAmmo[team][placedKind] = spendAmmo(utilityAmmo[team][placedKind]);
     activeUtility = null;
@@ -2461,6 +2464,7 @@ function useUtility(kind) {
     targetUtility = "girder";
     activeUtility = "bridgekit";
     girderAngle = 0;
+    girderLength = 64;
     utilitiesOpen = false;
     $("#status").textContent = "Click or tap to place a bridge.";
     updateUI();
@@ -2487,7 +2491,7 @@ function useUtility(kind) {
   if (kind === "teleport" || kind === "girder") {
     targetUtility = kind;
     activeUtility = kind;
-    if (kind === "girder") girderAngle = 0;
+    if (kind === "girder") { girderAngle = 0; girderLength = 64; }
     utilitiesOpen = false;
     $("#status").textContent =
       kind === "teleport"
@@ -6990,6 +6994,12 @@ window.addEventListener("keydown", (e) => {
   if (targetUtility === "girder" && (e.key === "[" || e.key === "]")) {
     girderAngle = Math.max(-90, Math.min(90, girderAngle + (e.key === "]" ? 22.5 : -22.5)));
     $("#status").textContent = `Girder angle ${girderAngle}°.`;
+    updateUI();
+    return;
+  }
+  if (targetUtility === "girder" && e.key.toLowerCase() === "l") {
+    girderLength = girderLength === 64 ? 96 : 64;
+    $("#status").textContent = girderLength === 96 ? "Long girder selected." : "Short girder selected.";
     updateUI();
     return;
   }
