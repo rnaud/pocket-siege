@@ -20,6 +20,9 @@ import {
 } from "./physics.js";
 import { WEAPONS, WEAPON_ORDER, ammoFor } from "./weapons.js";
 
+const hostile = (a, b) => a.team !== b.team ||
+  (Number.isFinite(a.alliance) && Number.isFinite(b.alliance) && a.alliance !== b.alliance);
+
 export const DIFFICULTIES = {
   rookie: {
     label: "Rookie",
