@@ -1166,7 +1166,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(38);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(39);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1348,4 +1348,26 @@ test("special and utility crates stock the field kit", async ({ page }) => {
       .filter(([kind]) => kind !== "rope")
       .reduce((sum, [, n]) => sum + n, 0),
   ).toBeGreaterThan(5);
+});
+
+test("flame thrower emits native flames and spends its stream", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase))
+    .toBe("aim");
+  await openArsenal(page);
+  await page.locator('[data-weapon="flamethrower"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().flames), { timeout: 10000 })
+    .toBeGreaterThan(0);
+  const before = await page.evaluate(() => window.siege.getState().ammo[0].flamethrower);
+  expect(before).toBeLessThan(56);
 });

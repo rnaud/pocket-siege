@@ -4221,6 +4221,42 @@ function syncTorchPosition(w, body) {
   if(w.originalBlowtorch)w.originalBlowtorch.body=body;
   w.x = body.x/65536; w.y = H-body.y/65536;
 }
+function fireFlamethrower() {
+  if (!canAct() || availableAmmo(ammo[team], "flamethrower") <= 0) return;
+  const w = worms[current];
+  ammo[team].flamethrower = spendAmmo(ammo[team].flamethrower);
+  shotCount++;
+  recordReactionWeaponUse("flamethrower");
+  pendingFire = { worm: w, angle, kind: "flamethrower", stage: "flamethrower", spent: true,
+    stream: { remaining: 18, frame: 0 } };
+  charging = false;
+  chargeSource = null;
+  $("#status").textContent = "Flames away. Retreat!";
+  updateSliders();
+  updateUI();
+}
+function stepFlamethrower(pending) {
+  if (pending.stream.remaining <= 0) {
+    pendingFire = null;
+    finishAction("Flame thrower complete. Retreat!");
+    return;
+  }
+  const w = pending.worm, radians = pending.angle * Math.PI / 180;
+  const cos = Math.cos(radians), sin = Math.sin(radians);
+  const baseX = w.x + cos * 14, baseY = w.y - sin * 14;
+  const count = Math.min(2, pending.stream.remaining);
+  for (let i = 0; i < count; i++) {
+    const spread = (i - 0.5) * 0.11 + (matchRandom.logicUint() / 0xffffffff - 0.5) * 0.04;
+    const a = radians + spread, speed = (3.2 + (matchRandom.logicUint() / 0xffffffff) * 1.2) * 65536;
+    spawnNativeFlame([
+      Math.round(baseX * 65536), Math.round((H - baseY) * 65536),
+      Math.round(Math.cos(a) * speed), Math.round(-Math.sin(a) * speed),
+      40, 0, 0, 10, 40, 4, 0,
+    ], w.team);
+  }
+  pending.stream.remaining -= count;
+  pending.stream.frame++;
+}
 function fireBlowtorch(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team],"blowtorch") <= 0) return;
   const w = worms[current];
@@ -4422,6 +4458,10 @@ function fire() {
     meta = WEAPONS[kind];
   if (kind === "mine") {
     placeMine();
+    return;
+  }
+  if (kind === "flamethrower") {
+    fireFlamethrower();
     return;
   }
   if (kind === "dynamite") {
@@ -6066,6 +6106,15 @@ function stepFrame(dt) {
       if ((pending.burst?.spent || pending.spent) && phase === "aim") finishAction("Firing interrupted. Retreat!");
     } else if (pending.stage === "blowtorch") {
       stepBlowtorch(pending);
+    } else if (pending.stage === "flamethrower") {
+      if (pending.stream.frame % 4 === 0) stepFlamethrower(pending);
+      else {
+        pending.stream.frame++;
+        if (pending.stream.remaining <= 0) {
+          pendingFire = null;
+          finishAction("Flame thrower complete. Retreat!");
+        }
+      }
     } else if (pending.stage === "drill") {
       stepDrill(pending);
     } else if (pending.stage === "firepunch") {
@@ -6934,6 +6983,7 @@ $("#select-worm").onclick = () => cycleWorm(1);
 $("#skip").onclick = skipTurn;
 $("#surrender").onclick = surrenderMatch;
 $("#utilities-toggle").onclick = () => $("#inventory-toggle").click();
+$("#special-toggle").onclick = () => { specialOpen = !specialOpen; updateUI(); };
 for (const button of document.querySelectorAll("[data-utility]"))
   button.onclick = () => useUtility(button.dataset.utility);
 $("#jump").onclick = () => jump("forward");
@@ -7564,6 +7614,7 @@ window.siege = {
     invisibleTeam,
     friction: matchFriction,
     fallDamageScale,
+    flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,
     targetUtility,

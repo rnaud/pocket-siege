@@ -360,8 +360,8 @@
     {
       "slot": 44,
       "native_name": "FlameThrower",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "flamethrower",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 9
     },

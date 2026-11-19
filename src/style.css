@@ -2779,3 +2779,42 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #scenario-objective { display: block; color: #ffe982; font: 11px/1.2 monospace; letter-spacing: 1px; }
 #menu#menu .frontend-scenario-meta { color: #b5b2d6; font: 13px/1.4 monospace; text-transform: uppercase; letter-spacing: 1px; margin: 8px auto; }
 #menu#menu .frontend-mission-list button.completed { color: #9ee29e; }
+
+/* Desktop weapon tray keeps the special weapons reachable; the legacy
+   absolutely-positioned panel is promoted to a modal sheet above the tray. */
+#weapon-tray .loadout-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 8px;
+}
+#weapon-tray #special-toggle { display: inline-flex !important; position: static; }
+#weapon-tray #special-toggle[hidden] { display: none !important; }
+#weapon-tray .special-weapons {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  z-index: 40;
+  width: min(560px, calc(100vw - 30px));
+  max-height: min(75vh, 600px);
+  overflow-y: auto;
+}
+
+/* The special grid is part of the arsenal sheet, not a separate hidden panel. */
+#weapon-tray .special-weapons[hidden] { display: block; }
+#weapon-tray .special-weapons {
+  position: static;
+  transform: none;
+  width: auto;
+  max-height: none;
+  overflow: visible;
+  padding: 8px 0 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+#weapon-tray .special-head { display: none; }
+#weapon-tray #special-toggle { display: none !important; }
