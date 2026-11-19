@@ -483,6 +483,7 @@ function crateShowerSlotKind(slot) {
 let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
 let currentScenario = null;
 let scenarioProgress = null;
+let scenarioSequence = [], scenarioSequenceIndex = 0;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1256,13 +1257,21 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   mode = $("#mode").value;
   applyWeather();
   spawnCrate();
+  if (currentScenario) {
+    scenarioSequence = (currentScenario.sequenceObjects ?? []).filter(
+      (object) => object.kind === "target" ||
+        (object.kind === "weapon" && crateShowerSlotKind(object.content)));
+    scenarioSequenceIndex = 0;
+    scenarioProgress = {
+      collected: 0,
+      total: (currentScenario.objects ?? []).filter(
+        (object) => object.kind === "weapon" || object.kind === "target").length +
+        scenarioSequence.length,
+      complete: false,
+    };
+  } else scenarioSequence = [], scenarioSequenceIndex = 0;
   spawnScenarioObjects();
-  if (currentScenario) scenarioProgress = {
-    collected: 0,
-    total: (currentScenario.objects ?? []).filter(
-      (object) => object.kind === "weapon" || object.kind === "target").length,
-    complete: false,
-  };
+  spawnNextScenarioSequence();
   if(!authored)spawnHazards();
   beginTurn();
   updateRecordUI();
@@ -1406,27 +1415,37 @@ function spawnScenarioBarrel(object) {
   hazards.push(hazard);
   hazard.scenario = object;
 }
-function spawnScenarioObjects() {
-  if (!currentScenario) return;
-  for (const object of currentScenario.objects ?? []) {
-    if (object.kind === "mine") {
-      spawnStrikeMine({ x: object.x, y: H - object.y, vx: 0, vy: 0 }).scenario = object;
-      continue;
-    }
-    if (object.kind === "drum") { spawnScenarioBarrel(object); continue; }
-    if (object.kind === "health") {
-      spawnShowerCrate({
-        x: Math.round(object.x * 65536),
-        y: Math.round(object.y * 65536),
-      }, { kind: "health", type: "health" }, object.health ?? 15).scenario = object;
-      continue;
-    }
-    const mapping = crateShowerSlotKind(object.content);
-    if (!mapping) continue;
+function spawnScenarioObject(object) {
+  if (object.kind === "mine") {
+    spawnStrikeMine({ x: object.x, y: H - object.y, vx: 0, vy: 0 }).scenario = object;
+    return true;
+  }
+  if (object.kind === "drum") { spawnScenarioBarrel(object); return true; }
+  if (object.kind === "health") {
     spawnShowerCrate({
       x: Math.round(object.x * 65536),
       y: Math.round(object.y * 65536),
-    }, mapping, 1).scenario = object;
+    }, { kind: "health", type: "health" }, object.health ?? 15).scenario = object;
+    return true;
+  }
+  const mapping = crateShowerSlotKind(object.content) ??
+    (object.kind === "target" ? { kind: null, type: "target" } : null);
+  if (!mapping) return false;
+  spawnShowerCrate({
+    x: Math.round(object.x * 65536),
+    y: Math.round(object.y * 65536),
+  }, mapping, object.kind === "health" ? object.health ?? 15 : 1).scenario = object;
+  return true;
+}
+function spawnScenarioObjects() {
+  if (!currentScenario) return;
+  for (const object of currentScenario.objects ?? []) spawnScenarioObject(object);
+}
+function spawnNextScenarioSequence() {
+  while (scenarioSequenceIndex < scenarioSequence.length) {
+    const object = scenarioSequence[scenarioSequenceIndex++];
+    if (object.kind === "health") { spawnScenarioObject(object); return; }
+    if (spawnScenarioObject(object)) return;
   }
 }
 function stepCrateShower() {
@@ -1732,9 +1751,29 @@ function stepNativeWormPickup(w) {
   w.nativePickupFlag = body.field154;
   w.nativePickupState = state;
 }
+function advanceScenarioProgress(crate) {
+  if (!crate.scenario || !scenarioProgress || scenarioProgress.total <= 0 ||
+      (crate.scenario.kind !== "weapon" && crate.scenario.kind !== "target")) return;
+  scenarioProgress.collected = (scenarioProgress.collected + 1) | 0;
+  scenarioProgress.complete = scenarioProgress.collected >= scenarioProgress.total;
+  announce(scenarioProgress.complete
+    ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}`
+    : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}`);
+  if (!scenarioProgress.complete) spawnNextScenarioSequence();
+}
 function collectCrate(w, crate = crates[0]) {
   if (!crate || !crates.includes(crate)) return;
   const { kind, mesh, quantity } = crate;
+  if (crate.scenario?.kind === "target" && !crate.content) {
+    pickupLabel(w, "TARGET");
+    $("#status").textContent = `${w.name} collects a scenario target.`;
+    nativeRenderOrder.release(crate.nativeOrderId);
+    dispose(mesh);
+    crates.splice(crates.indexOf(crate), 1);
+    advanceScenarioProgress(crate);
+    updateUI();
+    return;
+  }
   let label;
   // Content keys adapt the current host inventory to native transfer callbacks;
   // numeric slot ownership and donor inventories remain separate integration work.
@@ -1760,14 +1799,7 @@ function collectCrate(w, crate = crates[0]) {
     { ...target.nativePoison, team: target.team }, [w.team, worms.indexOf(w), nativePickupCategory(crate.nativeBody.kind)]);
   poisoned = worms.some(target => target.nativePoison.amount !== 0);
   nativeRecordPickup(w.matchStats, nativePickupCategory(crate.nativeBody.kind));
-  if (crate.scenario && scenarioProgress && scenarioProgress.total > 0 &&
-      (crate.scenario.kind === "weapon" || crate.scenario.kind === "target")) {
-    scenarioProgress.collected = (scenarioProgress.collected + 1) | 0;
-    scenarioProgress.complete = scenarioProgress.collected >= scenarioProgress.total;
-    announce(scenarioProgress.complete
-      ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}`
-      : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}`);
-  }
+  advanceScenarioProgress(crate);
   w.matchStats.hp = w.hp;
   updateUI();
 }
@@ -7031,7 +7063,7 @@ $("#daily").addEventListener("click", async () => {
   $("#modifier").value = "standard";
   $("#scheme").value = "classic";
   currentScenario = null;
-  scenarioProgress = null;
+  scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0;
   syncMenuOptions();
   saveSettings();
   matchStarted = true;
@@ -7054,7 +7086,7 @@ $("#sound").onclick = () => {
 $("#start").onclick = async event => {
   event.preventDefault();
   currentScenario = null;
-  scenarioProgress = null;
+  scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0;
   $("#start").textContent = "LET’S MAKE TROUBLE ↗";
   matchStarted = true;
   try {

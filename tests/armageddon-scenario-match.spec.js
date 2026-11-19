@@ -33,6 +33,10 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(mission0.objects.filter((object) => object.kind === "mine")).toHaveLength(8);
   expect(mission0.objects.filter((object) => object.kind === "drum")).toHaveLength(1);
   expect(resolveScenarioMatch("mission/mission5.wam").objects.filter((object) => object.kind === "health")).toHaveLength(2);
+  expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects).toHaveLength(1);
+  expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects[0]).toMatchObject({
+    kind: "target", x: 1066, y: 434, marked: true,
+  });
   expect(resolveScenarioMatch("mission/training1.wam")).toMatchObject({
     training: true,
     terrain: "mission/train~11.img",
@@ -85,6 +89,28 @@ test("campaign scenario starts on its original landscape and turn rules", async 
     .toBeGreaterThan(0);
   expect(state.scenario).toMatchObject({ collected: 0 });
   expect(state.scenario.total).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
+    .toBe(1);
+});
+
+
+test("training scenario places sequence targets as they are collected", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  const first = page.locator(".frontend-mission-list button").first();
+  await expect(first).toBeVisible();
+  await first.click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))

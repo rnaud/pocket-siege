@@ -39,6 +39,7 @@ export function resolveScenarioMatch(path) {
     difficulty: read(record, "Description", "Difficulty", 0),
     winningCondition: read(record, "Mission", "WinningCondition", 0),
     objects: scenarioInitialObjects(record),
+    sequenceObjects: scenarioSequenceObjects(record),
   };
 }
 
@@ -49,49 +50,69 @@ function numbered(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
-export function scenarioInitialObjects(record) {
+function placementObject(entries, type) {
+  if (type === 3) {
+    const x = numbered(entries.PlaceWeapon_XPosition);
+    const y = numbered(entries.PlaceWeapon_YPosition);
+    const content = numbered(entries.PlaceWeapon_Contents);
+    if (x === null || y === null || content === null) return null;
+    return { kind: "weapon", x, y, content,
+      marked: numbered(entries.PlaceWeapon_Marked) === 1,
+      vital: numbered(entries.PlaceWeapon_Vital) === 1,
+      bonusPoints: numbered(entries.PlaceWeapon_Bonus_Points) ?? 0,
+      bonusTurns: numbered(entries.PlaceWeapon_Bonus_TurnExtension) ?? 0 };
+  }
+  if (type === 4) {
+    const x = numbered(entries.PlaceHealth_XPosition);
+    const y = numbered(entries.PlaceHealth_YPosition);
+    if (x === null || y === null) return null;
+    return { kind: "health", x, y,
+      health: numbered(entries.PlaceHealth_Health) ?? 15,
+      marked: numbered(entries.PlaceHealth_Marked) === 1,
+      vital: numbered(entries.PlaceHealth_Vital) === 1,
+      onGround: numbered(entries.PlaceHealth_OnGround) === 1 };
+  }
+  if (type === 5) {
+    const x = numbered(entries.PlaceTarget_XPosition);
+    const y = numbered(entries.PlaceTarget_YPosition);
+    if (x === null || y === null) return null;
+    return { kind: "target", x, y,
+      content: numbered(entries.PlaceTarget_TargetType),
+      marked: numbered(entries.PlaceTarget_Marked) === 1,
+      vital: numbered(entries.PlaceTarget_Vital) === 1 };
+  }
+  if (type === 1 || type === 2) {
+    const prefix = type === 1 ? "PlaceMine_" : "PlaceDrum_";
+    const x = numbered(entries[prefix + "XPosition"]);
+    const y = numbered(entries[prefix + "YPosition"]);
+    if (x === null || y === null) return null;
+    return { kind: type === 1 ? "mine" : "drum", x, y,
+      onGround: numbered(entries[prefix + "OnGround"]) === 1 };
+  }
+  return null;
+}
+function objectsInSections(record, pattern, sort = false) {
+  const sections = record.sections.filter((section) => pattern.test(section.name));
+  if (sort) sections.sort((a, b) => Number(a.name.replace(/\D/g, "")) - Number(b.name.replace(/\D/g, "")));
   const objects = [];
-  for (const section of record.sections) {
-    if (!/^Event\d+$/i.test(section.name)) continue;
-    const entries = Object.fromEntries(section.entries);
+  for (const section of sections) {
+    const raw = Object.fromEntries(
+      section.entries.map(([key, value]) => [key.toLowerCase(), value]),
+    );
+    const entries = new Proxy(raw, {
+      get: (target, key) => target[String(key).toLowerCase()],
+    });
     const type = EVENT_TYPES[numbered(entries.TypeOfEvent)];
-    const turn = numbered(entries.Turn ?? 0);
-    if (type === undefined || turn !== 0) continue;
-    if (type === 3) {
-      const x = numbered(entries.PlaceWeapon_XPosition);
-      const y = numbered(entries.PlaceWeapon_YPosition);
-      const content = numbered(entries.PlaceWeapon_Contents);
-      if (x === null || y === null || content === null) continue;
-      objects.push({ kind: "weapon", x, y, content,
-        marked: numbered(entries.PlaceWeapon_Marked) === 1,
-        vital: numbered(entries.PlaceWeapon_Vital) === 1,
-        bonusPoints: numbered(entries.PlaceWeapon_Bonus_Points) ?? 0,
-        bonusTurns: numbered(entries.PlaceWeapon_Bonus_TurnExtension) ?? 0 });
-    } else if (type === 5) {
-      const x = numbered(entries.PlaceTarget_XPosition);
-      const y = numbered(entries.PlaceTarget_YPosition);
-      if (x === null || y === null) continue;
-      objects.push({ kind: "target", x, y,
-        content: numbered(entries.PlaceTarget_TargetType),
-        marked: numbered(entries.PlaceTarget_Marked) === 1,
-        vital: numbered(entries.PlaceTarget_Vital) === 1 });
-    } else if (type === 4) {
-      const x = numbered(entries.PlaceHealth_XPosition);
-      const y = numbered(entries.PlaceHealth_YPosition);
-      if (x === null || y === null) continue;
-      objects.push({ kind: "health", x, y,
-        health: numbered(entries.PlaceHealth_Health) ?? 15,
-        marked: numbered(entries.PlaceHealth_Marked) === 1,
-        vital: numbered(entries.PlaceHealth_Vital) === 1,
-        onGround: numbered(entries.PlaceHealth_OnGround) === 1 });
-    } else if (type === 1 || type === 2) {
-      const prefix = type === 1 ? "PlaceMine_" : "PlaceDrum_";
-      const x = numbered(entries[prefix + "XPosition"]);
-      const y = numbered(entries[prefix + "YPosition"]);
-      if (x === null || y === null) continue;
-      objects.push({ kind: type === 1 ? "mine" : "drum", x, y,
-        onGround: numbered(entries[prefix + "OnGround"]) === 1 });
-    }
+    if (type === undefined) continue;
+    if (!sort && numbered(entries.Turn ?? 0) !== 0) continue;
+    const object = placementObject(entries, type);
+    if (object) objects.push(object);
   }
   return objects;
+}
+export function scenarioInitialObjects(record) {
+  return objectsInSections(record, /^Event\d+$/i);
+}
+export function scenarioSequenceObjects(record) {
+  return objectsInSections(record, /^Sequence\d+$/i, true);
 }
