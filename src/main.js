@@ -492,6 +492,7 @@ let scenarioSequence = [], scenarioSequenceIndex = 0;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
+let earthquakeShake = 0;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1298,6 +1299,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     matchElapsed = 0;
     scenarioClockSecond = -1;
     lastWaterRiseRound = 0;
+    earthquakeShake = 0;
     scenarioProgress = {
       collected: 0,
       score: 0,
@@ -4350,6 +4352,7 @@ function useEarthquake() {
   for (const target of worms)
     if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
   w.recoil = 0.4;
+  earthquakeShake = 0x8000;
   $("#status").textContent = "Earthquake! The ground heaves.";
   finishAction("Earthquake! Retreat!");
 }
@@ -5755,6 +5758,7 @@ function checkScenarioRoundTime() {
 }
 function stepFrame(dt) {
   if (mapLoading) return;
+  earthquakeShake = Math.max(0, earthquakeShake - dt * 0x10000 * 0.9);
   checkScenarioRoundTime();
   if (currentScenario?.displayRoundTime && Math.floor(matchElapsed) !== scenarioClockSecond) {
     scenarioClockSecond = Math.floor(matchElapsed);
@@ -7180,10 +7184,11 @@ function frame(now) {
   });
   camera.position.x = 0;
   camera.position.y = 0;
-  if (!reducedMotion && nativeNuclearEffect?.shake) {
+  const cameraShake = Math.max(nativeNuclearEffect?.shake ?? 0, earthquakeShake);
+  if (!reducedMotion && cameraShake) {
     const base = [Math.round((view.x + view.w / 2) * 65536),
       Math.round((H - view.y - view.h / 2) * 65536), 0];
-    const shaken = nativeCameraShake(base, matchRandom.frame, [nativeNuclearEffect.shake, 0]);
+    const shaken = nativeCameraShake(base, matchRandom.frame, [cameraShake, 0]);
     // 004C5250 rounds the native camera to world pixels for projection.
     camera.position.x += ((shaken[0] + 0x8000) >> 16) - ((base[0] + 0x8000) >> 16);
     camera.position.y -= ((shaken[1] + 0x8000) >> 16) - ((base[1] + 0x8000) >> 16);
@@ -7885,6 +7890,7 @@ window.siege = {
     roundTimeSeconds: scenarioRoundTimeSeconds(),
     lastLossOfControl,
     lastWaterRiseRound,
+    earthquakeShake,
     jetpackFuel: jetpack.fuel,
     replayEnabled: currentScenario?.enableActionReplay !== false,
     pauseBetweenTurns: currentScenario?.pauseBetweenTurns ?? null,

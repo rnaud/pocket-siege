@@ -1461,6 +1461,7 @@ test("earthquake damages grounded worms", async ({ page }) => {
       window.siege.getState().worms.reduce((sum, w) => sum + w.hp, 0)),
     { timeout: 10000 })
     .toBeLessThan(before);
+  expect(await page.evaluate(() => window.siege.getState().earthquakeShake)).toBeGreaterThan(0);
 });
 
 test("longbow fires a host arrow projectile", async ({ page }) => {
