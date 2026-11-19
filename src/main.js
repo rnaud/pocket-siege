@@ -1122,6 +1122,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   wormLocked = false;
   water.userData.setLevel?.(WATER);
   difficulty = $("#difficulty")?.value || "regular";
+  if (currentScenario?.difficulty === 1) difficulty = "rookie";
+  else if (currentScenario?.difficulty === 2) difficulty = "regular";
+  else if (currentScenario?.difficulty === 3) difficulty = "veteran";
   shotFuse = null;
   shotBounce = null;
   aiMoveTime = 0;
