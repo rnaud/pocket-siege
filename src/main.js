@@ -4918,14 +4918,20 @@ function stepWalkingUnit(p) {
   if (!terrain.solid(p.x, p.y + 2)) return;
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
   const step = p.walkFacing * 0.8;
-  if (!terrain.solid(p.x + step * 4, p.y + 2)) {
+  const aheadX = p.x + step * 4;
+  if (!terrain.solid(aheadX, p.y + 2) || terrain.solid(aheadX, p.y - 4)) {
     p.walkFacing = -p.walkFacing;
     return;
   }
   p.x += step;
   p.nativeBody.x = Math.round(p.x * 65536);
   p.nativeBody.vx = 0;
-  if (p.mesh) p.mesh.position.x = p.x;
+  const surface = terrain.surface(p.x);
+  if (Number.isFinite(surface)) {
+    p.y = surface + 2;
+    p.nativeBody.y = Math.round(p.y * 65536);
+  }
+  if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
   if (p.kind === "skunk" || p.kind === "molebomb") {
     p.walkPoisonFrame = (p.walkPoisonFrame ?? 0) + 1;
     if (p.walkPoisonFrame >= 50) {
