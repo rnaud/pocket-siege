@@ -174,3 +174,14 @@ test("repositioning walks toward a nearby supply crate", { tag: "@logic" }, () =
   expect(move.direction).toBe(1);
   expect(move.time).toBeGreaterThan(1);
 });
+
+test("authored action radius caps AI movement routes", { tag: "@logic" }, () => {
+  const flat = { solid: (x, y) => x >= 0 && x <= W && y < 300 };
+  const me = { team: 1, x: 80, y: 312, hp: 100, ground: true, vx: 0, vy: 0, knocked: false };
+  const options = {
+    terrain: flat, me, waterLevel: WATER, difficulty: "regular", random: () => 0.5,
+  };
+  expect(planMove({ ...options, radius: 0 })).toEqual({ direction: 1, time: 0.5 });
+  expect(planMove({ ...options, radius: 1 })).toBeNull();
+  expect(planMove({ ...options, radius: 1000 })).toEqual({ direction: 1, time: 0.5 });
+});
