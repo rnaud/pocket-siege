@@ -4921,6 +4921,13 @@ function stepWalkingUnit(p) {
   p.nativeBody.x = Math.round(p.x * 65536);
   p.nativeBody.vx = 0;
   if (p.mesh) p.mesh.position.x = p.x;
+  if (p.kind === "skunk" || p.kind === "molebomb") {
+    p.walkPoisonFrame = (p.walkPoisonFrame ?? 0) + 1;
+    if (p.walkPoisonFrame >= 50) {
+      p.walkPoisonFrame = 0;
+      infectPoisonCloud(p.x, p.y, 45, 2);
+    }
+  }
 }
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
@@ -8247,6 +8254,10 @@ if (import.meta.env.DEV) {
       w.ground = false;
     },
     spawnUnitAt(kind = "sheep", x = 600, y = null) {
+      if (projectile) {
+        releaseProjectileMesh(projectile.mesh);
+        projectile = null;
+      }
       const groundY = y ?? Math.max(0, terrain.surface(x)) + 2;
       const p = {
         x, y: groundY, vx: 0, vy: 0, kind, target: null,
