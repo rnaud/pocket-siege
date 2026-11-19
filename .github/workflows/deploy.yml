@@ -34,7 +34,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test -- --config=playwright.precommit.config.js --project=logic --workers=2 --shard=${{ matrix.shard }}/2
+      - run: npm test -- --config=playwright.precommit.config.js --project=logic --workers=4 --shard=${{ matrix.shard }}/2
         env:
           RELATED_LOGIC_ONLY: '1'
   test:

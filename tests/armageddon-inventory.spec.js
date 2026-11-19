@@ -223,7 +223,20 @@ const fixture = JSON.parse(
   ),
 );
 
-test("inventory and match setup match original x86 sequences", { tag: "@logic" }, () => {
+// Original images shared by several native scene checks, decoded once per worker.
+let sceneSourceCache;
+function nativeSceneSources() {
+  return sceneSourceCache ??= {
+    toolSource:decodeImage(fs.readFileSync(new URL('../public/armageddon/media/gfx/gfx/masks.img',import.meta.url))),
+    arrowSources:sceneArrowShapes.sources.map(source=>
+      decodeImage(fs.readFileSync(new URL(`../public/armageddon/media/gfx/gfx/${source.name}`,import.meta.url)))),
+  };
+}
+
+// Split native setup checks so CI workers can run them in parallel.
+test.describe.configure({ mode: "parallel" });
+
+test("scene loading resources match original x86 sequences", { tag: "@logic" }, () => {
   for(const c of sceneFonts.cases) {
     const owner=0x2000000,stack=0x2100000,bytes=Buffer.alloc(0x10000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let groups=0;
     const region=a=>a>=stack?[stackBytes,a-stack]:[bytes,a-owner];
@@ -422,18 +435,22 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     });
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
-  const toolSource=decodeImage(fs.readFileSync(new URL('../public/armageddon/media/gfx/gfx/masks.img',import.meta.url)));
+  const {toolSource,arrowSources}=nativeSceneSources();
   expect([toolSource.width,toolSource.height]).toEqual([toolMaskMemory.source.width,toolMaskMemory.source.height]);
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(toolMaskMemory.source.pixels);
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(collisionShapeCreate.source.pixels);
   expect(Buffer.from(toolSource.pixels).toString('hex')).toBe(sceneCollisionShapes.source.pixels);
-  const arrowSources=sceneArrowShapes.sources.map(source=>{
-    const image=decodeImage(fs.readFileSync(new URL(`../public/armageddon/media/gfx/gfx/${source.name}`,import.meta.url)));
+  for(const [index,source] of sceneArrowShapes.sources.entries()) {
+    const image=arrowSources[index];
     expect([image.width,image.height]).toEqual([60,60]);
     expect(createHash('sha256').update(image.pixels).digest('hex')).toBe(source.sha256);
-    return image;
-  });
-  for(const c of sceneStartup.cases) {
+  }
+});
+
+// Each startup case composes the full resource stream; run them separately.
+for(const [caseIndex,c] of sceneStartup.cases.entries())test(`scene startup resources match original x86 sequences (case ${caseIndex+1})`, { tag: "@logic" }, () => {
+  const {toolSource,arrowSources}=nativeSceneSources();
+  {
     const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0xc00000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000,spritePixels=owner+0x800000,surfaces=0,headers=owner+0x400000,archives=-1,cursor=0;
     const packed=Buffer.alloc(0x10000,c.pattern),signature=Buffer.alloc(4,c.pattern),nameBytes=Buffer.alloc(256,c.pattern),spriteCounters=Buffer.alloc(16,c.pattern);
     const stream=Buffer.from(c.stream,'hex'),archiveCursors=[0,0,0];
@@ -510,6 +527,10 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     });
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
+});
+
+test("scene shapes and terrain archives match original x86 sequences", { tag: "@logic" }, () => {
+  const {toolSource,arrowSources}=nativeSceneSources();
   for(const c of sceneWorldResources.cases) {
     const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x400000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000;
     const region=a=>a>=owner?[bytes,a-owner]:[stackBytes,a-stack];
@@ -866,6 +887,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     nativePrepareSceneGraphics(memory,owner,source,c.bindings[1],host);
     expect({calls,sha256:snapshot()}).toEqual({calls:c.calls,sha256:c.sha256});
   }
+});
+
+test("mission files and loading match original x86 sequences", { tag: "@logic" }, () => {
   expect(Object.keys(missionNames)).toHaveLength(48);
   for(const [name,source] of Object.entries(missionNames)) {
     const record=resolveMissionDefinition(`D:\\DATA\\${name.toUpperCase().replaceAll('/','\\')}`);
@@ -1161,6 +1185,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     if(c.nativeInitializer)expect([random.state,storedSeed]).toEqual([c.randomState,c.storedSeed]);
     expect({result,count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} complete ${c.mutation}`).toEqual({result:c.result,count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
+});
+
+test("mission teams, events and options match original x86 sequences", { tag: "@logic" }, () => {
   for(const c of missionTeams.cases) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
@@ -1289,6 +1316,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     expect({result,calls,sha256:snapshot()},`${c.profile} ${c.operation} ${c.mutation} ${c.failure}`).toEqual({result:c.result,calls:c.calls,sha256:c.sha256});
   }
 
+});
+
+test("worm memory construction matches original x86 sequences", { tag: "@logic" }, () => {
   for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true})),...worldMineMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true})),...worldSceneryMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true})),...worldPresentationMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true})),...fullMatchRootMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true})),...fullStartupMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true})),...fullStartupSettings.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true})),...fullStartupDispatch.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true})),...fullStartupCleanup.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true})),...fullObjectDestroy.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true})),...fullControllerDestroy.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true})),...fullWorldDestroy.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true})),...fullStartupTeardown.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true})),...fullEnvironmentLifecycle.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true})),...fullSceneServices.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true})),...fullSceneBuffers.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true})),...fullSceneLayout.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true})),...fullOfflinePanels.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true})),...fullSceneDisplay.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true})),...fullSceneRecords.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true})),...fullOfflineScene.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true,completeScene:true})),...fullSceneLifecycle.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true,completeScene:true,completeLifecycle:true}))]) {
     const owner=new Uint8Array(0x10000),heap=new Uint8Array(c.world?0x100000:c.controller?0x40000:0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
@@ -1383,6 +1413,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     else expect(calls,label).toEqual(c.calls);
     expect(createHash('sha256').update(owner).update(heap).update(scene).digest('hex'),label).toBe(c.sha256);
   }
+});
+
+test("task, world and match setup match original x86 sequences", { tag: "@logic" }, () => {
   for(const row of eventBuffer.cases) {
     const bytes=Uint8Array.from({length:0x8000},(_,i)=>(i*13+row.seed)&255),view=new DataView(bytes.buffer),base=0x2000000;
     const memory={get:at=>view.getUint32(at-base,true),put:(at,v)=>view.setInt32(at-base,v,true),byte:at=>bytes[at-base],putByte:(at,v)=>bytes[at-base]=v};
@@ -1841,6 +1874,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     expect(nativeCountrySpeech(memory,4,row.country)).toBe(row.result);
     expect(Buffer.from(memory).toString('hex')).toBe(row.bytes);
   }
+});
+
+test("team and inventory setup match original x86 sequences", { tag: "@logic" }, () => {
   for(const row of [...teamSetup.cases,...speechSetup.cases]) {
     const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
     const frontend=Uint8Array.from({length:0x7000},(_,i)=>(i*13+7)&255),view=new DataView(frontend.buffer);
@@ -1921,6 +1957,9 @@ test("inventory and match setup match original x86 sequences", { tag: "@logic" }
     const inventory=new Uint8Array(0x2c14);nativeInitializeInventory(inventory,memory.subarray(0x3c));
     expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
   }
+});
+
+test("inventory banks and ammo match original x86 sequences", { tag: "@logic" }, () => {
   for(const row of initialization.cases) {
     const setup=new Uint8Array(0x10000),source=new DataView(setup.buffer);
     for(const [offset,size,value] of row.writes) {
