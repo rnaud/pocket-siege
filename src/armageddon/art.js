@@ -117,6 +117,8 @@ const names = [
     "ucrate0",
     "ucrate1",
     "ucrate2",
+    // Mission targets 004E0880: TargetType 0/1, Vital variants.
+    "targets", "targetsv", "targetw", "targetwv",
     "mineoff",
     "mineon",
     "oildrum1", "oildrum2", "oildrum3", "oildrum4",

@@ -46,3 +46,42 @@ export function recordScenarioCompletion(path, storage = globalThis.localStorage
   storage.setItem(STORAGE_KEY, JSON.stringify([...completed].sort()));
   return true;
 }
+
+const ATTEMPT_KEY = "pocket-siege-scenario-attempts-v1";
+const MEDAL_KEY = "pocket-siege-scenario-medals-v1";
+function readNumberMap(key, storage) {
+  try {
+    const value = JSON.parse(storage.getItem(key) ?? "{}");
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.fromEntries(Object.entries(value).filter(([, n]) => Number.isInteger(n) && n >= 0));
+  } catch {
+    return {};
+  }
+}
+
+// Failed attempts per mission (frontend byte 0x6f5288 + slot*8). Mission
+// Retries fields compare against this count when the script is loaded.
+export function readScenarioAttempts(path, storage = globalThis.localStorage) {
+  return readNumberMap(ATTEMPT_KEY, storage)[path] ?? 0;
+}
+
+export function recordScenarioFailure(path, storage = globalThis.localStorage) {
+  if (typeof path !== "string" || !path) return 0;
+  const attempts = readNumberMap(ATTEMPT_KEY, storage);
+  attempts[path] = Math.min(255, (attempts[path] ?? 0) + 1);
+  storage.setItem(ATTEMPT_KEY, JSON.stringify(attempts));
+  return attempts[path];
+}
+
+// Medal status (0x6f528c + slot*8): 3 gold, 2 silver, 1 bronze.
+export function readScenarioMedal(path, storage = globalThis.localStorage) {
+  return readNumberMap(MEDAL_KEY, storage)[path] ?? 0;
+}
+
+export function recordScenarioMedal(path, medal, storage = globalThis.localStorage) {
+  if (typeof path !== "string" || !path) return 0;
+  const medals = readNumberMap(MEDAL_KEY, storage);
+  medals[path] = Math.max(medals[path] ?? 0, medal | 0);
+  storage.setItem(MEDAL_KEY, JSON.stringify(medals));
+  return medals[path];
+}

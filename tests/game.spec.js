@@ -813,7 +813,10 @@ test("action camera follows the shot and snaps back for the next turn", async ({
       timeout: 3000,
     })
     .toBe(1);
-  expect(await page.evaluate(() => window.siege.getState().nativeCameraFocus)).toBeNull();
+  // A turn-start supply drop can briefly hold the camera before it releases.
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus), { timeout: 10000 })
+    .toBeNull();
 });
 
 test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {

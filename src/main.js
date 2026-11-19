@@ -57,6 +57,10 @@ import { createNativeCrateScheme } from "./armageddon/crate-scheme.js";
 import { nativeCrateShowerTick } from "./armageddon/crate-shower.js";
 import { recordScenarioCompletion, recordScenarioScore } from "./armageddon/scenario-progress.js";
 import { originalResourceString } from "./armageddon/string-resources.js";
+import { readScenarioAttempts, recordScenarioFailure, readScenarioMedal, recordScenarioMedal } from "./armageddon/scenario-progress.js";
+import { loadMissionScript } from "./armageddon/mission-script.js";
+import { createMissionState, runMissionTimed, runMissionSequence, missionMode, missionGameOver, missionSucceeded, missionMedal } from "./armageddon/mission-runtime.js";
+import { resolveMissionDefinition } from "./armageddon/mission-files.js";
 import { nativePickupCandidate } from "./armageddon/crate-pickup.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
@@ -494,6 +498,8 @@ let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
 let currentScenario = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
+// Original mission script (00440EB0 records) and turn-game mission state.
+let missionScript = null, missionState = null, missionRoundExpired = false, missionSurrendered = false;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
@@ -1356,6 +1362,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.fixedWeapon = config.fixedWeapon;
         worm.actionRadius = config.actionRadius;
         worm.alliance = config.alliance;
+        worm.sourceTeam = config.sourceTeam ?? null;
+        worm.missionVital = !!config.missionVital;
         worm.teamSkill = config.teamSkill;
         worm.allianceName = config.teamName;
         worm.allianceFlag = config.flag;
@@ -1413,32 +1421,30 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   applyWeather();
   spawnCrate();
   if (currentScenario) {
-    scenarioSequence = (currentScenario.sequenceObjects ?? []).filter(
-      (object) => object.kind === "text" || object.kind === "target" ||
-        object.kind === "weapon");
-    scenarioSequenceIndex = 0;
-    scenarioTimed = [...(currentScenario.timedObjects ?? [])];
+    const definition = resolveMissionDefinition(currentScenario.path);
+    missionScript = definition ? loadMissionScript(definition, {
+      attempts: readScenarioAttempts(currentScenario.path),
+      text: index => originalResourceString(1715 + index) ?? "",
+    }) : { timed: [], sequence: [] };
+    missionState = createMissionState();
+    missionRoundExpired = false; missionSurrendered = false;
+    scenarioSequence = []; scenarioSequenceIndex = 0;
+    scenarioTimed = [];
     scenarioTurn = 0;
     suddenDeathDamageTurn = -1;
     matchElapsed = 0;
     scenarioClockSecond = -1;
     lastWaterRiseRound = 0;
     earthquakeShake = 0;
-    scenarioProgress = {
-      collected: 0,
-      score: 0,
-      total: (currentScenario.objects ?? []).filter(
-        (object) => object.kind === "weapon" || object.kind === "target").length +
-        scenarioSequence.length +
-        scenarioTimed.filter((object) => object.kind === "weapon" || object.kind === "target").length,
-      complete: false,
-    };
+    scenarioProgress = { collected: 0, score: 0, total: 0, complete: false };
   } else {
+    missionScript = null; missionState = null;
     scenarioSequence = []; scenarioSequenceIndex = 0;
     scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0; scenarioClockSecond = -1; lastWaterRiseRound = 0;
   }
-  spawnScenarioObjects();
-  spawnNextScenarioSequence();
+  // 004B75F4/004B7617: turn-0 timed events, then one sequence pass, run
+  // between turns before the first turn starts.
+  runMissionBetweenTurns();
   if(!authored)spawnHazards();
   beginTurn();
   updateRecordUI();
@@ -1609,6 +1615,7 @@ function crateSnapshot(crate) {
     y: crate.y,
     kind: crate.kind,
     scenario: crate.scenario ?? null,
+    mission: crate.mission ? { ...crate.mission } : null,
     falling: crate.falling,
     sprite: crate.mesh.userData.originalSprite,
     frame: crate.mesh.userData.originalFrame,
@@ -1747,9 +1754,212 @@ function spawnScenarioObject(object) {
   }, mapping, object.kind === "health" ? object.health ?? 15 : 1).scenario = object;
   return true;
 }
-function spawnScenarioObjects() {
-  if (!currentScenario) return;
-  for (const object of currentScenario.objects ?? []) spawnScenarioObject(object);
+// 004B75F4: between turns, timed events for the current mission turn run in
+// order (one per original frame; the host drains them here). 004B7617 then
+// runs the sequence once before the first turn.
+function runMissionBetweenTurns() {
+  if (!missionState || !missionScript) return;
+  for (let guard = 0; guard < 512 && runMissionTimed(missionState, missionScript.timed,
+    event => executeMissionEvent(event, true)); guard++);
+  if (missionState.sequencePending) {
+    missionState.sequencePending = false;
+    runMissionSequence(missionState, missionScript.sequence, event => executeMissionEvent(event, false));
+  }
+  updateScenarioObjectiveHUD();
+}
+// 004B3210 start turn: between-turn events first, then turn counter +1.
+function advanceMissionTurn() {
+  if (!missionState) return;
+  runMissionBetweenTurns();
+  missionState.turn++;
+  scenarioTurn = missionState.turn;
+}
+// 004B6DFA: the sequence advances every frame of an active turn.
+function stepMissionFrame() {
+  if (!missionState || !missionScript || phase === "over" || phase === "menu" || phase === "break") return;
+  if (runMissionSequence(missionState, missionScript.sequence, event => executeMissionEvent(event, false)))
+    updateScenarioObjectiveHUD();
+  // 004B39A0 during an active turn: a forced end code ends the game once idle.
+  if (missionState.endCode && phase === "aim" && !projectile && !pendingFire && bombs.length === 0)
+    endGame();
+}
+function missionText(text) {
+  if (text) announce(text);
+}
+// 004EF2A0 (types 1-7) and, for timed records, 004EF6B0 (types 8-14).
+function executeMissionEvent(event, timed) {
+  switch (event.type) {
+    case 1: spawnScenarioObject({ kind: "mine", x: event.x, y: event.y, onGround: event.onGround }); return true;
+    case 2: spawnScenarioObject({ kind: "drum", x: event.x, y: event.y, onGround: event.onGround }); return true;
+    case 3: case 4: case 5: return spawnMissionCrate(event);
+    case 6: missionState.endCode = 5; return true;
+    case 7: missionText(event.text); return true;
+  }
+  if (!timed) return false;
+  switch (event.type) {
+    case 8: missionNuclearTest(); return true;
+    case 9: missionEarthquake(); return true;
+    case 10: missionArmageddon(); return true;
+    case 11: if (!sdTriggered) applySuddenDeath(); return true;
+    case 14:
+      missionState.timedCursor = -1;
+      missionState.turn = (event.eventTurn - 1) | 0;
+      return true;
+  }
+  return false;
+}
+// Weapon 55's water-rise and poison fields; host rules supply the values,
+// matching the sudden-death nuclear path until scheme weapon fields are live.
+function missionNuclearTest() {
+  const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
+  for (const call of nativeSuddenDeathActivation({ waterY: Math.floor(H - waterLevel), rise, dose: 5 })) {
+    if (call.operation === "sound") queueGameSound(call.request);
+    else if (call.event === 0x441) startNativeWaterRise(waterLevel + call.record[0], call.record[1]);
+    else if (call.event === 0x442) startNativeNuclearEffect(call.record[0]);
+    else if (call.event === 0x439) {
+      for (const w of worms) if (w.hp > 0) w.nativePoison = nativeWormPoisonInfect(
+        { ...w.nativePoison, team: w.matchStats.team, worm: w.matchStats.worm, state: nativeWormState(w) },
+        call.record[0], { announce: () => {} });
+    }
+  }
+  poisoned = worms.some(w => w.nativePoison.amount !== 0);
+}
+// 0x445 {8}: the same host effect as the Earthquake utility, without a user.
+function missionEarthquake() {
+  for (const target of worms)
+    if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
+  earthquakeShake = 0x8000;
+}
+// 0x443: Armageddon meteor fall. The host approximates the shower with
+// airstrike runs across the landscape; camera request matches 004EEB70.
+function missionArmageddon() {
+  for (let i = 0; i < 4; i++)
+    spawnAirstrike(64 + (matchRandom.logicUint() % Math.max(1, W - 128)), H * 0.5, "airstrike");
+  pendingEnvironmentCamera = [0x3c00000, 0x15c0000];
+}
+// Types 3/4/5 through 004DFBA0. Negative X asks 004B7C00 for a drop point;
+// failure leaves the event pending so the runner retries it.
+function spawnMissionCrate(event) {
+  let x = event.x << 16, y = event.y << 16;
+  if (event.x < 0) {
+    const scene = new NativeCollisionScene(terrain, H);
+    scene.syncWorms(worms);
+    scene.syncObjects([...mines, ...crates, ...hazards]);
+    const position = nativeCrateSpawnSearch(Math.floor(H - waterLevel), H > 960, 0, 1, {
+      random: () => matchRandom.logicUint(),
+      collide: (shape, px, py, flags) => px < 0 || px >= (W << 16) ? 1 : scene.probe(shape, px, py, flags),
+      nearest: (...args) => scene.nearest(...args),
+    });
+    if (!position.success) return false;
+    x = position.x; y = position.y;
+  }
+  const target = event.type === 5;
+  const mapping = event.type === 4 ? { kind: "health", type: "health" }
+    : target ? { kind: null, type: "target" }
+    : crateShowerSlotKind(event.content) ?? { kind: null, type: "weapon" };
+  const kind = target ? "target" : mapping.type === "health" ? "health" : mapping.type === "utility" ? "utility" : "special";
+  const nativeKind = target ? 3 : nativeCrateKind(kind);
+  const spriteName = target
+    ? nativeSpriteIds.sprites[(event.targetType === 1 ? 596 : 594) + (event.vital ? 1 : 0)].name
+    : crateOpeningSprite(kind);
+  const mesh = createOriginalObject(spriteName, -10) ?? createOriginalObject(crateOpeningSprite("special"), -10);
+  group.add(mesh);
+  const crate = {
+    nativeOrderId: nativeRenderOrder.allocate(),
+    content: target ? null : mapping.kind,
+    quantity: event.type === 4 ? Math.max(1, event.health | 0) : Math.max(1, event.ammo | 0),
+    x: x / 65536, y: H - y / 65536, kind, mesh, falling: true, vy: 0,
+    mission: { target, marked: !!event.marked, vital: !!event.vital,
+      points: event.points | 0, seconds: event.seconds | 0 },
+  };
+  mesh.position.set(crate.x, crate.y, 18);
+  const dropMode = event.onGround ? 0 : target ? 2 : 1;
+  crate.nativeBody = createNativeCrateBody({
+    kind: nativeKind, x, y, variant: event.vital ? 1 : 0,
+    targetStyle: event.targetType | 0, targetDrag: event.fallSpeed | 0, fuseSeconds: 0,
+  }, dropMode, nativeProjectileDepth(Math.floor(H - waterLevel)), matchFriction, {
+    shape: (body, shape) => { body.shape = shape; },
+    collide: (cx, cy, body) => nativeSceneCollision(crate, body, cx / 65536, H - cy / 65536, terrain, worms, H),
+    sound: queueCrateSound,
+    remove: () => {}, register: () => {},
+    // Settled placement's landing puff (sprite 0x349) has no host effect yet.
+    effect: () => {},
+  });
+  crates.push(crate);
+  // 004DFFA0 tail: Marked crates/targets feed sequence waits 15/16.
+  if (crate.mission.marked) {
+    if (target) missionState.markedTargets++; else missionState.markedCrates++;
+    scenarioProgress.total = (scenarioProgress.total + 1) | 0;
+  }
+  return true;
+}
+// 004E0110/004E0580/004E1107: Marked counters drop on any removal; a Vital
+// crate destroyed or lost (or a Vital target lost) forces end code 4.
+function missionCrateRemoved(crate, reason) {
+  const info = crate.mission;
+  if (!info || info.removed || !missionState) return;
+  info.removed = true;
+  if (info.marked) {
+    if (info.target) missionState.markedTargets = Math.max(0, missionState.markedTargets - 1);
+    else missionState.markedCrates = Math.max(0, missionState.markedCrates - 1);
+    scenarioProgress.collected = (scenarioProgress.collected + 1) | 0;
+  }
+  if (info.vital && (reason === "lost" || (reason === "destroyed" && !info.target)))
+    missionState.endCode ||= 4;
+  // Collection and target destruction send 0x447 {points, seconds}.
+  if (reason === "collected" || (reason === "destroyed" && info.target))
+    applyMissionBonus(info.points, info.seconds);
+  updateScenarioObjectiveHUD();
+}
+// 004B548B: bonus applies only while a turn is active.
+function applyMissionBonus(points, seconds) {
+  if (!scenarioProgress || phase === "over" || phase === "menu") return;
+  if (points) scenarioProgress.score = (scenarioProgress.score + points) | 0;
+  if (seconds) time += seconds;
+  if (points || seconds)
+    announce(`${points ? `+${points} POINTS` : ""}${points && seconds ? " " : ""}${seconds ? `+${seconds}s` : ""}`);
+}
+// Team records for 004B39A0/00443FA4: humans are alliance 0.
+function missionTeams() {
+  const records = new Map();
+  for (const w of worms) {
+    if (w.disabledRoster) continue;
+    const key = w.team === 0 ? "humanteam" : (w.sourceTeam ?? "cputeam");
+    const record = records.get(key) ?? { human: w.team === 0,
+      alliance: w.team === 0 ? 0 : (w.alliance ?? 0), vital: !!w.missionVital, alive: false };
+    record.alive ||= w.hp > 0;
+    records.set(key, record);
+  }
+  return [...records.values()];
+}
+// 004B3DD0: a dead MissionVital team defeats every team in its alliance.
+function applyMissionVitalLosses() {
+  const teams = missionTeams();
+  const lost = new Set(teams.filter(team => team.vital && !team.alive).map(team => team.alliance));
+  if (!lost.size) return;
+  for (const w of worms)
+    if (w.hp > 0 && lost.has(w.team === 0 ? 0 : (w.alliance ?? 0))) {
+      w.hp = 0; w.deathPending = false; w.dying = 0;
+    }
+}
+function missionIsOver() {
+  if (!missionState) return false;
+  applyMissionVitalLosses();
+  return missionRoundExpired || missionGameOver(missionState, missionMode(currentScenario.winningCondition), missionTeams());
+}
+// Frontend result evaluation, attempt counter and medal status.
+function finishMission() {
+  const resultCode = missionState.endCode || 3;
+  const success = missionSucceeded({ winningCondition: currentScenario.winningCondition,
+    resultCode, surrendered: missionSurrendered, teams: missionTeams() });
+  const path = currentScenario.path;
+  scenarioProgress.complete = success;
+  if (success) {
+    recordScenarioCompletion(path);
+    recordScenarioScore(path, scenarioProgress.score);
+    recordScenarioMedal(path, missionMedal(readScenarioMedal(path), readScenarioAttempts(path)));
+  } else recordScenarioFailure(path);
+  finishMatch(success ? 0 : null, false);
 }
 function applyScenarioSuddenDeathDamage() {
   const amount = currentScenario?.suddenDeath?.wormDamage | 0;
@@ -1758,30 +1968,6 @@ function applyScenarioSuddenDeathDamage() {
   for (const w of worms) if (w.hp > 0) injure(w, amount);
   updateUI();
   return true;
-}
-function stepScenarioTimedEvents() {
-  if (!currentScenario) return;
-  scenarioTurn++;
-  const due = scenarioTimed.filter((object) => (object.turn ?? 0) <= scenarioTurn);
-  scenarioTimed = scenarioTimed.filter((object) => (object.turn ?? 0) > scenarioTurn);
-  for (const object of due) {
-    if (object.kind === "text") {
-      const text = originalResourceString(1715 + object.textIndex);
-      if (text) announce(text);
-    } else spawnScenarioObject(object);
-  }
-}
-function spawnNextScenarioSequence() {
-  while (scenarioSequenceIndex < scenarioSequence.length) {
-    const object = scenarioSequence[scenarioSequenceIndex++];
-    if (object.kind === "text") {
-      const text = originalResourceString(1715 + object.textIndex);
-      if (text) announce(text);
-      continue;
-    }
-    if (object.kind === "health") { spawnScenarioObject(object); return; }
-    if (spawnScenarioObject(object)) return;
-  }
 }
 function stepCrateShower() {
   const state = automaticUtilityState;
@@ -2086,41 +2272,18 @@ function stepNativeWormPickup(w) {
   w.nativePickupFlag = body.field154;
   w.nativePickupState = state;
 }
-function advanceScenarioProgress(crate) {
-  if (!crate.scenario || !scenarioProgress || scenarioProgress.total <= 0 ||
-      (crate.scenario.kind !== "weapon" && crate.scenario.kind !== "target")) return;
-  scenarioProgress.collected = (scenarioProgress.collected + 1) | 0;
-  const points = crate.scenario.bonusPoints | 0;
-  const turns = crate.scenario.bonusTurns | 0;
-  if (points) scenarioProgress.score = (scenarioProgress.score + points) | 0;
-  if (turns) time += turns;
-  scenarioProgress.complete = scenarioProgress.collected >= scenarioProgress.total;
-  const bonus = `${points ? ` +${points}pt` : ""}${turns ? ` +${turns}s` : ""}`;
-  announce(scenarioProgress.complete
-    ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}${bonus}`
-    : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}${bonus}`);
-  updateScenarioObjectiveHUD();
-  if (scenarioProgress.complete) {
-    // 00442000 groups WinningCondition1/3 into the objective mode; 0/2 keep
-    // the ordinary elimination end conditions.
-    if (currentScenario?.training || [1, 3].includes(currentScenario?.winningCondition)) {
-      recordScenarioCompletion(currentScenario.path);
-      recordScenarioScore(currentScenario.path, scenarioProgress.score);
-      finishMatch(0, false);
-    }
-  } else spawnNextScenarioSequence();
-}
 function collectCrate(w, crate = crates[0]) {
   if (!crate || !crates.includes(crate)) return;
   const { kind, mesh, quantity } = crate;
-  if (crate.scenario && !crate.content &&
-      (crate.scenario.kind === "target" || crate.scenario.kind === "weapon")) {
-    pickupLabel(w, "TARGET");
-    $("#status").textContent = `${w.name} collects a scenario target.`;
+  // 004F5911: worms cannot collect targets (crate kind 3).
+  if (crate.nativeBody?.kind === 3) return;
+  if (crate.mission && !crate.content && crate.kind !== "health") {
+    pickupLabel(w, "CRATE");
+    $("#status").textContent = `${w.name} collects the mission crate.`;
     nativeRenderOrder.release(crate.nativeOrderId);
     dispose(mesh);
     crates.splice(crates.indexOf(crate), 1);
-    advanceScenarioProgress(crate);
+    missionCrateRemoved(crate, "collected");
     updateUI();
     return;
   }
@@ -2143,13 +2306,13 @@ function collectCrate(w, crate = crates[0]) {
   nativeRenderOrder.release(crate.nativeOrderId);
   dispose(mesh);
   crates.splice(crates.indexOf(crate), 1);
+  missionCrateRemoved(crate, "collected");
   dispatchWormEntryAudio(w, nativeCratePickupAudio(crate.nativeBody.kind, w.team + 1, (_team, slot) => slot));
   // Pickup event3EF is broadcast: health cures the entire collecting team.
   for (const target of worms) target.nativePoison = nativeWormPoisonPickup(
     { ...target.nativePoison, team: target.team }, [w.team, worms.indexOf(w), nativePickupCategory(crate.nativeBody.kind)]);
   poisoned = worms.some(target => target.nativePoison.amount !== 0);
   nativeRecordPickup(w.matchStats, nativePickupCategory(crate.nativeBody.kind));
-  advanceScenarioProgress(crate);
   w.matchStats.hp = w.hp;
   updateUI();
 }
@@ -2271,7 +2434,7 @@ function beginTurn() {
   wormLocked = false;
   time = turnSeconds;
   lastLossOfControl = false;
-  stepScenarioTimedEvents();
+  advanceMissionTurn();
   applyScenarioSuddenDeathDamage();
   updateAutomaticUtilities();
   nativeClockPresentation.displayed = turnSeconds * 1000;
@@ -3221,6 +3384,7 @@ function updateRopeVisual(w) {
 function surrenderMatch() {
   if (!matchStarted || phase === "over" || phase === "menu") return;
   const losingTeam = mode === "ai" ? 0 : team;
+  if (missionState && losingTeam === 0) missionSurrendered = true;
   for (const w of worms)
     if (w.team === losingTeam) {
       w.hp = 0;
@@ -5747,6 +5911,7 @@ function endGame() {
   stopNativeNuclearAudio();
   nativeNuclearEffect = null;
   nativePaletteDisplay.update();
+  if (currentScenario && missionState) return finishMission();
   const a = worms.some((w) => w.team === 0 && w.hp > 0),
     b = worms.some((w) => w.team === 1 && w.hp > 0);
   if (!a && b) {
@@ -5871,10 +6036,10 @@ function nextTurn() {
       return;
     }
   }
-  if (currentScenario?.turnEndFinishesGame && !scenarioProgress?.complete) {
-    finishMatch(null, false);
-    return;
-  }
+  // 004B368C: ending the turn forces end code 4.
+  if (currentScenario?.turnEndFinishesGame && missionState && !missionState.endCode)
+    missionState.endCode = 4;
+  if (missionState && missionIsOver()) return endGame();
   const killer = matchDamageSourceActive ? worms[current] : null;
   const killMessage = nativeKillAnnouncement(killer?.matchStats, killer?.name,
     killer?.team ? 0 : 2, () => matchRandom.logicUint());
@@ -6135,8 +6300,12 @@ function scenarioRoundTimeSeconds() {
 }
 function checkScenarioRoundTime() {
   if (!currentScenario || sdTriggered || phase === "over") return;
-  if (currentScenario?.suddenDeath?.disabled) return;
   const limit = scenarioRoundTimeSeconds();
+  // S+0x11d5d: without sudden death, round time-out ends the game after the turn.
+  if (currentScenario?.suddenDeath?.disabled) {
+    if (missionState && limit > 0 && matchElapsed >= limit) missionRoundExpired = true;
+    return;
+  }
   if (limit > 0 && matchElapsed >= limit) applySuddenDeath();
 }
 function stepFrame(dt) {
@@ -6163,6 +6332,7 @@ function stepFrame(dt) {
   if (phase !== "over" && phase !== "break" && phase !== "menu") {
     updateAutomaticUtilities();
     stepCrateShower();
+    stepMissionFrame();
   }
   nativeAnnouncementTick(nativeAnnouncements);
   const announcementAudio = nativeAnnouncementAudioTick(announcementVolume, announcementPlayback ? 17 : 0, nativeAnnouncements.blocking);
@@ -7075,6 +7245,7 @@ function stepFrame(dt) {
       nativeRenderOrder.release(crate.nativeOrderId);
       dispose(crate.mesh);
       crates.splice(crates.indexOf(crate), 1);
+      missionCrateRemoved(crate, detonate ? "destroyed" : "lost");
     } else if (wasFalling && !crate.falling) announce("SUPPLY CRATE LANDED");
   }
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
@@ -8504,8 +8675,8 @@ if (import.meta.env.DEV) {
       collectCrate(worms[current]);
     },
     collectScenarioCrate() {
-      const crate = crates.find((entry) => entry.scenario &&
-        (entry.scenario.kind === "weapon" || entry.scenario.kind === "target"));
+      const crate = crates.find((entry) => entry.mission?.marked && !entry.mission.target) ??
+        crates.find((entry) => entry.mission && !entry.mission.target);
       if (!crate) return false;
       collectCrate(worms[current], crate);
       return true;
@@ -8612,6 +8783,10 @@ if (import.meta.env.DEV) {
       attachNativeProjectile(p, H);
       detonateNativeProjectile(p);
       return true;
+    },
+    // Native blast packet {1, x, y, push, strength, 0} at host coordinates.
+    nativeBlastAt(x = 600, y = 350, push = 100, strength = 50) {
+      explode(x, y, "rocket", current, [1, Math.round(x * 65536), Math.round((H - y) * 65536), push, strength, 0]);
     },
     explodeAt(x = 600, y = 350, kind = "cluster") {
       if (kind === "napalm") {

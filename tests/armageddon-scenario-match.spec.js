@@ -121,7 +121,7 @@ test("campaign scenario starts on its original landscape and turn rules", async 
     })
     .toMatch(/^original:mission\/.+\.img$/);
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -133,13 +133,14 @@ test("campaign scenario starts on its original landscape and turn rules", async 
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.turnTime).toBe(45);
   expect(state.retreatSeconds).toBe(3);
+  // Mission 0 places a weapon crate and a Marked, Vital weapon crate.
   await expect
     .poll(() => page.evaluate(
-      () => window.siege.getState().crates.filter((crate) => crate.scenario).length,
+      () => window.siege.getState().crates.filter((crate) => crate.mission).length,
     ))
-    .toBeGreaterThan(0);
+    .toBe(2);
   expect(await page.evaluate(
-    () => window.siege.getState().crates.filter((crate) => !crate.scenario).length,
+    () => window.siege.getState().crates.filter((crate) => !crate.mission).length,
   )).toBe(0);
   await expect
     .poll(() => page.evaluate(
@@ -151,100 +152,98 @@ test("campaign scenario starts on its original landscape and turn rules", async 
       () => window.siege.getState().hazards.filter((hazard) => hazard.scenario).length,
     ))
     .toBeGreaterThan(0);
-  expect(state.scenario).toMatchObject({ collected: 0 });
-  expect(state.scenario.total).toBeGreaterThan(0);
-  await expect(page.locator("#scenario-objective")).toContainText("TARGETS 0/");
-  expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
-    .toBe(1);
-  await expect(page.locator("#scenario-objective")).toContainText("TARGETS 1/");
+  expect(state.scenario).toMatchObject({ collected: 0, total: 1 });
+  await expect(page.locator("#scenario-objective")).toContainText("TARGETS 0/1");
 });
 
-
-test("training scenario places sequence targets as they are collected", async ({
-  page,
-}) => {
+async function openScenario(page, path) {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="training"]').click();
-  const first = page.locator(".frontend-mission-list button").first();
-  await expect(first).toBeVisible();
-  await first.click();
+  await page.locator(`[data-mode="${path.includes("training") ? "training" : "missions"}"]`).click();
+  await page.locator(`[data-scenario="${path}"]`).click();
   await page.locator(".frontend-play-scenario").click();
+  // The default match behind the menu is already aiming; wait for the scenario.
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
-      timeout: 30000,
-    })
-    .toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
+    .poll(() => page.evaluate(() => {
+      const state = window.siege.getState();
+      return Boolean(state.scenario) && state.phase === "aim";
+    }), { timeout: 30000 })
+    .toBe(true);
+}
+// Targets are destroyed by native blast packets; worms cannot collect them.
+async function destroyTarget(page) {
+  const target = await page.evaluate(() =>
+    window.siege.getState().crates.find((crate) => crate.mission?.target));
+  expect(target).toBeTruthy();
+  await page.evaluate(([x, y]) => window.siege.debug.nativeBlastAt(x, y), [target.x, target.y]);
+}
+
+test("training sequences place each target after the previous one is destroyed", async ({
+  page,
+}) => {
+  await openScenario(page, "mission/training1.wam");
+  const first = await page.evaluate(() => window.siege.getState().crates);
+  expect(first.map((crate) => crate.kind)).toEqual(["target"]);
+  expect(first[0].nativeBody.kind).toBe(3);
+  expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(false);
+  await destroyTarget(page);
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
-    .toBe(1);
+    .poll(() => page.evaluate(() => window.siege.getState().scenario))
+    .toMatchObject({ collected: 1, total: 2 });
+  const second = await page.evaluate(() => window.siege.getState().crates);
+  expect(second).toHaveLength(1);
+  expect(Math.round(second[0].x)).not.toBe(Math.round(first[0].x));
 });
 
 test("completing a training course resolves the match as a win", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="training"]').click();
-  await page.locator(".frontend-mission-list button").first().click();
-  await page.locator(".frontend-play-scenario").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
-      timeout: 30000,
-    })
-    .toBeGreaterThan(0);
-  const total = await page.evaluate(() => window.siege.getState().scenario.total);
-  for (let i = 0; i < total; i++) {
-    await page.evaluate(() => window.siege.debug.collectScenarioCrate());
+  await openScenario(page, "mission/training1.wam");
+  for (let i = 0; i < 2; i++) {
+    await destroyTarget(page);
     await expect
       .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
       .toBe(i + 1);
   }
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase), {
-      timeout: 10000,
-    })
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 10000 })
     .toBe("over");
   const completed = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"));
-  expect(completed.length).toBeGreaterThan(0);
+  expect(completed).toContain("mission/training1.wam");
   expect(await page.evaluate(() =>
-    Object.keys(JSON.parse(localStorage.getItem("pocket-siege-scenario-scores-v1") ?? "{}")).length,
-  )).toBeGreaterThan(0);
+    JSON.parse(localStorage.getItem("pocket-siege-scenario-medals-v1") ?? "{}")["mission/training1.wam"],
+  )).toBe(3);
   const result = await page.evaluate(() => window.siege.getState().lastResult);
   expect(result.scenario).toMatchObject({ complete: true, collected: 2, total: 2 });
   await expect(page.locator("#turn-label")).toHaveText("SCENARIO COMPLETE");
 });
 
-test("completing a target-condition mission resolves the match as a win", async ({
+test("collecting a mission's vital crate completes WinningCondition 3", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="missions"]').click();
-  await page.locator(".frontend-mission-list button").first().click();
-  await page.locator(".frontend-play-scenario").click();
+  await openScenario(page, "mission/mission0.wam");
+  expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
-      timeout: 30000,
-    })
-    .toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.siege.getState().scenario.total)).toBe(4);
-  for (let i = 0; i < 4; i++) {
-    await page.evaluate(() => window.siege.debug.collectScenarioCrate());
-    await expect
-      .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
-      .toBe(i + 1);
-  }
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase), {
-      timeout: 10000,
-    })
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 10000 })
     .toBe("over");
   const completed = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"));
-  expect(completed.length).toBeGreaterThan(0);
+  expect(completed).toContain("mission/mission0.wam");
+});
+
+test("destroying a vital crate fails the mission and counts an attempt", async ({ page }) => {
+  await openScenario(page, "mission/mission0.wam");
+  const crate = await page.evaluate(() =>
+    window.siege.getState().crates.find((entry) => entry.mission?.vital));
+  await page.evaluate(([x, y]) => window.siege.debug.nativeBlastAt(x, y), [crate.x, crate.y]);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 10000 })
+    .toBe("over");
+  await expect(page.locator("#turn-label")).toHaveText("SCENARIO OVER");
+  expect(await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("pocket-siege-scenario-attempts-v1") ?? "{}")["mission/mission0.wam"],
+  )).toBe(1);
+  expect(await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"))).toEqual([]);
 });
 
 test("scenario target bonuses update the objective score", async ({ page }) => {
@@ -254,7 +253,7 @@ test("scenario target bonuses update the objective score", async ({ page }) => {
   await page.locator('[data-scenario="mission/training11.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -272,7 +271,7 @@ test("scenario fixed wind feeds the native wind selection", async ({ page }) => 
   await page.locator('[data-scenario="mission/training3.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -287,7 +286,7 @@ test("scenario friction feeds the live native body setup", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission15.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -302,7 +301,7 @@ test("indestructible scenario landscape blocks terrain carving", async ({ page }
   await page.locator('[data-scenario="mission/mission10.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -320,7 +319,7 @@ test("scenario fall damage option scales live fall damage", async ({ page }) => 
   await page.locator('[data-scenario="mission/training13.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -337,7 +336,7 @@ test("scenario sudden-death options disable the host round-six trigger", async (
   await page.locator('[data-scenario="mission/mission10.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -352,7 +351,7 @@ test("scenario water sudden death raises the sea", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -372,7 +371,7 @@ test("scenario sudden-death worm damage drains health each turn", async ({ page 
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -393,7 +392,7 @@ test("scenario mine fuse feeds the live mine timer", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission1.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -452,7 +451,7 @@ test("scenario logic random seed drives the live match RNG", async ({ page }) =>
   await page.locator('[data-scenario="mission/training1.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -467,7 +466,7 @@ test("scenario secret-weapon option clears the starting secret ammo", async ({ p
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -483,7 +482,7 @@ test("scenario starting loadout replaces unused live ammo", async ({ page }) => 
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -501,7 +500,7 @@ test("scenario utility loadout replaces unused field-kit ammo", async ({ page })
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -520,7 +519,7 @@ test("scenario round time expires into sudden death", async ({ page }) => {
   await page.locator('[data-scenario="mission/training1.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -537,7 +536,7 @@ test("scenario display round time shows a countdown", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -554,7 +553,7 @@ test("scenario turn-end-finishes-game resolves when the turn expires", async ({
   await page.locator('[data-scenario="mission/training11.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -575,7 +574,7 @@ test("scenario replay option disables the replay control", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission12.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -590,7 +589,7 @@ test("scenario jetpack time limit sets the live fuel tank", async ({ page }) => 
   await page.locator('[data-scenario="mission/mission17.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -620,7 +619,7 @@ test("scenario pause-between-turns value reaches the live settle delay", async (
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -634,7 +633,7 @@ test("an eliminated scenario does not report objective completion", async ({ pag
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -650,7 +649,7 @@ test("scenario water sudden death rises again on later rounds", async ({ page })
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -672,7 +671,7 @@ test("mixed-case mission ammo keys still reach the live loadout", async ({ page 
   await page.locator('[data-scenario="mission/mission18.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -703,7 +702,7 @@ test("scenario worm energies reach the live roster", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -720,7 +719,7 @@ test("authored worm disease reaches the live poison state", async ({ page }) => 
   await page.locator('[data-scenario="mission/mission31.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -737,7 +736,7 @@ test("scenario girder radius reaches live placement", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -752,7 +751,7 @@ test("mission difficulty reaches the live AI setting", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -767,7 +766,7 @@ test("mission team names reach the live HUD", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -782,7 +781,7 @@ test("authored mission worm positions reach the live roster", async ({ page }) =
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -799,7 +798,7 @@ test("authored worm names reach the live roster", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -814,7 +813,7 @@ test("authored artillery mode reaches the live worm", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -829,7 +828,7 @@ test("authored grave style reaches the live worm", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -844,7 +843,7 @@ test("authored fixed weapon reaches the live CPU worm", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -859,7 +858,7 @@ test("authored action radius reaches the live worm", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -876,7 +875,7 @@ test("teams with fewer authored worms leave the extra live worms disabled", asyn
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -894,7 +893,7 @@ test("mission reserve worms do not occupy live slots", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission25.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -910,7 +909,7 @@ test("mission rosters support a fourth worm per side", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -926,7 +925,7 @@ test("the largest mission fields six worms per side", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission22.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -944,7 +943,7 @@ test("mission 23 fields its full nine-worm CPU roster", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission23.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -961,7 +960,7 @@ test("merged CPU teams retain their authored alliance group", async ({ page }) =
   await page.locator('[data-scenario="mission/mission23.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -978,7 +977,7 @@ test("merged CPU worms retain their authored team skill", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -995,7 +994,7 @@ test("authored team flag and sound bank are retained", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -1011,7 +1010,7 @@ test("authored team flags render in the scenario label", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -1021,21 +1020,17 @@ test("authored team flags render in the scenario label", async ({ page }) => {
   }
 });
 
-test("eliminating the player leaves hostile CPU groups fighting", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="missions"]').click();
-  await page.locator('[data-scenario="mission/mission23.wam"]').click();
-  await page.locator(".frontend-play-scenario").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
-      timeout: 30000,
-    })
-    .toBeGreaterThan(0);
+test("eliminating the player ends the mission as a failure", async ({ page }) => {
+  // 004B39A0 modes 2/3 end the game once no human alliance survives.
+  await openScenario(page, "mission/mission1.wam");
   await page.evaluate(() => window.siege.debug.knockout(0));
-  const state = await page.evaluate(() => window.siege.getState());
-  expect(state.phase).not.toBe("over");
-  expect(state.team).toBe(1);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 10000 })
+    .toBe("over");
+  await expect(page.locator("#turn-label")).toHaveText("SCENARIO OVER");
+  expect(await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("pocket-siege-scenario-attempts-v1") ?? "{}")["mission/mission1.wam"],
+  )).toBe(1);
 });
 
 test("hostile CPU alliance groups show separate health", async ({ page }) => {
@@ -1045,7 +1040,7 @@ test("hostile CPU alliance groups show separate health", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission23.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -1061,7 +1056,7 @@ test("per-alliance health updates after damage", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission23.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -1073,25 +1068,6 @@ test("per-alliance health updates after damage", async ({ page }) => {
 });
 
 
-test("the surviving CPU alliance wins under its own name", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="missions"]').click();
-  await page.locator('[data-scenario="mission/mission23.wam"]').click();
-  await page.locator(".frontend-play-scenario").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
-      timeout: 30000,
-    })
-    .toBeGreaterThan(0);
-  await page.evaluate(() => window.siege.debug.knockout(0));
-  await page.evaluate(() => window.siege.debug.knockoutAlliance(0));
-  await page.evaluate(() => window.siege.debug.finishTurn());
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().lastResult?.winnerName))
-    .toBe("Patrol");
-});
-
 test("alliance health rows carry the group flag", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
@@ -1099,7 +1075,7 @@ test("alliance health rows carry the group flag", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission23.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -1114,7 +1090,7 @@ test("live state exposes the worm alliance identity", async ({ page }) => {
   await page.locator('[data-scenario="mission/mission23.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
@@ -1131,7 +1107,7 @@ test("ObjectType 0 scenarios start with only authored objects", async ({ page })
   await page.locator('[data-scenario="mission/mission0.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), { timeout: 30000 })
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), { timeout: 30000 })
     .toBeGreaterThan(0);
   await page.waitForTimeout(500);
   const state = await page.evaluate(() => window.siege.getState());
@@ -1155,7 +1131,7 @@ test("training 1 starts its low ledge worm above the scenario waterline", async 
   await page.locator('[data-scenario="mission/training1.wam"]').click();
   await page.locator(".frontend-play-scenario").click();
   await expect
-    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), { timeout: 30000 })
+    .poll(() => page.evaluate(() => window.siege.getState().scenario ? 1 : 0), { timeout: 30000 })
     .toBeGreaterThan(0);
   await page.waitForTimeout(1000);
   const state = await page.evaluate(() => window.siege.getState());

@@ -120,6 +120,9 @@ function scenarioTeamWorms(record) {
         x: Number.isFinite(x) ? x : null,
         y: Number.isFinite(y) ? y : null,
         place: entries[`worm${worm}_placeworm`] === "1",
+        // Team record byte +2: losing any MissionVital team defeats its alliance.
+        missionVital: entries.missionvital === "1",
+        sourceTeam: match[1].toLowerCase(),
       });
     }
   }
