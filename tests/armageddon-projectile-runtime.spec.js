@@ -379,3 +379,14 @@ test("native donkey uses the slot-54 released-unit record", { tag: "@logic" }, (
     sprite: 644, damage: 100, push: 100, offset: 100, secondary: 0,
   });
 });
+
+test("native super and aqua sheep share the slot-24/25 walking-bomb record", { tag: "@logic" }, () => {
+  for (const kind of ["supersheep", "aquasheep"]) {
+    const sheep = projectile(kind, { x: 200, y: 400, fuse: 2 });
+    expect(sheep.nativeBody).toMatchObject({ sprite: 626, mode: 3 });
+    expect(sheep.nativeTimer.remaining).toBe(20000);
+    expect(sheep.nativeDetonation).toMatchObject({
+      sprite: 626, damage: 75, push: 100, offset: 50,
+    });
+  }
+});

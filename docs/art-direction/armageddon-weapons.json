@@ -200,16 +200,16 @@
     {
       "slot": 24,
       "native_name": "SuperSheep",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "supersheep",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 0
     },
     {
       "slot": 25,
       "native_name": "AquaSheep",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "aquasheep",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 0
     },

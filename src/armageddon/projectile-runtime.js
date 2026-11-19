@@ -59,6 +59,8 @@ const kinds = new Set([
   "mingvase",
   "molesquadron",
   "sheep",
+  "supersheep",
+  "aquasheep",
   "donkey",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
