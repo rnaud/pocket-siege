@@ -5302,6 +5302,7 @@ function stepWalkingUnit(p) {
   if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
   if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
+  if (p.kind !== "aquasheep" && p.y <= waterLevel + 12) return;
   if (p.kind === "aquasheep" && p.y <= waterLevel + 12) {
     p.x += p.walkFacing * 1.0;
     p.walkTicks = (p.walkTicks ?? 0) + 1;

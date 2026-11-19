@@ -1749,3 +1749,19 @@ test("mole bomb detonation poisons nearby worms", async ({ page }) => {
       window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0)))
     .toBe(true);
 });
+
+test("land units do not swim while aqua sheep does", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  const y = await page.evaluate(() => window.siege.getState().waterLevel - 4);
+  await page.evaluate((y) => window.siege.debug.spawnUnitAt("sheep", 600, y), y);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));
+  const landTicks = await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0);
+  expect(landTicks).toBe(0);
+  await page.evaluate((y) => window.siege.debug.spawnUnitAt("aquasheep", 600, y), y);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));
+  const aquaTicks = await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0);
+  expect(aquaTicks).toBeGreaterThan(0);
+});
