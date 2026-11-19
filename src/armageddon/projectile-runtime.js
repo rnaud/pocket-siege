@@ -54,6 +54,7 @@ const kinds = new Set([
   "postal",
   "carpetbomb",
   "sheepstrike",
+  "minestrike",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
 // presets remain modifiers around this baseline until scheme UI is ported.
@@ -299,6 +300,12 @@ export function createNativeAirstrike(x, y, direction, owner, height, gravitySca
 export function stepNativeAirstrike(strike, height) {
   const result = nativeAirstrikeTick(strike.body, strike.config, strike.payload);
   strike.body = result.body;
+  const mines = result.calls.filter(c => c.operation === "mine").map(({payload}) => ({
+    kind: "minestrike", owner: strike.owner,
+    x: payload[2] / 65536, y: height - payload[3] / 65536,
+    vx: payload[4] / 65536 * 50, vy: -payload[5] / 65536 * 50,
+    timer: payload[10],
+  }));
   const missiles = result.calls.filter(c => c.operation === "missile").map(({payload}) => {
     const p = { kind: "bomblet", nativeWeaponKind: strike.kind, nativeBlockOffset: 0x88,
       x: payload[2] / 65536, y: height - payload[3] / 65536,
@@ -307,7 +314,7 @@ export function stepNativeAirstrike(strike, height) {
     attachNativeProjectile(p,height);
     return p;
   });
-  return { missiles, calls: result.calls, removed: result.calls.some(c => c.operation === "delete") };
+  return { missiles, mines, calls: result.calls, removed: result.calls.some(c => c.operation === "delete") };
 }
 
 // Owner age is irrelevant to the original manager: every body overlapping the

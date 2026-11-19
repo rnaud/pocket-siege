@@ -19,7 +19,8 @@ export function nativeAirstrikeInitial(config, gravity) {
 
 // 004DF7D0 / 004DF690: one missile per50Hz tick once within release distance.
 export function nativeAirstrikeTick(input, config, payload) {
-  if (config.kind !== 2) throw new RangeError("Only original projectile strike payloads are connected");
+  if (config.kind !== 0 && config.kind !== 2)
+    throw new RangeError("Only original mine and projectile strike payloads are connected");
   const body = { ...input }, calls = [];
   if (!body.active) {
     const dx = (body.x - config.targetX) | 0;
@@ -37,7 +38,7 @@ export function nativeAirstrikeTick(input, config, payload) {
       child[2] = body.x; child[3] = body.y;
       child[4] = Math.trunc(Math.imul(config.direction, config.speed) / 25);
       child[5] = 0; child[8] = 0;
-      calls.push({ operation: "missile", payload: child });
+      calls.push({ operation: config.kind === 0 ? "mine" : "missile", payload: child });
       body.count = (body.count - 1) | 0;
     }
   }

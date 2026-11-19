@@ -3352,6 +3352,24 @@ function spawnNaturalMine(request) {
   mine.mesh.position.set(mine.x,mine.y,18);group.add(mine.mesh);
   registerLiveMine(mine,0);
 }
+function spawnStrikeMine(payload) {
+  const timer = { ...nativeMineInitialTimer(), damage: NATIVE_MINE_DAMAGE,
+    placed: 0, forceBlast: 0, dud: 0 };
+  const mine = { owner: -1, team: -1, arm: timer.arm / 1000, nativeTimer: timer,
+    nativeWater: { bubbleProgress: 0, waterFlagsSet: 0, splashActive: 0 },
+    mesh: createOriginalObject("mineoff", 4), bob: 0 };
+  const collide = (x, y, body) =>
+    nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
+  mine.nativeBody = nativeMineBody(nativeMineBase(NATIVE_MINE_FRICTION), {
+    x: Math.round(payload.x * 65536), y: Math.round((H - payload.y) * 65536),
+    vx: Math.round(payload.vx / 50 * 65536), vy: Math.round(-payload.vy / 50 * 65536),
+  }, timer.arm, NATIVE_MINE_FRICTION, collide);
+  mine.x = mine.nativeBody.x / 65536;
+  mine.y = H - mine.nativeBody.y / 65536;
+  mine.mesh.position.set(mine.x, mine.y, 18);
+  group.add(mine.mesh);
+  registerLiveMine(mine, 0);
+}
 function spawnPlacedMine(release) {
   const w = worms[current],
     mesh = createOriginalObject("mineoff", 4);
@@ -3494,6 +3512,7 @@ function stepAirstrikes() {
     for (const call of result.calls) {
       if (call.operation === "camera") nativeCamera.offer(...call.request);
     }
+    for (const mine of result.mines ?? []) spawnStrikeMine(mine);
     for (const missile of result.missiles) {
       if (nativeProjectilePlacementHit(missile,terrain,worms,H)) {
         detonateNativeProjectile(missile);

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/airstrike.json" with { type: "json" };
+import mineStrike from "./fixtures/armageddon/mine-strike.json" with { type: "json" };
 import {
   nativeAirstrikeInitial,
   nativeAirstrikeTick,
@@ -239,4 +240,68 @@ test("native sheep strike releases record-driven sheep bombs", { tag: "@logic" }
   expect(nativeProjectileDetonationEvents(missile, () => 0)).toEqual([
     { operation: "blast", request: [1, 16252928, -13631488, 100, 50, 1] },
   ]);
+});
+
+
+test("native mine strike carrier matches the original kind0 task", { tag: "@logic" }, () => {
+  expect(mineStrike.initial).toHaveLength(16);
+  expect(mineStrike.cases).toHaveLength(1920);
+  for (const c of mineStrike.initial)
+    expect(nativeAirstrikeInitial(c.body, c.gravity)).toMatchObject({
+      x: c.x, y: c.y, threshold: c.threshold,
+    });
+  for (const [i, c] of mineStrike.cases.entries()) {
+    const payload = [123, 2, 0, 0, 0, 0, c.config.targetX, c.config.targetY, 0, 55, 3000];
+    expect(nativeAirstrikeTick(c.before, c.config, payload), `case ${i}`)
+      .toEqual({ body: c.after, calls: c.calls });
+  }
+});
+
+test("live mine strike releases five native mine bodies", { tag: "@logic" }, () => {
+  const strike = createNativeAirstrike(600, 300, 1, 0, 650, 1, "minestrike");
+  expect(strike.sprite).toBe(673);
+  expect(strike.sound).toBe(52);
+  expect(strike.config).toMatchObject({ count: 5, spacing: 50, speed: 100, kind: 0 });
+  const mines = [];
+  let removed = false;
+  for (let tick = 0; tick < 300 && !removed; tick++) {
+    const result = stepNativeAirstrike(strike, 650);
+    mines.push(...result.mines);
+    expect(result.missiles).toHaveLength(0);
+    removed = result.removed;
+  }
+  expect(removed).toBe(true);
+  expect(mines).toHaveLength(5);
+  expect(mines[0]).toMatchObject({ kind: "minestrike", owner: 0, vx: 200 });
+  expect(mines[0].y).toBeCloseTo(858);
+});
+
+test("live mine strike aircraft places five native mines", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  const before = await page.evaluate(() => window.siege.getState().mines.length);
+  await page.locator("#inventory-toggle").click();
+  await page.locator('[data-weapon="minestrike"]').click();
+  await page.locator("#fire").click();
+  const box = await page.locator("#arena").boundingBox();
+  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+  expect(await page.evaluate(() => window.siege.getState().ammo[0].minestrike)).toBe(0);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().mines.length), {
+      timeout: 15000,
+    })
+    .toBeGreaterThanOrEqual(before + 5);
+  const mines = await page.evaluate(
+    () => window.siege.getState().mines.slice(-5),
+  );
+  expect(mines.every((m) => m.arm !== undefined)).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().airstrikes.length), {
+      timeout: 15000,
+    })
+    .toBe(0);
 });

@@ -248,8 +248,8 @@
     {
       "slot": 30,
       "native_name": "MineStrike",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "minestrike",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 0
     },
