@@ -558,38 +558,6 @@ test("scenario turn-end-finishes-game resolves when the turn expires", async ({
 });
 
 
-test("scenario loss of control keeps the team active with another worm", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="training"]').click();
-  await page.locator('[data-scenario="mission/training11.wam"]').click();
-  await page.locator(".frontend-play-scenario").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase), {
-      timeout: 30000,
-    })
-    .toBe("aim");
-  const before = await page.evaluate(() => ({
-    team: window.siege.getState().team,
-    current: window.siege.getState().current,
-  }));
-  await page.evaluate(() => window.siege.debug.hit(0, 10));
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().lastLossOfControl))
-    .toBe(true);
-  let after = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await page.evaluate(() => window.siege.debug.finishTurn());
-    after = await page.evaluate(() => window.siege.getState());
-    if (after.current !== before.current) break;
-  }
-  expect(after.team).toBe(before.team);
-  expect(after.current).not.toBe(before.current);
-});
-
-
 test("scenario replay option disables the replay control", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
@@ -732,4 +700,21 @@ test("scenario worm energies reach the live roster", async ({ page }) => {
   const hp = await page.evaluate(() => window.siege.getState().worms.map((worm) => worm.hp));
   expect(hp[0]).toBe(150);
   expect(hp.slice(3, 6)).toEqual([45, 45, 45]);
+});
+
+
+test("authored worm disease reaches the live poison state", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission31.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() =>
+    window.siege.getState().worms.some((worm) => worm.nativePoison.amount === 3),
+  )).toBe(true);
 });

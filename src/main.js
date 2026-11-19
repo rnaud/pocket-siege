@@ -1274,6 +1274,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         if (!worm) continue;
         worm.hp = config.energy;
         worm.matchStats.hp = config.energy;
+        if (config.disease > 0) {
+          worm.nativePoison = { amount: config.disease, latched: 0 };
+          poisoned = true;
+        }
       }
     }
   }
