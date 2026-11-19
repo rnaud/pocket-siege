@@ -33,6 +33,13 @@ test("every mission and training resolves its original landscape and turn rules"
   });
   expect(mission0.objects.filter((object) => object.kind === "mine")).toHaveLength(8);
   expect(mission0.objects.filter((object) => object.kind === "drum")).toHaveLength(1);
+  expect(mission0.timedObjects).toEqual([
+    { kind: "text", textIndex: 104, turn: 2 },
+    { kind: "text", textIndex: 37, turn: 4 },
+  ]);
+  expect(resolveScenarioMatch("mission/mission1.wam").timedObjects[0]).toMatchObject({
+    kind: "weapon", turn: 3, content: 7,
+  });
   expect(resolveScenarioMatch("mission/mission5.wam").objects.filter((object) => object.kind === "health")).toHaveLength(2);
   expect(resolveScenarioMatch("mission/training3.wam")).toMatchObject({
     windStrength: -1, fixedWind: -35,

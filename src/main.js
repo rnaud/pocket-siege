@@ -487,6 +487,7 @@ let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
 let currentScenario = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
+let scenarioTimed = [], scenarioTurn = 0;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1268,15 +1269,21 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
       (object) => object.kind === "text" || object.kind === "target" ||
         object.kind === "weapon");
     scenarioSequenceIndex = 0;
+    scenarioTimed = [...(currentScenario.timedObjects ?? [])];
+    scenarioTurn = 0;
     scenarioProgress = {
       collected: 0,
       score: 0,
       total: (currentScenario.objects ?? []).filter(
         (object) => object.kind === "weapon" || object.kind === "target").length +
-        scenarioSequence.length,
+        scenarioSequence.length +
+        scenarioTimed.filter((object) => object.kind === "weapon" || object.kind === "target").length,
       complete: false,
     };
-  } else scenarioSequence = [], scenarioSequenceIndex = 0;
+  } else {
+    scenarioSequence = []; scenarioSequenceIndex = 0;
+    scenarioTimed = []; scenarioTurn = 0;
+  }
   spawnScenarioObjects();
   spawnNextScenarioSequence();
   if(!authored)spawnHazards();
@@ -1448,6 +1455,18 @@ function spawnScenarioObject(object) {
 function spawnScenarioObjects() {
   if (!currentScenario) return;
   for (const object of currentScenario.objects ?? []) spawnScenarioObject(object);
+}
+function stepScenarioTimedEvents() {
+  if (!currentScenario) return;
+  scenarioTurn++;
+  const due = scenarioTimed.filter((object) => (object.turn ?? 0) <= scenarioTurn);
+  scenarioTimed = scenarioTimed.filter((object) => (object.turn ?? 0) > scenarioTurn);
+  for (const object of due) {
+    if (object.kind === "text") {
+      const text = originalResourceString(1715 + object.textIndex);
+      if (text) announce(text);
+    } else spawnScenarioObject(object);
+  }
 }
 function spawnNextScenarioSequence() {
   while (scenarioSequenceIndex < scenarioSequence.length) {
@@ -1937,6 +1956,7 @@ function beginTurn() {
   cameraSnap = true; manualCamera = null;
   wormLocked = false;
   time = turnSeconds;
+  stepScenarioTimedEvents();
   updateAutomaticUtilities();
   nativeClockPresentation.displayed = turnSeconds * 1000;
   nativeClockPresentation.warned = 0;
@@ -7132,7 +7152,7 @@ $("#daily").addEventListener("click", async () => {
   $("#modifier").value = "standard";
   $("#scheme").value = "classic";
   currentScenario = null;
-  scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0;
+  scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0; scenarioTimed = []; scenarioTurn = 0;
   syncMenuOptions();
   saveSettings();
   matchStarted = true;
@@ -7155,7 +7175,7 @@ $("#sound").onclick = () => {
 $("#start").onclick = async event => {
   event.preventDefault();
   currentScenario = null;
-  scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0;
+  scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0; scenarioTimed = []; scenarioTurn = 0;
   $("#start").textContent = "LET’S MAKE TROUBLE ↗";
   matchStarted = true;
   try {

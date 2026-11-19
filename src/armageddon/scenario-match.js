@@ -44,6 +44,7 @@ export function resolveScenarioMatch(path) {
     indestructibleBorder: read(record, "Enviroment", "IndestructableBorder", 0) === 1,
     indestructibleLandscape: read(record, "Enviroment", "IndestructableLandscape", 0) === 1,
     objects: scenarioInitialObjects(record),
+    timedObjects: scenarioTimedObjects(record),
     sequenceObjects: scenarioSequenceObjects(record),
   };
 }
@@ -120,8 +121,36 @@ function objectsInSections(record, pattern, sort = false) {
   }
   return objects;
 }
+function eventObjects(record, initial) {
+  const objects = [];
+  for (const section of record.sections) {
+    if (!/^Event\d+$/i.test(section.name)) continue;
+    const raw = Object.fromEntries(
+      section.entries.map(([key, value]) => [key.toLowerCase(), value]),
+    );
+    const entries = new Proxy(raw, {
+      get: (target, key) => target[String(key).toLowerCase()],
+    });
+    const type = EVENT_TYPES[numbered(entries.TypeOfEvent)];
+    const turn = numbered(entries.Turn ?? 0);
+    if (type === undefined) continue;
+    if (initial ? turn !== 0 : turn <= 0) continue;
+    if (type === 7) {
+      if (initial) continue;
+      const textIndex = numbered(entries.Text_String_Index);
+      if (textIndex !== null) objects.push({ kind: "text", textIndex, turn });
+      continue;
+    }
+    const object = placementObject(entries, type);
+    if (object) objects.push(initial ? object : { ...object, turn });
+  }
+  return objects;
+}
 export function scenarioInitialObjects(record) {
-  return objectsInSections(record, /^Event\d+$/i);
+  return eventObjects(record, true);
+}
+export function scenarioTimedObjects(record) {
+  return eventObjects(record, false);
 }
 export function scenarioSequenceObjects(record) {
   return objectsInSections(record, /^Sequence\d+$/i, true);
