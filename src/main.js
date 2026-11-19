@@ -430,8 +430,8 @@ const land = new THREE.Mesh(
 land.position.set(W / 2, H / 2, 0);
 group.add(land);
 const names = [
-  ["Sprout", "Moss", "Pickle"],
-  ["Pepper", "Toast", "Chilli"],
+  ["Sprout", "Moss", "Pickle", "Fern", "Root", "Bud"],
+  ["Pepper", "Toast", "Chilli", "Ember", "Ash", "Flint"],
 ];
 let terrain,
   worms = [],
@@ -1293,6 +1293,30 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   }
   if (currentScenario?.teamWorms) {
     for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {
+      const activeRoster = roster.filter((config) => config.place !== false);
+      for (let index = 3; index < activeRoster.length && index < 6; index++) {
+        const config = activeRoster[index];
+        if (!config || config.x === null || config.y === null) continue;
+        const worm = createWorm(teamIndex, index, config.x, H - config.y);
+        if (authored) {
+          const placed = nativePlaceWormAt(
+            Math.round(config.x * 65536), Math.round((H - (H - config.y)) * 65536),
+            Math.floor(H - waterLevel), matchFriction,
+            (x, y, body) => nativeSceneCollision(worm, body, x / 65536, H - y / 65536, terrain, worms, H),
+            worm.nativeIdleMemory,
+          );
+          worm.nativeSpawnPhysics = placed.physics;
+          worm.x = placed.x / 65536;
+          worm.y = H - placed.y / 65536;
+          worm.renderY = worm.y;
+          worm.ground = bodyBlocked(terrain, worm.x, worm.y - 1);
+        }
+        worms.push(worm);
+      }
+    }
+  }
+  if (currentScenario?.teamWorms) {
+    for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {
       const teamWorms = worms.filter((w) => w.team === teamIndex);
       const activeRoster = roster.filter((config) => config.place !== false);
       if (activeRoster.length) {
@@ -1334,7 +1358,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
   nativeTeamRotation = nativeTeamRotationReset({ groups: 2,
     initialGroup: keepSeries ? (seriesRound - 1) % 2 : 0,
-    cursors: Array(6).fill(1), starts: [0, 0] });
+    cursors: Array(worms.length).fill(1), starts: [0, 0] });
   team = selectNativeMatchTeam();
   round = 1;
   lastSelectedWorm = [0, 0];
@@ -2220,9 +2244,10 @@ function updateUI() {
   updateCrateSpyHUD();
   updateHudTeams(worms, team);
   for (let t = 0; t < 2; t++) {
-    let hp = worms.filter((w) => w.team === t).reduce((s, w) => s + w.hp, 0);
+    const roster = worms.filter((w) => w.team === t && !w.disabledRoster);
+    const hp = roster.reduce((s, w) => s + w.hp, 0);
     $("#score" + t).textContent = hp;
-    $("#health" + t).style.width = hp / 3 + "%";
+    $("#health" + t).style.width = `${Math.min(100, hp / Math.max(1, roster.length * 100) * 100)}%`;
   }
   for (let i = 0; i < worms.length; i++) {
     const w = worms[i];

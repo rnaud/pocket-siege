@@ -900,3 +900,20 @@ test("mission reserve worms do not occupy live slots", async ({ page }) => {
   const worms = await page.evaluate(() => window.siege.getState().worms);
   expect(worms.slice(3, 6).every((worm) => worm.hp > 0)).toBe(true);
 });
+
+
+test("mission rosters support a fourth worm per side", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const worms = await page.evaluate(() => window.siege.getState().worms);
+  expect(worms).toHaveLength(7);
+  expect(worms[6].hp).toBeGreaterThan(0);
+});
