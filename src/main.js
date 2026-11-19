@@ -1480,7 +1480,20 @@ function updateScenarioAllianceHealth() {
     return;
   }
   el.hidden = false;
-  el.textContent = [...groups.values()].map((group) => `${group.name} ${group.hp}`).join(" · ");
+  const values = [...groups.values()];
+  const maximum = Math.max(100, ...values.map((group) => group.hp));
+  el.replaceChildren(...values.map((group) => {
+    const row = document.createElement("span");
+    row.className = "scenario-alliance-row";
+    const name = document.createElement("b");
+    name.textContent = group.name;
+    const bar = document.createElement("i");
+    bar.style.width = `${Math.min(100, group.hp / maximum * 100)}%`;
+    const hp = document.createElement("span");
+    hp.textContent = group.hp;
+    row.append(name, bar, hp);
+    return row;
+  }));
 }
 function updateCrateSpyHUD() {
   const el = $("#crate-spy");

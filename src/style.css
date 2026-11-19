@@ -2777,10 +2777,18 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #menu#menu .frontend-mission-preview .frontend-briefing { white-space: pre-line; text-align: left; font-family: system-ui, sans-serif; line-height: 1.6; text-transform: none; }
 #menu#menu .frontend-play-scenario { margin-top: 18px; padding: 8px 18px; }
 #scenario-objective { display: block; color: #ffe982; font: 11px/1.2 monospace; letter-spacing: 1px; }
-#scenario-alliance-health { display: block; color: #efc7a4; font: 10px/1.2 monospace; letter-spacing: 1px; }
+#scenario-alliance-health { display: flex; flex-direction: column; gap: 1px; color: #efc7a4; font: 10px/1.2 monospace; letter-spacing: 1px; }
+.scenario-alliance-row { display: flex; align-items: center; gap: 4px; }
+.scenario-alliance-row b { min-width: 74px; font-weight: normal; }
+.scenario-alliance-row i { height: 3px; background: #efc7a4; }
+.scenario-alliance-row span { min-width: 18px; text-align: right; }
 #scenario-team-names { display: flex; align-items: center; gap: 4px; }
 .scenario-team-flag { width: 20px; height: 17px; image-rendering: pixelated; }
-#scenario-alliance-health { display: block; color: #efc7a4; font: 10px/1.2 monospace; letter-spacing: 1px; }
+#scenario-alliance-health { display: flex; flex-direction: column; gap: 1px; color: #efc7a4; font: 10px/1.2 monospace; letter-spacing: 1px; }
+.scenario-alliance-row { display: flex; align-items: center; gap: 4px; }
+.scenario-alliance-row b { min-width: 74px; font-weight: normal; }
+.scenario-alliance-row i { height: 3px; background: #efc7a4; }
+.scenario-alliance-row span { min-width: 18px; text-align: right; }
 #scenario-team-names { display: flex; color: #d9d2ff; font: 10px/1.2 monospace; letter-spacing: 1px; }
 #crate-spy { display: block; color: #9fe7ff; font: 10px/1.2 monospace; letter-spacing: 1px; }
 #menu#menu .frontend-scenario-meta { color: #b5b2d6; font: 13px/1.4 monospace; text-transform: uppercase; letter-spacing: 1px; margin: 8px auto; }
