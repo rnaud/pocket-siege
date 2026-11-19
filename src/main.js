@@ -1406,6 +1406,13 @@ function updateCrateSpyHUD() {
     label.style.top = `${p.y}px`;
   }
 }
+function updateCrateSpyLabelPositions() {
+  for (const [crate, label] of crateSpyLabels) {
+    const p = screen(crate.x, crate.y - 34);
+    label.style.left = `${p.x}px`;
+    label.style.top = `${p.y}px`;
+  }
+}
 function updateScenarioObjectiveHUD() {
   const objective = $("#scenario-objective");
   if (!objective) return;
@@ -6953,6 +6960,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   if (renderedDisplayDensity !== window.devicePixelRatio) resize();
   syncMusic();
+  if (crateSpyLabels.size) updateCrateSpyLabelPositions();
   const frameDt = Math.min((now - last) / 1000, 0.1);
   const slow = slowMo > 0 && !reducedMotion;
   if (slowMo > 0) slowMo = Math.max(0, slowMo - frameDt);
