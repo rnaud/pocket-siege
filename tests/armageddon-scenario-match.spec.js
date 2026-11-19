@@ -67,6 +67,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission17.wam").jetpackTimeLimit).toBe(10);
   expect(resolveScenarioMatch("mission/mission0.wam").wormSelectDisabled).toBe(true);
   expect(resolveScenarioMatch("mission/mission0.wam").pauseBetweenTurns).toBe(0);
+  expect(resolveScenarioMatch("mission/mission0.wam").girderRadius).toBe(1000);
   expect(resolveScenarioMatch("mission/mission12.wam").wormSelectDisabled).toBe(false);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
@@ -717,4 +718,19 @@ test("authored worm disease reaches the live poison state", async ({ page }) => 
   expect(await page.evaluate(() =>
     window.siege.getState().worms.some((worm) => worm.nativePoison.amount === 3),
   )).toBe(true);
+});
+
+
+test("scenario girder radius reaches live placement", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().girderRadius)).toBe(1000);
 });

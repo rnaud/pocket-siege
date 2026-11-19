@@ -2528,7 +2528,7 @@ function handleUtilityTarget(e) {
       sprite.width,sprite.height,0);
     const px = target[0]>>16, py = target[1]>>16;
     if (!nativeSceneGirderPlacement(terrain,worms,[...mines,...crates,...hazards],
-      W,H,w,px,py,sprite)) {
+      W,H,w,px,py,sprite,currentScenario?.girderRadius ?? undefined)) {
       $("#status").textContent = "Girder blocked or out of range. Choose an empty spot closer to your worm.";
       return;
     }
@@ -7911,6 +7911,7 @@ window.siege = {
     jetpackFuel: jetpack.fuel,
     replayEnabled: currentScenario?.enableActionReplay !== false,
     pauseBetweenTurns: currentScenario?.pauseBetweenTurns ?? null,
+    girderRadius: currentScenario?.girderRadius ?? null,
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,
