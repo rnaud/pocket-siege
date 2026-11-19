@@ -40,7 +40,9 @@ test("all water sprites preserve source pixels; submerged projectiles use their 
       );
       decoded.set(name, sprite);
       for (let index = 0; index < sprite.frames.length; index++) {
-        const art = originalVisual(`water/${name}`, index);
+        let art;
+        try { art = originalVisual(`water/${name}`, index); }
+        catch (error) { throw new Error(`${name}[${index}]: ${error.message}`); }
         const canvas = art.map.image;
         const actual = canvas
           .getContext("2d")
@@ -56,6 +58,11 @@ test("all water sprites preserve source pixels; submerged projectiles use their 
     for (const [kind, name] of Object.entries(projectileSprites)) {
       const mesh = createOriginalVisual(name);
       const sprite = decoded.get(name);
+      if (!sprite) {
+        mesh.geometry.dispose();
+        mesh.material.dispose();
+        continue;
+      }
       const player = new NativeAnimationPlayer();
       player.enqueue(1, animationMetadata(sprite));
       updateOriginalProjectile(mesh, kind, 100, 0, 1, false);

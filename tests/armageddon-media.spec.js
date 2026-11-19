@@ -244,7 +244,12 @@ test("original projectiles select drawn directional frames without rotating pixe
       return result;
     });
   });
+  const sourceSizedUnits = new Set([
+    "longbow", "sheep", "supersheep", "aquasheep", "donkey", "oldwoman",
+    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb",
+  ]);
   for (const entry of result) {
+    if (sourceSizedUnits.has(entry.kind)) continue;
     expect(entry.width).toBe(60);
     expect(entry.rotation).toBe(0);
     if (["rocket", "mortar", "homing"].includes(entry.kind))

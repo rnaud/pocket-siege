@@ -995,8 +995,6 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     teamDisplayNames[0] = currentScenario.teamNames[0] ?? teamDisplayNames[0];
     teamDisplayNames[1] = currentScenario.teamNames[1] ?? teamDisplayNames[1];
   }
-  $("#team0-name").textContent = teamDisplayNames[0];
-  $("#team1-name").textContent = teamDisplayNames[1];
   fallDamageScale = currentScenario?.fallDamage == null ? 1 : currentScenario.fallDamage / 100;
   const layout = isDaily || selectedLayout === "random"
     ? randomOriginalMap(matchSeed) : selectedLayout;
@@ -1415,6 +1413,13 @@ function dispose(obj) {
     if (o.userData.nativeCrateLabel !== undefined) o.material?.map?.dispose();
     if (o.material) o.material.dispose();
   });
+}
+function updateScenarioTeamNames() {
+  const el = $("#scenario-team-names");
+  if (!el) return;
+  el.hidden = !currentScenario;
+  el.textContent = currentScenario
+    ? `${teamDisplayNames[0]} vs ${teamDisplayNames[1]}` : "";
 }
 function updateCrateSpyHUD() {
   const el = $("#crate-spy");
@@ -2211,6 +2216,7 @@ function beginTurn() {
   updateSeriesHUD();
   updateScenarioObjectiveHUD();
   updateCrateSpyHUD();
+  updateScenarioTeamNames();
   const weatherNote =
     weather === "storm"
       ? " Storm winds."

@@ -795,7 +795,7 @@ test("teleport validates a target and relocates the active worm", async ({ page 
   await expect(page.locator("#menu")).not.toBeVisible();
   const before = await page.evaluate(() => {
     const state = window.siege.getState();
-    return { x: state.worms[state.current].x, y: state.worms[state.current].y };
+    return { index: state.current, x: state.worms[state.current].x, y: state.worms[state.current].y };
   });
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="teleport"]').click();
@@ -811,9 +811,9 @@ test("teleport validates a target and relocates the active worm", async ({ page 
   });
   await page.mouse.click(point.x, point.y);
   await expect
-    .poll(() => page.evaluate(() => {
-      const state = window.siege.getState();
-      return { x: state.worms[state.current].x, y: state.worms[state.current].y };
-    }), { timeout: 10000 })
+    .poll(() => page.evaluate((index) => {
+      const worm = window.siege.getState().worms[index];
+      return { x: worm.x, y: worm.y };
+    }, before.index), { timeout: 10000 })
     .not.toEqual(before);
 });

@@ -770,7 +770,7 @@ test("mission team names reach the live HUD", async ({ page }) => {
       timeout: 30000,
     })
     .toBeGreaterThan(0);
-  await expect(page.locator("#team1-name")).toHaveText("Patrol");
+  await expect(page.locator("#scenario-team-names")).toContainText("Patrol");
 });
 
 
