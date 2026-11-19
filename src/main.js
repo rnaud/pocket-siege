@@ -1301,6 +1301,14 @@ function dispose(obj) {
     if (o.material) o.material.dispose();
   });
 }
+function updateScenarioObjectiveHUD() {
+  const objective = $("#scenario-objective");
+  if (!objective) return;
+  objective.hidden = !scenarioProgress || !currentScenario;
+  if (objective.hidden) return;
+  objective.textContent = `TARGETS ${scenarioProgress.collected}/${scenarioProgress.total}` +
+    (scenarioProgress.score ? ` · ${scenarioProgress.score} PTS` : "");
+}
 function updateSeriesHUD() {
   const el = $("#series");
   el.hidden = format !== "best3";
@@ -1801,6 +1809,7 @@ function advanceScenarioProgress(crate) {
   announce(scenarioProgress.complete
     ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}${bonus}`
     : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}${bonus}`);
+  updateScenarioObjectiveHUD();
   if (scenarioProgress.complete) {
     // 00442000 groups WinningCondition1/3 into the objective mode; 0/2 keep
     // the ordinary elimination end conditions.
@@ -2026,6 +2035,7 @@ function beginTurn() {
         .replace(".img", "")
         .toUpperCase());
   updateSeriesHUD();
+  updateScenarioObjectiveHUD();
   const weatherNote =
     weather === "storm"
       ? " Storm winds."

@@ -121,10 +121,12 @@ test("campaign scenario starts on its original landscape and turn rules", async 
     .toBeGreaterThan(0);
   expect(state.scenario).toMatchObject({ collected: 0 });
   expect(state.scenario.total).toBeGreaterThan(0);
+  await expect(page.locator("#scenario-objective")).toContainText("TARGETS 0/");
   expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
     .toBe(1);
+  await expect(page.locator("#scenario-objective")).toContainText("TARGETS 1/");
 });
 
 
