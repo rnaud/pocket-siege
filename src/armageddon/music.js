@@ -34,8 +34,8 @@ export class OriginalMusic {
     this.attempted = false;
     this.refresh();
   }
-  update({ enabled, hidden, scene, seed }) {
-    const key = `${enabled}|${hidden}|${scene}|${seed}|${this.resultTrack}`;
+  update({ enabled, hidden, scene, seed, track = null }) {
+    const key = `${enabled}|${hidden}|${scene}|${seed}|${this.resultTrack}|${track}`;
     if (key === this.updateKey) return;
     this.updateKey = key;
     if (this.seed !== seed) {
@@ -53,6 +53,7 @@ export class OriginalMusic {
     if (active !== this.active) this.attempted = false;
     this.active = active;
     this.scene = scene;
+    this.missionTrack = track;
     this.refresh();
   }
   refresh() {
@@ -67,7 +68,9 @@ export class OriginalMusic {
           ? this.resultTrack
           : this.scene === "sudden"
             ? `sudden-${((this.seed >>> 0) % 2) + 1}`
-            : this.playlist[this.index];
+            : this.missionTrack > 0
+              ? `ingame-${this.missionTrack}`
+              : this.playlist[this.index];
     if (track !== this.track) {
       this.track = track;
       this.audio.src = `${import.meta.env.BASE_URL}armageddon/music/${catalog.tracks[track].file}`;

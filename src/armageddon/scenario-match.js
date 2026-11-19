@@ -91,6 +91,7 @@ export function resolveScenarioMatch(path) {
     difficulty: read(record, "Description", "Difficulty", 0),
     winningCondition: read(record, "Mission", "WinningCondition", 0),
     logicRandomSeed: read(record, "Enviroment", "LogicRandomSeed", null),
+    sound: read(record, "Enviroment", "Sound", null),
     windStrength: read(record, "Enviroment", "Wind", null),
     fixedWind: read(record, "Enviroment", "FixedWind", null),
     friction: read(record, "Enviroment", "Friction", null),

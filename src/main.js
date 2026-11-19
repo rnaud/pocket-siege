@@ -921,6 +921,7 @@ function announceMatchResult(winner) {
 const music = new OriginalMusic();
 function syncMusic() {
   music.update({enabled:sound,hidden:document.hidden,seed:matchRandom.seed,
+    track: currentScenario?.sound ?? null,
     scene:menu.open ? "title" : phase === "over" || phase === "break" ? "result" : suddenDeath ? "sudden" : "battle"});
 }
 for (const event of ["pointerdown", "keydown"])

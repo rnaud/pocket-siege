@@ -692,3 +692,19 @@ test("mixed-case mission ammo keys still reach the live loadout", async ({ page 
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().ammo[0].uzi)).toBe(-1);
 });
+
+
+test("scenario sound option selects the authored music track", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await page.locator("#sound").click();
+  await expect
+    .poll(() => page.evaluate(() =>
+      document.querySelector("#game-music")?.dataset.track ?? null), {
+      timeout: 30000,
+    })
+    .toBe("ingame-5");
+});
