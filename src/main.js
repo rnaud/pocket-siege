@@ -3746,6 +3746,16 @@ function recordReactionWeaponUse(kind) {
   nativeReactionWeaponUse(nativeDamageReaction, nativeReactionWeaponFlag(kind));
 }
 function finishAction(message) {
+  if (currentScenario?.weaponsDontEndTurn && phase !== "over") {
+    phase = "aim";
+    retreat = 0;
+    shotWait = 0;
+    move = 0;
+    wormLocked = false;
+    $("#status").textContent = `${message} The turn continues.`;
+    updateUI();
+    return;
+  }
   phase = "settle";
   retreat = retreatSeconds;
   shotWait = 0;
@@ -6502,7 +6512,16 @@ function stepFrame(dt) {
     }
     if (phase === "settle") {
       shotWait = settled && !healthDisplayBusy && !deathStarted && !worms.some(w => w.nativeDeathRequest) ? shotWait + dt : 0;
-      if (shotWait > 0.7 && !nativeAnnouncementsPending(nativeAnnouncements)) nextTurn();
+      if (shotWait > 0.7 && !nativeAnnouncementsPending(nativeAnnouncements)) {
+        if (currentScenario?.weaponsDontEndTurn && phase === "settle") {
+          phase = "aim";
+          retreat = 0;
+          shotWait = 0;
+          wormLocked = false;
+          move = 0;
+          updateUI();
+        } else nextTurn();
+      }
     }
   }
   for (let i = particles.length - 1; i >= 0; i--) {
