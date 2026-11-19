@@ -4861,7 +4861,7 @@ function fire() {
       worms,
       waterLevel,
       danger: worms
-        .filter((t) => t.hp > 0 && t.team !== w.team)
+        .filter((t) => t.hp > 0 && hostileWorm(t, w))
         .sort((a, b) => Math.abs(a.x - w.x) - Math.abs(b.x - w.x))[0],
     });
     aiRetreatTime = route?.time ?? 0;
@@ -5737,6 +5737,10 @@ function jump(kind = "forward") {
   startOriginalJumpPreparation(w, direction, backflip);
   lastJump = { kind, time: jumpClock };
 
+}
+function hostileWorm(a, b) {
+  return a.team !== b.team ||
+    (Number.isFinite(a.alliance) && Number.isFinite(b.alliance) && a.alliance !== b.alliance);
 }
 function difficultyForWorm(worm) {
   const skill = worm?.teamSkill;
