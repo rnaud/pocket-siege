@@ -51,10 +51,9 @@ function scenarioTeamGraves(record) {
     const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
     if (!match) continue;
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
-    if (index === 1 && Number(match[1].replace(/\D/g, "")) !== 1) continue;
     const value = team.entries.find(([key]) => key.toLowerCase() === "gravestone")?.[1];
     const number = Number.parseInt(value, 10);
-    if (Number.isFinite(number)) graves[index] = number;
+    if (Number.isFinite(number) && graves[index] === null) graves[index] = number;
   }
   return graves;
 }
@@ -64,10 +63,9 @@ function scenarioTeamNames(record) {
     const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
     if (!match) continue;
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
-    if (index === 1 && Number(match[1].replace(/\D/g, "")) !== 1) continue;
     const value = team.entries.find(([key]) => key.toLowerCase() === "teamnamenumber")?.[1];
     const number = Number.parseInt(value, 10);
-    if (Number.isFinite(number)) names[index] = originalResourceString(712 + number);
+    if (Number.isFinite(number) && !names[index]) names[index] = originalResourceString(712 + number);
   }
   return names;
 }
@@ -77,7 +75,6 @@ function scenarioTeamWorms(record) {
     const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
     if (!match) continue;
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
-    if (index === 1 && Number(match[1].replace(/\D/g, "")) !== 1) continue;
     const entries = Object.fromEntries(team.entries.map(([key, value]) => [key.toLowerCase(), value]));
     for (let worm = 1; worm <= 16; worm++) {
       const energy = Number.parseInt(entries[`worm${worm}_energy`], 10);

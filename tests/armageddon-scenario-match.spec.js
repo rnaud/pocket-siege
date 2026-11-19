@@ -914,7 +914,7 @@ test("mission rosters support a fourth worm per side", async ({ page }) => {
     })
     .toBeGreaterThan(0);
   const worms = await page.evaluate(() => window.siege.getState().worms);
-  expect(worms).toHaveLength(7);
+  expect(worms).toHaveLength(9);
   expect(worms[6].hp).toBeGreaterThan(0);
 });
 
