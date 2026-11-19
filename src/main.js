@@ -5065,6 +5065,15 @@ function finishMatch(winner, series) {
   );
   lastResult = {
     winner,
+    scenario: currentScenario && scenarioProgress ? {
+      path: currentScenario.path,
+      title: currentScenario.title ?? null,
+      training: Boolean(currentScenario.training),
+      collected: scenarioProgress.collected,
+      total: scenarioProgress.total,
+      score: scenarioProgress.score | 0,
+      complete: scenarioProgress.complete,
+    } : null,
     series: Boolean(series),
     seriesWins: [...seriesWins],
     score,
@@ -5075,6 +5084,11 @@ function finishMatch(winner, series) {
     }),
     mode,
   };
+  if (lastResult.scenario) {
+    $("#turn-label").textContent = "SCENARIO COMPLETE";
+    $("#status").textContent =
+      `${lastResult.scenario.title ?? "Scenario"} complete · targets ${lastResult.scenario.collected}/${lastResult.scenario.total} · score ${lastResult.scenario.score}.`;
+  }
   if (!replaySimulation && (mode === "ai" || daily)) {
     record = applyMatchResult(record, {
       won: winner === 0,
