@@ -490,7 +490,7 @@ let currentScenario = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
-let matchElapsed = 0;
+let matchElapsed = 0, scenarioClockSecond = -1;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1294,6 +1294,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     scenarioTurn = 0;
     suddenDeathDamageTurn = -1;
     matchElapsed = 0;
+    scenarioClockSecond = -1;
     scenarioProgress = {
       collected: 0,
       score: 0,
@@ -1305,7 +1306,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     };
   } else {
     scenarioSequence = []; scenarioSequenceIndex = 0;
-    scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0;
+    scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0; scenarioClockSecond = -1;
   }
   spawnScenarioObjects();
   spawnNextScenarioSequence();
@@ -1327,8 +1328,13 @@ function updateScenarioObjectiveHUD() {
   if (!objective) return;
   objective.hidden = !scenarioProgress || !currentScenario;
   if (objective.hidden) return;
-  objective.textContent = `TARGETS ${scenarioProgress.collected}/${scenarioProgress.total}` +
+  let text = `TARGETS ${scenarioProgress.collected}/${scenarioProgress.total}` +
     (scenarioProgress.score ? ` · ${scenarioProgress.score} PTS` : "");
+  if (currentScenario.displayRoundTime) {
+    const remaining = Math.max(0, scenarioRoundTimeSeconds() - matchElapsed);
+    text += ` · ${Math.floor(remaining / 60)}:${String(Math.floor(remaining % 60)).padStart(2, "0")}`;
+  }
+  objective.textContent = text;
 }
 function updateSeriesHUD() {
   const el = $("#series");
@@ -5560,6 +5566,10 @@ function checkScenarioRoundTime() {
 function stepFrame(dt) {
   if (mapLoading) return;
   checkScenarioRoundTime();
+  if (currentScenario?.displayRoundTime && Math.floor(matchElapsed) !== scenarioClockSecond) {
+    scenarioClockSecond = Math.floor(matchElapsed);
+    updateScenarioObjectiveHUD();
+  }
   if (menu.open || document.hidden) {
     stopBurstSound(); stopProjectileSound();
     stopNativeNuclearAudio();

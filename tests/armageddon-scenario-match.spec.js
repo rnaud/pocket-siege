@@ -508,3 +508,18 @@ test("scenario round time expires into sudden death", async ({ page }) => {
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(2800));
   expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(true);
 });
+
+
+test("scenario display round time shows a countdown", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  await expect(page.locator("#scenario-objective")).toContainText(/TIME|\d:\d\d/);
+});
