@@ -1164,3 +1164,27 @@ test("training 1 starts its low ledge worm above the scenario waterline", async 
   expect(state.worms[0]).toMatchObject({ team: 0, hp: 1 });
   expect(state.worms[0].y).toBeGreaterThan(state.waterLevel);
 });
+
+test("single-team trainings field no CPU worms and keep the player's turn", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator('[data-scenario="mission/training1.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
+    .toBe("aim");
+  const start = await page.evaluate(() => window.siege.getState());
+  expect(start.worms.filter((worm) => worm.team === 1 && worm.hp > 0)).toHaveLength(0);
+  await expect(page.locator(".team").nth(1)).toBeHidden();
+  // nextTurn settles poison/environment stages before selecting the next team.
+  for (let i = 0; i < 4; i++)
+    await page.evaluate(() => window.siege.debug.finishTurn());
+  expect(await page.evaluate(() => window.siege.getState().round)).toBeGreaterThan(1);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 15000 })
+    .toBe("aim");
+  expect(await page.evaluate(() => window.siege.getState().team)).toBe(0);
+  await page.evaluate(() => window.siege.debug.knockout(0));
+  await expect.poll(() => page.evaluate(() => window.siege.getState().phase)).toBe("over");
+});

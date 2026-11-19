@@ -1037,7 +1037,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   selectionTick = 0;
   nativeClockProgress = nativeClockTarget = 0;
   nativeClockPresentation.phase = 0;
-  nativeTeamList = createNativeTeamList();
+  nativeTeamList = createNativeTeamList(soloScenario() ? [0] : [0, 1]);
   teamPanelSoundState.drop = teamPanelSoundState.bounce = 0;
   pendingEliminationTeam = null;
   nativeTeamHealthMaximum = 1;
@@ -1332,7 +1332,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {
       const teamWorms = worms.filter((w) => w.team === teamIndex);
       const activeRoster = roster.filter((config) => config.place !== false);
-      if (activeRoster.length) {
+      // TeamsInMission=1 trainings have no CPU team; disable its host slots.
+      if (activeRoster.length || (teamIndex === 1 && soloScenario())) {
         for (let index = activeRoster.length; index < 3; index++) {
           const worm = teamWorms[index];
           if (!worm) continue;
@@ -1466,6 +1467,9 @@ function updateScenarioTeamNames() {
       if (url && currentScenario) image.src = url;
     });
   }
+}
+function soloScenario() {
+  return currentScenario?.teams === 1;
 }
 function updateScenarioAllianceHealth() {
   const el = $("#scenario-alliance-health");
@@ -5811,7 +5815,7 @@ function nextTurn() {
   const playerAlive = worms.some((w) => w.team === 0 && w.hp > 0);
   const cpuGroups = new Set(worms.filter((w) => w.team === 1 && w.hp > 0)
     .map((w) => w.alliance ?? null));
-  if (!(playerAlive === false && cpuGroups.size > 1) &&
+  if (soloScenario() ? !playerAlive : !(playerAlive === false && cpuGroups.size > 1) &&
       [0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
     return endGame();
   matchDamageSourceActive = false;
