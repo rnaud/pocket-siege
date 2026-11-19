@@ -5007,6 +5007,13 @@ function stepWalkingUnit(p) {
     p.nativeBody.y = Math.round(p.y * 65536);
   }
   if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
+  if (p.kind === "skunk" || p.kind === "molebomb") {
+    p.walkPoisonFrame = (p.walkPoisonFrame ?? 0) + 1;
+    if (p.walkPoisonFrame >= 20) {
+      p.walkPoisonFrame = 0;
+      infectPoisonCloud(p.x, p.y, 45, 2);
+    }
+  }
 }
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
@@ -8402,6 +8409,17 @@ if (import.meta.env.DEV) {
     },
     setUtility(teamIndex = 0, kind = "crateshower", value = 1) {
       utilityAmmo[teamIndex][kind] = value;
+      updateUI();
+    },
+    setWormPosition(index = 0, x = 600) {
+      const worm = worms[index];
+      if (!worm) return;
+      worm.x = x;
+      worm.y = Math.max(0, terrain.surface(x)) + 2;
+      worm.renderY = worm.y;
+      worm.vx = worm.vy = 0;
+      worm.ground = true;
+      worm.g.position.set(worm.x, worm.y, 15);
       updateUI();
     },
     setWormHp(index = 0, hp = 100) {

@@ -1630,3 +1630,18 @@ test("donkey units use the released-unit walking path", async ({ page }) => {
   expect(after).not.toBeNull();
   expect(after).not.toBe(before);
 });
+
+test("walking skunk leaves a poison trail", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("skunk", 600));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(160));
+  await expect
+    .poll(() => page.evaluate(() =>
+      window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0)),
+    { timeout: 10000 })
+    .toBe(true);
+});
