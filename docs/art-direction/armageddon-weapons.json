@@ -400,8 +400,8 @@
     {
       "slot": 49,
       "native_name": "MingVase",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "mingvase",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 0
     },

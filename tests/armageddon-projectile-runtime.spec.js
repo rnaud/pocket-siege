@@ -344,3 +344,20 @@ test("native super banana detonates into five repeat-guarded bomblets", { tag: "
   expect(children.every((child) => child.nativeDetonation.secondary === 1)).toBe(true);
   expect(children.every((child) => nativeProjectileChildren(child, 650, () => 0).length === 0)).toBe(true);
 });
+
+test("native ming vase detonates into three repeat-guarded shards", { tag: "@logic" }, () => {
+  const vase = projectile("mingvase", { x: 200, y: 400 });
+  expect(vase.nativeDetonation).toMatchObject({
+    sprite: 668, damage: 75, push: 100, secondary: 1,
+  });
+  expect(vase.nativeFragmentConfig).toMatchObject({
+    count: 3, speed: 40, variance: 30, direction: 0, spread: 25,
+  });
+  const events = nativeProjectileDetonationEvents(vase, () => 0);
+  expect(events.some((event) => event.operation === "sound" && event.request[0] === 64)).toBe(true);
+  expect(events.some((event) => event.operation === "fragments")).toBe(true);
+  const children = nativeProjectileChildren(vase, 650, () => 12345);
+  expect(children).toHaveLength(3);
+  expect(children.map((child) => child.nativeRepeat)).toEqual([1, 2, 3]);
+  expect(children.every((child) => nativeProjectileChildren(child, 650, () => 0).length === 0)).toBe(true);
+});

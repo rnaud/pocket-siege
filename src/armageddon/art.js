@@ -131,6 +131,7 @@ const names = [
     "letter1",
     "cpttruck",
     "carpet2",
+    "vase",
     "shptruck",
     "sheepbrn",
     "clustlet",
