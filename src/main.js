@@ -481,6 +481,7 @@ function crateShowerSlotKind(slot) {
   return null;
 }
 let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
+let currentScenario = null;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1250,6 +1251,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   mode = $("#mode").value;
   applyWeather();
   spawnCrate();
+  spawnScenarioObjects();
   if(!authored)spawnHazards();
   beginTurn();
   updateRecordUI();
@@ -1285,6 +1287,7 @@ function crateSnapshot(crate) {
     x: crate.x,
     y: crate.y,
     kind: crate.kind,
+    scenario: crate.scenario ?? null,
     falling: crate.falling,
     sprite: crate.mesh.userData.originalSprite,
     frame: crate.mesh.userData.originalFrame,
@@ -1375,6 +1378,18 @@ function spawnShowerCrate(record, mapping, quantity) {
     sound: queueCrateSound,
   });
   crates.push(crate);
+  return crate;
+}
+function spawnScenarioObjects() {
+  if (!currentScenario) return;
+  for (const object of currentScenario.objects ?? []) {
+    const mapping = crateShowerSlotKind(object.content);
+    if (!mapping) continue;
+    spawnShowerCrate({
+      x: Math.round(object.x * 65536),
+      y: Math.round(object.y * 65536),
+    }, mapping, 1).scenario = object;
+  }
 }
 function stepCrateShower() {
   const state = automaticUtilityState;
@@ -6928,6 +6943,7 @@ $("#daily").addEventListener("click", async () => {
   $("#weather").value = "clear";
   $("#modifier").value = "standard";
   $("#scheme").value = "classic";
+  currentScenario = null;
   syncMenuOptions();
   saveSettings();
   matchStarted = true;
@@ -6949,6 +6965,7 @@ $("#sound").onclick = () => {
 };
 $("#start").onclick = async event => {
   event.preventDefault();
+  currentScenario = null;
   $("#start").textContent = "LET’S MAKE TROUBLE ↗";
   matchStarted = true;
   try {
@@ -7108,6 +7125,7 @@ mountArmageddonFrontend({
     $("#turn-time").value = String(scenario.turnTime);
     $("#retreat-time").value = String(scenario.retreatTime);
     $("#map-layout").value = `original:${scenario.terrain}`;
+    currentScenario = { ...scenario };
     matchStarted = true;
     await prepareDecorations();
     if (await reset() === false) {
