@@ -46,6 +46,7 @@ import crateProjectileData from "./armageddon/crate-projectile-data.json";
 import { attachNativeProjectileBlock, nativeWeaponSlotBlock } from "./armageddon/projectile-runtime.js";
 import { nativeArmageddonStart, nativeArmageddonTick } from "./armageddon/armageddon.js";
 import { nativeSchemeLoadouts, nativeSchemeWormEnergy } from "./armageddon/scheme-loadout.js";
+import { nativeCrateDropBag, nativeCrateDropDraw } from "./armageddon/crate-drop.js";
 import { nativeFlameBody } from "./armageddon/flame-body.js";
 import { registerNativeFlame } from "./armageddon/flame-spread.js";
 import { stepNativeFlame } from "./armageddon/flame-runtime.js";
@@ -505,6 +506,8 @@ let scenarioSequence = [], scenarioSequenceIndex = 0;
 let missionScript = null, missionState = null, missionRoundExpired = false, missionSurrendered = false;
 // Root +0x84..+0x90 meteor shower started by message 0x443.
 let nativeArmageddon = null;
+// Classic duel draws per-turn crates from the original scheme bag (004B7D00).
+let nativeCrateBag = null;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
@@ -1434,7 +1437,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   setWeapon("rocket");
   mode = $("#mode").value;
   applyWeather();
-  spawnCrate();
+  nativeCrateBag = !currentScenario && $("#scheme").value === "classic" ? nativeCrateDropBag(195) : null;
+  // 004B2C44 arms the drop before the first turn as well.
+  if (nativeCrateBag) drawNativeCrate(false);
+  else spawnCrate();
   if (currentScenario) {
     const definition = resolveMissionDefinition(currentScenario.path);
     missionScript = definition ? loadMissionScript(definition, {
@@ -1655,7 +1661,14 @@ function queueCrateSound(request) {
   audio.resume();
   nativeSoundQueue.enqueue(request);
 }
-function spawnCrate(announceDrop = false) {
+// Native crate kinds 1/2/4 (weapon/health/utility) as host crate kinds.
+const NATIVE_CRATE_KINDS = { 1: "special", 2: "health", 4: "utility" };
+function drawNativeCrate(announceDrop) {
+  const result = nativeCrateDropDraw(nativeCrateBag, crates.length, () => matchRandom.logicUint());
+  nativeCrateBag = result.bag;
+  if (result.kind) spawnCrate(announceDrop, NATIVE_CRATE_KINDS[result.kind]);
+}
+function spawnCrate(announceDrop = false, forcedKind = null) {
   if (!terrain) return;
   if (currentScenario && !currentScenario.crateDrops?.weapon &&
       !currentScenario.crateDrops?.health && !currentScenario.crateDrops?.utility)
@@ -1677,7 +1690,7 @@ function spawnCrate(announceDrop = false) {
   if (currentScenario?.crateDrops?.health > 0) allowed.push("health");
   if (currentScenario?.crateDrops?.utility > 0) allowed.push("utility");
   const pool = allowed.length ? allowed : PICKUP_KINDS;
-  const kind = pool[Math.floor(logicRandom() * pool.length)],
+  const kind = forcedKind ?? pool[Math.floor(logicRandom() * pool.length)],
     mesh =
       createOriginalObject(crateOpeningSprite(kind), -10);
   mesh.position.set(x, y, 18);
@@ -6114,6 +6127,8 @@ function nextTurn() {
   const nextTeam = selectNativeMatchTeam();
   if (nextTeam < 0) return endGame();
   team = nextTeam;
+  // 004B75A9: one bag draw between every turn (004B770F re-arms it).
+  if (nativeCrateBag) drawNativeCrate(true);
   if (team === 0) {
     round++;
     if (sdTriggered && suddenDeath && suddenDeathType === "water" && round > lastWaterRiseRound) {
@@ -6122,7 +6137,7 @@ function nextTurn() {
       startNativeWaterRise(waterLevel + rise, 8);
     }
     if (
-      !crates.length &&
+      !nativeCrateBag && !crates.length &&
       (crateRain ? round % 2 === 0 : round >= 3 && round % 3 === 0)
     ) {
       spawnCrate(true);

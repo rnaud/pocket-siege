@@ -70,3 +70,27 @@ test("worm energy follows scheme byte 0x15 and the handicap share", { tag: "@log
   // 004194CB: a +1 handicap adds a quarter of the scheme energy.
   expect(nativeSchemeWormEnergy(195, 1)).toBe(125);
 });
+
+test("classic crate drops draw from the original 100-entry scheme bag", { tag: "@logic" }, async () => {
+  const { nativeCrateDropBag, nativeCrateDropDraw } = await import("../src/armageddon/crate-drop.js");
+  const bag = nativeCrateDropBag(195);
+  const counts = {}; for (const kind of bag.available) counts[kind] = (counts[kind] ?? 0) + 1;
+  // Scheme bytes 20/10/10 over three enabled kinds: 6 weapon, 3 health, 3 utility.
+  expect(counts).toEqual({ 0: 88, 1: 6, 2: 3, 4: 3 });
+  // 004B7D00 draws (rand >> 16) % count and swaps the last entry into the hole.
+  const first = nativeCrateDropDraw(bag, 0, () => 2 << 16);
+  expect(first.kind).toBe(1);
+  expect(first.bag.available).toHaveLength(99);
+  expect(first.bag.available[2]).toBe(0);
+  expect(first.bag.used).toEqual([1]);
+  // Five live crates suppress the draw without touching the bag.
+  expect(nativeCrateDropDraw(bag, 5, () => 0)).toEqual({ bag, kind: 0 });
+  // Draws without replacement: 100 draws produce exactly the bag, then it refills.
+  let state = bag, drawn = {};
+  for (let i = 0; i < 100; i++) {
+    const result = nativeCrateDropDraw(state, 0, () => (i * 7919) << 16);
+    state = result.bag; drawn[result.kind] = (drawn[result.kind] ?? 0) + 1;
+  }
+  expect(drawn).toEqual(counts);
+  expect(state.available).toHaveLength(100);
+});

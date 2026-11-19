@@ -750,6 +750,8 @@ test("supply crate and a killing blow feed the pickup and slow-motion systems", 
 }) => {
   await page.goto("/");
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host crate rules; Classic duel draws crates from the scheme bag.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   const before = await page.evaluate(() => window.siege.getState());
   expect(before.crate).not.toBeNull();
@@ -1342,6 +1344,8 @@ test("stockpile keeps ammo and utilities across series islands", async ({
 test("special and utility crates stock the field kit", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host crate rules; Classic duel draws crates from the scheme bag.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   const specialKinds = await page.locator('.weapons [data-weapon]').evaluateAll(buttons => buttons.slice(5).map(button => button.dataset.weapon));
   await page.evaluate(kinds => {
@@ -1455,6 +1459,8 @@ test("crate spy reveals the current crate contents", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  // Custom keeps the host crate rules; Classic duel draws crates from the scheme bag.
+  await page.selectOption("#scheme", "custom");
   await page.locator("#start").click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().crates.length), { timeout: 10000 })
