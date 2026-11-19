@@ -494,6 +494,7 @@ let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
 let earthquakeShake = 0;
 let teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
+const crateSpyLabels = new Map();
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1377,6 +1378,13 @@ function updateCrateSpyHUD() {
   const el = $("#crate-spy");
   if (!el) return;
   const active = ((worms[current]?.nativeTeamModifiers ?? 0) & 0x20) !== 0;
+  const present = new Set(crates);
+  for (const [crate, label] of crateSpyLabels) {
+    if (!active || !present.has(crate)) {
+      label.remove();
+      crateSpyLabels.delete(crate);
+    }
+  }
   if (!active || !crates.length) {
     el.hidden = true;
     return;
@@ -1384,6 +1392,19 @@ function updateCrateSpyHUD() {
   el.hidden = false;
   el.textContent = `CRATES: ${crates.map((crate) =>
     WEAPONS[crate.content]?.label ?? crate.kind).join(" · ")}`;
+  for (const crate of crates) {
+    let label = crateSpyLabels.get(crate);
+    if (!label) {
+      label = document.createElement("span");
+      label.className = "crate-spy-label";
+      $("#labels").appendChild(label);
+      crateSpyLabels.set(crate, label);
+    }
+    label.textContent = WEAPONS[crate.content]?.label ?? crate.kind;
+    const p = screen(crate.x, crate.y - 34);
+    label.style.left = `${p.x}px`;
+    label.style.top = `${p.y}px`;
+  }
 }
 function updateScenarioObjectiveHUD() {
   const objective = $("#scenario-objective");

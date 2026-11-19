@@ -1439,6 +1439,7 @@ test("crate spy reveals the current crate contents", async ({ page }) => {
     .toBeGreaterThan(0);
   await page.evaluate(() => window.siege.debug.setTeamModifier(0x20, 0));
   await expect(page.locator("#crate-spy")).toContainText("CRATES:");
+  await expect(page.locator(".crate-spy-label").first()).toBeVisible();
 });
 
 test("earthquake damages grounded worms", async ({ page }) => {
