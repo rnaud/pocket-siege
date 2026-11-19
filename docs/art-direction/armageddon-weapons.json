@@ -192,8 +192,8 @@
     {
       "slot": 23,
       "native_name": "Sheep",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "sheep",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 0
     },

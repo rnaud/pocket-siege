@@ -361,3 +361,12 @@ test("native ming vase detonates into three repeat-guarded shards", { tag: "@log
   expect(children.map((child) => child.nativeRepeat)).toEqual([1, 2, 3]);
   expect(children.every((child) => nativeProjectileChildren(child, 650, () => 0).length === 0)).toBe(true);
 });
+
+test("native sheep uses the slot-23 walking-bomb record", { tag: "@logic" }, () => {
+  const sheep = projectile("sheep", { x: 200, y: 400, fuse: 2 });
+  expect(sheep.nativeBody).toMatchObject({ sprite: 626, mode: 3 });
+  expect(sheep.nativeTimer.remaining).toBe(20000);
+  expect(sheep.nativeDetonation).toMatchObject({
+    sprite: 626, damage: 75, push: 100, offset: 50, secondary: 0,
+  });
+});

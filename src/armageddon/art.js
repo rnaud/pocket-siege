@@ -133,6 +133,7 @@ const names = [
     "carpet2",
     "vase",
     "lshpwlk",
+    "sheepwlk",
     "shptruck",
     "sheepbrn",
     "clustlet",
