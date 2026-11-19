@@ -8034,6 +8034,15 @@ async function bootCurrentArt() {
 }
 mountArmageddonFrontend({
   setScenarioTraining: (value) => { scenarioIsTraining = Boolean(value); },
+  applyTrainingRoster: () => {
+    scenarioIsTraining = true;
+    disableSoloCpuWorms();
+    nativeTeamList = createNativeTeamList([0]);
+    if (team === 1) {
+      team = 0;
+      beginTurn();
+    }
+  },
   playScenario: async (scenario) => {
     if (!scenario?.terrain) return;
     $("#mode").value = "ai";

@@ -130,7 +130,7 @@ export function mountArmageddonFrontend(host = {}) {
         play.type = 'button';
         play.className = 'frontend-play-scenario';
         play.textContent = 'PLAY SCENARIO';
-        play.addEventListener('click', () => {
+        play.addEventListener('click', async () => {
           const match = resolveScenarioMatch(path);
           if (!match?.terrain || !host.playScenario) {
             notice.textContent = 'This scenario cannot start yet.';
@@ -138,8 +138,9 @@ export function mountArmageddonFrontend(host = {}) {
           }
           document.body.dataset.scenarioTraining = training ? "1" : "0";
           host.setScenarioTraining?.(training);
-          host.playScenario({ ...match, training: training || match.training,
+          await host.playScenario({ ...match, training: training || match.training,
             title: button.textContent, briefing: scenario.briefing });
+          if (training) host.applyTrainingRoster?.();
         });
         preview.append(play);
       });
