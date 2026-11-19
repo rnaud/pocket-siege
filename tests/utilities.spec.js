@@ -343,6 +343,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     "fastwalk",
     "lowgravity",
     "laser",
+    "invisibility",
   ]);
   expect(loadout.rope).toBe(Infinity);
   expect(loadout.jetpack).toBe(1);
@@ -350,6 +351,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.fastwalk).toBe(0);
   expect(loadout.lowgravity).toBe(0);
   expect(loadout.laser).toBe(1);
+  expect(loadout.invisibility).toBe(1);
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
@@ -690,4 +692,18 @@ test("laser sight draws the native aim ray until it is toggled off", async ({
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="laser"]').click();
   await expect.poll(() => line.evaluate((el) => el.style.display)).toBe("none");
+});
+
+test("invisibility cloaks the active squad until the next turn", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="invisibility"]').click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().invisibleTeam))
+    .toBe(0);
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.utilities.invisibility).toBe(0);
+  expect(state.worms.filter((worm) => worm.team === 0).every((worm) => worm.invisible)).toBe(true);
 });

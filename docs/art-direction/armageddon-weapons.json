@@ -536,8 +536,8 @@
     {
       "slot": 66,
       "native_name": "Invisibility",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "invisibility",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 19
     },

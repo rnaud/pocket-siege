@@ -57,6 +57,12 @@ export const UTILITIES = {
     fresh: 1,
     help: "Show the exact aim line until you fire",
   },
+  invisibility: {
+    label: "Invisibility",
+    icon: "◌",
+    fresh: 1,
+    help: "Cloak your squad until the next turn",
+  },
 };
 
 export const UTILITY_KINDS = Object.keys(UTILITIES);

@@ -469,7 +469,7 @@ const availableAmmo = (loadout, kind) =>
 // Native pickup slots for utilities that are not part of WEAPON_SLOTS.
 const NATIVE_UTILITY_SLOTS = {
   34: "girder", 37: "rope", 38: "bungee", 39: "parachute", 40: "teleport",
-  60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk", 65: "laser",
+  60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk", 65: "laser", 66: "invisibility",
   67: "doubledamage", 68: "cratespy", 69: "doubletime", 70: "crateshower",
 };
 const NATIVE_WEAPON_KINDS = Object.fromEntries(
@@ -534,6 +534,7 @@ let format = "single",
   parachuteArmed = false,
   bungeeArmed = false,
   laserSight = false,
+  invisibleTeam = null,
   turnSeconds = 45,
   turnTime = 45,
   retreatSeconds = 3,
@@ -1059,6 +1060,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   parachuteArmed = false;
   bungeeArmed = false;
   laserSight = false;
+  invisibleTeam = null;
   stopRope();
   stopJetpack();
   $("#replay").disabled = true;
@@ -1818,6 +1820,10 @@ function beginTurn() {
     return;
   }
   pendingTurnStart = false;
+  if (invisibleTeam !== null) {
+    for (const w of worms) w.invisible = false;
+    invisibleTeam = null;
+  }
   // 004B3210 resets the shared environment before the next team's turn.
   // Preserve the selected browser match modifier as the baseline.
   gravityScale = modifierSettings(modifier).gravityScale;
@@ -1838,6 +1844,7 @@ function beginTurn() {
   parachuteArmed = false;
   bungeeArmed = false;
   laserSight = false;
+  invisibleTeam = null;
   utilitiesOpen = false;
   specialOpen = false;
   // Native team event 0x41C broadcasts thaw (0x412) before turn setup.
@@ -2394,6 +2401,16 @@ function useUtility(kind) {
     $("#utility-status").textContent = laserSight
       ? "Laser sight active. The red line follows your aim."
       : "Laser sight off.";
+    updateUI();
+    return;
+  }
+  if (kind === "invisibility") {
+    invisibleTeam = team;
+    for (const w of worms) if (w.team === team) w.invisible = true;
+    utilityAmmo[team].invisibility = spendAmmo(utilityAmmo[team].invisibility);
+    activeUtility = null;
+    utilitiesOpen = false;
+    $("#utility-status").textContent = "Squad cloaked until the next turn.";
     updateUI();
     return;
   }
@@ -6529,6 +6546,8 @@ function frame(now) {
                     : active && phase === "aim"
                       ? "aim"
                       : "idle";
+    w.g.visible = !w.invisible;
+    w.label.style.display = w.invisible ? "none" : "";
     w.g.userData.pose = pose;
     const original = originalWormFrame(
       w,
@@ -7365,6 +7384,7 @@ window.siege = {
     utilities: { ...utilityAmmo[team] },
     laserSight,
     scenario: scenarioProgress ? { ...scenarioProgress } : null,
+    invisibleTeam,
     activeUtility,
     targetUtility,
     rope: {
@@ -7437,6 +7457,7 @@ window.siege = {
         nativeHurtBody,
         nativePoison,
         originalRecovery,
+        invisible,
       }) => ({
         nativeSpeechBank,
         name,
@@ -7450,6 +7471,7 @@ window.siege = {
         vy,
         ground,
         knocked,
+        invisible: Boolean(invisible),
         deathPending,
         nativeHurtState: nativeHurtBody?.state ?? null,
         recovering: !!originalRecovery,
