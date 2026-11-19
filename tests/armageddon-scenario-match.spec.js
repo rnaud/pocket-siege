@@ -34,6 +34,9 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(mission0.objects.filter((object) => object.kind === "mine")).toHaveLength(8);
   expect(mission0.objects.filter((object) => object.kind === "drum")).toHaveLength(1);
   expect(resolveScenarioMatch("mission/mission5.wam").objects.filter((object) => object.kind === "health")).toHaveLength(2);
+  expect(resolveScenarioMatch("mission/training3.wam")).toMatchObject({
+    windStrength: -1, fixedWind: -35,
+  });
   expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects).toHaveLength(1);
   expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects[0]).toMatchObject({
     kind: "target", x: 1066, y: 434, marked: true,
@@ -199,4 +202,19 @@ test("scenario target bonuses update the objective score", async ({ page }) => {
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().scenario.score))
     .toBeGreaterThan(0);
+});
+
+
+test("scenario fixed wind feeds the native wind selection", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator('[data-scenario="mission/training3.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(Math.abs(await page.evaluate(() => window.siege.getState().wind) + 250)).toBeLessThan(0.1);
 });

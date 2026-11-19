@@ -38,6 +38,8 @@ export function resolveScenarioMatch(path) {
     worms,
     difficulty: read(record, "Description", "Difficulty", 0),
     winningCondition: read(record, "Mission", "WinningCondition", 0),
+    windStrength: read(record, "Enviroment", "Wind", null),
+    fixedWind: read(record, "Enviroment", "FixedWind", null),
     objects: scenarioInitialObjects(record),
     sequenceObjects: scenarioSequenceObjects(record),
   };

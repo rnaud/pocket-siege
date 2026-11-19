@@ -1938,7 +1938,11 @@ function beginTurn() {
   updateAutomaticUtilities();
   nativeClockPresentation.displayed = turnSeconds * 1000;
   nativeClockPresentation.warned = 0;
-  const selectedWind = nativeWindSelection({ ...nativeDefaultWind,
+  const scenarioWind = currentScenario ? {
+    strength: currentScenario.windStrength ?? nativeDefaultWind.strength,
+    fixed: currentScenario.fixedWind ?? nativeDefaultWind.fixed,
+  } : nativeDefaultWind;
+  const selectedWind = nativeWindSelection({ ...scenarioWind,
     x: Math.round(active.x * 65536) | 0,
     previous: Math.round(wind / 2500 * 65536) | 0,
   }, () => matchRandom.logicUint());
