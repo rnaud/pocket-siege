@@ -783,3 +783,18 @@ test("authored mission worm positions reach the live roster", async ({ page }) =
   expect(state.worms[0].x).toBeCloseTo(446, 0);
   expect(state.worms[3].x).toBeCloseTo(842, 0);
 });
+
+
+test("authored worm names reach the live roster", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().worms[3].name)).toBe("Captain");
+});
