@@ -11,6 +11,9 @@ test("every mission and training resolves its original landscape and turn rules"
   for (const path of paths) {
     const scenario = resolveScenarioMatch(path);
     expect(scenario, path).not.toBeNull();
+    expect(scenario.teamWorms).toHaveLength(2);
+    expect(scenario.teamNames).toHaveLength(2);
+    expect(scenario.teamGraves).toHaveLength(2);
     expect(scenario.training, path).toBe(/\/training\d+\.wam$/i.test(path));
     expect(terrainIds.has(scenario.terrain), `${path} -> ${scenario.terrain}`).toBe(true);
     expect(Number.isFinite(scenario.turnTime)).toBe(true);

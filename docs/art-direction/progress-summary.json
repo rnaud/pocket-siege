@@ -573,7 +573,8 @@
         "native_terrain_mask_setup_composition",
         "native_terrain_tool_mask_memory",
         "native_terrain_tool_setup_composition",
-        "native_composed_scene_startup"
+        "native_composed_scene_startup",
+        "live_scenario_roster_metadata"
       ],
       "plain": {
         "now": "Local matches, authored maps, series play and the original mission/training landscapes are available. Scenario objectives and progression are still being connected.",
