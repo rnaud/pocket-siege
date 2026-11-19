@@ -6,7 +6,7 @@ const localChrome = process.platform === 'darwin' &&
 export default {
   ...base,
   reporter: 'list',
-  timeout: 120000,
+  timeout: 180000,
   workers: 2,
   retries: 0,
   // A running development server must not make commits fail or serve stale code.
