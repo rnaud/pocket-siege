@@ -134,6 +134,7 @@ const names = [
     "vase",
     "lshpwlk",
     "sheepwlk",
+    "donkey",
     "shptruck",
     "sheepbrn",
     "clustlet",

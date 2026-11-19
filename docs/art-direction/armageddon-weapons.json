@@ -440,8 +440,8 @@
     {
       "slot": 54,
       "native_name": "Donkey",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "donkey",
+      "status": "partial",
       "native_action_type": 3,
       "native_action_subtype": 0
     },

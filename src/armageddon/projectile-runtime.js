@@ -59,6 +59,7 @@ const kinds = new Set([
   "mingvase",
   "molesquadron",
   "sheep",
+  "donkey",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
 // presets remain modifiers around this baseline until scheme UI is ported.
@@ -151,7 +152,7 @@ export function attachNativeProjectile(p, height) {
   });
   const block = Array.from(
     { length: 94 },
-    (_, i) => record["0x" + ((p.nativeBlockOffset ?? 0x74) + i * 4).toString(16)],
+    (_, i) => record["0x" + ((p.nativeBlockOffset ?? ((p.nativeWeaponKind ?? p.kind) === "donkey" ? 0x88 : 0x74)) + i * 4).toString(16)],
   );
   return attachNativeProjectileBlock(p, height, block);
 }

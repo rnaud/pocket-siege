@@ -370,3 +370,12 @@ test("native sheep uses the slot-23 walking-bomb record", { tag: "@logic" }, () 
     sprite: 626, damage: 75, push: 100, offset: 50, secondary: 0,
   });
 });
+
+test("native donkey uses the slot-54 released-unit record", { tag: "@logic" }, () => {
+  const donkey = projectile("donkey", { x: 200, y: 400, fuse: 2 });
+  expect(donkey.nativeBody).toMatchObject({ sprite: 644, mode: 2 });
+  expect(donkey.nativeTimer.remaining).toBe(16000);
+  expect(donkey.nativeDetonation).toMatchObject({
+    sprite: 644, damage: 100, push: 100, offset: 100, secondary: 0,
+  });
+});
