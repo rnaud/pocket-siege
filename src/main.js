@@ -5326,6 +5326,10 @@ function selectNativeMatchTeam() {
 }
 function nextTurn() {
   if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
+  if (currentScenario?.turnEndFinishesGame && !scenarioProgress?.complete) {
+    finishMatch(null, false);
+    return;
+  }
   const killer = matchDamageSourceActive ? worms[current] : null;
   const killMessage = nativeKillAnnouncement(killer?.matchStats, killer?.name,
     killer?.team ? 0 : 2, () => matchRandom.logicUint());
@@ -7533,6 +7537,8 @@ window.siege = {
     homingTarget,
     aim: lastAim,
     phase,
+    time,
+    shotWait,
     charging,
     power,
     firedPower,
@@ -7869,6 +7875,9 @@ if (import.meta.env.DEV) {
     },
     applySuddenDeathDamage() {
       return applyScenarioSuddenDeathDamage();
+    },
+    finishTurn() {
+      if (phase !== "over") nextTurn();
     },
     dropWormForRecovery(index = current) {
       const w = worms[index];

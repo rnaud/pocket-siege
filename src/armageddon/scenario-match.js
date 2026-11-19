@@ -92,6 +92,7 @@ export function resolveScenarioMatch(path) {
     fallDamage: read(record, "Options", "FallDamage", null),
     mineFuse: read(record, "Options", "MineFuse", null),
     weaponsDontEndTurn: read(record, "Options", "WeaponsDontEndTurn", 0) === 1,
+    turnEndFinishesGame: read(record, "Options", "TurnEndFinishesGame", 0) === 1,
     enableSecretWeapons: read(record, "Options", "EnableSecretWeapons", 1) === 1,
     loadouts: scenarioLoadouts(record),
     utilityLoadouts: scenarioUtilityLoadouts(record),
