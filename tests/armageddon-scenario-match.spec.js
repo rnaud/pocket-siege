@@ -54,6 +54,9 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission0.wam").loadouts[0]).toMatchObject({
     shotgun: 3, uzi: 2,
   });
+  expect(resolveScenarioMatch("mission/mission0.wam").utilityLoadouts[0]).toMatchObject({
+    girder: 3, rope: 4, laser: 1,
+  });
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
@@ -467,4 +470,23 @@ test("scenario starting loadout replaces unused live ammo", async ({ page }) => 
   expect(ammo.shotgun).toBe(3);
   expect(ammo.uzi).toBe(2);
   expect(ammo.grenade).toBe(0);
+});
+
+
+test("scenario utility loadout replaces unused field-kit ammo", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const utilityAmmo = await page.evaluate(() => window.siege.getState().utilities);
+  expect(utilityAmmo.girder).toBe(3);
+  expect(utilityAmmo.rope).toBe(4);
+  expect(utilityAmmo.laser).toBe(1);
+  expect(utilityAmmo.bungee).toBe(0);
 });

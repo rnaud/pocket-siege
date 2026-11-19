@@ -22,6 +22,27 @@ const AMMO_SLOT_BY_NAME = new Map(
 const HOST_WEAPON_BY_SLOT = new Map(
   Object.entries(WEAPON_SLOTS).map(([kind, slot]) => [slot, kind]),
 );
+const UTILITY_BY_SLOT = new Map([
+  [34, "girder"], [36, "bridgekit"], [37, "rope"], [38, "bungee"],
+  [39, "parachute"], [40, "teleport"], [60, "freeze"], [62, "jetpack"],
+  [63, "lowgravity"], [64, "fastwalk"], [65, "laser"], [66, "invisibility"],
+]);
+function scenarioUtilityLoadouts(record) {
+  const loadouts = [{}, {}];
+  for (const team of record.sections) {
+    const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
+    if (!match) continue;
+    const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
+    for (const [key, value] of team.entries) {
+      if (!/^Ammo_/i.test(key)) continue;
+      const slot = AMMO_SLOT_BY_NAME.get(key);
+      const kind = slot === undefined ? null : UTILITY_BY_SLOT.get(slot);
+      const amount = Number.parseInt(value, 10);
+      if (kind && Number.isFinite(amount)) loadouts[index][kind] = amount;
+    }
+  }
+  return loadouts;
+}
 function scenarioLoadouts(record) {
   const loadouts = [{}, {}];
   for (const team of record.sections) {
@@ -72,6 +93,7 @@ export function resolveScenarioMatch(path) {
     weaponsDontEndTurn: read(record, "Options", "WeaponsDontEndTurn", 0) === 1,
     enableSecretWeapons: read(record, "Options", "EnableSecretWeapons", 1) === 1,
     loadouts: scenarioLoadouts(record),
+    utilityLoadouts: scenarioUtilityLoadouts(record),
     healthCrateEnergy: read(record, "Options", "HealthCrateEnergy", null),
     suddenDeath: {
       type: read(record, "Options", "SuddenDeathType", null),

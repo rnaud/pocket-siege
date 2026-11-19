@@ -1095,6 +1095,13 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     createWeaponDelays(isDaily ? {} : configuredDelays),
   );
   utilityAmmo = carriedUtilities ?? [freshUtilities(), freshUtilities()];
+  if (currentScenario?.utilityLoadouts) {
+    for (const [index, loadout] of currentScenario.utilityLoadouts.entries()) {
+      for (const kind of Object.keys(utilityAmmo[index])) utilityAmmo[index][kind] = 0;
+      Object.assign(utilityAmmo[index], loadout);
+    }
+  }
+
   damageMultiplier = 1;
   automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 };
   crateShowerPool = null; crateShowerUsed = []; crateShowerAmmo = null;
