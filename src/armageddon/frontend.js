@@ -136,7 +136,10 @@ export function mountArmageddonFrontend(host = {}) {
             notice.textContent = 'This scenario cannot start yet.';
             return;
           }
-          host.playScenario({ ...match, title: button.textContent, briefing: scenario.briefing });
+          document.body.dataset.scenarioTraining = training ? "1" : "0";
+          host.setScenarioTraining?.(training);
+          host.playScenario({ ...match, training: training || match.training,
+            title: button.textContent, briefing: scenario.briefing });
         });
         preview.append(play);
       });

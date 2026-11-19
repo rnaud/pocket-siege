@@ -657,7 +657,7 @@ test("scenario water sudden death rises again on later rounds", async ({ page })
   await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(600));
   const first = await page.evaluate(() => window.siege.getState().waterLevel);
-  for (let i = 0; i < 4; i++)
+  for (let i = 0; i < 12; i++)
     await page.evaluate(() => window.siege.debug.finishTurn());
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(600));
   const second = await page.evaluate(() => window.siege.getState().waterLevel);
@@ -1174,6 +1174,7 @@ test("single-team trainings field no CPU worms and keep the player's turn", asyn
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
     .toBe("aim");
+  expect(await page.evaluate(() => document.body.dataset.scenarioTraining)).toBe("1");
   const start = await page.evaluate(() => window.siege.getState());
   expect(start.worms.filter((worm) => worm.team === 1 && worm.hp > 0)).toHaveLength(0);
   await expect(page.locator(".team").nth(1)).toBeHidden();

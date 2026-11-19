@@ -448,6 +448,8 @@ let terrain,
   lastSelectedWorm = [0, 0],
   selectedNativeTeam = null,
   lastSelectedWormAlliance = new Map(),
+  soloMatch = false,
+  scenarioIsTraining = false,
   mode = "ai",
   weapon = "rocket",
   move = 0,
@@ -1001,6 +1003,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? currentScenario?.logicRandomSeed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
+  soloMatch = /train/i.test(selectedLayout);
   matchFriction = currentScenario?.friction ?? NATIVE_MINE_FRICTION;
   teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
   if (currentScenario?.teamNames) {
@@ -1378,6 +1381,16 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   if(!authored)for (let i = 0; i < 240; i++)
     for (const w of worms) stepWorm(w, terrain, 1 / 120, gravityScale);
   for (const w of worms) w.g.position.set(w.x, w.y, 15);
+  if (soloScenario()) {
+    for (const worm of worms) {
+      if (worm.team !== 1) continue;
+      worm.hp = 0;
+      worm.matchStats.hp = 0;
+      worm.disabledRoster = true;
+      worm.g.visible = false;
+      worm.label.hidden = true;
+    }
+  }
   nativeTeamRotation = nativeTeamRotationReset({ groups: 2,
     initialGroup: keepSeries ? (seriesRound - 1) % 2 : 0,
     cursors: Array(nativeTeamCandidates().length).fill(1), starts: [0, 0] });
@@ -1469,7 +1482,31 @@ function updateScenarioTeamNames() {
   }
 }
 function soloScenario() {
-  return currentScenario?.teams === 1;
+  if (document.body.dataset.scenarioTraining === "1") return true;
+  if (scenarioIsTraining) return true;
+  if (/train/i.test(terrain?.layout ?? "")) return true;
+  if (soloMatch) return true;
+  if (/train/i.test($("#map-layout")?.value ?? "")) return true;
+  if (!currentScenario) return false;
+  if (Object.keys(currentScenario).length === 0) return true;
+  if (/\/training\d+\.wam$/i.test(currentScenario.path ?? "")) return true;
+  if (currentScenario.training || currentScenario.teams === 1) return true;
+  const rosters = currentScenario.teamWorms;
+  if (!rosters || rosters.length <= 1) return true;
+  const cpuRoster = rosters[1];
+  return !cpuRoster ||
+    cpuRoster.filter((config) => config.place !== false).length === 0;
+}
+function disableSoloCpuWorms() {
+  if (!soloScenario()) return;
+  for (const worm of worms) {
+    if (worm.team !== 1) continue;
+    worm.hp = 0;
+    worm.matchStats.hp = 0;
+    worm.disabledRoster = true;
+    worm.g.visible = false;
+    worm.label.hidden = true;
+  }
 }
 function updateScenarioAllianceHealth() {
   const el = $("#scenario-alliance-health");
@@ -2222,6 +2259,7 @@ function beginTurn() {
   // 004B64B0 schedules426 for settlement after this team finishes.
   pendingPoisonSettlement = 1;
   pendingEnvironmentSettlement = Number(suddenDeath && ["water", "health", "nuke"].includes(suddenDeathType));
+  disableSoloCpuWorms();
   const alliance = selectedNativeTeam?.team === team ? selectedNativeTeam.alliance : undefined;
   const roster = worms.filter((w) => w.team === team &&
     (alliance === undefined || (w.alliance ?? null) === alliance));
@@ -8008,6 +8046,7 @@ async function bootCurrentArt() {
   }
 }
 mountArmageddonFrontend({
+  setScenarioTraining: (value) => { scenarioIsTraining = Boolean(value); },
   playScenario: async (scenario) => {
     if (!scenario?.terrain) return;
     $("#mode").value = "ai";
@@ -8019,12 +8058,24 @@ mountArmageddonFrontend({
     $("#turn-time").value = String(scenario.turnTime);
     $("#retreat-time").value = String(scenario.retreatTime);
     $("#map-layout").value = `original:${scenario.terrain}`;
+    const launchedTraining = document.body.dataset.scenarioTraining === "1" || Boolean(scenario.training ||
+      /train/i.test(scenario.path ?? "") || /train/i.test(scenario.terrain ?? "") ||
+      /train/i.test(scenario.title ?? ""));
+    scenarioIsTraining = launchedTraining;
     currentScenario = { ...scenario };
     matchStarted = true;
     await prepareDecorations();
     if (await reset() === false) {
       announce("SCENARIO LANDSCAPE COULD NOT LOAD");
       return;
+    }
+    if (launchedTraining || soloScenario()) {
+      disableSoloCpuWorms();
+      nativeTeamList = createNativeTeamList([0]);
+      if (team === 1) {
+        team = 0;
+        beginTurn();
+      }
     }
     menu.close();
     announce(`${scenario.title}${scenario.briefing ? `: ${scenario.briefing}` : ""}`);
