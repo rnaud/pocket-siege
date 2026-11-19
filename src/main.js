@@ -1264,10 +1264,11 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   if (currentScenario) {
     scenarioSequence = (currentScenario.sequenceObjects ?? []).filter(
       (object) => object.kind === "text" || object.kind === "target" ||
-        (object.kind === "weapon" && crateShowerSlotKind(object.content)));
+        object.kind === "weapon");
     scenarioSequenceIndex = 0;
     scenarioProgress = {
       collected: 0,
+      score: 0,
       total: (currentScenario.objects ?? []).filter(
         (object) => object.kind === "weapon" || object.kind === "target").length +
         scenarioSequence.length,
@@ -1433,7 +1434,8 @@ function spawnScenarioObject(object) {
     return true;
   }
   const mapping = crateShowerSlotKind(object.content) ??
-    (object.kind === "target" ? { kind: null, type: "target" } : null);
+    (object.kind === "target" || object.kind === "weapon"
+      ? { kind: null, type: "target" } : null);
   if (!mapping) return false;
   spawnShowerCrate({
     x: Math.round(object.x * 65536),
@@ -1764,10 +1766,15 @@ function advanceScenarioProgress(crate) {
   if (!crate.scenario || !scenarioProgress || scenarioProgress.total <= 0 ||
       (crate.scenario.kind !== "weapon" && crate.scenario.kind !== "target")) return;
   scenarioProgress.collected = (scenarioProgress.collected + 1) | 0;
+  const points = crate.scenario.bonusPoints | 0;
+  const turns = crate.scenario.bonusTurns | 0;
+  if (points) scenarioProgress.score = (scenarioProgress.score + points) | 0;
+  if (turns) time += turns;
   scenarioProgress.complete = scenarioProgress.collected >= scenarioProgress.total;
+  const bonus = `${points ? ` +${points}pt` : ""}${turns ? ` +${turns}s` : ""}`;
   announce(scenarioProgress.complete
-    ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}`
-    : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}`);
+    ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}${bonus}`
+    : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}${bonus}`);
   if (scenarioProgress.complete) {
     // 00442000 groups WinningCondition1/3 into the objective mode; 0/2 keep
     // the ordinary elimination end conditions.
@@ -1780,7 +1787,8 @@ function advanceScenarioProgress(crate) {
 function collectCrate(w, crate = crates[0]) {
   if (!crate || !crates.includes(crate)) return;
   const { kind, mesh, quantity } = crate;
-  if (crate.scenario?.kind === "target" && !crate.content) {
+  if (crate.scenario && !crate.content &&
+      (crate.scenario.kind === "target" || crate.scenario.kind === "weapon")) {
     pickupLabel(w, "TARGET");
     $("#status").textContent = `${w.name} collects a scenario target.`;
     nativeRenderOrder.release(crate.nativeOrderId);

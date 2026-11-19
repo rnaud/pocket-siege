@@ -100,6 +100,7 @@ export function mountArmageddonFrontend(host = {}) {
       const scenario = originalMissionPresentation(path);
       const button = document.createElement('button');
       button.type = 'button';
+      button.dataset.scenario = path;
       button.textContent = `${scenario.title || `${training ? 'Training' : 'Mission'} ${index + 1}`}${isScenarioComplete(path) ? ' ✓' : ''}`;
       if (isScenarioComplete(path)) button.classList.add('completed');
       button.addEventListener('click', () => {

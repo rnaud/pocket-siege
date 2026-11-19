@@ -179,3 +179,20 @@ test("completing a target-condition mission resolves the match as a win", async 
     JSON.parse(localStorage.getItem("pocket-siege-scenario-progress-v1") ?? "[]"));
   expect(completed.length).toBeGreaterThan(0);
 });
+
+test("scenario target bonuses update the objective score", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator('[data-scenario="mission/training11.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.debug.collectScenarioCrate())).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario.score))
+    .toBeGreaterThan(0);
+});
