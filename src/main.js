@@ -1323,6 +1323,18 @@ function dispose(obj) {
     if (o.material) o.material.dispose();
   });
 }
+function updateCrateSpyHUD() {
+  const el = $("#crate-spy");
+  if (!el) return;
+  const active = ((worms[current]?.nativeTeamModifiers ?? 0) & 0x20) !== 0;
+  if (!active || !crates.length) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.textContent = `CRATES: ${crates.map((crate) =>
+    WEAPONS[crate.content]?.label ?? crate.kind).join(" · ")}`;
+}
 function updateScenarioObjectiveHUD() {
   const objective = $("#scenario-objective");
   if (!objective) return;
@@ -2078,6 +2090,7 @@ function beginTurn() {
         .toUpperCase());
   updateSeriesHUD();
   updateScenarioObjectiveHUD();
+  updateCrateSpyHUD();
   const weatherNote =
     weather === "storm"
       ? " Storm winds."
@@ -2109,6 +2122,7 @@ function updateUI() {
   const key = `${canAct()}|${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${bungeeArmed}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${Object.values(utilityAmmo[team] ?? {}).join(",")}|${worms[current]?.nativeTeamModifiers || 0}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
+  updateCrateSpyHUD();
   updateHudTeams(worms, team);
   for (let t = 0; t < 2; t++) {
     let hp = worms.filter((w) => w.team === t).reduce((s, w) => s + w.hp, 0);
@@ -7847,6 +7861,7 @@ window.siege = {
         moving,
         deathPending,
         nativeHurtBody,
+        nativeTeamModifiers,
         nativePoison,
         originalRecovery,
         invisible,
@@ -7857,6 +7872,7 @@ window.siege = {
         damageTaken,
         matchStats: { ...matchStats, hp },
         nativePoison: { ...nativePoison },
+        nativeTeamModifiers,
         x,
         y,
         vx,
@@ -8048,6 +8064,10 @@ if (import.meta.env.DEV) {
     },
     setUtility(teamIndex = 0, kind = "crateshower", value = 1) {
       utilityAmmo[teamIndex][kind] = value;
+      updateUI();
+    },
+    setTeamModifier(value = 0, teamIndex = 0) {
+      for (const w of worms) if (w.team === teamIndex) w.nativeTeamModifiers = value;
       updateUI();
     },
     resetSeed(seed = 42) {

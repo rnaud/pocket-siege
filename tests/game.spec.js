@@ -1428,3 +1428,15 @@ test("kamikaze self-destructs the active worm", async ({ page }) => {
     }), { timeout: 10000 })
     .toBe(0);
 });
+
+test("crate spy reveals the current crate contents", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().crates.length), { timeout: 10000 })
+    .toBeGreaterThan(0);
+  await page.evaluate(() => window.siege.debug.setTeamModifier(0x20, 0));
+  await expect(page.locator("#crate-spy")).toContainText("CRATES:");
+});

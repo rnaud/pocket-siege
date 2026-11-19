@@ -2777,6 +2777,7 @@ body:has(#menu[open]) #app, body:has(#menu[open]) #app * { visibility: hidden !i
 #menu#menu .frontend-mission-preview .frontend-briefing { white-space: pre-line; text-align: left; font-family: system-ui, sans-serif; line-height: 1.6; text-transform: none; }
 #menu#menu .frontend-play-scenario { margin-top: 18px; padding: 8px 18px; }
 #scenario-objective { display: block; color: #ffe982; font: 11px/1.2 monospace; letter-spacing: 1px; }
+#crate-spy { display: block; color: #9fe7ff; font: 10px/1.2 monospace; letter-spacing: 1px; }
 #menu#menu .frontend-scenario-meta { color: #b5b2d6; font: 13px/1.4 monospace; text-transform: uppercase; letter-spacing: 1px; margin: 8px auto; }
 #menu#menu .frontend-mission-list button.completed { color: #9ee29e; }
 
