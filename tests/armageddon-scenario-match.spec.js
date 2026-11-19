@@ -37,6 +37,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/training3.wam")).toMatchObject({
     windStrength: -1, fixedWind: -35,
   });
+  expect(resolveScenarioMatch("mission/mission15.wam").friction).toBe(40);
   expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects).toHaveLength(1);
   expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects[0]).toMatchObject({
     kind: "target", x: 1066, y: 434, marked: true,
@@ -217,4 +218,19 @@ test("scenario fixed wind feeds the native wind selection", async ({ page }) => 
     })
     .toBeGreaterThan(0);
   expect(Math.abs(await page.evaluate(() => window.siege.getState().wind) + 250)).toBeLessThan(0.1);
+});
+
+
+test("scenario friction feeds the live native body setup", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission15.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().friction)).toBe(40);
 });

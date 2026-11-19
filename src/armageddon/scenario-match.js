@@ -40,6 +40,7 @@ export function resolveScenarioMatch(path) {
     winningCondition: read(record, "Mission", "WinningCondition", 0),
     windStrength: read(record, "Enviroment", "Wind", null),
     fixedWind: read(record, "Enviroment", "FixedWind", null),
+    friction: read(record, "Enviroment", "Friction", null),
     objects: scenarioInitialObjects(record),
     sequenceObjects: scenarioSequenceObjects(record),
   };

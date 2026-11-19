@@ -474,6 +474,7 @@ const NATIVE_UTILITY_SLOTS = {
   36: "bridgekit", 60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk", 65: "laser", 66: "invisibility",
   67: "doubledamage", 68: "cratespy", 69: "doubletime", 70: "crateshower",
 };
+let matchFriction = NATIVE_MINE_FRICTION;
 const NATIVE_WEAPON_KINDS = Object.fromEntries(
   Object.entries(WEAPON_SLOTS).map(([kind, slot]) => [slot, kind]),
 );
@@ -978,6 +979,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const matchSeed = seed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
+  matchFriction = currentScenario?.friction ?? NATIVE_MINE_FRICTION;
   const layout = isDaily || selectedLayout === "random"
     ? randomOriginalMap(matchSeed) : selectedLayout;
   if (layout.startsWith("original:") && !originalMapLoaded(layout)) {
@@ -1231,7 +1233,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     const worm=createWorm(index<3?0:1,index%3,p.x,p.y);
     if(authored) {
       const placed=nativePlaceWormAt(Math.round(p.x*65536),Math.round((H-p.y)*65536),
-        Math.floor(H-waterLevel),NATIVE_MINE_FRICTION,
+        Math.floor(H-waterLevel),matchFriction,
         (x,y,body)=>nativeSceneCollision(worm,body,x/65536,H-y/65536,terrain,worms,H),worm.nativeIdleMemory);
       worm.nativeSpawnPhysics=placed.physics;
       worm.x=placed.x/65536;worm.y=H-placed.y/65536;
@@ -1367,7 +1369,7 @@ function spawnCrate(announceDrop = false) {
   };
   crate.nativeBody = createNativeCrateBody({
     kind: nativeCrateKind(kind), x: position.x, y: position.y,
-  }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), NATIVE_MINE_FRICTION, {
+  }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), matchFriction, {
     shape: (body, shape) => { body.shape = shape; },
     collide: (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H),
     sound: queueCrateSound,
@@ -1397,7 +1399,7 @@ function spawnShowerCrate(record, mapping, quantity) {
   };
   crate.nativeBody = createNativeCrateBody({
     kind: nativeCrateKind(kind), x: record.x, y: record.y,
-  }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), NATIVE_MINE_FRICTION, {
+  }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), matchFriction, {
     shape: (body, shape) => { body.shape = shape; },
     collide: (cx, cy, body) => nativeSceneCollision(crate, body, cx / 65536, H - cy / 65536, terrain, worms, H),
     sound: queueCrateSound,
@@ -1410,7 +1412,7 @@ function spawnScenarioBarrel(object) {
   const hazard = { mesh, nativeOrderId: nativeRenderOrder.allocate() };
   hazard.nativeBody = nativeBarrelBody(
     Math.round(object.x * 65536), Math.round(object.y * 65536),
-    object.onGround ? 1 : 0, Math.floor(H - waterLevel), NATIVE_MINE_FRICTION,
+    object.onGround ? 1 : 0, Math.floor(H - waterLevel), matchFriction,
     (px, py, body) => nativeSceneCollision(hazard, body, px / 65536, H - py / 65536, terrain, worms, H),
   );
   hazard.x = hazard.nativeBody.x / 65536;
@@ -1495,7 +1497,7 @@ function spawnHazards(requests=null) {
       const mesh=createOriginalObject("oildrum1",-14);
       const hazard={mesh,nativeOrderId:nativeRenderOrder.allocate()};
       hazard.nativeBody=nativeBarrelBody(request.x,request.y,request.settle,
-        Math.floor(H-waterLevel),NATIVE_MINE_FRICTION,
+        Math.floor(H-waterLevel),matchFriction,
         (px,py,body)=>nativeSceneCollision(hazard,body,px/65536,H-py/65536,terrain,worms,H));
       hazard.x=hazard.nativeBody.x/65536;hazard.y=H-hazard.nativeBody.y/65536;
       mesh.position.set(hazard.x,hazard.y,17);group.add(mesh);hazards.push(hazard);
@@ -3620,7 +3622,7 @@ function spawnNaturalMine(request) {
     nativeWater:{bubbleProgress:0,waterFlagsSet:0,splashActive:0},
     mesh:createOriginalObject("mineoff",4),bob:0};
   const collide=(x,y,body)=>nativeSceneCollision(mine,body,x/65536,H-y/65536,terrain,worms,H);
-  mine.nativeBody=nativeMineBody(nativeMineBase(NATIVE_MINE_FRICTION),payload,timer.arm,NATIVE_MINE_FRICTION,collide);
+  mine.nativeBody=nativeMineBody(nativeMineBase(matchFriction),payload,timer.arm,matchFriction,collide);
   if(request.settle)mine.nativeBody=nativeSettleMineBody(mine.nativeBody,payload,Math.floor(H-waterLevel),collide);
   mine.x=mine.nativeBody.x/65536;mine.y=H-mine.nativeBody.y/65536;
   mine.mesh.position.set(mine.x,mine.y,18);group.add(mine.mesh);
@@ -3634,10 +3636,10 @@ function spawnStrikeMine(payload) {
     mesh: createOriginalObject("mineoff", 4), bob: 0 };
   const collide = (x, y, body) =>
     nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
-  mine.nativeBody = nativeMineBody(nativeMineBase(NATIVE_MINE_FRICTION), {
+  mine.nativeBody = nativeMineBody(nativeMineBase(matchFriction), {
     x: Math.round(payload.x * 65536), y: Math.round((H - payload.y) * 65536),
     vx: Math.round(payload.vx / 50 * 65536), vy: Math.round(-payload.vy / 50 * 65536),
-  }, timer.arm, NATIVE_MINE_FRICTION, collide);
+  }, timer.arm, matchFriction, collide);
   mine.x = mine.nativeBody.x / 65536;
   mine.y = H - mine.nativeBody.y / 65536;
   mine.mesh.position.set(mine.x, mine.y, 18);
@@ -3658,10 +3660,10 @@ function spawnPlacedMine(release) {
     mesh,
     bob: visualRandom() * Math.PI * 2,
   };
-  mine.nativeBody = nativeMineBody(nativeMineBase(NATIVE_MINE_FRICTION), {
+  mine.nativeBody = nativeMineBody(nativeMineBase(matchFriction), {
     x: Math.round(release.x * 65536), y: Math.round((H - release.y) * 65536),
     vx: Math.round(release.vx / 50 * 65536), vy: Math.round(-release.vy / 50 * 65536),
-  }, mine.nativeTimer.arm, NATIVE_MINE_FRICTION, (x, y, body) =>
+  }, mine.nativeTimer.arm, matchFriction, (x, y, body) =>
     nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H));
   mine.x = mine.nativeBody.x / 65536;
   mine.y = H - mine.nativeBody.y / 65536;
@@ -5900,7 +5902,7 @@ function stepFrame(dt) {
     };
     const result = nativeMineTimer(mine.nativeTimer, {
       vx: mine.nativeBody.vx, vy: mine.nativeBody.vy, awake: nativeBodyAwake(mine.nativeBody), submerged: mine.nativeBody.submerged,
-      frame: matchRandom.frame, friction: NATIVE_MINE_FRICTION,
+      frame: matchRandom.frame, friction: matchFriction,
     }, proximity);
     mine.nativeTimer = result.body;
     mine.arm = result.body.arm / 1000;
@@ -7478,6 +7480,7 @@ window.siege = {
     laserSight,
     scenario: scenarioProgress ? { ...scenarioProgress } : null,
     invisibleTeam,
+    friction: matchFriction,
     activeUtility,
     targetUtility,
     rope: {
