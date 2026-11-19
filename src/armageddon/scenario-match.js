@@ -67,6 +67,13 @@ export function scenarioInitialObjects(record) {
         content: numbered(entries.PlaceTarget_TargetType),
         marked: numbered(entries.PlaceTarget_Marked) === 1,
         vital: numbered(entries.PlaceTarget_Vital) === 1 });
+    } else if (type === 1 || type === 2) {
+      const prefix = type === 1 ? "PlaceMine_" : "PlaceDrum_";
+      const x = numbered(entries[prefix + "XPosition"]);
+      const y = numbered(entries[prefix + "YPosition"]);
+      if (x === null || y === null) continue;
+      objects.push({ kind: type === 1 ? "mine" : "drum", x, y,
+        onGround: numbered(entries[prefix + "OnGround"]) === 1 });
     }
   }
   return objects;

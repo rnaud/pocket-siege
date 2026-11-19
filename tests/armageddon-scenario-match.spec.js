@@ -22,10 +22,12 @@ test("every mission and training resolves its original landscape and turn rules"
     turnTime: 45,
     retreatTime: 3,
   });
-  expect(mission0.objects).toHaveLength(4);
+  expect(mission0.objects).toHaveLength(13);
   expect(mission0.objects[0]).toMatchObject({
     kind: "weapon", x: 1217, y: 171, content: 34,
   });
+  expect(mission0.objects.filter((object) => object.kind === "mine")).toHaveLength(8);
+  expect(mission0.objects.filter((object) => object.kind === "drum")).toHaveLength(1);
   expect(resolveScenarioMatch("mission/training1.wam")).toMatchObject({
     training: true,
     terrain: "mission/train~11.img",
@@ -58,6 +60,16 @@ test("campaign scenario starts on its original landscape and turn rules", async 
   await expect
     .poll(() => page.evaluate(
       () => window.siege.getState().crates.filter((crate) => crate.scenario).length,
+    ))
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() => page.evaluate(
+      () => window.siege.getState().mines.filter((mine) => mine.scenario).length,
+    ))
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() => page.evaluate(
+      () => window.siege.getState().hazards.filter((hazard) => hazard.scenario).length,
     ))
     .toBeGreaterThan(0);
 });

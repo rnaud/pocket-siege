@@ -1380,9 +1380,29 @@ function spawnShowerCrate(record, mapping, quantity) {
   crates.push(crate);
   return crate;
 }
+function spawnScenarioBarrel(object) {
+  const mesh = createOriginalObject("oildrum1", -14);
+  const hazard = { mesh, nativeOrderId: nativeRenderOrder.allocate() };
+  hazard.nativeBody = nativeBarrelBody(
+    Math.round(object.x * 65536), Math.round(object.y * 65536),
+    object.onGround ? 1 : 0, Math.floor(H - waterLevel), NATIVE_MINE_FRICTION,
+    (px, py, body) => nativeSceneCollision(hazard, body, px / 65536, H - py / 65536, terrain, worms, H),
+  );
+  hazard.x = hazard.nativeBody.x / 65536;
+  hazard.y = H - hazard.nativeBody.y / 65536;
+  mesh.position.set(hazard.x, hazard.y, 17);
+  group.add(mesh);
+  hazards.push(hazard);
+  hazard.scenario = object;
+}
 function spawnScenarioObjects() {
   if (!currentScenario) return;
   for (const object of currentScenario.objects ?? []) {
+    if (object.kind === "mine") {
+      spawnStrikeMine({ x: object.x, y: H - object.y, vx: 0, vy: 0 }).scenario = object;
+      continue;
+    }
+    if (object.kind === "drum") { spawnScenarioBarrel(object); continue; }
     const mapping = crateShowerSlotKind(object.content);
     if (!mapping) continue;
     spawnShowerCrate({
@@ -3503,6 +3523,7 @@ function spawnStrikeMine(payload) {
   mine.mesh.position.set(mine.x, mine.y, 18);
   group.add(mine.mesh);
   registerLiveMine(mine, 0);
+  return mine;
 }
 function spawnPlacedMine(release) {
   const w = worms[current],
@@ -7292,8 +7313,10 @@ window.siege = {
       x: Math.round(h.x),
       y: Math.round(h.y),
       sprite: h.mesh.userData.originalSprite,
+      scenario: h.scenario ?? null,
     })),
     mines: mines.map((m) => ({
+      scenario: m.scenario ?? null,
       nativeSlot: m.nativeSlot,
       nativeOrderId: m.nativeOrderId,
       nativeRenderRank: nativeRenderOrder.orders[m.nativeOrderId],
