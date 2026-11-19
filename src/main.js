@@ -56,6 +56,7 @@ import { nativeAutomaticUtilities } from "./armageddon/automatic-utilities.js";
 import { createNativeCrateScheme } from "./armageddon/crate-scheme.js";
 import { nativeCrateShowerTick } from "./armageddon/crate-shower.js";
 import { recordScenarioCompletion } from "./armageddon/scenario-progress.js";
+import { originalResourceString } from "./armageddon/string-resources.js";
 import { nativePickupCandidate } from "./armageddon/crate-pickup.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
@@ -1262,7 +1263,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   spawnCrate();
   if (currentScenario) {
     scenarioSequence = (currentScenario.sequenceObjects ?? []).filter(
-      (object) => object.kind === "target" ||
+      (object) => object.kind === "text" || object.kind === "target" ||
         (object.kind === "weapon" && crateShowerSlotKind(object.content)));
     scenarioSequenceIndex = 0;
     scenarioProgress = {
@@ -1447,6 +1448,11 @@ function spawnScenarioObjects() {
 function spawnNextScenarioSequence() {
   while (scenarioSequenceIndex < scenarioSequence.length) {
     const object = scenarioSequence[scenarioSequenceIndex++];
+    if (object.kind === "text") {
+      const text = originalResourceString(1715 + object.textIndex);
+      if (text) announce(text);
+      continue;
+    }
     if (object.kind === "health") { spawnScenarioObject(object); return; }
     if (spawnScenarioObject(object)) return;
   }

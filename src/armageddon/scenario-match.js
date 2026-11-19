@@ -105,6 +105,11 @@ function objectsInSections(record, pattern, sort = false) {
     const type = EVENT_TYPES[numbered(entries.TypeOfEvent)];
     if (type === undefined) continue;
     if (!sort && numbered(entries.Turn ?? 0) !== 0) continue;
+    if (sort && type === 7) {
+      const textIndex = numbered(entries.Text_String_Index);
+      if (textIndex !== null) objects.push({ kind: "text", textIndex });
+      continue;
+    }
     const object = placementObject(entries, type);
     if (object) objects.push(object);
   }

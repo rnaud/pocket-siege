@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import missionNames from "../src/armageddon/mission-names.json" with { type: "json" };
 import mapCatalog from "../src/armageddon/map-catalog.json" with { type: "json" };
 import { resolveScenarioMatch } from "../src/armageddon/scenario-match.js";
+import { originalResourceString } from "../src/armageddon/string-resources.js";
 
 test("every mission and training resolves its original landscape and turn rules", { tag: "@logic" }, () => {
   const terrainIds = new Set(mapCatalog.map((entry) => entry.id));
@@ -37,6 +38,10 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects[0]).toMatchObject({
     kind: "target", x: 1066, y: 434, marked: true,
   });
+  const training12 = resolveScenarioMatch("mission/training12.wam").sequenceObjects;
+  const text = training12.find((object) => object.kind === "text");
+  expect(text).toEqual({ kind: "text", textIndex: 65 });
+  expect(originalResourceString(1715 + text.textIndex)).toBe("There may be trouble ahead...");
   expect(resolveScenarioMatch("mission/training1.wam")).toMatchObject({
     training: true,
     terrain: "mission/train~11.img",
