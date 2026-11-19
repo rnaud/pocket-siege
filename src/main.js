@@ -45,7 +45,7 @@ import { nativeCrateContents } from "./armageddon/crate-contents.js";
 import crateProjectileData from "./armageddon/crate-projectile-data.json";
 import { attachNativeProjectileBlock, nativeWeaponSlotBlock } from "./armageddon/projectile-runtime.js";
 import { nativeArmageddonStart, nativeArmageddonTick } from "./armageddon/armageddon.js";
-import { nativeSchemeLoadouts, nativeSchemeWormEnergy } from "./armageddon/scheme-loadout.js";
+import { nativeSchemeLoadouts, nativeSchemeWormEnergy, nativeSchemeTiming } from "./armageddon/scheme-loadout.js";
 import { nativeCrateDropBag, nativeCrateDropDraw } from "./armageddon/crate-drop.js";
 import { nativeFlameBody } from "./armageddon/flame-body.js";
 import { registerNativeFlame } from "./armageddon/flame-spread.js";
@@ -508,6 +508,8 @@ let missionScript = null, missionState = null, missionRoundExpired = false, miss
 let nativeArmageddon = null;
 // Classic duel draws per-turn crates from the original scheme bag (004B7D00).
 let nativeCrateBag = null;
+// Classic duel pacing from the default scheme: round time and water rise.
+let nativeClassicTiming = null;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
@@ -1438,6 +1440,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   mode = $("#mode").value;
   applyWeather();
   nativeCrateBag = !currentScenario && $("#scheme").value === "classic" ? nativeCrateDropBag(195) : null;
+  nativeClassicTiming = nativeCrateBag ? nativeSchemeTiming(195) : null;
   // 004B2C44 arms the drop before the first turn as well.
   if (nativeCrateBag) drawNativeCrate(false);
   else spawnCrate();
@@ -3479,7 +3482,7 @@ function advanceNativeEnvironmentSettlement() {
   // Browser modes still supply scheme choices; the native stage owns event
   // order, the one-second transition and one-shot pending-flag consumption.
   const result = nativeSuddenDeathRepeat({ pending: pendingEnvironmentSettlement,
-    rise: WATER_RISE, dose: suddenDeathType === "nuke" ? 5 : suddenDeathType === "health" ? -1 : 0,
+    rise: nativeClassicTiming?.waterRise ?? WATER_RISE, dose: suddenDeathType === "nuke" ? 5 : suddenDeathType === "health" ? -1 : 0,
     nuclear: Number(suddenDeathType === "nuke") });
   pendingEnvironmentSettlement = result.pending;
   for (const call of result.calls) {
@@ -3586,7 +3589,7 @@ function applySuddenDeath() {
     nativeSoundQueue.enqueue([94, 8, 65536, 65536, 0]);
   }
   if (suddenDeathType === "water") {
-    const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
+    const rise = currentScenario?.suddenDeath?.waterRise || nativeClassicTiming?.waterRise || WATER_RISE;
     lastWaterRiseRound = round;
     startNativeWaterRise(waterLevel + rise, 8);
     return false;
@@ -3605,7 +3608,7 @@ function applySuddenDeath() {
   if (suddenDeathType === "nuke") {
     // The original controller emits these requests in order. Host rules still
     // supply the rise/dose until the scheme's environmental fields are live.
-    const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
+    const rise = currentScenario?.suddenDeath?.waterRise || nativeClassicTiming?.waterRise || WATER_RISE;
     const calls = nativeSuddenDeathActivation({ waterY: Math.floor(H - waterLevel),
       rise, dose: 5 });
     for (const call of calls) {
@@ -6133,7 +6136,7 @@ function nextTurn() {
     round++;
     if (sdTriggered && suddenDeath && suddenDeathType === "water" && round > lastWaterRiseRound) {
       lastWaterRiseRound = round;
-      const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
+      const rise = currentScenario?.suddenDeath?.waterRise || nativeClassicTiming?.waterRise || WATER_RISE;
       startNativeWaterRise(waterLevel + rise, 8);
     }
     if (
@@ -6142,7 +6145,7 @@ function nextTurn() {
     ) {
       spawnCrate(true);
     }
-    if (!sdTriggered && round >= 6 && !currentScenario?.suddenDeath?.disabled &&
+    if (!sdTriggered && round >= 6 && !nativeClassicTiming && !currentScenario?.suddenDeath?.disabled &&
         !currentScenario?.suddenDeath?.roundEnds) {
       if (applySuddenDeath()) return;
     }
@@ -6378,11 +6381,18 @@ function checkScenarioRoundTime() {
   if (currentScenario?.suddenDeath?.disabled) return;
   if (limit > 0 && matchElapsed >= limit) applySuddenDeath();
 }
+// Classic duel: sudden death starts when the scheme's round time runs out
+// (004B50A3/004B7391), not at the host's round six.
+function checkClassicRoundTime() {
+  if (!nativeClassicTiming || currentScenario || sdTriggered || phase === "over" || phase === "menu") return;
+  if (matchElapsed >= nativeClassicTiming.roundSeconds) applySuddenDeath();
+}
 function stepFrame(dt) {
   if (mapLoading) return;
   // 004EB110 decays the scene shake amplitude through 004EDA70 every frame.
   earthquakeShake = nativeCameraShakeDecay(earthquakeShake);
   checkScenarioRoundTime();
+  checkClassicRoundTime();
   if (currentScenario?.displayRoundTime && Math.floor(matchElapsed) !== scenarioClockSecond) {
     scenarioClockSecond = Math.floor(matchElapsed);
     updateScenarioObjectiveHUD();

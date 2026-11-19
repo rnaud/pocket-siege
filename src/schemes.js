@@ -1,4 +1,7 @@
 export const SCHEMES = {
+  // Pace matches the original default scheme (resource 195): 45 s turns,
+  // 3 s retreat and Sudden Death Event 2 (every worm to 1 HP) after the
+  // 15-minute round, with the scheme's water rise.
   classic: {
     label: "Classic duel",
     format: "single",
@@ -6,7 +9,7 @@ export const SCHEMES = {
     modifier: "standard",
     turnTime: 45,
     retreatTime: 3,
-    suddenDeath: "water",
+    suddenDeath: "health",
     stockpile: false,
     crateRain: false,
   },

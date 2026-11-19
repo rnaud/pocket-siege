@@ -1831,3 +1831,17 @@ test("classic duel starts with the original default scheme kit", async ({ page }
   })).toEqual({ grenade: true, shotgun: true, mortar: 5, cluster: 3, homing: 1, supersheep: 0,
     holy: 0, rope: 5, girder: 3, jetpack: 0 });
 });
+
+test("classic duel sudden death waits for the scheme's fifteen-minute round", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  expect(await page.locator("#sudden-death").inputValue()).toBe("health");
+  await page.locator("#start").click();
+  // The host round-six trigger no longer applies; round time drives it.
+  for (let i = 0; i < 14; i++) await page.evaluate(() => window.siege.debug.finishTurn());
+  expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(false);
+  for (const frames of [15000, 15000, 15500])
+    await page.evaluate((count) => window.siege.debug.advanceReplayFrames(count), frames);
+  expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(true);
+});

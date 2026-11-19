@@ -42,7 +42,8 @@ export function defaultSettings() {
     scheme: "classic",
     turnTime: 45,
     retreatTime: 3,
-    suddenDeath: "water",
+    // Classic duel uses the default scheme's Sudden Death Event 2.
+    suddenDeath: "health",
   };
 }
 

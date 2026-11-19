@@ -94,3 +94,9 @@ test("classic crate drops draw from the original 100-entry scheme bag", { tag: "
   expect(drawn).toEqual(counts);
   expect(state.available).toHaveLength(100);
 });
+
+test("default scheme pacing decodes turn, retreat, round and sudden death", { tag: "@logic" }, async () => {
+  const { nativeSchemeTiming } = await import("../src/armageddon/scheme-loadout.js");
+  expect(nativeSchemeTiming(195)).toEqual({ retreatTime: 3, turnTime: 45, roundSeconds: 900,
+    suddenDeathEvent: 2, waterRise: 20 });
+});

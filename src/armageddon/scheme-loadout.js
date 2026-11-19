@@ -40,3 +40,19 @@ export function nativeSchemeWormEnergy(resourceId, handicap = 0) {
   const energy = scheme.bytes[0x15];
   return (energy + Math.trunc(energy * ((handicap << 24) >> 24) * 25 / 100)) & 65535;
 }
+
+// Match pacing from the raw scheme, as 00417278 expands it: retreat byte 1,
+// Sudden Death Event byte 0xa (0 round ends, 1 nuclear, 2 one HP, 3 nothing),
+// water rise byte 0xb (setup 0xd5ec = rate^2 * 5), turn time byte 0x16 and
+// round time byte 0x17 (minutes, or seconds when negative; setup 0xd5de).
+export function nativeSchemeTiming(resourceId) {
+  const scheme = resources.schemes.find(row => row.resource_id === resourceId);
+  if (!scheme) throw new RangeError(`Unknown native scheme resource ${resourceId}`);
+  const bytes = scheme.bytes, signed = offset => (bytes[offset] << 24) >> 24;
+  const round = signed(0x17);
+  return {
+    retreatTime: bytes[1], turnTime: signed(0x16),
+    roundSeconds: round < 0 ? -round : round * 60,
+    suddenDeathEvent: signed(0xa), waterRise: (bytes[0xb] * bytes[0xb] * 5) & 255,
+  };
+}
