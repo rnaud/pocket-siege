@@ -2119,7 +2119,7 @@ function updateUI() {
   const loadout = ammo[team] ?? {};
   // Recovery can finish without changing HP or knocked state. Refresh controls
   // whenever action eligibility changes, including native hurt/recovery gates.
-  const key = `${canAct()}|${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${bungeeArmed}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${Object.values(utilityAmmo[team] ?? {}).join(",")}|${worms[current]?.nativeTeamModifiers || 0}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}`;
+  const key = `${canAct()}|${!!pendingFire}|${weaponDelays[team].delays.join(",")}|${shotgunRemaining}|${current}|${phase}|${team}|${mode}|${weapon}|${replaying}|${charging}|${retreat > 0}|${menu.open}|${wormLocked}|${suddenDeath}|${poisoned}|${utilitiesOpen}|${activeUtility}|${targetUtility}|${rope.attached}|${bungeeArmed}|${Math.ceil(rope.length)}|${jetpack.active}|${Math.ceil(jetpack.fuel)}|${Object.values(loadout).join(",")}|${Object.values(utilityAmmo[team] ?? {}).join(",")}|${worms[current]?.nativeTeamModifiers || 0}|${specialOpen}|${worms.map((w) => `${w.hp}:${w.knocked}`).join(",")}|${crates.map((c) => `${c.kind}:${c.content}`).join(",")}`;
   if (key === uiKey) return;
   uiKey = key;
   updateCrateSpyHUD();
