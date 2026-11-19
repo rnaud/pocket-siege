@@ -172,6 +172,9 @@ export function resolveScenarioMatch(path) {
     friction: read(record, "Enviroment", "Friction", null),
     fallDamage: read(record, "Options", "FallDamage", null),
     mineFuse: read(record, "Options", "MineFuse", null),
+    // nativeLoadMissionScheme writes ObjectType (fallback0) over the scheme's
+    // natural-object setting, so scenarios only receive their authored objects.
+    objectType: read(record, "Options", "ObjectType", 0),
     weaponsDontEndTurn: read(record, "Options", "WeaponsDontEndTurn", 0) === 1,
     turnEndFinishesGame: read(record, "Options", "TurnEndFinishesGame", 0) === 1,
     lossOfControlDoesntEndTurn: read(record, "Options", "LossOfControlDoesntEndTurn", 0) === 1,

@@ -1121,3 +1121,22 @@ test("live state exposes the worm alliance identity", async ({ page }) => {
   expect(worms[3].allianceName).toBe("Cannon Fodder");
   expect(worms[6].allianceName).toBe("Patrol");
 });
+
+test("ObjectType 0 scenarios start with only authored objects", async ({ page }) => {
+  expect(resolveScenarioMatch("mission/mission0.wam").objectType).toBe(0);
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), { timeout: 30000 })
+    .toBeGreaterThan(0);
+  await page.waitForTimeout(500);
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.mines.filter((mine) => !mine.scenario)).toHaveLength(0);
+  expect(state.mines).toHaveLength(8);
+  expect(state.explosions).toBe(0);
+  expect(state.worms.filter((worm) => worm.team === 1).map((worm) => worm.hp))
+    .toEqual([45, 45, 45, 100, 45, 45]);
+});

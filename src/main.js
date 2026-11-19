@@ -1271,7 +1271,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         terrain,
         waterLevel,
         slots.length,matchSeed,preparedNativeMapTheme(terrain.theme,true),
-        nativeDefaultMapObjects,
+        currentScenario?.objectType === 0 ? { ...nativeDefaultMapObjects, count: 0 } : nativeDefaultMapObjects,
       )
     : slots.map((x) => ({ x, y: null }));
   if (currentScenario?.teamWorms) {
