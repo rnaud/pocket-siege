@@ -384,8 +384,8 @@
     {
       "slot": 47,
       "native_name": "PetrolBomb",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "napalm",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 2
     },
@@ -552,8 +552,8 @@
     {
       "slot": 68,
       "native_name": "CrateSpy",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "cratespy",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 19
     },
