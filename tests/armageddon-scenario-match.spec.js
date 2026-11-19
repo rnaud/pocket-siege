@@ -75,7 +75,7 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission0.wam").teamSkill).toBe(80);
   expect(resolveScenarioMatch("mission/mission0.wam").teamWorms[1][0].fixedWeapon).toBe("earthquake");
   expect(resolveScenarioMatch("mission/mission0.wam").teamWorms[1][0].actionRadius).toBe(0);
-  expect(resolveScenarioMatch("mission/mission0.wam").teamNames[1]).toBe("Patrol");
+  expect(resolveScenarioMatch("mission/mission0.wam").teamNames[1]).toBe("Patrol + Gunners");
   expect(resolveScenarioMatch("mission/mission12.wam").wormSelectDisabled).toBe(false);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,

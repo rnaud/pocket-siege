@@ -65,7 +65,10 @@ function scenarioTeamNames(record) {
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
     const value = team.entries.find(([key]) => key.toLowerCase() === "teamnamenumber")?.[1];
     const number = Number.parseInt(value, 10);
-    if (Number.isFinite(number) && !names[index]) names[index] = originalResourceString(712 + number);
+    if (Number.isFinite(number)) {
+      const name = originalResourceString(712 + number);
+      if (name) names[index] = names[index] ? `${names[index]} + ${name}` : name;
+    }
   }
   return names;
 }
