@@ -60,6 +60,7 @@ export const AUTOMATIC_UTILITIES = {
   doubledamage: { label: "Double Damage", slot: 67 },
   cratespy: { label: "Crate Spy", slot: 68 },
   doubletime: { label: "Double Time", slot: 69 },
+  crateshower: { label: "Crate Shower", slot: 70 },
 };
 
 export function freshUtilities() {

@@ -568,8 +568,8 @@
     {
       "slot": 70,
       "native_name": "CrateShower",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "crateshower",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 19
     }

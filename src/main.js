@@ -53,6 +53,8 @@ import nativeWaterSpriteIds from "./armageddon/water-sprite-ids.json";
 import { NativeSoundQueue } from "./armageddon/sound-queue.js";
 import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
 import { nativeAutomaticUtilities } from "./armageddon/automatic-utilities.js";
+import { createNativeCrateScheme } from "./armageddon/crate-scheme.js";
+import { nativeCrateShowerTick } from "./armageddon/crate-shower.js";
 import { nativePickupCandidate } from "./armageddon/crate-pickup.js";
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponFlag, nativeReactionWeaponUse, nativeDamageReactionVoice } from "./armageddon/damage-reactions.js";
 import { loadNativeAnnouncementArt, updateNativeAnnouncement } from "./armageddon/announcement-art.js";
@@ -464,6 +466,21 @@ let announcementVolume = 0, announcementPlayback = null;
 let weaponDelays = [createWeaponDelays(), createWeaponDelays()];
 const availableAmmo = (loadout, kind) =>
   ammoFor(loadout, kind, weaponDelays[team]);
+// Native pickup slots for utilities that are not part of WEAPON_SLOTS.
+const NATIVE_UTILITY_SLOTS = {
+  34: "girder", 37: "rope", 38: "bungee", 39: "parachute", 40: "teleport",
+  60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk",
+  67: "doubledamage", 68: "cratespy", 69: "doubletime", 70: "crateshower",
+};
+const NATIVE_WEAPON_KINDS = Object.fromEntries(
+  Object.entries(WEAPON_SLOTS).map(([kind, slot]) => [slot, kind]),
+);
+function crateShowerSlotKind(slot) {
+  if (NATIVE_WEAPON_KINDS[slot]) return { kind: NATIVE_WEAPON_KINDS[slot], type: "weapon" };
+  if (NATIVE_UTILITY_SLOTS[slot]) return { kind: NATIVE_UTILITY_SLOTS[slot], type: "utility" };
+  return null;
+}
+let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1016,6 +1033,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   utilityAmmo = carriedUtilities ?? [freshUtilities(), freshUtilities()];
   damageMultiplier = 1;
   automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 };
+  crateShowerPool = null; crateShowerUsed = []; crateShowerAmmo = null;
   teamWeapon = ["rocket", "rocket"];
   waterLevel = WATER;
   nativeWaterRise = null;
@@ -1299,6 +1317,55 @@ function spawnCrate(announceDrop = false) {
       nativeSoundQueue.enqueue([81, 8, 65536, 65536, 0]);
     }
   }
+}
+function spawnShowerCrate(record, mapping, quantity) {
+  const kind = mapping.type === "utility" ? "utility" : "special";
+  const x = record.x / 65536, y = H - record.y / 65536;
+  const mesh = createOriginalObject(crateOpeningSprite(kind), -10);
+  mesh.position.set(x, y, 18);
+  group.add(mesh);
+  const crate = {
+    nativeOrderId: nativeRenderOrder.allocate(),
+    content: mapping.kind,
+    quantity: mapping.type === "weapon" ? Math.max(1, quantity | 0) : 1,
+    x, y, kind, mesh, falling: true, vy: 0,
+  };
+  crate.nativeBody = createNativeCrateBody({
+    kind: nativeCrateKind(kind), x: record.x, y: record.y,
+  }, 1, nativeProjectileDepth(Math.floor(H - waterLevel)), NATIVE_MINE_FRICTION, {
+    shape: (body, shape) => { body.shape = shape; },
+    collide: (cx, cy, body) => nativeSceneCollision(crate, body, cx / 65536, H - cy / 65536, terrain, worms, H),
+    sound: queueCrateSound,
+  });
+  crates.push(crate);
+}
+function stepCrateShower() {
+  const state = automaticUtilityState;
+  if (!state.crateShower || state.crateCount <= 0 || !crateShowerPool || !terrain) return;
+  const scene = new NativeCollisionScene(terrain, H);
+  scene.syncWorms(worms);
+  scene.syncObjects([...mines, ...crates, ...hazards]);
+  const result = nativeCrateShowerTick({
+    count: state.crateCount, timer: state.crateTimer,
+    pool: crateShowerPool, used: crateShowerUsed,
+  }, {
+    parent: () => 25, busy: () => {},
+    nextRandom: () => matchRandom.logicUint(),
+    bottom: Math.floor(H - waterLevel), tall: H > 960,
+    collide: (shape, x, y, flags) =>
+      x < 0 || x >= (W << 16) ? 1 : scene.probe(shape, x, y, flags),
+    nearest: (...args) => scene.nearest(...args),
+    ammo: slot => crateShowerAmmo?.[slot] ?? 1,
+    allocate: () => true,
+    create: (allocation, parent, record, quantity) => {
+      const mapping = crateShowerSlotKind(record.weapon);
+      if (mapping) spawnShowerCrate(record, mapping, quantity);
+    },
+  });
+  automaticUtilityState.crateCount = result.count;
+  automaticUtilityState.crateTimer = result.timer;
+  crateShowerPool = result.pool;
+  crateShowerUsed = result.used;
 }
 function spawnHazards(requests=null) {
   if (hazards.length || !terrain) return;
@@ -1662,6 +1729,7 @@ function beginTurn() {
   gravityScale = modifierSettings(modifier).gravityScale;
   damageMultiplier = 1;
   automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 };
+  crateShowerPool = null; crateShowerUsed = []; crateShowerAmmo = null;
   matchDamageSourceActive = false;
   nativeDamageReaction = { ...createNativeDamageReaction(), firstBlood: nativeDamageReaction.firstBlood };
   nativeClockTarget = 65536;
@@ -5033,14 +5101,23 @@ function queueControllerSpeech(request,owner=worms[current]) {
 function submitQueuedSound(request) {
   playNativeQueuedSound(audio, request);
 }
+function initializeCrateShower() {
+  const native = createNativeCrateScheme(195);
+  crateShowerAmmo = native.ammo;
+  crateShowerPool = native.pool.filter((slot) => crateShowerSlotKind(slot));
+  crateShowerUsed = [];
+}
 function updateAutomaticUtilities() {
   const loadout = utilityAmmo[team];
-  if (!worms[current] || (!loadout.doubledamage && !loadout.cratespy && !loadout.doubletime)) return;
+  if (!worms[current] || (!loadout.doubledamage && !loadout.cratespy &&
+      !loadout.doubletime && !loadout.crateshower)) return;
+  const wasShower = automaticUtilityState.crateShower;
   const result = nativeAutomaticUtilities({
     ...automaticUtilityState, team: team + 1,
     time: Math.round(time * 1000), flags: worms[current].nativeTeamModifiers || 0,
-  }, [loadout.doubledamage, loadout.cratespy, loadout.doubletime, 0]);
+  }, [loadout.doubledamage, loadout.cratespy, loadout.doubletime, loadout.crateshower]);
   automaticUtilityState = result.body;
+  if (result.body.crateShower && !wasShower) initializeCrateShower();
   time = result.body.time / 1000;
   for (const w of worms) if (w.team === team) w.nativeTeamModifiers = result.body.flags;
   for (const [kind, utility] of Object.entries(AUTOMATIC_UTILITIES))
@@ -5113,7 +5190,10 @@ function stepFrame(dt) {
   }
   tickOriginalWindHUD(wind);
   nativeBusy.tick();
-  if (phase !== "over" && phase !== "break" && phase !== "menu") updateAutomaticUtilities();
+  if (phase !== "over" && phase !== "break" && phase !== "menu") {
+    updateAutomaticUtilities();
+    stepCrateShower();
+  }
   nativeAnnouncementTick(nativeAnnouncements);
   const announcementAudio = nativeAnnouncementAudioTick(announcementVolume, announcementPlayback ? 17 : 0, nativeAnnouncements.blocking);
   announcementVolume = announcementAudio.volume;
@@ -7396,6 +7476,10 @@ if (import.meta.env.DEV) {
     },
     setAmmo(teamIndex = 0, kind = "grenade", value = 5) {
       ammo[teamIndex][kind] = value;
+      updateUI();
+    },
+    setUtility(teamIndex = 0, kind = "crateshower", value = 1) {
+      utilityAmmo[teamIndex][kind] = value;
       updateUI();
     },
     resetSeed(seed = 42) {

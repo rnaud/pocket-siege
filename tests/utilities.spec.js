@@ -646,3 +646,18 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(collide(body.x, body.y, body)).toBe(0);
   expect(collide(body.x, body.y + 65536, body)).toBe(1);
 });
+
+test("crate shower drops native supply crates", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.setUtility(0, "crateshower", 1));
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().utilities.crateshower))
+    .toBe(0);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().crates.length), {
+      timeout: 30000,
+    })
+    .toBeGreaterThanOrEqual(5);
+});
