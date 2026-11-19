@@ -344,8 +344,8 @@
     {
       "slot": 42,
       "native_name": "SuperBananaBomb",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "superbanana",
+      "status": "partial",
       "native_action_type": 1,
       "native_action_subtype": 2
     },

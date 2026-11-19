@@ -326,3 +326,21 @@ test("native live launch geometry uses body-origin throws and fourteen-pixel roc
     }
   }
 });
+
+test("native super banana detonates into five repeat-guarded bomblets", { tag: "@logic" }, () => {
+  const banana = projectile("superbanana", { x: 200, y: 400 });
+  expect(banana.nativeDetonation).toMatchObject({
+    sprite: 662, damage: 75, push: 100, secondary: 1,
+  });
+  expect(banana.nativeFragmentConfig).toMatchObject({
+    count: 5, speed: 45, variance: 30, direction: 0, spread: 25,
+  });
+  expect(nativeProjectileDetonationEvents(banana, () => 0).some(
+    (event) => event.operation === "fragments",
+  )).toBe(true);
+  const children = nativeProjectileChildren(banana, 650, () => 12345);
+  expect(children).toHaveLength(5);
+  expect(children.map((child) => child.nativeRepeat)).toEqual([1, 2, 3, 4, 5]);
+  expect(children.every((child) => child.nativeDetonation.secondary === 1)).toBe(true);
+  expect(children.every((child) => nativeProjectileChildren(child, 650, () => 0).length === 0)).toBe(true);
+});
