@@ -88,8 +88,8 @@
     {
       "slot": 10,
       "native_name": "EarthQuake",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "earthquake",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 21
     },

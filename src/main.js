@@ -4294,6 +4294,18 @@ function syncTorchPosition(w, body) {
   if(w.originalBlowtorch)w.originalBlowtorch.body=body;
   w.x = body.x/65536; w.y = H-body.y/65536;
 }
+function useEarthquake() {
+  if (!canAct() || availableAmmo(ammo[team], "earthquake") <= 0) return;
+  const w = worms[current];
+  ammo[team].earthquake = spendAmmo(ammo[team].earthquake);
+  shotCount++;
+  recordReactionWeaponUse("earthquake");
+  for (const target of worms)
+    if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
+  w.recoil = 0.4;
+  $("#status").textContent = "Earthquake! The ground heaves.";
+  finishAction("Earthquake! Retreat!");
+}
 function useSelfDestruct(kind) {
   if (!canAct() || availableAmmo(ammo[team], kind) <= 0) return;
   const w = worms[current];
@@ -4569,6 +4581,10 @@ function fire() {
   const w = worms[current],
     kind = weapon,
     meta = WEAPONS[kind];
+  if (kind === "earthquake") {
+    useEarthquake();
+    return;
+  }
   if (kind === "kamikaze" || kind === "suicidebomber") {
     useSelfDestruct(kind);
     return;

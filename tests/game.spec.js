@@ -1166,7 +1166,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(47);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(48);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1406,7 +1406,7 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
   await openArsenal(page);
   for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
     "aquasheep", "donkey", "oldwoman", "molesquadron", "mingvase",
-    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb", "kamikaze", "suicidebomber"]) {
+    "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb", "earthquake", "kamikaze", "suicidebomber"]) {
     await expect(page.locator(`[data-weapon="${kind}"]`)).toBeVisible();
   }
 });
@@ -1439,4 +1439,26 @@ test("crate spy reveals the current crate contents", async ({ page }) => {
     .toBeGreaterThan(0);
   await page.evaluate(() => window.siege.debug.setTeamModifier(0x20, 0));
   await expect(page.locator("#crate-spy")).toContainText("CRATES:");
+});
+
+test("earthquake damages grounded worms", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase))
+    .toBe("aim");
+  const before = await page.evaluate(() =>
+    window.siege.getState().worms.reduce((sum, w) => sum + w.hp, 0));
+  await page.locator('[data-weapon="earthquake"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() =>
+      window.siege.getState().worms.reduce((sum, w) => sum + w.hp, 0)),
+    { timeout: 10000 })
+    .toBeLessThan(before);
 });
