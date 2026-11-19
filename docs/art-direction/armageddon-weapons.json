@@ -296,8 +296,8 @@
     {
       "slot": 36,
       "native_name": "BridgeKit",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "bridgekit",
+      "status": "partial",
       "native_action_type": 4,
       "native_action_subtype": 17
     },

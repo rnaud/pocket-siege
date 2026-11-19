@@ -469,7 +469,7 @@ const availableAmmo = (loadout, kind) =>
 // Native pickup slots for utilities that are not part of WEAPON_SLOTS.
 const NATIVE_UTILITY_SLOTS = {
   34: "girder", 37: "rope", 38: "bungee", 39: "parachute", 40: "teleport",
-  60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk", 65: "laser", 66: "invisibility",
+  36: "bridgekit", 60: "freeze", 62: "jetpack", 63: "lowgravity", 64: "fastwalk", 65: "laser", 66: "invisibility",
   67: "doubledamage", 68: "cratespy", 69: "doubletime", 70: "crateshower",
 };
 const NATIVE_WEAPON_KINDS = Object.fromEntries(
@@ -2073,7 +2073,7 @@ function updateUI() {
         : targetUtility === "teleport"
           ? "◎ AIM"
           : targetUtility === "girder"
-            ? "▰ AIM"
+            ? (activeUtility === "bridgekit" ? "▬ AIM" : "▰ AIM")
             : WEAPONS[targetUtility]?.special === "airstrike"
               ? "✈ AIM"
               : parachuteArmed
@@ -2334,8 +2334,10 @@ function handleUtilityTarget(e) {
     }
     // Convert the validated native bitmap row to the same host terrain row.
     if (!addGirder(px, H-1-py, 0, 64)) return;
-    utilityAmmo[team].girder = spendAmmo(utilityAmmo[team].girder);
-    finishUtilityTurn("Girder placed. Turn over.");
+    const placedKind = activeUtility === "bridgekit" ? "bridgekit" : "girder";
+    utilityAmmo[team][placedKind] = spendAmmo(utilityAmmo[team][placedKind]);
+    activeUtility = null;
+    finishUtilityTurn(placedKind === "bridgekit" ? "Bridge placed. Turn over." : "Girder placed. Turn over.");
   }
 }
 function useUtility(kind) {
@@ -2411,6 +2413,14 @@ function useUtility(kind) {
     activeUtility = null;
     utilitiesOpen = false;
     $("#utility-status").textContent = "Squad cloaked until the next turn.";
+    updateUI();
+    return;
+  }
+  if (kind === "bridgekit") {
+    targetUtility = "girder";
+    activeUtility = "bridgekit";
+    utilitiesOpen = false;
+    $("#status").textContent = "Click or tap to place a bridge.";
     updateUI();
     return;
   }

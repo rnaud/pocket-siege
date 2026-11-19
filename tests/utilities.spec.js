@@ -344,6 +344,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     "lowgravity",
     "laser",
     "invisibility",
+    "bridgekit",
   ]);
   expect(loadout.rope).toBe(Infinity);
   expect(loadout.jetpack).toBe(1);
@@ -352,6 +353,7 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.lowgravity).toBe(0);
   expect(loadout.laser).toBe(1);
   expect(loadout.invisibility).toBe(1);
+  expect(loadout.bridgekit).toBe(1);
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
@@ -706,4 +708,28 @@ test("invisibility cloaks the active squad until the next turn", async ({ page }
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.utilities.invisibility).toBe(0);
   expect(state.worms.filter((worm) => worm.team === 0).every((worm) => worm.invisible)).toBe(true);
+});
+
+test("bridge kit spends its own inventory on native placement", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="bridgekit"]').click();
+  const before = await page.evaluate(() => window.siege.getState());
+  await page.evaluate(() => {
+    const state = window.siege.getState(), worm = state.worms[state.current], camera = state.camera;
+    const arena = document.querySelector("#arena"), box = arena.getBoundingClientRect();
+    arena.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", button: 0,
+      clientX: box.x + (worm.x + 80 - camera.x) / camera.w * box.width,
+      clientY: box.y + (1 - (worm.y + 100 - camera.y) / camera.h) * box.height }));
+  });
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.girders.length).toBeGreaterThan(0);
+  expect(state.utilities.bridgekit).toBe(0);
+  expect(state.phase).toBe("settle");
+  expect(before.utilities.bridgekit).toBe(1);
 });

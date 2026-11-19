@@ -63,6 +63,12 @@ export const UTILITIES = {
     fresh: 1,
     help: "Cloak your squad until the next turn",
   },
+  bridgekit: {
+    label: "Bridge Kit",
+    icon: "▬",
+    fresh: 1,
+    help: "Place a bridge with the native placement checks",
+  },
 };
 
 export const UTILITY_KINDS = Object.keys(UTILITIES);
