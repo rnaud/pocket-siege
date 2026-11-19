@@ -22,6 +22,10 @@ export function resolveScenarioMatch(path) {
   const name = read(record, "Description", "Name", Number(match[2]));
   const terrainName = `mission/${training ? "training" : "mission"}${name}.img`;
   const terrain = mapNames[terrainName]?.id ?? null;
+  const teams = read(record, "Teams", "TeamsInMission", 1);
+  let worms = read(record, "HumanTeam", "NumberOfWorms", 1);
+  for (let team = 1; team < teams; team++)
+    worms += read(record, `CPUTeam${team}`, "NumberOfWorms", 1);
   return {
     path,
     training,
@@ -30,6 +34,10 @@ export function resolveScenarioMatch(path) {
     turnTime: read(record, "Options", "TurnTime", 45),
     retreatTime: read(record, "Options", "LandRetreatTime", 3),
     roundTime: read(record, "Options", "RoundTime", 0),
+    teams,
+    worms,
+    difficulty: read(record, "Description", "Difficulty", 0),
+    winningCondition: read(record, "Mission", "WinningCondition", 0),
     objects: scenarioInitialObjects(record),
   };
 }

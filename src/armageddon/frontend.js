@@ -112,6 +112,13 @@ export function mountArmageddonFrontend(host = {}) {
           preview.append(image);
         }
         preview.append(note);
+        const composition = resolveScenarioMatch(path);
+        if (composition) {
+          const meta = document.createElement('p');
+          meta.className = 'frontend-scenario-meta';
+          meta.textContent = `${composition.teams} team${composition.teams === 1 ? '' : 's'} · ${composition.worms} worm${composition.worms === 1 ? '' : 's'} · ${composition.turnTime}s turns`;
+          preview.append(meta);
+        }
         const play = document.createElement('button');
         play.type = 'button';
         play.className = 'frontend-play-scenario';

@@ -21,6 +21,10 @@ test("every mission and training resolves its original landscape and turn rules"
     terrain: "mission/missi~11.img",
     turnTime: 45,
     retreatTime: 3,
+    teams: 3,
+    worms: 7,
+    difficulty: 1,
+    winningCondition: 3,
   });
   expect(mission0.objects).toHaveLength(13);
   expect(mission0.objects[0]).toMatchObject({
@@ -48,6 +52,7 @@ test("campaign scenario starts on its original landscape and turn rules", async 
   await first.click();
   const play = page.locator(".frontend-play-scenario");
   await expect(play).toBeVisible();
+  await expect(page.locator(".frontend-scenario-meta")).toContainText("3 teams · 7 worms");
   await play.click();
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().mapLayout), {
