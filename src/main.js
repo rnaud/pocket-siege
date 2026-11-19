@@ -1380,7 +1380,7 @@ function spawnCrate(announceDrop = false) {
   const crate = {
     nativeOrderId: nativeRenderOrder.allocate(),
     content: chooseCrateContent(kind),
-    quantity: kind === "health" ? 25 : 1,
+    quantity: kind === "health" ? (currentScenario?.healthCrateEnergy ?? 25) : 1,
     x,
     y,
     kind,
@@ -3680,7 +3680,7 @@ function spawnNaturalMine(request) {
   registerLiveMine(mine,0);
 }
 function spawnStrikeMine(payload) {
-  const timer = { ...nativeMineInitialTimer(), damage: NATIVE_MINE_DAMAGE,
+  const timer = { ...scenarioMineTimer(), damage: NATIVE_MINE_DAMAGE,
     placed: 0, forceBlast: 0, dud: 0 };
   const mine = { owner: -1, team: -1, arm: timer.arm / 1000, nativeTimer: timer,
     nativeWater: { bubbleProgress: 0, waterFlagsSet: 0, splashActive: 0 },
@@ -3698,6 +3698,11 @@ function spawnStrikeMine(payload) {
   registerLiveMine(mine, 0);
   return mine;
 }
+function scenarioMineTimer() {
+  const timer = nativeMineInitialTimer();
+  if (currentScenario?.mineFuse > 0) timer.fuse = Math.round(currentScenario.mineFuse * 1000);
+  return timer;
+}
 function spawnPlacedMine(release) {
   const w = worms[current],
     mesh = createOriginalObject("mineoff", 4);
@@ -3705,8 +3710,8 @@ function spawnPlacedMine(release) {
     ...release,
     owner: current,
     team,
-    arm: nativeMineInitialTimer().arm / 1000,
-    nativeTimer: { ...nativeMineInitialTimer(), damage: NATIVE_MINE_DAMAGE, placed: 1, forceBlast: 0, dud: 0 },
+    arm: scenarioMineTimer().arm / 1000,
+    nativeTimer: { ...scenarioMineTimer(), damage: NATIVE_MINE_DAMAGE, placed: 1, forceBlast: 0, dud: 0 },
     nativeWater: { bubbleProgress: 0, waterFlagsSet: 0, splashActive: 0 },
     mesh,
     bob: visualRandom() * Math.PI * 2,
@@ -7614,6 +7619,7 @@ window.siege = {
     invisibleTeam,
     friction: matchFriction,
     fallDamageScale,
+    mineFuse: currentScenario?.mineFuse ?? null,
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,

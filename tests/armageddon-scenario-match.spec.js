@@ -46,6 +46,8 @@ test("every mission and training resolves its original landscape and turn rules"
   });
   expect(resolveScenarioMatch("mission/mission15.wam").friction).toBe(40);
   expect(resolveScenarioMatch("mission/training13.wam").fallDamage).toBe(3);
+  expect(resolveScenarioMatch("mission/mission1.wam").mineFuse).toBe(4);
+  expect(resolveScenarioMatch("mission/mission17.wam").healthCrateEnergy).toBe(15);
   expect(resolveScenarioMatch("mission/mission0.wam").crateDrops).toEqual({
     weapon: 0, health: 0, utility: 0,
   });
@@ -351,4 +353,19 @@ test("scenario sudden-death worm damage drains health each turn", async ({ page 
   const after = await page.evaluate(() =>
     window.siege.getState().worms.map((worm) => worm.hp));
   expect(after.some((hp, index) => hp < before[index])).toBe(true);
+});
+
+
+test("scenario mine fuse feeds the live mine timer", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission1.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().mineFuse)).toBe(4);
 });
