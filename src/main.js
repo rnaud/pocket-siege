@@ -1759,7 +1759,9 @@ function advanceScenarioProgress(crate) {
   announce(scenarioProgress.complete
     ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}`
     : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}`);
-  if (!scenarioProgress.complete) spawnNextScenarioSequence();
+  if (scenarioProgress.complete) {
+    if (currentScenario?.training) finishMatch(0, false);
+  } else spawnNextScenarioSequence();
 }
 function collectCrate(w, crate = crates[0]) {
   if (!crate || !crates.includes(crate)) return;

@@ -116,3 +116,28 @@ test("training scenario places sequence targets as they are collected", async ({
     .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
     .toBe(1);
 });
+
+test("completing a training course resolves the match as a win", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator(".frontend-mission-list button").first().click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const total = await page.evaluate(() => window.siege.getState().scenario.total);
+  for (let i = 0; i < total; i++) {
+    await page.evaluate(() => window.siege.debug.collectScenarioCrate());
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
+      .toBe(i + 1);
+  }
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), {
+      timeout: 10000,
+    })
+    .toBe("over");
+});
