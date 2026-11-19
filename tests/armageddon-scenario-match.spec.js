@@ -141,3 +141,30 @@ test("completing a training course resolves the match as a win", async ({ page }
     })
     .toBe("over");
 });
+
+test("completing a target-condition mission resolves the match as a win", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator(".frontend-mission-list button").first().click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().scenario.total)).toBe(4);
+  for (let i = 0; i < 4; i++) {
+    await page.evaluate(() => window.siege.debug.collectScenarioCrate());
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().scenario.collected))
+      .toBe(i + 1);
+  }
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), {
+      timeout: 10000,
+    })
+    .toBe("over");
+});

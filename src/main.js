@@ -1762,7 +1762,10 @@ function advanceScenarioProgress(crate) {
     ? `SCENARIO TARGETS COMPLETE ${scenarioProgress.collected}/${scenarioProgress.total}`
     : `SCENARIO TARGET ${scenarioProgress.collected}/${scenarioProgress.total}`);
   if (scenarioProgress.complete) {
-    if (currentScenario?.training) finishMatch(0, false);
+    // 00442000 groups WinningCondition1/3 into the objective mode; 0/2 keep
+    // the ordinary elimination end conditions.
+    if (currentScenario?.training || [1, 3].includes(currentScenario?.winningCondition))
+      finishMatch(0, false);
   } else spawnNextScenarioSequence();
 }
 function collectCrate(w, crate = crates[0]) {
