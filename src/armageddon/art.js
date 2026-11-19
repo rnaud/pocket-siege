@@ -135,6 +135,7 @@ const names = [
     "lshpwlk",
     "sheepwlk",
     "donkey",
+    "woman",
     "shptruck",
     "sheepbrn",
     "clustlet",
