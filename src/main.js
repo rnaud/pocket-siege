@@ -8099,6 +8099,7 @@ window.siege = {
     terrainPixels: terrain.data.reduce((a, b) => a + b, 0),
     worms: worms.map(
       ({
+        team,
         nativeSpeechBank,
         name,
         hp,
@@ -8129,6 +8130,7 @@ window.siege = {
         invisible,
       }) => ({
         nativeSpeechBank,
+        team,
         name,
         hp,
         damageTaken,

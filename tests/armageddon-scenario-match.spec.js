@@ -917,3 +917,20 @@ test("mission rosters support a fourth worm per side", async ({ page }) => {
   expect(worms).toHaveLength(7);
   expect(worms[6].hp).toBeGreaterThan(0);
 });
+
+test("the largest mission fields six worms per side", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission22.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const worms = await page.evaluate(() => window.siege.getState().worms);
+  expect(worms).toHaveLength(12);
+  for (const team of [0, 1])
+    expect(worms.filter((worm) => worm.team === team)).toHaveLength(6);
+});
