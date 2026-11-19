@@ -5103,6 +5103,10 @@ const WALKING_UNIT_KINDS = new Set([
   "sheep", "supersheep", "aquasheep", "donkey",
   "oldwoman", "sallyarmy", "skunk", "madcow", "molebomb",
 ]);
+const WALKING_UNIT_SPEED = {
+  sheep: 0.9, supersheep: 1.2, aquasheep: 1.0, donkey: 1.3,
+  oldwoman: 0.45, sallyarmy: 0.8, skunk: 0.7, madcow: 1.25, molebomb: 0.6,
+};
 function walkingUnitGrounded(x, y) {
   for (const offset of [-8, -4, 0, 4]) if (terrain.solid(x, y + offset)) return true;
   return false;
@@ -5112,7 +5116,7 @@ function stepWalkingUnit(p) {
   if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
   if (!walkingUnitGrounded(p.x, p.y)) return;
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
-  const step = p.walkFacing * 0.8;
+  const step = p.walkFacing * (WALKING_UNIT_SPEED[p.kind] ?? 0.8);
   const aheadX = p.x + step * 4;
   if (!walkingUnitGrounded(aheadX, p.y) ||
       (terrain.solid(aheadX, p.y - 4) && !terrain.solid(p.x, p.y - 4))) {
