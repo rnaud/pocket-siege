@@ -2475,6 +2475,7 @@ function handleUtilityTarget(e) {
     activeUtility = null;
     startNativeNuclearEffect(8);
     explode(x, y, "nuclearbomb", team);
+    infectPoisonCloud(x, y, WEAPONS.nuclearbomb.radius, 20);
     finishAction("Nuclear bomb! Retreat!");
     return;
   }
@@ -4339,6 +4340,7 @@ function useArmageddon() {
   shotCount++;
   recordReactionWeaponUse("armageddon");
   startNativeNuclearEffect(8);
+  infectPoisonCloud(W / 2, H / 2, Math.max(W, H), 20);
   for (const w of worms) if (w.hp > 0) injure(w, 100);
   $("#status").textContent = "Armageddon. The island burns.";
   finishAction("Armageddon. Retreat!");

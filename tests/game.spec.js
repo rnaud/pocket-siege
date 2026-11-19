@@ -1552,6 +1552,9 @@ test("nuclear bomb targets a nuclear strike", async ({ page }) => {
       timeout: 10000,
     })
     .toBeGreaterThan(0);
+  expect(await page.evaluate(() =>
+    window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0),
+  )).toBe(true);
 });
 
 test("scales of justice caps health at 100 with uneven survivors", async ({ page }) => {
