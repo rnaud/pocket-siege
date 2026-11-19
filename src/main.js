@@ -2295,7 +2295,7 @@ function beginTurn() {
     : `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}${weatherNote}`;
   bannerTime = 1.8;
   $("#turn-banner").textContent =
-    `${teamDisplayNames[team]} · ${active.name.toUpperCase()}`;
+    `${activeTeamName(active)} · ${active.name.toUpperCase()}`;
   updateUI();
 }
 function updateUI() {
@@ -5837,6 +5837,14 @@ function jump(kind = "forward") {
 function hostileWorm(a, b) {
   return a.team !== b.team ||
     (Number.isFinite(a.alliance) && Number.isFinite(b.alliance) && a.alliance !== b.alliance);
+}
+function activeTeamName(worm) {
+  if (worm.team === 1 && worm.allianceName) {
+    const groups = new Set(worms.filter((w) => w.team === 1 && w.hp > 0)
+      .map((w) => w.alliance ?? null));
+    if (groups.size > 1 && groups.has(worm.alliance ?? null)) return worm.allianceName;
+  }
+  return teamDisplayNames[worm.team];
 }
 function difficultyForWorm(worm) {
   const skill = worm?.teamSkill;

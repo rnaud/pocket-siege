@@ -1070,3 +1070,4 @@ test("per-alliance health updates after damage", async ({ page }) => {
     .poll(() => page.locator("#scenario-alliance-health").textContent())
     .not.toBe(before);
 });
+
