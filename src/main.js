@@ -535,6 +535,7 @@ let format = "single",
   bungeeArmed = false,
   laserSight = false,
   invisibleTeam = null,
+  girderAngle = 0,
   turnSeconds = 45,
   turnTime = 45,
   retreatSeconds = 3,
@@ -1061,6 +1062,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   bungeeArmed = false;
   laserSight = false;
   invisibleTeam = null;
+  girderAngle = 0;
   stopRope();
   stopJetpack();
   $("#replay").disabled = true;
@@ -1823,6 +1825,7 @@ function beginTurn() {
   if (invisibleTeam !== null) {
     for (const w of worms) w.invisible = false;
     invisibleTeam = null;
+  girderAngle = 0;
   }
   // 004B3210 resets the shared environment before the next team's turn.
   // Preserve the selected browser match modifier as the baseline.
@@ -2265,6 +2268,10 @@ function addGirder(cx, cy, angle = 0, length = 64) {
   girders.push({ mesh, cx, cy, angle, length, original });
   return true;
 }
+function girderSprite(angle = girderAngle, length = 64) {
+  const index = Math.max(0, Math.min(8, 4 - Math.round(angle / 22.5)));
+  return originalGirder(`grd${length > 72 ? "l" : "s"}${index}`);
+}
 function handleUtilityTarget(e) {
   if (!targetUtility) return;
   const rect = arena.getBoundingClientRect(),
@@ -2322,7 +2329,7 @@ function handleUtilityTarget(e) {
     return;
   }
   if (targetUtility === "girder") {
-    const sprite = originalGirder("grds4");
+    const sprite = girderSprite();
     if (!sprite) return;
     const target = nativeClampPlacementTarget(Math.round(x*65536),Math.round((H-y)*65536),
       sprite.width,sprite.height,0);
@@ -2333,7 +2340,7 @@ function handleUtilityTarget(e) {
       return;
     }
     // Convert the validated native bitmap row to the same host terrain row.
-    if (!addGirder(px, H-1-py, 0, 64)) return;
+    if (!addGirder(px, H-1-py, girderAngle, 64)) return;
     const placedKind = activeUtility === "bridgekit" ? "bridgekit" : "girder";
     utilityAmmo[team][placedKind] = spendAmmo(utilityAmmo[team][placedKind]);
     activeUtility = null;
@@ -2419,6 +2426,7 @@ function useUtility(kind) {
   if (kind === "bridgekit") {
     targetUtility = "girder";
     activeUtility = "bridgekit";
+    girderAngle = 0;
     utilitiesOpen = false;
     $("#status").textContent = "Click or tap to place a bridge.";
     updateUI();
@@ -2445,6 +2453,7 @@ function useUtility(kind) {
   if (kind === "teleport" || kind === "girder") {
     targetUtility = kind;
     activeUtility = kind;
+    if (kind === "girder") girderAngle = 0;
     utilitiesOpen = false;
     $("#status").textContent =
       kind === "teleport"
@@ -6942,6 +6951,12 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === " ") {
     if (!e.repeat) startCharge("keyboard");
+    return;
+  }
+  if (targetUtility === "girder" && (e.key === "[" || e.key === "]")) {
+    girderAngle = Math.max(-90, Math.min(90, girderAngle + (e.key === "]" ? 22.5 : -22.5)));
+    $("#status").textContent = `Girder angle ${girderAngle}°.`;
+    updateUI();
     return;
   }
   if (e.key === "ArrowLeft" || e.key === "a") setMove(-1);

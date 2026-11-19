@@ -733,3 +733,27 @@ test("bridge kit spends its own inventory on native placement", async ({ page })
   expect(state.phase).toBe("settle");
   expect(before.utilities.bridgekit).toBe(1);
 });
+
+test("girder targeting cycles the original shape strips", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await page.locator("#utilities-toggle").click();
+  await page.locator('[data-utility="girder"]').click();
+  await page.keyboard.press("]");
+  await page.evaluate(() => {
+    const state = window.siege.getState(), worm = state.worms[state.current], camera = state.camera;
+    const arena = document.querySelector("#arena"), box = arena.getBoundingClientRect();
+    arena.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", button: 0,
+      clientX: box.x + (worm.x + 80 - camera.x) / camera.w * box.width,
+      clientY: box.y + (1 - (worm.y + 100 - camera.y) / camera.h) * box.height }));
+  });
+  const state = await page.evaluate(() => window.siege.getState());
+  expect(state.girders).toHaveLength(1);
+  expect(state.girders[0].angle).toBe(22.5);
+  expect(state.girders[0].sprite).toBe("grds3");
+  expect(state.utilities.girder).toBe(0);
+});
