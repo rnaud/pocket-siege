@@ -1294,8 +1294,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   if (currentScenario?.teamWorms) {
     for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {
       const teamWorms = worms.filter((w) => w.team === teamIndex);
-      if (roster.length) {
-        for (let index = roster.length; index < 3; index++) {
+      const activeRoster = roster.filter((config) => config.place !== false);
+      if (activeRoster.length) {
+        for (let index = activeRoster.length; index < 3; index++) {
           const worm = teamWorms[index];
           if (!worm) continue;
           worm.hp = 0;
@@ -1305,7 +1306,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
           worm.label.hidden = true;
         }
       }
-      for (const [index, config] of roster.entries()) {
+      for (const [index, config] of activeRoster.entries()) {
         const worm = teamWorms[index];
         if (!worm) continue;
         worm.hp = config.energy;

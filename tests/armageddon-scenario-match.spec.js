@@ -884,3 +884,19 @@ test("teams with fewer authored worms leave the extra live worms disabled", asyn
   expect(hp.slice(1, 3)).toEqual([0, 0]);
   expect(hp.slice(3, 6)).toEqual([45, 45, 45]);
 });
+
+
+test("mission reserve worms do not occupy live slots", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission25.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const worms = await page.evaluate(() => window.siege.getState().worms);
+  expect(worms.slice(3, 6).every((worm) => worm.hp > 0)).toBe(true);
+});
