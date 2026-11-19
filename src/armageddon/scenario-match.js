@@ -84,6 +84,7 @@ export function resolveScenarioMatch(path) {
     enableActionReplay: read(record, "Options", "EnableActionReplay", 1) === 1,
     jetpackTimeLimit: read(record, "Options", "JetPackTimeLimit", null),
     wormSelectDisabled: read(record, "Options", "WormSelect", null) === 0,
+    pauseBetweenTurns: read(record, "Options", "PauseBetweenTurns", null),
     teams,
     worms,
     difficulty: read(record, "Description", "Difficulty", 0),

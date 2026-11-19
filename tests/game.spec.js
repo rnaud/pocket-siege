@@ -1397,3 +1397,15 @@ test("scales of justice balances team health", async ({ page }) => {
     }), { timeout: 10000 })
     .toEqual([225, 225]);
 });
+
+test("all special weapons are reachable from the arsenal sheet", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
+    "aquasheep", "donkey", "oldwoman", "molesquadron", "mingvase"]) {
+    await expect(page.locator(`[data-weapon="${kind}"]`)).toBeVisible();
+  }
+});

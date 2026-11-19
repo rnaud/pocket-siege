@@ -6603,7 +6603,8 @@ function stepFrame(dt) {
     }
     if (phase === "settle") {
       shotWait = settled && !healthDisplayBusy && !deathStarted && !worms.some(w => w.nativeDeathRequest) ? shotWait + dt : 0;
-      if (shotWait > 0.7 && !nativeAnnouncementsPending(nativeAnnouncements)) {
+      const pause = currentScenario?.pauseBetweenTurns ?? 0.7;
+      if (shotWait > pause && !nativeAnnouncementsPending(nativeAnnouncements)) {
         if (currentScenario?.weaponsDontEndTurn && phase === "settle") {
           phase = "aim";
           retreat = 0;
@@ -7744,6 +7745,7 @@ window.siege = {
     lastLossOfControl,
     jetpackFuel: jetpack.fuel,
     replayEnabled: currentScenario?.enableActionReplay !== false,
+    pauseBetweenTurns: currentScenario?.pauseBetweenTurns ?? null,
     flames: nativeFlames.filter(Boolean).length,
     suddenDeathDisabled: Boolean(currentScenario?.suddenDeath?.disabled),
     activeUtility,
