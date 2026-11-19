@@ -1105,3 +1105,19 @@ test("alliance health rows carry the group flag", async ({ page }) => {
   for (const flag of await page.locator(".scenario-alliance-flag").all())
     await expect.poll(() => flag.evaluate((image) => image.naturalWidth)).toBe(20);
 });
+
+test("live state exposes the worm alliance identity", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission23.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const worms = await page.evaluate(() => window.siege.getState().worms);
+  expect(worms[3].allianceName).toBe("Cannon Fodder");
+  expect(worms[6].allianceName).toBe("Patrol");
+});
