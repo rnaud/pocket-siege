@@ -491,6 +491,7 @@ let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
 let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
+let lastWaterRiseRound = 0;
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1295,6 +1296,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     suddenDeathDamageTurn = -1;
     matchElapsed = 0;
     scenarioClockSecond = -1;
+    lastWaterRiseRound = 0;
     scenarioProgress = {
       collected: 0,
       score: 0,
@@ -1306,7 +1308,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     };
   } else {
     scenarioSequence = []; scenarioSequenceIndex = 0;
-    scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0; scenarioClockSecond = -1;
+    scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0; scenarioClockSecond = -1; lastWaterRiseRound = 0;
   }
   spawnScenarioObjects();
   spawnNextScenarioSequence();
@@ -3097,6 +3099,7 @@ function applySuddenDeath() {
   }
   if (suddenDeathType === "water") {
     const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
+    lastWaterRiseRound = round;
     startNativeWaterRise(waterLevel + rise, 8);
     return false;
   }
@@ -5453,6 +5456,11 @@ function nextTurn() {
   team = nextTeam;
   if (team === 0) {
     round++;
+    if (sdTriggered && suddenDeath && suddenDeathType === "water" && round > lastWaterRiseRound) {
+      lastWaterRiseRound = round;
+      const rise = currentScenario?.suddenDeath?.waterRise || WATER_RISE;
+      startNativeWaterRise(waterLevel + rise, 8);
+    }
     if (
       !crates.length &&
       (crateRain ? round % 2 === 0 : round >= 3 && round % 3 === 0)
@@ -7802,6 +7810,7 @@ window.siege = {
     matchElapsed,
     roundTimeSeconds: scenarioRoundTimeSeconds(),
     lastLossOfControl,
+    lastWaterRiseRound,
     jetpackFuel: jetpack.fuel,
     replayEnabled: currentScenario?.enableActionReplay !== false,
     pauseBetweenTurns: currentScenario?.pauseBetweenTurns ?? null,

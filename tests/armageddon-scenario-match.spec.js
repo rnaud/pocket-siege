@@ -654,3 +654,24 @@ test("an eliminated scenario does not report objective completion", async ({ pag
   await expect(page.locator("#turn-label")).toHaveText("SCENARIO OVER");
   expect(await page.evaluate(() => window.siege.getState().lastResult.scenario.complete)).toBe(false);
 });
+
+test("scenario water sudden death rises again on later rounds", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(600));
+  const first = await page.evaluate(() => window.siege.getState().waterLevel);
+  await page.evaluate(() => window.siege.debug.finishTurn());
+  await page.evaluate(() => window.siege.debug.finishTurn());
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(600));
+  const second = await page.evaluate(() => window.siege.getState().waterLevel);
+  expect(second).toBeGreaterThan(first);
+});
