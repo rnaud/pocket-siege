@@ -63,6 +63,9 @@ const kinds = new Set([
   "aquasheep",
   "donkey",
   "oldwoman",
+  "sallyarmy",
+  "skunk",
+  "madcow",
 ]);
 // Resource 195 is the native loader's default scheme (00470A20). Browser
 // presets remain modifiers around this baseline until scheme UI is ported.

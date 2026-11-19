@@ -368,8 +368,8 @@
     {
       "slot": 45,
       "native_name": "SallyArmy",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "sallyarmy",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 0
     },
@@ -392,8 +392,8 @@
     {
       "slot": 48,
       "native_name": "Skunk",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "skunk",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 0
     },
@@ -424,8 +424,8 @@
     {
       "slot": 52,
       "native_name": "MadCow",
-      "host_action": null,
-      "status": "missing",
+      "host_action": "madcow",
+      "status": "partial",
       "native_action_type": 2,
       "native_action_subtype": 1
     },

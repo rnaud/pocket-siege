@@ -399,3 +399,16 @@ test("native old woman uses the slot-53 released-unit record", { tag: "@logic" }
     sprite: 617, damage: 75, push: 100, offset: 50,
   });
 });
+
+test("native sally army, skunk and mad cow use their recovered unit payloads", { tag: "@logic" }, () => {
+  for (const [kind, sprite, timer, damage, secondary] of [
+    ["sallyarmy", 616, 10000, 75, 1],
+    ["skunk", 618, 5000, 0, 1],
+    ["madcow", 614, 10000, 75, 0],
+  ]) {
+    const unit = projectile(kind, { x: 200, y: 400, fuse: 2 });
+    expect(unit.nativeBody).toMatchObject({ sprite, mode: 3 });
+    expect(unit.nativeTimer.remaining).toBe(timer);
+    expect(unit.nativeDetonation).toMatchObject({ sprite, damage, secondary });
+  }
+});
