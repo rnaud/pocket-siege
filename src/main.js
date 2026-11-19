@@ -1602,7 +1602,7 @@ function stepNativeFlames() {
       delete: () => {},
       burn: (mask, x, y) => {
         terrain.craterRim ??= new Uint8Array(W * H);
-        carveNativeToolMask(terrain.data, W, H, toolCuts[mask], x, y, terrain.craterRim);
+        carveScenarioTool(terrain.data, W, H, toolCuts[mask], x, y, terrain.craterRim);
         terrainDirty = true;
       },
     });
@@ -4038,7 +4038,7 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     // 004F7DA0 selects every nearby body, including self, and emits 0x433.
     applyNativeAreaRequest(targets, resolution.area);
     terrain.craterRim ??= new Uint8Array(W * H);
-    carveNativeCrater(
+    carveScenarioCrater(
       terrain.data,
       W,
       H,
@@ -4087,7 +4087,7 @@ function dispatchFirePunchCalls(w, calls) {
   for (const call of calls) {
     if (call.operation === "terrain") {
       terrain.craterRim ??= new Uint8Array(W * H);
-      carveNativeToolMask(terrain.data, W, H, toolCuts[call.request[0]], call.request[1], call.request[2], terrain.craterRim);
+      carveScenarioTool(terrain.data, W, H, toolCuts[call.request[0]], call.request[1], call.request[2], terrain.craterRim);
       terrainDirty = true;
     } else if (call.operation === "particle") spawnNativeParticleRequest(call.request);
     else if (call.operation === "camera") queueWormCamera(w);
@@ -4533,6 +4533,23 @@ function explodeProjectile(p) {
   else explode(p.x, p.y, p.kind, p.owner);
 }
 
+function scenarioBlocksCarve(x, y, radius = 0) {
+  if (currentScenario?.indestructibleLandscape) return true;
+  if (currentScenario?.indestructibleBorder) {
+    const margin = 8;
+    if (x - radius <= margin || x + radius >= W - margin ||
+        y - radius <= margin || y + radius >= H - margin) return true;
+  }
+  return false;
+}
+function carveScenarioCrater(data, width, height, x, y, radius, rim) {
+  if (scenarioBlocksCarve(x, y, radius)) return;
+  carveNativeCrater(data, width, height, x, y, radius, rim);
+}
+function carveScenarioTool(data, width, height, mask, x, y, rim) {
+  if (scenarioBlocksCarve(x, y, 0)) return;
+  carveNativeToolMask(data, width, height, mask, x, y, rim);
+}
 function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   const sourceX = x, sourceY = y;
   if (nativePacket) {
@@ -4565,7 +4582,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
     const nativeX = Math.round(x * 65536),
       nativeY = Math.round((H - y) * 65536);
     terrain.craterRim ??= new Uint8Array(W * H);
-    carveNativeCrater(
+    carveScenarioCrater(
       terrain.data,
       W,
       H,
@@ -4575,7 +4592,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
       terrain.craterRim,
     );
     spawnOriginalDebris(nativeX, nativeY, nativeStrength);
-  } else terrain.carve(x, y, radius);
+  } else if (!scenarioBlocksCarve(x, y, radius)) terrain.carve(x, y, radius);
   terrainDirty = true;
   explosions++;
   hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);

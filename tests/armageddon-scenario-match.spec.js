@@ -38,6 +38,9 @@ test("every mission and training resolves its original landscape and turn rules"
     windStrength: -1, fixedWind: -35,
   });
   expect(resolveScenarioMatch("mission/mission15.wam").friction).toBe(40);
+  expect(resolveScenarioMatch("mission/mission10.wam")).toMatchObject({
+    indestructibleLandscape: true,
+  });
   expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects).toHaveLength(1);
   expect(resolveScenarioMatch("mission/training1.wam").sequenceObjects[0]).toMatchObject({
     kind: "target", x: 1066, y: 434, marked: true,
@@ -233,4 +236,22 @@ test("scenario friction feeds the live native body setup", async ({ page }) => {
     })
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().friction)).toBe(40);
+});
+
+
+test("indestructible scenario landscape blocks terrain carving", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission10.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const before = await page.evaluate(() => window.siege.getState().terrainPixels);
+  await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "cluster"));
+  const after = await page.evaluate(() => window.siege.getState().terrainPixels);
+  expect(after).toBe(before);
 });
