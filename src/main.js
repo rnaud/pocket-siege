@@ -4274,6 +4274,28 @@ function syncTorchPosition(w, body) {
   if(w.originalBlowtorch)w.originalBlowtorch.body=body;
   w.x = body.x/65536; w.y = H-body.y/65536;
 }
+function useScales() {
+  if (!canAct() || availableAmmo(ammo[team], "scales") <= 0) return;
+  const totals = [0, 1].map((t) => worms
+    .filter((w) => w.team === t && w.hp > 0)
+    .reduce((sum, w) => sum + w.hp, 0));
+  const average = Math.round((totals[0] + totals[1]) / 2);
+  for (const t of [0, 1]) {
+    const roster = worms.filter((w) => w.team === t && w.hp > 0);
+    if (!roster.length) continue;
+    const base = Math.floor(average / roster.length);
+    const remainder = average % roster.length;
+    roster.forEach((w, index) => {
+      w.hp = base + (index < remainder ? 1 : 0);
+      revealWormHealth(w);
+    });
+  }
+  ammo[team].scales = spendAmmo(ammo[team].scales);
+  shotCount++;
+  recordReactionWeaponUse("scales");
+  updateUI();
+  finishAction("Scales balanced. Retreat!");
+}
 function fireFlamethrower() {
   if (!canAct() || availableAmmo(ammo[team], "flamethrower") <= 0) return;
   const w = worms[current];
@@ -4515,6 +4537,10 @@ function fire() {
   }
   if (kind === "flamethrower") {
     fireFlamethrower();
+    return;
+  }
+  if (kind === "scales") {
+    useScales();
     return;
   }
   if (kind === "dynamite") {

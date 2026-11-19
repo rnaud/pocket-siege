@@ -1166,7 +1166,7 @@ test("special tray fires shotgun, dynamite and airstrike", async ({ page }) => {
   await page.locator("#start").click();
   await openArsenal(page);
 
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(39);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(40);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
@@ -1370,4 +1370,30 @@ test("flame thrower emits native flames and spends its stream", async ({ page })
     .toBeGreaterThan(0);
   const before = await page.evaluate(() => window.siege.getState().ammo[0].flamethrower);
   expect(before).toBeLessThan(56);
+});
+
+
+test("scales of justice balances team health", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#map-layout").selectOption("fern");
+  await page.locator("#start").click();
+  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await openArsenal(page);
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase))
+    .toBe("aim");
+  await page.evaluate(() => window.siege.debug.hit(1, 50));
+  await page.locator('[data-weapon="scales"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() => {
+      const worms = window.siege.getState().worms;
+      return [worms.slice(0, 3), worms.slice(3)].map((team) =>
+        team.reduce((sum, w) => sum + w.hp, 0));
+    }), { timeout: 10000 })
+    .toEqual([225, 225]);
 });

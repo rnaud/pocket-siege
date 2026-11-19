@@ -227,6 +227,18 @@ export const WEAPONS = {
     ammo: 1,
     special: "sheep",
   },
+  scales: {
+    label: "Scales of justice",
+    icon: "⚖",
+    radius: 0,
+    damage: 0,
+    wind: false,
+    speed: 1,
+    timed: false,
+    bounces: false,
+    ammo: 1,
+    special: "scales",
+  },
   flamethrower: {
     label: "Flame thrower",
     icon: "🔥",
@@ -456,6 +468,7 @@ export const SPECIAL_WEAPONS = [
   "pigeon",
   "magic",
   "holy",
+  "scales",
 ];
 export const WEAPON_ORDER = ["rocket", "grenade", "mortar", "sticky"];
 export const PROJECTILE_ORDER = [
@@ -490,6 +503,7 @@ export const freshAmmo = () => ({
   aquasheep: WEAPONS.aquasheep.ammo,
   oldwoman: WEAPONS.oldwoman.ammo,
   flamethrower: WEAPONS.flamethrower.ammo,
+  scales: WEAPONS.scales.ammo,
   donkey: WEAPONS.donkey.ammo,
   banana: WEAPONS.banana.ammo,
   grenade: WEAPONS.grenade.ammo,
