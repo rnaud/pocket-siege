@@ -1215,3 +1215,24 @@ test("mission Nuclear Test raises the sea by weapon 55's water rise and poisons 
     window.siege.getState().worms.filter((worm) => worm.hp > 0).every((worm) => worm.nativePoison.amount >= 2)))
     .toBe(true);
 });
+
+test("mission and training runtime smoke without opt-in playthrough", async ({ page }) => {
+  for (const path of ["mission/mission0.wam", "mission/training1.wam"]) {
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("/");
+    await page.waitForFunction(() => window.siege?.getState().assetsReady);
+    await page.locator(`[data-mode="${path.includes("training") ? "training" : "missions"}"]`).click();
+    await page.locator(`[data-scenario="${path}"]`).click();
+    await page.locator(".frontend-play-scenario").click();
+    await expect
+      .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
+      .toBe("aim");
+    for (let i = 0; i < 2; i++)
+      await page.evaluate(() => window.siege.debug.finishTurn());
+    await expect.poll(() => page.evaluate(() => window.siege.getState().mission?.turn ?? 0))
+      .toBeGreaterThan(0);
+    expect(errors, path).toEqual([]);
+    page.removeAllListeners("pageerror");
+  }
+});
