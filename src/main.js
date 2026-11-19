@@ -2307,6 +2307,7 @@ function updateUI() {
   if (key === uiKey) return;
   uiKey = key;
   updateCrateSpyHUD();
+  updateScenarioAllianceHealth();
   updateHudTeams(worms, team);
   for (let t = 0; t < 2; t++) {
     const roster = worms.filter((w) => w.team === t && !w.disabledRoster);

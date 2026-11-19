@@ -1052,3 +1052,21 @@ test("hostile CPU alliance groups show separate health", async ({ page }) => {
   expect(text).toContain("Cannon Fodder");
   expect(text).toContain("Patrol");
 });
+
+test("per-alliance health updates after damage", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission23.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const before = await page.locator("#scenario-alliance-health").textContent();
+  await page.evaluate(() => window.siege.debug.hit(1, 10));
+  await expect
+    .poll(() => page.locator("#scenario-alliance-health").textContent())
+    .not.toBe(before);
+});
