@@ -31,3 +31,12 @@ export function nativeSchemeLoadouts(resourceId, teamCount = 2) {
     delays: Array.from({ length: 71 }, (_, slot) => view.getInt32(0x1eb8 + bank * 0x238 + 0x11c + slot * 4, true)),
   }));
 }
+
+// 004194CB team setup: worm energy = scheme[0x15] plus the frontend handicap
+// share (scheme[0x15] * handicap * 25 / 100); no handicaps are set here.
+export function nativeSchemeWormEnergy(resourceId, handicap = 0) {
+  const scheme = resources.schemes.find(row => row.resource_id === resourceId);
+  if (!scheme) throw new RangeError(`Unknown native scheme resource ${resourceId}`);
+  const energy = scheme.bytes[0x15];
+  return (energy + Math.trunc(energy * ((handicap << 24) >> 24) * 25 / 100)) & 65535;
+}

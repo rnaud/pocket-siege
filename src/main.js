@@ -45,7 +45,7 @@ import { nativeCrateContents } from "./armageddon/crate-contents.js";
 import crateProjectileData from "./armageddon/crate-projectile-data.json";
 import { attachNativeProjectileBlock, nativeWeaponSlotBlock } from "./armageddon/projectile-runtime.js";
 import { nativeArmageddonStart, nativeArmageddonTick } from "./armageddon/armageddon.js";
-import { nativeSchemeLoadouts } from "./armageddon/scheme-loadout.js";
+import { nativeSchemeLoadouts, nativeSchemeWormEnergy } from "./armageddon/scheme-loadout.js";
 import { nativeFlameBody } from "./armageddon/flame-body.js";
 import { registerNativeFlame } from "./armageddon/flame-spread.js";
 import { stepNativeFlame } from "./armageddon/flame-runtime.js";
@@ -1319,6 +1319,14 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
       worm.renderY=worm.y;worm.ground=bodyBlocked(terrain,worm.x,worm.y-1);
     }
     worms.push(worm);
+  }
+  // Classic duel worms start with the default scheme's energy (scheme[0x15]).
+  if (!currentScenario && $("#scheme").value === "classic") {
+    const energy = nativeSchemeWormEnergy(195);
+    for (const worm of worms) {
+      worm.hp = energy; worm.matchStats.hp = energy;
+      worm.nativeHealthDisplay = { ...worm.nativeHealthDisplay, value: energy << 16, target: energy << 16 };
+    }
   }
   if (currentScenario?.teamWorms) {
     for (const [teamIndex, roster] of currentScenario.teamWorms.entries()) {

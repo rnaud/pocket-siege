@@ -62,3 +62,11 @@ test("scene shake decays through the original 004EDA70 smoothing", { tag: "@logi
   expect(shake).toBe(0);
   expect(frames).toBeLessThan(40);
 });
+
+test("worm energy follows scheme byte 0x15 and the handicap share", { tag: "@logic" }, async () => {
+  const { nativeSchemeWormEnergy } = await import("../src/armageddon/scheme-loadout.js");
+  expect(nativeSchemeWormEnergy(195)).toBe(100);
+  expect(nativeSchemeWormEnergy(193)).toBe(150);
+  // 004194CB: a +1 handicap adds a quarter of the scheme energy.
+  expect(nativeSchemeWormEnergy(195, 1)).toBe(125);
+});
