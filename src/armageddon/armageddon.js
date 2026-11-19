@@ -9,9 +9,9 @@ export function nativeArmageddonStart([count, interval, weapon]) {
 // 004E1830 record) and an optional sound request.
 export function nativeArmageddonTick(input, random) {
   const state = { ...input };
-  if (!state.count) return { state, meteor: null, sound: null };
+  if (!state.count) return { state, meteor: null, sound: null, effect: null };
   state.timer = (state.timer - 20) | 0;
-  if (state.timer > 0) return { state, meteor: null, sound: null };
+  if (state.timer > 0) return { state, meteor: null, sound: null, effect: null };
   state.timer = (state.interval + (random() & 0xffff) % 100 + state.timer) | 0;
   const column = (random() & 0xffff) % 1920;
   const drift = ((random() & 0xffff) % 401) - 200;
@@ -19,6 +19,8 @@ export function nativeArmageddonTick(input, random) {
   const vx = Math.trunc(((5 * drift) << 17) / 100) | 0;
   const meteor = [0, 0, x, -696 << 16, vx, 0x140000, 0x3c00000, 0x15c0000, 0, 0, 0];
   const sound = random() & 0x80000000 ? null : [0x2c, 8, 0x10000, 0x10000, 0];
+  // 004EB2BF: 004EE7F0 launch puff at the meteor's spawn point (message 0x43E).
+  const effect = [0x10000, x, meteor[3], 0, 0, 0, 0, 0, 0x349, 0, 0x10000, 0x1999];
   state.count = (state.count - 1) | 0;
-  return { state, meteor, sound };
+  return { state, meteor, sound, effect };
 }

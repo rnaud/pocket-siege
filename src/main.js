@@ -1852,6 +1852,7 @@ function stepNativeArmageddon() {
   nativeArmageddon = result.state;
   if (result.sound) queueGameSound(result.sound);
   if (result.meteor) spawnArmageddonMeteor(result.meteor, nativeArmageddon.weapon);
+  if (result.effect) spawnNativeParticleRequest(result.effect);
   nativeBusy.wake();
 }
 function spawnArmageddonMeteor(payload, weapon) {
@@ -1908,8 +1909,8 @@ function spawnMissionCrate(event) {
     collide: (cx, cy, body) => nativeSceneCollision(crate, body, cx / 65536, H - cy / 65536, terrain, worms, H),
     sound: queueCrateSound,
     remove: () => {}, register: () => {},
-    // Settled placement's landing puff (sprite 0x349) has no host effect yet.
-    effect: () => {},
+    // 004DFE8E: settled placement emits the 0x43E landing puff (sprite 0x349).
+    effect: request => spawnNativeParticleRequest(request),
   });
   crates.push(crate);
   // 004DFFA0 tail: Marked crates/targets feed sequence waits 15/16.
@@ -6356,7 +6357,8 @@ function checkScenarioRoundTime() {
 }
 function stepFrame(dt) {
   if (mapLoading) return;
-  earthquakeShake = Math.max(0, earthquakeShake - dt * 0x10000 * 0.9);
+  // 004EB110 decays the scene shake amplitude through 004EDA70 every frame.
+  earthquakeShake = nativeCameraShakeDecay(earthquakeShake);
   checkScenarioRoundTime();
   if (currentScenario?.displayRoundTime && Math.floor(matchElapsed) !== scenarioClockSecond) {
     scenarioClockSecond = Math.floor(matchElapsed);

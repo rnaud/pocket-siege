@@ -12,6 +12,8 @@ test("armageddon meteors follow the original 004EB110 timer and launch record", 
   expect(first.meteor).toEqual([0, 0, (1000 - 696) << 16, -696 << 16,
     Math.trunc((500 << 17) / 100), 0x140000, 0x3c00000, 0x15c0000, 0, 0, 0]);
   expect(first.sound).toEqual([0x2c, 8, 0x10000, 0x10000, 0]);
+  // 004EB2BF launch puff (004EE7F0 -> message 0x43E) at the spawn point.
+  expect(first.effect).toEqual([0x10000, (1000 - 696) << 16, -696 << 16, 0, 0, 0, 0, 0, 0x349, 0, 0x10000, 0x1999]);
   state = first.state;
   let ticks = 0, spawned = null;
   while (!spawned && ticks < 20) {
@@ -26,7 +28,7 @@ test("armageddon meteors follow the original 004EB110 timer and launch record", 
   const left = nativeArmageddonTick({ ...state, timer: 0 }, (() => { const d = [0, 0, 0, 1]; return () => d.shift(); })());
   expect(left.meteor[2]).toBe(Math.trunc(696 * 200 / 100) << 16);
   expect(left.meteor[4]).toBe(Math.trunc((-1000 << 17) / 100));
-  expect(nativeArmageddonTick({ ...state, count: 0 }, () => 0).meteor).toBeNull();
+  expect(nativeArmageddonTick({ ...state, count: 0 }, () => 0)).toMatchObject({ meteor: null, effect: null });
 });
 
 test("meteor projectile block comes from weapon 56 entry +0x70", { tag: "@logic" }, () => {
@@ -48,4 +50,15 @@ test("default scheme loadout comes from the recovered inventory setup", { tag: "
   expect([1, 3, 6, 7, 24, 37].map(slot => first.counts[slot])).toEqual([-1, 5, -1, 3, 0, 5]);
   expect(second.counts).toEqual(first.counts);
   expect(first.delays[2]).toBe(1);
+});
+
+test("scene shake decays through the original 004EDA70 smoothing", { tag: "@logic" }, async () => {
+  const { nativeCameraShakeDecay } = await import("../src/armageddon/camera-shake.js");
+  // Tenth-per-frame decay with a 0x7ae minimum step, reaching zero.
+  let shake = 0x8000, frames = 0;
+  const first = nativeCameraShakeDecay(shake);
+  expect(first).toBe(0x8000 - 3277);
+  while (shake && frames < 100) { shake = nativeCameraShakeDecay(shake); frames++; }
+  expect(shake).toBe(0);
+  expect(frames).toBeLessThan(40);
 });
