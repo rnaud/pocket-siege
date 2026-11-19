@@ -17,7 +17,8 @@ function read(record, sectionName, key, fallback) {
 // Maps a selected WAM to the original landscape long name and the turn rules
 // stored in its Options section. Objective/event execution remains separate.
 const AMMO_SLOT_BY_NAME = new Map(
-  inventoryKeys.entries.filter(([kind]) => kind === "ammo").map(([, slot, name]) => [name, slot]),
+  inventoryKeys.entries.filter(([kind]) => kind === "ammo")
+    .map(([, slot, name]) => [name.toLowerCase(), slot]),
 );
 const HOST_WEAPON_BY_SLOT = new Map(
   Object.entries(WEAPON_SLOTS).map(([kind, slot]) => [slot, kind]),
@@ -35,7 +36,7 @@ function scenarioUtilityLoadouts(record) {
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
     for (const [key, value] of team.entries) {
       if (!/^Ammo_/i.test(key)) continue;
-      const slot = AMMO_SLOT_BY_NAME.get(key);
+      const slot = AMMO_SLOT_BY_NAME.get(key.toLowerCase());
       const kind = slot === undefined ? null : UTILITY_BY_SLOT.get(slot);
       const amount = Number.parseInt(value, 10);
       if (kind && Number.isFinite(amount)) loadouts[index][kind] = amount;
@@ -52,7 +53,7 @@ function scenarioLoadouts(record) {
     if (index < 0 || index > 1) continue;
     for (const [key, value] of team.entries) {
       if (!/^Ammo_/i.test(key)) continue;
-      const slot = AMMO_SLOT_BY_NAME.get(key);
+      const slot = AMMO_SLOT_BY_NAME.get(key.toLowerCase());
       const kind = slot === undefined ? null : HOST_WEAPON_BY_SLOT.get(slot);
       const amount = Number.parseInt(value, 10);
       if (kind && Number.isFinite(amount)) loadouts[index][kind] = amount;

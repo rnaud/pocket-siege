@@ -54,6 +54,8 @@ test("every mission and training resolves its original landscape and turn rules"
   expect(resolveScenarioMatch("mission/mission0.wam").loadouts[0]).toMatchObject({
     shotgun: 3, uzi: 2,
   });
+  expect(resolveScenarioMatch("mission/mission18.wam").loadouts[0].uzi).toBe(-1);
+  expect(resolveScenarioMatch("mission/mission11.wam").loadouts[0].rocket).toBe(-1);
   expect(resolveScenarioMatch("mission/mission0.wam").utilityLoadouts[0]).toMatchObject({
     girder: 3, rope: 4, laser: 1,
   });
@@ -674,4 +676,19 @@ test("scenario water sudden death rises again on later rounds", async ({ page })
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(600));
   const second = await page.evaluate(() => window.siege.getState().waterLevel);
   expect(second).toBeGreaterThan(first);
+});
+
+
+test("mixed-case mission ammo keys still reach the live loadout", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission18.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().ammo[0].uzi)).toBe(-1);
 });
