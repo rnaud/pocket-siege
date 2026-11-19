@@ -2288,6 +2288,7 @@ function canMove() {
 }
 function canSelectWorm() {
   return (
+    !currentScenario?.wormSelectDisabled &&
     phase === "aim" &&
     !wormLocked &&
     !charging &&
