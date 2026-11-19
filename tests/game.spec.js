@@ -1699,3 +1699,16 @@ test("super sheep steers horizontally while airborne", async ({ page }) => {
   expect(x).not.toBeNull();
   expect(x).not.toBe(600);
 });
+
+test("aqua sheep swims at the water surface", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  const y = await page.evaluate(() => window.siege.getState().waterLevel - 4);
+  await page.evaluate((y) => window.siege.debug.spawnUnitAt("aquasheep", 600, y), y);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  const x = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
+  expect(x).not.toBeNull();
+  expect(x).not.toBe(600);
+});
