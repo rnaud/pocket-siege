@@ -4370,6 +4370,19 @@ function useSelfDestruct(kind) {
   $("#status").textContent = `${w.name} self-destructs.`;
   updateUI();
 }
+function infectPoisonCloud(x, y, radius = 80, amount = 10) {
+  let infected = false;
+  for (const w of worms) {
+    if (w.hp <= 0) continue;
+    if (Math.hypot(w.x - x, w.y - y) > radius) continue;
+    w.nativePoison = nativeWormPoisonInfect({
+      ...w.nativePoison, team: w.matchStats.team,
+      worm: w.matchStats.worm, state: nativeWormState(w),
+    }, amount, { announce: () => {} });
+    infected = true;
+  }
+  if (infected) poisoned = true;
+}
 function useScales() {
   if (!canAct() || availableAmmo(ammo[team], "scales") <= 0) return;
   const totals = [0, 1].map((t) => worms
@@ -4863,6 +4876,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
           impulse: (WEAPONS[kind].impulse ?? 350) * scale,
         };
   const { radius, damage: maxDamage, impulse } = profile;
+  if (kind === "skunk" || kind === "molebomb") infectPoisonCloud(x, y, radius || 80);
   const exposure = new Map(
     worms.map((w) => [w, blastExposure(terrain, x, y, w.x, w.y + 17)]),
   );

@@ -1576,3 +1576,20 @@ test("scales of justice caps health at 100 with uneven survivors", async ({ page
     { timeout: 10000 })
     .toBeLessThanOrEqual(100);
 });
+
+test("skunk detonation infects nearby worms with poison", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  const target = await page.evaluate(() => {
+    const state = window.siege.getState();
+    return { x: state.worms[3].x, y: state.worms[3].y };
+  });
+  await page.evaluate(({ x, y }) => window.siege.debug.explodeAt(x, y, "skunk"), target);
+  await expect
+    .poll(() => page.evaluate(() =>
+      window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0)),
+    { timeout: 10000 })
+    .toBe(true);
+});
