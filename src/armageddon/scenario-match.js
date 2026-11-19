@@ -79,6 +79,7 @@ function scenarioTeamWorms(record) {
     if (!match) continue;
     const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
     const entries = Object.fromEntries(team.entries.map(([key, value]) => [key.toLowerCase(), value]));
+    const teamSkill = Number.parseInt(entries.teamskill, 10);
     for (let worm = 1; worm <= 16; worm++) {
       const energy = Number.parseInt(entries[`worm${worm}_energy`], 10);
       if (!Number.isFinite(energy)) continue;
@@ -92,6 +93,7 @@ function scenarioTeamWorms(record) {
       const y = Number.parseInt(entries[`worm${worm}_yposition`], 10);
       teams[index].push({
         artillery: entries[`worm${worm}_artilerymode`] === "1",
+        teamSkill: Number.isFinite(teamSkill) ? teamSkill : null,
         energy,
         disease: Number.isFinite(disease) ? disease : 0,
         nameNumber: Number.isFinite(nameNumber) ? nameNumber : null,

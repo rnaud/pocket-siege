@@ -1338,6 +1338,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.fixedWeapon = config.fixedWeapon;
         worm.actionRadius = config.actionRadius;
         worm.alliance = config.alliance;
+        worm.teamSkill = config.teamSkill;
         if (currentScenario.teamGraves?.[teamIndex]) worm.graveStyle = currentScenario.teamGraves[teamIndex];
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
@@ -5737,6 +5738,11 @@ function jump(kind = "forward") {
   lastJump = { kind, time: jumpClock };
 
 }
+function difficultyForWorm(worm) {
+  const skill = worm?.teamSkill;
+  if (Number.isFinite(skill)) return skill >= 70 ? "veteran" : skill >= 50 ? "regular" : "rookie";
+  return difficulty;
+}
 function startAiTurn() {
   const w = worms[current];
   const aiAlive = worms.filter((t) => t.team === 1 && t.hp > 0).length;
@@ -5758,7 +5764,7 @@ function startAiTurn() {
     terrain,
     me: w,
     waterLevel,
-    difficulty,
+    difficulty: difficultyForWorm(w),
     crate: crates.filter(crate => !crate.falling).reduce((nearest, crate) =>
       !nearest || Math.abs(crate.x - w.x) < Math.abs(nearest.x - w.x) ? crate : nearest, null),
     worms,
@@ -5783,7 +5789,7 @@ function aiAim() {
         [kind, kind === fixed ? count : 0]))
     : null;
   const planOptions = {
-    terrain, worms, me: w, wind, waterLevel, difficulty,
+    terrain, worms, me: w, wind, waterLevel, difficulty: difficultyForWorm(w),
     ammo: fixedAmmo ?? ammo[1], delays: weaponDelays[1],
     fuse: 2, bounce: 0.55, gravityScale, blastScale, random: logicRandom,
   };
@@ -8134,6 +8140,7 @@ window.siege = {
         fixedWeapon,
         actionRadius,
         alliance,
+        teamSkill,
         nativePoison,
         originalRecovery,
         invisible,
@@ -8150,6 +8157,7 @@ window.siege = {
         fixedWeapon,
         actionRadius,
         alliance,
+        teamSkill,
         nativeTeamModifiers,
         x,
         y,

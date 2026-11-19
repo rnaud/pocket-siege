@@ -968,3 +968,20 @@ test("merged CPU teams retain their authored alliance group", async ({ page }) =
   expect(worms[3].alliance).toBe(0);
   expect(worms[6].alliance).toBe(1);
 });
+
+
+test("merged CPU worms retain their authored team skill", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  const worms = await page.evaluate(() => window.siege.getState().worms);
+  expect(worms[3].teamSkill).toBe(80);
+  expect(worms[7].teamSkill).toBe(60);
+});
