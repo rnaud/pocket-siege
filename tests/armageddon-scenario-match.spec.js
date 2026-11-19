@@ -813,3 +813,18 @@ test("authored artillery mode reaches the live worm", async ({ page }) => {
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.siege.getState().worms[3].artillery)).toBe(true);
 });
+
+
+test("authored grave style reaches the live worm", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="missions"]').click();
+  await page.locator('[data-scenario="mission/mission0.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().scenario?.total ?? 0), {
+      timeout: 30000,
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.siege.getState().worms[3].graveStyle)).toBe(1);
+});

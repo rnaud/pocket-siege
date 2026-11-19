@@ -45,6 +45,19 @@ function scenarioUtilityLoadouts(record) {
   }
   return loadouts;
 }
+function scenarioTeamGraves(record) {
+  const graves = [null, null];
+  for (const team of record.sections) {
+    const match = /^(HumanTeam|CPUTeam\d+)$/i.exec(team.name);
+    if (!match) continue;
+    const index = match[1].toLowerCase() === "humanteam" ? 0 : 1;
+    if (index === 1 && Number(match[1].replace(/\D/g, "")) !== 1) continue;
+    const value = team.entries.find(([key]) => key.toLowerCase() === "gravestone")?.[1];
+    const number = Number.parseInt(value, 10);
+    if (Number.isFinite(number)) graves[index] = number;
+  }
+  return graves;
+}
 function scenarioTeamNames(record) {
   const names = [null, null];
   for (const team of record.sections) {
@@ -146,6 +159,7 @@ export function resolveScenarioMatch(path) {
     enableSecretWeapons: read(record, "Options", "EnableSecretWeapons", 1) === 1,
     teamWorms: scenarioTeamWorms(record),
     teamNames: scenarioTeamNames(record),
+    teamGraves: scenarioTeamGraves(record),
     loadouts: scenarioLoadouts(record),
     utilityLoadouts: scenarioUtilityLoadouts(record),
     healthCrateEnergy: read(record, "Options", "HealthCrateEnergy", null),

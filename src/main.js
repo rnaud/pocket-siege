@@ -1296,6 +1296,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
         worm.hp = config.energy;
         worm.matchStats.hp = config.energy;
         worm.artillery = config.artillery;
+        if (currentScenario.teamGraves?.[teamIndex]) worm.graveStyle = currentScenario.teamGraves[teamIndex];
         if (config.nameNumber !== null) {
           const name = originalResourceString(700 + config.nameNumber);
           if (name) {
@@ -6069,7 +6070,7 @@ function stepFrame(dt) {
         w.deathPending = false;
         explode(w.x, w.y - 10, "death");
         spawnDeathSmoke(w);
-        const grave = createOriginalGrave(w);
+        const grave = createOriginalGrave(w, w.graveStyle);
         if (grave) {
           graves.push(grave);
           group.add(grave.mesh);
@@ -8016,6 +8017,7 @@ window.siege = {
         nativeHurtBody,
         nativeTeamModifiers,
         artillery,
+        graveStyle,
         nativePoison,
         originalRecovery,
         invisible,
@@ -8027,6 +8029,7 @@ window.siege = {
         matchStats: { ...matchStats, hp },
         nativePoison: { ...nativePoison },
         artillery,
+        graveStyle,
         nativeTeamModifiers,
         x,
         y,
