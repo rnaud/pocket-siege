@@ -318,6 +318,16 @@ export const projectileSprites = {
   holy: "hgrenade",
   napalm: "petrolbm",
   longbow: "arrow",
+  sheep: "sheepwlk",
+  supersheep: "sheepwlk",
+  aquasheep: "sheepwlk",
+  donkey: "donkey",
+  oldwoman: "woman",
+  sallyarmy: "sally",
+  skunk: "skunk1",
+  madcow: "cowwalk",
+  molebomb: "molewalk",
+  mbbomb: "mbbomb",
 };
 export function createNativeProjectileVisual(render) {
   const name = spriteIds.sprites[render?.sprite]?.name;

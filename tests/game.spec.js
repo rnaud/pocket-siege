@@ -1479,3 +1479,23 @@ test("longbow fires a host arrow projectile", async ({ page }) => {
     })
     .toBeGreaterThan(0);
 });
+
+test("unit weapons fire without missing projectile art", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator("#mode").selectOption("local");
+  await page.locator("#start").click();
+  await openArsenal(page);
+  await page.locator('[data-weapon="sheep"]').click();
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(500);
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().projectile?.kind ?? null), {
+      timeout: 10000,
+    })
+    .toBe("sheep");
+  expect(errors).toEqual([]);
+});
