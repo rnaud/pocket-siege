@@ -378,7 +378,9 @@
         "live_native_camera_limits_cursor",
         "live_native_weapon_panel",
         "live_native_team_name_box",
-        "live_native_weapon_keys"
+        "live_native_weapon_keys",
+        "live_native_drum_support",
+        "live_native_cursor_orientation"
       ],
       "plain": {
         "now": "Original sprites, many animations and parts of the HUD are in the game. Sprite textures now use recovered original decoding and pixel drawing, with crisp scaling on Retina screens.",

@@ -135,7 +135,7 @@ import {
 } from "./armageddon/debris.js";
 import { carveNativeCrater } from "./armageddon/crater-mask.js";
 import { nativeAreaDamage } from "./armageddon/area-damage.js";
-import { applyNativeWeaponImpulse } from "./armageddon/worm-flight.js";
+import { applyNativeWeaponImpulse, nativeAirborneBody } from "./armageddon/worm-flight.js";
 import { nativeJetpackInitialFuel } from "./armageddon/jetpack.js";
 import { nativeHitscanResolution } from "./armageddon/hitscan-resolution.js";
 import { nativeHitscanTerrain } from "./armageddon/hitscan-terrain.js";
@@ -157,7 +157,8 @@ import {
   nativeSmokeBody,
   nativeSmokeTick,
 } from "./armageddon/smoke.js";
-import { nextVisualRandom } from "./armageddon/numeric.js";
+import { nextVisualRandom, fixedMultiply } from "./armageddon/numeric.js";
+import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { createOriginalGrave, stepOriginalGrave } from "./armageddon/graves.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
@@ -380,6 +381,7 @@ let pendingInputCamera = false;
 const mouseLookDelta = [0, 0];
 // 0x1247C/0x12480: native world-space target cursor (Y down, 16.16).
 let targetCursor = null;
+let targetCursorAngle = 0, targetCursorAngleTarget = 0xa000;
 let targetCursorMesh = null;
 const inventoryOpen = () => Boolean(document.querySelector(".controls.inventory-open"));
 function updateNativeLayout() {
@@ -2261,6 +2263,13 @@ function spawnHazards(requests=null) {
       break;
     }
   }
+}
+// Probe one pixel below an idle worm with its airborne collision shape.
+function wormSupportedByObject(w) {
+  const body = { ...nativeAirborneBody(w, H, 96), state: 0x65, type: 2 };
+  const hit = nativeSceneCollision(w, body, w.x, w.y - 1, terrain, worms, H);
+  return hit > 1; // 1 is terrain, which bodyBlocked already answers
+
 }
 function nativeSceneCollision(identity, body, x, y, landscape, actors, height) {
   return queryNativeScene(identity, body, x, y, landscape, actors, height, [...mines, ...crates, ...hazards]);
@@ -4573,10 +4582,19 @@ function stepNativeTargetCursor(limits) {
   }
   const active = worms[current];
   if (!targetCursor) {
-    targetCursor = [Math.round((active?.x ?? W / 2) * 65536), Math.round((H - (active?.y ?? H / 2)) * 65536)];
+    // 004E6420: the cursor starts 32 pixels above the worm. Its pointer angle
+    // (+0xB0) starts at 0 and turns toward 0xA000, or toward the strike
+    // direction (+0xDC << 13) for weapons that take one.
+    targetCursor = [Math.round((active?.x ?? W / 2) * 65536), Math.round((H - (active?.y ?? H / 2)) * 65536) - 0x200000];
+    const directional = WEAPONS[targetUtility]?.special === "airstrike";
+    const direction = Number($("#strike-direction")?.value) || 1;
+    targetCursorAngle = directional ? direction << 13 : 0;
+    targetCursorAngleTarget = directional ? direction << 13 : 0xa000;
     nativeCamera.setPriority(14);
     nativeCamera.offerSpecial(...targetCursor);
   }
+  // 004E6960: ease the pointer angle by a fifth each frame.
+  targetCursorAngle = (targetCursorAngle + fixedMultiply((targetCursorAngleTarget - targetCursorAngle) | 0, 0x3333)) | 0;
   const dx = Math.trunc(mouseLookDelta[0]), dy = Math.trunc(mouseLookDelta[1]);
   mouseLookDelta[0] -= dx; mouseLookDelta[1] -= dy;
   const closed = $("#map-layout")?.value === "caverns";
@@ -4589,10 +4607,14 @@ function stepNativeTargetCursor(limits) {
     if (targetCursorMesh) group.add(targetCursorMesh);
   }
   if (targetCursorMesh) {
-    // 004E6190 draws team cursor 0x31C+colour 16 pixels above the point.
-    updateOriginalObject(targetCursorMesh, team ? "cursorr" : "cursorg", 0, 0);
+    // 004E6190: team cursor 0x31C+colour at progress = angle, drawn at the
+    // point minus (sin, cos)(angle) * 16 so the arrow tip touches it.
+    const angle = targetCursorAngle;
+    updateOriginalObject(targetCursorMesh, team ? "cursorr" : "cursorg", 0, angle & 0xffff);
     targetCursorMesh.visible = true;
-    targetCursorMesh.position.set(targetCursor[0] / 65536, H - targetCursor[1] / 65536 + 16, 40);
+    const x = (targetCursor[0] - Math.imul(nativeSin(angle), 16)) / 65536;
+    const y = (targetCursor[1] - Math.imul(nativeCos(angle), 16)) / 65536;
+    targetCursorMesh.position.set(x, H - y, 40);
   }
 }
 // Client coordinates of the native target cursor, for the host target handler.
@@ -6977,8 +6999,11 @@ function stepFrame(dt) {
     } else if (w === worms[current] && rope.attached) {
       stepRope(w, dt);
     } else {
+      // 004DED81: an idle worm starts falling (0x7E) only when nothing holds
+      // it up; oil drums, crates, mines and other worms support it as well as
+      // terrain.
       if (!w.frozen && !w.originalHurt && !w.knocked && !w.nativeFlight &&
-          (!w.ground || !bodyBlocked(terrain, w.x, w.y - 1)))
+          (!w.ground || (!bodyBlocked(terrain, w.x, w.y - 1) && !wormSupportedByObject(w))))
         attachNativeFallingFlight(w, { height: H });
       const fallState = nativeWormState(w);
       const fastFall = !w.frozen && [0x79, 0x7e, 0x7f].includes(fallState) && w.vy <= -400;
@@ -9107,6 +9132,12 @@ if (import.meta.env.DEV) {
       finally { replaySimulation = previous; }
     },
     arsenalPanel: () => arsenalPanel.state(),
+    wormBody(index = current) {
+      const w = worms[index], body = w?.nativeFlight ?? w?.nativeHurtBody;
+      return w && { x: w.x, y: w.y, ground: w.ground, knocked: w.knocked, hurt: Boolean(w.originalHurt),
+        flight: body && { state: body.state, sleeping: body.sleeping, moving: body.moving, contact: body.contact,
+          vx: body.vx, vy: body.vy, enabled: body.enabled } };
+    },
     knockout(teamIndex = 1) {
       for (const w of worms) {
         if (w.team !== teamIndex) continue;
@@ -9153,6 +9184,12 @@ if (import.meta.env.DEV) {
       shotWait = 1;
       nativeAnnouncements = createNativeAnnouncements();
       if (phase !== "over") nextTurn();
+    },
+    // Release a worm in mid-air at host coordinates (it falls from rest).
+    placeWormInAir(index = current, x = 600, y = 400) {
+      const w = worms[index];
+      Object.assign(w, { x, y, renderY: y, vx: 0, vy: 0, ground: false, nativeFlight: null });
+      w.g.position.set(w.x, w.y, 15);
     },
     dropWormForRecovery(index = current) {
       const w = worms[index];

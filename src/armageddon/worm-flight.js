@@ -13,7 +13,7 @@ const fixed = (value) => Math.round(value * 65536) | 0;
 
 // Shared constructor fields for unrestrained airborne worms. State-specific
 // entry changes are applied after this common body has been created.
-function nativeAirborneBody(worm, height, friction) {
+export function nativeAirborneBody(worm, height, friction) {
   const x = fixed(worm.x),
     y = fixed(height - worm.y);
   const sum = (x + y) | 0;
@@ -302,8 +302,20 @@ export function stepNativeJumpFlight(
   worm.ground = landed;
   // The host resumes its grounded state once the landing event is delivered.
   if (landed) worm.nativeFlight = null;
-  return { landed, landingSpeed, events, body };
+  // 004DED91 (worm frame update): an airborne worm whose body has gone to
+  // sleep without a landing contact, e.g. resting on an oil drum, enters the
+  // idle state 0x65 instead of staying airborne.
+  let settled = false;
+  if (!landed && worm.nativeFlight && NATIVE_SLEEP_TO_IDLE_STATES.has(body.state) && !nativeBodyAwake(body)) {
+    worm.ground = true;
+    worm.nativeFlight = null;
+    worm.vx = worm.vy = 0;
+    settled = true;
+  }
+  return { landed, landingSpeed, events, body, settled };
 }
+// 004DED6A table at 004DF1D4: states routed to the asleep -> 0x65 branch.
+export const NATIVE_SLEEP_TO_IDLE_STATES = new Set([0x73, 0x79, 0x7d, 0x7e, 0x7f, 0x80, 0x81, 0x87]);
 
 // Physics precedes the state6C tick. Landing remains in6C until its awake
 // getter becomes false; unlike a jump, it must not enter landing state7A.

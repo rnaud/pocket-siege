@@ -165,3 +165,32 @@ test("planting a mine displays the original unarmed sprite", async ({
   expect(mines).toHaveLength(1);
   expect(mines[0].sprite).toBe("mineoff");
 });
+
+test("a worm that comes to rest on an oil drum stands on it and can still move", async ({ page }) => {
+  await start(page, "fern");
+  const result = await page.evaluate(() => {
+    const debug = window.siege.debug;
+    let state = window.siege.getState();
+    const drum = state.hazards.find((h) => h.x > 300 && h.x < 1500);
+    // Release the active worm just above the drum so it falls onto it.
+    debug.placeWormInAir(state.current, drum.x, drum.y + 30);
+    let body = null;
+    for (let frame = 0; frame < 400; frame += 10) {
+      debug.advanceReplayFrames(10);
+      body = debug.wormBody();
+      if (body.ground && !body.flight) break;
+    }
+    return { drum: [drum.x, drum.y], body };
+  });
+  // 004DED91: the sleeping airborne body enters idle instead of staying stuck.
+  expect(result.body.ground).toBe(true);
+  expect(result.body.flight).toBeFalsy();
+  // Standing on top of the drum, not beside or under it.
+  expect(result.body.y).toBeGreaterThan(result.drum[1] + 8);
+  expect(Math.abs(result.body.x - result.drum[0])).toBeLessThan(20);
+  const before = result.body.x;
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(600);
+  await page.keyboard.up("ArrowRight");
+  await expect.poll(() => page.evaluate(() => window.siege.debug.wormBody().x)).not.toBe(before);
+});

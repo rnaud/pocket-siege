@@ -10,6 +10,7 @@ import { originalHUDIcon } from "./armageddon/hud-icons.js";
 import { loadNativeFont, rasterNativeText } from "./armageddon/font.js";
 import { originalVisual } from "./armageddon/art.js";
 import { fixedMultiply } from "./armageddon/numeric.js";
+import { nativeSpriteFrame } from "./armageddon/animation.js";
 
 // Live weapon panel for the original desktop layout. The widget routines
 // (00500170/00500B20/00500960/00500A40/00500FD0), slide and cursor rules
@@ -183,11 +184,16 @@ export function createNativeArsenalPanel(arena, host) {
       const left = half(width) + x - half(widget.width), top = half(height) + y - half(widget.height);
       canvas.style.left = `${left}px`; canvas.style.top = `${top}px`;
       canvas.style.width = `${canvas.width}px`; canvas.style.height = `${canvas.height}px`;
-      const frame = originalVisual(cursorName);
+      // 004E5BF0 draws the team cursor at fixed progress 0xA000.
+      const info = originalVisual(cursorName);
+      const frameIndex = info ? nativeSpriteFrame(info.count, info.flags, 0xa000) : 0;
+      const frame = info && originalVisual(cursorName, frameIndex);
       if (!frame?.map?.image) { cursor.hidden = true; return; }
       const image = frame.map.image;
-      if (cursor.width !== image.width || cursor.height !== image.height || cursor.dataset.name !== cursorName) {
-        cursor.width = image.width; cursor.height = image.height; cursor.dataset.name = cursorName;
+      const key = `${cursorName}:${frameIndex}`;
+      if (cursor.width !== image.width || cursor.height !== image.height || cursor.dataset.name !== key) {
+        cursor.width = image.width; cursor.height = image.height; cursor.dataset.name = key;
+        cursor.getContext("2d").clearRect(0, 0, image.width, image.height);
         cursor.getContext("2d").drawImage(image, 0, 0);
       }
       const cx = left + 10 + (pointer[0] >> 16), cy = top + 10 + (pointer[1] >> 16);
