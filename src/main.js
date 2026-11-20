@@ -9078,6 +9078,44 @@ function toggleAllEffects() {
 const graphicsPanel = mountGraphicsPanel({ get: () => fx.settings, change: (next) => applyGraphics(next), toggleAll: toggleAllEffects });
 $("#graphics-toggle").onclick = () => graphicsPanel.open();
 $("#graphics-open").onclick = () => graphicsPanel.open();
+// Fullscreen takes over the whole display. Keyboard Lock (where supported)
+// keeps a short Escape press for the game, so Esc still releases the mouse
+// and then opens the menu; holding Escape leaves fullscreen.
+const fullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+async function toggleFullscreen() {
+  if (fullscreenElement()) {
+    navigator.keyboard?.unlock?.();
+    try { await (document.exitFullscreen?.() ?? document.webkitExitFullscreen?.()); } catch {}
+    return;
+  }
+  // Back to the running match and capture the mouse first: entering
+  // fullscreen consumes the click's user activation. Before the first match
+  // the capture happens when the player starts one.
+  if (menu.open && !$(".close-help").hidden) menu.close();
+  requestBattlefieldPointerLock();
+  const root = document.documentElement;
+  try {
+    if (root.requestFullscreen) await root.requestFullscreen({ navigationUI: "hide" });
+    else if (root.webkitRequestFullscreen) root.webkitRequestFullscreen();
+    else return;
+  } catch { return; }
+  try { await navigator.keyboard?.lock?.(["Escape"]); } catch {}
+}
+function syncFullscreenButtons() {
+  const active = Boolean(fullscreenElement());
+  for (const button of document.querySelectorAll(".fullscreen-button")) {
+    button.setAttribute("aria-pressed", String(active));
+    const label = button.querySelector("span") ?? button;
+    label.textContent = active ? "EXIT FULLSCREEN" : "FULLSCREEN";
+  }
+  if (!active) navigator.keyboard?.unlock?.();
+}
+for (const button of document.querySelectorAll(".fullscreen-button")) {
+  if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) button.hidden = true;
+  button.onclick = toggleFullscreen;
+}
+document.addEventListener("fullscreenchange", syncFullscreenButtons);
+document.addEventListener("webkitfullscreenchange", syncFullscreenButtons);
 arena.addEventListener("pointermove", (e) => {
   const box = arena.getBoundingClientRect();
   diorama.setPointer(((e.clientX - box.left) / box.width) * 2 - 1, 1 - ((e.clientY - box.top) / box.height) * 2);

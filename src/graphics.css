@@ -26,9 +26,9 @@
 }
 #graphics button:hover { background: #5a568b; color: #fff6a8; }
 #graphics button:focus-visible, #graphics select:focus-visible { outline: 2px solid #ffdc42; outline-offset: 2px; }
-#graphics-open { padding: 8px 10px; text-align: left; flex-shrink: 0; }
-#graphics-open span { display: block; font-size: 8px; letter-spacing: 1.2px; font-weight: 700; color: #ffe982; }
-#graphics-open small { display: block; margin-top: 3px; font-size: 7px; letter-spacing: 0.6px; color: #9fb2bb; }
+#graphics-open, #fullscreen-open { padding: 8px 10px; text-align: left; flex-shrink: 0; }
+#graphics-open span, #fullscreen-open span { display: block; font-size: 8px; letter-spacing: 1.2px; font-weight: 700; color: #ffe982; }
+#graphics-open small, #fullscreen-open small { display: block; margin-top: 3px; font-size: 7px; letter-spacing: 0.6px; color: #9fb2bb; }
 /* GPU rain and snow replace the DOM weather layer while atmosphere is on. */
 #arena.gpu-weather #weather-layer { display: none; }
 #graphics .graphics-master { width: 100%; min-height: 42px; margin-bottom: 6px; font-size: 12px; letter-spacing: 1px; color: #d5d3f0; }
