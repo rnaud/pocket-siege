@@ -456,6 +456,7 @@ let terrain,
   selectedNativeTeam = null,
   lastSelectedWormAlliance = new Map(),
   soloMatch = false,
+  simulationPaused = false,
   lastExplosion = null,
   scenarioIsTraining = false,
   mode = "ai",
@@ -6388,6 +6389,7 @@ function checkClassicRoundTime() {
   if (matchElapsed >= nativeClassicTiming.roundSeconds) applySuddenDeath();
 }
 function stepFrame(dt) {
+  if (simulationPaused) return;
   if (mapLoading) return;
   // 004EB110 decays the scene shake amplitude through 004EDA70 every frame.
   earthquakeShake = nativeCameraShakeDecay(earthquakeShake);
@@ -8733,6 +8735,7 @@ if (import.meta.env.DEV) {
   window.siege.debug = {
     captureReplayState: captureMatchReplayState,
     restoreReplayState: restoreMatchReplayState,
+    setSimulationPaused(value) { simulationPaused = Boolean(value); },
     advanceReplayFrames(count=1) {
       const previous = replaySimulation;
       replaySimulation = true;
