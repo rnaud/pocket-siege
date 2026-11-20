@@ -306,7 +306,11 @@ import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel, updateHudTeamHealth } from "./pixel-hud.js";
 import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode } from "./armageddon/worm-label.js";
 import { pixelViewport } from "./pixel-art.js";
-import { createWater, loadOriginalWater } from "./water.js";
+import { createWater, loadOriginalWater, originalWaterColor } from "./water.js";
+import { mountExpedition } from "./expedition-ui.js";
+import { createDiorama } from "./diorama.js";
+import { createFx, readGraphics, writeGraphics, toggleAllGraphics } from "./fx.js";
+import { mountGraphicsPanel } from "./graphics-panel.js";
 import * as THREE from "three";
 import "./style.css";
 import "./pixel-hud.css";
@@ -684,6 +688,8 @@ const arsenalPanel = createNativeArsenalPanel(arena, {
 });
 loadNativeArsenalFonts().catch((error) => console.error("Weapon panel fonts failed", error));
 let currentScenario = null;
+// Island being fought for an expedition run (see expedition.js), or null.
+let expeditionStage = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
 // Original mission script (00440EB0 records) and turn-game mission state.
@@ -905,6 +911,23 @@ for (let i = 0; i < 26; i++) {
 }
 let water = createWater(W, WATER, WATER_DEPTH, WORLD_MARGIN);
 group.add(water);
+// Optional graphics pipeline (fx.js) and lit-miniature view (diorama.js).
+// Both are presentation only and off by default.
+const fx = createFx({ renderer, scene, group, land, landTexture: texture, landContext: ctx, backdrop, reducedMotion });
+const diorama = createDiorama({
+  renderer, scene, layer: group, land, landTexture: texture, backdrop, reducedMotion,
+  lights: fx.lights, lightColors: fx.lightColors,
+  bindPalette: (material, bank) => nativePaletteDisplay.bind(material, bank),
+});
+function applyGraphics(next, remember = true) {
+  const settings = fx.apply(next);
+  diorama.setEnabled(settings.view === "diorama");
+  const color = originalWaterColor();
+  if (color) diorama.setSeaTint(color);
+  arena.classList.toggle("diorama", diorama.enabled);
+  arena.classList.toggle("gpu-weather", settings.atmosphere !== "off");
+  if (remember) writeGraphics(settings);
+}
 // Debris and projectiles share GPU resources; only one prototype per kind is built.
 const debrisGeometry = new THREE.PlaneGeometry(2, 2);
 const debrisMaterials = [
@@ -1538,6 +1561,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   paintTerrain(ctx, terrain, texture);
   updateOriginalBackdrop();
   terrainDirty = false;
+  fx.resetWorld(W, H);
   worms = [];
   if(authored)spawnHazards(terrain.nativeSpawnSetup.objects);
   for(const [index,p] of spawns.entries()) {
@@ -1646,6 +1670,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
       worm.label.hidden = true;
     }
   }
+  if (expeditionStage) applyExpeditionStage();
   nativeTeamRotation = nativeTeamRotationReset({ groups: 2,
     initialGroup: keepSeries ? (seriesRound - 1) % 2 : 0,
     cursors: Array(nativeTeamCandidates().length).fill(1), starts: [0, 0] });
@@ -1703,6 +1728,38 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   beginTurn();
   updateRecordUI();
   resize();
+}
+// Expedition islands start from the classic duel, then carry the run's squad,
+// supplies and complications in. Called from reset() before the first turn.
+function applyExpeditionStage() {
+  const stage = expeditionStage;
+  gravityScale = stage.gravityScale;
+  blastScale = stage.blastScale;
+  $(".location span").textContent = stage.name.toUpperCase();
+  const setEnergy = (worm, hp) => {
+    worm.hp = hp; worm.matchStats.hp = hp;
+    worm.nativeHealthDisplay = { ...worm.nativeHealthDisplay, value: hp << 16, target: hp << 16 };
+  };
+  const squad = worms.filter((w) => w.team === 0);
+  stage.squad.forEach((member, slot) => {
+    const worm = squad[slot];
+    if (!worm) return;
+    worm.name = member.name;
+    worm.label.querySelector(".worm-label-name").textContent = member.name;
+    if (member.alive) return setEnergy(worm, member.hp);
+    worm.hp = 0; worm.matchStats.hp = 0;
+    worm.disabledRoster = true;
+    worm.g.visible = false;
+    worm.label.hidden = true;
+  });
+  for (const worm of worms) if (worm.team === 1) setEnergy(worm, stage.enemyHp);
+  const issue = (loadout, supplies) => {
+    for (const [kind, count] of Object.entries(supplies))
+      if (kind in loadout) loadout[kind] = addAmmo(loadout[kind], count);
+  };
+  issue(ammo[0], stage.weapons);
+  issue(utilityAmmo[0], stage.utilities);
+  issue(ammo[1], stage.enemyAmmo);
 }
 function dispose(obj) {
   group.remove(obj);
@@ -6036,6 +6093,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
           impulse: (WEAPONS[kind].impulse ?? 350) * scale,
         };
   const { radius, damage: maxDamage, impulse } = profile;
+  fx.explosion(x, y, radius, kind === "holy");
   if (kind === "skunk" || kind === "molebomb") infectPoisonCloud(x, y, radius || 80);
   const exposure = new Map(
     worms.map((w) => [w, blastExposure(terrain, x, y, w.x, w.y + 17)]),
@@ -6555,7 +6613,7 @@ function finishMatch(winner, series) {
     $("#status").textContent =
       `${lastResult.scenario.title ?? "Scenario"} ${completed ? "complete" : "ended"} · targets ${lastResult.scenario.collected}/${lastResult.scenario.total} · score ${lastResult.scenario.score}.`;
   }
-  if (!replaySimulation && (mode === "ai" || daily)) {
+  if (!replaySimulation && !expeditionStage && (mode === "ai" || daily)) {
     record = applyMatchResult(record, {
       won: winner === 0,
       ai: mode === "ai",
@@ -6567,6 +6625,14 @@ function finishMatch(winner, series) {
   }
   updateRecordUI();
   updateUI();
+  if (expeditionStage && !replaySimulation) {
+    const squad = worms.filter((w) => w.team === 0);
+    expedition.battleOver({
+      won: winner === 0,
+      survivors: expeditionStage.squad.map((member, slot) =>
+        member.alive ? Math.max(0, Math.round(squad[slot]?.hp ?? 0)) : 0),
+    });
+  }
 }
 function endGame() {
   stopNativeNuclearAudio();
@@ -8779,7 +8845,39 @@ function frame(now) {
     paintTerrain(ctx, terrain, texture);
     updateOriginalBackdrop();
   }
-  renderer.render(scene, camera);
+  if (fx.active) {
+    const graphics = fx.settings;
+    const lit = graphics.lighting !== "off";
+    if (lit || diorama.enabled) {
+      for (const flame of nativeFlames)
+        if (flame?.mesh) fx.glow(flame.mesh.position.x, flame.mesh.position.y + 6, 80, 0xff8a30, lit ? 0.9 : 0.5);
+      if (projectile?.mesh) fx.glow(projectile.x, projectile.y, 70, 0xffd9a0, lit ? 0.7 : 0.35);
+    }
+    // After dark every living worm carries a lamp; the active one is brighter.
+    if (graphics.lighting === "night")
+      for (const [index, w] of worms.entries())
+        if (w.hp > 0 && !w.disabledRoster)
+          fx.glow(w.x, w.y + 14, index === current ? 150 : 95, w.team ? 0xffb090 : 0xd8ffa8, index === current ? 1.25 : 0.8);
+    const level = water.userData.surfaceLevel ?? waterLevel;
+    const focusOn = projectile ?? worms[current];
+    fx.render({
+      camera: diorama.enabled
+        ? diorama.prepare({
+            view, W, H, level, now, shakeX: camera.position.x, shakeY: camera.position.y, ownLights: !lit,
+            focusX: focusOn?.x ?? null,
+            // Feet of everything that stands on the ground, for contact shadows.
+            blobs: [
+              ...worms.filter((w) => w.hp > 0 && !w.disabledRoster && w.ground).map((w) => ({ x: w.x, y: w.y - 10 })),
+              ...crates.map((crate) => ({ x: crate.x, y: crate.y - 10, strength: 0.8 })),
+            ],
+          })
+        : camera,
+      view, W, H, level, now, wind: wind / (2500 * 10 / 35), weather, theme: terrain?.theme ?? "",
+      flat: !diorama.enabled,
+      tilt: diorama.enabled ? Math.max(1.5, renderer.domElement.height / 190) : 0,
+      focusY: focusOn ? Math.max(0.3, Math.min(0.7, (focusOn.y - view.y) / view.h)) : 0.5,
+    });
+  } else renderer.render(scene, camera);
 }
 function setWeapon(kind) {
   equippedTurnControl = 0;
@@ -8973,8 +9071,25 @@ function cycleLabelMode() {
   updateLabelModeButton();
 }
 $('#label-detail').onclick = cycleLabelMode;
+function toggleAllEffects() {
+  applyGraphics(toggleAllGraphics(fx.settings));
+  graphicsPanel.sync();
+}
+const graphicsPanel = mountGraphicsPanel({ get: () => fx.settings, change: (next) => applyGraphics(next), toggleAll: toggleAllEffects });
+$("#graphics-toggle").onclick = () => graphicsPanel.open();
+$("#graphics-open").onclick = () => graphicsPanel.open();
+arena.addEventListener("pointermove", (e) => {
+  const box = arena.getBoundingClientRect();
+  diorama.setPointer(((e.clientX - box.left) / box.width) * 2 - 1, 1 - ((e.clientY - box.top) / box.height) * 2);
+});
+// The scene and palette uniforms exist by now; restore the saved choices.
+applyGraphics(readGraphics(), false);
 window.addEventListener("keydown", (e) => {
   if (menu.open) return;
+  // F9 opens the graphics options over the live battlefield.
+  if (e.key === "F9") { e.preventDefault(); graphicsPanel.open(); return; }
+  // F8 switches every new effect on or off at once.
+  if (e.key === "F8") { e.preventDefault(); toggleAllEffects(); return; }
   if (nativeLayout && e.key === "Escape" && matchStarted) {
     // Original: Escape leaves the battlefield for the in-game menu. A press
     // already used to close the arsenal tray is not repeated here.
@@ -9166,6 +9281,7 @@ $("#restart").onclick = () => {
 $("#daily").addEventListener("click", async () => {
   const { key, seed } = dailySeed();
   daily = { date: key, seed };
+  expeditionStage = null;
   $("#mode").value = "ai";
   $("#format").value = "single";
   $("#weather").value = "clear";
@@ -9199,6 +9315,7 @@ function clearScenarioTraining() {
 }
 $("#start").onclick = async event => {
   event.preventDefault();
+  expeditionStage = null;
   currentScenario = null;
   clearScenarioTraining();
   scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0; scenarioTimed = []; scenarioTurn = 0;
@@ -9362,6 +9479,7 @@ const frontend = mountArmageddonFrontend({
   },
   playScenario: async (scenario) => {
     if (!scenario?.terrain) return;
+    expeditionStage = null;
     $("#mode").value = "ai";
     syncMenuOptions();
     $("#scheme").value = "custom";
@@ -9398,6 +9516,47 @@ const frontend = mountArmageddonFrontend({
     announce(`${scenario.title}${scenario.briefing ? `: ${scenario.briefing}` : ""}`);
   },
 });
+const EXPEDITION_MENU_FIELDS = ["#mode", "#difficulty", "#format", "#weather", "#map-layout",
+  "#terrain-theme", "#modifier", "#scheme", "#turn-time", "#retreat-time", "#sudden-death"];
+const expedition = mountExpedition({
+  // Set the island up through the same controls a custom match uses, then
+  // put the player's own menu choices back once the match has read them.
+  startStage: async (stage) => {
+    const saved = EXPEDITION_MENU_FIELDS.map((id) => [id, $(id).value]);
+    const restore = () => { for (const [id, value] of saved) $(id).value = value; syncMenuOptions(); };
+    Object.entries({
+      "#mode": "ai", "#difficulty": stage.difficulty, "#format": "single", "#weather": stage.weather,
+      "#map-layout": stage.layout, "#terrain-theme": stage.theme, "#modifier": "standard",
+      "#scheme": "classic", "#turn-time": String(stage.turnTime), "#retreat-time": "3", "#sudden-death": "water",
+    }).forEach(([id, value]) => { $(id).value = value; });
+    currentScenario = null;
+    clearScenarioTraining();
+    scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0; scenarioTimed = []; scenarioTurn = 0;
+    daily = null;
+    expeditionStage = stage;
+    matchStarted = true;
+    let started = false;
+    try {
+      await prepareDecorations();
+      started = await reset({ seed: stage.seed }) !== false;
+    } catch (error) { console.error("Expedition island failed to start", error); }
+    restore();
+    prepareDecorations();
+    if (!started) { expeditionStage = null; return false; }
+    if (menu.open) menu.close();
+    return true;
+  },
+  leave: () => {
+    if (menu.open) return;
+    releaseInputs();
+    frontend.showHome();
+    updateRecordUI();
+    menu.showModal();
+    resetMenuScroll();
+    updateUI();
+  },
+});
+$("#expedition-open").onclick = () => expedition.open();
 bootCurrentArt();
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   const registerServiceWorker = () =>
@@ -9414,6 +9573,11 @@ window.siege = {
     originalArtError,
     lastExplosion,
     mapLayout: terrain.layout,
+    diorama: diorama.enabled,
+    graphics: fx.settings,
+    graphicsCounts: fx.counts(),
+    expedition: expedition.state(),
+    expeditionStage: expeditionStage ? { name: expeditionStage.name, enemyHp: expeditionStage.enemyHp } : null,
     world: { width: W, height: H },
     terrainTheme: terrain.theme,
     terrainDecorations: terrain.decorations || [],

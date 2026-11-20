@@ -1,0 +1,36 @@
+#graphics {
+  width: min(360px, calc(100vw - 24px));
+  margin: 12px 12px auto auto;
+  padding: 16px 18px;
+  border: 2px solid;
+  border-color: #b8b5d8 #222035 #222035 #b8b5d8;
+  background: #0b0a3aee;
+  color: #d5d3f0;
+  font: 13px/1.5 monospace;
+}
+/* The battlefield stays visible so changes can be judged as they are made. */
+#graphics::backdrop { background: transparent; }
+#graphics h2 { margin: 0 0 4px; color: #ffe982; font: 15px "Siege Pixel", monospace; letter-spacing: 2px; }
+#graphics p { margin: 0 0 12px; color: #b5b0d5; font-size: 12px; }
+.graphics-fields { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.graphics-fields label { margin-top: 6px; color: #ffe982; font: 10px "Siege Pixel", monospace; letter-spacing: 1px; }
+.graphics-fields select {
+  width: 100%; min-height: 34px; padding: 4px 8px; border: 1px solid #585580; border-radius: 0;
+  background: #08062d; color: #fff; font: 13px monospace;
+}
+.graphics-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+#graphics button {
+  min-height: 34px; padding: 6px 12px; border: 2px solid; border-color: #b8b5d8 #222035 #222035 #b8b5d8;
+  border-radius: 0; background: #45416e; color: #fff; box-shadow: inset 1px 1px #77729d, 2px 2px #000;
+  font: 11px "Siege Pixel", monospace; cursor: pointer;
+}
+#graphics button:hover { background: #5a568b; color: #fff6a8; }
+#graphics button:focus-visible, #graphics select:focus-visible { outline: 2px solid #ffdc42; outline-offset: 2px; }
+#graphics-open { padding: 8px 10px; text-align: left; flex-shrink: 0; }
+#graphics-open span { display: block; font-size: 8px; letter-spacing: 1.2px; font-weight: 700; color: #ffe982; }
+#graphics-open small { display: block; margin-top: 3px; font-size: 7px; letter-spacing: 0.6px; color: #9fb2bb; }
+/* GPU rain and snow replace the DOM weather layer while atmosphere is on. */
+#arena.gpu-weather #weather-layer { display: none; }
+#graphics .graphics-master { width: 100%; min-height: 42px; margin-bottom: 6px; font-size: 12px; letter-spacing: 1px; color: #d5d3f0; }
+#graphics .graphics-master[aria-pressed="true"] { background: #2c6b3c; border-color: #b9f0c2 #17351f #17351f #b9f0c2; color: #fff; box-shadow: inset 1px 1px #58a86a, 2px 2px #000; }
+.graphics-actions { justify-content: flex-end; }

@@ -40,6 +40,7 @@ export async function loadOriginalWater() {
 // and parallax are separate remaining ports.
 // depth extends the fill below the landscape bottom and margin past both map
 // edges, covering everything the native camera limits can show.
+export const originalWaterColor = () => waterArt?.color ?? null;
 export function createWater(mapWidth, level, depth = 0, margin = 0) {
   const width = mapWidth + 2 * margin;
   const canvas = document.createElement("canvas"),
