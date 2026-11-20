@@ -454,24 +454,27 @@
     },
     {
       "title": "Computer opponents",
-      "live": "A playable computer opponent is present. The original AI is mapped and its ballistic routines are executable-verified; live CPU turns now pick Bazooka and grenade-family shots, aim, power and fuse with the recovered search, skill jitter and friendly-fire filter. Movement, the other weapon families and the per-frame event stream still use host heuristics.",
-      "remaining": "Port the reachable-position flood fill, path walking, safety and retreat scoring, the gun/melee/drop/strike evaluators and the full per-frame state machine and event stream.",
+      "live": "A playable computer opponent runs the original AI. Its planning, reachable-spot search, path following, every weapon family, aiming, firing and retreat are executable-verified and drive live CPU turns through the same controls a player uses. Host adapters remain for worm states, terrain-only path collision, a few neutral snapshot values and walking/jump physics.",
+      "remaining": "Collide AI paths with worms and objects, spread long searches across frames as the original yields, let airstrikes run the AI's escape, recover the unknown snapshot fields and per-worm target, and check difficulty behaviour against the original in play.",
       "evidence": [
         "native_cpu_ai_routines",
-        "live_native_cpu_ballistic_shots"
+        "native_cpu_ai_task",
+        "native_cpu_ai_movement",
+        "native_cpu_ai_weapons",
+        "live_native_cpu_ai"
       ],
       "plain": {
-        "now": "The computer now chooses its thrown and launched shots the way the original does; its movement and other weapons still use our own logic.",
-        "next": "Port its movement, retreat and remaining weapon choices."
+        "now": "The computer now plays with the original AI: it walks to a spot, chooses any weapon the original would, aims, fires and retreats.",
+        "next": "Close the remaining host differences and compare whole computer turns with the original."
       },
       "milestones": [
         {
           "title": "Original weapon choice in play",
-          "done": false
+          "done": true
         },
         {
           "title": "Original aiming and trajectory search in play",
-          "done": false
+          "done": true
         },
         {
           "title": "Original movement planning in play",

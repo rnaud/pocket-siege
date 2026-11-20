@@ -88,6 +88,8 @@ test("computer takes its turn and returns control", async ({ page }) => {
     })
     .toBe(1);
   await expect(page.locator("#fire")).toBeDisabled();
+  const playerHp = (state) => state.worms.filter((w) => w.team === 0).reduce((sum, w) => sum + w.hp, 0);
+  const before = playerHp(await page.evaluate(() => window.siege.getState()));
   // Bound the simulation, not the runner's render speed. This still executes
   // the actual AI, projectile and settlement steps, with no forced turn change.
   const after = await page.evaluate(() => {
@@ -100,7 +102,9 @@ test("computer takes its turn and returns control", async ({ page }) => {
   });
   expect(after.round).toBe(2);
   expect(after.team).toBe(0);
-  expect(after.lastShot?.points ?? 0).toBeGreaterThan(1);
+  // The original AI may pick any family: a projectile leaves a recorded shot,
+  // a strike or melee attack shows up as damage to the player's worms.
+  expect((after.lastShot?.points ?? 0) > 1 || playerHp(after) < before).toBe(true);
   await expect(page.locator("#fire")).toBeEnabled();
 });
 test("movement, jump, and pointer aiming", async ({

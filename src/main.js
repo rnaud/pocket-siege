@@ -350,10 +350,7 @@ import {
   WATER_RISE,
 } from "./weapons.js";
 import { planTurn, planMove, planRetreat } from "./ai.js";
-import {
-  aiWeaponTrial, aiBallisticEvaluate, aiBallisticFireSetup, aiBlastEstimate, nextAiRandom,
-} from "./armageddon/cpu-ai.js";
-import schemeWeaponData from "./armageddon/scheme-weapon-data.json";
+import { createLiveAi, stepLiveAi, destroyLiveAi, liveAiPlan } from "./armageddon/cpu-ai-live.js";
 import { chooseCameraTarget, cameraView, FULL_VIEW } from "./camera.js";
 import {
   applyMatchResult,
@@ -767,8 +764,11 @@ let format = "single",
   daily = null,
   record = readRecord();
 let aiPower = 100;
-// Per CPU team controller+0x88 recklessness (see nativeAiShot).
+// Per CPU team controller+0x88 recklessness (see startCpuAi/destroyCpuAi).
 const aiRecklessness = new Map();
+// Live original CPU AI (cpu-ai-live.js); cpuInput lets its events through the
+// human-control guards, cpuWalked feeds worm state 0x66 to the next AI frame.
+let cpuAi = null, cpuAiFailed = false, cpuInput = false, cpuWalked = false, cpuTarget = null;
 let shotFuse = null,
   shotBounce = null,
   aiMoveTime = 0,
@@ -1395,6 +1395,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   aiMoveTime = 0;
   aiMoveDirection = 0;
   aiRecklessness.clear();
+  if (cpuAi) { destroyLiveAi(cpuAi.live); cpuAi = null; }
+  cpuAiFailed = false;
   aiPlan = null;
   lastAiPlanMs = 0;
   hitStop = 0;
@@ -2826,6 +2828,9 @@ function beginTurn() {
   hitStop = 0;
   setWeapon(teamWeapon[team]);
   updateSliders();
+  destroyCpuAi();
+  cpuTarget = null;
+  if (team === 1 && mode === "ai" && !cpuAiFailed) startCpuAi();
   $("#round").textContent = suddenDeath
     ? "SUDDEN DEATH"
     : `ROUND ${String(round).padStart(2, "0")}`;
@@ -3049,16 +3054,20 @@ function canAct() {
     !worms[current]?.originalJumpPreparation &&
     !worms[current]?.originalRecovery &&
     (!worms[current]?.nativeHurtBody || worms[current].nativeHurtBody.state === 0x73) &&
-    !(team === 1 && mode === "ai") &&
+    !cpuInputBlocked() &&
     !menu.open &&
     !replaying &&
     worms[current]?.hp > 0
   );
 }
+// CPU turns accept only the native AI's own events (cpuInput).
+function cpuInputBlocked() {
+  return team === 1 && mode === "ai" && !cpuInput;
+}
 function canMove() {
   return (
     (canAct() ||
-      (retreat > 0 && !(team === 1 && mode === "ai") && !menu.open)) &&
+      (retreat > 0 && !cpuInputBlocked() && !menu.open)) &&
     !charging &&
     !replaying &&
     worms[current]?.hp > 0 &&
@@ -3081,7 +3090,7 @@ function canSelectWorm() {
     !activeUtility &&
     !rope.attached &&
     !jetpack.active &&
-    !(team === 1 && mode === "ai") &&
+    !cpuInputBlocked() &&
     worms[current]?.hp > 0 &&
     worms.filter((w) => w.team === team && w.hp > 0).length > 1
   );
@@ -3251,6 +3260,11 @@ function handleUtilityTarget(e) {
       ),
     ),
     y = view.y + (1 - (e.clientY - rect.top) / rect.height) * view.h;
+  applyUtilityTarget(x, y);
+}
+// Shared by pointer targeting and the CPU's 0x41A target (host world units).
+function applyUtilityTarget(x, y, strikeDirection = undefined) {
+  if (!targetUtility) return;
   const w = worms[current];
   if (WEAPONS[targetUtility]?.special === "homing") {
     homingTarget = { x, y };
@@ -3271,7 +3285,7 @@ function handleUtilityTarget(e) {
     }
     const strikeKind = targetUtility;
     ammo[team][strikeKind] = spendAmmo(ammo[team][strikeKind]);
-    spawnAirstrike(x, y, strikeKind);
+    spawnAirstrike(x, y, strikeKind, strikeDirection);
     finishUtilityTurn(`${WEAPONS[strikeKind].label} called. Bombs away!`);
     return;
   }
@@ -4115,6 +4129,8 @@ function captureMatchReplayState() {
 }
 function restoreMatchReplayState(snapshot) {
   if (snapshot.terrain !== terrain || mapLoading) throw new Error("Replay snapshot belongs to a different map");
+  // The AI coroutine is not part of the snapshot: a restored CPU turn starts a fresh task.
+  if (cpuAi) { destroyLiveAi(cpuAi.live); cpuAi = null; }
   // Native constructors clear transient audio owners; saved WebAudio handles
   // can refer to stopped/displaced sources and must never be reinstalled.
   const resources = new Map([...snapshot.resources].map(([id,value]) => [id,isReplayAudioResource(value) ? null : value]));
@@ -4812,9 +4828,8 @@ function queueWormCamera(w, priority = null) {
   });
   if (request) pendingWormCamera.push(request);
 }
-function spawnAirstrike(x, y, kind = "airstrike") {
+function spawnAirstrike(x, y, kind = "airstrike", direction = Number($("#strike-direction").value)) {
   recordReactionWeaponUse(kind);
-  const direction = Number($("#strike-direction").value);
   const strike = createNativeAirstrike(x,y,direction,current,H,gravityScale,kind);
   strike.mesh = createNativeProjectileVisual({sprite: strike.sprite});
   if (strike.mesh) {
@@ -6845,131 +6860,233 @@ function startAiTurn() {
   }
   aiAim();
 }
-// Original CPU shot choice for the ballistic family (004CE3A0 group order,
-// 004CE270 trials, 004F3F00/004F39A0 search, 004CE7D0 friendly-fire filter,
-// 004F2FD0 skill jitter). Other families (guns, melee, drops, strikes) and
-// the reachable-position flood fill are not recovered yet: the search uses the
-// worm's current spot and the host planner handles everything else.
-const AI_BALLISTIC_RECORDS = schemeWeaponData.schemes.find((scheme) => scheme.resource_id === 195).weapons;
-const aiRecordWord = (slot, offset) => AI_BALLISTIC_RECORDS[slot]?.[(offset - 0x48) / 4] | 0;
-function aiBallisticRecord(slot) {
-  const at = (offset) => aiRecordWord(slot, offset);
-  return { launch: at(0x6c), kind: at(0x68), fuseMs: at(0xc4), impact: at(0x80), mode: at(0x128),
-    blast: at(0x8c), extra: at(0x150), extraCount: at(0x130), wind: at(0xb4), gravity: at(0xbc),
-    acceptMiss: at(0x204), secondaryFixed: at(0x188) };
-}
 // Host adapter: CPU skill 0..100 (controller byte +0x44) from the mission team
 // skill, else the host difficulty preset.
 function nativeAiSkill(worm) {
   if (Number.isFinite(worm?.teamSkill)) return Math.max(0, Math.min(100, worm.teamSkill | 0));
   return { rookie: 30, regular: 60, veteran: 100 }[difficultyForWorm(worm)] ?? 60;
 }
-// Controller+0x88 recklessness: -15 at each CPU activation (004E7470), +40
-// (capped at 100) when a CPU turn ends without firing.
-function nativeAiShot(w) {
-  const native = (x, y) => [Math.round(x * 65536) | 0, Math.round((H - y) * 65536) | 0];
-  const reckless = Math.max(0, (aiRecklessness.get(w.team) ?? 0) - 15);
-  aiRecklessness.set(w.team, reckless);
-  const living = worms.filter((t) => t.hp > 0);
-  const [ox, oy] = native(w.x, w.y);
-  const ai = {
-    team: w.team + 1, skill: nativeAiSkill(w), aggression: reckless,
-    teams: new Set(living.map((t) => t.team)).size,
-    seed: matchRandom.logicState | 0, x: ox, y: oy, targetTeam: 0, targetWorm: 0, stamp: 0,
-  };
-  const registry = living.map((t) => {
-    const [x, y] = native(t.x, t.y);
-    return { team: t.team + 1, worm: t.matchStats?.worm ?? worms.indexOf(t) + 1, x, y, self: t === w, host: t };
-  });
-  const world = {
-    damageScale: 1, water: Math.floor(H - waterLevel), rangeWord: 0,
-    health: (team, worm) => registry.find((r) => r.team === team && r.worm === worm)?.host.hp ?? 0,
-    altHealth: (team, worm) => registry.find((r) => r.team === team && r.worm === worm)?.host.hp ?? 0,
-    teamFlag: () => 0,
-    alliance: (team) => {
-      const member = registry.find((r) => r.team === team)?.host;
-      return Number.isFinite(member?.alliance) ? member.alliance : team;
-    },
-    ally: () => 0, double: () => false,
-  };
-  const kindOf = (slot) => NATIVE_WEAPON_KINDS[slot];
-  const ammoOf = (slot) => {
-    const kind = kindOf(slot);
-    if (!kind || !WEAPONS[kind] || WEAPONS[kind].special) return 0;
-    const count = availableAmmo(ammo[w.team], kind);
-    return !Number.isFinite(count) || count < 0 ? -1 : count | 0;
-  };
-  const host = {
-    positions: [[ox >> 16, oy >> 16, 0]],
-    ammo: ammoOf,
-    wind: () => Math.round((wind / 2500) * 65536) | 0,
-    gravity: () => Math.round(0x3d70 * gravityScale),
-    enemies: () => registry.map((r) => ({ team: r.team, x: r.x, y: r.y })),
-    ownPosition: () => [ox, oy],
-    teleport: () => true, wormFlags: () => 0, setWormFlags: () => {}, yield: () => {},
-    solid: (x, y) => terrain.solid(x, H - 1 - y),
-    closedTop: 0, bordered: 0,
-    estimate: (x, y, radius, damage) => aiBlastEstimate(ai, registry, world, x, y, radius, damage, 0),
-  };
-  const adjustable = (record) => record.kind === 1 &&
-    (record.fuseMs === 0 || (record.mode === 1 && record.secondaryFixed === 0));
-  const trialHost = {
-    ammo: ammoOf, weight: (slot) => aiRecordWord(slot, 0x200),
-    evaluate: (family, slot, plan) => {
-      if (family !== "ballistic") return 0;
-      const record = aiBallisticRecord(slot);
-      return aiBallisticEvaluate(ai, plan, slot, record, adjustable(record), host);
-    },
-  };
-  const plan = new Array(24).fill(0);
-  // 004CE3A0: Grenade and Bazooka in AI-random order, then the ballistic part
-  // of the fallback list.
-  const entry = ai.seed;
-  ai.seed = nextAiRandom(ai.seed);
-  const groups = ai.seed & 0x10000 ? [[1], [6]] : [[6], [1]];
-  for (const group of groups) aiWeaponTrial(ai, plan, group, 4, entry, trialHost);
-  if (!(plan[6] && !plan[4] && plan[3]))
-    aiWeaponTrial(ai, plan, [1, 6, 47, 7, 8, 43], 4, entry, trialHost);
-  if (plan[6] !== 3 || !plan[3]) return null;
-  const slot = plan[1], record = aiBallisticRecord(slot);
-  Object.assign(ai, { weapon: slot, aim: plan[19], power: plan[20], flightTicks: plan[10], action: 0 });
-  aiBallisticFireSetup(ai, { hasFuse: adjustable(record), selected: WEAPON_SLOTS[weapon] ?? 0 });
-  // Native aim: turn = aim/2 from straight down (mirrored when facing left);
-  // host angles are degrees from the right, counter-clockwise.
-  const turn = (plan[22] < 0 ? 0x20000 - ai.aim : ai.aim) / 2;
-  const radians = (turn / 65536) * Math.PI * 2;
+// Original CPU team AI (task 004CCFA0, cpu-ai-live.js) driving the CPU turn
+// through controller events. Created on turn activation (0x41C) and stepped
+// once per logic frame until deactivation (0x41F: the turn or its retreat
+// ends). The host planner (src/ai.js) only runs when the native AI cannot be
+// built or throws; aiPlan.native says which one is active.
+const CPU_AIRBORNE_STATE = 0x7c; // host adapter: any non-idle worm state (the AI tests 0x64..0x68 only)
+const cpuRosterIndex = (w) => worms.filter((t) => t.team === w.team).indexOf(w) + 1;
+const cpuFixedX = (x) => Math.round(x * 65536) | 0, cpuFixedY = (y) => Math.round((H - y) * 65536) | 0;
+// Native aim (worm +0xC): 0 straight down .. 0x10000 straight up, 0x200 per aim event.
+function cpuAimValue(w = worms[current]) {
+  const elevation = w.facing > 0 ? angle : 180 - angle;
+  const aim = Math.round(((elevation + 90) / 180) * 0x10000 / 0x200) * 0x200;
+  return Math.max(0, Math.min(0x10000, aim));
+}
+function setCpuAim(aim, w = worms[current]) {
+  const elevation = (Math.max(0, Math.min(0x10000, aim)) / 0x10000) * 180 - 90;
+  angle = w.facing > 0 ? elevation : 180 - elevation;
+  updateSliders();
+}
+function cpuWormState(w) {
+  const state = nativeWormState(w);
+  if (state !== 0x65) return state;
+  if (w.originalDrill) return 0x6e;
+  if (w === worms[current] && charging) return 0x68;
+  // The host recoil pose (originalRecoil) advances with rendering only, so it
+  // is not a logic state here; pending recoil/burst actions are.
+  if (pendingFire?.worm === w && pendingFire.stage === "recoil") return 0x6a;
+  if (pendingFire?.worm === w && pendingFire.stage === "burst") return 0x6b;
+  if (!w.ground || w.knocked) return CPU_AIRBORNE_STATE;
+  if (w === worms[current] && cpuWalked) return 0x66;
+  if (w === worms[current] && phase === "aim" && !targetUtility) return 0x67;
+  return 0x65;
+}
+function cpuAmmo(slot) {
+  if (slot === 0x28) {
+    const count = displayAmmo(utilityAmmo[team]?.teleport ?? 0);
+    return count === Infinity ? -1 : count | 0;
+  }
+  const kind = NATIVE_WEAPON_KINDS[slot];
+  if (!kind || !WEAPONS[kind]) return 0;
+  const count = availableAmmo(ammo[team], kind);
+  return !Number.isFinite(count) || count < 0 ? -1 : count | 0;
+}
+function cpuAiSnapshot() {
+  const w = worms[current];
+  // Retreat time runs while the shot is still in flight; the worm may move then.
+  const blocked = !(phase === "aim" || retreat > 0) || Boolean(pendingFire);
+  const selected = targetUtility === "teleport" ? 0x28 : WEAPON_SLOTS[weapon] ?? 0;
+  const objects = [];
+  for (const mine of mines) objects.push({ type: 10, x: mine.nativeBody.x, y: mine.nativeBody.y,
+    inactive: !mine.nativeTimer?.enabled || mine.nativeTimer?.dud, armed: mine.nativeTimer?.triggered });
+  for (const crate of crates) if (!crate.nativeBody?.destroyed)
+    objects.push({ type: crate.nativeBody?.type === 12 ? 12 : 11, x: crate.nativeBody?.x ?? cpuFixedX(crate.x),
+      y: crate.nativeBody?.y ?? cpuFixedY(crate.y) });
+  for (const p of [projectile, ...bombs]) if (p)
+    objects.push({ type: 15, x: p.nativeBody?.x ?? cpuFixedX(p.x), y: p.nativeBody?.y ?? cpuFixedY(p.y) });
+  for (const barrel of hazards) objects.push({ type: 17, x: barrel.nativeBody.x, y: barrel.nativeBody.y });
   return {
-    weapon: kindOf(slot), slot, facing: plan[22],
-    angle: (Math.atan2(-Math.cos(radians), Math.sin(radians)) * 180) / Math.PI,
-    power: (ai.power / 65536) * 100, nativePower: ai.power, nativeAim: ai.aim, fuse: adjustable(record) ? ai.fuse : null,
-    score: plan[3], friendly: plan[4], native: true,
+    currentWorm: w && w.hp > 0 ? cpuRosterIndex(w) : 0,
+    controls: [blocked ? 1 : 0, 1, menu.open ? 1 : 0, phase === "aim" && !pendingFire ? 1 : 0, selected,
+      shotgunRemaining > 0 ? 1 : 0],
+    root: { team: team + 1, turnLeftMs: Math.max(0, Math.round(time * 1000)), matchMs: Math.round(matchElapsed * 1000),
+      suddenDeath: suddenDeath ? 1 : 0, ended: phase === "over" },
+    worm: { state: cpuWormState(w), aim: cpuAimValue(w), charge: charging ? chargeFixed : 0,
+      weapon: WEAPON_SLOTS[w.fixedWeapon] ?? 0 },
+    position: [cpuFixedX(w.x), cpuFixedY(w.y)],
+    moving: !w.ground || Math.abs(w.vx) >= 2 || Math.abs(w.vy) >= 2 ? 1 : 0,
+    worms: worms.filter((t) => !t.disabledRoster && (t.hp > 0 || t.deathPending)).map((t) => ({
+      team: t.team + 1, worm: cpuRosterIndex(t), x: cpuFixedX(t.x), y: cpuFixedY(t.y), hp: Math.max(0, t.hp | 0),
+      alliance: Number.isFinite(t.alliance) ? t.alliance : t.team + 1, self: t === w })),
+    objects,
+    flames: nativeFlames.filter(Boolean).map((flame) => [flame.body.x, flame.body.y]),
+    water: Math.floor(H - waterLevel),
+    waterRise: suddenDeath && suddenDeathType === "water"
+      ? Math.round((currentScenario?.suddenDeath?.waterRise || nativeClassicTiming?.waterRise || WATER_RISE) / 5) : 0,
+    wind: Math.round((wind / 2500) * 65536) | 0, gravity: Math.round(0x3d70 * gravityScale),
+    settling: projectile || bombs.length || airstrikes.length ? 1 : 0,
+    closedTop: 0, bordered: currentScenario?.indestructibleBorder ? 1 : 0,
   };
+}
+function startCpuAi() {
+  destroyCpuAi();
+  const w = worms[current];
+  if (!w || w.hp <= 0) return false;
+  const started = performance.now();
+  // 004E6810 on 0x41C: the task takes controller+0x88, then +0x88 drops by 15.
+  const aggression = aiRecklessness.get(w.team) ?? 0;
+  aiRecklessness.set(w.team, Math.max(0, aggression - 15));
+  try {
+    const live = createLiveAi({
+      team: w.team + 1, skill: nativeAiSkill(w), aggression, seed: matchRandom.logicState | 0,
+      livingWorms: worms.filter((t) => t.team === w.team && t.hp > 0).length,
+      snapshot: cpuAiSnapshot,
+      // Host adapter: the worm body against terrain only, the same test host
+      // walking uses (walkWorm/bodyBlocked), so planned paths stay walkable.
+      // The original 004F4D80 also collides with other worms and objects.
+      collide: (x, y) => (bodyBlocked(terrain, x / 65536, H - y / 65536) ? 1 : 0),
+      solid: (x, y) => (terrain.solid(x, H - 1 - y) ? 1 : 0),
+      ammo: cpuAmmo,
+      logicRandom: () => matchRandom.logicUint() | 0,
+      place: (x, y) => {
+        const actor = worms[current];
+        actor.x = x / 65536; actor.y = H - y / 65536; actor.renderY = actor.y;
+        actor.g?.position.set(actor.x, actor.y, 15);
+      },
+    });
+    cpuAi = { live, team: w.team, fired: false };
+    lastAiPlanMs = performance.now() - started;
+    aiPlan = { native: true, state: live.task.state, family: null, weapon: null, angle, power: 0, score: 0, samples: 0 };
+    aiWait = Infinity;
+    return true;
+  } catch (error) {
+    cpuAiFallback(error);
+    return false;
+  }
+}
+function destroyCpuAi() {
+  if (!cpuAi) return;
+  const ai = cpuAi;
+  cpuAi = null;
+  destroyLiveAi(ai.live);
+  if (aiPlan?.native) aiPlan = { ...aiPlan, events: [], active: false };
+  // 0x41F: +0x88 rises by 40 (max 100) when no fire event reached the controller.
+  if (!ai.fired) aiRecklessness.set(ai.team, Math.min(100, (aiRecklessness.get(ai.team) ?? 0) + 40));
+  move = 0;
+}
+function cpuAiFallback(error) {
+  console.warn("Native CPU AI unavailable; using the host planner.", error);
+  if (cpuAi) { destroyLiveAi(cpuAi.live); cpuAi = null; }
+  cpuAiFailed = true;
+  aiPlan = { native: false, error: String(error?.message ?? error), weapon: null, angle, power: 0, score: 0, samples: 0 };
+  move = 0;
+  aiWait = 0.3;
+}
+function updateCpuAiPlan() {
+  const view = liveAiPlan(cpuAi.live), kind = view.slot === 0x28 ? "teleport" : NATIVE_WEAPON_KINDS[view.slot] ?? null;
+  const facing = view.facing || worms[current]?.facing || 1;
+  const elevation = (view.aim / 0x10000) * 180 - 90;
+  aiPlan = {
+    native: true, state: view.state, nextState: view.nextState, family: view.family, weapon: view.family ? kind : null,
+    slot: view.slot, angle: facing > 0 ? elevation : 180 - elevation, power: (view.power / 65536) * 100,
+    nativeAim: view.aim, nativePower: view.power, fuse: view.fuse || null, score: view.enemy, friendly: view.friendly,
+    walking: view.walking, path: view.path, position: view.position, retries: view.retries, finished: view.finished, frames: view.frames, yields: view.yields,
+    samples: 0, events: cpuAi.live.events, wormState: cpuAi.live.snap?.worm.state ?? null,
+    blocked: cpuAi.live.snap?.controls[0] ?? null,
+  };
+}
+// Controller events (004D0760 -> class 0x14) mapped onto the host controls.
+function applyCpuEvent(event, words) {
+  const w = worms[current];
+  cpuInput = true;
+  try {
+    if (event === 0x406 || event === 0x407) setMove(event === 0x406 ? -1 : 1); // held for this frame
+    else if (event === 0x40a || event === 0x40b) { if (canMove()) turnFacing(event === 0x40a ? -1 : 1); }
+    else if (event === 0x40c) jump("forward");
+    else if (event === 0x40d) jump("up");
+    else if (event === 0x408 || event === 0x409) {
+      if (canAct() && !charging) {
+        markNativePickupAction();
+        setCpuAim(cpuAimValue(w) + (event === 0x408 ? 0x200 : -0x200), w);
+      }
+    } else if (event === 0x40e) {
+      if (phase === "aim" && !pendingFire) cpuAi.fired = true; // 0x40E clears controller+0x58
+      cpuFireDown();
+    } else if (event === 0x40f) releaseCharge("cpu");
+    else if (event === 0x410) {
+      if (canAct()) skipTurn();
+      else if (retreat > 0) { clearNativeRetreat(); retreat = 0; move = 0; updateUI(); }
+    } else if (event === 0x417) {
+      if (canAct() && WEAPONS[weapon]?.timed) shotFuse = Math.max(1, Math.min(5, (words[2] | 0) + 1));
+    } else if (event === 0x41a) {
+      cpuTarget = { x: (words[2] << 16) >> 16, y: words[2] >> 16, mode: words[3] | 0 };
+    } else if (event === 0x41b) {
+      const slot = words[2] | 0;
+      if (slot === 0x28) { if (targetUtility !== "teleport") useUtility("teleport"); }
+      else if (canAct() && NATIVE_WEAPON_KINDS[slot]) {
+        if (targetUtility === "teleport") { targetUtility = null; activeUtility = null; }
+        setWeapon(NATIVE_WEAPON_KINDS[slot]);
+      }
+    } else if (event === 0x42b) cycleWorm(1);
+  } finally {
+    cpuInput = false;
+  }
+}
+function cpuFireDown() {
+  if (!canAct()) return;
+  const target = cpuTarget;
+  if (targetUtility === "teleport") {
+    if (target) applyUtilityTarget(Math.max(20, Math.min(W - 20, target.x)), H - target.y);
+    return;
+  }
+  startCharge("cpu");
+  if (target && WEAPONS[targetUtility]?.special === "airstrike")
+    applyUtilityTarget(Math.max(20, Math.min(W - 20, target.x)), H - target.y, target.mode < 0 ? -1 : 1);
+}
+function stepCpuAi() {
+  const w = worms[current];
+  const live = team === cpuAi.team && team === 1 && mode === "ai" && w?.hp > 0 &&
+    (phase === "aim" || retreat > 0 || ((phase === "flight" || phase === "settle") && turnBody.retreatPending));
+  if (!live) { destroyCpuAi(); return; }
+  if (replaying) return;
+  move = 0;
+  let events;
+  const started = performance.now();
+  try {
+    events = stepLiveAi(cpuAi.live);
+  } catch (error) {
+    cpuAiFallback(error);
+    return;
+  }
+  // Slowest AI frame this turn (searches and flood fills run inside one frame).
+  lastAiPlanMs = Math.max(lastAiPlanMs, performance.now() - started);
+  for (const [event, words] of events) {
+    if (!cpuAi) break;
+    applyCpuEvent(event, words);
+  }
+  if (cpuAi) updateCpuAiPlan();
 }
 function aiAim() {
   const w = worms[current];
   const started = performance.now();
-  const nativeShot = w.fixedWeapon ? null : nativeAiShot(w);
-  if (nativeShot) {
-    lastAiPlanMs = performance.now() - started;
-    aiPlan = { weapon: nativeShot.weapon, angle: nativeShot.angle, power: nativeShot.power,
-      score: nativeShot.score, samples: 0, native: true, nativePower: nativeShot.nativePower,
-      nativeAim: nativeShot.nativeAim, fuse: nativeShot.fuse };
-    angle = nativeShot.angle;
-    aiPower = nativeShot.power;
-    shotFuse = WEAPONS[nativeShot.weapon].timed ? nativeShot.fuse ?? 2 : null;
-    shotBounce = 0.55;
-    weapon = nativeShot.weapon;
-    setWeapon(weapon);
-    w.facing = nativeShot.facing;
-    power = 0;
-    charging = true;
-    chargeSource = "ai";
-    chargeFixed = 0;
-    aiWait = Infinity;
-    updateSliders();
-    $("#status").textContent = `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
-    return;
-  }
   const fixed = w.fixedWeapon;
   const fixedAmmo = fixed && (ammo[1][fixed] ?? 0) !== 0
     ? Object.fromEntries(Object.entries(ammo[1]).map(([kind, count]) =>
@@ -7259,7 +7376,9 @@ function stepFrame(dt) {
       }
     }
     if (aimInput && !rope.attached && !jetpack.active) adjustAim(aimInput, dt);
-    if (team === 1 && mode === "ai") {
+    // A CPU turn that lost its task (restored snapshot, turn resumed) activates a new one.
+    if (team === 1 && mode === "ai" && !cpuAi && !cpuAiFailed && worms[current]?.hp > 0) startCpuAi();
+    if (team === 1 && mode === "ai" && !cpuAi) {
       if (aiMoveTime > 0) {
         aiMoveTime = Math.max(0, aiMoveTime - dt);
         const w = worms[current];
@@ -7286,11 +7405,17 @@ function stepFrame(dt) {
       else nativeSoundQueue.enqueue(request);
     }
   }
+  if (cpuAi) stepCpuAi();
+  const cpuWalk = Boolean(cpuAi);
+  cpuWalked = false;
+  if (cpuWalk) cpuInput = true;
   if (canMove() && move && !rope.attached && !jetpack.active && !worms[current].originalParachute) {
     const w = worms[current];
     markNativePickupAction(w);
     w.moving = walkWorm(w, terrain, move, dt);
+    cpuWalked = cpuWalk && w.moving && w.ground;
   }
+  cpuInput = false;
   if (
     team === 1 &&
     mode === "ai" &&
@@ -9532,9 +9657,16 @@ window.siege = {
           native: Boolean(aiPlan.native),
           nativePower: aiPlan.nativePower, nativeAim: aiPlan.nativeAim, fuse: aiPlan.fuse,
           samples: aiPlan.samples,
+          state: aiPlan.state ?? null, nextState: aiPlan.nextState ?? null, family: aiPlan.family ?? null,
+          slot: aiPlan.slot ?? null, friendly: aiPlan.friendly ?? null, walking: Boolean(aiPlan.walking),
+          retries: aiPlan.retries ?? 0, finished: Boolean(aiPlan.finished), path: aiPlan.path ?? null, position: aiPlan.position ?? null, frames: aiPlan.frames ?? 0,
+          yields: aiPlan.yields ?? 0, error: aiPlan.error ?? null, wormState: aiPlan.wormState ?? null,
+          blocked: aiPlan.blocked ?? null,
+          events: (aiPlan.events ?? []).map(([event, words]) => [event, ...words.slice(1)]),
         }
       : null,
-    terrainPixels: terrain.data.reduce((a, b) => a + b, 0),
+    // Summed only when read: tests poll getState() every frame.
+    get terrainPixels() { let total = 0; for (const value of terrain.data) total += value; return total; },
     worms: worms.map(
       ({
         team,
