@@ -6,7 +6,9 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.removeItem("pocket-siege-host-layout"));
 });
 
-async function startLocalMatch(page, map = null) {
+// Starting a match captures the mouse (pointer lock). Most cases drive hover
+// motion with synthetic pointer events, so they release it first.
+async function startLocalMatch(page, map = null, { keepPointerLock = false } = {}) {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
@@ -16,6 +18,10 @@ async function startLocalMatch(page, map = null) {
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
     .toBe("aim");
+  if (!keepPointerLock) {
+    await page.evaluate(() => document.exitPointerLock());
+    await page.waitForTimeout(450);
+  }
 }
 
 test("desktop shows the original full-window battlefield at one world pixel per pixel", async ({ page }) => {
@@ -222,4 +228,20 @@ test("the ninja rope is selected from its row and fired with Space", async ({ pa
     const rope = window.siege.getState().rope;
     return Boolean(rope && (rope.firing || rope.attached)) || /anchor/.test(document.querySelector("#status").textContent);
   })).toBe(true);
+});
+
+test("starting a match captures the mouse; Esc releases it, a second Esc opens the menu", async ({ page }) => {
+  await startLocalMatch(page, null, { keepPointerLock: true });
+  const locked = () => page.evaluate(() => document.pointerLockElement?.id ?? null);
+  try {
+    await expect.poll(locked, { timeout: 3000 }).toBe("arena");
+  } catch {
+    test.skip(true, "This browser does not grant pointer lock");
+  }
+  await page.keyboard.press("Escape");
+  await expect.poll(locked).toBe(null);
+  await page.waitForTimeout(500);
+  await expect(page.locator("#menu")).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#menu")).toBeVisible();
 });

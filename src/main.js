@@ -8359,8 +8359,18 @@ arena.addEventListener("pointerdown", (e) => {
   pointerAim(e);
 });
 arena.addEventListener("contextmenu", (e) => { if (nativeLayout) e.preventDefault(); });
-new MutationObserver(() => { if (menu.open && pointerLocked()) document.exitPointerLock(); })
-  .observe(menu, { attributes: true, attributeFilter: ["open"] });
+// Leaving the menu for the battlefield (Start, Play scenario, Return to game)
+// captures the mouse while the click still counts as a user gesture; Esc
+// gives it back. Opening the menu always releases it.
+new MutationObserver(() => {
+  if (menu.open) { if (pointerLocked()) document.exitPointerLock(); return; }
+  if (nativeLayout && navigator.userActivation?.isActive !== false) requestBattlefieldPointerLock();
+}).observe(menu, { attributes: true, attributeFilter: ["open"] });
+// The Esc that releases the captured mouse must not also open the menu.
+let pointerLockReleasedAt = -Infinity;
+document.addEventListener("pointerlockchange", () => {
+  if (!pointerLocked()) pointerLockReleasedAt = performance.now();
+});
 // Locked pointer events report relative motion only, like DirectInput.
 document.addEventListener("mousemove", (e) => {
   if (!pointerLocked() || !matchStarted || menu.open || inventoryOpen() || replaying) return;
@@ -8426,7 +8436,9 @@ window.addEventListener("keydown", (e) => {
     if (e.defaultPrevented || inventoryOpen()) return;
     e.preventDefault();
     if (arsenalPanel.open) { arsenalPanel.close(); return; }
-    if (pointerLocked()) document.exitPointerLock();
+    // First Esc gives the mouse back; the next one opens the menu.
+    if (pointerLocked()) { document.exitPointerLock(); return; }
+    if (performance.now() - pointerLockReleasedAt < 400) return;
     $("#restart").click();
     return;
   }
