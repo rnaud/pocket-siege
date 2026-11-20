@@ -106,7 +106,7 @@
       "projectile": {
         "kind": "sheep",
         "x": 600,
-        "y": 263,
+        "y": 267,
         "walkTicks": 0,
         "burrowDepth": 0
       },
@@ -169,7 +169,7 @@
       "projectile": {
         "kind": "sheep",
         "x": 600,
-        "y": 263,
+        "y": 267,
         "walkTicks": 0,
         "burrowDepth": 0
       },
@@ -232,7 +232,7 @@
       "projectile": {
         "kind": "sheep",
         "x": 600,
-        "y": 263,
+        "y": 267,
         "walkTicks": 0,
         "burrowDepth": 0
       },
@@ -295,7 +295,7 @@
       "projectile": {
         "kind": "molebomb",
         "x": 800,
-        "y": 348,
+        "y": 352,
         "walkTicks": 0,
         "burrowDepth": 0
       },

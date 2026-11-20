@@ -45,7 +45,7 @@ import { nativeCrateContents } from "./armageddon/crate-contents.js";
 import crateProjectileData from "./armageddon/crate-projectile-data.json";
 import { attachNativeProjectileBlock, nativeWeaponSlotBlock } from "./armageddon/projectile-runtime.js";
 import {
-  nativeSheepEvent, nativeSuperSheepFlight, nativeSheepDraw,
+  nativeSheepEvent, nativeSuperSheepFlight, nativeSheepDraw, nativeSheepWalk,
   SHEEP_FIRE_EVENT, SHEEP_LEFT_EVENT, SHEEP_RIGHT_EVENT,
 } from "./armageddon/super-sheep.js";
 import { nativeArmageddonStart, nativeArmageddonTick } from "./armageddon/armageddon.js";
@@ -5776,11 +5776,13 @@ function sheepUnit(p) {
     fallAngle: at(0x344), fallSpeed: at(0x348), fallSound: at(0x34c),
     hopAngle: at(0x350), hopSpeed: at(0x354), hopSound: at(0x358),
     flightSprite: at(0x36c), flightSprite2: at(0x370), releaseSound: at(0x374), flightLoop: at(0x378),
-    timer: p.nativeTimer?.remaining ?? 0, firstFrame: 0, inWater: 0, lastSound: 0, phase: 0, angle: 0,
+    timer: p.nativeTimer?.remaining ?? 0, firstFrame: 1, inWater: 0, lastSound: 0, phase: 0, angle: 0,
     direction: p.vx < 0 ? -1 : 1, loopHandle: 0, rotation: 0,
   };
   // 004E1830 event 0x43A: fire mode 1 arms the owner controller's fire key.
   p.sheepFireArmed = p.sheep.fireMode === 1;
+  // Record word 0x108 (actor 0x35C): 004E2A7D draw offset for the walking art.
+  p.sheepDrawOffset = at(0x35c);
   p.sheepSteering = false;
   p.sheepLoops = new Map();
   return p.sheep;
@@ -5825,8 +5827,8 @@ function sheepHost(p) {
   return {
     waterY: Math.floor(H - waterLevel),
     frame: matchRandom.frame,
-    collide: (x, y, flags) => nativeProjectileCollision(p, x / 65536, H - y / 65536, terrain, worms, H,
-      { ...p.nativeBody, x, y, flags }),
+    collide: (x, y, flags, actor) => nativeProjectileCollision(p, x / 65536, H - y / 65536, terrain, worms, H,
+      { ...p.nativeBody, x: actor.x, y: actor.y, flags }),
     random: () => matchRandom.logicUint(),
     visualRandom: () => matchRandom.visualUint(),
     wormState: (team, worm) => nativeWormState(worms[worm] ?? {}),
@@ -5898,27 +5900,39 @@ const WALKING_UNIT_KINDS = new Set([
   "oldwoman", "sallyarmy", "skunk", "madcow", "molebomb",
 ]);
 const WALKING_UNIT_SPEED = {
-  sheep: 0.9, supersheep: 1.2, aquasheep: 1.0, donkey: 1.3,
+  donkey: 1.3,
   oldwoman: 0.45, sallyarmy: 0.8, skunk: 0.7, madcow: 1.25, molebomb: 0.6,
 };
 function walkingUnitGrounded(x, y) {
   for (const offset of [-8, -4, 0, 4]) if (terrain.solid(x, y + offset)) return true;
   return false;
 }
+// 004E48B8: after the shared body frame, a mode3 sheep outside flight runs
+// the original ground routine 004E3920. The frame handler clears the
+// first-frame flag (actor+0x388) at its end (004E4C76).
+function stepSheepWalk(p) {
+  const s = p.sheep, b = p.nativeBody;
+  Object.assign(s, {
+    x: b.x, y: b.y, vx: b.vx, vy: b.vy, rest: b.sleeping ? 1 : 0,
+    submerged: b.submerged ? 1 : 0, contactX: b.contact | 0, contactY: b.moving | 0,
+    suspended: b.suspended | 0, impulseScale: b.mass ?? 65536,
+  });
+  const before = s.x;
+  applySheepCalls(p, nativeSheepWalk(s, sheepHost(p)));
+  b.sleeping = p.sheep.rest;
+  if (p.sheep.x !== before && !p.sheep.vx && !p.sheep.vy) p.walkTicks = (p.walkTicks ?? 0) + 1;
+  b.facing = p.sheep.direction;
+  p.sheep.firstFrame = 0;
+  p.walkFacing = p.sheep.direction;
+  if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
+}
 function stepWalkingUnit(p) {
   if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
-  if (p.sheep?.phase === 2 && p.walkFacing === undefined) p.walkFacing = p.sheep.direction;
+  if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
+  if (sheepUnit(p)) { stepSheepWalk(p); return; }
   if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
-  if (p.kind !== "aquasheep" && p.y <= waterLevel + 12) return;
-  if (p.kind === "aquasheep" && p.y <= waterLevel + 12) {
-    p.x += p.walkFacing * 1.0;
-    p.walkTicks = (p.walkTicks ?? 0) + 1;
-    p.nativeBody.x = Math.round(p.x * 65536);
-    p.nativeBody.vx = 0;
-    if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
-    return;
-  }
+  if (p.y <= waterLevel + 12) return;
   if (!walkingUnitGrounded(p.x, p.y)) return;
   const step = p.walkFacing * (WALKING_UNIT_SPEED[p.kind] ?? 0.8);
   const aheadX = p.x + step * 4;
@@ -7798,6 +7812,10 @@ function stepFrame(dt) {
     }
     if (p.sheep?.phase === 1 && renderSheepFlight(p)) {
       // 004E27F0 mode3 flight art (spsheep/aquashp, rotated by heading).
+    } else if (p.sheep && updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age,
+        p.y < waterLevel, false, p.nativeRender)) {
+      p.mesh.scale.x = Math.abs(p.mesh.scale.x) * (p.sheep.direction < 0 ? 1 : -1);
+      p.mesh.position.y = p.y - p.sheepDrawOffset;
     } else if (
       !updateOriginalProjectile(
         p.mesh,
@@ -9647,6 +9665,13 @@ if (import.meta.env.DEV) {
         mesh: projectileMesh(kind), blocked: false,
       };
       attachNativeProjectile(p, H);
+      // The registry ignores bodies a unit already overlaps, so a ground
+      // spawn rises until its shape is clear of the terrain.
+      if (y === null && p.nativeBody)
+        for (let lift = 0; lift < 64 && nativeProjectilePlacementHit(p, terrain, worms, H); lift++) {
+          p.y += 1; p.launchY = p.y;
+          p.nativeBody.y -= 65536; p.nativeBody.launchY = p.nativeBody.y;
+        }
       p.mesh.position.set(p.x, p.y, 40);
       group.add(p.mesh);
       projectile = p;

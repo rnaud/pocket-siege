@@ -1772,20 +1772,6 @@ test("super sheep steers horizontally while airborne", async ({ page }) => {
   expect(x).not.toBe(600);
 });
 
-test("aqua sheep swims at the water surface", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  const y = await page.evaluate(() => window.siege.getState().waterLevel - 4);
-  await page.evaluate((y) => window.siege.debug.spawnUnitAt("aquasheep", 600, y), y);
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
-  const x = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
-  expect(x).not.toBeNull();
-  expect(x).not.toBe(600);
-});
-
-
 test("mole bomb burrows while host-walking", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
@@ -1812,20 +1798,19 @@ test("mole bomb detonation poisons nearby worms", async ({ page }) => {
     .toBe(true);
 });
 
-test("land units do not swim while aqua sheep does", async ({ page }) => {
+test("sheep units do not walk in water", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   const y = await page.evaluate(() => window.siege.getState().waterLevel - 4);
-  await page.evaluate((y) => window.siege.debug.spawnUnitAt("sheep", 600, y), y);
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));
-  const landTicks = await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0);
-  expect(landTicks).toBe(0);
-  await page.evaluate((y) => window.siege.debug.spawnUnitAt("aquasheep", 600, y), y);
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));
-  const aquaTicks = await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0);
-  expect(aquaTicks).toBeGreaterThan(0);
+  // 004E3920 returns before stepping while the body is submerged; Aqua Sheep
+  // moves under water only in flight.
+  for (const kind of ["sheep", "aquasheep"]) {
+    await page.evaluate(({ kind, y }) => window.siege.debug.spawnUnitAt(kind, 600, y), { kind, y });
+    await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));
+    expect(await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0), kind).toBe(0);
+  }
 });
 
 test("mole bomb detonates below its burrow depth", async ({ page }) => {

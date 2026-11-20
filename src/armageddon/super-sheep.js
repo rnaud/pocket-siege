@@ -19,7 +19,8 @@ import { nativeDirectionTurn } from "./direction.js";
 //   again)  angle 0x398  direction 0x3C8  loopHandle 0x3D8  rotation 0x3DC.
 //
 // Host interface (all calls are also returned, in native order, in `calls`):
-//   collide(x, y, flags) -> truthy: scene 0x7D4 vtable+0xC occupancy probe
+//   collide(x, y, flags, actor) -> truthy: scene 0x7D4 vtable+0xC occupancy
+//     probe of the actor (at its current x/y) against point x/y
 //   random() -> uint32: 004EE960 logic RNG (host advances its own state)
 //   visualRandom() -> uint32: 004EE930 cosmetic RNG
 //   wormState(team, worm): 004C2D60
@@ -43,7 +44,8 @@ function context(input, host) {
   const body = { ...input }, calls = [];
   const call = (operation, request, extra = {}) => { calls.push({ operation, request, ...extra }); };
   const probe = (x, y) => {
-    const hit = host.collide(x, y, body.flags) ? 1 : 0;
+    // The actor stays at its own position; only the query point moves.
+    const hit = host.collide(x, y, body.flags, body) ? 1 : 0;
     call("probe", [x, y, body.flags], { result: hit });
     return hit;
   };
