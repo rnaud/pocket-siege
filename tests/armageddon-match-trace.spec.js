@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import fs from "node:fs";
+import fixture from "./fixtures/armageddon/match-trace.json" with { type: "json" };
 
 const snapshot = (page) => page.evaluate(() => {
   const s = window.siege.getState();
@@ -57,7 +59,14 @@ test("deterministic match trace baseline (host)", async ({ browser }) => {
   const first = await browser.newPage();
   const second = await browser.newPage();
   try {
-    expect(await runTrace(first)).toEqual(await runTrace(second));
+    const trace = await runTrace(first);
+    if (process.env.UPDATE_MATCH_TRACE) {
+      fs.writeFileSync(new URL("./fixtures/armageddon/match-trace.json", import.meta.url),
+        JSON.stringify(trace, null, 2) + "\n");
+    } else {
+      expect(trace).toEqual(fixture);
+    }
+    expect(trace).toEqual(await runTrace(second));
   } finally {
     await first.close();
     await second.close();
