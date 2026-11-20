@@ -227,6 +227,12 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
       timeout: 20000,
     })
     .toBe(1);
+  // A turn-start supply drop settles before aiming; finish it in frames.
+  expect(await page.evaluate(() => {
+    for (let frames = 0; frames < 3000 && window.siege.getState().phase !== "aim"; frames += 10)
+      window.siege.debug.advanceReplayFrames(10);
+    return window.siege.getState().phase;
+  })).toBe("aim");
   await expect(page.locator("#aim-reticle")).toBeVisible();
 });
 
