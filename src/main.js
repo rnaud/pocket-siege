@@ -1145,6 +1145,13 @@ function announceMatchResult(winner) {
     audio.resume();
     queueControllerSpeech(request,worms.find(w=>w.team===winner));
   }
+  // 004B71E1: a draw also queues the last turn's team "Boring" speech
+  // (004EDAF0 slot 2) before the drawn-game announcement.
+  if (winner === null && sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    queueControllerSpeech([2, 8, 65536, 65536, 0], worms.find((w) => w.team === team));
+  }
   const message = nativeMatchResultAnnouncement(winningSideName(winner), winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
@@ -1674,7 +1681,13 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   // between turns before the first turn starts.
   runMissionBetweenTurns();
   if(!authored)spawnHazards();
+  // 004B761C (S10c): before the first turn the intro plays StartRound
+  // (sound 0x2D, priority 8) and holds the scene for 1 s (004EEBF0); the
+  // first turn starts in the same pass. Host adapter: the mission-mode intro
+  // text (language +0x2D8) is not loaded.
+  nativeSoundQueue.enqueue([0x2d, 8, 65536, 65536, 0]);
   beginTurn();
+  nativeBusy.delay(1);
   updateRecordUI();
   resize();
 }
