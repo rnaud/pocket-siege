@@ -15,7 +15,7 @@ import { captureReplayActors, restoreReplayActors } from "./armageddon/replay-ac
 import { nativeWindSelection, nativeDefaultWind } from "./armageddon/wind-selection.js";
 import { nativeWormRotation } from "./armageddon/worm-rotation.js";
 import { nativeTeamRotationReset, nativeSelectNextTeam } from "./armageddon/team-rotation.js";
-import { nativeRetreatCountdown } from "./armageddon/retreat.js";
+import { nativeRetreatCountdown, nativeRetreatTick } from "./armageddon/retreat.js";
 import { nativePoisonSettlement } from "./armageddon/poison-settlement.js";
 import { NativeBusyCounter } from "./armageddon/busy-counter.js";
 import { nativeSettlementPresentation } from "./armageddon/settlement-presentation.js";
@@ -82,6 +82,8 @@ import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { createNativeArsenalPanel, loadNativeArsenalFonts, nativeArsenalWeapons } from "./arsenal-panel.js";
+import { nativeTurnStart } from "./armageddon/turn-start.js";
+import { nativeRetreatRequest } from "./armageddon/retreat-request.js";
 import { nativeCollectWeaponInput } from "./armageddon/controller-input.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFallingFlight, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
@@ -375,6 +377,26 @@ let nativeLayout = false;
 // control tests) frames through the native camera task at 1:1 pixels.
 let nativeCameraActive = false;
 let pendingTurnCamera = null;
+// Turn-game root turn fields owned by 004B3210 and the retreat/settlement
+// routines (turn and retreat durations in ms, turn count, clock target).
+let turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending: 0 };
+// 004B4CE0 event 0x432 at weapon completion: request the retreat (pending
+// until the worm's action ends), size it (004B4230) and slide the clock out.
+// Host adapters: every finished action ends the turn, the controller +104
+// gate is open, and weapon +5C and scheme 11D47 minimums are not mapped.
+function requestNativeRetreat() {
+  const w = worms[current];
+  const request = nativeRetreatRequest({ ...turnBody, activeTeam: team + 1, field104: 1,
+    retreatDuration: Math.round(retreatSeconds * 1000), endsTurn: 1, schemeFlag: 0,
+    weaponRetreat: 0, traversalSeconds: 0, wormState: w ? nativeWormState(w) : 0 });
+  turnBody = request.body;
+  nativeClockTarget = turnBody.clockTarget;
+  retreat = 0;
+}
+function clearNativeRetreat() {
+  turnBody.retreatPending = 0;
+  turnBody.retreatRemaining = 0;
+}
 // Arsenal slot 57-59 (Skip Go/Surrender/Select Worm) equipped until fired.
 let equippedTurnControl = 0;
 let pendingInputCamera = false;
@@ -1183,6 +1205,7 @@ let mapLoading = false;
 let preparedRandomSeed = null;
 const nativeSoundQueue = new NativeSoundQueue();
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
+  turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending: 0 };
   const matchSeed = seed ?? currentScenario?.logicRandomSeed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
@@ -1345,7 +1368,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   hitStop = 0;
   move = 0;
   aimInput = 0;
-  retreat = 0;
+  retreat = 0; clearNativeRetreat();
   shotCount = 0;
   shotgunRemaining = 0;
   stopBurstSound();
@@ -2703,10 +2726,25 @@ function beginTurn() {
   matchDamageSourceActive = true;
   active.nativePlacedAction = null;
   active.nativeFireInput = null;
+  // 004B3210: the turn root takes the scheme turn/retreat seconds, counts
+  // the turn, raises the clock and panel targets and orders 42B/41C/420.
+  // Host adapters: deployment (state 100) and the round-time warning are
+  // not reachable live, and the events map onto the host blocks above.
+  const turnStart = nativeTurnStart({
+    body: turnBody, shared: {}, team, selectedWorm: selection.selected,
+    schemeTurn: turnSeconds, schemeRetreat: retreatSeconds, schemeMode: 0,
+    state: nativeWormState(active), positionX: Math.round(active.x * 65536) | 0,
+    positionY: Math.round((H - active.y) * 65536) | 0,
+    teamHealth: roster.reduce((sum, w) => sum + Math.max(0, w.hp), 0),
+    teamFlags: active.nativeTeamModifiers | 0, teamControl: mode === "ai" && team === 1 ? 128 : 0,
+    initialDeployment: false, deployment: false,
+  });
+  turnBody = turnStart.body;
+  nativeClockTarget = turnBody.clockTarget;
   phase = "aim";
   cameraSnap = true; manualCamera = null;
   wormLocked = false;
-  time = turnSeconds;
+  time = turnBody.turnRemaining / 1000;
   lastLossOfControl = false;
   advanceMissionTurn();
   applyScenarioSuddenDeathDamage();
@@ -3040,7 +3078,7 @@ function skipTurn() {
   activeUtility = null;
   wormLocked = true;
   phase = "settle";
-  retreat = 0;
+  retreat = 0; clearNativeRetreat();
   shotWait = 0;
   move = 0;
   shotCount++;
@@ -3095,7 +3133,7 @@ function finishUtilityTurn(text) {
   utilitiesOpen = false;
   wormLocked = true;
   phase = "settle";
-  retreat = 0;
+  retreat = 0; clearNativeRetreat();
   shotWait = 0;
   move = 0;
   $("#status").textContent = text;
@@ -4424,7 +4462,7 @@ function injure(w, damage, direction = 0, native = false) {
   if (w === worms[current]) {
     shotgunRemaining = 0;
     cancelCharge();
-    retreat = 0;
+    retreat = 0; clearNativeRetreat();
     move = 0;
     aimInput = 0;
     if (phase === "aim") {
@@ -4546,7 +4584,7 @@ function recordReactionWeaponUse(kind) {
 function finishAction(message) {
   if (currentScenario?.weaponsDontEndTurn && phase !== "over") {
     phase = "aim";
-    retreat = 0;
+    retreat = 0; clearNativeRetreat();
     shotWait = 0;
     move = 0;
     wormLocked = false;
@@ -4555,7 +4593,7 @@ function finishAction(message) {
     return;
   }
   phase = "settle";
-  retreat = retreatSeconds;
+  requestNativeRetreat();
   shotWait = 0;
   move = 0;
   wormLocked = true;
@@ -5083,7 +5121,7 @@ function fireDragonBall(prepared = false) {
   projectile.mesh.position.set(projectile.x, projectile.y, 40);
   group.add(projectile.mesh);
   lastShot = {kind:"dragonball", shooter:w.name, points:[{x:projectile.x,y:projectile.y}], impact:null};
-  phase = "flight"; retreat = retreatSeconds; shotWait = 0;
+  phase = "flight"; requestNativeRetreat(); shotWait = 0;
   move = aimInput = 0; charging = false; chargeSource = null;
   const release = nativeLaunchAudio(config.record, { loop: 0, burst: 0, ordinal: 0, flag: 0, team });
   if (sound) {
@@ -5154,7 +5192,7 @@ function fireSheepLauncher() {
   shotCount++;
   recordReactionWeaponUse("sheeplauncher");
   phase = "flight";
-  retreat = retreatSeconds;
+  requestNativeRetreat();
   $("#status").textContent = "Sheep launched!";
   updateUI();
 }
@@ -5193,7 +5231,7 @@ function useSelfDestruct(kind) {
   w.nativeDeathRequest = 0;
   startOriginalDeath(w);
   phase = "settle";
-  retreat = retreatSeconds;
+  requestNativeRetreat();
   shotWait = 0;
   wormLocked = true;
   $("#status").textContent = `${w.name} self-destructs.`;
@@ -5569,7 +5607,7 @@ function fire() {
   updateSliders();
   firedPower = power;
   shotCount++; recordReactionWeaponUse(kind);
-  retreat = retreatSeconds;
+  requestNativeRetreat();
   if (kind !== "rocket" || ammo[team].rocket !== undefined) {
     ammo[team][kind] = spendAmmo(ammo[team][kind]);
     if (ammo[team][kind] === 0) setWeapon("rocket");
@@ -6556,7 +6594,7 @@ function startAiTurn() {
     freezeNativeTeam(1);
     playSkipTurnSpeech();
     phase = "settle";
-    retreat = 0;
+    retreat = 0; clearNativeRetreat();
     shotWait = 0;
     move = 0;
     $("#status").textContent =
@@ -6831,9 +6869,20 @@ function stepFrame(dt) {
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
-  if (retreat > 0) {
-    retreat = nativeRetreatCountdown(Math.round(retreat * 1000)) / 1000;
-    if (retreat === 0) {
+  // 004B6C63..004B6DC8: a pending retreat waits for the worm's action to
+  // finish, starts without decrementing that frame, then counts 20 ms per
+  // frame; expiry requests the turn end (0x41D). Host adapters: action-busy
+  // comes from the host fire/weapon-state flags and the team-status release
+  // remains the host settlement.
+  if (turnBody.retreatPending || turnBody.retreatRemaining) {
+    const w = worms[current];
+    const state = w ? nativeWormState(w) : 0;
+    const actionBusy = Boolean(pendingFire || charging || shotgunRemaining || (state >= 0x68 && state <= 0x72));
+    const had = turnBody.retreatRemaining;
+    turnBody = nativeRetreatTick({ ...turnBody, cameraCounts: turnBody.cameraCounts ?? [],
+      activeTeam: team + 1, actionBusy, teamStatus: 1 }).body;
+    retreat = turnBody.retreatRemaining / 1000;
+    if (had && !turnBody.retreatRemaining) {
       move = 0;
       updateUI();
     }
@@ -7184,7 +7233,7 @@ function stepFrame(dt) {
       tone(150, 0.3);
       if (w === worms[current]) {
         cancelCharge();
-        retreat = 0;
+        retreat = 0; clearNativeRetreat();
         move = 0;
         if (phase === "aim") {
           phase = "settle";
@@ -7695,6 +7744,7 @@ function stepFrame(dt) {
       nativeBusy.value === 0 &&
       !projectile && !pendingFire &&
       bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
+      !turnBody.retreatPending && !turnBody.retreatRemaining &&
       worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&
         ((w.hp <= 0 && !w.deathPending) ||
           (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)));
@@ -7742,7 +7792,7 @@ function stepFrame(dt) {
       if (shotWait > pause && !nativeAnnouncementsPending(nativeAnnouncements)) {
         if (currentScenario?.weaponsDontEndTurn && phase === "settle") {
           phase = "aim";
-          retreat = 0;
+          retreat = 0; clearNativeRetreat();
           shotWait = 0;
           wormLocked = false;
           move = 0;
@@ -9077,6 +9127,8 @@ window.siege = {
     nativeNuclearEffect: nativeNuclearEffect ? { ...nativeNuclearEffect } : null,
     waterSprite: water.userData.originalSprite,
     waterSurface: water.userData.surfaceLevel,
+    turnBody: { turnCount: turnBody.turnCount, turnDuration: turnBody.turnDuration, retreatDuration: turnBody.retreatDuration,
+      retreatRemaining: turnBody.retreatRemaining, retreatPending: turnBody.retreatPending, clockTarget: turnBody.clockTarget },
     waterFrame: water.userData.originalFrame,
     suddenDeath,
     hitStop,
