@@ -127,7 +127,8 @@
         "live_scheme_nuclear_weapons",
         "live_unit_ground_walk",
         "collision_maskless_registry_guard",
-        "live_sally_army_secondary"
+        "live_sally_army_secondary",
+        "live_unit_ai_recovery_audit"
       ],
       "plain": {
         "now": "The arsenal uses original weapon settings, with many weapons already playable.",
