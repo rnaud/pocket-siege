@@ -1176,7 +1176,8 @@ test("parachute and freeze utilities resolve their effects", async ({
   await page.locator('[data-utility="freeze"]').click();
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.frozen).toEqual([1, 1, 1, 0, 0, 0]);
-  expect(state.utilities.freeze).toBe(0);
+  // Read Moss's kit: with no fixed gap the next team's turn may already run.
+  expect(state.utilityAmmo[0].freeze).toBe(0);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().team), {
       timeout: 5000,

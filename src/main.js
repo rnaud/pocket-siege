@@ -3773,7 +3773,7 @@ function advanceNativeEnvironmentSettlement() {
   // Browser modes still supply scheme choices; the native stage owns event
   // order, the one-second transition and one-shot pending-flag consumption.
   const result = nativeSuddenDeathRepeat({ pending: pendingEnvironmentSettlement,
-    rise: nativeClassicTiming?.waterRise ?? WATER_RISE, dose: suddenDeathType === "nuke" ? 5 : suddenDeathType === "health" ? -1 : 0,
+    rise: currentScenario?.suddenDeath?.waterRise || nativeClassicTiming?.waterRise || WATER_RISE, dose: suddenDeathType === "nuke" ? 5 : suddenDeathType === "health" ? -1 : 0,
     nuclear: Number(suddenDeathType === "nuke") });
   pendingEnvironmentSettlement = result.pending;
   for (const call of result.calls) {
@@ -6450,6 +6450,7 @@ function consumeDamageReaction(reveal = false) {
     audio.resume();
     queueControllerSpeech(reaction.speech.request,worms.find(w=>w.team+1===reaction.speech.team));
   }
+  return Boolean(reaction.speech);
 }
 function nativeTeamCandidates() {
   const candidates = [{
@@ -6509,7 +6510,11 @@ function nextTurn() {
     queueNativeAnnouncement(nativeAnnouncements, killMessage.text, killMessage.font);
     return;
   }
-  consumeDamageReaction();
+  // 004B725A: a winning damage reaction voice holds the next step for 2 s.
+  if (consumeDamageReaction()) {
+    nativeBusy.delay(2);
+    return;
+  }
   showNativeTeamPanel(nativeTeamPanel);
   const playerAlive = worms.some((w) => w.team === 0 && w.hp > 0);
   const cpuGroups = new Set(worms.filter((w) => w.team === 1 && w.hp > 0)
@@ -6527,11 +6532,6 @@ function nextTurn() {
   if (nativeCrateBag) drawNativeCrate(true);
   if (team === 0) {
     round++;
-    if (sdTriggered && suddenDeath && suddenDeathType === "water" && round > lastWaterRiseRound) {
-      lastWaterRiseRound = round;
-      const rise = currentScenario?.suddenDeath?.waterRise || nativeClassicTiming?.waterRise || WATER_RISE;
-      startNativeWaterRise(waterLevel + rise, 8);
-    }
     if (
       !nativeCrateBag && !crates.length &&
       (crateRain ? round % 2 === 0 : round >= 3 && round % 3 === 0)
@@ -7807,7 +7807,10 @@ function stepFrame(dt) {
     }
     if (phase === "settle") {
       shotWait = settled && !healthDisplayBusy && !deathStarted && !worms.some(w => w.nativeDeathRequest) ? shotWait + dt : 0;
-      const pause = currentScenario?.pauseBetweenTurns ?? 0.7;
+      // The original has no fixed gap: each between-turn step waits for the
+      // scene busy counter, which its steps raise (004EEBE0/004EEBF0).
+      // Missions may still set their own PauseBetweenTurns.
+      const pause = currentScenario?.pauseBetweenTurns ?? 0;
       if (shotWait > pause && !nativeAnnouncementsPending(nativeAnnouncements)) {
         if (currentScenario?.weaponsDontEndTurn && phase === "settle") {
           phase = "aim";
@@ -9102,6 +9105,7 @@ window.siege = {
       delays: [...state.delays],
     })),
     utilities: { ...utilityAmmo[team] },
+    utilityAmmo: utilityAmmo.map((ammo) => ({ ...ammo })),
     laserSight,
     scenario: scenarioProgress ? { ...scenarioProgress } : null,
     invisibleTeam,

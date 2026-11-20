@@ -172,13 +172,20 @@ test("F-keys cycle the original panel rows and turn controls act when fired", as
   const first = await weapon();
   expect(first).not.toBe("homing");
   // F12's Skip Go is equipped, not performed, until fire.
-  const team = await page.evaluate(() => window.siege.getState().team);
+  const turns = () => page.evaluate(() => window.siege.getState().turnBody.turnCount);
+  const before = await turns();
   await page.keyboard.press("F12");
   await page.waitForTimeout(200);
-  expect(await page.evaluate(() => window.siege.getState().phase)).toBe("aim");
+  expect(await turns()).toBe(before);
   await page.keyboard.press("Space");
-  await expect.poll(() => page.evaluate(() => window.siege.getState().phase)).not.toBe("aim");
-  expect(await page.evaluate(() => window.siege.getState().team)).toBe(team);
+  // Skip Go ends the turn; settle the next one in frames, not wall time.
+  expect(await page.evaluate((before) => {
+    for (let frames = 0; frames < 3000; frames += 10) {
+      if (window.siege.getState().turnBody.turnCount > before) break;
+      window.siege.debug.advanceReplayFrames(10);
+    }
+    return window.siege.getState().turnBody.turnCount;
+  }, before)).toBe(before + 1);
 });
 
 test("Control-click opens the weapon panel on macOS", async ({ page }) => {
