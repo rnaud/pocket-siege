@@ -40,6 +40,16 @@ const runTrace = async (page) => {
   await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 800));
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(120));
   await capture("mole");
+  const waterY = await page.evaluate(() => window.siege.getState().waterLevel - 4);
+  await page.evaluate((y) => window.siege.debug.spawnUnitAt("aquasheep", 600, y), waterY);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  await capture("aqua");
+  await page.evaluate((y) => window.siege.debug.spawnUnitAt("supersheep", 600, y), waterY + 160);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  await capture("super");
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 1850));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
+  await capture("edge");
   return trace;
 };
 
