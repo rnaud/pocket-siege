@@ -87,12 +87,15 @@ test("live team names use original colored glyphs on the pixel grid", async ({
             .getContext("2d")
             .getImageData(0, 0, canvas.width, canvas.height).data,
         ].some((v, i) => i % 4 !== 3 && v > 0),
+        border: [...canvas.getContext("2d").getImageData(1, 0, 1, 1).data],
       })),
     ).toEqual({
-      height: 16,
-      cssHeight: 16,
+      // 004B8350: the team text cache is the font height + 1, drawn boxed.
+      height: 17,
+      cssHeight: 17,
       smoothing: "pixelated",
       colored: true,
+      border: [157, 157, 157, 255],
     });
   }
   const highlights = await page.evaluate(() => new Promise(resolve => {

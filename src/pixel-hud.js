@@ -4,10 +4,26 @@ import {
   nativeTeamHighlight,
   nativeTeamListRows,
 } from "./armageddon/hud-frame.js";
-import { loadNativeFont, paintNativeText } from "./armageddon/font.js";
+import { loadNativeFont } from "./armageddon/font.js";
+import { nativeCanvasPaletteDisplay } from "./armageddon/canvas-palette.js";
+import { createNativeTextRenderer, paintNativeTextImage } from "./armageddon/text-image-art.js";
 
 const frames = new Set();
 const teamFonts = new Map();
+// 004B8350 gives each team panel a 004C6610 text cache (256 wide, font height
+// + 1). Like the announcements, 004C67A0 draws the name in a black box
+// (role 8) with a grey border (role 7) rather than bare glyphs over the
+// battlefield.
+const TEAM_TEXT_COLORS = { 7: [157, 157, 157], 8: [0, 0, 0], 9: [255, 255, 255] };
+function paintTeamName(canvas, fontName, text) {
+  const font = teamFonts.get(fontName);
+  const renderer = createNativeTextRenderer(256, font.height + 1, () => font, (id) => TEAM_TEXT_COLORS[id]);
+  const result = renderer.render({ text, font: 1, background: 8, border: 7, coverage: 65536 });
+  paintNativeTextImage(canvas, result);
+  canvas.style.width = `${canvas.width}px`;
+  canvas.style.height = `${canvas.height}px`;
+  nativeCanvasPaletteDisplay.capture(canvas);
+}
 function frame(element, ornate = false) {
   const canvas = document.createElement("canvas");
   canvas.className = "pixel-panel-frame";
@@ -114,7 +130,7 @@ export function mountPixelHUD(arena) {
         canvas.className = "native-team-name";
         canvas.setAttribute("aria-hidden", "true");
         label.setAttribute("aria-label", label.textContent);
-        paintNativeText(canvas, font, label.textContent, 1);
+        paintTeamName(canvas, fontName, label.textContent);
         label.replaceChildren(canvas);
         label.dataset.nativeFont = fontName;
       })
@@ -215,7 +231,7 @@ export function updateHudTeamHealth(values, activeTeam = -1, tick = 0) {
     const label = panel.querySelector("b");
     const canvas = label.querySelector(".native-team-name");
     if (canvas && teamFonts.has(name) && label.dataset.nativeFont !== name) {
-      paintNativeText(canvas, teamFonts.get(name), label.getAttribute("aria-label"), 1);
+      paintTeamName(canvas, name, label.getAttribute("aria-label"));
       label.dataset.nativeFont = name;
     }
   });
