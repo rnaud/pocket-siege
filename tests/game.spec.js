@@ -883,6 +883,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
 
 test("the last shot can be replayed over the battlefield", async ({ page }) => {
   await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.locator("#angle").evaluate((el) => {
@@ -909,10 +910,18 @@ test("the last shot can be replayed over the battlefield", async ({ page }) => {
   });
   expect(settled).toBe(true);
   await expect(page.locator("#replay")).toBeEnabled();
+  // A replay lasts 1.1-2.8 s of wall time; record it every frame so a slow
+  // runner cannot miss it between polls.
+  await page.evaluate(() => {
+    window.replaySeen = false;
+    const sample = () => {
+      window.replaySeen ||= window.siege.getState().replaying;
+      if (!window.replaySeen) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
   await page.locator("#replay").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().replaying))
-    .toBe(true);
+  await expect.poll(() => page.evaluate(() => window.replaySeen)).toBe(true);
   await expect(page.locator(".replay-path")).toHaveAttribute("d", /^M/);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().replaying), {
