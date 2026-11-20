@@ -382,6 +382,11 @@ const mouseLookDelta = [0, 0];
 // 0x1247C/0x12480: native world-space target cursor (Y down, 16.16).
 let targetCursor = null;
 let targetCursorAngle = 0, targetCursorAngleTarget = 0xa000;
+// Controller +0xE0 per team: girder shape 1..18 (0 is the stop sign). 1-9
+// are grds0-8 and 10-18 grdl0-8 (004CB380 scene+0x314/+0x338). Worm
+// activation sets 0 to 1 (004E70F9); it persists between turns.
+const girderShapes = [1, 1];
+let girderPreview = null;
 let targetCursorMesh = null;
 const inventoryOpen = () => Boolean(document.querySelector(".controls.inventory-open"));
 function updateNativeLayout() {
@@ -577,10 +582,33 @@ function arsenalSlotAmmo(slot) {
 }
 // Skip Go, Surrender and Select Worm are equipped like weapons in the
 // original and act when fired; other slots use their host weapon/utility.
+// In the original every panel item is selected first and used with fire;
+// only placement/target items open their cursor on selection.
+const TARGETED_UTILITIES = new Set(["teleport", "girder", "bridgekit"]);
 function equipArsenalSlot(slot) {
-  if (ARSENAL_TURN_CONTROLS[slot]) { equippedTurnControl = slot; updateUI(); return; }
+  const utility = NATIVE_UTILITY_SLOTS[slot];
+  if (ARSENAL_TURN_CONTROLS[slot] || (nativeLayout && utility && !TARGETED_UTILITIES.has(utility))) {
+    equippedTurnControl = slot;
+    $("#status").textContent = `${nativeArsenalWeapons()[slot]?.name ?? "Item"} selected.`;
+    updateUI();
+    return;
+  }
   equippedTurnControl = 0;
   arsenalSlotButton(slot)?.click();
+}
+// Fire with an equipped panel item: turn controls act once; utilities stay
+// selected, so the Ninja Rope fires, releases and refires on each press.
+function useEquippedSlot() {
+  const slot = equippedTurnControl;
+  if (ARSENAL_TURN_CONTROLS[slot]) {
+    const button = arsenalSlotButton(slot);
+    equippedTurnControl = 0;
+    button?.click();
+    return;
+  }
+  const utility = NATIVE_UTILITY_SLOTS[slot];
+  if (utility === "rope") fireRope();
+  else if (utility) useUtility(utility);
 }
 function currentArsenalSlot() {
   if (equippedTurnControl) return equippedTurnControl;
@@ -2661,6 +2689,11 @@ function beginTurn() {
   const active = roster[selection.selected - 1];
   current = worms.indexOf(active);
   equippedTurnControl = 0;
+  if (!girderShapes[team]) girderShapes[team] = 1;
+  if (nativeLayout) {
+    const shape = girderShapeSprite(girderShapes[team]);
+    if (shape) { girderAngle = shape.angle; girderLength = shape.length; }
+  }
   // 004DA9A0 (worm event 0x41C): special camera request at the new worm,
   // aim input may move the camera (+0x2A0) and the idle counter restarts.
   active.nativeCameraAim = true;
@@ -3079,6 +3112,49 @@ function addGirder(cx, cy, angle = 0, length = 64) {
   const mesh = new THREE.Group();
   girders.push({ mesh, cx, cy, angle, length, original });
   return true;
+}
+function girderShapeSprite(shape) {
+  if (shape < 1 || shape > 18) return null;
+  const index = (shape - 1) % 9;
+  return { name: `grd${shape > 9 ? "l" : "s"}${index}`, angle: (4 - index) * 22.5, length: shape > 9 ? 96 : 64 };
+}
+// 00501370 target branch (keys 0x22/0x23 with key repeat): Left/Right cycle
+// the girder shape through 0..18, skipping 0 unless allowed.
+function cycleGirderShape(direction) {
+  let value = (girderShapes[team] + direction) | 0;
+  if (direction < 0) { if (value < 0) value = 18; if (value === 0) value = 18; }
+  else { if (value > 18) value = 0; if (value === 0) value = 1; }
+  girderShapes[team] = value;
+  const shape = girderShapeSprite(value);
+  girderAngle = shape.angle; girderLength = shape.length;
+}
+// 004E6190: the selected girder image is drawn at the (placement-clamped)
+// target cursor while choosing where to put it.
+function updateGirderPreview() {
+  const active = nativeLayout && targetCursor && targetUtility === "girder";
+  if (!girderPreview) {
+    if (!active) return;
+    girderPreview = document.createElement("canvas");
+    girderPreview.className = "native-girder-preview";
+    girderPreview.setAttribute("aria-hidden", "true");
+    arena.append(girderPreview);
+  }
+  girderPreview.hidden = !active;
+  if (!active) return;
+  const shape = girderShapeSprite(girderShapes[team]);
+  const image = shape && originalGirder(shape.name);
+  if (!image) { girderPreview.hidden = true; return; }
+  if (girderPreview.dataset.name !== shape.name) {
+    girderPreview.width = image.width; girderPreview.height = image.height;
+    girderPreview.getContext("2d").putImageData(new ImageData(image.rgba, image.width, image.height), 0, 0);
+    girderPreview.dataset.name = shape.name;
+    girderPreview.style.width = `${image.width}px`;
+    girderPreview.style.height = `${image.height}px`;
+  }
+  const [x, y] = nativeClampPlacementTarget(targetCursor[0], targetCursor[1], image.width, image.height, 0);
+  const p = screen(x / 65536, H - y / 65536);
+  girderPreview.style.left = `${Math.round(p.x - image.width / 2)}px`;
+  girderPreview.style.top = `${Math.round(p.y - image.height / 2)}px`;
 }
 function girderSprite(angle = girderAngle, length = 64) {
   const index = Math.max(0, Math.min(8, 4 - Math.round(angle / 22.5)));
@@ -4590,6 +4666,10 @@ function stepNativeTargetCursor(limits) {
     const direction = Number($("#strike-direction")?.value) || 1;
     targetCursorAngle = directional ? direction << 13 : 0;
     targetCursorAngleTarget = directional ? direction << 13 : 0xa000;
+    if (targetUtility === "girder") {
+      const shape = girderShapeSprite(girderShapes[team] || 1);
+      girderAngle = shape.angle; girderLength = shape.length;
+    }
     nativeCamera.setPriority(14);
     nativeCamera.offerSpecial(...targetCursor);
   }
@@ -7836,6 +7916,7 @@ function frame(now) {
   if (nativeCameraFocus) camTarget = { zoom: 1, cx: nativeCameraFocus.x, cy: nativeCameraFocus.y };
   if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
   arena.classList.toggle("targeting", Boolean(targetUtility));
+  updateGirderPreview();
   if (nativeLayout || arsenalPanel.open) {
     // 0x42E (weapon input disabled) and turn changes close the panel.
     if (!nativeLayout || !matchStarted || menu.open || phase === "over" || !canAct()) arsenalPanel.close();
@@ -8363,13 +8444,9 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (nativeLayout && e.key === " " && equippedTurnControl) {
-    // Firing an equipped turn control performs it.
+    // Fire uses the equipped panel item.
     e.preventDefault();
-    if (!e.repeat) {
-      const button = arsenalSlotButton(equippedTurnControl);
-      equippedTurnControl = 0;
-      button?.click();
-    }
+    if (!e.repeat) useEquippedSlot();
     return;
   }
   if (e.key === 'Delete' && e.shiftKey) {
@@ -8437,6 +8514,12 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === " ") {
     if (!e.repeat) startCharge("keyboard");
+    return;
+  }
+  if (nativeLayout && targetUtility === "girder" && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    e.preventDefault();
+    cycleGirderShape(e.key === "ArrowLeft" ? -1 : 1);
+    updateUI();
     return;
   }
   if (targetUtility === "girder" && (e.key === "[" || e.key === "]")) {

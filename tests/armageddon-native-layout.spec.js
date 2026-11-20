@@ -58,10 +58,10 @@ test("turn start frames the active worm and mouse-look pans the native camera", 
   // Mouse-look holds automatic framing for 100 frames; movement input
   // re-requests the active worm afterwards.
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(110));
+  // Movement requests the camera on every tick the key is held.
   await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(200);
-  await page.keyboard.up("ArrowLeft");
   await expect.poll(inView).toBe(true);
+  await page.keyboard.up("ArrowLeft");
 });
 
 test("right click opens the original weapon panel and Escape opens the in-game menu", async ({ page }) => {
@@ -181,4 +181,45 @@ test("Control-click opens the weapon panel on macOS", async ({ page }) => {
   await page.locator("#arena").dispatchEvent("pointerdown",
     { pointerType: "mouse", button: 0, ctrlKey: true, clientX: 600, clientY: 300 });
   await expect(page.locator(".native-arsenal")).toBeVisible();
+});
+
+test("girders preview the original shape at the cursor, rotate with arrows and place there", async ({ page }) => {
+  await startLocalMatch(page, "fern");
+  await page.keyboard.press("g");
+  await expect.poll(() => page.evaluate(() => window.siege.getState().targetUtility)).toBe("girder");
+  await page.evaluate(() => {
+    const arena = document.querySelector("#arena");
+    for (let i = 0; i < 6; i++) arena.dispatchEvent(new PointerEvent("pointermove",
+      { pointerType: "mouse", bubbles: true, movementX: 10, movementY: -15, clientX: 600, clientY: 300 }));
+  });
+  const preview = page.locator(".native-girder-preview");
+  // Worm activation selects shape 1 (grds0); the arrows step through 0x3FA.
+  await expect(preview).toHaveAttribute("data-name", "grds0");
+  const x = await page.evaluate(() => window.siege.debug.wormBody().x);
+  for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowRight");
+  await expect(preview).toHaveAttribute("data-name", "grds4");
+  // The arrows rotate the girder; they do not walk the worm.
+  expect(Math.abs(await page.evaluate(() => window.siege.debug.wormBody().x) - x)).toBeLessThan(2);
+  // Worm spawns vary, so try a few open spots until one accepts the girder.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await page.locator("#arena").dispatchEvent("pointerdown", { pointerType: "mouse", button: 0, clientX: 5, clientY: 5 });
+    await page.waitForTimeout(200);
+    if (await page.evaluate(() => window.siege.getState().girders.length)) break;
+    await page.evaluate(() => document.querySelector("#arena").dispatchEvent(new PointerEvent("pointermove",
+      { pointerType: "mouse", bubbles: true, movementX: 40, movementY: -40, clientX: 600, clientY: 300 })));
+  }
+  await expect.poll(() => page.evaluate(() => window.siege.getState().girders.length)).toBe(1);
+  await expect(preview).toBeHidden();
+});
+
+test("the ninja rope is selected from its row and fired with Space", async ({ page }) => {
+  await startLocalMatch(page, "fern");
+  await page.keyboard.press("F8");
+  await expect(page.locator("#status")).toHaveText("Ninja Rope selected.");
+  expect(await page.evaluate(() => window.siege.getState().rope?.firing ?? false)).toBe(false);
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => {
+    const rope = window.siege.getState().rope;
+    return Boolean(rope && (rope.firing || rope.attached)) || /anchor/.test(document.querySelector("#status").textContent);
+  })).toBe(true);
 });

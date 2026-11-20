@@ -2359,3 +2359,11 @@ body.native-layout #arena.targeting {
 .native-arsenal-cursor { z-index: 61; }
 .native-arsenal[hidden],
 .native-arsenal-cursor[hidden] { display: none; }
+.native-girder-preview {
+  position: absolute;
+  z-index: 5;
+  opacity: 0.85;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.native-girder-preview[hidden] { display: none; }
