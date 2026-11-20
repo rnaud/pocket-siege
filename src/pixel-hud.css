@@ -2344,6 +2344,34 @@ body.native-layout #weapon-tray .weapons button small {
 body.native-layout #arena {
   cursor: none;
 }
+#weapons-toggle {
+  display: none;
+}
+body.native-layout #weapons-toggle {
+  display: block;
+  position: absolute;
+  /* Beside the turn clock in the bottom-left corner. */
+  left: 74px;
+  bottom: 15px;
+  z-index: 40;
+  padding: 6px 8px;
+  border: 2px solid #786a45;
+  background: rgba(37, 37, 31, 0.85);
+  color: #f3ce71;
+  font: 10px monospace;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+body.native-layout #weapons-toggle:hover {
+  background: #4a4532;
+}
+#weapons-toggle kbd {
+  margin-left: 4px;
+  padding: 0 3px;
+  border: 1px solid #786a45;
+  color: #eee;
+  font: inherit;
+}
 body.native-layout #arena.targeting {
   cursor: crosshair;
 }

@@ -9002,6 +9002,15 @@ arena.addEventListener("pointerdown", (e) => {
   pointerAim(e);
 });
 arena.addEventListener("contextmenu", (e) => { if (nativeLayout) e.preventDefault(); });
+// On-screen weapon panel button for trackpads and mice without a right
+// button. It keeps its click away from the battlefield's own handlers.
+const weaponsToggle = $("#weapons-toggle");
+weaponsToggle.addEventListener("pointerdown", (e) => e.stopPropagation());
+weaponsToggle.onclick = (e) => {
+  e.stopPropagation();
+  arsenalPanel.toggle();
+  weaponsToggle.blur();
+};
 // Leaving the menu for the battlefield (Start, Play scenario, Return to game)
 // captures the mouse while the click still counts as a user gesture; Esc
 // gives it back. Opening the menu always releases it.
@@ -9138,6 +9147,13 @@ window.addEventListener("keydown", (e) => {
     if (pointerLocked()) { document.exitPointerLock(); return; }
     if (performance.now() - pointerLockReleasedAt < 400) return;
     $("#restart").click();
+    return;
+  }
+  // Q opens and closes the weapon panel without a right mouse button.
+  if (nativeLayout && matchStarted && e.key.toLowerCase() === "q" && !e.repeat &&
+      !e.metaKey && !e.ctrlKey && !e.altKey && !e.target.closest?.("input, select, textarea")) {
+    e.preventDefault();
+    arsenalPanel.toggle();
     return;
   }
   // 00501370: fire, jump and movement keys close the open weapon panel and
