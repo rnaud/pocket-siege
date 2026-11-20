@@ -220,6 +220,8 @@ test("girders preview the original shape at the cursor, rotate with arrows and p
     if (await page.evaluate(() => window.siege.getState().girders.length)) break;
     await page.evaluate(() => document.querySelector("#arena").dispatchEvent(new PointerEvent("pointermove",
       { pointerType: "mouse", bubbles: true, movementX: 40, movementY: -40, clientX: 600, clientY: 300 })));
+    // The cursor moves on the next simulation tick.
+    await page.waitForTimeout(150);
   }
   await expect.poll(() => page.evaluate(() => window.siege.getState().girders.length)).toBe(1);
   await expect(preview).toBeHidden();

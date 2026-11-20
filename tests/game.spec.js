@@ -1532,7 +1532,7 @@ test("earthquake damages grounded worms", async ({ page }) => {
     return { shake: Math.max(shake, window.quakeShake), hp };
   }, before);
   expect(quake.hp).toBeLessThan(before);
-  expect(quake.shake).toBeGreaterThan(0);
+  expect(Math.max(quake.shake, await page.evaluate(() => window.siege.getState().earthquakeShakePeak))).toBeGreaterThan(0);
 });
 
 test("longbow fires a host arrow projectile", async ({ page }) => {
@@ -1883,5 +1883,12 @@ test("classic duel sudden death waits for the scheme's fifteen-minute round", as
   expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(false);
   for (const frames of [15000, 15000, 15500])
     await page.evaluate((count) => window.siege.debug.advanceReplayFrames(count), frames);
+  // Round expiry arms the countdown; onset comes on a between-turn pass.
+  await page.evaluate(() => {
+    for (let pass = 0; pass < 6 && !window.siege.getState().suddenDeath; pass++) {
+      window.siege.debug.finishTurn();
+      window.siege.debug.advanceReplayFrames(100);
+    }
+  });
   expect(await page.evaluate(() => window.siege.getState().suddenDeath)).toBe(true);
 });

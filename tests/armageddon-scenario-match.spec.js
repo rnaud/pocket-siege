@@ -376,7 +376,13 @@ test("scenario water sudden death raises the sea", async ({ page }) => {
     .toBeGreaterThan(0);
   const before = await page.evaluate(() => window.siege.getState().waterLevel);
   await page.evaluate(() => window.siege.debug.triggerSuddenDeath());
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(1200));
+  // 004B72E1: the sea rises on the next between-turn pass, not at onset.
+  await page.evaluate(() => {
+    for (let pass = 0; pass < 4; pass++) {
+      window.siege.debug.finishTurn();
+      window.siege.debug.advanceReplayFrames(300);
+    }
+  });
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().waterLevel))
     .toBeGreaterThan(before);
@@ -552,6 +558,14 @@ test("mission round time with a sudden-death event expires into sudden death", a
   expect(await page.evaluate(() => window.siege.getState().roundTimeSeconds)).toBe(120);
   for (const frames of [2100, 2100, 2100])
     await page.evaluate((count) => window.siege.debug.advanceReplayFrames(count), frames);
+  // 004B65D2 arms a countdown of (rand % teams) + 1 between-turn passes;
+  // sudden death begins on the pass that reaches zero.
+  await page.evaluate(() => {
+    for (let pass = 0; pass < 6 && !window.siege.getState().suddenDeath; pass++) {
+      window.siege.debug.finishTurn();
+      window.siege.debug.advanceReplayFrames(100);
+    }
+  });
   expect(await page.evaluate(() => {
     const state = window.siege.getState();
     return { suddenDeath: state.suddenDeath, over: state.phase === "over" };

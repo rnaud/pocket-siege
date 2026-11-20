@@ -381,6 +381,10 @@ let pendingTurnCamera = null;
 // Turn-game root turn fields owned by 004B3210 and the retreat/settlement
 // routines (turn and retreat durations in ms, turn count, clock target).
 let turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending: 0 };
+// Turn-root +0x150: sudden-death countdown in between-turn passes, armed by
+// round-time expiry (004B65D2); +0x198: crate drop armed at each turn start.
+let suddenDeathCountdown = 0;
+let crateDropArmed = false;
 // 004B4CE0 event 0x432 at weapon completion: request the retreat (pending
 // until the worm's action ends), size it (004B4230) and slide the clock out.
 // Host adapters: every finished action ends the turn, the controller +104
@@ -685,6 +689,8 @@ let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
 let earthquakeShake = 0;
+// Strongest shake since the match started (diagnostic for slow runners).
+let earthquakeShakePeak = 0;
 let teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
 const crateSpyLabels = new Map();
 let ammo = [freshAmmo(), freshAmmo()],
@@ -1207,6 +1213,8 @@ let preparedRandomSeed = null;
 const nativeSoundQueue = new NativeSoundQueue();
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending: 0 };
+  suddenDeathCountdown = 0;
+  crateDropArmed = false;
   const matchSeed = seed ?? currentScenario?.logicRandomSeed ?? preparedRandomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
   preparedRandomSeed = null;
   const selectedLayout = $("#map-layout").value;
@@ -2054,7 +2062,7 @@ function missionNuclearTest() {
 function missionEarthquake() {
   for (const target of worms)
     if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
-  earthquakeShake = 0x8000;
+  earthquakeShake = 0x8000; earthquakeShakePeak = Math.max(earthquakeShakePeak, earthquakeShake);
 }
 // 004EF6B0 type 10: 0x443 {100, 0xa6, 56} plus the 004EEB70 camera request.
 function missionArmageddon() {
@@ -3866,6 +3874,13 @@ function stepNativeNuclearEffect() {
   }
   nativePaletteDisplay.update({ flash: result.body.flash, fade: result.body.fade });
 }
+// 004B65D2: when the round time runs out (and the round does not simply
+// end), sudden death is armed (rand & 0xFF) % teams + 1 passes ahead.
+function armSuddenDeathCountdown() {
+  if (sdTriggered || suddenDeathCountdown) return;
+  const teams = Math.max(1, nativeTeamCandidates().length);
+  suddenDeathCountdown = ((matchRandom.logicUint() & 0xff) % teams) + 1;
+}
 function applySuddenDeath() {
   if (sdTriggered) return false;
   sdTriggered = true;
@@ -3879,12 +3894,9 @@ function applySuddenDeath() {
     audio.resume();
     nativeSoundQueue.enqueue([94, 8, 65536, 65536, 0]);
   }
-  if (suddenDeathType === "water") {
-    const rise = currentScenario?.suddenDeath?.waterRise || nativeClassicTiming?.waterRise || WATER_RISE;
-    lastWaterRiseRound = round;
-    startNativeWaterRise(waterLevel + rise, 8);
-    return false;
-  }
+  // 004B7391 onset: water sudden death only arms the repeat (+0x158); the
+  // next between-turn pass raises the sea through 004B72E1.
+  if (suddenDeathType === "water") return false;
   if (suddenDeathType === "health") {
     for (const w of worms)
       if (w.hp > 0) {
@@ -5217,7 +5229,7 @@ function useEarthquake() {
   for (const target of worms)
     if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
   w.recoil = 0.4;
-  earthquakeShake = 0x8000;
+  earthquakeShake = 0x8000; earthquakeShakePeak = Math.max(earthquakeShakePeak, earthquakeShake);
   $("#status").textContent = "Earthquake! The ground heaves.";
   finishAction("Earthquake! Retreat!");
 }
@@ -6525,24 +6537,48 @@ function nextTurn() {
   matchDamageSourceActive = false;
   if (!advanceNativePoisonSettlement()) return;
   if (!advanceNativeEnvironmentSettlement()) return;
+  // 004B7391 (S8): the armed sudden-death countdown drops by one per pass;
+  // at zero sudden death begins and the next step waits 1 s.
+  if (suddenDeathCountdown > 0) {
+    suddenDeathCountdown--;
+    if (!suddenDeathCountdown) {
+      applySuddenDeath();
+      nativeBusy.delay(1);
+      return;
+    }
+  }
+  // 004B7505 (S9): once per turn, the crate bag may drop a crate; the pass
+  // returns and the falling crate keeps the scene busy until it lands.
+  if (crateDropArmed) {
+    crateDropArmed = false;
+    if (nativeCrateBag) {
+      const before = crates.length;
+      drawNativeCrate(true);
+      if (crates.length > before) {
+        nativeBusy.wake();
+        return;
+      }
+    }
+  }
+  // 004B768A (S10d): choose the next team and start its turn.
   const nextTeam = selectNativeMatchTeam();
   if (nextTeam < 0) return endGame();
   team = nextTeam;
-  // 004B75A9: one bag draw between every turn (004B770F re-arms it).
-  if (nativeCrateBag) drawNativeCrate(true);
   if (team === 0) {
     round++;
+    // Host presets without the native crate bag keep their round crates.
     if (
       !nativeCrateBag && !crates.length &&
       (crateRain ? round % 2 === 0 : round >= 3 && round % 3 === 0)
     ) {
       spawnCrate(true);
     }
+    // Host presets without a native round time arm sudden death at round 6.
     if (!sdTriggered && round >= 6 && !nativeClassicTiming && !currentScenario?.suddenDeath?.disabled &&
-        !currentScenario?.suddenDeath?.roundEnds) {
-      if (applySuddenDeath()) return;
-    }
+        !currentScenario?.suddenDeath?.roundEnds)
+      armSuddenDeathCountdown();
   }
+  crateDropArmed = true;
   beginTurn();
 }
 function jump(kind = "forward") {
@@ -6774,13 +6810,13 @@ function checkScenarioRoundTime() {
     return;
   }
   if (currentScenario?.suddenDeath?.disabled) return;
-  if (limit > 0 && matchElapsed >= limit) applySuddenDeath();
+  if (limit > 0 && matchElapsed >= limit) armSuddenDeathCountdown();
 }
 // Classic duel: sudden death starts when the scheme's round time runs out
 // (004B50A3/004B7391), not at the host's round six.
 function checkClassicRoundTime() {
   if (!nativeClassicTiming || currentScenario || sdTriggered || phase === "over" || phase === "menu") return;
-  if (matchElapsed >= nativeClassicTiming.roundSeconds) applySuddenDeath();
+  if (matchElapsed >= nativeClassicTiming.roundSeconds) armSuddenDeathCountdown();
 }
 function stepFrame(dt) {
   if (simulationPaused) return;
@@ -9150,6 +9186,7 @@ window.siege = {
     nativeNuclearEffect: nativeNuclearEffect ? { ...nativeNuclearEffect } : null,
     waterSprite: water.userData.originalSprite,
     waterSurface: water.userData.surfaceLevel,
+    earthquakeShakePeak,
     turnBody: { turnCount: turnBody.turnCount, turnDuration: turnBody.turnDuration, retreatDuration: turnBody.retreatDuration,
       retreatRemaining: turnBody.retreatRemaining, retreatPending: turnBody.retreatPending, clockTarget: turnBody.clockTarget },
     waterFrame: water.userData.originalFrame,
