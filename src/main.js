@@ -44,6 +44,10 @@ import { nativeCrateDetonation } from "./armageddon/crate-detonation.js";
 import { nativeCrateContents } from "./armageddon/crate-contents.js";
 import crateProjectileData from "./armageddon/crate-projectile-data.json";
 import { attachNativeProjectileBlock, nativeWeaponSlotBlock } from "./armageddon/projectile-runtime.js";
+import {
+  nativeSheepEvent, nativeSuperSheepFlight, nativeSheepDraw,
+  SHEEP_FIRE_EVENT, SHEEP_LEFT_EVENT, SHEEP_RIGHT_EVENT,
+} from "./armageddon/super-sheep.js";
 import { nativeArmageddonStart, nativeArmageddonTick } from "./armageddon/armageddon.js";
 import { nativeSchemeLoadouts, nativeSchemeWormEnergy, nativeSchemeTiming } from "./armageddon/scheme-loadout.js";
 import { nativeCrateDropBag, nativeCrateDropDraw } from "./armageddon/crate-drop.js";
@@ -250,6 +254,8 @@ import {
   createOriginalObject,
   updateOriginalObject,
   updateOriginalProjectile,
+  nativeSpriteName,
+  updateNativeSpriteVisual,
   projectileSprites,
   originalWormFrame,
   updateOriginalCrate,
@@ -1201,6 +1207,7 @@ function stopBurstSound(burst = pendingFire?.burst) {
   if (burst) burst.playback = null;
 }
 function stopProjectileSound(p = projectile) {
+  stopSheepLoops(p);
   p?.nativeFusePlayback?.stop();
   p?.nativeContactPlayback?.stop();
   p?.nativeSecondaryPlayback?.stop();
@@ -5747,6 +5754,145 @@ function detonateNativeProjectile(p) {
   if (p.kind === "molebomb")
     explode(p.x, p.y - (p.burrowDepth ?? 0), "molebomb", p.owner);
 }
+// Mode3 units of the projectile actor (004E44A0): Sheep, Super Sheep and Aqua
+// Sheep. Record words 0x80.. are copied to actor 0x2D4..; a nonzero flight
+// sprite (actor 0x36C) lets fire take off, steer with left/right and land.
+const SHEEP_UNIT_SLOTS = { sheep: 23, supersheep: 24, aquasheep: 25 };
+let sheepSteer = { left: false, right: false };
+function sheepUnit(p) {
+  if (p.sheep !== undefined) return p.sheep;
+  const slot = SHEEP_UNIT_SLOTS[p.kind];
+  if (slot === undefined || !p.nativeBody) return (p.sheep = null);
+  const block = nativeWeaponSlotBlock(slot, 0x74).slice(3, 45);
+  const at = (offset) => block[(offset - 0x2d4) / 4] | 0;
+  const owner = worms[p.owner];
+  p.sheep = {
+    flags: at(0x334) | at(0x2d4), state: 0, sprite: at(0x2ec), suspended: 0, impulseScale: 65536,
+    x: p.nativeBody.x, y: p.nativeBody.y, rest: 0, vx: p.nativeBody.vx, vy: p.nativeBody.vy, spin: 0,
+    depth: 0, submerged: 0, contactX: 0, contactY: 0, soundHandle: 0, secondary: 0,
+    team: owner ? owner.team + 1 : 0, worm: p.owner ?? 0,
+    baseFlags: at(0x2d4), field314: at(0x314), fireMode: at(0x32c), mode: at(0x330),
+    walkFlags: at(0x334), flightFlags: at(0x338), walkSpeed: at(0x33c), climb: at(0x340),
+    fallAngle: at(0x344), fallSpeed: at(0x348), fallSound: at(0x34c),
+    hopAngle: at(0x350), hopSpeed: at(0x354), hopSound: at(0x358),
+    flightSprite: at(0x36c), flightSprite2: at(0x370), releaseSound: at(0x374), flightLoop: at(0x378),
+    timer: p.nativeTimer?.remaining ?? 0, firstFrame: 0, inWater: 0, lastSound: 0, phase: 0, angle: 0,
+    direction: p.vx < 0 ? -1 : 1, loopHandle: 0, rotation: 0,
+  };
+  // 004E1830 event 0x43A: fire mode 1 arms the owner controller's fire key.
+  p.sheepFireArmed = p.sheep.fireMode === 1;
+  p.sheepSteering = false;
+  p.sheepLoops = new Map();
+  return p.sheep;
+}
+function stopSheepLoops(p) {
+  if (!p?.sheepLoops) return;
+  for (const playback of p.sheepLoops.values()) playback?.stop();
+  p.sheepLoops.clear();
+}
+let sheepLoopHandle = 0x100;
+// Dispatch kernel calls in native order and copy the actor back to the host.
+function applySheepCalls(p, result) {
+  const previous = p.sheep;
+  p.sheep = result.body;
+  for (const call of result.calls) {
+    if (call.operation === "event") {
+      if (call.request[2] === 0x437) p.sheepSteering = true;
+      else if (call.request[2] === 0x438) p.sheepSteering = false;
+    } else if (call.operation === "sound") queueGameSound(call.request);
+    else if (call.operation === "stopSound") {
+      p.sheepLoops?.get(call.request[0])?.stop();
+      p.sheepLoops?.delete(call.request[0]);
+    } else if (call.operation === "particle") spawnNativeParticleRequest(call.request);
+    else if (call.operation === "waterEntry") sfx("splash");
+  }
+  const s = p.sheep;
+  p.nativeBody.x = s.x; p.nativeBody.y = s.y;
+  p.nativeBody.vx = s.vx; p.nativeBody.vy = s.vy;
+  if (s.state === 1) p.nativeBody.state = 1;
+  p.x = s.x / 65536; p.y = H - s.y / 65536;
+  p.vx = s.vx / 65536 * 50; p.vy = -s.vy / 65536 * 50;
+  if (previous.phase === 1 && s.phase !== 1) {
+    // Back on the body routine: the shared projectile art takes over again.
+    releaseProjectileMesh(p.mesh);
+    p.mesh = createNativeProjectileVisual(p.nativeRender) ?? projectileMesh(p.kind);
+    p.mesh.position.set(p.x, p.y, 40);
+    group.add(p.mesh);
+    p.walkFacing = s.direction;
+  }
+}
+function sheepHost(p) {
+  return {
+    waterY: Math.floor(H - waterLevel),
+    frame: matchRandom.frame,
+    collide: (x, y, flags) => nativeProjectileCollision(p, x / 65536, H - y / 65536, terrain, worms, H,
+      { ...p.nativeBody, x, y, flags }),
+    random: () => matchRandom.logicUint(),
+    visualRandom: () => matchRandom.visualUint(),
+    wormState: (team, worm) => nativeWormState(worms[worm] ?? {}),
+    startLoop: (request) => {
+      const handle = ++sheepLoopHandle;
+      if (sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        p.sheepLoops.set(handle, playNativeProjectileFuse(audio, request[0]));
+      }
+      return handle;
+    },
+  };
+}
+// Owner controller fire key (00501FF0 -> event 0x414). True when consumed.
+function sheepFire() {
+  const p = projectile;
+  if (!p || p.nativeRemoved || !sheepUnit(p) || !p.sheepFireArmed) return false;
+  const s = p.sheep;
+  if (worms[current]?.team + 1 !== s.team) return false;
+  if (s.phase !== 1) Object.assign(s, { x: p.nativeBody.x, y: p.nativeBody.y,
+    vx: p.nativeBody.vx, vy: p.nativeBody.vy, submerged: p.nativeBody.submerged ? 1 : 0 });
+  applySheepCalls(p, nativeSheepEvent(s, SHEEP_FIRE_EVENT, s.team, sheepHost(p)));
+  if (p.sheep.phase === 1) {
+    releaseProjectileMesh(p.mesh);
+    p.mesh = createOriginalVisual(nativeSpriteName(p.sheep.flightSprite2)) ?? p.mesh;
+    p.mesh.rotation.z = 0;
+    p.mesh.position.set(p.x, p.y, 40);
+    group.add(p.mesh);
+  }
+  return true;
+}
+// One flight frame: polled steering keys (0x415/0x416), fuse, then 004E3E40.
+function stepSheepFlight(p) {
+  const host = sheepHost(p);
+  if (p.sheepSteering) {
+    if (sheepSteer.left) applySheepCalls(p, nativeSheepEvent(p.sheep, SHEEP_LEFT_EVENT, p.sheep.team, host));
+    if (sheepSteer.right) applySheepCalls(p, nativeSheepEvent(p.sheep, SHEEP_RIGHT_EVENT, p.sheep.team, host));
+  }
+  p.nativeTimer.remaining = Math.max(0, (p.nativeTimer.remaining | 0) - 20);
+  applySheepCalls(p, nativeSuperSheepFlight(p.sheep, host));
+  // The fuse also runs out in flight: the sheep drops and blows on the next
+  // body frame through the shared timer.
+  if (p.sheep.phase === 1 && p.nativeTimer.remaining <= 0)
+    applySheepCalls(p, nativeSheepEvent({ ...p.sheep, fireMode: 0 }, SHEEP_FIRE_EVENT, p.sheep.team, host));
+  return { hit: 0, contacts: 0, sounds: [], events: [], removed: false, detonate: p.sheep.state === 1 };
+}
+function renderSheepFlight(p) {
+  const { body, draw } = nativeSheepDraw(p.sheep, matchRandom.frame, Math.floor(H - waterLevel), 0x50000);
+  p.sheep = body;
+  if (!draw) return false;
+  const name = nativeSpriteName(draw[4]);
+  if (!name) return false;
+  if (!updateNativeSpriteVisual(p.mesh, name, draw[5])) {
+    const mesh = createOriginalVisual(name);
+    if (!mesh) return false;
+    releaseProjectileMesh(p.mesh);
+    p.mesh = mesh;
+    group.add(mesh);
+    updateNativeSpriteVisual(mesh, name, draw[5]);
+  }
+  p.mesh.rotation.z = 0;
+  p.mesh.scale.x = Math.abs(p.mesh.scale.x);
+  p.mesh.position.set(p.x, p.y, 40);
+  return true;
+}
 const WALKING_UNIT_KINDS = new Set([
   "sheep", "supersheep", "aquasheep", "donkey",
   "oldwoman", "sallyarmy", "skunk", "madcow", "molebomb",
@@ -5761,6 +5907,7 @@ function walkingUnitGrounded(x, y) {
 }
 function stepWalkingUnit(p) {
   if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
+  if (p.sheep?.phase === 2 && p.walkFacing === undefined) p.walkFacing = p.sheep.direction;
   if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
   if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
   if (p.kind !== "aquasheep" && p.y <= waterLevel + 12) return;
@@ -5772,15 +5919,7 @@ function stepWalkingUnit(p) {
     if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
     return;
   }
-  if (!walkingUnitGrounded(p.x, p.y)) {
-    if (p.kind !== "supersheep") return;
-    p.x += p.walkFacing * 1.6;
-    p.walkTicks = (p.walkTicks ?? 0) + 1;
-    p.nativeBody.x = Math.round(p.x * 65536);
-    p.nativeBody.vx = 0;
-    if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
-    return;
-  }
+  if (!walkingUnitGrounded(p.x, p.y)) return;
   const step = p.walkFacing * (WALKING_UNIT_SPEED[p.kind] ?? 0.8);
   const aheadX = p.x + step * 4;
   if (!walkingUnitGrounded(aheadX, p.y) ||
@@ -7546,7 +7685,9 @@ function stepFrame(dt) {
       p.y = p.attached.w.y + p.attached.dy;
     }
     if (!p.sleeping && !p.stuck) {
-      if (p.nativeBody) {
+      if (p.nativeBody && sheepUnit(p)?.phase === 1) {
+        nativeContact = stepSheepFlight(p);
+      } else if (p.nativeBody) {
         nativeContact = stepNativeProjectile(
           p,
           {
@@ -7655,7 +7796,9 @@ function stepFrame(dt) {
       if (!lastPoint || Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y) > 6)
         lastShot.points.push({ x: p.x, y: p.y });
     }
-    if (
+    if (p.sheep?.phase === 1 && renderSheepFlight(p)) {
+      // 004E27F0 mode3 flight art (spsheep/aquashp, rotated by heading).
+    } else if (
       !updateOriginalProjectile(
         p.mesh,
         p.kind,
@@ -8583,6 +8726,12 @@ window.addEventListener("keydown", (e) => {
       cycleArsenalCategory(Number(functionKey[1]));
     return;
   }
+  if (e.key === "ArrowLeft") sheepSteer.left = true;
+  if (e.key === "ArrowRight") sheepSteer.right = true;
+  if (e.key === " " && projectile && !e.repeat && sheepFire()) {
+    e.preventDefault();
+    return;
+  }
   if (nativeLayout && e.key === " " && equippedTurnControl) {
     // Fire uses the equipped panel item.
     e.preventDefault();
@@ -8702,11 +8851,14 @@ window.addEventListener("keyup", (e) => {
     releaseCharge("keyboard");
   }
   if (["ArrowLeft", "ArrowRight", "a", "d"].includes(e.key)) move = 0;
+  if (e.key === "ArrowLeft") sheepSteer.left = false;
+  if (e.key === "ArrowRight") sheepSteer.right = false;
   if (["ArrowUp", "ArrowDown", "w", "s", "W", "S"].includes(e.key))
     aimInput = 0;
 });
 function releaseInputs() {
   touchPan = null;
+  sheepSteer = { left: false, right: false };
   aiming = false;
   stopBurstSound();
   stopProjectileSound();
@@ -9337,6 +9489,8 @@ window.siege = {
           nativeTimer: projectile.nativeTimer ? { ...projectile.nativeTimer } : null,
           nativeGuidance: projectile.nativeGuidance ? { ...projectile.nativeGuidance } : null,
           walkTicks: projectile.walkTicks ?? 0,
+          sheep: projectile.sheep ? { phase: projectile.sheep.phase, angle: projectile.sheep.angle,
+            vx: projectile.sheep.vx, vy: projectile.sheep.vy, state: projectile.sheep.state, steering: projectile.sheepSteering } : null,
           burrowDepth: Math.round((projectile.burrowDepth ?? 0) * 10) / 10,
           target: projectile.target,
           kind: projectile.kind,

@@ -81,6 +81,7 @@ const names = [
     "shotcase",
     "uzicase",
     "shothit",
+    "spsheep1", "spsheep2", "aquashp1", "aquashp2",
     "basehit", "firehit", "kamismk", "wpncup", "wpnctop", "wpncbak", "wpnclnk", "wfirbl1", "wfirbl2", "fireball",
     "wormhit1",
     "wormhit2",
@@ -470,6 +471,25 @@ export function createOriginalVisual(name) {
   mesh.userData.originalSprite = name;
   nativePaletteDisplay.bind(mesh.material, name.startsWith("water/") ? 2 : 1);
   return mesh;
+}
+
+// Resolve a native draw request sprite id (main bank, or the 004AAFD0 water
+// bank ids such as 705/748/749) to a loaded animation name.
+export function nativeSpriteName(id) {
+  id &= 0xffff;
+  const water = waterSpriteIds.sprites[id];
+  if (water && !spriteIds.sprites[id]) return `water/${water.name}`;
+  return spriteIds.sprites[id]?.name ?? null;
+}
+
+// Show the frame a native draw request selects with its progress word.
+export function updateNativeSpriteVisual(mesh, name, progress) {
+  const animation = animations.get(name);
+  if (!animation || mesh?.userData.originalSprite !== name) return false;
+  const index = nativeSpriteFrame(animation.sprite.frames.length, animation.sprite.metadata[2], progress);
+  mesh.material.map = texture(name, index);
+  nativePaletteDisplay.bind(mesh.material, name.startsWith("water/") ? 2 : 1);
+  return true;
 }
 
 export function updateOriginalProjectile(
