@@ -81,7 +81,8 @@ import { nativeDrillEntry, nativeDrillTick } from "./armageddon/drill.js";
 import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
-import { createNativeArsenalPanel, loadNativeArsenalFonts } from "./arsenal-panel.js";
+import { createNativeArsenalPanel, loadNativeArsenalFonts, nativeArsenalWeapons } from "./arsenal-panel.js";
+import { nativeCollectWeaponInput } from "./armageddon/controller-input.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFallingFlight, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
@@ -373,6 +374,8 @@ let nativeLayout = false;
 // control tests) frames through the native camera task at 1:1 pixels.
 let nativeCameraActive = false;
 let pendingTurnCamera = null;
+// Arsenal slot 57-59 (Skip Go/Surrender/Select Worm) equipped until fired.
+let equippedTurnControl = 0;
 let pendingInputCamera = false;
 const mouseLookDelta = [0, 0];
 // 0x1247C/0x12480: native world-space target cursor (Y down, 16.16).
@@ -570,6 +573,39 @@ function arsenalSlotAmmo(slot) {
     : utilityAmmo[team]?.[entry.kind] ?? 0;
   return count === Infinity ? -1 : Math.max(0, count | 0);
 }
+// Skip Go, Surrender and Select Worm are equipped like weapons in the
+// original and act when fired; other slots use their host weapon/utility.
+function equipArsenalSlot(slot) {
+  if (ARSENAL_TURN_CONTROLS[slot]) { equippedTurnControl = slot; updateUI(); return; }
+  equippedTurnControl = 0;
+  arsenalSlotButton(slot)?.click();
+}
+function currentArsenalSlot() {
+  if (equippedTurnControl) return equippedTurnControl;
+  const utility = Object.entries(NATIVE_UTILITY_SLOTS).find(([, kind]) => kind === (targetUtility ?? activeUtility));
+  return utility ? Number(utility[0]) : WEAPON_SLOTS[weapon] ?? 0;
+}
+// 00502550: F1..F12 (keys 14..25) select the next available slot of that
+// panel row after the current one, wrapping, through event 0x41B.
+function cycleArsenalCategory(category) {
+  const memory = new Uint8Array(0x100), view = new DataView(memory.buffer);
+  view.setInt32(0x3c, team, true); view.setInt32(0x4c, current + 1, true);
+  view.setInt32(0x64, currentArsenalSlot(), true);
+  let selected = 0;
+  nativeCollectWeaponInput(memory, { writeEvent: (event, payload) => {
+    if (event === 0x41b) selected = new DataView(payload.buffer).getInt32(8, true);
+  } }, {
+    wormBusy: () => false,
+    key: (key) => key === category + 13,
+    consume: () => {},
+    weaponAvailable: (_team, slot) => arsenalSlotAmmo(slot) !== 0 && !arsenalSlotDelay(slot),
+    weaponCategory: (slot) => nativeArsenalWeapons()[slot]?.category ?? -1,
+  });
+  if (!selected) return false;
+  arsenalPanel.close();
+  equipArsenalSlot(selected);
+  return true;
+}
 const arsenalPanel = createNativeArsenalPanel(arena, {
   team: () => team,
   ammo: arsenalSlotAmmo,
@@ -577,7 +613,7 @@ const arsenalPanel = createNativeArsenalPanel(arena, {
   teamFlags: () => worms[current]?.nativeTeamModifiers | 0,
   // 005011F0: weapon input must be enabled (no shot away, no target pending).
   canOpen: () => canAct() && !charging && !targetUtility && retreat <= 0 && !projectile && !replaying,
-  select: (slot) => arsenalSlotButton(slot)?.click(),
+  select: (slot) => equipArsenalSlot(slot),
   sound: (id) => queueGameSound([id, 8, 65536, 65536, 0]),
 });
 loadNativeArsenalFonts().catch((error) => console.error("Weapon panel fonts failed", error));
@@ -2615,6 +2651,7 @@ function beginTurn() {
   lastSelectedWormAlliance.set(selectionKey, selection.selected);
   const active = roster[selection.selected - 1];
   current = worms.indexOf(active);
+  equippedTurnControl = 0;
   // 004DA9A0 (worm event 0x41C): special camera request at the new worm,
   // aim input may move the camera (+0x2A0) and the idle counter restarts.
   active.nativeCameraAim = true;
@@ -8094,6 +8131,7 @@ function frame(now) {
   renderer.render(scene, camera);
 }
 function setWeapon(kind) {
+  equippedTurnControl = 0;
   if (shotgunRemaining) return;
   homingTarget = null;
   if (WEAPONS[targetUtility]?.special === "homing") targetUtility = null;
@@ -8197,7 +8235,8 @@ arena.addEventListener("pointerdown", (e) => {
     arena.setPointerCapture(e.pointerId);
     return;
   }
-  if (nativeLayout && e.button === 2) {
+  // macOS reports Control-click as a primary click with Ctrl held.
+  if (nativeLayout && (e.button === 2 || (e.button === 0 && e.ctrlKey && /Mac/.test(navigator.platform)))) {
     // Original: the right mouse button opens and closes the weapon panel.
     e.preventDefault();
     arsenalPanel.toggle();
@@ -8290,6 +8329,24 @@ window.addEventListener("keydown", (e) => {
   if (nativeLayout && arsenalPanel.open &&
       [" ", "Enter", "Backspace", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key))
     arsenalPanel.close();
+  const functionKey = /^F([1-9]|1[0-2])$/.exec(e.key);
+  if (nativeLayout && functionKey) {
+    // F5/F11/F12 would reload, go full screen or open developer tools.
+    e.preventDefault();
+    if (!e.repeat && canAct() && !charging && !targetUtility && retreat <= 0 && !projectile)
+      cycleArsenalCategory(Number(functionKey[1]));
+    return;
+  }
+  if (nativeLayout && e.key === " " && equippedTurnControl) {
+    // Firing an equipped turn control performs it.
+    e.preventDefault();
+    if (!e.repeat) {
+      const button = arsenalSlotButton(equippedTurnControl);
+      equippedTurnControl = 0;
+      button?.click();
+    }
+    return;
+  }
   if (e.key === 'Delete' && e.shiftKey) {
     e.preventDefault();
     if (!e.repeat) toggleTeamPanelVisibility = !toggleTeamPanelVisibility;

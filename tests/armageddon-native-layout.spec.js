@@ -120,8 +120,9 @@ test("target selection moves a native cursor that the camera follows", async ({ 
   await startLocalMatch(page, "fern");
   await page.keyboard.press("t");
   await expect.poll(() => page.evaluate(() => window.siege.getState().targetUtility)).toBe("teleport");
-  const before = await page.evaluate(() => window.siege.getState().camera.x);
-  const direction = before > 600 ? -1 : 1;
+  const cameraAt = () => page.evaluate(() => { const c = window.siege.getState().camera; return `${c.x},${c.y}`; });
+  const before = await cameraAt();
+  const direction = Number(before.split(",")[0]) > 600 ? -1 : 1;
   await page.evaluate((direction) => {
     const arena = document.querySelector("#arena");
     for (let i = 0; i < 20; i++)
@@ -129,7 +130,7 @@ test("target selection moves a native cursor that the camera follows", async ({ 
         movementX: 15 * direction, movementY: -12, clientX: 600, clientY: 300 }));
   }, direction);
   // 004E65F0 keeps the cursor framed through a priority-0 request.
-  await expect.poll(() => page.evaluate(() => window.siege.getState().camera.x)).not.toBe(before);
+  await expect.poll(cameraAt).not.toBe(before);
   const start = await page.evaluate(() => { const s = window.siege.getState(); return s.worms[s.current].x; });
   // The click position is ignored: the target is the cursor.
   await page.locator("#arena").dispatchEvent("pointerdown", { pointerType: "mouse", button: 0, clientX: 5, clientY: 5 });
@@ -150,4 +151,34 @@ test("narrow windows keep the host controls with the native 1:1 camera", async (
     return { w: c.w, h: c.h, zoom: c.zoom, width: arena.clientWidth, height: arena.clientHeight };
   });
   expect(view).toEqual({ w: view.width, h: view.height, zoom: 1, width: view.width, height: view.height });
+});
+
+test("F-keys cycle the original panel rows and turn controls act when fired", async ({ page }) => {
+  await startLocalMatch(page);
+  const weapon = () => page.evaluate(() => window.siege.getState().weapon);
+  // 00502550: F2 picks the next available slot in its row (Grenade, Cluster...).
+  await page.keyboard.press("F2");
+  await expect.poll(weapon).toBe("grenade");
+  await page.keyboard.press("F2");
+  await expect.poll(weapon).toBe("cluster");
+  // F1 skips the delayed Homing Missile and wraps back to the Bazooka.
+  await page.keyboard.press("F1");
+  const first = await weapon();
+  expect(first).not.toBe("homing");
+  // F12's Skip Go is equipped, not performed, until fire.
+  const team = await page.evaluate(() => window.siege.getState().team);
+  await page.keyboard.press("F12");
+  await page.waitForTimeout(200);
+  expect(await page.evaluate(() => window.siege.getState().phase)).toBe("aim");
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => window.siege.getState().phase)).not.toBe("aim");
+  expect(await page.evaluate(() => window.siege.getState().team)).toBe(team);
+});
+
+test("Control-click opens the weapon panel on macOS", async ({ page }) => {
+  test.skip(process.platform !== "darwin", "Control-click is the macOS secondary click");
+  await startLocalMatch(page);
+  await page.locator("#arena").dispatchEvent("pointerdown",
+    { pointerType: "mouse", button: 0, ctrlKey: true, clientX: 600, clientY: 300 });
+  await expect(page.locator(".native-arsenal")).toBeVisible();
 });
