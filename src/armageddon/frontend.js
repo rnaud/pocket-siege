@@ -87,7 +87,7 @@ export function mountArmageddonFrontend(host = {}) {
   campaign.append(campaignTitle, notice, campaignBody);
   const modeSelect = game.querySelector('#mode');
   let campaignRequest = 0, mode = modeSelect.value, screen = "home";
-  async function showCampaign(kind) {
+  async function showCampaign(kind, selectPath = null) {
     const request = ++campaignRequest;
     const training = kind === 'training';
     campaignTitle.textContent = training ? 'TRAINING' : 'MISSIONS';
@@ -179,8 +179,11 @@ export function mountArmageddonFrontend(host = {}) {
       });
       list.append(button);
     });
-    // Open on the furthest reachable entry, as the original selects the current mission.
-    (Number.isFinite(bound) ? list.children[bound] : list.firstElementChild)?.click();
+    // A finished scenario reopens on itself so its updated result is shown;
+    // otherwise open on the furthest reachable entry, as the original selects
+    // the current mission.
+    const finished = selectPath && [...list.children].find(item => item.dataset.scenario === selectPath && !item.disabled);
+    (finished ?? (Number.isFinite(bound) ? list.children[bound] : list.firstElementChild))?.click();
   }
   function render() {
     const isCampaign = mode === 'missions' || mode === 'training';
@@ -234,5 +237,12 @@ export function mountArmageddonFrontend(host = {}) {
   return {
     showHome: () => showScreen("home"),
     showHelp: () => showScreen("help"),
+    // The original game exits to the frontend when a mission ends, where the
+    // result is evaluated; reopen that mission list on the finished scenario.
+    showScenarioResult: (kind, path) => {
+      mode = kind;
+      showScreen("mode");
+      return showCampaign(kind, path);
+    },
   };
 }

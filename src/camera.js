@@ -31,13 +31,15 @@ export function chooseCameraTarget({ phase, projectile, worms, active }) {
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-export function cameraView(cx, cy, zoom, aspect = W / H, top = H) {
+// bottom lets a focused view dip below the landscape into the sea band, so
+// worms standing at the landscape's bottom edge clear the overlaid HUD.
+export function cameraView(cx, cy, zoom, aspect = W / H, top = H, bottom = 0) {
   const z = clamp(zoom, 1, 1.5),
     w = Math.min(W, H * aspect) / z,
     h = Math.min(H, W / aspect) / z;
   return {
     x: clamp(cx - w / 2, 0, W - w),
-    y: clamp(cy - h / 2, 0, Math.max(0, top - h)),
+    y: clamp(cy - h / 2, 0 - bottom, Math.max(0 - bottom, top - h)),
     w,
     h,
     zoom: z,

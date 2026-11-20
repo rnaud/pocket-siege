@@ -2234,6 +2234,22 @@ body.native-game-hud {
   display: block;
 }
 .native-game-hud .turn #round { display: none; }
+/* Scenario/crate-spy notes sit in the open sky at the battlefield's top-left,
+   clear of the clock box, the message line and low worms. */
+.native-game-hud .turn-notes {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 1px 1px 0 #000;
+}
+.turn-notes > [hidden] { display: none !important; }
 .native-clock-frame {
   position: absolute;
   inset: 0;

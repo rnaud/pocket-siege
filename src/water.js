@@ -38,7 +38,8 @@ export async function loadOriginalWater() {
 // Native wave pixels tiled horizontally over the source fill colour. The
 // browser clock currently drives this zero-rate strip; native layer timing
 // and parallax are separate remaining ports.
-export function createWater(width, level) {
+// depth extends the fill below the landscape bottom for the camera's sea band.
+export function createWater(width, level, depth = 0) {
   const canvas = document.createElement("canvas"),
     context = canvas.getContext("2d");
   canvas.width = Math.ceil(width);
@@ -62,7 +63,7 @@ export function createWater(width, level) {
     const { sprite, frames, color } = waterArt;
     const frame = restoredFrame ?? Math.floor(Math.max(0, time) * 25) % frames.length;
     const crest = Math.floor(sprite.height / 2);
-    const height = Math.max(1, Math.ceil(currentLevel) + crest);
+    const height = Math.max(1, Math.ceil(currentLevel) + crest + depth);
     if (lastFrame === frame && lastHeight === height) return;
     if (canvas.height !== height) {
       texture.dispose();
@@ -75,7 +76,7 @@ export function createWater(width, level) {
     for (let x = 0; x < width; x += sprite.width)
       context.drawImage(frames[frame], x, 0);
     mesh.scale.y = height;
-    mesh.position.set(width / 2, height / 2, 22);
+    mesh.position.set(width / 2, height / 2 - depth, 22);
     texture.needsUpdate = true;
     lastFrame = frame;
     lastHeight = height;

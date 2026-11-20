@@ -219,6 +219,10 @@ test("completing a training course resolves the match as a win", async ({ page }
   const result = await page.evaluate(() => window.siege.getState().lastResult);
   expect(result.scenario).toMatchObject({ complete: true, collected: 2, total: 2 });
   await expect(page.locator("#turn-label")).toHaveText("SCENARIO COMPLETE");
+  // The game then returns to the training list on the finished course.
+  await expect(page.locator("#menu")).toHaveAttribute("open", "", { timeout: 10000 });
+  await expect(page.locator("#menu")).toHaveAttribute("data-frontend-mode", "training");
+  await expect(page.locator('[data-scenario="mission/training1.wam"]')).toHaveAttribute("aria-pressed", "true");
 });
 
 test("collecting a mission's vital crate completes WinningCondition 3", async ({
@@ -1311,15 +1315,14 @@ test("starting a local match after a training restores both teams", async ({ pag
   expect(team1).toBe(3);
 });
 
-test("training targets are visibly marked", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="training"]').click();
-  await page.locator('[data-scenario="mission/training1.wam"]').click();
-  await page.locator(".frontend-play-scenario").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
-    .toBe("aim");
-  await expect(page.locator(".mission-target-marker")).toBeVisible();
-  await expect(page.locator(".mission-target-marker")).toContainText("TARGET");
+test("training water is drawn at the landscape bottom", async ({ page }) => {
+  await openScenario(page, "mission/training1.wam");
+  const state = await page.evaluate(() => {
+    const s = window.siege.getState();
+    return { level: s.waterLevel, surface: s.waterSurface, target: s.crates.find((c) => c.kind === "target")?.y };
+  });
+  // The rendered sea must follow the scenario waterline, not the default 80 rows.
+  expect(state.level).toBe(0);
+  expect(state.surface).toBe(0);
+  expect(state.target).toBeGreaterThan(state.surface);
 });

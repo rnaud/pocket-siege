@@ -517,7 +517,6 @@ let lastWaterRiseRound = 0;
 let earthquakeShake = 0;
 let teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
 const crateSpyLabels = new Map();
-const missionTargetMarkers = new Map();
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -658,6 +657,9 @@ function mountCurrentMenuArt() {
   }
 }
 const SKY_HEADROOM = 256;
+// Host camera limit: sea visible below the landscape bottom (native viewport
+// limits are not ported), sized to clear the overlaid bottom HUD.
+const SEA_BAND = 96;
 const backdropMap = new THREE.CanvasTexture(document.createElement("canvas"));
 backdropMap.colorSpace = THREE.SRGBColorSpace;
 backdropMap.minFilter = backdropMap.magFilter = THREE.NearestFilter;
@@ -695,7 +697,7 @@ for (let i = 0; i < 26; i++) {
   group.add(mote);
   motes.push(mote);
 }
-let water = createWater(W, WATER);
+let water = createWater(W, WATER, SEA_BAND);
 group.add(water);
 // Debris and projectiles share GPU resources; only one prototype per kind is built.
 const debrisGeometry = new THREE.PlaneGeometry(2, 2);
@@ -1265,7 +1267,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     water.geometry.dispose();
     water.material.map.dispose();
     water.material.dispose();
-    water = createWater(W, WATER);
+    water = createWater(W, WATER, SEA_BAND);
     group.add(water);
     Object.assign(view, cameraView(W / 2, H / 2, 1));
     cameraX = W / 2;
@@ -1275,6 +1277,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   }
   // Scenario land.dat files carry Landgen's default0% water.
   if (authored && currentScenario) waterLevel = nativeScenarioWaterLevel(H);
+  // The mesh keeps its own surface level; sync it or it still draws the
+  // default 80-row sea over the scenario's bottom-edge waterline.
+  water.userData.setLevel?.(waterLevel);
   terrain =
     authored ??
     new Terrain(matchSeed, layout.startsWith("original:") ? "fern" : layout);
@@ -1502,12 +1507,14 @@ function updateScenarioTeamNames() {
   if (!el) return;
   el.hidden = !currentScenario;
   const text = $("#scenario-team-names-text");
+  // TeamsInMission=1 trainings field only the player's team.
+  const solo = currentScenario?.teams === 1 || soloScenario();
   if (text) text.textContent = currentScenario
-    ? `${teamDisplayNames[0]} vs ${teamDisplayNames[1]}` : "";
+    ? solo ? teamDisplayNames[0] : `${teamDisplayNames[0]} vs ${teamDisplayNames[1]}` : "";
   for (const team of [0, 1]) {
     const image = $(`#scenario-flag-${team}`);
     if (!image) continue;
-    image.hidden = !currentScenario;
+    image.hidden = !currentScenario || (solo && team === 1);
     if (!currentScenario) { image.removeAttribute("src"); continue; }
     const flag = currentScenario.teamWorms[team]?.find((worm) => worm.place !== false)?.flag ?? 1;
     scenarioFlagUrl(flag).then((url) => {
@@ -1598,34 +1605,6 @@ function updateCrateSpyHUD() {
     const p = screen(crate.x, crate.y - 34);
     label.style.left = `${p.x}px`;
     label.style.top = `${p.y}px`;
-  }
-}
-function updateMissionTargetMarkers() {
-  const active = Boolean(currentScenario && scenarioProgress);
-  const present = new Set();
-  for (const crate of crates) {
-    if (!active || !crate.mission?.target || crate.mission.removed) continue;
-    present.add(crate);
-    let marker = missionTargetMarkers.get(crate);
-    if (!marker) {
-      marker = document.createElement("span");
-      marker.className = "mission-target-marker";
-      const ring = document.createElement("i");
-      const text = document.createElement("b");
-      text.textContent = "TARGET";
-      marker.append(ring, text);
-      $("#labels").appendChild(marker);
-      missionTargetMarkers.set(crate, marker);
-    }
-    const p = screen(crate.x, crate.y + 34);
-    marker.style.left = `${p.x}px`;
-    marker.style.top = `${p.y}px`;
-  }
-  for (const [crate, marker] of missionTargetMarkers) {
-    if (!present.has(crate)) {
-      marker.remove();
-      missionTargetMarkers.delete(crate);
-    }
   }
 }
 function updateCrateSpyLabelPositions() {
@@ -2042,6 +2021,24 @@ function finishMission() {
     resetScenarioAttempts(path);
   } else recordScenarioFailure(path);
   finishMatch(success ? 0 : null, false);
+  if (!replaySimulation) scheduleScenarioFrontendReturn(path);
+}
+// WA leaves the game for the frontend once a mission ends; the frontend then
+// shows the result. The host keeps the end-of-match view briefly (host timing,
+// not a recovered duration) and reopens the mission list on that scenario.
+const SCENARIO_RETURN_MS = 3000;
+function scheduleScenarioFrontendReturn(path) {
+  const result = lastResult;
+  const kind = soloScenario() || currentScenario?.training ? "training" : "missions";
+  setTimeout(() => {
+    if (lastResult !== result || phase !== "over" || menu.open) return;
+    releaseInputs();
+    frontend.showScenarioResult(kind, path);
+    updateRecordUI();
+    menu.showModal();
+    resetMenuScroll();
+    updateUI();
+  }, SCENARIO_RETURN_MS);
 }
 // Classic duel starts from the original default scheme (resource 195): the
 // recovered 00415540/00417750/004C2640 setup supplies counts and delays.
@@ -7533,7 +7530,6 @@ function frame(now) {
   if (renderedDisplayDensity !== window.devicePixelRatio) resize();
   syncMusic();
   if (crateSpyLabels.size) updateCrateSpyLabelPositions();
-  if (missionTargetMarkers.size || (currentScenario && scenarioProgress)) updateMissionTargetMarkers();
   const frameDt = Math.min((now - last) / 1000, 0.1);
   const slow = slowMo > 0 && !reducedMotion;
   if (slowMo > 0) slowMo = Math.max(0, slowMo - frameDt);
@@ -7597,6 +7593,7 @@ function frame(now) {
     cameraZoom,
     arena.clientWidth / arena.clientHeight,
     nativeCameraFocus && !overview && !manualCamera ? H + SKY_HEADROOM : H,
+    overview ? 0 : SEA_BAND,
   );
   view.x = nextView.x;
   view.y = nextView.y;
@@ -8629,6 +8626,7 @@ window.siege = {
     nativeWaterRise: nativeWaterRise ? { ...nativeWaterRise } : null,
     nativeNuclearEffect: nativeNuclearEffect ? { ...nativeNuclearEffect } : null,
     waterSprite: water.userData.originalSprite,
+    waterSurface: water.userData.surfaceLevel,
     waterFrame: water.userData.originalFrame,
     suddenDeath,
     hitStop,

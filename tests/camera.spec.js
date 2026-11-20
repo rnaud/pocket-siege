@@ -75,3 +75,8 @@ test("camera view clamps to the world and preserves the world aspect", { tag: "@
   expect(far.y).toBeCloseTo(H - H / 1.5, 5);
   expect(cameraView(W / 2, H / 2, 99).zoom).toBe(1.5);
 });
+
+test("a focused camera may dip into the sea band below the landscape", { tag: "@logic" }, () => {
+  expect(cameraView(0, 0, 1.32, W / H, H, 96).y).toBe(-96);
+  expect(cameraView(W / 2, H / 2, 1, W / H, H, 96).y).toBe(0);
+});
