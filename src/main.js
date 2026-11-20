@@ -8189,7 +8189,9 @@ function frame(now) {
                     : active && phase === "aim"
                       ? "aim"
                       : "idle";
-    w.g.visible = !w.invisible;
+    // A dead worm is removed once its death sequence ends; only its grave
+    // stays (the simulation step decides this, so rendering must not undo it).
+    w.g.visible = !w.invisible && (w.hp > 0 || w.deathPending || w.dying > 0);
     w.label.style.display = w.invisible ? "none" : "";
     w.g.userData.pose = pose;
     const original = originalWormFrame(
@@ -9303,6 +9305,7 @@ window.siege = {
         moving,
         weaponRotation: rig.pivot.rotation.z,
         pose: g.userData.pose || "idle",
+        rendered: g.visible,
         originalSprite: g.userData.originalSprite,
         originalFrame: g.userData.originalFrame,
         originalTransform: g.userData.originalSprite

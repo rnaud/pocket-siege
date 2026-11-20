@@ -194,3 +194,25 @@ test("a worm that comes to rest on an oil drum stands on it and can still move",
   await page.keyboard.up("ArrowRight");
   await expect.poll(() => page.evaluate(() => window.siege.debug.wormBody().x)).not.toBe(before);
 });
+
+test("a dead worm leaves only its grave, not its last frame", async ({ page }) => {
+  await start(page);
+  const result = await page.evaluate(async () => {
+    const debug = window.siege.debug;
+    let state = window.siege.getState();
+    const index = state.worms.findIndex((w) => w.team === 1 && w.hp > 0);
+    const victim = state.worms[index];
+    debug.setWormHp(index, 1);
+    debug.nativeBlastAt(victim.x, victim.y, 100, 50);
+    debug.finishTurn();
+    for (let frames = 0; frames < 1500 && !window.siege.getState().graves.length; frames += 25)
+      debug.advanceReplayFrames(25);
+    // Let the renderer draw a few frames after the grave appears.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    state = window.siege.getState();
+    return { hp: state.worms[index].hp, graves: state.graves.length, rendered: state.worms[index].rendered };
+  });
+  expect(result.hp).toBe(0);
+  expect(result.graves).toBe(1);
+  expect(result.rendered).toBe(false);
+});
