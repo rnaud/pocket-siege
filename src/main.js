@@ -83,6 +83,7 @@ import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/au
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
 import { createNativeArsenalPanel, loadNativeArsenalFonts, nativeArsenalWeapons } from "./arsenal-panel.js";
 import { nativeTurnStart } from "./armageddon/turn-start.js";
+import { nativeDeactivateTurn } from "./armageddon/settlement-entry.js";
 import { nativeRetreatRequest } from "./armageddon/retreat-request.js";
 import { nativeCollectWeaponInput } from "./armageddon/controller-input.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
@@ -2731,7 +2732,8 @@ function beginTurn() {
   // Host adapters: deployment (state 100) and the round-time warning are
   // not reachable live, and the events map onto the host blocks above.
   const turnStart = nativeTurnStart({
-    body: turnBody, shared: {}, team, selectedWorm: selection.selected,
+    // Native team ids are 1-based; 0 means no active team.
+    body: turnBody, shared: {}, team: team + 1, selectedWorm: selection.selected,
     schemeTurn: turnSeconds, schemeRetreat: retreatSeconds, schemeMode: 0,
     state: nativeWormState(active), positionX: Math.round(active.x * 65536) | 0,
     positionY: Math.round((H - active.y) * 65536) | 0,
@@ -6478,6 +6480,12 @@ function selectNativeMatchTeam() {
 }
 function nextTurn() {
   if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
+  // 004B35F0: end the active turn (0x41F/0x421/0x425), clearing the turn
+  // fields and input mode and resetting the camera priority cap to 14.
+  if (turnBody.activeTeam) {
+    turnBody = nativeDeactivateTurn({ ...turnBody, cameraCounts: turnBody.cameraCounts ?? new Array(14).fill(0) }).body;
+    nativeCamera.setPriority(14);
+  }
   if (currentScenario?.lossOfControlDoesntEndTurn && lastLossOfControl) {
     lastLossOfControl = false;
     const roster = worms.filter((w) => w.team === team && w.hp > 0);
