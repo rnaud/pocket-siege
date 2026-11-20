@@ -385,6 +385,8 @@ let turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending
 // round-time expiry (004B65D2); +0x198: crate drop armed at each turn start.
 let suddenDeathCountdown = 0;
 let crateDropArmed = false;
+// Turn-root +0x13C: the round intro still has to play before the first turn.
+let introPending = false;
 // 004B4CE0 event 0x432 at weapon completion: request the retreat (pending
 // until the worm's action ends), size it (004B4230) and slide the clock out.
 // Host adapters: every finished action ends the turn, the controller +104
@@ -1681,13 +1683,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   // between turns before the first turn starts.
   runMissionBetweenTurns();
   if(!authored)spawnHazards();
-  // 004B761C (S10c): before the first turn the intro plays StartRound
-  // (sound 0x2D, priority 8) and holds the scene for 1 s (004EEBF0); the
-  // first turn starts in the same pass. Host adapter: the mission-mode intro
-  // text (language +0x2D8) is not loaded.
-  nativeSoundQueue.enqueue([0x2d, 8, 65536, 65536, 0]);
+  introPending = true;
   beginTurn();
-  nativeBusy.delay(1);
   updateRecordUI();
   resize();
 }
@@ -2764,6 +2761,14 @@ function beginTurn() {
   });
   turnBody = turnStart.body;
   nativeClockTarget = turnBody.clockTarget;
+  // 004B761C (S10c): the first turn opens with StartRound (sound 0x2D,
+  // priority 8) and a 1 s busy hold; the turn starts in the same pass.
+  // Host adapter: the mission-mode intro text (language +0x2D8) is not loaded.
+  if (introPending) {
+    introPending = false;
+    nativeSoundQueue.enqueue([0x2d, 8, 65536, 65536, 0]);
+    nativeBusy.delay(1);
+  }
   phase = "aim";
   cameraSnap = true; manualCamera = null;
   wormLocked = false;

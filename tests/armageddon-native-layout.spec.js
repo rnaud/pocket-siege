@@ -47,6 +47,12 @@ test("desktop shows the original full-window battlefield at one world pixel per 
 
 test("turn start frames the active worm and mouse-look pans the native camera", async ({ page }) => {
   await startLocalMatch(page);
+  // The opening supply crate falls during the first turn and draws the
+  // camera; remove it so the turn-start framing itself is checked.
+  await page.evaluate(() => { if (window.siege.getState().crates.length) window.siege.debug.collectCrate(); });
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(100);
+  await page.keyboard.up("ArrowRight");
   const inView = () => page.evaluate(() => {
     const s = window.siege.getState(), w = s.worms[s.current], c = s.camera;
     return w.x >= c.x && w.x <= c.x + c.w && w.y >= c.y && w.y <= c.y + c.h;
