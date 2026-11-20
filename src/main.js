@@ -81,6 +81,7 @@ import { nativeDrillEntry, nativeDrillTick } from "./armageddon/drill.js";
 import { startOriginalDrill } from "./armageddon/art.js";
 import { playNativeDrillLoop, playNativeRopeContactSound } from "./armageddon/audio.js";
 import { mountArmageddonFrontend } from "./armageddon/frontend.js";
+import { createNativeArsenalPanel, loadNativeArsenalFonts } from "./arsenal-panel.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFallingFlight, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
@@ -538,6 +539,48 @@ function crateShowerSlotKind(slot) {
   return null;
 }
 let crateShowerPool = null, crateShowerUsed = [], crateShowerAmmo = null;
+// Host inventory behind the native weapon panel (004C2EE0/004C3050/004C29C0).
+// Slots without a host action stay empty; -1 is an unlimited count and
+// match-locked weapons (negative host delay) are left out.
+// Slots 57-59 (Skip Go, Surrender, Select Worm) are host turn controls.
+const ARSENAL_TURN_CONTROLS = { 57: "#skip", 58: "#surrender", 59: "#select-worm" };
+function arsenalSlotButton(slot) {
+  if (ARSENAL_TURN_CONTROLS[slot]) {
+    const button = $(ARSENAL_TURN_CONTROLS[slot]);
+    return button && !button.hidden && !button.disabled ? button : null;
+  }
+  const entry = crateShowerSlotKind(slot);
+  if (!entry) return null;
+  return document.querySelector(entry.type === "weapon"
+    ? `[data-weapon="${entry.kind}"]` : `[data-utility="${entry.kind}"]`);
+}
+function arsenalSlotDelay(slot) {
+  if (ARSENAL_TURN_CONTROLS[slot]) return 0;
+  const entry = crateShowerSlotKind(slot);
+  if (!entry || !arsenalSlotButton(slot)) return 0;
+  const delay = weaponDelay(weaponDelays[team], entry.kind) | 0;
+  return delay > 0 ? delay : 0;
+}
+function arsenalSlotAmmo(slot) {
+  if (ARSENAL_TURN_CONTROLS[slot]) return arsenalSlotButton(slot) ? -1 : 0;
+  const entry = crateShowerSlotKind(slot);
+  if (!entry || !arsenalSlotButton(slot)) return 0;
+  if (entry.type === "weapon" && weaponDelay(weaponDelays[team], entry.kind) < 0) return 0;
+  const count = entry.type === "weapon" ? availableAmmo(ammo[team], entry.kind)
+    : utilityAmmo[team]?.[entry.kind] ?? 0;
+  return count === Infinity ? -1 : Math.max(0, count | 0);
+}
+const arsenalPanel = createNativeArsenalPanel(arena, {
+  team: () => team,
+  ammo: arsenalSlotAmmo,
+  delay: arsenalSlotDelay,
+  teamFlags: () => worms[current]?.nativeTeamModifiers | 0,
+  // 005011F0: weapon input must be enabled (no shot away, no target pending).
+  canOpen: () => canAct() && !charging && !targetUtility && retreat <= 0 && !projectile && !replaying,
+  select: (slot) => arsenalSlotButton(slot)?.click(),
+  sound: (id) => queueGameSound([id, 8, 65536, 65536, 0]),
+});
+loadNativeArsenalFonts().catch((error) => console.error("Weapon panel fonts failed", error));
 let currentScenario = null;
 let scenarioProgress = null;
 let scenarioSequence = [], scenarioSequenceIndex = 0;
@@ -7631,7 +7674,11 @@ function stepFrame(dt) {
     // mouse (00501370 moves the cursor instead).
     const dx = Math.trunc(mouseLookDelta[0]), dy = Math.trunc(mouseLookDelta[1]);
     mouseLookDelta[0] -= dx; mouseLookDelta[1] -= dy;
-    if (!targetCursor) nativeCameraMouseLook(nativeCameraFraming, dx, dy);
+    // An open weapon panel owns the pointer (00501370 resets the device), so
+    // the camera sees no mouse motion that frame.
+    if (arsenalPanel.open) arsenalPanel.move(dx, dy);
+    else if (!targetCursor) nativeCameraMouseLook(nativeCameraFraming, dx, dy);
+    arsenalPanel.tick();
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame,
       [Math.max(1, Math.round(arena.clientWidth)), Math.max(1, Math.round(arena.clientHeight))], limits);
     nativeCameraFocus = { x: position[0] / 65536, y: H - position[1] / 65536 };
@@ -7727,6 +7774,11 @@ function frame(now) {
   if (nativeCameraFocus) camTarget = { zoom: 1, cx: nativeCameraFocus.x, cy: nativeCameraFocus.y };
   if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
   arena.classList.toggle("targeting", Boolean(targetUtility));
+  if (nativeLayout || arsenalPanel.open) {
+    // 0x42E (weapon input disabled) and turn changes close the panel.
+    if (!nativeLayout || !matchStarted || menu.open || phase === "over" || !canAct()) arsenalPanel.close();
+    arsenalPanel.render(arena.clientWidth, arena.clientHeight, team ? "cursorr" : "cursorg");
+  }
   if (!nativeCameraActive && mousePanPointer && matchStarted && !menu.open && !overview && !replaying && !touchPan) {
     const rect = arena.getBoundingClientRect();
     const x = mousePanPointer.x - rect.left, y = mousePanPointer.y - rect.top;
@@ -8148,13 +8200,12 @@ arena.addEventListener("pointerdown", (e) => {
   if (nativeLayout && e.button === 2) {
     // Original: the right mouse button opens and closes the weapon panel.
     e.preventDefault();
-    if (canAct() || inventoryOpen()) $("#inventory-toggle")?.click();
-    // The host arsenal grid is clicked with the system cursor.
-    if (inventoryOpen() && pointerLocked()) document.exitPointerLock();
+    arsenalPanel.toggle();
     return;
   }
   if (e.button !== 0) return;
   if (nativeLayout && !pointerLocked()) requestBattlefieldPointerLock();
+  if (nativeLayout && arsenalPanel.open) { arsenalPanel.click(); return; }
   if (targetUtility) { handleUtilityTarget(nativeLayout && targetCursor ? targetCursorEvent() : e); return; }
   // The original never aims with the mouse; left click only picks targets.
   if (nativeLayout) return;
@@ -8229,10 +8280,16 @@ window.addEventListener("keydown", (e) => {
     // already used to close the arsenal tray is not repeated here.
     if (e.defaultPrevented || inventoryOpen()) return;
     e.preventDefault();
+    if (arsenalPanel.open) { arsenalPanel.close(); return; }
     if (pointerLocked()) document.exitPointerLock();
     $("#restart").click();
     return;
   }
+  // 00501370: fire, jump and movement keys close the open weapon panel and
+  // still act.
+  if (nativeLayout && arsenalPanel.open &&
+      [" ", "Enter", "Backspace", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key))
+    arsenalPanel.close();
   if (e.key === 'Delete' && e.shiftKey) {
     e.preventDefault();
     if (!e.repeat) toggleTeamPanelVisibility = !toggleTeamPanelVisibility;
@@ -8992,6 +9049,7 @@ if (import.meta.env.DEV) {
       try { for (let i=0;i<count;i++) step(LOGIC_STEP_SECONDS); }
       finally { replaySimulation = previous; }
     },
+    arsenalPanel: () => arsenalPanel.state(),
     knockout(teamIndex = 1) {
       for (const w of worms) {
         if (w.team !== teamIndex) continue;

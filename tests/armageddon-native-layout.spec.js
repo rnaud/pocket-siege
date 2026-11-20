@@ -6,10 +6,11 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.removeItem("pocket-siege-host-layout"));
 });
 
-async function startLocalMatch(page) {
+async function startLocalMatch(page, map = null) {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="local"]').click();
+  if (map) await page.locator("#map-layout").selectOption(map);
   await page.locator("#start").click();
   await expect(page.locator("#menu")).not.toBeVisible();
   await expect
@@ -63,15 +64,39 @@ test("turn start frames the active worm and mouse-look pans the native camera", 
   await expect.poll(inView).toBe(true);
 });
 
-test("right click opens the arsenal and Escape opens the in-game menu", async ({ page }) => {
+test("right click opens the original weapon panel and Escape opens the in-game menu", async ({ page }) => {
   await startLocalMatch(page);
   const arena = page.locator("#arena");
   await arena.click({ button: "right", position: { x: 400, y: 300 } });
-  await expect(page.locator("#weapon-tray")).toBeVisible();
-  await page.keyboard.press("Escape");
+  const panel = page.locator(".native-arsenal");
+  await expect(panel).toBeVisible();
   await expect(page.locator("#weapon-tray")).toBeHidden();
+  // 004E5BF0: 10 pixels from the right edge, 23 below the screen centre line
+  // of its own height, i.e. its bottom edge sits 23 pixels above the bottom.
+  await expect.poll(() => page.evaluate(() => {
+    const r = document.querySelector(".native-arsenal").getBoundingClientRect();
+    return [innerWidth - r.right, innerHeight - r.bottom, r.width];
+  })).toEqual([10, 23, 180]);
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
   await page.keyboard.press("Escape");
   await expect(page.locator("#menu")).toBeVisible();
+});
+
+test("the weapon panel cursor hovers cells and a left click equips the weapon", async ({ page }) => {
+  await startLocalMatch(page);
+  const arena = page.locator("#arena");
+  await arena.click({ button: "right", position: { x: 400, y: 300 } });
+  await expect.poll(() => page.evaluate(() => window.siege.debug.arsenalPanel().hover)).toEqual([0, 0]);
+  const panel = page.locator(".native-arsenal");
+  await expect(panel).toHaveAttribute("aria-valuetext", "Bazooka");
+  // One cell down is F2: Grenade (00501370 moves the cursor by mouse motion).
+  await page.evaluate(() => document.querySelector("#arena").dispatchEvent(new PointerEvent("pointermove",
+    { pointerType: "mouse", bubbles: true, movementX: 0, movementY: 29, clientX: 600, clientY: 300 })));
+  await expect(panel).toHaveAttribute("aria-valuetext", "Grenade");
+  await page.locator("#arena").dispatchEvent("pointerdown", { pointerType: "mouse", button: 0, clientX: 600, clientY: 300 });
+  await expect.poll(() => page.evaluate(() => window.siege.getState().weapon)).toBe("grenade");
+  await expect(panel).toBeHidden();
 });
 
 test("the camera roams the original world limits past the map edges", async ({ page }) => {
@@ -91,7 +116,8 @@ test("the camera roams the original world limits past the map edges", async ({ p
 });
 
 test("target selection moves a native cursor that the camera follows", async ({ page }) => {
-  await startLocalMatch(page);
+  // A fixed map keeps the cursor's destination in open sky above the island.
+  await startLocalMatch(page, "fern");
   await page.keyboard.press("t");
   await expect.poll(() => page.evaluate(() => window.siege.getState().targetUtility)).toBe("teleport");
   const before = await page.evaluate(() => window.siege.getState().camera.x);
@@ -100,7 +126,7 @@ test("target selection moves a native cursor that the camera follows", async ({ 
     const arena = document.querySelector("#arena");
     for (let i = 0; i < 20; i++)
       arena.dispatchEvent(new PointerEvent("pointermove", { pointerType: "mouse", bubbles: true,
-        movementX: 40 * direction, movementY: 0, clientX: 600, clientY: 300 }));
+        movementX: 15 * direction, movementY: -12, clientX: 600, clientY: 300 }));
   }, direction);
   // 004E65F0 keeps the cursor framed through a priority-0 request.
   await expect.poll(() => page.evaluate(() => window.siege.getState().camera.x)).not.toBe(before);

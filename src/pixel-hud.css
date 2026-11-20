@@ -2347,3 +2347,15 @@ body.native-layout #arena {
 body.native-layout #arena.targeting {
   cursor: crosshair;
 }
+/* Native weapon panel (004E5BF0): drawn 1:1 above the HUD; input comes
+   through the battlefield's pointer handling. */
+.native-arsenal,
+.native-arsenal-cursor {
+  position: absolute;
+  z-index: 60;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.native-arsenal-cursor { z-index: 61; }
+.native-arsenal[hidden],
+.native-arsenal-cursor[hidden] { display: none; }
