@@ -105,22 +105,22 @@ test("cluster fragments and fire use original art in live gameplay", async ({
   expect(flames[0].sprite).toMatch(/^petrol-?[1-6]$/);
   expect(flames[0].record.slice(7)).toEqual([4000, 100, 20, 1]);
 });
-test("native object strips preserve ping-pong playback and feet when changing canvas size", async ({
+test("native object strips preserve ping-pong playback and the centred native anchor when changing canvas size", async ({
   page,
 }) => {
   await start(page);
   const result = await page.evaluate(async () => {
     const { createOriginalObject, updateOriginalObject, updateOriginalCrate, originalVisual } =
       await import("/src/armageddon/art.js");
-    const mesh = createOriginalObject("wcrate2", -10);
-    const foot = () => {
-      const frame = originalVisual(mesh.userData.originalSprite);
+    const mesh = createOriginalObject("wcrate2");
+    // 00498890 centres the sprite box on the object position.
+    const anchor = () => {
       const plane = mesh.children[0];
-      return plane.position.y + plane.scale.y / 2 - frame.bottom;
+      return [plane.position.x, plane.position.y, plane.scale.x, plane.scale.y];
     };
-    const fallingFoot = foot();
+    const fallingFoot = anchor();
     updateOriginalObject(mesh, "wcrate1", 0);
-    const landedFoot = foot();
+    const landedFoot = anchor();
     const data = originalVisual("wcrate1");
     updateOriginalObject(mesh, "wcrate1", 0, 0x8000);
     const middle = mesh.userData.originalFrame;
@@ -147,8 +147,8 @@ test("native object strips preserve ping-pong playback and feet when changing ca
   });
   expect(result.crateDraw).toEqual({ position: [100, result.crateDraw.expectedY], centered: [0,0],
     labels: 2, countdownBorder: [255,255,255,255], hidden: true, expectedY: result.crateDraw.expectedY });
-  expect(result.fallingFoot).toBe(-10);
-  expect(result.landedFoot).toBe(-10);
+  expect(result.fallingFoot).toEqual([0, 0, 74, 74]);
+  expect(result.landedFoot).toEqual([0, 0, 60, 60]);
   expect(result.middle).toBe(result.count - 1);
   expect(result.end).toBe(1);
 });

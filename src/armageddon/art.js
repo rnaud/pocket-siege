@@ -352,9 +352,11 @@ export function originalVisual(name, index = 0) {
   };
 }
 
-// A reusable native-size sprite with an explicit foot anchor. Frame selection
-// honors the original loop/ping-pong flags; only the host event driver is new.
-export function createOriginalObject(name, footOffset = 0) {
+// A reusable native-size sprite. 00498890/nativeSelectSpriteFrame anchor the
+// crop at (width>>1)-left, (height>>1)-top, so the sprite box is centred on
+// the object position. Frame selection honors the original loop/ping-pong
+// flags; only the host event driver is new.
+export function createOriginalObject(name) {
   const frame = originalVisual(name);
   if (!frame) return null;
   const group = new THREE.Group();
@@ -364,7 +366,6 @@ export function createOriginalObject(name, footOffset = 0) {
   );
   group.add(plane);
   group.userData.originalPlane = plane;
-  group.userData.footOffset = footOffset;
   updateOriginalObject(group, name, 0);
   return group;
 }
@@ -389,8 +390,8 @@ export function updateOriginalObject(group, name, age, progress = null) {
   plane.material.map = texture(name, index);
   nativePaletteDisplay.bind(plane.material, name.startsWith("water/") ? 2 : 1);
   plane.scale.set(frame.width, frame.height, 1);
-  plane.position.y =
-    frame.bottom - frame.height / 2 + group.userData.footOffset;
+  // Native top is y-(height>>1) (Y down): odd heights sit half a pixel lower.
+  plane.position.y = frame.height & 1 ? -0.5 : 0;
   group.userData.originalSprite = name;
   group.userData.originalFrame = index;
   return true;

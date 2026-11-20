@@ -2298,6 +2298,8 @@ body.native-layout .controls {
   background: none;
   visibility: hidden;
   pointer-events: none;
+  /* The weapon panel covers the wind meter and team bars when open. */
+  z-index: 50;
 }
 body.native-layout .controls.inventory-open > #weapon-tray#weapon-tray {
   visibility: visible;

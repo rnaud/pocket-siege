@@ -1724,7 +1724,7 @@ function spawnCrate(announceDrop = false, forcedKind = null) {
   const pool = allowed.length ? allowed : PICKUP_KINDS;
   const kind = forcedKind ?? pool[Math.floor(logicRandom() * pool.length)],
     mesh =
-      createOriginalObject(crateOpeningSprite(kind), -10);
+      createOriginalObject(crateOpeningSprite(kind));
   mesh.position.set(x, y, 18);
   group.add(mesh);
   const crate = {
@@ -1759,7 +1759,7 @@ function spawnCrate(announceDrop = false, forcedKind = null) {
 function spawnShowerCrate(record, mapping, quantity) {
   const kind = mapping.type === "health" ? "health" : mapping.type === "utility" ? "utility" : "special";
   const x = record.x / 65536, y = H - record.y / 65536;
-  const mesh = createOriginalObject(crateOpeningSprite(kind), -10);
+  const mesh = createOriginalObject(crateOpeningSprite(kind));
   mesh.position.set(x, y, 18);
   group.add(mesh);
   const crate = {
@@ -1779,7 +1779,7 @@ function spawnShowerCrate(record, mapping, quantity) {
   return crate;
 }
 function spawnScenarioBarrel(object) {
-  const mesh = createOriginalObject("oildrum1", -14);
+  const mesh = createOriginalObject("oildrum1");
   const hazard = { mesh, nativeOrderId: nativeRenderOrder.allocate() };
   hazard.nativeBody = nativeBarrelBody(
     Math.round(object.x * 65536), Math.round(object.y * 65536),
@@ -1942,7 +1942,7 @@ function spawnMissionCrate(event) {
   const spriteName = target
     ? nativeSpriteIds.sprites[(event.targetType === 1 ? 596 : 594) + (event.vital ? 1 : 0)].name
     : crateOpeningSprite(kind);
-  const mesh = createOriginalObject(spriteName, -10) ?? createOriginalObject(crateOpeningSprite("special"), -10);
+  const mesh = createOriginalObject(spriteName) ?? createOriginalObject(crateOpeningSprite("special"));
   group.add(mesh);
   const crate = {
     nativeOrderId: nativeRenderOrder.allocate(),
@@ -2115,7 +2115,7 @@ function spawnHazards(requests=null) {
   if(requests) {
     for(const request of requests) {
       if(request.kind==="mine"){spawnNaturalMine(request);continue;}
-      const mesh=createOriginalObject("oildrum1",-14);
+      const mesh=createOriginalObject("oildrum1");
       const hazard={mesh,nativeOrderId:nativeRenderOrder.allocate()};
       hazard.nativeBody=nativeBarrelBody(request.x,request.y,request.settle,
         Math.floor(H-waterLevel),matchFriction,
@@ -2133,7 +2133,7 @@ function spawnHazards(requests=null) {
       if (worms.some((w) => w.hp > 0 && Math.abs(w.x - x) < 70)) continue;
       if (crates.some(crate => Math.abs(crate.x - x) < 55)) continue;
       if (hazards.some((h) => Math.abs(h.x - x) < 70)) continue;
-      const mesh = createOriginalObject("oildrum1", -14);
+      const mesh = createOriginalObject("oildrum1");
       group.add(mesh);
       // 004D0D30 only places a collision-free initial body. The native mask
       // extends beyond the old14px visual offset, which could leave the body
@@ -4275,7 +4275,7 @@ function spawnNaturalMine(request) {
   const timer=nativeMineTimerFromRecord(request.record,request.placed);
   const mine={owner:-1,team:-1,arm:timer.arm/1000,nativeTimer:timer,
     nativeWater:{bubbleProgress:0,waterFlagsSet:0,splashActive:0},
-    mesh:createOriginalObject("mineoff",4),bob:0};
+    mesh:createOriginalObject("mineoff"),bob:0};
   const collide=(x,y,body)=>nativeSceneCollision(mine,body,x/65536,H-y/65536,terrain,worms,H);
   mine.nativeBody=nativeMineBody(nativeMineBase(matchFriction),payload,timer.arm,matchFriction,collide);
   if(request.settle)mine.nativeBody=nativeSettleMineBody(mine.nativeBody,payload,Math.floor(H-waterLevel),collide);
@@ -4288,7 +4288,7 @@ function spawnStrikeMine(payload) {
     placed: 0, forceBlast: 0, dud: 0 };
   const mine = { owner: -1, team: -1, arm: timer.arm / 1000, nativeTimer: timer,
     nativeWater: { bubbleProgress: 0, waterFlagsSet: 0, splashActive: 0 },
-    mesh: createOriginalObject("mineoff", 4), bob: 0 };
+    mesh: createOriginalObject("mineoff"), bob: 0 };
   const collide = (x, y, body) =>
     nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
   mine.nativeBody = nativeMineBody(nativeMineBase(matchFriction), {
@@ -4309,7 +4309,7 @@ function scenarioMineTimer() {
 }
 function spawnPlacedMine(release) {
   const w = worms[current],
-    mesh = createOriginalObject("mineoff", 4);
+    mesh = createOriginalObject("mineoff");
   const mine = {
     ...release,
     owner: current,
@@ -4380,7 +4380,7 @@ function spawnBomb({
 }) {
   const mesh =
     (grounded
-      ? createOriginalObject(sprite, -4)
+      ? createOriginalObject(sprite)
       : createOriginalVisual(sprite));
   mesh.position.set(x, y, 40);
   const ball = mesh.children[0];
