@@ -578,7 +578,8 @@
         "native_terrain_tool_setup_composition",
         "native_composed_scene_startup",
         "live_scenario_roster_metadata",
-        "mission_playthrough_suite"
+        "mission_playthrough_suite",
+        "offline_release_checkpoint"
       ],
       "plain": {
         "now": "Local matches, authored maps, series play and the original missions and training are playable with their original objectives, success rules and retries.",
