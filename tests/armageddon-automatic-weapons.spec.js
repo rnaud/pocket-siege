@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { nativeHitscanWeapon } from "../src/armageddon/hitscan-art.js";
+import { advanceUntil } from "./helpers/scenario-page.js";
+
+// Bursts fire one bullet per frame and their looping sound starts
+// asynchronously, so bursts run in real frames (waitForFunction checks every
+// frame instead of expect.poll's back-off); turn changes and idle checks
+// advance logic frames.
 
 async function start(page, kind) {
   await page.addInitScript(() => {
@@ -38,8 +44,10 @@ for (const [kind, total, spread, mode] of [["uzi", 10, 15, 5], ["minigun", 20, 2
     await start(page, kind);
     await page.locator("#fire").click();
     await expect(page.locator("#fire")).toBeDisabled();
-    await expect.poll(() => page.evaluate(() => window.siege.getState().shotCount)).toBe(total);
-    await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
+    await page.waitForFunction((total) => {
+      const state = window.siege.getState();
+      return state.shotCount === total && state.preparing === null;
+    }, total);
     expect(await page.evaluate(kind => window.siege.getState().ammo[0][kind], kind)).toBe(0);
     expect(await page.evaluate(() => window.weaponLoops)).toEqual([{ stopped: true }]);
   });
@@ -52,14 +60,16 @@ for (const [kind, total, spread, mode] of [["uzi", 10, 15, 5], ["minigun", 20, 2
     });
     await page.evaluate(() => {
       const interrupt = () => {
-        if (window.siege.getState().shotCount >= 1) window.siege.debug.hit(0, 1);
+        if (window.siege.getState().shotCount >= 1) { window.siege.debug.hit(0, 1); window.interrupted = true; }
         else requestAnimationFrame(interrupt);
       };
       requestAnimationFrame(interrupt);
     });
     await page.locator("#fire").click();
-    await expect.poll(() => page.evaluate(() => window.siege.getState().team)).toBe(1);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => window.interrupted);
+    await advanceUntil(page, (s) => s.team === 1, { step: 5, label: "next team" });
+    // 400 ms more of play fires nothing.
+    await page.evaluate(() => window.siege.debug.advanceReplayFrames(20));
     expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
     expect(await page.evaluate(kind => window.siege.getState().ammo[0][kind], kind)).toBe(0);
     expect(await page.evaluate(() => window.weaponLoops.every(loop => loop.stopped))).toBe(true);
@@ -77,16 +87,19 @@ test("pausing an automatic burst stops audio and resumes remaining bullets", asy
     requestAnimationFrame(pauseDuringBurst);
   });
   await page.locator("#fire").click();
-  await expect.poll(() => page.evaluate(() => window.weaponLoops.length)).toBe(1);
+  await page.waitForFunction(() => window.weaponLoops.length === 1);
   await expect(page.locator("#menu")).toBeVisible();
   const paused = await page.evaluate(() => window.siege.getState().shotCount);
   expect(paused).toBeLessThan(10);
-  await page.waitForTimeout(400);
+  // 400 ms of frames while the menu is open fire nothing.
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(20));
   expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(paused);
   expect(await page.evaluate(() => window.weaponLoops)).toEqual([{ stopped: true }]);
   await page.keyboard.press("Escape");
-  await expect.poll(() => page.evaluate(() => window.siege.getState().shotCount)).toBe(10);
-  await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
+  await page.waitForFunction(() => {
+    const state = window.siege.getState();
+    return state.shotCount === 10 && state.preparing === null;
+  });
   expect(await page.evaluate(() => window.weaponLoops)).toEqual([{ stopped: true }, { stopped: true }]);
 });
 

@@ -18,13 +18,11 @@ test("original aiming crosshairs retain all palette frames and mirrored pixels",
       await import("/src/armageddon/sprite.js");
     let mismatch = 0,
       frames = 0;
-    for (const color of ["r", "b", "g", "y", "p", "c"]) {
-      const name = `crshair${color}`;
-      const source = decodeSprite(
-        await fetch(`/armageddon/sprites/${name}.spr`).then((r) =>
-          r.arrayBuffer(),
-        ),
-      );
+    const names = ["r", "b", "g", "y", "p", "c"].map((color) => `crshair${color}`);
+    const buffers = await Promise.all(names.map((name) =>
+      fetch(`/armageddon/sprites/${name}.spr`).then((r) => r.arrayBuffer())));
+    for (const [n, name] of names.entries()) {
+      const source = decodeSprite(buffers[n]);
       for (let i = 0; i < source.frames.length; i++) {
         const actual = originalVisual(name, i)
           .map.image.getContext("2d")

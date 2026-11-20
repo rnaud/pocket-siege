@@ -207,7 +207,19 @@ import { nativeInitializeInventory } from '../src/armageddon/inventory-initializ
 import { createHash } from 'node:crypto';
 import bankFixture from './fixtures/armageddon/inventory-banks.json' with { type:'json' };
 import { nativeInventorySet, nativeInventoryAdd, nativeInventorySpend, nativeInventoryAvailable } from '../src/armageddon/inventory.js';
-import { test, expect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "@playwright/test";
+import { fastExpect } from "./helpers/fast-expect.js";
+// Thousands of fixture assertions: skip Playwright step bookkeeping for passing ones.
+const expect = fastExpect(playwrightExpect);
+import { memoDigest, sampledHash } from "./helpers/callback-hash-sample.js";
+import { FULL_FIXTURES, sampleCases } from "./helpers/fixture-sample.js";
+// (i*multiplier+seed)&255 fill, without Uint8Array.from callback overhead on large buffers.
+const bytePatterns=new Map();
+const bytePattern=(length,multiplier,seed)=>{
+  const key=`${length}/${multiplier}/${seed}`;let bytes=bytePatterns.get(key);
+  if(!bytes){bytes=new Uint8Array(length);for(let i=0;i<length;i++)bytes[i]=(i*multiplier+seed)&255;bytePatterns.set(key,bytes);}
+  return bytes.slice();
+};
 import fs from "node:fs";
 import {
   addNativeAmmo,
@@ -243,7 +255,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
     for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200200],[0x5cd0,owner+0x4000],[0x4008,owner+0x6000],[0x2ac,0x11223344],[0x2b4,owner+0x6000],[0x6000,owner+0x6100],[0x6200,owner+0x6100],[0x6114,0x2200100],[0x6154,0x2200300],[0x6178,0x2200400]])memory.put(owner+offset,value);
     for(let i=0;i<0xb18;i++){bytes[0x8000+i]=(i*13+7)&255;bytes[0x9000+i]=(i*17+3)&255;}
-    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0xe4e8,0xf000)).digest('hex');
+    const snapshot=memoDigest(()=>[bytes,stackBytes.subarray(0xe4e8,0xf000)]);
     const record=(name,...args)=>calls.push([name,...args,snapshot()]);
     nativeLoadSceneFonts(memory,owner,stack+0xe4e8,{
       getRendererPalette:(...args)=>{record('palette',...args);return owner+(c.alternate&&groups?0x9000:0x8000);},
@@ -264,7 +276,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     for(const [offset,hex] of c.initial)Buffer.from(hex,'hex').copy(bytes,offset);
     const region=a=>a>=stack?[stackBytes,a-stack]:[bytes,a-owner];
     const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},byte:a=>{const [b,o]=region(a);return b[o];},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
-    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8218,0x821c)).digest('hex');
+    const snapshot=memoDigest(()=>[bytes,stackBytes.subarray(0x8218,0x821c)]);
     const record=(name,...args)=>calls.push([name,...args,snapshot()]);
     nativeFinishSceneResources(memory,owner,stack+0x8218,[0,0,0],{
       allocate:size=>{record('allocate',size);return owner+0x1000+(++allocated)*0x40;},
@@ -285,7 +297,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     const region=a=>a>=stack?[scratchBytes,a-stack]:[bytes,a-owner];
     const memory={get:a=>{const [b,o]=region(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=region(a);b.writeUInt32LE(v>>>0,o);},putByte:(a,v)=>{const [b,o]=region(a);b[o]=v;}};
     memory.put(owner+0x5cd0,owner+0x10000);memory.put(owner+0x2ac,owner+0x6000);
-    const snapshot=()=>createHash('sha256').update(bytes).update(scratchBytes.subarray(0x8010,0x8d20)).digest('hex');
+    const snapshot=memoDigest(()=>[bytes,scratchBytes.subarray(0x8010,0x8d20)]);
     const masks=nativePrepareSceneTerrain(memory,owner,owner+0x6100,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118},{
       allocate:size=>{allocations++;calls.push(['allocate',size,snapshot()]);if(c.mutation)memory.put(owner+0x5cd0,owner+(allocations===1?0x10000:0x30000));return c.failure===allocations?0:owner+(allocations===1?0x1000:0x2000);},
       allocateArray:(...args)=>{calls.push(['array',...args,snapshot()]);return owner+0x70000;},
@@ -304,7 +316,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
     for(const [offset,value] of [[0x2bc,c.total],[0x2c0,c.maximum],[0x2c4,c.last],[0x2b4,owner+0x6000],[0x5cd0,owner+0x8000],[0x800c,c.sound?owner+0x7000:0],[0x8020,0],[0x7000,owner+0x7100],[0x710c,0x2200500],[0x6000,owner+0x6100],[0x6200,owner+0x6100],[0x6104,0x2200100],[0x6144,0x2200200],[0x6160,0x2200300],[0x6148,0x2200400]])memory.put(owner+offset,value);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     const switchRenderer=()=>{if(c.mutation)memory.put(owner+0x2b4,owner+(memory.get(owner+0x2b4)===owner+0x6000?0x6200:0x6000));};
     nativeAdvanceSceneLoading(memory,owner,c.amount,{
       pumpLoadingEvents:()=>{calls.push(['pump',snapshot()]);if(c.mutation)memory.put(owner+0x2bc,memory.get(owner+0x2bc)+1);},
@@ -320,7 +332,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     const owner=0x2000000,bytes=Buffer.alloc(0x20000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
     for(const [offset,value] of [[0x2b4,owner+0x6000],[0x5cd0,owner+0x8000],[0x8008,owner+0x6000],[0x6000,owner+0x6100],[0x6200,owner+0x6100],[0x6104,0x2200100],[0x6144,0x2200200],[0x6160,0x2200300],[0x6148,0x2200400],[0x6154,0x2200500]])memory.put(owner+offset,value);
-    const snapshot=()=>createHash('sha256').update(bytes.subarray(0,0x17f00)).update(bytes.subarray(0x18218,0x1821c)).digest('hex');
+    const snapshot=memoDigest(()=>[bytes.subarray(0,0x17f00),bytes.subarray(0x18218,0x1821c)]);
     nativeFinishSceneGraphics(memory,owner,owner+0x18218,{
       drawRendererPrimitive:(...args)=>{calls.push(['draw',...args,snapshot()]);if(c.mutation)memory.put(owner+0x2b4,owner+0x6200);},
       rendererDimensions:(...args)=>{calls.push(['dimensions',...args,snapshot()]);if(c.mutation)memory.put(owner+0x8008,owner+0x6200);return [c.width,c.height];},
@@ -350,7 +362,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
         memory.putByte(owner+0x14ba4+team*3000+i,c.mode===2?0:(Math.floor(i/24)+i%24+team*7)%12);
       }
     }
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     const waterColor=Array(3).fill((c.pattern*257)<<16>>16);
     nativeCreateSceneTeamGraves(memory,owner,waterColor,{
       getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return owner+0x7000+bank*0x1000;},
@@ -373,7 +385,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
       for(let i=0;i<768;i++)memory.putByte(owner+0x14ea4+team*3000+i,(Math.floor(i/3)*[43,71,97][i%3]+(Math.floor(i/3)>=8?team:0))&255);
       for(let i=0;i<340;i++)memory.putByte(owner+0x151a4+team*3000+i,(Math.floor(i/20)+i%20+team*7)%12);
     }
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     nativeCreateSceneTeamFlags(memory,owner,{
       getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return owner+0x8000;},
       allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);return owner+0x1000+allocated*0x40;},
@@ -392,7 +404,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     const owner=0x2000000,bytes=Buffer.alloc(0x10000,c.pattern),calls=[];let images=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),putByte:(a,v)=>{bytes[a-owner]=v;}};
     memory.put(owner+8,owner+0x6000);memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200100);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     nativeLoadSceneHUDResources(memory,owner,0x11223344,{
       getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return 0x12345678;},
       loadNamedArchiveImage:(palette,archive,name)=>{images++;calls.push(['image',palette,archive,name,snapshot()]);return c.mode&1&&images%7===0?0:owner+0x2000+images*0x40;},
@@ -407,7 +419,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     for(const [offset,value] of [[0,owner+0x6400],[0x6404,0x2200300],[0x2b0,owner+0x1000],[0x1b20,0x11111111],[0x1b24,0x22222222],[0x2ac,0x33333333],[0x2b4,owner+0x6000],[0x5cd0,owner+0x8000],[0x8008,owner+0x6000],[0xa008,owner+0x6200],[0x6000,owner+0x6100],[0x6200,owner+0x6300],[0x6114,0x2200100],[0x6314,0x2200100],[0x6170,0x2200200],[0x6370,0x2200200]])memory.put(owner+offset,value);
     for(const [offset,value] of [[0,0x5249b0],[4,(c.mode>>1)&1],[8,owner+0x4000],[12,8],[16,4],[20,1],[24,1],[28,0],[32,0],[36,c.mode&1?0:1],[40,1]])memory.put(owner+0x3000+offset,value);
     bytes[0x4000]=17+c.mode;
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     nativeLoadSceneThemeResources(memory,owner,{
       allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return 0;},
       loadResourceGroup:(...args)=>calls.push(['group',...args,snapshot()]),
@@ -428,7 +440,7 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
     sceneSpawnPool.positions.forEach((pair,i)=>pair.forEach((v,j)=>memory.put(owner+0x6000+i*8+j*4,v)));
     memory.put(owner+0x5cd0,owner+0x8000);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     nativeCreateSceneSpawnPool(memory,owner,owner+0x6000,c.count,{
       allocate:size=>{calls.push(['allocate',size,snapshot()]);return (c.failure===1&&size===44)||(c.failure===2&&size===16)?0:owner+(size===44?0x1000:0x2000);},
       allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+(pool===0x567600?0x4000:0x10000);},
@@ -449,6 +461,8 @@ test("scene loading resources match original x86 sequences", { tag: "@logic" }, 
 
 // Each startup case composes the full resource stream; run them separately.
 for(const [caseIndex,c] of sceneStartup.cases.entries())test(`scene startup resources match original x86 sequences (case ${caseIndex+1})`, { tag: "@logic" }, () => {
+  // Hashing all ~15k callback states takes over a minute; give FULL_FIXTURES runs room.
+  test.slow(FULL_FIXTURES);
   const {toolSource,arrowSources}=nativeSceneSources();
   {
     const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0xc00000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000,spritePixels=owner+0x800000,surfaces=0,headers=owner+0x400000,archives=-1,cursor=0;
@@ -493,8 +507,9 @@ for(const [caseIndex,c] of sceneStartup.cases.entries())test(`scene startup reso
     const colors=Uint8Array.from({length:768},(_,i)=>(Math.floor(i/3)*[43,71,97][i%3])&255);
     bytes.set(colors,0x350000+0x48a4-0x47a8);bytes.set(Uint8Array.from({length:768},(_,i)=>(Math.floor(i/24)+i%24)%12),0x350000+0x4ba4-0x47a8);
     bytes.set(colors,0x350000+0x4ea4-0x47a8);bytes.set(Uint8Array.from({length:340},(_,i)=>(Math.floor(i/20)+i%20)%12),0x350000+0x51a4-0x47a8);
-    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).update(stackBytes.subarray(0x8218,0x8d30)).update(packed).update(signature).update(nameBytes).update(spriteCounters).digest('hex');
-    const record=(name,...args)=>{const row=[name,...args,snapshot()],index=calls.length;calls.push(row);if(JSON.stringify(row)!==JSON.stringify(c.calls[index]))expect(row,`startup callback ${index}, pattern ${c.pattern}`).toEqual(c.calls[index]);};
+    const snapshot=memoDigest(()=>[bytes,stackBytes.subarray(0x8010,0x8014),stackBytes.subarray(0x8118,0x8218),stackBytes.subarray(0x8218,0x8d30),packed,signature,nameBytes,spriteCounters]);
+    const hashAt=sampledHash(c.calls,64,snapshot);
+    const record=(name,...args)=>{const index=calls.length,row=[name,...args,hashAt(index)];calls.push(row);if(JSON.stringify(row)!==JSON.stringify(c.calls[index]))expect(row,`startup callback ${index}, pattern ${c.pattern}`).toEqual(c.calls[index]);};
     nativeStartScene(memory,owner,[owner+0x700000,0,1,2,3,4,0,5],frontend,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118,waterColor:[0,0,0],fontPalette:stack+0x74e4,fontMapping:stack+0x3000,streamSpriteScratch:stack+0x5000,terrainScratch:stack+0x4000,archiveScratch:stack+0x6000,imageName:stack+0x1000,imageScratch:stack+0x2000},{
       createSpriteSurface:(renderer,slot,width,height,flags)=>{
         record('surfaceCreate',renderer,slot,width,height,flags);
@@ -529,7 +544,7 @@ for(const [caseIndex,c] of sceneStartup.cases.entries())test(`scene startup reso
   }
 });
 
-test("scene shapes and terrain archives match original x86 sequences", { tag: "@logic" }, () => {
+test("scene world resources match original x86 sequences", { tag: "@logic" }, () => {
   const {toolSource,arrowSources}=nativeSceneSources();
   for(const c of sceneWorldResources.cases) {
     const owner=0x3000000,stack=0x2100000,bytes=Buffer.alloc(0x400000,c.pattern),stackBytes=Buffer.alloc(0x10000,c.pattern),calls=[];let allocated=0,pixels=owner+0x100000;
@@ -542,8 +557,8 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     bytes.set(toolSource.pixels,0x60000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x60000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x9000+offset,value);
     for(const [offset,value] of [[0x5cd0,owner+0x300000],[0x2ac,owner+0x7000],[0x300008,owner+0x6000],[0x30000c,0],[0x300020,0],[0x6000,owner+0x6100],[0x6114,0x2200100],[0x6104,0x2200300],[0x6144,0x2200400],[0x6148,0x2200500],[0x6160,0x2200600],[0x2b4,owner+0x6000],[0x2bc,0],[0x2c0,841],[0x2c4,-100]])memory.put(owner+offset,value);
-    const snapshot=()=>createHash('sha256').update(bytes).update(stackBytes.subarray(0x8010,0x8014)).update(stackBytes.subarray(0x8118,0x8218)).digest('hex');
-    const record=(name,...args)=>calls.push([name,...args,snapshot()]);
+    const snapshot=memoDigest(()=>[bytes,stackBytes.subarray(0x8010,0x8014),stackBytes.subarray(0x8118,0x8218)]),hashAt=sampledHash(c.calls,48,snapshot);
+    const record=(name,...args)=>calls.push([name,...args,hashAt(calls.length)]);
     const image=(palette,archive,name)=>{record('image',palette,archive,name);return name==='masks.img'?owner+0x9000:owner+0x10000+Number(name.slice(5,7))*0x40;};
     nativeCreateSceneWorldResources(memory,owner,owner+0x6000,{palette:stack+0x8218,count:stack+0x8010,positions:stack+0x8118},{
       allocate:size=>{allocated++;record('allocate',size);return owner+0x70000+allocated*0x100;},
@@ -562,6 +577,10 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     });
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
+});
+
+test("scene arrow shapes match original x86 sequences", { tag: "@logic" }, () => {
+  const {toolSource,arrowSources}=nativeSceneSources();
   for(const c of sceneArrowShapes.cases) {
     const owner=0x3000000,bytes=Buffer.alloc(0x200000,c.pattern),calls=[];let allocated=0,descriptors=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
@@ -570,25 +589,29 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
       for(const [offset,value] of [[0,0x5249b0],[4,1],[8,pixels],[12,8],[16,60],[20,60],[24,60],[28,0],[32,0],[36,60],[40,60]])memory.put(owner+0x10000+i*0x40+offset,value);
     });
     memory.put(owner+0x5cd0,owner+0xc000);memory.put(owner+0x2ac,owner+0x7000);memory.put(owner+0xc008,owner+0x6000);memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200100);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]),hashAt=sampledHash(c.calls,40,snapshot);
     nativeCreateSceneArrowShapes(memory,owner,{
-      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);if(size===0x9c)descriptors++;return size===0x9c&&descriptors===c.failure?0:owner+0x70000+allocated*0x100;},
-      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0xc0000+allocated*0x400;},
-      getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,snapshot()]);return owner+0x9000;},
-      loadNamedArchiveImage:(palette,archive,name)=>{calls.push(['image',palette,archive,name,snapshot()]);return owner+0x10000+Number(name.slice(5,7))*0x40;},
+      allocate:size=>{allocated++;calls.push(['allocate',size,hashAt(calls.length)]);if(size===0x9c)descriptors++;return size===0x9c&&descriptors===c.failure?0:owner+0x70000+allocated*0x100;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,hashAt(calls.length)]);return owner+0xc0000+allocated*0x400;},
+      getRendererPalette:(renderer,bank)=>{calls.push(['palette',renderer,bank,hashAt(calls.length)]);return owner+0x9000;},
+      loadNamedArchiveImage:(palette,archive,name)=>{calls.push(['image',palette,archive,name,hashAt(calls.length)]);return owner+0x10000+Number(name.slice(5,7))*0x40;},
     });
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
+});
+
+test("scene collision shapes and terrain masks match original x86 sequences", { tag: "@logic" }, () => {
+  const {toolSource,arrowSources}=nativeSceneSources();
   for(const c of sceneCollisionShapes.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0xa0000,c.pattern),calls=[];let allocated=0,descriptors=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
     bytes.set(toolSource.pixels,0x10000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x10000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x1000+offset,value);
     memory.put(owner+0x5cd0,owner+0x8000);memory.put(owner+0x2b0,owner+0xa000);memory.put(owner+0xa000,0x526588);memory.put(owner+0xa0c4,0x11223344);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]),hashAt=sampledHash(c.calls,24,snapshot);
     nativeCreateSceneCollisionShapes(memory,owner,owner+0x1000,{
-      allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);if(size===0x9c)descriptors++;return size===0x9c&&descriptors===c.failure?0:owner+0x20000+allocated*0x100;},
-      allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x40000+allocated*0x400;},
+      allocate:size=>{allocated++;calls.push(['allocate',size,hashAt(calls.length)]);if(size===0x9c)descriptors++;return size===0x9c&&descriptors===c.failure?0:owner+0x20000+allocated*0x100;},
+      allocateArray:(size,pool)=>{calls.push(['array',size,pool,hashAt(calls.length)]);return owner+0x40000+allocated*0x400;},
       freeSized:(at,size)=>calls.push(['free',at,size,snapshot()]),
     });
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
@@ -598,7 +621,7 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
     bytes.set(toolSource.pixels,0x10000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x10000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x1000+offset,value);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     expect(nativeCreateCollisionShape(memory,owner,c.region,owner+0x1000,{
       allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);return owner+0x2000+allocated*0x40;},
       allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x20000+allocated*0x1000;},
@@ -610,7 +633,7 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
     bytes.set(toolSource.pixels,0x10000);
     for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0x10000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0x1000+offset,value);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     nativeCreateTerrainToolMasks(memory,owner,owner+0x1000,{
       allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);if(size===28)descriptors++;return size===28&&descriptors===c.failure?0:owner+0x2000+allocated*0x40;},
       allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return owner+0x20000+allocated*0x1000;},
@@ -630,7 +653,7 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     for(const [offset,bitmap,width,height] of [[0x904,owner+0x1000,...c.dimensions.slice(0,2)],[0x908,owner+0x2000,...c.dimensions.slice(2)]]) {
       memory.put(owner+offset,bitmap);memory.put(bitmap,0x526328);memory.put(bitmap+20,width);memory.put(bitmap+24,height);
     }
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     expect(nativeInitializeTerrainState(memory,owner,{
       allocate:size=>{calls.push(['allocate',size,snapshot()]);return c.failure&2?0:owner+0x3000;},
       allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.failure&1?0:owner+0x4000;},
@@ -640,13 +663,16 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
   for(const c of terrainMasks.cases) {
     const owner=0x2000000,bytes=Buffer.alloc(0x50000,c.pattern),calls=[];let allocated=0;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}};
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     nativeCreateTerrainMasks(memory,owner,{
       allocate:size=>{allocated++;calls.push(['allocate',size,snapshot()]);return c.failure&&allocated===33?0:owner+0x1000+allocated*0x40;},
       allocateArray:(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return pool===0x54a150?0:owner+0x4000+(allocated-1)*0x2000;},
     });
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
+});
+
+test("archive handles, directories and bitmap fills match original x86 sequences", { tag: "@logic" }, () => {
   for(const c of archiveHandle.cases) {
     const owner=0x2000000,handle=owner+0x8000,bytes=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner)};
@@ -658,7 +684,7 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
       memory.put(owner+slot*16+16,100);memory.put(owner+slot*16+20,120);
       memory.put(owner+slot*16+24,[100,118,120,125][c.mode]);
     });
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     const host={
       seekArchive:(archive,position)=>{calls.push(['seek',archive,position,snapshot()]);return c.mode===1?0:1;},
       readArchive:(archive,dest,count)=>{
@@ -686,7 +712,7 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
       const at=owner+0x1000+i*4,relative=memory.get(at);
       if(relative){let node=owner+0x1000+relative-4;memory.put(at,node);while(memory.get(node)){const next=owner+0x1000+memory.get(node)-4;memory.put(node,next);node=next;}}
     }
-    const snapshot=()=>createHash('sha256').update(bytes).update(nameBytes).digest('hex');let allocations=0;
+    const snapshot=memoDigest(()=>[bytes,nameBytes]);let allocations=0;
     for(const step of c.steps) {
       Buffer.from(step.name+'\0','latin1').copy(bytes,0x5000);const calls=[];
       const result=nativeOpenArchiveEntry(memory,owner,owner+0x5000,{allocate:size=>{allocations++;const result=c.failure&&allocations%3===0?0:owner+0x6000+allocations*16;calls.push(['allocate',size,snapshot(),result]);return result;}});
@@ -701,7 +727,7 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     const directory=Buffer.alloc(0x1040);if(c.chain){directory.writeUInt32LE(0x1004,12);directory.writeUInt32LE(0x1024,0x1000);}
     const header=Buffer.alloc(12);header.write(c.variant===6?'BAD!':'DIR\x1a');header.writeUInt32LE(0x104c,4);header.writeUInt32LE(8,8);
     const stream=Buffer.concat([header,directory]);if(c.mapped)directory.copy(bytes,0x2000);
-    const snapshot=()=>createHash('sha256').update(bytes).update(signature).digest('hex');let cursor=0,reads=0;
+    const snapshot=memoDigest(()=>[bytes,signature]);let cursor=0,reads=0;
     const host={
       readArchive:(at,dest,n)=>{calls.push(['read',at,dest>=scratch?'scratch':dest,n,snapshot()]);let chunk=stream.subarray(cursor,cursor+n);cursor+=chunk.length;if(++reads===c.variant)chunk=chunk.subarray(0,-1);const [b,o]=locate(dest);chunk.copy(b,o);return chunk.length;},
       seekArchive:(at,offset)=>{cursor=offset;calls.push(['seek',at,offset,snapshot()]);},
@@ -729,7 +755,19 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     nativeDecodeImagePixels({byte:a=>bytes[a-owner],putByte:(a,v)=>{bytes[a-owner]=v;}},destination,source,palette);
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(c.sha256);
   }
-  for(const c of [...terrainImage.cases,...terrainLoad.cases,...terrainSoil.cases,...terrainGrass.cases,...terrainMaskSetup.cases,...terrainConstruction.cases,...archiveImage.cases.map(c=>({...c,archiveImage:true})),...[...archiveImageLoad.cases,...archiveImageComposed.cases,...archiveRealImages.cases].map(c=>({...c,namedImage:true}))]) {
+});
+
+// One test per terrain/archive image family so they run in parallel; each samples
+// its cases and per-callback hashes (FULL_FIXTURES checks all of them).
+const terrainArchiveFamilies={
+  'terrain image':[terrainImage.cases,Infinity],'terrain startup':[terrainLoad.cases,Infinity],'terrain soil':[terrainSoil.cases,Infinity],
+  'terrain grass':[terrainGrass.cases,16],'terrain mask setup':[terrainMaskSetup.cases,8],'terrain construction':[terrainConstruction.cases,4],
+  'archive image':[archiveImage.cases.map(c=>({...c,archiveImage:true})),Infinity],'archive image load':[archiveImageLoad.cases.map(c=>({...c,namedImage:true})),Infinity],
+  'archive image composed':[archiveImageComposed.cases.map(c=>({...c,namedImage:true})),Infinity],'archive real images':[archiveRealImages.cases.map(c=>({...c,namedImage:true})),Infinity],
+};
+for(const [family,[familyCases,limit]] of Object.entries(terrainArchiveFamilies))test(`terrain and archive images match original x86 sequences (${family})`, { tag: "@logic" }, () => {
+  const {toolSource}=nativeSceneSources();
+  for(const c of sampleCases(familyCases,limit)) {
     const owner=0x2000000,scratch=0x2100000,compressed=0x714be0;
     const nameBytes=Buffer.alloc(256,c.pattern),terrainStorage=Buffer.alloc(c.terrainConstruction?0x60000:0,c.pattern);
     const bytes=Buffer.alloc(c.terrainToolSetup?0xe0000:c.terrainMaskSetup?0xa0000:c.terrainSoil?0x50000:c.realArchive?0x30000:0x10000,c.pattern),temporary=Buffer.alloc(0x43c,c.pattern),packed=Buffer.alloc(c.realArchive||c.terrainSoil?0x10000:0x1000,c.pattern),signature=Buffer.alloc(4,c.pattern),calls=[];
@@ -740,26 +778,26 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
       for(const [offset,value] of [[0,0x5249b0],[4,1],[8,owner+0xa0000],[12,8],[16,512],[20,512],[24,64],[28,0],[32,0],[36,512],[40,64]])memory.put(owner+0xe000+offset,value);
       expect(createHash('sha256').update(toolSource.pixels).digest('hex')).toBe(terrainConstruction.tool_source_sha256);
     }
-    const snapshot=()=>createHash('sha256').update(bytes).update(packed).update(c.nativeDirectories?signature:Buffer.alloc(0)).update(c.namedImage||c.terrainSoil?nameBytes:Buffer.alloc(0)).update(c.realArchive?signature:Buffer.alloc(0)).update(terrainStorage).digest('hex');
+    const snapshot=memoDigest(()=>[bytes,packed,c.nativeDirectories?signature:Buffer.alloc(0),c.namedImage||c.terrainSoil?nameBytes:Buffer.alloc(0),c.realArchive?signature:Buffer.alloc(0),terrainStorage]),hashAt=sampledHash(c.calls,32,snapshot);
     const mapping=a=>{const [b,o]=locate(a);return b.subarray(o,o+256).toString('hex');};
     const stream=Buffer.from(c.realArchive?archiveRealImages.source.bytes:c.stream,'hex');let cursor=c.composed?0:5,colorIndex=0,bitmap=owner+0x1000,archives=0,toolAllocations=0;
     const archiveCursors=[0,0],archiveData=c.nativeDirectories?(c.terrainSoil?terrainSoil:terrainLoad).archive_sources.map(source=>{if(source.bytes)return Buffer.from(source.bytes,"hex");const header=Buffer.from(source.header,'hex'),data=Buffer.alloc(header.readUInt32LE(4));header.copy(data);Buffer.from(source.index,'hex').copy(data,source.offset);return data;}):[];
     const host={
-      openFile:(path,mode)=>{calls.push(['open',path,mode,snapshot()]);return typeof path==='number'?0x1234:!c.terrainSoil&&c.variant&(1<<(archives-1))?0:0x5000+archives;},
-      closeFile:file=>calls.push(['close',file,snapshot()]),
-      tellFile:file=>{calls.push(['tell',file,snapshot()]);return cursor;},
+      openFile:(path,mode)=>{calls.push(['open',path,mode,hashAt(calls.length)]);return typeof path==='number'?0x1234:!c.terrainSoil&&c.variant&(1<<(archives-1))?0:0x5000+archives;},
+      closeFile:file=>calls.push(['close',file,hashAt(calls.length)]),
+      tellFile:file=>{calls.push(['tell',file,hashAt(calls.length)]);return cursor;},
       readFile:(dest,n,count,file)=>{
-        calls.push(['read',dest>=scratch?'scratch':dest,n,count,file,snapshot()]);
+        calls.push(['read',dest>=scratch?'scratch':dest,n,count,file,hashAt(calls.length)]);
         let chunk;
         if(c.nativeDirectories&&file!==0x1234){const index=file-0x5001,position=archiveCursors[index];chunk=archiveData[index].subarray(position,position+n*count);archiveCursors[index]+=chunk.length;}
         else {chunk=stream.subarray(cursor,cursor+n*count);cursor+=chunk.length;}
         const [b,o]=locate(dest);chunk.copy(b,o);return n?Math.floor(chunk.length/n):0;
       },
-      addPaletteColor:(...args)=>{calls.push(['color',...args,snapshot()]);return ++colorIndex+10;},
-      allocate:n=>{calls.push(['allocate',n,snapshot()]);if(c.themeArchives&&n===0x19c)return owner+0x7000+(archives++)*0x200;if(c.terrainSoil&&n===12)return owner+0xd000;if(c.terrainConstruction&&n===0x9c)return c.variant===2?0:owner+0xf000;if(c.terrainSoil&&c.variant===3&&bitmap===owner+0x1100){if(c.terrainGrass)bitmap+=0x40;return 0;}if(c.terrainToolSetup&&(n===28||toolAllocations)){toolAllocations++;return owner+0xe000+toolAllocations*0x40;}if(c.composed){bitmap+=0x40;return bitmap;}return c.namedImage&&n===12?owner+0x8000:owner;},
-      constructBitmap:(bitmap,width,height,bits)=>{calls.push(['construct',bitmap,width,height,bits,snapshot()]);memory.put(bitmap+4,width);memory.put(bitmap+8,height);memory.put(bitmap+12,bits);},
-      bitmapStorage:bitmap=>{calls.push(['storage',bitmap,snapshot()]);return c.composed?{pixels:owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400,bits:memory.get(bitmap+12),pitch:Math.floor((memory.get(bitmap+4)*memory.get(bitmap+12)+31)/32)*4}:{pixels:owner+0x1000,bits:c.bits,pitch:c.pitch};},
-      remapBitmap:(bitmap,map)=>calls.push(['remap',bitmap,mapping(map),snapshot()]),
+      addPaletteColor:(...args)=>{calls.push(['color',...args,hashAt(calls.length)]);return ++colorIndex+10;},
+      allocate:n=>{calls.push(['allocate',n,hashAt(calls.length)]);if(c.themeArchives&&n===0x19c)return owner+0x7000+(archives++)*0x200;if(c.terrainSoil&&n===12)return owner+0xd000;if(c.terrainConstruction&&n===0x9c)return c.variant===2?0:owner+0xf000;if(c.terrainSoil&&c.variant===3&&bitmap===owner+0x1100){if(c.terrainGrass)bitmap+=0x40;return 0;}if(c.terrainToolSetup&&(n===28||toolAllocations)){toolAllocations++;return owner+0xe000+toolAllocations*0x40;}if(c.composed){bitmap+=0x40;return bitmap;}return c.namedImage&&n===12?owner+0x8000:owner;},
+      constructBitmap:(bitmap,width,height,bits)=>{calls.push(['construct',bitmap,width,height,bits,hashAt(calls.length)]);memory.put(bitmap+4,width);memory.put(bitmap+8,height);memory.put(bitmap+12,bits);},
+      bitmapStorage:bitmap=>{calls.push(['storage',bitmap,hashAt(calls.length)]);return c.composed?{pixels:owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400,bits:memory.get(bitmap+12),pitch:Math.floor((memory.get(bitmap+4)*memory.get(bitmap+12)+31)/32)*4}:{pixels:owner+0x1000,bits:c.bits,pitch:c.pitch};},
+      remapBitmap:(bitmap,map)=>calls.push(['remap',bitmap,mapping(map),hashAt(calls.length)]),
     };
     if(c.namedImage) {
       const archive=owner+0x4000,directory=owner+0x9000,entry=directory+0x1000;
@@ -775,61 +813,61 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
       let hash=0;for(const b of Buffer.from('soil.img'))hash=(b+((hash>>>9)|((hash*2)&1023)))&1023;
       memory.put(directory+hash*4,entry);memory.put(entry,0);memory.put(entry+4,5);memory.put(entry+8,stream.length-5);bytes.write('soil.img\0',0xa00c,'latin1');
       }
-      host.seekArchive=(at,position)=>{cursor=position;calls.push(['seek',at,position,snapshot()]);return 1;};
+      host.seekArchive=(at,position)=>{cursor=position;calls.push(['seek',at,position,hashAt(calls.length)]);return 1;};
       host.readArchive=(at,dest,n)=>{
-        calls.push(['read',dest>=scratch?'scratch':dest,n,at,snapshot()]);
+        calls.push(['read',dest>=scratch?'scratch':dest,n,at,hashAt(calls.length)]);
         const chunk=stream.subarray(cursor,cursor+n);cursor+=chunk.length;const [b,o]=locate(dest);chunk.copy(b,o);return chunk.length;
       };
-      host.freeSized=(at,size)=>calls.push(['free',at,size,snapshot()]);
+      host.freeSized=(at,size)=>calls.push(['free',at,size,hashAt(calls.length)]);
     }
     if(c.nativeImageServices) {
       delete host.constructBitmap;delete host.bitmapStorage;delete host.remapBitmap;delete host.addPaletteColor;
-      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.realArchive?(pool===0x560220?owner+0x9000:owner+0x10000):owner+0x1000;};
+      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,hashAt(calls.length)]);return c.realArchive?(pool===0x560220?owner+0x9000:owner+0x10000):owner+0x1000;};
       nativeCreateGamePalette(memory,owner+0xc000,c.first,c.last);
       if(c.realArchive) {
-        host.archiveView=(at,position)=>{calls.push(['view',at,position,snapshot()]);return 0;};
+        host.archiveView=(at,position)=>{calls.push(['view',at,position,hashAt(calls.length)]);return 0;};
         expect(nativeLoadArchiveDirectory(memory,owner+0x4000,scratch,host)).toBe(1);
       }
     }
     if(c.archiveImage) {
       host.tellArchiveEntry=host.tellFile;
       host.readArchiveEntry=(entry,dest,n)=>{
-        calls.push(['read',dest>=scratch?'scratch':dest,n,entry,snapshot()]);
+        calls.push(['read',dest>=scratch?'scratch':dest,n,entry,hashAt(calls.length)]);
         const chunk=stream.subarray(cursor,cursor+n);cursor+=chunk.length;
         const [b,o]=locate(dest);chunk.copy(b,o);return chunk.length;
       };
-      host.readArchiveByte=entry=>{calls.push(['byte',entry,snapshot()]);return stream[cursor++];};
+      host.readArchiveByte=entry=>{calls.push(['byte',entry,hashAt(calls.length)]);return stream[cursor++];};
     }
     if(c.nativeBitmaps) {
       delete host.constructBitmap;delete host.bitmapStorage;delete host.remapBitmap;
-      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,snapshot()]);return c.terrainConstruction&&pool===0x55f7cc?(c.variant===1?0:0x2300000):c.terrainToolSetup&&toolAllocations?owner+0xb0000+toolAllocations*0x1000:c.terrainMaskSetup&&pool===0x54a150?0:c.terrainMaskSetup&&bitmap>=owner+0x11c0?owner+0x50000+(bitmap-owner-0x11c0)/0x40*0x2000:c.nativeDirectories&&pool===0x560220?owner+0x9000+(archives-1)*0x2000:c.terrainGrass&&bitmap>=owner+0x1180?owner+0x49000:c.terrainSoil&&bitmap>=owner+0x1100?(bitmap===owner+0x1100?owner+0x10000:owner+0x20000):owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400;};
+      host.allocateArray=(size,pool)=>{calls.push(['array',size,pool,hashAt(calls.length)]);return c.terrainConstruction&&pool===0x55f7cc?(c.variant===1?0:0x2300000):c.terrainToolSetup&&toolAllocations?owner+0xb0000+toolAllocations*0x1000:c.terrainMaskSetup&&pool===0x54a150?0:c.terrainMaskSetup&&bitmap>=owner+0x11c0?owner+0x50000+(bitmap-owner-0x11c0)/0x40*0x2000:c.nativeDirectories&&pool===0x560220?owner+0x9000+(archives-1)*0x2000:c.terrainGrass&&bitmap>=owner+0x1180?owner+0x49000:c.terrainSoil&&bitmap>=owner+0x1100?(bitmap===owner+0x1100?owner+0x10000:owner+0x20000):owner+0x2000+(bitmap-owner-0x1000)/0x40*0x400;};
     }
     if(c.nativePalette){delete host.addPaletteColor;nativeCreateGamePalette(memory,owner+0x8000,c.first,c.last);}
     if(c.terrainStartup) {
       memory.put(owner+0x6000,owner+0x6100);memory.put(owner+0x6114,0x2200800);memory.put(owner+0x6154,0x2200900);if(c.terrainMaskSetup)memory.put(owner+0x6180,0x2200a00);
-      host.getRendererPalette=(...args)=>{calls.push(['palette',...args,snapshot()]);return owner+0x8000;};
-      host.submitRendererPalette=(...args)=>calls.push(['submit',...args,snapshot()]);
-      if(!c.nativeRectangles)host.clearBitmapRect=(...args)=>calls.push(['clear',...args,snapshot()]);
+      host.getRendererPalette=(...args)=>{calls.push(['palette',...args,hashAt(calls.length)]);return owner+0x8000;};
+      host.submitRendererPalette=(...args)=>calls.push(['submit',...args,hashAt(calls.length)]);
+      if(!c.nativeRectangles)host.clearBitmapRect=(...args)=>calls.push(['clear',...args,hashAt(calls.length)]);
     }
     if(c.terrainToolSetup) {
-      host.seekFile=(file,offset,origin)=>{calls.push(['seek',file,offset,origin,snapshot()]);archiveCursors[file-0x5001]=offset;return 0;};
-      host.freeSized=(at,size)=>calls.push(['free',at,size,snapshot()]);
-      host.free=at=>calls.push(['arrayFree',at,snapshot()]);
-      host.bindTerrainLayers=(...args)=>calls.push(['bind',...args,snapshot()]);
+      host.seekFile=(file,offset,origin)=>{calls.push(['seek',file,offset,origin,hashAt(calls.length)]);archiveCursors[file-0x5001]=offset;return 0;};
+      host.freeSized=(at,size)=>calls.push(['free',at,size,hashAt(calls.length)]);
+      host.free=at=>calls.push(['arrayFree',at,hashAt(calls.length)]);
+      host.bindTerrainLayers=(...args)=>calls.push(['bind',...args,hashAt(calls.length)]);
     }
     const result=c.terrainToolSetup?nativeCreateTerrain(memory,owner+0x4000,{maskImage:owner+0xe000,renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.namedImage?nativeLoadNamedArchiveImage(memory,c.nativeImageServices?owner+0xc000:0x4567,owner+0x4000,owner+0x7000,scratch,host):c.terrainStartup?nativeLoadTerrainLayers(memory,owner+0x4000,{renderer:owner+0x6000,mode:c.variant,path:owner+0x800,count:owner+8,positions:owner+0x100,metadata:owner,water:owner+4},scratch,host):c.composed?nativeLoadTerrainFile(memory,owner+0x800,c.nativePalette?owner+0x8000:0x4567,{values:[owner,owner+4,owner+8],positions:owner+0x100,images:[owner+0x10,owner+0x14,owner+0x18],names:[owner+0x400,owner+0x600]},scratch,host):(c.archiveImage?nativeLoadArchiveImage:nativeLoadTerrainImage)(memory,0x4567,0x1234,scratch,host);
     if(c.themeArchives&&!c.terrainToolSetup){
-      if(c.nativeDirectories){host.archiveScratch=scratch;host.seekFile=(file,offset,origin)=>{calls.push(['seek',file,offset,origin,snapshot()]);archiveCursors[file-0x5001]=offset;return 0;};}
-      else host.loadArchiveDirectory=archive=>{calls.push(['directory',archive,snapshot()]);return c.variant&1;};
+      if(c.nativeDirectories){host.archiveScratch=scratch;host.seekFile=(file,offset,origin)=>{calls.push(['seek',file,offset,origin,hashAt(calls.length)]);archiveCursors[file-0x5001]=offset;return 0;};}
+      else host.loadArchiveDirectory=archive=>{calls.push(['directory',archive,hashAt(calls.length)]);return c.variant&1;};
       nativeLoadTerrainThemes(memory,owner+0x4000,owner,host);
       if(c.terrainSoil) {
-        host.freeSized=(at,size)=>calls.push(['free',at,size,snapshot()]);
+        host.freeSized=(at,size)=>calls.push(['free',at,size,hashAt(calls.length)]);
         nativeLoadTerrainSoil(memory,owner+0x4000,scratch,host);
         if(c.terrainGrass) {
-          host.free=at=>calls.push(['arrayFree',at,snapshot()]);
+          host.free=at=>calls.push(['arrayFree',at,hashAt(calls.length)]);
           nativeLoadTerrainGrass(memory,owner+0x4000,scratch,host);
           if(c.terrainMaskSetup) {
-            host.bindTerrainLayers=(...args)=>calls.push(['bind',...args,snapshot()]);
+            host.bindTerrainLayers=(...args)=>calls.push(['bind',...args,hashAt(calls.length)]);
             nativePrepareTerrainMasks(memory,owner+0x4000,host);
           }
         }
@@ -838,12 +876,15 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     if(!c.terrainStartup||c.terrainConstruction)expect(result).toBe(c.result);
     expect(calls).toEqual(c.calls);expect(snapshot()).toBe(c.sha256);
   }
+});
+
+test("terrain files and scene graphics match original x86 sequences", { tag: "@logic" }, () => {
   for(const c of terrainFile.cases) {
     const owner=0x2000000,scratch=0x2100000,bytes=Buffer.alloc(0x10000,c.pattern),temporary=Buffer.alloc(20),calls=[];
     const locate=a=>a>=scratch?[temporary,a-scratch]:[bytes,a-owner];
     const memory={get:a=>{const [b,o]=locate(a);return b.readUInt32LE(o);},put:(a,v)=>{const [b,o]=locate(a);b.writeUInt32LE(v>>>0,o);},putByte:(a,v)=>{const [b,o]=locate(a);b[o]=v;}};
     memory.put(owner+8,0);
-    const snapshot=()=>createHash('sha256').update(bytes).digest('hex');
+    const snapshot=memoDigest(()=>[bytes]);
     const stream=Buffer.from(c.stream,'hex');let cursor=0,imageIndex=0;
     const host={
       openFile:(path,mode)=>{calls.push(['open',path,mode,snapshot()]);return c.variant===4?0:0x1234;},
@@ -867,7 +908,7 @@ test("scene shapes and terrain archives match original x86 sequences", { tag: "@
     for(let i=0;i<0xdc64;i++)memory.putByte(source+i,(i*13+c.variant*37)&255);
     for(const address of [services,services+0x200])memory.put(address,services+0x800);
     for(const [offset,target] of [[4,0x2200100],[0x44,0x2200200],[0x60,0x2200300],[0x14,0x2200400]])memory.put(services+0x800+offset,target);
-    const snapshot=()=>createHash('sha256').update(ownerBytes).update(sceneBytes).update(frontendBytes).update(serviceBytes).digest('hex');
+    const snapshot=memoDigest(()=>[ownerBytes,sceneBytes,frontendBytes,serviceBytes]);
     let allocations=0,colorIndex=10;
     const host={
       initializePalette:(...args)=>{calls.push(['palette',...args,snapshot()]);if(c.mutation)memory.put(source+0x100,0x12345678);},
@@ -931,7 +972,7 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
   for(const c of missionSelection.cases) {
     const owner=0x2000000, bytes=Buffer.alloc(0x10000,0xa5),calls=[];let drive=68;
     const memory={get:a=>bytes.readUInt32LE(a-owner),put:(a,v)=>bytes.writeUInt32LE(v>>>0,a-owner),byte:()=>drive};
-    const snapshot=()=>createHash('sha256').update(bytes).update(Buffer.from([drive])).digest('hex');
+    const snapshot=memoDigest(()=>[bytes,Buffer.from([drive])]);
     const change=base=>{for(const [offset,v] of [[0x884,base+1],[0x54,base+2],[0x87c,base+3]])memory.put(owner+offset,v);};
     const file={};
     const host={
@@ -979,7 +1020,7 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
   for(const c of [...filePalette.cases,...filePalette.destroyCases.map(c=>({...c,destroyOnly:true}))]) {
     const heap=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={get:address=>heap.readUInt32LE(address-0x2000000),put:(address,value)=>heap.writeUInt32LE(value>>>0,address-0x2000000),byte:address=>heap[address-0x2000000],putByte:(address,value)=>{heap[address-0x2000000]=value;}};
-    const snapshot=()=>createHash('sha256').update(heap).digest('hex');
+    const snapshot=memoDigest(()=>[heap]);
     let allocated=0,entries=Buffer.alloc(1024);
     const host={
       device:()=>c.destroyOnly&&!c.present?0:0x2300000,
@@ -987,7 +1028,7 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
       allocate(...args){calls.push(['allocate',...args,snapshot()]);return 0x2001000+(allocated++)*0x2000;},
       free(...args){calls.push(['free',...args,snapshot()]);},
       seekFile(...args){calls.push(['seekFile',...args,snapshot()]);},
-      readFile(...args){calls.push(['readFile',...args,snapshot()]);const bytes=Buffer.from(Uint8Array.from({length:1068},(_,i)=>(i*19+7)&255));bytes.writeUInt16LE(c.bits,14);heap.set(bytes.subarray(0,c.amount),args[0]-0x2000000);return c.amount;},
+      readFile(...args){calls.push(['readFile',...args,snapshot()]);const bytes=Buffer.from(bytePattern(1068,19,7));bytes.writeUInt16LE(c.bits,14);heap.set(bytes.subarray(0,c.amount),args[0]-0x2000000);return c.amount;},
       closeFile(...args){calls.push(['closeFile',...args,snapshot()]);},
       createPalette(device,flags,bytes,dest,outer){entries=Buffer.from(bytes);calls.push(['createPalette',device,flags,entries.toString('hex'),dest,outer,snapshot()]);memory.put(dest,0x2300200);return c.createResult;},
       getPaletteEntries(handle,flags,first,count,dest){calls.push(['getPaletteEntries',handle,flags,first,count,dest,snapshot()]);heap.set(entries.subarray(first*4,(first+count)*4),dest-0x2000000);return -123;},
@@ -1010,10 +1051,10 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
     expect(createHash('sha256').update(fs.readFileSync(new URL(path,import.meta.url))).digest('hex')).toBe(bitmap.sha256);
   }
   for(const c of setupBitmap.cases) {
-    const owner=Buffer.from(Uint8Array.from({length:0x10000},(_,i)=>(i*13+5)&255)),source=Buffer.from(Uint8Array.from({length:0x10000},(_,i)=>(i*7+11)&255)),calls=[];
+    const owner=Buffer.from(bytePattern(0x10000,13,5)),source=Buffer.from(bytePattern(0x10000,7,11)),calls=[];
     const locate=address=>address>=0x2300000?[source,address-0x2300000]:[owner,address-0x2000000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
-    const snapshot=()=>createHash('sha256').update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[owner]);
     const result=nativeLoadSetupBitmap(memory,'fixture.bmp',0x2001004,0x2008000,c.width,c.height,{
       loadImage(...args){calls.push(['loadImage',...args,snapshot()]);return c.fail?0:0x1234;},
       getBitmap(...args){calls.push(['getBitmap',...args,snapshot()]);return {width:c.bitmapWidth,height:c.bitmapHeight,stride:c.stride,bits:c.overlap?0x2001000:0x2300000};},
@@ -1029,12 +1070,12 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
     expect(nativeCountryFlag(buffer,c.country)).toBe(c.result);
     expect(Buffer.from(buffer).toString('hex')).toBe(c.bytes);
   }
-  for(const c of missionNativeFlags.flagCases) {
+  for(const c of sampleCases(missionNativeFlags.flagCases,200)) {
     const globals=Buffer.alloc(0x30000),owner=Buffer.alloc(0x10000),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6da000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},byte:address=>{const [b,o]=locate(address);return b[o];}};
     globals.writeUInt32LE(c.country,0x6f47f4-0x6da000);globals[0x6e1178-0x6da000]=67+c.team;owner[0x620+c.team*0xd7b]=c.skill;
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[globals,owner]);
     nativeLoadSetupFlag(memory,0x2000000,c.team,{loadFlagBitmap(...args){
       calls.push(['flagBitmap',...args,snapshot()]);owner.writeUInt32LE(0x12345678,args[2]-0x2000000);owner.writeUInt32LE(0x76543210,args[1]-0x2000000);
     }});
@@ -1043,7 +1084,7 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
   for(const c of missionNativeScheme.schemeCases) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={put:(address,value)=>globals.writeUInt32LE(value>>>0,address-0x6e0000),putByte:(address,value)=>{globals[address-0x6e0000]=value;}};
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[globals,owner]);
     const result=nativeSelectSetupScheme(memory,0x6f454c,c.selection,c.bank,{
       setResourceString(address,id) {calls.push(['label',address,id,snapshot()]);memory.put(address,0x2500000+id*4);},
       findResource(module,id,type) {calls.push(['findResource',module,id,type,snapshot()]);return 0x2400000+id*256;},
@@ -1054,7 +1095,13 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
   }
   // The deepest capture supersedes the earlier all-profile callback captures.
   // Keep scheme rejection separately: native mission bank0 always exists.
-  for(const c of [...missionLoad.cases.filter(c=>c.failure),...missionNativePalette.cases]) {
+});
+
+// Each mission load hashes ~0.5 MB of emulated memory at ~2000 callbacks and
+// compares a digest of the whole call list, so everyday runs check a spread of
+// missions (including a failure case); FULL_FIXTURES checks every mission.
+test("mission loading matches original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sampleCases([...missionLoad.cases.filter(c=>c.failure),...missionNativePalette.cases],6)) {
     const missionOwner=c.globalOwner?0x6e0484:0x2000000;
     const globalBase=c.nativeInitializer?0x6da000:0x6e0000;
     const globals=Buffer.alloc(c.nativeInitializer?0x30000:0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
@@ -1077,7 +1124,7 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
     if(!c.unselected){memory.put((missionOwner+0x884),1);memory.put((missionOwner+0x54),c.mutation?1:-1);}
     if(c.nativeServices)memory.putByte(0x6e1178,67+c.mutation);
     const random=new NativeFrontendRandom(123+c.pattern);
-    const snapshot=()=>createHash('sha256').update(globals).update(c.globalOwner?Buffer.alloc(0):owner).update(c.nativePalette?paletteHeap:Buffer.alloc(0)).update(c.sceneContext?contextBytes:Buffer.alloc(0)).update(c.sceneContext?contextOwnerBytes:Buffer.alloc(0)).digest('hex');
+    const snapshot=memoDigest(()=>[globals,c.globalOwner?Buffer.alloc(0):owner,c.nativePalette?paletteHeap:Buffer.alloc(0),c.sceneContext?contextBytes:Buffer.alloc(0),c.sceneContext?contextOwnerBytes:Buffer.alloc(0)]);
     const host={
       setResourceString(address,id) {calls.push(['label',address,id,snapshot()]);memory.put(address,0x2500000+id*4);},
       findResource(module,id,type) {calls.push(['findResource',module,id,type,snapshot()]);return 0x2400000+id*256;},
@@ -1187,14 +1234,14 @@ test("mission files and loading match original x86 sequences", { tag: "@logic" }
   }
 });
 
-test("mission teams, events and options match original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of missionTeams.cases) {
+test("mission teams, worms and strings match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sampleCases(missionTeams.cases,48)) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
     memory.put(0x2000880,0x2001000);memory.put(0x6f47f4,c.country);
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[globals,owner]);
     nativeLoadMissionTeams(memory,0x2000000,c.teams,{
       profileInt(section,key,fallback,filename) {
         calls.push(['profile',section,key,fallback,filename,snapshot()]);
@@ -1212,7 +1259,7 @@ test("mission teams, events and options match original x86 sequences", { tag: "@
     });
     expect({count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} teams ${c.mutation}`).toEqual({count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
-  for(const c of missionWorms.cases) {
+  for(const c of sampleCases(missionWorms.cases,12)) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
@@ -1220,7 +1267,7 @@ test("mission teams, events and options match original x86 sequences", { tag: "@
     memory.put(0x2000880,0x2001000);memory.put(0x2000054,c.mutation?1:-1);
     memory.putByte(0x6e1834,c.counts[0]);memory.putByte(0x6e69c6,c.counts.length);
     for(let i=1;i<c.counts.length;i++) {memory.putByte(0x6e2518+(i-1)*0xd7b,c.groups[i-1]);memory.putByte(0x6e25af+(i-1)*0xd7b,c.counts[i]);}
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[globals,owner]);
     nativeLoadMissionWorms(memory,0x2000000,{
       profileInt(section,key,fallback,filename) {
         calls.push(['profile',section,key,fallback,filename,snapshot()]);
@@ -1244,7 +1291,7 @@ test("mission teams, events and options match original x86 sequences", { tag: "@
   for (const c of missionOwner.cases) {
     const owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const memory={put:(address,value)=>owner.writeUInt32LE(value>>>0,address-0x2000000)};
-    const snapshot=()=>createHash('sha256').update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[owner]);
     const result=nativeCreateMissionOwner(memory,0x2000000,{
       initializeString(address) {calls.push(['string',address,snapshot()]);memory.put(address,0x2400000);},
       time(pointer) {calls.push(['time',pointer,snapshot()]);if(c.mutation)memory.put(0x2000054,123456);return c.timestamp;},
@@ -1252,14 +1299,17 @@ test("mission teams, events and options match original x86 sequences", { tag: "@
     });
     expect({result,calls,state:snapshot()},`mission owner ${c.pattern} ${c.timestamp} ${c.mutation}`).toEqual({result:c.result,calls:c.calls,state:c.sha256});
   }
-  for (const c of missionEvents.cases) {
+});
+
+test("mission events match original x86 sequences", { tag: "@logic" }, () => {
+  for (const c of sampleCases(missionEvents.cases,10)) {
     const globals=Buffer.alloc(0x20000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6e0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     if(c.originalTables) nativeCreateMissionOwner(memory,0x2000000,{initializeString:address=>memory.put(address,0),time:()=>0,seedRandom:()=>{}});
     else for(let i=0;i<100;i++) {memory.put(0x2000004+i*4,i);memory.put(0x2000698+i*4,1000+i);memory.put(0x2000888+i*4,2000+i);}
     memory.put(0x2000880,0x2001000);memory.put(0x200087c,c.retries);
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[globals,owner]);
     nativeLoadMissionEvents(memory,0x2000000,{
       profileInt(section,key,fallback,filename) {
         calls.push(['profile',section,key,fallback,filename,snapshot()]);
@@ -1270,14 +1320,17 @@ test("mission teams, events and options match original x86 sequences", { tag: "@
     });
     expect({count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} events ${c.mutation}`).toEqual({count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
-  for(const c of missionInventory.cases) {
+});
+
+test("mission inventory and options match original x86 sequences", { tag: "@logic" }, () => {
+  for(const c of sampleCases(missionInventory.cases,32)) {
     const globals=Buffer.alloc(0x10000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6f0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     const short=(address,value)=>{memory.putByte(address,value);memory.putByte(address+1,value>>>8);};
     memory.put(0x2000880,0x2001000);owner.write(c.section+'\0',0x2000,'ascii');
     for(let i=0;i<71;i++)for(const base of [0x6f3624,0x6f36b2])short(base+(c.team*143+i)*2,c.mutation?[-1,0,1,32767,-32768,123][i%6]:0);
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[globals,owner]);
     nativeLoadMissionInventory(memory,0x2000000,c.section,c.team,{
       profileInt(section,key,fallback,filename) {
         calls.push([section,key,fallback,filename,snapshot()]);
@@ -1294,12 +1347,12 @@ test("mission teams, events and options match original x86 sequences", { tag: "@
     expect({count:calls.length,calls:createHash('sha256').update(JSON.stringify(calls)).digest('hex'),state:snapshot()},`${c.profile} ${c.section} ${c.mutation}`).toEqual({count:c.callCount,calls:c.callsSha256,state:c.sha256});
   }
 
-  for(const c of missionOptions.cases) {
+  for(const c of sampleCases(missionOptions.cases,96)) {
     const globals=Buffer.alloc(0x10000,c.pattern),owner=Buffer.alloc(0x10000,c.pattern),calls=[];
     const locate=address=>address>=0x2000000?[owner,address-0x2000000]:[globals,address-0x6f0000];
     const memory={get:address=>{const [b,o]=locate(address);return b.readUInt32LE(o);},put:(address,value)=>{const [b,o]=locate(address);b.writeUInt32LE(value>>>0,o);},byte:address=>{const [b,o]=locate(address);return b[o];},putByte:(address,value)=>{const [b,o]=locate(address);b[o]=value;}};
     memory.put(0x2000880,0x2001000);
-    const snapshot=()=>createHash('sha256').update(globals).update(owner).digest('hex');
+    const snapshot=memoDigest(()=>[globals,owner]);
     let countCalls=0;
     const host={
       profileInt(section,key,fallback,filename) {
@@ -1318,11 +1371,47 @@ test("mission teams, events and options match original x86 sequences", { tag: "@
 
 });
 
-test("worm memory construction matches original x86 sequences", { tag: "@logic" }, () => {
-  for(const c of [...wormMemory.cases,...wormMemoryAnimation.cases.map(c=>({...c,synchronized:true})),...wormMemorySpawn.cases.map(c=>({...c,synchronized:true,nativeSpawn:true})),...wormMemoryState.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true})),...wormMemoryPlacement.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true})),...controllerWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true})),...worldWormMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true})),...worldLandscapeMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true})),...worldObjectsMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true})),...worldBarrelMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true})),...worldMineMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true})),...worldSceneryMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true})),...worldPresentationMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true})),...fullMatchRootMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true})),...fullStartupMemory.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true})),...fullStartupSettings.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true})),...fullStartupDispatch.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true})),...fullStartupCleanup.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true})),...fullObjectDestroy.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true})),...fullControllerDestroy.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true})),...fullWorldDestroy.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true})),...fullStartupTeardown.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true})),...fullEnvironmentLifecycle.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true})),...fullSceneServices.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true})),...fullSceneBuffers.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true})),...fullSceneLayout.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true})),...fullOfflinePanels.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true})),...fullSceneDisplay.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true})),...fullSceneRecords.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true})),...fullOfflineScene.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true,completeScene:true})),...fullSceneLifecycle.cases.map(c=>({...c,synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true,completeScene:true,completeLifecycle:true}))]) {
+// One test per constructor stage (each fixture adds one native routine to the
+// previous stage); everyday runs sample each stage, FULL_FIXTURES runs every case.
+const wormMemoryStages=[
+  ['wormMemory',wormMemory,{}],
+  ['wormMemoryAnimation',wormMemoryAnimation,{synchronized:true}],
+  ['wormMemorySpawn',wormMemorySpawn,{synchronized:true,nativeSpawn:true}],
+  ['wormMemoryState',wormMemoryState,{synchronized:true,nativeSpawn:true,nativeState:true}],
+  ['wormMemoryPlacement',wormMemoryPlacement,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true}],
+  ['controllerWormMemory',controllerWormMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true}],
+  ['worldWormMemory',worldWormMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true}],
+  ['worldLandscapeMemory',worldLandscapeMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true}],
+  ['worldObjectsMemory',worldObjectsMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true}],
+  ['worldBarrelMemory',worldBarrelMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true}],
+  ['worldMineMemory',worldMineMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true}],
+  ['worldSceneryMemory',worldSceneryMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true}],
+  ['worldPresentationMemory',worldPresentationMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true}],
+  ['fullMatchRootMemory',fullMatchRootMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true}],
+  ['fullStartupMemory',fullStartupMemory,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true}],
+  ['fullStartupSettings',fullStartupSettings,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true}],
+  ['fullStartupDispatch',fullStartupDispatch,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true}],
+  ['fullStartupCleanup',fullStartupCleanup,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true}],
+  ['fullObjectDestroy',fullObjectDestroy,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true}],
+  ['fullControllerDestroy',fullControllerDestroy,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true}],
+  ['fullWorldDestroy',fullWorldDestroy,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true}],
+  ['fullStartupTeardown',fullStartupTeardown,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true}],
+  ['fullEnvironmentLifecycle',fullEnvironmentLifecycle,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true}],
+  ['fullSceneServices',fullSceneServices,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true}],
+  ['fullSceneBuffers',fullSceneBuffers,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true}],
+  ['fullSceneLayout',fullSceneLayout,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true}],
+  ['fullOfflinePanels',fullOfflinePanels,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true}],
+  ['fullSceneDisplay',fullSceneDisplay,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true}],
+  ['fullSceneRecords',fullSceneRecords,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true}],
+  ['fullOfflineScene',fullOfflineScene,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true,completeScene:true}],
+  ['fullSceneLifecycle',fullSceneLifecycle,{synchronized:true,nativeSpawn:true,nativeState:true,nativePlacement:true,controller:true,world:true,landscape:true,objects:true,barrels:true,mines:true,scenery:true,presentation:true,fullRoot:true,finalized:true,settings:true,deepSettings:true,cleanup:true,destroyObjects:true,destroyRoot:true,teardown:true,environmentConstructor:true,sceneServices:true,sceneBuffers:true,sceneLayout:true,offlinePanels:true,sceneDisplay:true,sceneRecords:true,completeScene:true,completeLifecycle:true}],
+];
+for(const [stage,fixture,flags] of wormMemoryStages)test(`worm memory construction matches original x86 sequences (${stage})`, { tag: "@logic" }, () => {
+  for(const c of sampleCases(fixture.cases,32).map(c=>({...c,...flags}))) {
     const owner=new Uint8Array(0x10000),heap=new Uint8Array(c.world?0x100000:c.controller?0x40000:0x10000),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
-    const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
+    const views=new Map([owner,heap,scene].map(a=>[a,new DataView(a.buffer)]));
+    const memory={get:at=>{const [a,o]=locate(at);return views.get(a).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);views.get(a).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
     if(c.world){const input=inflateSync(Buffer.from(c.input,'base64'));for(let i=0;i<input.length;i+=8)memory.put(input.readUInt32LE(i),input.readUInt32LE(i+4));}
     else for(const [at,value] of c.initialWords)memory.put(at,value);
     let cursor=0x2408000,attempts=0,portraitLabel=0xdeadbeef;
@@ -1417,7 +1506,7 @@ test("worm memory construction matches original x86 sequences", { tag: "@logic" 
 
 test("task, world and match setup match original x86 sequences", { tag: "@logic" }, () => {
   for(const row of eventBuffer.cases) {
-    const bytes=Uint8Array.from({length:0x8000},(_,i)=>(i*13+row.seed)&255),view=new DataView(bytes.buffer),base=0x2000000;
+    const bytes=bytePattern(0x8000,13,row.seed),view=new DataView(bytes.buffer),base=0x2000000;
     const memory={get:at=>view.getUint32(at-base,true),put:(at,v)=>view.setInt32(at-base,v,true),byte:at=>bytes[at-base],putByte:(at,v)=>bytes[at-base]=v};
     for(let q=0;q<2;q++) {
       const buffer=base+0x100+q*0x40;memory.put(base+q*8,0x526544);memory.put(base+q*8+4,buffer);
@@ -1439,7 +1528,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
     expect(checks,`event buffer ${row.seed}`).toEqual(row.operations.map(op=>[op.result,op.sha256]));
   }
   for(const {count,flags,mode,calls:expected,sha256} of taskDestroy.cases) {
-    const owner=Uint8Array.from({length:0x10000},(_,i)=>(i*11+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),calls=[];
+    const owner=bytePattern(0x10000,11,5),heap=bytePattern(0x10000,7,3),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setUint32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;}};
     let cursor=0x2408000;
@@ -1458,7 +1547,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   }
   for(const row of taskCleanup.cases) {
     const {count,mode,mask,dirty}=row,owner=0x2000000,children=owner+0x4000,alternate=owner+0x5000,scratch=owner+0x6000,table=owner+0x8000;
-    const bytes=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(bytes.buffer),calls=[];
+    const bytes=bytePattern(0x10000,7,3),view=new DataView(bytes.buffer),calls=[];
     const memory={get:at=>view.getUint32(at-owner,true),put:(at,value)=>view.setUint32(at-owner,value,true)};
     memory.put(table+0x18,0x2200100);
     for(let i=0;i<8;i++)memory.put(owner+0x1000+i*0x100,table);
@@ -1481,7 +1570,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
     expect(createHash('sha256').update(bytes).digest('hex'),`task cleanup ${count}/${mode}/${mask}/${dirty}`).toBe(row.sha256);
   }
   for(const {seed,sha256} of physicsCompact.cases) {
-    const bytes=Uint8Array.from({length:0x10000},(_,i)=>(i*13+seed)&255),view=new DataView(bytes.buffer);
+    const bytes=bytePattern(0x10000,13,seed),view=new DataView(bytes.buffer);
     const memory={get:at=>view.getUint32(at-0x2000000,true),put:(at,value)=>view.setUint32(at-0x2000000,value,true)};
     for(let index=0;index<33;index++) {
       const at=0x2000000+(index===0?0x18:0x34+(index-1)*0x1c),storage=0x2001000+index*0x200,count=(seed+index)%17;
@@ -1506,7 +1595,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
     expect(createHash('sha256').update(bytes).digest('hex'),`actor teardown memory ${row.tag}/${row.flags}/${row.variant}`).toBe(row.sha256);
   }
   for(const row of [...physicsMemory.cases,...physicsDestroy.cases.map(row=>({...row,destroy:true}))]) {
-    const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),owner=Uint8Array.from({length:row.destroy?0x10000:0x3c},(_,i)=>(i*11+5)&255),scene=new Uint8Array(0x20000),calls=[];
+    const heap=bytePattern(0x10000,7,3),owner=bytePattern(row.destroy?0x10000:0x3c,11,5),scene=new Uint8Array(0x20000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;},range:(at,len)=>{const [a,o]=locate(at);return a.subarray(o,o+len);}};
     let cursor=0x2408000;
@@ -1533,7 +1622,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
     expect(calls,label).toEqual(row.calls);
     expect(createHash('sha256').update(owner).update(heap).digest('hex'),label).toBe(row.sha256);
   }
-  const accessPattern=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255);
+  const accessPattern=bytePattern(0x20000,17,5);
   for(const row of groupDispatch.send_cases) {
     const bytes=new Uint8Array(0x8000),view=new DataView(bytes.buffer),calls=[];
     const memory={get:at=>at===0x2000030?0x2306000:view.getUint32(at-0x2300000,true),put:(at,v)=>view.setInt32(at-0x2300000,v,true)};
@@ -1546,7 +1635,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   }
   const dispatchActual=[],dispatchExpected=[];
   for(const row of groupDispatch.cases) {
-    const owner=Uint8Array.from({length:0xa0},(_,i)=>(i*7+3)&255),arena=new Uint8Array(0x8000),calls=[];
+    const owner=bytePattern(0xa0,7,3),arena=new Uint8Array(0x8000),calls=[];
     const locate=at=>at>=0x2300000?[arena,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];}};
     for(let i=0;i<8;i++)memory.put(0x2300000+i*256,0x2308000);
@@ -1568,7 +1657,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   expect(dispatchActual).toEqual(dispatchExpected);
   const taskActual=[],taskExpected=[];
   for(const row of worldCreate.task_cases) {
-    const heap=Uint8Array.from({length:0x40000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
+    const heap=bytePattern(0x40000,7,3),view=new DataView(heap.buffer),calls=[];
     const memory={get:at=>view.getUint32(at-0x2400000,true),put:(at,v)=>view.setInt32(at-0x2400000,v,true),byte:at=>heap[at-0x2400000],putByte:(at,v)=>heap[at-0x2400000]=v};
     let cursor=0x2404000;
     const allocate=(kind,size,pool)=>{const value=cursor;cursor+=(size+15)&~15;calls.push([kind,size,value,...(kind==='array'?[pool]:[])]);return value;};
@@ -1582,7 +1671,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   expect(taskActual).toEqual(taskExpected);
   const groupActual=[],groupExpected=[];
   for(const row of worldCreate.event_cases) {
-    const bytes=Uint8Array.from({length:0xa0},(_,i)=>(i*7+3)&255),calls=[];
+    const bytes=bytePattern(0xa0,7,3),calls=[];
     const memory={byte:at=>bytes[at-0x2400000],putByte:(at,v)=>bytes[at-0x2400000]=v};
     memory.putByte(0x2400000-0x3ac+row.event,row.initial);
     if(row.action>=0)nativeSetGroupSubscription(memory,0x2400000,row.event,row.action);
@@ -1592,7 +1681,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   expect(groupActual).toEqual(groupExpected);
   const worldActual=[],worldExpected=[];
   for(const row of worldCreate.cases) {
-    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x40000},(_,i)=>(i*7+3)&255),calls=[];
+    const scene=bytePattern(0x20000,17,5),heap=bytePattern(0x40000,7,3),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:[scene,at-0x2300000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];}};
     memory.putByte=(at,v)=>{const [a,o]=locate(at);a[o]=v;};
@@ -1626,7 +1715,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   expect(worldActual).toEqual(worldExpected);
   const resourceActual=[],resourceExpected=[];
   for(const row of [...matchResources.cases,...matchCreate.cases.map(row=>({...row,root:true}))]) {
-    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:row.root?0x40000:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),sv=new DataView(scene.buffer),calls=[];
+    const scene=bytePattern(0x20000,17,5),heap=bytePattern(row.root?0x40000:0x10000,7,3),view=new DataView(heap.buffer),sv=new DataView(scene.buffer),calls=[];
     sv.setUint32(8,0x2000800,true);view.setUint32(0x38,0x2300000,true);
     if(row.root) {
       sv.setUint32(20,row.variant&1?0x2003000:0,true);
@@ -1668,7 +1757,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   expect(resourceActual).toEqual(resourceExpected);
   const finalActual=[],finalExpected=[];
   for(const row of finalizeSetup.cases) {
-    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),owner=new Uint8Array(0x10000),calls=[];
+    const scene=bytePattern(0x20000,17,5),heap=bytePattern(0x10000,7,3),owner=new Uint8Array(0x10000),calls=[];
     const locate=at=>at>=0x2400000?[heap,at-0x2400000]:at>=0x2300000?[scene,at-0x2300000]:[owner,at-0x2000000];
     const memory={get:at=>{const [a,o]=locate(at);return new DataView(a.buffer).getUint32(o,true);},put:(at,v)=>{const [a,o]=locate(at);new DataView(a.buffer).setInt32(o,v,true);},byte:at=>{const [a,o]=locate(at);return a[o];},putByte:(at,v)=>{const [a,o]=locate(at);a[o]=v;}};
     scene[0x4886]=row.count;memory.put(0x2300008,0x2000800);memory.put(0x230000c,row.variant%2?0x2003100:0);
@@ -1700,7 +1789,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   expect(finalActual).toEqual(finalExpected);
   const imageActual=[],imageExpected=[];
   for(const row of panelSetup.image_cases) {
-    const heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
+    const heap=bytePattern(0x10000,7,3),view=new DataView(heap.buffer),calls=[];
     const memory={put:(at,v)=>view.setInt32(at-0x2400000,v,true),putByte:(at,v)=>heap[at-0x2400000]=v};
     nativeCreatePanelImage(memory,0x2400000,row.width,row.height,row.bits,{allocateArray:(size,pool)=>{calls.push(['array',size,0x2401000,pool]);return 0x2401000;}});
     imageActual.push([createHash('sha256').update(heap).digest('hex'),calls]);imageExpected.push([row.sha256,row.calls]);
@@ -1708,7 +1797,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   expect(imageActual).toEqual(imageExpected);
   const panelActual=[],panelExpected=[];
   for(const row of panelSetup.cases) {
-    const scene=new Uint8Array(0x20000),heap=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(heap.buffer),calls=[];
+    const scene=new Uint8Array(0x20000),heap=bytePattern(0x10000,7,3),view=new DataView(heap.buffer),calls=[];
     scene[0x4886]=row.count;const sceneView=new DataView(scene.buffer);sceneView.setUint32(8,0x2000800,true);
     row.groups.forEach((group,team)=>scene[0x488b+team*3000]=group);
     let cursor=0x2401000,allocation=0;
@@ -1774,27 +1863,27 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
   }
   expect(localeActual).toEqual(localeExpected);
   for(const row of matchSetup.music_cases) {
-    const memory=Uint8Array.from({length:0xc6},(_,i)=>(i*11+5)&255),random=new NativeFrontendRandom(row.seed);
+    const memory=bytePattern(0xc6,11,5),random=new NativeFrontendRandom(row.seed);
     nativeSetupMusic(memory,row.selection,90,row.enabled,random);
     expect(Buffer.from(memory).toString('hex')).toBe(row.memory);expect(random.state).toBe(row.state);
   }
   for(const row of weaponSettings.cases) {
-    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),scheme=Uint8Array.from(Buffer.from(row.initial,'hex'));
+    const memory=bytePattern(0x10000,7,3),scheme=Uint8Array.from(Buffer.from(row.initial,'hex'));
     nativePrepareInventoryScheme(memory,scheme);memory[0xd42a]=0;
     nativeExpandWeaponSettings(memory,scheme.subarray(0x14,0xec));
     expect(Buffer.from(scheme).toString('hex')).toBe(row.prepared);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
   }
   for(const row of schemeEnvironment.cases) {
-    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),descriptors=new Uint8Array(0xd0),view=new DataView(descriptors.buffer);
+    const memory=bytePattern(0x10000,7,3),descriptors=new Uint8Array(0xd0),view=new DataView(descriptors.buffer);
     view.setInt32(0xc8,row.handicap,true);view.setInt32(0xc0,-row.handicap,true);
     nativeExpandSchemeEnvironment(memory,row.scheme,descriptors);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
   }
   for(const row of matchSetup.cases) {
-    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),inventory=new Uint8Array(0x2c14);
+    const memory=bytePattern(0x10000,7,3),inventory=new Uint8Array(0x2c14);
     const teamData=new Uint8Array(0x9000),frontend=teamData.subarray(0x2000),view=new DataView(frontend.buffer,frontend.byteOffset,frontend.byteLength);
-    frontend.set(Uint8Array.from({length:0x7000},(_,i)=>(i*13+7)&255));
+    frontend.set(bytePattern(0x7000,13,7));
     for(const [offset,size,value] of row.writes) {
       if(size===1)view.setUint8(offset,value);else view.setInt32(offset,value,true);
     }
@@ -1803,7 +1892,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
     const descriptors=new Uint8Array(0x1d8);descriptors.fill(255,0xd0);
     const calls=[];let path=0,profile=row.initial_profile;
     const defaultSpeech=new Uint8Array(65);defaultSpeech.set(new TextEncoder().encode('English'));
-    const music=Uint8Array.from({length:0xc6},(_,i)=>(i*11+5)&255);
+    const music=bytePattern(0xc6,11,5);
     const localeState=new Uint8Array(8);
     const result=nativeInitializeMatchSetup(memory,scheme,teamData,{
       descriptors,random,music,drive:68,musicEnabled:row.music_enabled,
@@ -1830,7 +1919,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
     expect(Buffer.from(scheme).toString('hex')).toBe(row.scheme);
     expect(createHash('sha256').update(memory).digest('hex')).toBe(row.sha256);
     expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
-    const scene=Uint8Array.from({length:0x20000},(_,i)=>(i*17+5)&255),sceneView=new DataView(scene.buffer);
+    const scene=bytePattern(0x20000,17,5),sceneView=new DataView(scene.buffer);
     sceneView.setUint32(0x1c,0x2600800,true);sceneView.setInt32(0x20,row.gameplay_mode,true);sceneView.setInt32(0x1b8ac,row.gameplay_tall,true);
     const counter=new Uint8Array([239,190,173,222]);
     nativeInitializeGameplayRecords(scene,memory,()=>new Uint8Array(1),counter);
@@ -1844,7 +1933,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
 
   }
   for(const row of frontendRandom.cases) {
-    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
+    const memory=bytePattern(0x10000,7,3);
     for(const [offset,value] of row.writes)memory[offset]=value;
     const random=new NativeFrontendRandom();let profile=row.initial,calls=[];
     const host={time:()=>{calls.push(['time',row.clock]);return row.clock;},
@@ -1859,7 +1948,7 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
     }
   }
   for(const row of turnOrder.cases) {
-    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
+    const memory=bytePattern(0x10000,7,3);
     for(const [offset,value] of row.writes)memory[offset]=value;
     let used=0;
     for(const step of row.steps) {
@@ -1878,8 +1967,8 @@ test("task, world and match setup match original x86 sequences", { tag: "@logic"
 
 test("team and inventory setup match original x86 sequences", { tag: "@logic" }, () => {
   for(const row of [...teamSetup.cases,...speechSetup.cases]) {
-    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255);
-    const frontend=Uint8Array.from({length:0x7000},(_,i)=>(i*13+7)&255),view=new DataView(frontend.buffer);
+    const memory=bytePattern(0x10000,7,3);
+    const frontend=bytePattern(0x7000,13,7),view=new DataView(frontend.buffer);
     for(const [offset,size,value] of row.writes) {
       if(size===1)view.setUint8(offset,value);else view.setInt32(offset,value,true);
     }
@@ -1908,7 +1997,7 @@ test("team and inventory setup match original x86 sequences", { tag: "@logic" },
     expect(createHash('sha256').update(inventory).digest('hex')).toBe(row.inventory_sha256);
   }
   for(const row of setupFixture.preparations) {
-    const template=setupFixture.cases[0],memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(memory.buffer);
+    const template=setupFixture.cases[0],memory=bytePattern(0x10000,7,3),view=new DataView(memory.buffer);
     for(const [offset,size,value] of template.writes) {
       if(size===1)view.setUint8(offset,value);else if(size===2)view.setUint16(offset,value,true);else view.setInt32(offset,value,true);
     }
@@ -1930,7 +2019,7 @@ test("team and inventory setup match original x86 sequences", { tag: "@logic" },
     expect(nativeFindSetupTeam(data,name,true)).toBe(row.results[1]);
   }
   for(const row of setupFixture.cases) {
-    const memory=Uint8Array.from({length:0x10000},(_,i)=>(i*7+3)&255),view=new DataView(memory.buffer);
+    const memory=bytePattern(0x10000,7,3),view=new DataView(memory.buffer);
     for(const [offset,size,value] of row.writes) {
       if(size===1)view.setUint8(offset,value);else if(size===2)view.setUint16(offset,value,true);else view.setInt32(offset,value,true);
     }
@@ -2015,17 +2104,18 @@ test("unlimited shotgun survives both shots and remains selectable", async ({
   // Fire into clear sky: a nearby terrain hit can injure the shooter and
   // correctly cancel the second shot, independently of unlimited ammunition.
   await page.locator("#angle").fill("90");
+  // Step the simulation until each shot resolves instead of waiting in real time.
+  const advanceUntilRemaining = (remaining) => page.evaluate((remaining) => {
+    for (let i = 0; i < 600 && window.siege.getState().shotgunRemaining !== remaining; i++) window.siege.debug.advanceReplayFrames(1);
+    return window.siege.getState().shotgunRemaining;
+  }, remaining);
   await page.locator("#fire").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().shotgunRemaining))
-    .toBe(1);
+  expect(await advanceUntilRemaining(1)).toBe(1);
   expect(
     await page.evaluate(() => window.siege.getState().ammo[0].shotgun),
   ).toBe(-1);
   await page.locator("#fire").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().shotgunRemaining))
-    .toBe(0);
+  expect(await advanceUntilRemaining(0)).toBe(0);
   expect(
     await page.evaluate(() => window.siege.getState().ammo[0].shotgun),
   ).toBe(-1);

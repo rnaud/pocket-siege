@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import themes from "../src/armageddon/terrain-themes.js";
+import { advanceUntil } from "./helpers/misc-advance.js";
 async function ready(page) {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
@@ -67,22 +69,26 @@ test("native water preserves original wave pixels and repeats at the source widt
   expect(result.worldHeight).toBe(144);
   expect(result.level).toBe(120);
 });
-test("every terrain theme renders its original backdrop at native resolution", async ({
+// Each theme fetches and decodes its own gradient, so themes run in parallel
+// chunks instead of one long serial loop.
+const THEME_CHUNKS = 4;
+for (let chunk = 0; chunk < THEME_CHUNKS; chunk++)
+test(`terrain themes render their original backdrop at native resolution (part ${chunk + 1}/${THEME_CHUNKS})`, async ({
   page,
-}, testInfo) => {
+}) => {
+  expect(themes).toHaveLength(29);
+  const selected = themes.filter((_, i) => i % THEME_CHUNKS === chunk);
   await ready(page);
-  const result = await page.evaluate(async () => {
+  const result = await page.evaluate(async (selected) => {
     const { paintOriginalBackdrop } =
       await import("/src/armageddon/terrain.js");
-    const { default: themes } =
-      await import("/src/armageddon/terrain-themes.js");
     const { decodeImage, imageRGBA } = await import("/src/armageddon/image.js");
     const failures = [];
     const canvas = document.createElement("canvas");
     canvas.width = 1200;
     canvas.height = 650;
     const ctx = canvas.getContext("2d");
-    for (const theme of themes) {
+    for (const theme of selected) {
       if (!paintOriginalBackdrop(ctx, theme, 80)) {
         failures.push(theme);
         continue;
@@ -99,9 +105,15 @@ test("every terrain theme renders its original backdrop at native resolution", a
       if (actual.some((v, i) => v !== expected[i]))
         failures.push(theme + " gradient");
     }
-    return { count: themes.length, failures };
-  });
-  expect(result).toEqual({ count: 29, failures: [] });
+    return { count: selected.length, failures };
+  }, selected);
+  expect(result).toEqual({ count: selected.length, failures: [] });
+});
+
+test("selected terrain theme starts the match with its original backdrop and water", async ({
+  page,
+}, testInfo) => {
+  await ready(page);
   await page.locator('[data-mode="ai"]').click();
   await page.locator("#terrain-theme").selectOption("forest");
   await page.locator('[data-mode="local"]').click();
@@ -166,10 +178,5 @@ test("explosions render native debris for the selected terrain and release it", 
   expect(explosions).toBeGreaterThanOrEqual(1);
   expect(debris).toHaveLength(46 * explosions);
   expect(debris.every((p) => p.theme === "snow")).toBe(true);
-  await expect
-    .poll(
-      () => page.evaluate(() => window.siege.getState().debrisSprites.length),
-      { timeout: 5000 },
-    )
-    .toBe(0);
+  await advanceUntil(page, (s) => s.debrisSprites.length === 0, { label: "debris released" });
 });

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
+import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
 import { nativePostFire, nativeRecoilTick } from "../src/armageddon/recoil.js";
 const fixture = JSON.parse(
   fs.readFileSync(
@@ -114,27 +115,26 @@ for (const [weapon, sprite] of [
       el.value = "90";
       el.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    await page.evaluate(({ shooter, sprite }) => {
-      window.recoilObserved = false;
-      const deadline = performance.now() + 10000;
-      const sample = () => {
-        if (window.siege.getState().worms[shooter].originalSprite === sprite) window.recoilObserved = true;
-        else if (performance.now() < deadline) requestAnimationFrame(sample);
-      };
-      requestAnimationFrame(sample);
-    }, { shooter, sprite });
+    // Step the preparation synchronously until the action releases, then let
+    // one rendered frame pick the recoil pose (it advances with rendering).
+    const shots = await page.evaluate(() => window.siege.getState().shotCount);
     await page.locator("#fire").click();
-    await expect.poll(() => page.evaluate(() => window.recoilObserved), {timeout:10000}).toBe(true);
+    await advanceUntil(page, (s, shots) => s.shotCount > shots, { arg: shots, label: "action release" });
+    const firing = await page.evaluate(async (shooter) => {
+      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      return window.siege.getState().worms[shooter].originalSprite;
+    }, shooter);
+    expect(firing).toBe(sprite);
     await page.screenshot({
       path: test.info().outputPath(`native-${weapon}-fire.png`),
     });
-    await expect
-      .poll(() =>
-        page.evaluate(
-          (shooter) => window.siege.getState().worms[shooter].originalSprite,
-          shooter,
-        ),
-      )
-      .not.toBe(sprite);
+    // The pose ends with its native countdown (at most 26 ticks for the bat).
+    await advanceFrames(page, 40);
+    expect(
+      await page.evaluate(
+        (shooter) => window.siege.getState().worms[shooter].originalSprite,
+        shooter,
+      ),
+    ).not.toBe(sprite);
   });
 }

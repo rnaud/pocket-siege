@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { fastForward } from "./helpers/scenario-page.js";
 async function start(page, map) {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
@@ -17,15 +18,13 @@ test("original crates descend by parachute and switch to ground idle art", async
   const initial = await page.evaluate(() => window.siege.getState());
   expect(initial.crate.sprite).toMatch(/^[muw]crate0$/);
   expect(initial.crate.nativeBody.state).toBe(100);
-  await expect.poll(() => page.evaluate(() => window.siege.getState().crate?.sprite))
-    .toMatch(/^[muw]crate2$/);
   expect(initial.hazards.length).toBeGreaterThan(0);
   expect(initial.hazards.every((h) => h.sprite === "oildrum1")).toBe(true);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().crate?.sprite), {
-      timeout: 15000,
-    })
-    .toMatch(/^[muw]crate1$/);
+  // The descent runs several logic ticks per rendered frame; every frame
+  // records the drawn crate sprite.
+  const descent = await fastForward(page, (s) => /^[muw]crate1$/.test(s.crate?.sprite ?? ""),
+    { perFrame: 6, maxTicks: 1500, sample: (s) => s.crate?.sprite, label: "landed crate" });
+  expect(descent.samples.some((sprite) => /^[muw]crate2$/.test(sprite ?? ""))).toBe(true);
   await page.screenshot({ path: "test-results/original-world-objects.png" });
   const spy = await page.evaluate(async () => {
     const { captureReplayActors, restoreReplayActors } = await import('/src/armageddon/replay-actor-adapter.js');
@@ -190,9 +189,9 @@ test("a worm that comes to rest on an oil drum stands on it and can still move",
   expect(Math.abs(result.body.x - result.drum[0])).toBeLessThan(20);
   const before = result.body.x;
   await page.keyboard.down("ArrowRight");
-  await page.waitForTimeout(600);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));
   await page.keyboard.up("ArrowRight");
-  await expect.poll(() => page.evaluate(() => window.siege.debug.wormBody().x)).not.toBe(before);
+  expect(await page.evaluate(() => window.siege.debug.wormBody().x)).not.toBe(before);
 });
 
 test("a dead worm leaves only its grave, not its last frame", async ({ page }) => {
@@ -208,7 +207,7 @@ test("a dead worm leaves only its grave, not its last frame", async ({ page }) =
     for (let frames = 0; frames < 1500 && !window.siege.getState().graves.length; frames += 25)
       debug.advanceReplayFrames(25);
     // Let the renderer draw a few frames after the grave appears.
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    for (let i = 0; i < 3; i++) await new Promise((resolve) => requestAnimationFrame(resolve));
     state = window.siege.getState();
     return { hp: state.worms[index].hp, graves: state.graves.length, rendered: state.worms[index].rendered };
   });

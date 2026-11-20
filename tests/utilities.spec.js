@@ -97,10 +97,16 @@ import { createNativeCrateBody, stepNativeCrateBody } from '../src/armageddon/cr
 import { nativeCollisionBitmapOverlap } from '../src/armageddon/collision-mask.js';
 import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json' };
 
-test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
+test("native utility logic: poison settlement", { tag: "@logic" }, () => {
   for (const row of poisonSettlement.cases) expect(nativePoisonSettlement(row.input)).toEqual(row.result);
+});
+
+test("native utility logic: team environment", { tag: "@logic" }, () => {
   for (const row of environment.cases)
     expect(nativeTeamEnvironment(row.input, row.flags)).toEqual(row.output);
+});
+
+test("native utility logic: nuclear effect", { tag: "@logic" }, () => {
   for (const row of nuclearEffect.starts) {
     let random = row.seed;
     const result = nativeNuclearEffectStart(row.input, row.duration, () => (random = nextLogicRandom(random, row.frame)));
@@ -108,14 +114,23 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   }
   for (const row of nuclearEffect.cases)
     expect(nativeNuclearEffectTick(row.input, request => request[0] === 0x10004 ? 301 : 302)).toEqual(row.result);
+});
+
+test("native utility logic: water rise", { tag: "@logic" }, () => {
   for (const row of waterRise.starts)
     expect({ body: nativeWaterRiseStart(row.input, row.record), calls: [] }).toEqual(row.result);
   for (const row of waterRise.ticks)
     expect(nativeWaterRiseTick(row.input)).toEqual(row.result);
+});
+
+test("native utility logic: sudden death", { tag: "@logic" }, () => {
   for (const row of suddenDeath.cases)
     expect(nativeSuddenDeathActivation(row.input)).toEqual(row.calls);
   for (const row of suddenDeath.repeats)
     expect(nativeSuddenDeathRepeat(row.input)).toEqual(row.result);
+});
+
+test("native utility logic: worm poison", { tag: "@logic" }, () => {
   for (const row of poison.health_cases)
     expect({ body: row.input, calls: nativeSuddenDeathHealth(row.hp, row.amount), random: 17 }).toEqual(row.result);
   for (const row of poison.cases) {
@@ -128,6 +143,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       : row.operation === 'reset' ? nativeWormPoisonTurnReset(row.input) : row.input;
     expect({ body, calls, random }).toEqual(row.result);
   }
+});
+
+test("native utility logic: crate transfer", { tag: "@logic" }, () => {
   for (const row of transfer.stat_cases) {
     const keys = ['weaponCrates', 'utilityCrates', 'healthCrates', 'donorCrates'];
     const stats = Object.fromEntries(keys.map(key => [key, row.count]));
@@ -151,6 +169,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     });
     expect({ hp, recipient: stock(1), donor: stock(2) }).toEqual(row.output);
   }
+});
+
+test("native utility logic: pickup candidate", { tag: "@logic" }, () => {
   for (const row of pickup.cases) {
     const queries = [], actor = { ...row.actor, type: 11 };
     const candidates = row.candidates.map(c => c.self ? actor : { ...c });
@@ -162,8 +183,14 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result ? candidates.indexOf(result) : -1).toBe(row.selected);
     expect(queries).toEqual(row.queries);
   }
+});
+
+test("native utility logic: crate events", { tag: "@logic" }, () => {
   for (const row of crateEvents.cases)
     expect(nativeCrateEvent(row.input, row.event)).toEqual(row.output);
+});
+
+test("native utility logic: crate contact", { tag: "@logic" }, () => {
   for (const row of crateContact.cases) {
     const calls = [];
     nativeCrateContact(row, row.side, row.suppress, {
@@ -173,6 +200,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     });
     expect(calls).toEqual(row.calls);
   }
+});
+
+test("native utility logic: text images", { tag: "@logic" }, () => {
   for (const row of textImages.cases) {
     const state = { ...row.initial };
     for (const step of row.sequence) {
@@ -189,6 +219,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       expect(state).toEqual(step.state);
     }
   }
+});
+
+test("native utility logic: crate draw", { tag: "@logic" }, () => {
   for (const row of crateDraw.cases) {
     const calls = [], queue = new NativeSpriteDrawQueue();
     nativeDrawCrate(row.body, row.scene, {
@@ -212,10 +245,16 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       (...args) => rendered.push(['image', ...args]));
     expect(rendered).toEqual(row.rendered);
   }
+});
+
+test("native utility logic: crate state and art", { tag: "@logic" }, () => {
   for (const row of crateState.cases) {
     expect(nativeCrateState(row.input, row.state)).toEqual(row.output);
     expect(nativeCrateArt(row.input)).toEqual(row.art);
   }
+});
+
+test("native utility logic: crate placement", { tag: "@logic" }, () => {
   for (const row of crateBody.cases) {
     const base = nativeBodyBase(row.friction, 11, 6);
     for (const [key, value] of Object.entries(base)) expect(value).toBe(row.before[key]);
@@ -237,6 +276,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result).toEqual(row.after);
     expect(events).toEqual(row.events);
   }
+});
+
+test("native utility logic: crate tick", { tag: "@logic" }, () => {
   for (const row of crateTick.cases) {
     const events = [];
     let busy = 0;
@@ -258,12 +300,18 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
   }
+});
+
+test("native utility logic: crate schemes and content pool", { tag: "@logic" }, () => {
   expect(crateSchemes.cases.map(row=>createNativeCrateScheme(row.resource_id,row.scene)))
     .toEqual(crateSchemes.cases.map(row=>({pool:row.pool,used:[],ammo:row.ammo})));
   for (const row of crateContentPool.schemes)
     expect(createNativeCrateScheme(row.resource_id,{tall:row.tall}).pool).toEqual(row.pool);
   for (const row of crateContentPool.cases)
     expect(nativeCrateContentPool(row.initial,row.scene,slot=>row.descriptors[slot])).toEqual(row.output);
+});
+
+test("native utility logic: nearest body", { tag: "@logic" }, () => {
   for (const row of nearestBody.cases) {
     const calls=[];
     expect(nativeNearestBody(row.bodies,row.x,row.y,row.flags,{
@@ -272,6 +320,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     })).toBe(row.result);
     expect(calls).toEqual(row.calls);
   }
+});
+
+test("native utility logic: crate spawn search and shower placement", { tag: "@logic" }, () => {
   for (const row of [...crateSpawnSearch.cases,...crateShowerPlacement.cases,...crateShowerNearest.cases]) {
     let rng=row.seed; const calls=[];
     const host={
@@ -306,15 +357,24 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(calls.length).toBe(row.call_count);
     expect(createHash('sha256').update(JSON.stringify(calls)).digest('hex')).toBe(row.calls_sha256);
   }
+});
+
+test("native utility logic: crate visibility", { tag: "@logic" }, () => {
   for (const row of crateVisibility.cases)
     expect(nativeCrateContentsVisible(row.team,row.visible,row.controller,row.flags)).toBe(row.result);
   for (const row of crateVisibility.special)
     expect(nativeSpecialCrateContent(row.slot)).toBe(row.result);
+});
+
+test("native utility logic: automatic utilities", { tag: "@logic" }, () => {
   for (const row of automatic.cases) {
     const result = nativeAutomaticUtilities(row.input, row.available, row.bits);
     expect(result.body).toEqual(row.output);
     expect(row.counts.map((count, i) => result.cleared.includes(67 + i) ? 0 : count)).toEqual(row.after);
   }
+});
+
+test("native utility logic: crate shower tick", { tag: "@logic" }, () => {
   for (const row of [...shower.cases,...shower.schemes]) {
     const events = [];
     let busy = 0;
@@ -331,6 +391,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(busy).toBe(row.busy);
   }
+});
+
+test("utility inventory exposes the movement and support kit", { tag: "@logic" }, () => {
   const loadout = freshUtilities();
   expect(UTILITY_KINDS).toEqual([
     "bungee",
@@ -357,6 +420,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(loadout.doubledamage).toBe(0);
   expect(loadout.doubletime).toBe(0);
   expect(UTILITIES.teleport.label).toBe("Teleport");
+});
+
+test("native utility logic: flame chain burns a target and burns out", { tag: "@logic" }, () => {
   {
     const pool = Array(200).fill(null);
     let counter = 0, frame = 0, created = 0, burns = 0, hits = 0;
@@ -401,8 +467,14 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(hits).toBeGreaterThan(0);
     expect(pool.filter(Boolean)).toHaveLength(0);
   }
+});
+
+test("native utility logic: barrel art", { tag: "@logic" }, () => {
   for (const row of barrelArt.cases)
     expect(nativeBarrelArt(row.body, row.frame, row.rank)).toEqual(row.request);
+});
+
+test("native utility logic: barrel contact", { tag: "@logic" }, () => {
   for (const row of barrelContacts.cases) {
     const calls = [];
     nativeBarrelContact(row, row.side, row.suppress, {
@@ -412,6 +484,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     });
     expect(calls).toEqual(row.calls);
   }
+});
+
+test("native utility logic: barrel body", { tag: "@logic" }, () => {
   for (const row of barrelBodies.cases) {
     const queries = [];
     const body = nativeBarrelBody(row.x, row.y, row.settle, row.water, row.friction, (x, y, b) => {
@@ -421,6 +496,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(body).toEqual(row.body);
     expect(queries).toEqual(row.queries);
   }
+});
+
+test("native utility logic: barrel tick", { tag: "@logic" }, () => {
   for (const row of barrelTicks.cases) {
     const events = [];
     const result = nativeBarrelTick(row.input, row.bottom, {
@@ -437,11 +515,17 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(events).toEqual(row.events);
     expect(result.deleted).toBe(row.events.some(event => event[0] === "delete"));
   }
+});
+
+test("native utility logic: barrel hit", { tag: "@logic" }, () => {
   for (const row of barrelHits.cases) {
     const packet = [...row.packet];
     expect(nativeBarrelHit(row.input, row.event, packet)).toEqual(row.output);
     expect(packet[5]).toBe(row.report);
   }
+});
+
+test("native utility logic: barrel detonation", { tag: "@logic" }, () => {
   for (const row of barrelDetonation.cases) {
     const events = []; let ordinal = 0;
     nativeBarrelDetonation(row.x, row.y, {
@@ -454,6 +538,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     });
     expect(events).toEqual(row.events);
   }
+});
+
+test("native utility logic: projectile fire", { tag: "@logic" }, () => {
   for (const row of projectileFire.cases) {
     const events = [];
     nativeProjectileFire(row.input, row.x, row.y, {
@@ -464,17 +551,29 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     });
     expect(events).toEqual(row.events);
   }
+});
+
+test("native utility logic: flame events", { tag: "@logic" }, () => {
   for (const row of flameEvents.cases) {
     const record = Array(11).fill(0); record[10] = row.input.persistent;
     expect(nativeFlameEvent(row.input, record, row.event)).toEqual(row.output);
   }
+});
+
+test("native utility logic: flame blast", { tag: "@logic" }, () => {
   for (const row of flameBlasts.cases)
     expect(nativeFlameBlast(row.input, row.packet, row.extent)).toEqual(row.output);
+});
+
+test("native utility logic: flame art", { tag: "@logic" }, () => {
   for (const row of flameArt.cases) {
     const result = nativeFlameArt(row.input);
     expect(result.body).toEqual(row.output);
     expect([result.request]).toEqual(row.events);
   }
+});
+
+test("native utility logic: flame tick", { tag: "@logic" }, () => {
   for (const row of flameTicks.cases) {
     const events = [];
     const result = nativeFlameTick(row.input, row.record, row, {
@@ -494,6 +593,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       deleted: row.events.some(event => event[0] === 'delete') });
     expect(events).toEqual(row.events);
   }
+});
+
+test("native utility logic: flame hit", { tag: "@logic" }, () => {
   for (const row of flameHits.cases) {
     const events = []; let visualIndex = 0;
     const result = nativeFlameHit(row.input, row.candidates, {
@@ -506,6 +608,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result).toEqual(row.output);
     expect(events).toEqual(row.events);
   }
+});
+
+test("native utility logic: flame spread and pool", { tag: "@logic" }, () => {
   for (const row of flameSpread.spread) {
     const events = []; let probes = 0;
     const result = nativeFlameSpread(row.record, {
@@ -527,6 +632,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(pool.flatMap((entry, i) => entry === body ? [i] : [])).toEqual(row.ownerSlots);
     expect(events).toEqual(row.events);
   }
+});
+
+test("native utility logic: flame motion", { tag: "@logic" }, () => {
   for (const row of flameMotion.cases) {
     const events = []; let randomIndex = 0;
     const result = nativeFlameMotion(row.input, {
@@ -541,6 +649,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result).toEqual({ body: row.output, result: row.result });
     expect(events).toEqual(row.events);
   }
+});
+
+test("native utility logic: flame body", { tag: "@logic" }, () => {
   for (const row of flameBodies.cases) {
     let randomIndex = 0;
     const result = nativeFlameBody(row.record, row.frame, row.counter,
@@ -548,6 +659,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result).toEqual({ body: row.output, record: row.copied, nextCounter: row.nextCounter });
     expect(randomIndex).toBe(2);
   }
+});
+
+test("native utility logic: crate contents launch the crate projectile", { tag: "@logic" }, () => {
   const sheepBlock = schemeWeapons.schemes.find(s => s.resource_id === 195).weapons[23].slice(11, 105);
   // The copied crate block precedes the later sheep scheme offset override.
   sheepBlock[25] = 0; sheepBlock[3] = 126; sheepBlock[4] = 0;
@@ -580,6 +694,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
       expect(projectile.nativeRelease).toBeUndefined();
     }
   }
+});
+
+test("native utility logic: worm pickup", { tag: "@logic" }, () => {
   for (const row of wormPickup.contacts) {
     const calls = [];
     const intercept = nativeWormPickupContact(row.input, row.otherType,
@@ -598,6 +715,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     const value = nativeWormPickupQuery(row.input, (...args) => { calls.push(args); return row.query_result; });
     expect({ body: row.input, calls, value }).toEqual(row.result);
   }
+});
+
+test("native utility logic: crate hit", { tag: "@logic" }, () => {
   for (const row of crateHits.direct_cases) {
     expect(nativeCrateDirectHit(row.input)).toEqual(row.output);
     expect(row.packet_out).toEqual(row.packet);
@@ -607,6 +727,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(nativeCrateHit(row.input, packet, row.extentFactor)).toEqual(row.output);
     expect(packet[5]).toBe(row.report);
   }
+});
+
+test("native utility logic: crate detonation", { tag: "@logic" }, () => {
   for (const row of detonation.cases) {
     const events = [];
     let allocationIndex = 0;
@@ -626,6 +749,9 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
     expect(result.body).toEqual({ ...row.input, destroyed: row.destroyed });
     expect(result.missionStatus).toBe(row.missionStatus);
   }
+});
+
+test("native utility logic: crate body settles on terrain", { tag: "@logic" }, () => {
   const collide = (x, y, body) => nativeCollisionBitmapOverlap(
     shapes.shapes[body.shape], x >> 16, y >> 16,
     { width: 1000, height: 1000, left: 0, top: 0, solid: (x, y) => y >= 500 },
@@ -653,19 +779,40 @@ test("utility inventory exposes the movement and support kit", { tag: "@logic" }
   expect(collide(body.x, body.y + 65536, body)).toBe(1);
 });
 
+
 test("crate shower drops native supply crates", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.setUtility(0, "crateshower", 1));
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().utilities.crateshower))
-    .toBe(0);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().crates.length), {
-      timeout: 180000,
-    })
-    .toBeGreaterThanOrEqual(5);
+  await page.waitForFunction(() => window.siege?.getState().assetsReady && window.siege.getState().phase === "aim");
+  // Grant the shower to the team now playing (the opening team is random) and
+  // drive it synchronously. Count crates as they appear: on some maps a
+  // dropped crate lands in water or is picked up before the next one falls.
+  // A fixed seed gives the same map and drop sites every run: the native drop
+  // routine can fail to place crates on some random maps.
+  await page.evaluate(async () => {
+    window.siege.debug.setSimulationPaused(true);
+    await window.siege.debug.resetSeed(42);
+  });
+  const result = await page.evaluate(() => {
+    window.siege.debug.setSimulationPaused(false);
+    for (let frame = 0; frame < 2000 && window.siege.getState().phase !== "aim"; frame++)
+      window.siege.debug.advanceReplayFrames(1);
+    const team = window.siege.getState().team;
+    let present = new Set(window.siege.getState().crates.map((crate) => crate.nativeOrderId));
+    window.siege.debug.setUtility(team, "crateshower", 1);
+    let dropped = 0, frames = 0;
+    for (; frames < 3000 && dropped < 5; frames++) {
+      window.siege.debug.advanceReplayFrames(1);
+      const now = new Set(window.siege.getState().crates.map((crate) => crate.nativeOrderId));
+      for (const id of now) if (!present.has(id)) dropped++;
+      present = now;
+    }
+    return { dropped, frames, left: window.siege.getState().utilityAmmo[team].crateshower };
+  });
+  // 004B6xxx crate shower (automatic-utilities.js): five supply crates.
+  expect(result.left).toBe(0);
+  expect(result.dropped).toBe(5);
 });
 
 test("laser sight draws the native aim ray until it is toggled off", async ({

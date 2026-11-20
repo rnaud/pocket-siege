@@ -9,8 +9,12 @@ async function startAiMatch(page, seed = 42) {
   await page.locator('[data-mode="ai"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  await page.evaluate(async (value) => { await window.siege.debug.resetSeed(value); }, seed);
-  await page.locator("#skip").click();
+  // Pause across the reseed so no real-time frame runs before the recorded
+  // ones: every run then replays the same match.
+  await page.evaluate(async (value) => {
+    window.siege.debug.setSimulationPaused(true);
+    await window.siege.debug.resetSeed(value);
+  }, seed);
 }
 
 // Advance logic frames and record each CPU turn: AI states, the controller
@@ -19,6 +23,9 @@ async function startAiMatch(page, seed = 42) {
 async function recordCpuTurns(page, { turns = 2, frames = 9000, prepare = null } = {}) {
   return page.evaluate(({ turns, frames, prepare }) => {
     const setup = prepare ? new Function("state", "debug", prepare) : null;
+    // Resume and hand the turn to the CPU inside this synchronous call.
+    window.siege.debug.setSimulationPaused(false);
+    document.querySelector("#skip")?.click();
     const out = [];
     let turn = null;
     for (let f = 0; f < frames && out.length < turns; f++) {
@@ -80,8 +87,7 @@ test("computer turns run the original AI end to end", async ({ page }) => {
 test("a CPU turn walks its planned path, aims, charges, fires and retreats", async ({ page }) => {
   test.setTimeout(30000);
   await startAiMatch(page);
-  // Scan several turns: whether a turn needs to walk depends on the map draw.
-  const turns = await recordCpuTurns(page, { turns: 6, frames: 20000 });
+  const turns = await recordCpuTurns(page, { turns: 3 });
   // A charged release: fire up on a later frame than its fire down (004F3250).
   const chargedRelease = (events) => events.findIndex((e, i) => e.event === 0x40f &&
     events.slice(0, i).some((d) => d.event === 0x40e && d.f < e.f));

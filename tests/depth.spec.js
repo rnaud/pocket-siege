@@ -167,7 +167,14 @@ for (const layout of ["caverns", "bridges"])
     await page.locator("#fire").click();
     const box = await page.locator("#arena").boundingBox();
     await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
-    await expect
-      .poll(() => page.evaluate(() => window.siege.getState().bombs.length))
-      .toBe(5);
+    // Step the strike synchronously: all five bombs are in flight at once.
+    const peak = await page.evaluate(() => {
+      let most = 0;
+      for (let frame = 0; frame < 1500 && most < 5; frame++) {
+        window.siege.debug.advanceReplayFrames(1);
+        most = Math.max(most, window.siege.getState().bombs.length);
+      }
+      return most;
+    });
+    expect(peak).toBe(5);
   });

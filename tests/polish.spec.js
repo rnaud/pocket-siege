@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { Terrain, W, H } from "../src/physics.js";
 import { cameraView } from "../src/camera.js";
+import { advanceFrames } from "./helpers/game-sim.js";
 test("portrait camera preserves world proportions and clamps to map", { tag: "@logic" }, () => {
   const v = cameraView(100, 350, 1, 0.6);
   expect(v.w / v.h).toBeCloseTo(0.6);
@@ -31,7 +32,8 @@ test("compact arsenal, overview and charge work across layouts", async ({
   await page.locator('[data-weapon="grenade"]').click();
   await expect(page.locator(".weapon-panel")).not.toBeVisible();
   await page.keyboard.down("Space");
-  await page.waitForTimeout(450);
+  // Charge for simulated time instead of waiting on the wall clock.
+  await advanceFrames(page, 22);
   await expect(page.locator("#worm-charge")).toBeVisible();
   await page.keyboard.up("Space");
   await page.setViewportSize({ width: 390, height: 844 });
@@ -45,12 +47,13 @@ test("compact arsenal, overview and charge work across layouts", async ({
   await expect(page.locator("#arena")).not.toHaveClass(/portrait-camera/);
   await page.locator("#overview-toggle").click();
   await expect(page.locator("#arena")).toHaveClass(/portrait-camera/);
-  await page.waitForTimeout(1500);
+  // Let the camera settle (in simulated time) before the reference screenshot.
+  await advanceFrames(page, 75);
   await page.screenshot({
     path: `test-results/${info.project.name}-polish-portrait.png`,
   });
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.waitForTimeout(300);
+  await advanceFrames(page, 15);
   await page.screenshot({
     path: `test-results/${info.project.name}-polish-desktop.png`,
   });

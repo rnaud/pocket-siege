@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { Terrain, stepWorm, bodyBlocked } from "../src/physics.js";
+import { advanceUntil } from "./helpers/game-sim.js";
 
 test("seeded maps provide six stable, clear starting positions", { tag: "@logic" }, () => {
   for (const layout of [
@@ -74,12 +75,11 @@ test("homing selects a fixed world target through the current camera", async ({
   await page.screenshot({
     path: test.info().outputPath("original-target.png"),
   });
+  // Charge for 500 ms of simulated time rather than wall-clock time.
   await page.locator("#fire").dispatchEvent("pointerdown", { pointerId: 1 });
-  await page.waitForTimeout(500);
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(25));
   await page.locator("#fire").dispatchEvent("pointerup", { pointerId: 1 });
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().shotCount))
-    .toBe(1);
+  expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
   const fired = await page.evaluate(() => window.siege.getState());
   if (fired.projectile)
     expect(fired.projectile.target).toEqual(state.homingTarget);
@@ -105,7 +105,7 @@ for (const kind of ["cluster", "napalm", "holy"]) {
     await page.locator("#angle").fill("90");
     await page.locator("#angle").dispatchEvent("input");
     await page.locator("#fire").dispatchEvent("pointerdown", { pointerId: 1 });
-    await page.waitForTimeout(500);
+    await page.evaluate(() => window.siege.debug.advanceReplayFrames(25));
     await page.locator("#fire").dispatchEvent("pointerup", { pointerId: 1 });
     if (kind === "holy") {
       const timer = await page.evaluate(() => window.siege.getState().projectile?.nativeTimer);
@@ -114,14 +114,10 @@ for (const kind of ["cluster", "napalm", "holy"]) {
       expect(timer.delay).toBe(1800);
       expect(timer.waitForRest).toBe(1);
     }
-    await expect
-      .poll(() =>
-        page.evaluate(() => window.siege.getState().lastShot?.impact?.kind),
-        // Holy uses a fixed native3s fuse plus1.8s after rest. Wall time also
-        // includes landing and slower simulation delivery on CI browsers.
-        { timeout: kind === "holy" || kind === "napalm" ? 15000 : 5000 },
-      )
-      .toBe(kind);
+    // Holy uses a fixed native 3 s fuse plus 1.8 s after rest; step the
+    // simulation through it instead of waiting in wall time.
+    await advanceUntil(page, (s, kind) => s.lastShot?.impact?.kind === kind,
+      { arg: kind, max: 750, step: 5, label: `${kind} detonation` });
     expect(
       (await page.evaluate(() => window.siege.getState())).explosions,
     ).toBeGreaterThan(0);

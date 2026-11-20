@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import entry from "./fixtures/armageddon/parachute.json" with { type: "json" };
+import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
 
 test("parachute uses the native entry queue, canopy loop and landing fold", async ({
   page,
@@ -102,31 +103,21 @@ test("live falling worm deploys original canopy, slows continuously and folds on
   expect(state.worms[0].originalCanvas).toEqual({ width: 90, height: 90 });
   expect(state.worms[0].vy).toBeGreaterThanOrEqual(-70);
   expect(state.parachuteArmed).toBe(false);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().worms[0].y))
-    .toBeLessThan(500);
+  // Step the slow descent synchronously instead of watching it in real time.
+  await advanceUntil(page, (s) => s.worms[0].y < 500, { label: "canopy descends" });
   await page.screenshot({ path: info.outputPath("original-parachute.png") });
-  const seen = await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const sprites = new Set();
-        const deadline = performance.now() + 10000;
-        function sample() {
-          const w = window.siege.getState().worms[0];
-          sprites.add(w.originalSprite);
-          if (/^wparbak[ud]?$/.test(w.originalSprite) || performance.now() > deadline)
-            resolve([...sprites]);
-          else requestAnimationFrame(sample);
-        }
-        sample();
-      }),
-  );
-  expect(seen.some(name=>/^wparbak[ud]?$/.test(name))).toBe(true);
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.siege.getState().worms[0].originalSprite),
-    )
-    .not.toMatch(/^wparbak[ud]?$/);
+  await advanceUntil(page, (s) => s.worms[0].ground, { max: 3000, label: "canopy lands" });
+  // Worm sprites are chosen by the render loop: show one frame of the landing.
+  const folded = await page.evaluate(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    return window.siege.getState().worms[0].originalSprite;
+  });
+  expect(folded).toMatch(/^wparbak[ud]?$/);
+  // The 13-tick native landing fold then returns to ordinary art.
+  await advanceFrames(page, 30);
+  expect(
+    await page.evaluate(() => window.siege.getState().worms[0].originalSprite),
+  ).not.toMatch(/^wparbak[ud]?$/);
   expect(await page.evaluate(() => window.siege.getState().worms[0].hp)).toBe(
     100,
   );

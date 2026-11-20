@@ -54,12 +54,11 @@ test("original walking strips preserve pixels, follow slopes and stop/reset with
     const { decodeSprite, spriteFrameRGBA } =
       await import("/src/armageddon/sprite.js");
     let mismatch = 0;
-    for (const name of ["wwalk", "wwalku", "wwalkd"]) {
-      const source = decodeSprite(
-        await fetch(`/armageddon/sprites/${name}.spr`).then((r) =>
-          r.arrayBuffer(),
-        ),
-      );
+    const strips = ["wwalk", "wwalku", "wwalkd"];
+    const buffers = await Promise.all(strips.map((name) =>
+      fetch(`/armageddon/sprites/${name}.spr`).then((r) => r.arrayBuffer())));
+    for (const [n, name] of strips.entries()) {
+      const source = decodeSprite(buffers[n]);
       for (let i = 0; i < source.frames.length; i++) {
         const pixels = originalVisual(name, i)
           .map.image.getContext("2d")

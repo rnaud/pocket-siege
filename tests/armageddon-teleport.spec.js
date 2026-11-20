@@ -4,6 +4,7 @@ import {
   nativeTeleportTick,
   nativeTeleportRenderProgress,
 } from "../src/armageddon/teleport.js";
+import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
 test("teleport progress, relocation and completion match original executable", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeTeleportTick(row.input)).toEqual(row.output);
@@ -103,22 +104,19 @@ test("live teleport shows the dissolve before moving and holds the turn until it
   let state = await page.evaluate(() => window.siege.getState());
   expect(state.worms[0].x).toBe(before.worms[0].x);
   expect(state.team).toBe(0);
-  // Observe relocation before taking a screenshot: capture can consume the
-  // entire rematerialization interval on a busy browser worker.
-  await expect
-    .poll(() => page.evaluate((previousX) => {
-      const state = window.siege.getState();
-      return {
-        moved: state.worms[0].x !== previousX,
-        team: state.team,
-        dissolving: /^wteldsv[ud]?$/.test(state.worms[0].originalSprite),
-      };
-    }, before.worms[0].x), { intervals: [16] })
-    .toEqual({ moved: true, team: 0, dissolving: true });
+  // Step the dissolve synchronously to the relocation tick, then render one
+  // frame: the worm has moved, keeps the dissolve strip and still holds the turn.
+  await advanceUntil(page, (s, x) => s.worms[0].x !== x, { arg: before.worms[0].x, label: "relocation" });
+  state = await page.evaluate(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    return window.siege.getState();
+  });
+  expect(state.team).toBe(0);
+  expect(state.worms[0].originalSprite).toMatch(/^wteldsv[ud]?$/);
   await page.screenshot({ path: info.outputPath("original-teleport.png") });
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.siege.getState().worms[0].originalSprite),
-    )
-    .not.toMatch(/^wteldsv[ud]?$/);
+  // Rematerialization completes 50 ticks after relocation.
+  await advanceFrames(page, 60);
+  expect(
+    await page.evaluate(() => window.siege.getState().worms[0].originalSprite),
+  ).not.toMatch(/^wteldsv[ud]?$/);
 });

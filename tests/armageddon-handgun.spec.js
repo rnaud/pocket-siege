@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { nativeHitscanWeapon } from "../src/armageddon/hitscan-art.js";
+import { advanceUntil } from "./helpers/misc-advance.js";
 
 test("handgun reads original resource195 bullet and burst fields", { tag: "@logic" }, () => {
   const config = nativeHitscanWeapon("handgun");
@@ -33,42 +34,37 @@ async function start(page) {
 
 test("handgun fires six timed bullets for one ammo and then retreats", async ({ page }) => {
   await start(page);
-  await page.evaluate(() => {
-    // Sample the recorded simulation release tick, not the later render tick.
-    window.bulletFrames = [];
-    const sample = () => {
-      const s = window.siege.getState();
-      if (s.shotCount > window.bulletFrames.length) window.bulletFrames.push(s.lastShot.frame);
-      if (window.bulletFrames.length < 6) window.bulletSample = requestAnimationFrame(sample);
-    };
-    sample();
-  });
   await page.locator("#fire").click();
   await expect(page.locator("#fire")).toBeDisabled();
-  await expect.poll(() => page.evaluate(() => window.siege.getState().shotCount)).toBe(6);
-  await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
-  const state = await page.evaluate(() => window.siege.getState());
+  // Step the burst synchronously and sample the recorded simulation release
+  // tick of each bullet, not a later render tick.
+  const { frames, state } = await page.evaluate(() => {
+    const frames = [];
+    for (let tick = 0; tick < 1000; tick++) {
+      const s = window.siege.getState();
+      if (s.shotCount > frames.length) frames.push(s.lastShot.frame);
+      if (s.shotCount >= 6 && s.preparing === null) return { frames, state: s };
+      window.siege.debug.advanceReplayFrames(1);
+    }
+    return { frames, state: window.siege.getState() };
+  });
+  expect(state.shotCount).toBe(6);
+  expect(state.preparing).toBeNull();
   expect(state.ammo[0].handgun).toBe(0);
   expect(state.phase).toBe("settle");
-  const frames = await page.evaluate(() => { cancelAnimationFrame(window.bulletSample); return window.bulletFrames; });
   expect(frames).toHaveLength(6);
   for (let i = 1; i < frames.length; i++) expect(frames[i] - frames[i - 1]).toBeGreaterThanOrEqual(29);
 });
 
 test("damage interrupts a spent handgun burst without firing remaining bullets", async ({ page }) => {
   await start(page);
-  await page.evaluate(() => {
-    // Interrupt on the first rendered shot, without a remote polling round trip.
-    const interrupt = () => {
-      if (window.siege.getState().shotCount >= 1) window.siege.debug.hit(0, 1);
-      else requestAnimationFrame(interrupt);
-    };
-    requestAnimationFrame(interrupt);
-  });
   await page.locator("#fire").click();
-  await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
-  await expect.poll(() => page.evaluate(() => window.siege.getState().team)).toBe(1);
-  await page.waitForTimeout(800);
+  // Interrupt on the first released shot, stepping the simulation synchronously.
+  await advanceUntil(page, (s) => s.shotCount >= 1, { label: "first bullet" });
+  await page.evaluate(() => window.siege.debug.hit(0, 1));
+  await advanceUntil(page, (s) => s.preparing === null && s.team === 1, { label: "burst cancelled and turn passed" });
+  // Keep stepping well past the 500 ms bullet interval: no more bullets fire.
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.shotCount).toBe(1);
   expect(state.ammo[0].handgun).toBe(0);

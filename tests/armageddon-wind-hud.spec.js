@@ -11,12 +11,11 @@ test("original wind strips retain source pixels and clip left/right strength wit
       await import("/src/armageddon/wind-hud.js");
     const { decodeImage, imageRGBA } = await import("/src/armageddon/image.js");
     let mismatch = 0;
-    for (const name of ["windl", "windr"]) {
-      const image = decodeImage(
-        await fetch(`/armageddon/media/gfx/gfx/${name}.img`).then((r) =>
-          r.arrayBuffer(),
-        ),
-      );
+    const names = ["windl", "windr"];
+    const buffers = await Promise.all(names.map((name) =>
+      fetch(`/armageddon/media/gfx/gfx/${name}.img`).then((r) => r.arrayBuffer())));
+    for (const [n, name] of names.entries()) {
+      const image = decodeImage(buffers[n]);
       const canvas = originalWindStrip(name),
         pixels = canvas.getContext("2d").getImageData(0, 0, 96, 13).data;
       const expected = imageRGBA(image);

@@ -4,6 +4,7 @@ import {
   nativePreparation,
   nativePreparationTick,
 } from "../src/armageddon/preparation.js";
+import { fastForward, advance } from "./helpers/misc-fast-forward.js";
 const fixture = JSON.parse(
   fs.readFileSync(
     new URL("./fixtures/armageddon/preparation.json", import.meta.url),
@@ -109,14 +110,13 @@ test("live shotgun waits to spend ammo and release damage; interruption cancels 
   await expect(page.locator("#fire")).toBeDisabled();
   await page.locator("#help").click();
   const paused = await page.evaluate(() => window.siege.getState().preparing);
-  await page.waitForTimeout(150);
+  // Stepping 10 logic ticks while help is open must not progress preparation.
+  await advance(page, 10);
   expect(await page.evaluate(() => window.siege.getState().preparing)).toEqual(
     paused,
   );
   await page.locator(".close-help").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().shotCount))
-    .toBe(1);
+  await fastForward(page, (s) => s.shotCount === 1);
   expect(
     await page.evaluate(() => window.siege.getState().ammo[0].shotgun),
   ).toBe(2);
@@ -138,10 +138,9 @@ test("live shotgun waits to spend ammo and release damage; interruption cancels 
   await page.locator("#fire").click();
   const interrupted = await page.evaluate(() => window.interruptedPreparation);
   expect(interrupted).toEqual({ preparing: "shotgun", shots: 1 });
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().preparing))
-    .toBeNull();
-  await page.waitForTimeout(1000);
+  await fastForward(page, (s) => !s.preparing);
+  // The cancelled 46-tick preparation would have released within 50 ticks.
+  await advance(page, 50);
   expect(await page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
   expect(
     await page.evaluate(() => window.siege.getState().shotgunRemaining),

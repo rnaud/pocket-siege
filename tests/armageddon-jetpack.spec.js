@@ -55,19 +55,11 @@ test("jetpack turns through original poses and renders thrust flames", async ({
     const { decodeSprite, spriteFrameRGBA } =
       await import("/src/armageddon/sprite.js");
     let mismatch = 0;
-    for (const name of [
-      "wjetfly1",
-      "wjetfly2",
-      "wjetfly3",
-      "wjetfly4",
-      "wjetflmb",
-      "wjetflmd",
-    ]) {
-      const sprite = decodeSprite(
-        await fetch(`/armageddon/sprites/${name}.spr`).then((r) =>
-          r.arrayBuffer(),
-        ),
-      );
+    const names = ["wjetfly1", "wjetfly2", "wjetfly3", "wjetfly4", "wjetflmb", "wjetflmd"];
+    const buffers = await Promise.all(names.map((name) =>
+      fetch(`/armageddon/sprites/${name}.spr`).then((r) => r.arrayBuffer())));
+    for (const [n, name] of names.entries()) {
+      const sprite = decodeSprite(buffers[n]);
       for (let i = 0; i < sprite.frames.length; i++) {
         const pixels = originalVisual(name, i)
           .map.image.getContext("2d")

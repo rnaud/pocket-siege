@@ -32,12 +32,12 @@ test("all water sprites preserve source pixels; submerged projectiles use their 
       .default;
     let mismatches = 0;
     const decoded = new Map();
-    for (const { name } of Object.values(bank.sprites)) {
-      const sprite = decodeSprite(
-        await fetch(`/armageddon/media/water/blue/water/${name}.spr`).then(
-          (r) => r.arrayBuffer(),
-        ),
-      );
+    // Fetch every sprite concurrently; comparison below stays per frame.
+    const sources = await Promise.all(Object.values(bank.sprites).map(({ name }) =>
+      fetch(`/armageddon/media/water/blue/water/${name}.spr`).then((r) => r.arrayBuffer())
+        .then((buffer) => [name, buffer])));
+    for (const [name, buffer] of sources) {
+      const sprite = decodeSprite(buffer);
       decoded.set(name, sprite);
       for (let index = 0; index < sprite.frames.length; index++) {
         let art;

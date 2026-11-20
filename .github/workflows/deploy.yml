@@ -37,6 +37,9 @@ jobs:
       - run: npm test -- --config=playwright.precommit.config.js --project=logic --workers=4 --shard=${{ matrix.shard }}/2
         env:
           RELATED_LOGIC_ONLY: '1'
+          # Weekly and on-demand runs check every captured executable case;
+          # pushes check the evenly spaced samples (tests/helpers/fixture-sample.js).
+          FULL_FIXTURES: ${{ github.event_name == 'schedule' || inputs.full_browser == true }}
   test:
     name: Browser checks (${{ matrix.shard }}/6)
     # Keep browser system dependencies on Playwright's supported Ubuntu release.
@@ -63,6 +66,7 @@ jobs:
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           FULL_BROWSER: ${{ github.event_name == 'schedule' || inputs.full_browser == true }}
+          FULL_FIXTURES: ${{ github.event_name == 'schedule' || inputs.full_browser == true }}
           CI_SHARD: ${{ matrix.shard }}/6
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/results.json
       - uses: actions/upload-artifact@v4

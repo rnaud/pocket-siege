@@ -3,6 +3,7 @@ import ticks from './fixtures/armageddon/axe.json' with {type:'json'};
 import receivers from './fixtures/armageddon/axe-receiver.json' with {type:'json'};
 import {nativeAxeTick} from '../src/armageddon/axe.js';
 import {nativeDirectHitResponse} from '../src/armageddon/direct-hit-response.js';
+import {fastForward, advance} from './helpers/misc-fast-forward.js';
 
 test('Axe animation thresholds, queues and hit windows match original executable', { tag: "@logic" }, () => {
   expect(ticks.cases).toHaveLength(288);
@@ -35,27 +36,21 @@ test('live Axe plays all three stages and halves eligible targets only once', as
   const targets = await prepare(page);
   await page.locator('#sound').click();
   await expect(page.locator('#angle')).toBeDisabled();
-  await page.evaluate(() => {
-    window.axeFrames = [];
-    const sample = () => {
-      const s = window.siege.getState();
-      const sprite = s.worms[0].originalSprite;
-      if (!window.axeFrames.includes(sprite)) window.axeFrames.push(sprite);
-      if (!s.shotCount || s.preparing) requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
-  });
+  // Fast-forward the swing while still rendering, sampling every displayed pose.
+  const running = fastForward(page, s => s.shotCount === 1 && !s.preparing,
+    { sample: s => ({ sprite: s.worms[0].originalSprite, shots: s.shotCount,
+      fireDisabled: document.querySelector('#fire').disabled }) });
   await page.locator('#fire').click();
-  await expect.poll(() => page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
-  await expect(page.locator('#fire')).toBeDisabled();
-  await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
+  const run = await running;
+  const axeFrames = [...new Set(run.samples.map(s => s.sprite))];
+  expect(run.samples.some(s => s.shots === 1 && s.fireDisabled)).toBe(true);
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.ammo[0].axe).toBe(1);
   expect(state.worms[targets.ally].hp).toBe(50);
   expect(state.worms[targets.enemy].hp).toBe(50);
   expect(state.worms[targets.shooter].hp).toBe(100);
   expect(state.worms[targets.rear].hp).toBe(100);
-  expect(await page.evaluate(() => window.axeFrames)).toEqual(expect.arrayContaining(['waxelk2','waxeswn','waxebak']));
+  expect(axeFrames).toEqual(expect.arrayContaining(['waxelk2','waxeswn','waxebak']));
   await expect.poll(() => sounds.has('vikingaxerelease.wav') && sounds.has('vikingaxeimpact.wav')).toBe(true);
 });
 
@@ -64,8 +59,9 @@ test('hurt interrupts Axe after ammo is spent and prevents later swing hits', as
   await page.locator('#fire').click();
   await expect.poll(() => page.evaluate(() => window.siege.getState().shotCount)).toBe(1);
   await page.evaluate(() => window.siege.debug.hit(0,1));
-  await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
-  await page.waitForTimeout(1200);
+  await fastForward(page, s => !s.preparing);
+  // The swing's remaining hit windows would have passed within 60 ticks.
+  await advance(page, 60);
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.ammo[0].axe).toBe(1);
   expect(state.worms[targets.enemy].hp).toBe(100);

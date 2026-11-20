@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { advanceUntil, fastForward } from "./helpers/scenario-page.js";
 import fixture from "./fixtures/armageddon/airstrike.json" with { type: "json" };
 import mineStrike from "./fixtures/armageddon/mine-strike.json" with { type: "json" };
 import {
@@ -85,21 +86,6 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
   await page.locator(`[data-weapon="${kind}"]`).click();
   await page.locator("#fire").click();
   const box = await page.locator("#arena").boundingBox();
-  await page.evaluate(() => {
-    window.strikeCameraSamples = [];
-    function sample() {
-      const s = window.siege.getState();
-      window.strikeCameraSamples.push({
-        focus: s.nativeCameraFocus,
-        camera: s.camera,
-        aircraft: s.airstrikes.length,
-        missiles: s.bombs.length,
-      });
-      if (window.strikeCameraSamples.length < 1800)
-        window.strikeCameraFrame = requestAnimationFrame(sample);
-    }
-    sample();
-  });
   // Different native flight paths need different targets on this fixed map:
   // keep missiles on land without striking the central barrel with Air Strike.
   const targetX = kind === "airstrike" ? 0.75 : 0.5;
@@ -109,38 +95,26 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
   );
   expect(strike.sprite).toBe(carrier);
   expect(await page.evaluate(kind => window.siege.getState().ammo[0][kind], kind)).toBe(0);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().bombs.length), {
-      timeout: 10000,
-    })
-    .toBeGreaterThan(0);
-  const missiles = await page.evaluate(() => window.siege.getState().bombs);
+  // The flight runs several logic ticks per rendered frame; every frame
+  // samples the rendered camera.
+  const sample = (s) => ({ focus: s.nativeCameraFocus, camera: s.camera,
+    aircraft: s.airstrikes.length, missiles: s.bombs.length });
+  const released = await fastForward(page, (s) => s.bombs.length > 0,
+    { sample, perFrame: 4, label: "missile release" });
+  const missiles = released.state.bombs;
   expect(
     missiles.every((b) => b.sprite === sprite && b.nativeDamage === damage),
   ).toBe(true);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().bombs.length), {
-      timeout: 15000,
-    })
-    .toBe(0);
-  expect(
-    await page.evaluate(() => window.siege.getState().explosions),
-  ).toBeGreaterThan(0);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().airstrikes.length))
-    .toBe(0);
-  const samples = await page.evaluate(() => {
-    cancelAnimationFrame(window.strikeCameraFrame);
-    return window.strikeCameraSamples;
-  });
+  const resolved = await fastForward(page, (s) => s.bombs.length === 0 && s.airstrikes.length === 0,
+    { sample, perFrame: 4, label: "strike resolution" });
+  expect(resolved.state.explosions).toBeGreaterThan(0);
+  const samples = [...released.samples, ...resolved.samples];
   expect(samples.some((s) => s.aircraft && s.focus && s.camera.y > 0)).toBe(
     true,
   );
   expect(samples.some((s) => s.missiles && s.focus)).toBe(true);
   if (kind === "napalmstrike")
-    expect(
-      await page.evaluate(() => window.siege.getState().nativeFlames.length),
-    ).toBeGreaterThan(0);
+    expect(resolved.state.nativeFlames.length).toBeGreaterThan(0);
   // Burning napalm keeps the camera for many seconds; finish it in frames.
   expect(await page.evaluate(() => {
     for (let frames = 0; frames < 3000 && window.siege.getState().nativeCameraFocus; frames += 10)
@@ -284,20 +258,12 @@ test("live mine strike aircraft places five native mines", async ({ page }) => {
   const box = await page.locator("#arena").boundingBox();
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
   expect(await page.evaluate(() => window.siege.getState().ammo[0].minestrike)).toBe(0);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().mines.length), {
-      timeout: 15000,
-    })
-    .toBeGreaterThanOrEqual(before + 5);
+  await advanceUntil(page, (s, count) => s.mines.length >= count, { arg: before + 5, label: "five mines" });
   const mines = await page.evaluate(
     () => window.siege.getState().mines.slice(-5),
   );
   expect(mines.every((m) => m.arm !== undefined)).toBe(true);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().airstrikes.length), {
-      timeout: 15000,
-    })
-    .toBe(0);
+  await advanceUntil(page, (s) => s.airstrikes.length === 0, { label: "carrier exit" });
 });
 
 test("native mole squadron releases five mode-4 mole payloads", { tag: "@logic" }, () => {

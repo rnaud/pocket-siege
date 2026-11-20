@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
+  // Tests are independent pages; spread every file across all workers, as CI does.
+  fullyParallel: true,
   // Shared CI runners render in software and run several browsers per core;
   // give real-time cases room and retry once so one slow frame is reported
   // as flaky instead of failing the deploy.
@@ -17,7 +19,8 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- --port 5187 --strictPort",
     url: "http://127.0.0.1:5187",
-    reuseExistingServer: false,
+    // Local runs share one dev server between concurrent invocations; CI starts fresh.
+    reuseExistingServer: !process.env.CI,
   },
   projects: [
     // Native kernels and fixture comparisons run once; only browser behavior

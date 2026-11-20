@@ -77,16 +77,26 @@ test("live native damage totals reveal after settlement and lethal accounting st
     window.siege.debug.hit(0, 6);
     window.siege.debug.hit(0, 4);
   });
-  const labels = page.locator('.native-damage-number:visible');
-  // Read one frame atomically: the native totals expire after 72 simulation ticks.
-  await expect.poll(() => labels.evaluateAll(canvases => canvases.map(c => ({
-    label: c.getAttribute('aria-label'),
-    painted: c.width > 0,
-    animation: getComputedStyle(c).animationName,
-  })))).toEqual(Array.from({ length: 3 }, () => ({
+  // Advance the settlement and the 72-tick display synchronously, rendering a
+  // frame after every few ticks so the label canvases are painted and sampled.
+  const display = await page.evaluate(async () => {
+    const visible = () => [...document.querySelectorAll('.native-damage-number')]
+      .filter(c => !c.hidden && c.getClientRects().length)
+      .map(c => ({ label: c.getAttribute('aria-label'), painted: c.width > 0,
+        animation: getComputedStyle(c).animationName }));
+    let shown = null;
+    for (let i = 0; i < 300; i++) {
+      window.siege.debug.advanceReplayFrames(4);
+      await new Promise(requestAnimationFrame);
+      const labels = visible();
+      if (!shown && labels.length) shown = labels;
+      else if (shown && !labels.length) return { shown, remaining: 0 };
+    }
+    return { shown, remaining: visible().length };
+  });
+  expect(display).toEqual({ shown: Array.from({ length: 3 }, () => ({
     label: '10 damage', painted: true, animation: 'none',
-  })));
-  await expect(labels).toHaveCount(0);
+  })), remaining: 0 });
   const result = await page.evaluate(() => {
     const initial = window.siege.getState();
     const before = initial.worms.slice(3).map(w => w.hp);

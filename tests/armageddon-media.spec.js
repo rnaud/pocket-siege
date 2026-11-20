@@ -11,8 +11,17 @@ import { resolveOriginalMapId, randomOriginalMap } from "../src/armageddon/maps.
 import mapNames from "../src/armageddon/map-names.json" with { type: "json" };
 const root = new URL("../public/armageddon/", import.meta.url);
 const catalog = JSON.parse(fs.readFileSync(new URL("media.json", root)));
+// Deep-equality on large pixel buffers dominates test time; compare bytes
+// directly and report the first differing offset (-1 when identical).
+function firstByteMismatch(actual, expected) {
+  const a = Buffer.from(actual.buffer ?? actual, actual.byteOffset ?? 0, actual.byteLength ?? actual.length);
+  const b = Buffer.from(expected.buffer ?? expected, expected.byteOffset ?? 0, expected.byteLength ?? expected.length);
+  if (a.equals(b)) return -1;
+  for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return i;
+  return Math.min(a.length, b.length);
+}
 
-test("every imported visual preserves its original bytes and native containers decode", { tag: "@logic" }, () => {
+test("imported maps resolve original paths and preserve their bytes", { tag: "@logic" }, () => {
   expect(Object.keys(mapNames)).toHaveLength(100);
   const randomMaps = new Set(Array.from({length:100}, (_, seed) => randomOriginalMap(seed)));
   for (const [name, asset] of Object.entries(mapNames)) {
@@ -27,6 +36,9 @@ test("every imported visual preserves its original bytes and native containers d
   expect(resolveOriginalMapId('C:\\data\\mission\\mission22.img')).toBe('original:mission/missi~11.img');
   expect(resolveOriginalMapId('C:\\data\\mission\\training13.img')).toBe('original:mission/traini~5.img');
   expect(resolveOriginalMapId('C:\\data\\mission\\mission999.img')).toBe(null);
+});
+
+test("original terrain sources map into the shared native palette", { tag: "@logic" }, () => {
   for (const row of terrainPalettes.cases) {
     const sources = {};
     for (const asset of row.rows) {
@@ -45,6 +57,9 @@ test("every imported visual preserves its original bytes and native containers d
     expect(mapped.palette.used.map(index => [index, mapped.palette.colors[index]]))
       .toEqual(row.rows.at(-1).entries);
   }
+});
+
+test("original images map into the native game palette", { tag: "@logic" }, () => {
   for (const row of imagePalettes.cases) {
     const bytes = fs.readFileSync(new URL(`../${row.path}`, import.meta.url));
     expect(crypto.createHash("sha256").update(bytes).digest("hex")).toBe(row.sha256);
@@ -54,20 +69,33 @@ test("every imported visual preserves its original bytes and native containers d
     expect(Array.from(mapping)).toEqual(row.mapping);
     expect(palette.used.map(index => [index, palette.colors[index]])).toEqual(row.entries);
     if (!mapping.includes(255)) for (const transparent of [false, true])
-      expect(Buffer.from(imageRGBA(image, transparent, { mapping, colors: palette.colors })))
-        .toEqual(Buffer.from(imageRGBA(image, transparent)));
+      expect(firstByteMismatch(imageRGBA(image, transparent, { mapping, colors: palette.colors }),
+        imageRGBA(image, transparent)), `${row.path} transparent=${transparent}`).toBe(-1);
   }
+});
+
+test("the visual catalog lists every original asset by format", { tag: "@logic" }, () => {
   expect(catalog.assets).toHaveLength(3099);
   const counts = { img: 0, spr: 0, bmp: 0 };
+  for (const asset of catalog.assets) counts[asset.format]++;
+  expect(counts).toEqual({ spr: 961, img: 1217, bmp: 921 });
+  expect(CATALOG_SHARD_FRAMES.reduce((sum, frames) => sum + frames)).toBe(22473);
+});
+
+// Hashing and decoding all 3099 assets is split into interleaved shards that
+// run in parallel; together they still check every asset and every frame.
+const CATALOG_SHARD_FRAMES = [2024, 1842, 2073, 1941, 1849, 2045, 1946, 1470, 1732, 2032, 1702, 1817];
+for (const [shard, expectedFrames] of CATALOG_SHARD_FRAMES.entries())
+test(`every imported visual preserves its original bytes and native containers decode (shard ${shard + 1}/${CATALOG_SHARD_FRAMES.length})`, { tag: "@logic" }, () => {
   let frames = 0;
-  for (const asset of catalog.assets) {
+  for (const [index, asset] of catalog.assets.entries()) {
+    if (index % CATALOG_SHARD_FRAMES.length !== shard) continue;
     const bytes = fs.readFileSync(new URL(asset.path, root));
     expect(bytes.length, asset.id).toBe(asset.bytes);
     expect(
       crypto.createHash("sha256").update(bytes).digest("hex"),
       asset.id,
     ).toBe(asset.sha256);
-    counts[asset.format]++;
     if (asset.format === "bmp") {
       expect(bytes.subarray(0, 2).toString(), asset.id).toBe("BM");
       continue;
@@ -86,13 +114,11 @@ test("every imported visual preserves its original bytes and native containers d
     }
     if (asset.format === "img" && bytes[9] === 128) {
       const offset = 16 + bytes.readUInt16LE(10) * 3;
-      expect(Buffer.from(decoded.pixels), asset.id).toEqual(
-        bytes.subarray(offset, offset + decoded.width * decoded.height),
-      );
+      expect(firstByteMismatch(decoded.pixels,
+        bytes.subarray(offset, offset + decoded.width * decoded.height)), asset.id).toBe(-1);
     }
   }
-  expect(counts).toEqual({ spr: 961, img: 1217, bmp: 921 });
-  expect(frames).toBe(22473);
+  expect(frames).toBe(expectedFrames);
 });
 
 test("browser decodes every original bitmap without conversion", async ({

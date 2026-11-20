@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { fastForward } from "./helpers/misc-fast-forward.js";
 import fixture from "./fixtures/armageddon/mine-art.json" with { type: "json" };
 import { nativeMineRender, nativeMineArt } from "../src/armageddon/mine-art.js";
 
@@ -34,28 +35,16 @@ test("live submerged mines use original water artwork at zero rotation", async (
   await mine.click();
   await page.locator("#fire").click();
   await page.evaluate(() => window.siege.debug.submergeMine());
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const mine = window.siege.getState().mines[0];
-        return mine && { sprite: mine.sprite, frame: mine.frame };
-      }),
-    )
-    .toEqual({ sprite: "water/mineoff", frame: 0 });
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.siege.getState().mines[0]?.nativeBody.flags),
-    )
-    .toBe(0x400000);
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.siege.getState().waterBubbles.length),
-    )
-    .toBeGreaterThan(0);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().mines.length), {
-      timeout: 6000,
-    })
-    .toBe(0);
+  // Fast-forward (still rendering) until the sunk mine expires.
+  const { samples } = await fastForward(page, (s) => s.mines.length === 0, {
+    sample: (s) => {
+      const mine = s.mines[0];
+      return { art: mine && { sprite: mine.sprite, frame: mine.frame },
+        flags: mine?.nativeBody.flags, bubbles: s.waterBubbles.length };
+    },
+  });
+  expect(samples.map((s) => s.art)).toContainEqual({ sprite: "water/mineoff", frame: 0 });
+  expect(samples.map((s) => s.flags)).toContain(0x400000);
+  expect(samples.some((s) => s.bubbles > 0)).toBe(true);
   expect(splashes.length).toBeGreaterThan(0);
 });

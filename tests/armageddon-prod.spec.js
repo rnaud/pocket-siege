@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/prod.json" with { type: "json" };
 import { nativeProdRequest } from "../src/armageddon/prod.js";
 import { nativeAreaDamage } from "../src/armageddon/area-damage.js";
+import { advanceUntil } from "./helpers/misc-advance.js";
 
 test("Prod impulse and direct hit rectangle match original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(140);
@@ -45,8 +46,9 @@ test(`live Prod ${interrupt ? 'cancels on damage without spending' : 'waits for 
   }, interrupt);
   await page.locator('#fire').click();
   expect(await page.evaluate(() => window.prodRelease)).toEqual({ weapon:'prod', shots:0, ammo:2 });
-  await expect.poll(() => page.evaluate(() => window.siege.getState().preparing)).toBeNull();
-  await page.waitForTimeout(200);
+  await advanceUntil(page, (s) => s.preparing === null, { label: "preparation ends" });
+  // Ten more logic ticks (200 ms) confirm nothing is released late.
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(10));
   const s = await page.evaluate(() => window.siege.getState());
   expect(s.shotCount).toBe(interrupt ? 0 : 1);
   expect(s.ammo[0].prod).toBe(interrupt ? 2 : 1);

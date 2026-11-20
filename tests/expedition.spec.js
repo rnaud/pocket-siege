@@ -170,7 +170,7 @@ test("graphics options default to the original look and survive bad data", { tag
   expect(resolveAtmosphere("snow", "rain", "forest")).toMatchObject({ precipitation: "snow", storm: false });
 });
 
-test("every graphics option renders a live match without errors", async ({ page }) => {
+async function startGraphicsMatch(page) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => { if (/shader|program info|GL_INVALID|THREE\.WebGL/i.test(message.text())) errors.push(message.text()); });
@@ -180,22 +180,44 @@ test("every graphics option renders a live match without errors", async ({ page 
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
   await expect(page.locator("#menu")).not.toBeVisible();
-  expect(await page.evaluate(() => window.siege.getState().graphics)).toEqual(defaultGraphics());
-  await page.keyboard.press("F9");
-  await expect(page.locator("#graphics")).toBeVisible();
-  for (const [key, option] of Object.entries(GRAPHICS_OPTIONS)) {
-    for (const value of Object.keys(option.values).reverse()) {
+  return errors;
+}
+// Render a few frames with the current options (real frames run the renderer).
+const renderFrames = (page) => page.evaluate(() => new Promise((done) => {
+  let left = 3;
+  const tick = () => (--left ? requestAnimationFrame(tick) : done());
+  requestAnimationFrame(tick);
+}));
+
+// One test per option value so the renders run in parallel.
+for (const [key, option] of Object.entries(GRAPHICS_OPTIONS)) {
+  for (const value of Object.keys(option.values)) {
+    test(`graphics ${key}=${value} renders a live match without errors`, async ({ page }) => {
+      const errors = await startGraphicsMatch(page);
+      expect(await page.evaluate(() => window.siege.getState().graphics)).toEqual(defaultGraphics());
+      // Shift+F9 opens the sheet; plain F-keys stay the original weapon rows.
+      await page.keyboard.press("Shift+F9");
+      await expect(page.locator("#graphics")).toBeVisible();
       await page.locator(`#gfx-${key}`).selectOption(value);
-      await page.waitForTimeout(120);
+      await renderFrames(page);
       if (key === "destruction" && value === "on") {
         await page.evaluate(() => window.siege.debug.explodeAt(600, 350, "rocket"));
         expect(await page.evaluate(() => window.siege.getState().graphicsCounts.shocks)).toBeGreaterThan(0);
       }
-    }
-    // Leave each group on a non-default value so the options also run combined.
-    await page.locator(`#gfx-${key}`).selectOption(Object.keys(option.values)[1]);
+      expect((await page.evaluate(() => window.siege.getState().graphics))[key]).toBe(value);
+      expect(errors).toEqual([]);
+    });
   }
-  await page.waitForTimeout(400);
+}
+
+test("combined graphics options persist and the master switch restores them", async ({ page }) => {
+  const errors = await startGraphicsMatch(page);
+  await page.keyboard.press("Shift+F9");
+  await expect(page.locator("#graphics")).toBeVisible();
+  // Leave each group on a non-default value so the options also run combined.
+  for (const [key, option] of Object.entries(GRAPHICS_OPTIONS))
+    await page.locator(`#gfx-${key}`).selectOption(Object.keys(option.values)[1]);
+  await renderFrames(page);
   const combined = await page.evaluate(() => window.siege.getState());
   expect(combined.diorama).toBe(true);
   expect(combined.graphics).toEqual({ view: "diorama", lighting: "day", destruction: "on", style: "crt", atmosphere: "auto" });

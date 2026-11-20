@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
+import { isDeepStrictEqual } from "node:util";
 import { nativeWormAirborneContact } from "../src/armageddon/worm-contact.js";
 const fixture = JSON.parse(
   fs.readFileSync(
@@ -21,11 +22,15 @@ test("airborne contact matches native landing, ceiling and position-attempt deci
       },
       (body,target)=>entries.push({previous:body.state,target,velocity:[body.vx,body.vy]}),
     );
-    expect(entries).toEqual(v.result.calls.filter(c=>c.operation==='state').map(c=>({previous:v.input.state,target:c.target,velocity:c.velocity})));
-    expect({ result, queries }, JSON.stringify(v)).toEqual({
-      result: v.result,
-      queries: v.queries,
-    });
+    const expectedEntries = v.result.calls.filter(c=>c.operation==='state').map(c=>({previous:v.input.state,target:c.target,velocity:c.velocity}));
+    // Full coverage with a cheap strict comparison; build the detailed
+    // assertion (and its JSON message) only for a case that differs.
+    if (!isDeepStrictEqual(entries, expectedEntries)) expect(entries).toEqual(expectedEntries);
+    if (!isDeepStrictEqual({ result, queries }, { result: v.result, queries: v.queries }))
+      expect({ result, queries }, JSON.stringify(v)).toEqual({
+        result: v.result,
+        queries: v.queries,
+      });
   }
 });
 
@@ -45,9 +50,10 @@ test("complete airborne callback matches receiver dispatch, bounce and facing up
       },
       () => v.environment.otherResponse,
     );
-    expect({ result, queries }, JSON.stringify(v)).toEqual({
-      result: v.result,
-      queries: v.queries,
-    });
+    if (!isDeepStrictEqual({ result, queries }, { result: v.result, queries: v.queries }))
+      expect({ result, queries }, JSON.stringify(v)).toEqual({
+        result: v.result,
+        queries: v.queries,
+      });
   }
 });

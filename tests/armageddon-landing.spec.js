@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { advanceUntil } from "./helpers/misc-advance.js";
 
 test("landing adapter selects native strips and completes on simulation ticks", async ({
   page,
@@ -108,32 +109,17 @@ test("live jump returns through the recovered landing animation", async ({
       }),
     )
     .toBe(true);
-  const sprites = await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const index = window.siege.getState().current;
-        const seen = new Set();
-        let airborne = false;
-        const deadline = performance.now() + 5000;
-        function sample() {
-          const w = window.siege.getState().worms[index];
-          airborne ||= !w.ground;
-          if (airborne) seen.add(w.originalSprite);
-          if (
-            seen.has("wland1") ||
-            seen.has("wland2") ||
-            performance.now() >= deadline
-          )
-            resolve([...seen]);
-          else requestAnimationFrame(sample);
-        }
-        document.querySelector("#jump").click();
-        requestAnimationFrame(sample);
-      }),
-  );
-  expect(sprites.some((name) => name === "wland1" || name === "wland2")).toBe(
-    true,
-  );
+  // Step the jump synchronously until the worm is back on the ground, then let
+  // one rendered frame pick the landing strip (the render loop derives sprites).
+  const index = await page.evaluate(() => window.siege.getState().current);
+  await page.locator("#jump").click();
+  await advanceUntil(page, (s, i) => !s.worms[i].ground, { arg: index, label: "jump leaves ground" });
+  await advanceUntil(page, (s, i) => s.worms[i].ground, { arg: index, label: "jump lands" });
+  const sprite = await page.evaluate(async (index) => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    return window.siege.getState().worms[index].originalSprite;
+  }, index);
+  expect(["wland1", "wland2"]).toContain(sprite);
 });
 
 test("jump playback follows velocity through the native apex queue and backflip strip", async ({

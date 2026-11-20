@@ -6,9 +6,14 @@ async function startLocalMatch(page) {
   await page.locator('[data-mode="local"]').click();
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
-    .toBe("aim");
+  // Step the intro synchronously instead of waiting for it in real time.
+  await page.waitForFunction(() => window.siege.getState().phase !== undefined && window.siege.debug);
+  const phase = await page.evaluate(() => {
+    for (let frame = 0; frame < 2000 && window.siege.getState().phase !== "aim"; frame++)
+      window.siege.debug.advanceReplayFrames(1);
+    return window.siege.getState().phase;
+  });
+  expect(phase).toBe("aim");
 }
 
 test("Super Sheep takes off on fire, steers 0x5B0 per held frame and explodes on contact", async ({ page }) => {

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/bubbles.json" with { type: "json" };
 import { nativeBubble, nativeBubbleTick } from "../src/armageddon/bubble.js";
+import { advanceUntil } from "./helpers/misc-advance.js";
 
 test("bubble physics and surface retirement match 192 original executable cases", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
@@ -31,11 +32,7 @@ for (const frozen of [false, true])
         page.evaluate(() => window.siege.getState().worms[0].originalSprite),
       )
       .toBe(frozen ? "water/wfdrown" : "water/wdrown");
-    await expect
-      .poll(() =>
-        page.evaluate(() => window.siege.getState().waterBubbles.length),
-      )
-      .toBeGreaterThan(0);
+    await advanceUntil(page, (s) => s.waterBubbles.length > 0, { label: "first bubble" });
     const state = await page.evaluate(() => window.siege.getState());
     expect(state.worms[0].hp).toBe(0);
     expect(state.worms[0].damageTaken).toBe(before.damageTaken + before.hp);
@@ -45,12 +42,8 @@ for (const frozen of [false, true])
     ).toBe(true);
     expect(state.waterBubbles.every((b) => b.y < state.waterLevel)).toBe(true);
     await page.screenshot({ path: info.outputPath("original-drowning.png") });
-    await expect
-      .poll(
-        () => page.evaluate(() => window.siege.getState().waterBubbles.length),
-        { timeout: 10000 },
-      )
-      .toBe(0);
+    // Step the rest of the drowning synchronously until every bubble surfaces.
+    await advanceUntil(page, (s) => s.waterBubbles.length === 0, { label: "bubbles retire" });
     await page.evaluate(() => window.siege.debug.resetSeed(42));
     expect(
       await page.evaluate(() => window.siege.getState().waterBubbles.length),

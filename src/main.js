@@ -9133,10 +9133,11 @@ arena.addEventListener("pointermove", (e) => {
 applyGraphics(readGraphics(), false);
 window.addEventListener("keydown", (e) => {
   if (menu.open) return;
-  // F9 opens the graphics options over the live battlefield.
-  if (e.key === "F9") { e.preventDefault(); graphicsPanel.open(); return; }
-  // F8 switches every new effect on or off at once.
-  if (e.key === "F8") { e.preventDefault(); toggleAllEffects(); return; }
+  // Shift+F9 opens the graphics options over the live battlefield and
+  // Shift+F8 switches every new effect on or off at once. Plain F1..F12 stay
+  // the original weapon-row keys (00502550).
+  if (e.shiftKey && e.key === "F9") { e.preventDefault(); graphicsPanel.open(); return; }
+  if (e.shiftKey && e.key === "F8") { e.preventDefault(); toggleAllEffects(); return; }
   if (nativeLayout && e.key === "Escape" && matchStarted) {
     // Original: Escape leaves the battlefield for the in-game menu. A press
     // already used to close the arsenal tray is not repeated here.

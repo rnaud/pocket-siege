@@ -39,18 +39,17 @@ test('live bat uses aimed native impulse, hits allies and enemies, and plays ori
   await page.locator('[data-weapon="bat"]').click();
   await page.locator('#angle').fill('45');
   await page.locator('#angle').dispatchEvent('input');
-  await page.evaluate(() => {
-    window.batHits = null;
-    const sample = () => {
-      const s = window.siege.getState();
-      if(s.shotCount) window.batHits = {worms:s.worms, particles:s.nativeParticles};
-      else requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
-  });
   await page.locator('#fire').click();
-  await expect.poll(() => page.evaluate(() => window.batHits)).not.toBeNull();
-  const hit = await page.evaluate(() => window.batHits);
+  // Step the swing synchronously and capture the first tick after the hit lands.
+  const hit = await page.evaluate(() => {
+    for (let tick = 0; tick < 500; tick++) {
+      const s = window.siege.getState();
+      if (s.shotCount) return {worms:s.worms, particles:s.nativeParticles};
+      window.siege.debug.advanceReplayFrames(1);
+    }
+    return null;
+  });
+  expect(hit).not.toBeNull();
   for(const index of [targets.ally, targets.enemy]) {
     expect(hit.worms[index].hp, JSON.stringify({targets, worms:hit.worms.map(w=>({hp:w.hp,x:w.x,y:w.y,vx:w.vx,vy:w.vy,knocked:w.knocked})),particles:hit.particles})).toBe(70);
     expect(hit.worms[index].vx).toBeGreaterThan(0);

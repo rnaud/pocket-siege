@@ -43,7 +43,7 @@ export function mountGraphicsPanel({ get, change, toggleAll }) {
     for (const [key, select] of Object.entries(selects)) select.value = settings[key];
     const on = !isOriginalGraphics(settings);
     master.setAttribute("aria-pressed", String(on));
-    master.textContent = on ? "NEW EFFECTS: ON  ·  F8" : "NEW EFFECTS: OFF  ·  F8";
+    master.textContent = on ? "NEW EFFECTS: ON  ·  SHIFT+F8" : "NEW EFFECTS: OFF  ·  SHIFT+F8";
   }
   return {
     sync,

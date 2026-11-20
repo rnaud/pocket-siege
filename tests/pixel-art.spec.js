@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { advanceFrames } from "./helpers/game-sim.js";
 
 test("original art stays on an integer pixel grid without bitmap requests", async ({
   page,
@@ -25,7 +26,8 @@ test("original art stays on an integer pixel grid without bitmap requests", asyn
   });
   await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
-  await page.waitForTimeout(2200);
+  // Play through the turn announcement in simulated time.
+  await advanceFrames(page, 110);
   await expect(page.locator("#announcement")).toBeHidden({
     timeout: 10000,
   });

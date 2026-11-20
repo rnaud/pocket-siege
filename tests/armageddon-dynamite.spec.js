@@ -59,16 +59,17 @@ test("live dynamite moves, advances its native fuse strip and stops the original
   expect(first.kind).toBe("dynamite");
   expect(first.nativeDamage).toBe(75);
   expect(first.fuse).toBeGreaterThan(4);
-  const observed=await page.evaluate(async()=>{
-    const frames=new Set(), xs=new Set(), start=performance.now();
-    await new Promise(resolve=>{
-      function sample(){
-        const b=window.siege.getState().bombs.find(b=>b.kind==="dynamite");
-        if(!b || performance.now()-start>12000){resolve();return;}
-        frames.add(b.frame); xs.add(b.x); requestAnimationFrame(sample);
-      }
-      sample();
-    });
+  // The fuse loop starts once its sample has decoded; then drive the 5 s fuse
+  // synchronously at the native 20 ms logic step instead of waiting in real time.
+  await page.waitForFunction(()=>window.fusePlayback.includes("start"));
+  const observed=await page.evaluate(()=>{
+    const frames=new Set(), xs=new Set();
+    for(let tick=0;tick<400;tick++){
+      const b=window.siege.getState().bombs.find(b=>b.kind==="dynamite");
+      if(!b) break;
+      frames.add(b.frame); xs.add(b.x);
+      window.siege.debug.advanceReplayFrames(1);
+    }
     return {frames:[...frames],xs:[...xs],state:window.siege.getState()};
   });
   expect(observed.frames.length).toBeGreaterThan(2);

@@ -1,4 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "@playwright/test";
+import { fastExpect } from "./helpers/fast-expect.js";
+// Fixture loops make thousands of assertions: skip Playwright step bookkeeping for passing ones.
+const expect = fastExpect(playwrightExpect);
 import fixture from "./fixtures/armageddon/homing-avoidance.json" with { type: "json" };
 import { nativeHomingAvoid } from "../src/armageddon/homing.js";
 
@@ -117,7 +120,11 @@ test(`live ${kind} targets, launches with original art and spends one ammo`, asy
     await page.keyboard.press("Escape");
     await expect.poll(() => page.evaluate(() => window.projectileLoops.length)).toBe(2);
   }
-  await expect.poll(() => page.evaluate(() => window.siege.getState().projectile), { timeout: 15000 }).toBeNull();
+  // Fast-forward the rest of the flight with the logic stepper instead of waiting in real time.
+  expect(await page.evaluate(() => {
+    for (let i = 0; i < 600 && window.siege.getState().projectile; i++) window.siege.debug.advanceReplayFrames(5);
+    return window.siege.getState().projectile;
+  })).toBeNull();
   if (kind === "magic") expect(await page.evaluate(() => window.projectileLoops)).toEqual([{ stopped: true }, { stopped: true }]);
 });
 

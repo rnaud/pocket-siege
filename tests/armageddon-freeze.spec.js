@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import { freezeTeam, nativeFreezeAnimation } from "../src/armageddon/freeze.js";
 import { blastImpulse } from "../src/physics.js";
+import { advanceUntil } from "./helpers/misc-advance.js";
 const fixture = JSON.parse(
   fs.readFileSync(
     new URL("./fixtures/armageddon/freeze.json", import.meta.url),
@@ -77,9 +78,8 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
   await page.locator("#sound").click();
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="freeze"]').click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().team))
-    .toBe(1);
+  // Step the turn hand-over synchronously instead of waiting in real time.
+  await advanceUntil(page, (s) => s.team === 1, { label: "Freeze turn end" });
   expect(await page.evaluate(() => window.siege.getState().phase)).toBe("aim");
   await expect
     .poll(() =>
@@ -102,9 +102,7 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
     ),
   ).toEqual([100, 100, 100]);
   await page.locator("#skip").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().team))
-    .toBe(0);
+  await advanceUntil(page, (s) => s.team === 0, { label: "skipped turn end" });
   expect(await page.evaluate(() => window.siege.getState().phase)).toBe("aim");
   expect(await page.evaluate(() => window.siege.getState().frozen)).toEqual([
     0, 0, 0, 0, 0, 0,

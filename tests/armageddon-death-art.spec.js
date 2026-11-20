@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { fastForward } from "./helpers/misc-fast-forward.js";
 test("death strip completes on simulation ticks without render-driven advancement", async ({
   page,
 }) => {
@@ -55,16 +56,7 @@ test("live death plays past the old cutoff before its explosion", async ({
   await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        window.siege
-          .getState()
-          .worms.slice(3)
-          .every((w) => w.ground),
-      ),
-    )
-    .toBe(true);
+  await fastForward(page, (s) => s.worms.slice(3).every((w) => w.ground));
   await page.evaluate(() => {
     // Late frames last less than a second. Keep the maximum on every render
     // instead of hoping Playwright's backoff poll lands inside that window.
@@ -83,22 +75,23 @@ test("live death plays past the old cutoff before its explosion", async ({
     const sample = () => {
       const probe = window.deathFrameProbe;
       if (!probe.active) return;
+      // getState() is costly; read one snapshot per rendered frame.
+      const state = window.siege.getState();
       probe.smoke = Math.max(
         probe.smoke,
-        window.siege.getState().originalSmoke.length,
+        state.originalSmoke.length,
       );
       probe.debris = Math.max(
         probe.debris,
-        window.siege.getState().originalDebris.length,
+        state.originalDebris.length,
       );
-      probe.rings ||= window.siege
-        .getState()
+      probe.rings ||= state
         .nativeParticles.some((p) => p.sprite === "circle25");
-      const pending = window.siege.getState().worms;
+      const pending = state.worms;
       for (let i = 3; i < pending.length; i++)
         if (pending[i].hp === 0 && pending[i].deathPending && pending[i].originalSprite !== 'wdie')
           probe.pendingLabelVisible ||= getComputedStyle(document.querySelectorAll('.worm-label')[i]).visibility === 'visible';
-      const dying = window.siege.getState().worms.slice(3)
+      const dying = state.worms.slice(3)
         .filter(w => w.deathPending && w.originalSprite === "wdie");
       probe.maxConcurrent = Math.max(probe.maxConcurrent, dying.length);
       for (const worm of dying) {
@@ -110,35 +103,24 @@ test("live death plays past the old cutoff before its explosion", async ({
       }
       // Keep a rendered sample between small simulation batches. Software
       // rendering on CI must not dictate how long three death strips take.
-      // Five ticks cannot skip the late portion of the 86-tick death strip.
-      if (probe.advancedFrames < 3000 && window.siege.getState().phase !== "over") {
-        window.siege.debug.advanceReplayFrames(5);
-        probe.advancedFrames += 5;
+      // 16 ticks cannot skip the late portion of the 86-tick death strip;
+      // between strips (reveals, announcements) larger batches are safe.
+      if (probe.advancedFrames < 3000 && state.phase !== "over") {
+        const batch = dying.length ? 16 : 30;
+        window.siege.debug.advanceReplayFrames(batch);
+        probe.advancedFrames += batch;
       }
       requestAnimationFrame(sample);
     };
     requestAnimationFrame(sample);
     window.siege.debug.hit(1, 200);
   });
-  await expect
-    .poll(() => page.evaluate(() => window.deathFrameProbe.max), { timeout: 15000 })
-    .toBeGreaterThan(40);
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        window.siege
-          .getState()
-          .worms.slice(3)
-          .every((w) => !w.deathPending),
-      ),
-      { timeout: 15000 }, // Three sequential native death strips plus damage reveals.
-    )
-    .toBe(true);
-  await expect(page.locator(".team-coral")).toBeHidden({ timeout: 5000 });
-  // Native death, elimination and kill announcements drain before match end.
-  // CI captured the completed match just after the former five-second poll.
-  await expect.poll(() => page.evaluate(() => window.siege.getState().phase),
-    { timeout: 10000, intervals: [100] }).toBe("over");
+  // Three sequential native death strips, damage reveals and the native death,
+  // elimination and kill announcements all drain before the match ends.
+  await page.waitForFunction(() => window.siege.getState().phase === "over", null, { timeout: 15000, polling: 100 });
+  expect(await page.evaluate(() => window.deathFrameProbe.max)).toBeGreaterThan(40);
+  expect(await page.evaluate(() => window.siege.getState().worms.slice(3).every((w) => !w.deathPending))).toBe(true);
+  await expect(page.locator(".team-coral")).toBeHidden();
   const sequence = await page.evaluate(() => window.deathFrameProbe);
   expect(sequence.maxConcurrent).toBe(1);
   expect(sequence.pendingLabelVisible).toBe(true);

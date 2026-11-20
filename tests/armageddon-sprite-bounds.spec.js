@@ -1,4 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "@playwright/test";
+import { fastExpect } from "./helpers/fast-expect.js";
+// Fixture loops make thousands of assertions: skip Playwright step bookkeeping for passing ones.
+const expect = fastExpect(playwrightExpect);
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import fixture from "./fixtures/armageddon/sprite-bounds.json" with { type: "json" };
@@ -58,7 +61,7 @@ import rendererStreamedLifetime from './fixtures/armageddon/renderer-streamed-li
 
 import spriteRaster from './fixtures/armageddon/sprite-raster.json' with {type:'json'};
 
-test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
+test("sprite rasters, renderer draws and blend tables match original x86", { tag: "@logic" }, () => {
   for(const c of spriteRaster.cases) {
     const raw=readFileSync(new URL(`../${c.path}`,import.meta.url));
     expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
@@ -144,6 +147,9 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       }
     }
   }
+});
+
+test("sprite, font and archive art memory match original x86", { tag: "@logic" }, () => {
   for(const c of [...spriteMemory.cases,...fontMemory.cases.map(c=>({...c,font:true}))]) {
     const raw=c.path?readFileSync(new URL(`../${c.path}`,import.meta.url)):Buffer.from(c.raw,'hex');
     expect(createHash('sha256').update(raw).digest('hex')).toBe(c.sha256);
@@ -270,6 +276,9 @@ test("worm frame bounds retain the native canvas-center anchor across animation"
       expect(events).toEqual(c.events);expect(snapshot()).toBe(c.final);
     }
   }
+});
+
+test("worm frame bounds retain the native canvas-center anchor across animation", { tag: "@logic" }, () => {
   const blend=Buffer.from(Array.from({length:65536},(_,i)=>((i&255)*3+(i>>>8)*5)&255));
   for(const c of indexedBlits.cases) {
     const owner=0x2000000,destination=owner+0x1000,source=owner+0x1100,bytes=Buffer.alloc(0x10000,165);

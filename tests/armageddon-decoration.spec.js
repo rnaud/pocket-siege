@@ -1,25 +1,29 @@
 import { test, expect } from "@playwright/test";
+import themes from "../src/armageddon/terrain-themes.js";
 
-test("all themes place deterministic, destructible original object pixels", async ({
+// Full pixel comparisons across every imported terrain theme, split into
+// parallel chunks so no single test walks all 29 themes serially.
+const THEME_CHUNKS = 8;
+for (let chunk = 0; chunk < THEME_CHUNKS; chunk++)
+test(`themes place deterministic, destructible original object pixels (part ${chunk + 1}/${THEME_CHUNKS})`, async ({
   page,
 }) => {
-  test.setTimeout(120000); // Full pixel comparisons across every imported terrain theme.
+  expect(themes).toHaveLength(29);
+  const selected = themes.filter((_, i) => i % THEME_CHUNKS === chunk);
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  const results = await page.evaluate(async () => {
+  const results = await page.evaluate(async (selected) => {
     const { Terrain, W, H } = await import("/src/physics.js");
     const { loadOriginalDecorations, placeOriginalDecorations } =
       await import("/src/armageddon/terrain-decoration.js");
     const { paintOriginalTerrain } = await import("/src/armageddon/terrain.js");
     const { decodeImage, imageRGBA } = await import("/src/armageddon/image.js");
-    const { default: themes } =
-      await import("/src/armageddon/terrain-themes.js");
     const canvas = document.createElement("canvas");
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     const results = [];
-    for (const theme of themes) {
+    for (const theme of selected) {
       await loadOriginalDecorations(theme);
       const terrain = new Terrain(42);
       terrain.theme = theme;
@@ -72,7 +76,8 @@ test("all themes place deterministic, destructible original object pixels", asyn
       });
     }
     return results;
-  });
+  }, selected);
+  expect(results.map((r) => r.theme)).toEqual(selected);
   for (const result of results) {
     expect(result.mismatches, result.theme).toBe(0);
     expect(result.deterministic, result.theme).toBe(true);

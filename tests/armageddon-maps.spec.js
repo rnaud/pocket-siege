@@ -4,7 +4,10 @@ import {createNativeRopeShot} from '../src/armageddon/rope-runtime.js';
 import { nativePlaceWormAt } from "../src/armageddon/worm-placement.js";
 import { nativeSceneCollision } from "../src/armageddon/collision-scene.js";
 import { nativeDefaultMapObjects } from "../src/armageddon/map-setup.js";
-import { test, expect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "@playwright/test";
+import { fastExpect } from "./helpers/fast-expect.js";
+// Fixture loops make thousands of assertions: skip Playwright step bookkeeping for passing ones.
+const expect = fastExpect(playwrightExpect);
 import fs from "node:fs";
 import { OriginalMapTerrain } from "../src/armageddon/maps.js";
 import { decodeImage } from "../src/armageddon/image.js";
@@ -19,9 +22,13 @@ function read(asset) {
   );
 }
 
-test("all 100 authored maps retain full source pixels and collision orientation", { tag: "@logic" }, () => {
+// Whole-map checks are split into eight parts so they run in parallel; together
+// they still cover every authored map.
+const mapParts = Array.from({ length: 8 }, (_, part) => [`part ${part + 1}/8`, maps.slice(Math.round(part * maps.length / 8), Math.round((part + 1) * maps.length / 8))]);
+
+for (const [part, partMaps] of mapParts) test(`all 100 authored maps retain full source pixels and collision orientation (${part})`, { tag: "@logic" }, () => {
   expect(maps).toHaveLength(100);
-  for (const asset of maps) {
+  for (const asset of partMaps) {
     const buffer = read(asset),
       source = decodeImage(buffer);
     const terrain = new OriginalMapTerrain(buffer, asset.id);
@@ -112,7 +119,7 @@ test("authored map is playable at full size and switching back restores the host
   });
 });
 
-test("all authored maps support six separated, grounded worm spawns including caves", { tag: "@logic" }, async () => {
+for (const [part, partMaps] of mapParts) test(`all authored maps support six separated, grounded worm spawns including caves (${part})`, { tag: "@logic" }, async () => {
   const { originalMapSpawns } =
     await import("../src/armageddon/map-placement.js");
   const { bodyBlocked } = await import("../src/physics.js");
@@ -121,7 +128,7 @@ test("all authored maps support six separated, grounded worm spawns including ca
     const bytes=fs.readFileSync(`public/armageddon/media/level/forest/level/${name}.img`);
     return [name,decodeImage(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength))];
   })),true);
-  for (const asset of maps) {
+  for (const asset of partMaps) {
     const terrain = new OriginalMapTerrain(read(asset), asset.id);
     const positions = originalMapSpawns(
       terrain,

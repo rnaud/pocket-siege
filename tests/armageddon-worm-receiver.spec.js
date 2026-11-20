@@ -123,20 +123,17 @@ test("live update preserves native hurt impulse into the next standing worm", as
   // This contact fixture needs empty air at its fixed world coordinates.
   await page.locator("#map-layout").selectOption("fern");
   await page.locator("#start").click();
-  await page.evaluate(() => {
-    window.wormContact = null;
+  // Step the staged contact synchronously until the receiver takes the impulse.
+  const contact = await page.evaluate(() => {
     window.siege.debug.stageWormContact();
-    const sample = () => {
+    for (let tick = 0; tick < 250; tick++) {
+      window.siege.debug.advanceReplayFrames(1);
       const [a, b] = window.siege.getState().worms;
-      if (b.vx > 1) window.wormContact = { a: a.vx, b: b.vx };
-      else requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
+      if (b.vx > 1) return { a: a.vx, b: b.vx };
+    }
+    return null;
   });
-  await expect
-    .poll(() => page.evaluate(() => window.wormContact), { timeout: 10000 })
-    .not.toBeNull();
-  const contact = await page.evaluate(() => window.wormContact);
+  expect(contact).not.toBeNull();
   expect(contact.a).toBeGreaterThan(0);
   expect(contact.a).toBeCloseTo(600, 1);
   expect(contact.b).toBeGreaterThan(0);

@@ -1,4 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "@playwright/test";
+import { fastExpect } from "./helpers/fast-expect.js";
+// Fixture loops make thousands of assertions: skip Playwright step bookkeeping for passing ones.
+const expect = fastExpect(playwrightExpect);
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import fixture from "./fixtures/armageddon/fonts.json" with { type: "json" };

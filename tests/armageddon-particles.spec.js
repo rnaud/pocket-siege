@@ -4,6 +4,7 @@ import {
   addNativeParticle,
   stepNativeParticles,
 } from "../src/armageddon/particles.js";
+import { fastForward, advance } from "./helpers/misc-fast-forward.js";
 
 test("particle integration and swap-last expiry match original executable pools", { tag: "@logic" }, () => {
   for (const row of fixture.cases) {
@@ -30,18 +31,10 @@ test("live rocket emits original exhaust pixels instead of a vector trail and ex
     el.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await page.keyboard.down("Space");
-  await page.waitForTimeout(500);
+  // Charge for the original 500 ms (25 logic ticks) without waiting in real time.
+  await advance(page, 25);
   await page.keyboard.up("Space");
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          window.siege
-            .getState()
-            .nativeParticles.filter((p) => p.sprite === "hexhaust").length,
-      ),
-    )
-    .toBeGreaterThan(0);
+  await fastForward(page, (s) => s.nativeParticles.some((p) => p.sprite === "hexhaust"), { perFrame: 1 });
   await expect(page.locator(".projectile-trail")).toHaveAttribute("d", "");
   const source = await page.evaluate(async () => {
     const { originalVisual } = await import("/src/armageddon/art.js");
@@ -71,23 +64,8 @@ test("live rocket emits original exhaust pixels instead of a vector trail and ex
   });
   expect(source).toBe(0);
   await page.screenshot({ path: info.outputPath("original-exhaust.png") });
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().projectile), {
-      timeout: 20000,
-    })
-    .toBeNull();
-  await expect
-    .poll(
-      () =>
-        page.evaluate(
-          () =>
-            window.siege
-              .getState()
-              .nativeParticles.filter((p) => p.sprite === "hexhaust").length,
-        ),
-      { timeout: 6000 },
-    )
-    .toBe(0);
+  // Fast-forward the flight and the exhaust's expiry.
+  await fastForward(page, (s) => !s.projectile && !s.nativeParticles.some((p) => p.sprite === "hexhaust"), { perFrame: 8 });
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   expect(
     await page.evaluate(() => window.siege.getState().nativeParticles.length),

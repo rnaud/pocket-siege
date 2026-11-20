@@ -127,13 +127,7 @@ test("weapon release audio and casing choices match all original records", { tag
 });
 
 
-test("browser decodes native projectile release samples without an early holy chant", async ({ page }) => {
-  const requested = [],voices=[];
-  page.on("request", request => {
-    if(request.url().includes("/voices/"))voices.push(request.url().split("/voices/")[1]);
-    if (/\/(throwrelease|rocketrelease|holygrenade)\.wav$/.test(request.url()))
-      requested.push(request.url().split("/").pop());
-  });
+test("cold decode keeps an owned fuse loop and never starts one stopped meanwhile", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);
   // A cold decode must not discard a still-owned loop after500ms. A loop
@@ -162,6 +156,17 @@ test("browser decodes native projectile release samples without an early holy ch
   await expect.poll(()=>page.evaluate(()=>window.delayedLoops)).toEqual([{stopped:false}]);
   await page.evaluate(async()=>{window.delayedLoop.stop();await window.delayedLoopContext.close();});
   expect(await page.evaluate(()=>window.delayedLoops)).toEqual([{stopped:true}]);
+});
+
+test("browser decodes native projectile release samples without an early holy chant", async ({ page }) => {
+  const requested = [],voices=[];
+  page.on("request", request => {
+    if(request.url().includes("/voices/"))voices.push(request.url().split("/voices/")[1]);
+    if (/\/(throwrelease|rocketrelease|holygrenade)\.wav$/.test(request.url()))
+      requested.push(request.url().split("/").pop());
+  });
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.evaluate(async () => {
     const { attachNativeProjectile } = await import("/src/armageddon/projectile-runtime.js");
     const { playNativeProjectileReleaseSound, playNativeQueuedSound } = await import("/src/armageddon/audio.js");
@@ -207,6 +212,15 @@ test("browser decodes native projectile release samples without an early holy ch
   });
   await expect.poll(()=>page.evaluate(()=>window.releasePlayback.length)).toBe(9);
   expect(voices.sort()).toEqual(['austra~1/amazing.wav','danish~1/amazing.wav','english/amazing.wav']);
+});
+
+test("team speech banks persist and drive in-match reactions", async ({ page }) => {
+  const voices=[];
+  page.on("request", request => {
+    if(request.url().includes("/voices/"))voices.push(request.url().split("/voices/")[1]);
+  });
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
   await page.locator('[data-mode="ai"]').click();
   await page.locator('#team-voice-0').selectOption('austra~1');
   await page.locator('#team-voice-1').selectOption('danish~1');
@@ -221,7 +235,4 @@ test("browser decodes native projectile release samples without an early holy ch
   await page.locator('#sound').click();await page.locator('#skip').click();
   const reactionBank=activeTeam===0?'danish~1':'austra~1';
   await expect.poll(()=>voices.includes(`${reactionBank}/coward.wav`)).toBe(true);
-
-
-
 });

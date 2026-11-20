@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-state.json" with { type: "json" };
 import { nativeMineStateEvents } from "../src/armageddon/mine-state.js";
+import { fastForward } from "./helpers/misc-fast-forward.js";
 
 test("mine physical-state detonation matches original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(48);
@@ -31,11 +32,9 @@ test("live mine physical state detonates before its arming timer expires", async
     return arm;
   });
   expect(arm).toBeGreaterThan(3000);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().mines.length), {
-      timeout: 2000,
-    })
-    .toBe(0);
+  // Well before the arming timer: the physical state alone detonates it.
+  const { ticks } = await fastForward(page, (s) => s.mines.length === 0, { perFrame: 2, maxTicks: 100 });
+  expect(ticks * 20).toBeLessThan(arm);
   expect(
     await page.evaluate(() => window.siege.getState().explosions),
   ).toBeGreaterThan(0);

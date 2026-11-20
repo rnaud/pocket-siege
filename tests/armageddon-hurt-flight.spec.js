@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { fastForward } from "./helpers/misc-fast-forward.js";
 import { stepNativeHurtFlight, attachNativeDrowningFlight, stepNativeDrowningFlight } from "../src/armageddon/hurt-flight.js";
 import drowning from './fixtures/armageddon/drowning-flight.json' with { type: 'json' };
 
@@ -63,28 +64,20 @@ test("live hard landing plays native recovery and returns to idle", async ({
   await page.locator('[data-mode="local"]').click();
   await page.locator("#start").click();
   await page.evaluate(() => window.siege.debug.resetSeed(42));
-  await page.evaluate(() => {
-    window.hurtProbe = { names: [], recovering: false, done: false };
-    window.siege.debug.dropWormForRecovery(0);
-    const sample = () => {
-      const w = window.siege.getState().worms[0],
-        p = window.hurtProbe;
-      if (!p.names.includes(w.originalSprite)) p.names.push(w.originalSprite);
-      p.recovering ||= w.recovering;
-      p.done =
-        p.recovering &&
-        !w.recovering &&
-        w.nativeHurtState === null &&
-        w.ground &&
-        !w.knocked;
-      if (!p.done) requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
-  });
-  await expect
-    .poll(() => page.evaluate(() => window.hurtProbe.done), { timeout: 10000 })
-    .toBe(true);
-  expect(await page.evaluate(() => window.hurtProbe.names)).toContain("wtwang");
+  await page.evaluate(() => window.siege.debug.dropWormForRecovery(0));
+  // Step the fall faster than real time while still rendering each frame so
+  // the render-derived recovery sprite (wtwang) stays observable.
+  const { samples } = await fastForward(
+    page,
+    (s) => {
+      const w = s.worms[0];
+      window.__hurtRecovering ||= w.recovering;
+      return window.__hurtRecovering && !w.recovering && w.nativeHurtState === null && w.ground && !w.knocked;
+    },
+    { perFrame: 2, sample: (s) => ({ sprite: s.worms[0].originalSprite, recovering: s.worms[0].recovering }) },
+  );
+  expect(samples.some((x) => x.recovering)).toBe(true);
+  expect(samples.map((x) => x.sprite)).toContain("wtwang");
   await expect(page.locator("#fire")).toBeEnabled();
   await expect(page.locator("#angle")).toBeEnabled();
   expect(errors).toEqual([]);
