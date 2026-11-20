@@ -7743,6 +7743,9 @@ function stepFrame(dt) {
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
   if (cratesBusy || barrelActivity.busy || flameActivity.busy) nativeBusy.wake();
+  // 004EA4C5..004EA584: arming, triggered or awake mines write activity 12;
+  // 004E4C11: live projectile bodies keep the scene busy as well.
+  if (mineCameraRequests.length || bombs.some((b) => b.nativeBody) || projectile?.nativeBody) nativeBusy.wake();
   // 004DEF07..004DEF67: every worm outside its idle/walk states keeps the
   // scene busy (004EEBE0). Host adapters cover motion the host still keeps
   // in state 0x65 (sliding, unsettled landings), teleports, jetpacks and
