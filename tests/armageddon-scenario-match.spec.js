@@ -1290,3 +1290,23 @@ test("scenario sudden death types 2 and 3 reach health and nuclear modes", async
       .toBe(mode);
   }
 });
+
+test("starting a local match after a training restores both teams", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  await page.locator('[data-mode="training"]').click();
+  await page.locator('[data-scenario="mission/training1.wam"]').click();
+  await page.locator(".frontend-play-scenario").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
+    .toBe("aim");
+  await page.locator("#restart").click();
+  await page.locator('[data-mode="local"]').click();
+  await page.locator("#start").click();
+  await expect
+    .poll(() => page.evaluate(() => window.siege.getState().phase), { timeout: 30000 })
+    .toBe("aim");
+  const team1 = await page.evaluate(() =>
+    window.siege.getState().worms.filter((worm) => worm.team === 1 && worm.hp > 0).length);
+  expect(team1).toBe(3);
+});

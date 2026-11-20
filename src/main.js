@@ -8141,6 +8141,7 @@ $("#daily").addEventListener("click", async () => {
   $("#modifier").value = "standard";
   $("#scheme").value = "classic";
   currentScenario = null;
+  clearScenarioTraining();
   scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0; scenarioTimed = []; scenarioTurn = 0;
   syncMenuOptions();
   saveSettings();
@@ -8161,9 +8162,14 @@ $("#sound").onclick = () => {
   saveSettings();
   tone(440);
 };
+function clearScenarioTraining() {
+  scenarioIsTraining = false;
+  document.body.dataset.scenarioTraining = "0";
+}
 $("#start").onclick = async event => {
   event.preventDefault();
   currentScenario = null;
+  clearScenarioTraining();
   scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0; scenarioTimed = []; scenarioTurn = 0;
   $("#start").textContent = "LET’S MAKE TROUBLE ↗";
   matchStarted = true;
