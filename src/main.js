@@ -107,7 +107,7 @@ import { nativeContactReceiver } from "./armageddon/contact-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
 import { nativeMineTimer, nativeMineTimerFromRecord, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
-import { NativeCameraFraming } from "./armageddon/camera-framing.js";
+import { NativeCameraFraming, nativeCameraMouseLook, nativeWormFrameCameraRequest } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse, updateNativeProjectileAudio, cleanupNativeContactSound } from "./armageddon/audio.js";
 import {
@@ -364,6 +364,24 @@ let nativeTeamRotation = null;
 let nativeCameraFraming = null;
 let pendingWormCamera = [];
 let pendingEnvironmentCamera = null;
+// Original desktop presentation: the whole window is the battlefield, one
+// world pixel per CSS pixel, framed only by the native camera task.
+const HOST_LAYOUT_KEY = "pocket-siege-host-layout";
+let nativeLayout = false;
+let pendingTurnCamera = null;
+let pendingInputCamera = false;
+const mouseLookDelta = [0, 0];
+const edgeScrollDelta = [0, 0];
+const inventoryOpen = () => Boolean(document.querySelector(".controls.inventory-open"));
+function updateNativeLayout() {
+  let host = false;
+  try { host = localStorage.getItem(HOST_LAYOUT_KEY) === "1"; } catch {}
+  const next = !host && window.matchMedia("(pointer: fine) and (min-width: 900px) and (min-height: 560px)").matches;
+  if (next !== nativeLayout) { nativeCameraFraming = null; mouseLookDelta[0] = mouseLookDelta[1] = 0; }
+  nativeLayout = next;
+  document.body.classList.toggle("native-layout", nativeLayout);
+}
+updateNativeLayout();
 const logicRandom = () => matchRandom.logic();
 const visualRandom = () => matchRandom.visual();
 const $ = (s) => document.querySelector(s);
@@ -1232,6 +1250,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeCameraFocus = null;
   nativeCameraFraming = null;
   pendingEnvironmentCamera = null;
+  pendingTurnCamera = null; pendingInputCamera = false;
+  mouseLookDelta[0] = mouseLookDelta[1] = 0;
   pendingWormCamera = [];
   for (const flame of nativeFlames) if (flame) dispose(flame.mesh);
   nativeFlames.fill(null); nativeFlameCounter = 0;
@@ -2518,6 +2538,11 @@ function beginTurn() {
   lastSelectedWormAlliance.set(selectionKey, selection.selected);
   const active = roster[selection.selected - 1];
   current = worms.indexOf(active);
+  // 004DA9A0 (worm event 0x41C): special camera request at the new worm,
+  // aim input may move the camera (+0x2A0) and the idle counter restarts.
+  active.nativeCameraAim = true;
+  active.nativeIdleTicks = 0;
+  pendingTurnCamera = [Math.round(active.x * 65536), Math.round((H - active.y) * 65536)];
   reactionOrigin = { x: Math.round(active.x * 65536) | 0, y: Math.round((H - active.y) * 65536) | 0 };
   matchDamageSourceActive = true;
   active.nativePlacedAction = null;
@@ -4386,6 +4411,31 @@ function spawnBomb({
     age: 0,
   });
 }
+// Native-layout camera callers of 004D6760: the per-frame worm update
+// (004DEF3F state rule), held movement keys (0x406/0x407 every frame),
+// jump/backflip (0x40A..0x40D), aim keys while +0x2A0 is set (0x408/0x409),
+// and the 500-tick idle return (004D9F45..004DA052, consumed by 004DE2AE).
+function collectNativeLayoutCameraRequests() {
+  for (const w of worms) {
+    if (w.disabledRoster || (w.hp <= 0 && !w.deathPending)) continue;
+    const moving = Math.abs(w.vx) > 0.01 || Math.abs(w.vy) > 0.01;
+    if (nativeWormFrameCameraRequest(nativeWormState(w), moving)) queueWormCamera(w);
+  }
+  const active = worms[current];
+  if (!active || active.hp <= 0 || phase !== "aim" || replaying) { pendingInputCamera = false; return; }
+  const input = move !== 0 || pendingInputCamera || (aimInput !== 0 && active.nativeCameraAim);
+  pendingInputCamera = false;
+  if (input) {
+    active.nativeIdleTicks = 0;
+    queueWormCamera(active);
+    return;
+  }
+  active.nativeIdleTicks = ((active.nativeIdleTicks ?? 0) + 1) | 0;
+  if (active.nativeIdleTicks >= 0x1f4) {
+    active.nativeIdleTicks = 0;
+    queueWormCamera(active);
+  }
+}
 // Original teleport relocation and drowning updates dispatch004D6760.
 function queueWormCamera(w, priority = null) {
   if (priority !== null) {
@@ -6196,6 +6246,8 @@ function jump(kind = "forward") {
     return;
   }
   if (!canMove()) return;
+  // 004D9B04: jump/backflip events (0x40A..0x40D) re-request the worm.
+  pendingInputCamera = true;
   markNativePickupAction(w);
   wormLocked = true;
   if (!w.ground) {
@@ -7449,8 +7501,19 @@ function stepFrame(dt) {
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
+  if (nativeLayout) collectNativeLayoutCameraRequests();
   const wormTracking = pendingWormCamera.length > 0;
   const environmentTracking = pendingEnvironmentCamera !== null || nativeNuclearEffect?.progress >= 0;
+  if (nativeLayout && !nativeCameraFraming) {
+    nativeCamera.reset();
+    nativeCameraFraming = new NativeCameraFraming(
+      Math.round(cameraX * 65536), Math.round((H - cameraY) * 65536), 1000 * 65536,
+    );
+  }
+  if (nativeLayout && pendingTurnCamera) {
+    nativeCamera.offerSpecial(...pendingTurnCamera);
+    pendingTurnCamera = null;
+  }
   if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking || environmentTracking)) {
     nativeCamera.reset();
     nativeCameraFraming = new NativeCameraFraming(
@@ -7470,7 +7533,24 @@ function stepFrame(dt) {
   for (const request of barrelActivity.camera) nativeCamera.offer(...request);
   for (const request of flameActivity.camera) nativeCamera.offer(...request);
   pendingWormCamera = [];
-  if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking || environmentTracking)) {
+  if (nativeLayout) {
+    // 004ED5F0 then 004ED710 every frame; the viewport is the window in
+    // world pixels (1:1), limited to the world plus sky and sea bands.
+    const dx = Math.trunc(mouseLookDelta[0]), dy = Math.trunc(mouseLookDelta[1]);
+    mouseLookDelta[0] -= dx; mouseLookDelta[1] -= dy;
+    nativeCameraMouseLook(nativeCameraFraming, dx, dy);
+    const ex = Math.trunc(edgeScrollDelta[0]), ey = Math.trunc(edgeScrollDelta[1]);
+    edgeScrollDelta[0] -= ex; edgeScrollDelta[1] -= ey;
+    if (ex || ey) {
+      nativeCameraFraming.target[0] = (nativeCameraFraming.target[0] + (ex << 16)) | 0;
+      nativeCameraFraming.target[1] = (nativeCameraFraming.target[1] + (ey << 16)) | 0;
+      nativeCameraFraming.suppression = 100;
+    }
+    const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame,
+      [Math.max(1, Math.round(arena.clientWidth)), Math.max(1, Math.round(arena.clientHeight))],
+      [0, -SKY_HEADROOM * 65536, W * 65536, (H + SEA_BAND) * 65536]);
+    nativeCameraFocus = { x: position[0] / 65536, y: H - position[1] / 65536 };
+  } else if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking || environmentTracking)) {
     const aspect = arena.clientWidth / arena.clientHeight;
     const viewport = [Math.floor(Math.min(W, H * aspect)), Math.floor(Math.min(H, W / aspect))];
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame, viewport, [0, -256 * 65536, W * 65536, H * 65536]);
@@ -7504,12 +7584,15 @@ function resize() {
   );
   const portrait =
     !overview && battlefieldFrame.clientHeight > battlefieldFrame.clientWidth;
-  const fill = portrait || (!coarsePointer && !overview);
+  updateNativeLayout();
+  const fill = nativeLayout || portrait || (!coarsePointer && !overview);
   arena.style.width = `${fill ? battlefieldFrame.clientWidth : stageWidth}px`;
   arena.style.height = `${fill ? battlefieldFrame.clientHeight : Math.floor(stageWidth / stageAspect)}px`;
   arena.classList.toggle("portrait-camera", portrait);
   renderedDisplayDensity = window.devicePixelRatio;
-  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight, coarsePointer ? 480 : 960, renderedDisplayDensity);
+  // Native layout draws one world pixel per CSS pixel at full device density.
+  const pixels = pixelViewport(arena.clientWidth, arena.clientHeight,
+    nativeLayout ? Math.max(1, arena.clientWidth) : coarsePointer ? 480 : 960, renderedDisplayDensity);
   renderer.setSize(pixels.width, pixels.height, false);
   renderer.domElement.style.width = `${pixels.width * pixels.scale}px`;
   renderer.domElement.style.height = `${pixels.height * pixels.scale}px`;
@@ -7558,7 +7641,20 @@ function frame(now) {
   }
   if (nativeCameraFocus) camTarget = { zoom: 1, cx: nativeCameraFocus.x, cy: nativeCameraFocus.y };
   if (overview) camTarget = { zoom: 1, cx: W / 2, cy: H / 2 };
-  if (mousePanPointer && matchStarted && !menu.open && !overview && !replaying && !touchPan) {
+  arena.classList.toggle("targeting", Boolean(targetUtility));
+  if (nativeLayout && targetUtility && mousePanPointer && matchStarted && !menu.open && !replaying) {
+    // Target selection shows the cursor; screen edges scroll the camera
+    // through the same mouse-look path (host edge speed).
+    const rect = arena.getBoundingClientRect();
+    const x = mousePanPointer.x - rect.left, y = mousePanPointer.y - rect.top, edge = 48;
+    const speed = (position, size) => position < edge ? -Math.max(0, 1 - position / edge)
+      : position > size - edge ? Math.max(0, 1 - (size - position) / edge) : 0;
+    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+      edgeScrollDelta[0] += speed(x, rect.width) * 700 * frameDt;
+      edgeScrollDelta[1] += speed(y, rect.height) * 700 * frameDt;
+    }
+  }
+  if (!nativeLayout && mousePanPointer && matchStarted && !menu.open && !overview && !replaying && !touchPan) {
     const rect = arena.getBoundingClientRect();
     const x = mousePanPointer.x - rect.left, y = mousePanPointer.y - rect.top;
     const edge = 48;
@@ -7587,7 +7683,12 @@ function frame(now) {
     cameraX += (camTarget.cx - cameraX) * ease;
     cameraY += (camTarget.cy - cameraY) * ease;
   }
-  const nextView = cameraView(
+  const nextView = nativeLayout && nativeCameraFocus ? (() => {
+    // 004C5250 projects from the nearest whole camera pixel.
+    const w = arena.clientWidth, h = arena.clientHeight;
+    cameraX = nativeCameraFocus.x; cameraY = nativeCameraFocus.y; cameraZoom = 1;
+    return { x: Math.round(nativeCameraFocus.x) - w / 2, y: Math.round(nativeCameraFocus.y) - h / 2, w, h, zoom: 1 };
+  })() : cameraView(
     cameraX,
     cameraY,
     cameraZoom,
@@ -7971,13 +8072,27 @@ arena.addEventListener("pointerdown", (e) => {
     arena.setPointerCapture(e.pointerId);
     return;
   }
+  if (nativeLayout && e.button === 2) {
+    // Original: the right mouse button opens and closes the weapon panel.
+    e.preventDefault();
+    if (canAct() || inventoryOpen()) $("#inventory-toggle")?.click();
+    return;
+  }
   if (e.button !== 0) return;
   if (targetUtility) { handleUtilityTarget(e); return; }
+  // The original never aims with the mouse; left click only picks targets.
+  if (nativeLayout) return;
   aiming = true;
   arena.setPointerCapture(e.pointerId);
   pointerAim(e);
 });
+arena.addEventListener("contextmenu", (e) => { if (nativeLayout) e.preventDefault(); });
 arena.addEventListener("pointermove", (e) => {
+  if (nativeLayout && e.pointerType === "mouse" && matchStarted && !menu.open && !targetUtility &&
+      !inventoryOpen() && !replaying && !e.target.closest("button, a, input, select, .weapon-panel")) {
+    mouseLookDelta[0] += e.movementX;
+    mouseLookDelta[1] += e.movementY;
+  }
   if (e.pointerType === "mouse") mousePanPointer =
     e.target.closest("button, a, input, select") ? null : { x: e.clientX, y: e.clientY };
   if (touchPan?.id === e.pointerId) {
@@ -8017,6 +8132,14 @@ function cycleLabelMode() {
 $('#label-detail').onclick = cycleLabelMode;
 window.addEventListener("keydown", (e) => {
   if (menu.open) return;
+  if (nativeLayout && e.key === "Escape" && matchStarted) {
+    // Original: Escape leaves the battlefield for the in-game menu. A press
+    // already used to close the arsenal tray is not repeated here.
+    if (e.defaultPrevented || inventoryOpen()) return;
+    e.preventDefault();
+    $("#restart").click();
+    return;
+  }
   if (e.key === 'Delete' && e.shiftKey) {
     e.preventDefault();
     if (!e.repeat) toggleTeamPanelVisibility = !toggleTeamPanelVisibility;

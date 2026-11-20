@@ -120,3 +120,30 @@ export class NativeCameraFraming {
     return this.display;
   }
 }
+
+// 004ED5F0 (first local player only): the raw mouse delta moves the camera
+// target in screen pixels. A resting camera (suppression 0) ignores moves
+// below |dx|+|dy| 16; negative suppression disables mouse-look. Any applied
+// move holds automatic framing for 100 frames (004ED6F1).
+export function nativeCameraMouseLook(framing, dx, dy) {
+  dx |= 0; dy |= 0;
+  if (framing.suppression < 0) return false;
+  if (framing.suppression === 0 && (Math.abs(dx) + Math.abs(dy)) < 0x10) return false;
+  if (!dx && !dy) return false;
+  framing.target[0] = (framing.target[0] + (dx << 16)) | 0;
+  framing.target[1] = (framing.target[1] + (dy << 16)) | 0;
+  framing.suppression = 100;
+  return true;
+}
+
+// 004DEF07..004DEF67 worm frame update: which states offer 004D6760 each
+// frame. Walking/idle states never do; airborne, hurt, jump, recovery,
+// parachute, drowning and death states always do; rope/frozen states
+// (0x7B/0x7C/0x82/0x83/0x88) only while the 0xF4 movement predicate holds.
+export function nativeWormFrameCameraRequest(state, moving) {
+  state |= 0;
+  if ((state >= 0x64 && state <= 0x67) || state === 0x74) return false;
+  if ([0x7b, 0x7c, 0x82, 0x83, 0x88].includes(state)) return Boolean(moving);
+  if (state >= 0x68 && state <= 0x75) return state === 0x73;
+  return true;
+}

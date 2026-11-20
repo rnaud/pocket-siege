@@ -65,7 +65,10 @@ export function mountPixelHUD(arena) {
     .querySelectorAll(".weapons button")
     .forEach((button) => button.addEventListener("click", closeInventory));
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeInventory();
+    if (event.key !== "Escape") return;
+    // A press that closes the tray is consumed; it does not also open the menu.
+    if (controls.classList.contains("inventory-open")) event.preventDefault();
+    closeInventory();
   });
   const overview = document.createElement("button");
   overview.id = "overview-toggle";

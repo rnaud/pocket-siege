@@ -2266,3 +2266,82 @@ body.native-game-hud {
 }
 
 .menu-meta .progress-link { color: #c9e886; font: 12px monospace; padding: 10px; text-underline-offset: 3px; }
+
+/* Original desktop layout: the window is the battlefield. Host chrome is
+   removed; only original HUD pieces (clock, team bars, wind, messages,
+   labels) remain over a 1:1 landscape. The arsenal tray opens on right
+   click; Escape opens the menu. */
+body.native-layout > #app > header,
+body.native-layout > #app > footer,
+body.native-layout #replay,
+body.native-layout #turn-banner,
+body.native-layout #aim-reticle text,
+body.native-layout .arena-bottom > span:first-child {
+  display: none !important;
+}
+body.native-layout #app,
+body.native-layout main {
+  height: 100dvh;
+}
+body.native-layout .controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  min-height: 0;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+body.native-layout .controls.inventory-open > #weapon-tray#weapon-tray {
+  visibility: visible;
+  pointer-events: auto;
+  left: auto;
+  top: auto;
+  right: 8px;
+  bottom: 8px;
+  width: auto;
+  max-height: calc(100dvh - 16px);
+  padding: 4px;
+  overflow-y: auto;
+}
+/* Icon-only grid like the original weapon panel; names stay available to
+   assistive technology and as tooltips. */
+body.native-layout #weapon-tray .weapons {
+  grid-template-columns: repeat(6, 36px);
+  gap: 2px;
+}
+body.native-layout #weapon-tray .weapons button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 1px;
+}
+body.native-layout #weapon-tray .weapons button canvas.original-icon {
+  margin: 0 auto;
+}
+body.native-layout #weapon-tray .weapons .weapon-name,
+body.native-layout #weapon-tray .weapons .slot-key {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden;
+  clip-path: inset(50%) !important;
+}
+body.native-layout #weapon-tray .weapons button small {
+  right: 1px;
+  bottom: 0;
+  font-size: 8px;
+}
+body.native-layout #arena {
+  cursor: none;
+}
+body.native-layout #arena.targeting {
+  cursor: crosshair;
+}
