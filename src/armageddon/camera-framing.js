@@ -161,3 +161,13 @@ export function nativeCameraWorldLimits({ closed = false, width = 1920, waterY }
   if (((bottom - top) & 0xffff0000) < 0x3000000) bottom = (top + 0x3000000) | 0;
   return [left << 16, top, right << 16, bottom];
 }
+
+// 004DEF07..004DEF67: which worm states call 004EEBE0 (scene busy wake) each
+// frame. Idle/walk states 0x64-0x67 and 0x74 never do; rope/frozen states
+// (0x7B/0x7C/0x82/0x83/0x88) only while moving; all other states always do.
+export function nativeWormFrameActivity(state, moving) {
+  state |= 0;
+  if ((state >= 0x64 && state <= 0x67) || state === 0x74) return false;
+  if ([0x7b, 0x7c, 0x82, 0x83, 0x88].includes(state)) return Boolean(moving);
+  return true;
+}

@@ -112,7 +112,7 @@ import { nativeContactReceiver } from "./armageddon/contact-receiver.js";
 import { NativeMineDudPool, nativeMineExpiry } from "./armageddon/mine-expiry.js";
 import { nativeMineTimer, nativeMineTimerFromRecord, nativeMineInitialTimer, NATIVE_MINE_MASK, NATIVE_MINE_DAMAGE } from "./armageddon/mine-timer.js";
 import { nativeMineProximity } from "./armageddon/mine-proximity.js";
-import { NativeCameraFraming, nativeCameraMouseLook, nativeWormFrameCameraRequest, nativeCameraWorldLimits } from "./armageddon/camera-framing.js";
+import { NativeCameraFraming, nativeCameraMouseLook, nativeWormFrameCameraRequest, nativeCameraWorldLimits, nativeWormFrameActivity } from "./armageddon/camera-framing.js";
 import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRequest } from "./armageddon/camera-priority.js";
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse, updateNativeProjectileAudio, cleanupNativeContactSound } from "./armageddon/audio.js";
 import {
@@ -7743,6 +7743,17 @@ function stepFrame(dt) {
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
   if (cratesBusy || barrelActivity.busy || flameActivity.busy) nativeBusy.wake();
+  // 004DEF07..004DEF67: every worm outside its idle/walk states keeps the
+  // scene busy (004EEBE0). Host adapters cover motion the host still keeps
+  // in state 0x65 (sliding, unsettled landings), teleports, jetpacks and
+  // death sequences, which have no native state here yet.
+  for (const w of worms) {
+    if (w.disabledRoster || (w.hp <= 0 && !w.deathPending && w.dying <= 0)) continue;
+    const moving = Math.abs(w.vx) >= 2 || Math.abs(w.vy) >= 2;
+    if (nativeWormFrameActivity(nativeWormState(w), moving) ||
+        !w.ground || moving || w.originalTeleport || w.originalJetpack || w.dying > 0)
+      nativeBusy.wake();
+  }
   const teamScores = teamRosters.map(roster => {
     const hp = roster.reduce((total, w) => (total + w.hp) | 0, 0);
     return hp === 0 ? 0 : (hp + 1) | 0; // 004B8510.
@@ -7752,10 +7763,7 @@ function stepFrame(dt) {
       nativeBusy.value === 0 &&
       !projectile && !pendingFire &&
       bombs.length === 0 && airstrikes.length === 0 && retreat <= 0 &&
-      !turnBody.retreatPending && !turnBody.retreatRemaining &&
-      worms.every(w => !w.originalTeleport && !w.originalJetpack && w.dying <= 0 &&
-        ((w.hp <= 0 && !w.deathPending) ||
-          (w.ground && Math.abs(w.vx) < 2 && Math.abs(w.vy) < 2)));
+      !turnBody.retreatPending && !turnBody.retreatRemaining;
     let healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
     let deathStarted = false;
     if (settled && !healthDisplayBusy) {

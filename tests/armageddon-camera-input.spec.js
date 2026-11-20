@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/camera-input.json" with { type: "json" };
-import { nativeCameraMouseLook, nativeWormFrameCameraRequest } from "../src/armageddon/camera-framing.js";
+import { nativeCameraMouseLook, nativeWormFrameCameraRequest, nativeWormFrameActivity } from "../src/armageddon/camera-framing.js";
 
 test("mouse-look matches original 004ED5F0 thresholds, holds and player gate", { tag: "@logic" }, () => {
   expect(fixture.mouse).toHaveLength(264);
@@ -37,4 +37,9 @@ test("camera world limits match the recovered scene display initialisation", { t
   // 004EABB5: a rising sea moves the bottom with it, keeping 768 below the top.
   expect(nativeCameraWorldLimits({ waterY: 500 })[3]).toBe(660 << 16);
   expect(nativeCameraWorldLimits({ closed: true, waterY: 100 })[3]).toBe((2 + 768) << 16);
+});
+
+test("worm frame busy wakes match original 004DEF07 activity calls", { tag: "@logic" }, () => {
+  for (const c of fixture.frames)
+    expect(nativeWormFrameActivity(c.state, c.moving), JSON.stringify(c)).toBe(c.activity);
 });

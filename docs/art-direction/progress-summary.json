@@ -248,7 +248,8 @@
         "live_native_worm_rotation",
         "native_turn_start_controller",
         "native_weapon_completion_retreat_request",
-        "live_native_turn_start_retreat"
+        "live_native_turn_start_retreat",
+        "live_native_worm_busy"
       ],
       "plain": {
         "now": "Teams take turns, wind changes and poison takes effect.",
