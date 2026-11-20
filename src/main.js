@@ -517,6 +517,7 @@ let lastWaterRiseRound = 0;
 let earthquakeShake = 0;
 let teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
 const crateSpyLabels = new Map();
+const missionTargetMarkers = new Map();
 let ammo = [freshAmmo(), freshAmmo()],
   teamWeapon = ["rocket", "rocket"],
   waterLevel = WATER,
@@ -1597,6 +1598,34 @@ function updateCrateSpyHUD() {
     const p = screen(crate.x, crate.y - 34);
     label.style.left = `${p.x}px`;
     label.style.top = `${p.y}px`;
+  }
+}
+function updateMissionTargetMarkers() {
+  const active = Boolean(currentScenario && scenarioProgress);
+  const present = new Set();
+  for (const crate of crates) {
+    if (!active || !crate.mission?.target || crate.mission.removed) continue;
+    present.add(crate);
+    let marker = missionTargetMarkers.get(crate);
+    if (!marker) {
+      marker = document.createElement("span");
+      marker.className = "mission-target-marker";
+      const ring = document.createElement("i");
+      const text = document.createElement("b");
+      text.textContent = "TARGET";
+      marker.append(ring, text);
+      $("#labels").appendChild(marker);
+      missionTargetMarkers.set(crate, marker);
+    }
+    const p = screen(crate.x, crate.y + 34);
+    marker.style.left = `${p.x}px`;
+    marker.style.top = `${p.y}px`;
+  }
+  for (const [crate, marker] of missionTargetMarkers) {
+    if (!present.has(crate)) {
+      marker.remove();
+      missionTargetMarkers.delete(crate);
+    }
   }
 }
 function updateCrateSpyLabelPositions() {
@@ -7504,6 +7533,7 @@ function frame(now) {
   if (renderedDisplayDensity !== window.devicePixelRatio) resize();
   syncMusic();
   if (crateSpyLabels.size) updateCrateSpyLabelPositions();
+  if (missionTargetMarkers.size || (currentScenario && scenarioProgress)) updateMissionTargetMarkers();
   const frameDt = Math.min((now - last) / 1000, 0.1);
   const slow = slowMo > 0 && !reducedMotion;
   if (slowMo > 0) slowMo = Math.max(0, slowMo - frameDt);
