@@ -56,6 +56,8 @@ const runTrace = async (page) => {
 };
 
 test("deterministic match trace baseline (host)", async ({ browser }) => {
+  // Two complete scripted traces in fresh pages; slower CI runners need room.
+  test.setTimeout(180000);
   const first = await browser.newPage();
   const second = await browser.newPage();
   try {

@@ -86,14 +86,18 @@ test("delay survives worm selection and unlocks on the next own turn", async ({
   expect(
     await page.evaluate(() => window.siege.getState().weaponDelays[0].turns),
   ).toBe(1);
+  // Skipped turns still settle and announce; advance them in simulation frames.
+  const waitForTeam = (target) => page.evaluate((target) => {
+    for (let frames = 0; frames < 6000; frames += 25) {
+      if (window.siege.getState().team === target) return target;
+      window.siege.debug.advanceReplayFrames(25);
+    }
+    return window.siege.getState().team;
+  }, target);
   await page.locator("#skip").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().team))
-    .toBe(1);
+  expect(await waitForTeam(1)).toBe(1);
   await page.locator("#skip").click();
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().team))
-    .toBe(0);
+  expect(await waitForTeam(0)).toBe(0);
   await page.locator("#inventory-toggle").click();
   await expect(rocket).toBeEnabled();
   await page.screenshot({

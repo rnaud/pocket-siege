@@ -38,14 +38,15 @@ jobs:
         env:
           RELATED_LOGIC_ONLY: '1'
   test:
-    name: Browser checks (${{ matrix.shard }}/2)
+    name: Browser checks (${{ matrix.shard }}/4)
     # Keep browser system dependencies on Playwright's supported Ubuntu release.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        # Four shards keep a full regression near ten minutes of wall time.
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,7 +61,7 @@ jobs:
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           FULL_BROWSER: ${{ github.event_name == 'schedule' || inputs.full_browser == true }}
-          CI_SHARD: ${{ matrix.shard }}/2
+          CI_SHARD: ${{ matrix.shard }}/4
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/results.json
       - uses: actions/upload-artifact@v4
         if: always()

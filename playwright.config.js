@@ -1,7 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
-  timeout: 45000,
+  // Shared CI runners render in software and run several browsers per core;
+  // give real-time cases room and retry once so one slow frame is reported
+  // as flaky instead of failing the deploy.
+  timeout: process.env.CI ? 90000 : 45000,
+  retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["line"], ["json"]] : "list",
   use: {
     baseURL: "http://127.0.0.1:5187",

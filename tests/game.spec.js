@@ -807,11 +807,14 @@ test("action camera follows the shot and snaps back for the next turn", async ({
         timeout: 6000,
       })
       .toBe(1);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().team), {
-      timeout: 60000,
-    })
-    .toBe(1);
+  // Finish the shot and settlement in simulation frames, not CI wall time.
+  expect(await page.evaluate(() => {
+    for (let frames = 0; frames < 6000; frames += 25) {
+      if (window.siege.getState().team === 1) return 1;
+      window.siege.debug.advanceReplayFrames(25);
+    }
+    return window.siege.getState().team;
+  })).toBe(1);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().camera.zoom), {
       timeout: 3000,
@@ -1487,12 +1490,20 @@ test("earthquake damages grounded worms", async ({ page }) => {
   await page.keyboard.down("Space");
   await page.waitForTimeout(250);
   await page.keyboard.up("Space");
-  await expect
-    .poll(() => page.evaluate(() =>
-      window.siege.getState().worms.reduce((sum, w) => sum + w.hp, 0)),
-    { timeout: 10000 })
-    .toBeLessThan(before);
-  expect(await page.evaluate(() => window.siege.getState().earthquakeShake)).toBeGreaterThan(0);
+  // Step frames synchronously and keep the strongest shake: on a slow runner
+  // the shake can decay between polls before the damage is observed.
+  const quake = await page.evaluate((before) => {
+    let shake = 0, hp = before;
+    for (let frame = 0; frame < 1500 && hp >= before; frame++) {
+      window.siege.debug.advanceReplayFrames(1);
+      const s = window.siege.getState();
+      shake = Math.max(shake, s.earthquakeShake);
+      hp = s.worms.reduce((sum, w) => sum + w.hp, 0);
+    }
+    return { shake, hp };
+  }, before);
+  expect(quake.hp).toBeLessThan(before);
+  expect(quake.shake).toBeGreaterThan(0);
 });
 
 test("longbow fires a host arrow projectile", async ({ page }) => {

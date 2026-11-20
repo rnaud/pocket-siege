@@ -137,22 +137,16 @@ test(`live ${kind} aircraft releases original missiles and resolves its strike`,
     true,
   );
   expect(samples.some((s) => s.missiles && s.focus)).toBe(true);
-  if (kind === "napalmstrike") {
+  if (kind === "napalmstrike")
     expect(
       await page.evaluate(() => window.siege.getState().nativeFlames.length),
     ).toBeGreaterThan(0);
-    await expect
-      .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus), {
-        timeout: 20000,
-      })
-      .toBeNull();
-  } else {
-    await expect
-      .poll(() => page.evaluate(() => window.siege.getState().nativeCameraFocus), {
-        timeout: 20000,
-      })
-      .toBeNull();
-  }
+  // Burning napalm keeps the camera for many seconds; finish it in frames.
+  expect(await page.evaluate(() => {
+    for (let frames = 0; frames < 3000 && window.siege.getState().nativeCameraFocus; frames += 10)
+      window.siege.debug.advanceReplayFrames(10);
+    return window.siege.getState().nativeCameraFocus;
+  })).toBeNull();
 });
 
 import {
