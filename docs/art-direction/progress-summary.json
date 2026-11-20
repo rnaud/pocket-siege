@@ -454,12 +454,15 @@
     },
     {
       "title": "Computer opponents",
-      "live": "A playable computer opponent is present. Its host heuristics are not a complete port of the original AI.",
-      "remaining": "Port native movement planning, trajectory search, weapon selection and difficulty behavior.",
-      "evidence": [],
+      "live": "A playable computer opponent is present. The original AI is mapped and its ballistic routines are executable-verified; live CPU turns now pick Bazooka and grenade-family shots, aim, power and fuse with the recovered search, skill jitter and friendly-fire filter. Movement, the other weapon families and the per-frame event stream still use host heuristics.",
+      "remaining": "Port the reachable-position flood fill, path walking, safety and retreat scoring, the gun/melee/drop/strike evaluators and the full per-frame state machine and event stream.",
+      "evidence": [
+        "native_cpu_ai_routines",
+        "live_native_cpu_ballistic_shots"
+      ],
       "plain": {
-        "now": "You can play against the computer, but it uses our own decision-making.",
-        "next": "Replace it with the original aiming, movement and weapon choices."
+        "now": "The computer now chooses its thrown and launched shots the way the original does; its movement and other weapons still use our own logic.",
+        "next": "Port its movement, retreat and remaining weapon choices."
       },
       "milestones": [
         {

@@ -350,6 +350,10 @@ import {
   WATER_RISE,
 } from "./weapons.js";
 import { planTurn, planMove, planRetreat } from "./ai.js";
+import {
+  aiWeaponTrial, aiBallisticEvaluate, aiBallisticFireSetup, aiBlastEstimate, nextAiRandom,
+} from "./armageddon/cpu-ai.js";
+import schemeWeaponData from "./armageddon/scheme-weapon-data.json";
 import { chooseCameraTarget, cameraView, FULL_VIEW } from "./camera.js";
 import {
   applyMatchResult,
@@ -763,6 +767,8 @@ let format = "single",
   daily = null,
   record = readRecord();
 let aiPower = 100;
+// Per CPU team controller+0x88 recklessness (see nativeAiShot).
+const aiRecklessness = new Map();
 let shotFuse = null,
   shotBounce = null,
   aiMoveTime = 0,
@@ -1388,6 +1394,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   shotBounce = null;
   aiMoveTime = 0;
   aiMoveDirection = 0;
+  aiRecklessness.clear();
   aiPlan = null;
   lastAiPlanMs = 0;
   hitStop = 0;
@@ -6838,9 +6845,131 @@ function startAiTurn() {
   }
   aiAim();
 }
+// Original CPU shot choice for the ballistic family (004CE3A0 group order,
+// 004CE270 trials, 004F3F00/004F39A0 search, 004CE7D0 friendly-fire filter,
+// 004F2FD0 skill jitter). Other families (guns, melee, drops, strikes) and
+// the reachable-position flood fill are not recovered yet: the search uses the
+// worm's current spot and the host planner handles everything else.
+const AI_BALLISTIC_RECORDS = schemeWeaponData.schemes.find((scheme) => scheme.resource_id === 195).weapons;
+const aiRecordWord = (slot, offset) => AI_BALLISTIC_RECORDS[slot]?.[(offset - 0x48) / 4] | 0;
+function aiBallisticRecord(slot) {
+  const at = (offset) => aiRecordWord(slot, offset);
+  return { launch: at(0x6c), kind: at(0x68), fuseMs: at(0xc4), impact: at(0x80), mode: at(0x128),
+    blast: at(0x8c), extra: at(0x150), extraCount: at(0x130), wind: at(0xb4), gravity: at(0xbc),
+    acceptMiss: at(0x204), secondaryFixed: at(0x188) };
+}
+// Host adapter: CPU skill 0..100 (controller byte +0x44) from the mission team
+// skill, else the host difficulty preset.
+function nativeAiSkill(worm) {
+  if (Number.isFinite(worm?.teamSkill)) return Math.max(0, Math.min(100, worm.teamSkill | 0));
+  return { rookie: 30, regular: 60, veteran: 100 }[difficultyForWorm(worm)] ?? 60;
+}
+// Controller+0x88 recklessness: -15 at each CPU activation (004E7470), +40
+// (capped at 100) when a CPU turn ends without firing.
+function nativeAiShot(w) {
+  const native = (x, y) => [Math.round(x * 65536) | 0, Math.round((H - y) * 65536) | 0];
+  const reckless = Math.max(0, (aiRecklessness.get(w.team) ?? 0) - 15);
+  aiRecklessness.set(w.team, reckless);
+  const living = worms.filter((t) => t.hp > 0);
+  const [ox, oy] = native(w.x, w.y);
+  const ai = {
+    team: w.team + 1, skill: nativeAiSkill(w), aggression: reckless,
+    teams: new Set(living.map((t) => t.team)).size,
+    seed: matchRandom.logicState | 0, x: ox, y: oy, targetTeam: 0, targetWorm: 0, stamp: 0,
+  };
+  const registry = living.map((t) => {
+    const [x, y] = native(t.x, t.y);
+    return { team: t.team + 1, worm: t.matchStats?.worm ?? worms.indexOf(t) + 1, x, y, self: t === w, host: t };
+  });
+  const world = {
+    damageScale: 1, water: Math.floor(H - waterLevel), rangeWord: 0,
+    health: (team, worm) => registry.find((r) => r.team === team && r.worm === worm)?.host.hp ?? 0,
+    altHealth: (team, worm) => registry.find((r) => r.team === team && r.worm === worm)?.host.hp ?? 0,
+    teamFlag: () => 0,
+    alliance: (team) => {
+      const member = registry.find((r) => r.team === team)?.host;
+      return Number.isFinite(member?.alliance) ? member.alliance : team;
+    },
+    ally: () => 0, double: () => false,
+  };
+  const kindOf = (slot) => NATIVE_WEAPON_KINDS[slot];
+  const ammoOf = (slot) => {
+    const kind = kindOf(slot);
+    if (!kind || !WEAPONS[kind] || WEAPONS[kind].special) return 0;
+    const count = availableAmmo(ammo[w.team], kind);
+    return !Number.isFinite(count) || count < 0 ? -1 : count | 0;
+  };
+  const host = {
+    positions: [[ox >> 16, oy >> 16, 0]],
+    ammo: ammoOf,
+    wind: () => Math.round((wind / 2500) * 65536) | 0,
+    gravity: () => Math.round(0x3d70 * gravityScale),
+    enemies: () => registry.map((r) => ({ team: r.team, x: r.x, y: r.y })),
+    ownPosition: () => [ox, oy],
+    teleport: () => true, wormFlags: () => 0, setWormFlags: () => {}, yield: () => {},
+    solid: (x, y) => terrain.solid(x, H - 1 - y),
+    closedTop: 0, bordered: 0,
+    estimate: (x, y, radius, damage) => aiBlastEstimate(ai, registry, world, x, y, radius, damage, 0),
+  };
+  const adjustable = (record) => record.kind === 1 &&
+    (record.fuseMs === 0 || (record.mode === 1 && record.secondaryFixed === 0));
+  const trialHost = {
+    ammo: ammoOf, weight: (slot) => aiRecordWord(slot, 0x200),
+    evaluate: (family, slot, plan) => {
+      if (family !== "ballistic") return 0;
+      const record = aiBallisticRecord(slot);
+      return aiBallisticEvaluate(ai, plan, slot, record, adjustable(record), host);
+    },
+  };
+  const plan = new Array(24).fill(0);
+  // 004CE3A0: Grenade and Bazooka in AI-random order, then the ballistic part
+  // of the fallback list.
+  const entry = ai.seed;
+  ai.seed = nextAiRandom(ai.seed);
+  const groups = ai.seed & 0x10000 ? [[1], [6]] : [[6], [1]];
+  for (const group of groups) aiWeaponTrial(ai, plan, group, 4, entry, trialHost);
+  if (!(plan[6] && !plan[4] && plan[3]))
+    aiWeaponTrial(ai, plan, [1, 6, 47, 7, 8, 43], 4, entry, trialHost);
+  if (plan[6] !== 3 || !plan[3]) return null;
+  const slot = plan[1], record = aiBallisticRecord(slot);
+  Object.assign(ai, { weapon: slot, aim: plan[19], power: plan[20], flightTicks: plan[10], action: 0 });
+  aiBallisticFireSetup(ai, { hasFuse: adjustable(record), selected: WEAPON_SLOTS[weapon] ?? 0 });
+  // Native aim: turn = aim/2 from straight down (mirrored when facing left);
+  // host angles are degrees from the right, counter-clockwise.
+  const turn = (plan[22] < 0 ? 0x20000 - ai.aim : ai.aim) / 2;
+  const radians = (turn / 65536) * Math.PI * 2;
+  return {
+    weapon: kindOf(slot), slot, facing: plan[22],
+    angle: (Math.atan2(-Math.cos(radians), Math.sin(radians)) * 180) / Math.PI,
+    power: (ai.power / 65536) * 100, nativePower: ai.power, nativeAim: ai.aim, fuse: adjustable(record) ? ai.fuse : null,
+    score: plan[3], friendly: plan[4], native: true,
+  };
+}
 function aiAim() {
   const w = worms[current];
   const started = performance.now();
+  const nativeShot = w.fixedWeapon ? null : nativeAiShot(w);
+  if (nativeShot) {
+    lastAiPlanMs = performance.now() - started;
+    aiPlan = { weapon: nativeShot.weapon, angle: nativeShot.angle, power: nativeShot.power,
+      score: nativeShot.score, samples: 0, native: true, nativePower: nativeShot.nativePower,
+      nativeAim: nativeShot.nativeAim, fuse: nativeShot.fuse };
+    angle = nativeShot.angle;
+    aiPower = nativeShot.power;
+    shotFuse = WEAPONS[nativeShot.weapon].timed ? nativeShot.fuse ?? 2 : null;
+    shotBounce = 0.55;
+    weapon = nativeShot.weapon;
+    setWeapon(weapon);
+    w.facing = nativeShot.facing;
+    power = 0;
+    charging = true;
+    chargeSource = "ai";
+    chargeFixed = 0;
+    aiWait = Infinity;
+    updateSliders();
+    $("#status").textContent = `Computer lines up the ${WEAPONS[weapon].label.toLowerCase()}…`;
+    return;
+  }
   const fixed = w.fixedWeapon;
   const fixedAmmo = fixed && (ammo[1][fixed] ?? 0) !== 0
     ? Object.fromEntries(Object.entries(ammo[1]).map(([kind, count]) =>
@@ -6858,6 +6987,8 @@ function aiAim() {
   }
   lastAiPlanMs = performance.now() - started;
   if (!plan) {
+    // Controller+0x88: a CPU turn that ends without firing raises recklessness.
+    aiRecklessness.set(w.team, Math.min(100, (aiRecklessness.get(w.team) ?? 0) + 40));
     time = 0;
     aiWait = Infinity;
     return;
@@ -9398,6 +9529,8 @@ window.siege = {
           angle: Math.round(aiPlan.angle),
           power: Math.round(aiPlan.power),
           score: Math.round(aiPlan.score),
+          native: Boolean(aiPlan.native),
+          nativePower: aiPlan.nativePower, nativeAim: aiPlan.nativeAim, fuse: aiPlan.fuse,
           samples: aiPlan.samples,
         }
       : null,
