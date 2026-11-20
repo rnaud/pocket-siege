@@ -64,6 +64,7 @@ const names = [
     ...["r", "b", "g", "y", "p", "c"].flatMap((color) => [
       `marker${color}`,
       `crshair${color}`,
+      `cursor${color}`,
       `arrowdn${color}`,
       `arrowsd${color}`,
       `spangle${color}`,

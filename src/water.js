@@ -38,8 +38,10 @@ export async function loadOriginalWater() {
 // Native wave pixels tiled horizontally over the source fill colour. The
 // browser clock currently drives this zero-rate strip; native layer timing
 // and parallax are separate remaining ports.
-// depth extends the fill below the landscape bottom for the camera's sea band.
-export function createWater(width, level, depth = 0) {
+// depth extends the fill below the landscape bottom and margin past both map
+// edges, covering everything the native camera limits can show.
+export function createWater(mapWidth, level, depth = 0, margin = 0) {
+  const width = mapWidth + 2 * margin;
   const canvas = document.createElement("canvas"),
     context = canvas.getContext("2d");
   canvas.width = Math.ceil(width);
@@ -73,10 +75,11 @@ export function createWater(width, level, depth = 0) {
     context.fillStyle = color;
     context.fillRect(0, crest, canvas.width, height - crest);
     context.imageSmoothingEnabled = false;
-    for (let x = 0; x < width; x += sprite.width)
+    // Tile from the map's left edge so the waves stay aligned with it.
+    for (let x = margin % sprite.width - sprite.width; x < width; x += sprite.width)
       context.drawImage(frames[frame], x, 0);
     mesh.scale.y = height;
-    mesh.position.set(width / 2, height / 2 - depth, 22);
+    mesh.position.set(width / 2 - margin, height / 2 - depth, 22);
     texture.needsUpdate = true;
     lastFrame = frame;
     lastHeight = height;

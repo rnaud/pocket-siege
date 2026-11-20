@@ -147,3 +147,17 @@ export function nativeWormFrameCameraRequest(state, moving) {
   if (state >= 0x68 && state <= 0x75) return state === 0x73;
   return true;
 }
+
+// 0049D2CE..0049D3DE and 004EABB5..004EABE5 world limits in 16.16: open
+// landscapes let the camera roam 2046 pixels past each side and above the
+// map, closed ones (scene 0x11D67 -> 0x1B8AC) stop 2 pixels inside; the bottom
+// is the Y-down waterline + 160, at least 768 below the top. The original
+// right edges 0x77E/0xF7E assume the 1920-pixel landscape; width scales them.
+export function nativeCameraWorldLimits({ closed = false, width = 1920, waterY }) {
+  const left = closed ? 2 : -2046;
+  const right = closed ? width - 2 : width + 2046;
+  const top = left << 16;
+  let bottom = ((waterY + 160) << 16) | 0;
+  if (((bottom - top) & 0xffff0000) < 0x3000000) bottom = (top + 0x3000000) | 0;
+  return [left << 16, top, right << 16, bottom];
+}
