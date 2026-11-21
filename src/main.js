@@ -482,6 +482,16 @@ targetMarker.style.cssText =
 arena.appendChild(targetMarker);
 let manualCamera = null;
 let touchPan = null;
+// Two-finger pinch on touch screens scales the battlefield view: pinchZoom is
+// screen pixels per world pixel for the 1:1 native camera (1 = original).
+let pinch = null;
+let pinchZoom = 1;
+const touchPoints = new Map();
+const PINCH_MAX_ZOOM = 3;
+// Unzoom until the island's width or the sky-to-sea height fills the screen.
+function pinchMinZoom() {
+  return Math.min(1, Math.max(arena.clientWidth / W, arena.clientHeight / (H + SKY_HEADROOM)));
+}
 let mousePanPointer = null;
 let overview = false;
 window.addEventListener("siege-overview", (event) => {
@@ -1478,6 +1488,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   pendingEnvironmentCamera = null;
   pendingTurnCamera = null; pendingInputCamera = false;
   mouseLookDelta[0] = mouseLookDelta[1] = 0;
+  pinchZoom = 1;
   pendingWormCamera = [];
   for (const flame of nativeFlames) if (flame) dispose(flame.mesh);
   nativeFlames.fill(null); nativeFlameCounter = 0;
@@ -8432,7 +8443,7 @@ function stepFrame(dt) {
     else if (!targetCursor) nativeCameraMouseLook(nativeCameraFraming, dx, dy);
     arsenalPanel.tick();
     const position = nativeCameraFraming.track(nativeCamera, matchRandom.frame,
-      [Math.max(1, Math.round(arena.clientWidth)), Math.max(1, Math.round(arena.clientHeight))], limits);
+      [Math.max(1, Math.round(arena.clientWidth / pinchZoom)), Math.max(1, Math.round(arena.clientHeight / pinchZoom))], limits);
     nativeCameraFocus = { x: position[0] / 65536, y: H - position[1] / 65536 };
   } else if (nativeCameraFraming && (airstrikes.length || trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking || environmentTracking)) {
     const aspect = arena.clientWidth / arena.clientHeight;
@@ -8566,9 +8577,10 @@ function frame(now) {
   }
   const nextView = nativeCameraActive && nativeCameraFocus && !overview ? (() => {
     // 004C5250 projects from the nearest whole camera pixel.
-    const w = arena.clientWidth, h = arena.clientHeight;
+    pinchZoom = Math.max(pinchMinZoom(), Math.min(PINCH_MAX_ZOOM, pinchZoom));
+    const w = arena.clientWidth / pinchZoom, h = arena.clientHeight / pinchZoom;
     cameraX = nativeCameraFocus.x; cameraY = nativeCameraFocus.y; cameraZoom = 1;
-    return { x: Math.round(nativeCameraFocus.x) - w / 2, y: Math.round(nativeCameraFocus.y) - h / 2, w, h, zoom: 1 };
+    return { x: Math.round(nativeCameraFocus.x) - w / 2, y: Math.round(nativeCameraFocus.y) - h / 2, w, h, zoom: pinchZoom };
   })() : cameraView(
     cameraX,
     cameraY,
@@ -8979,8 +8991,19 @@ function pointerAim(e) {
 }
 arena.addEventListener("pointerdown", (e) => {
   if (e.target.closest("button, a, input, select") || menu.open || !matchStarted) return;
+  if (e.pointerType === "touch") touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (e.pointerType === "touch" && touchPan?.touch && !pinch && touchPoints.size === 2 && !overview) {
+    // A second finger turns the pan into a pinch; neither finger aims.
+    e.preventDefault();
+    touchPan.dragged = true;
+    const [a, b] = touchPoints.values();
+    pinch = { ids: [...touchPoints.keys()], distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+      zoom: nativeCameraActive ? pinchZoom : view.zoom, mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
+    arena.setPointerCapture(e.pointerId);
+    return;
+  }
   if (e.pointerType === "touch" || e.button === 1) {
-    if (touchPan) return;
+    if (touchPan || pinch) return;
     e.preventDefault();
     touchPan = { id: e.pointerId, x: e.clientX, y: e.clientY,
       cx: view.x + view.w / 2, cy: view.y + view.h / 2,
@@ -9041,6 +9064,12 @@ arena.addEventListener("pointermove", (e) => {
   }
   if (e.pointerType === "mouse") mousePanPointer =
     e.target.closest("button, a, input, select") ? null : { x: e.clientX, y: e.clientY };
+  if (touchPoints.has(e.pointerId)) touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch?.ids.includes(e.pointerId)) {
+    e.preventDefault();
+    pinchMove();
+    return;
+  }
   if (touchPan?.id === e.pointerId) {
     e.preventDefault();
     const dx = e.clientX - touchPan.x, dy = e.clientY - touchPan.y;
@@ -9050,8 +9079,8 @@ arena.addEventListener("pointermove", (e) => {
     if (nativeCameraActive) {
       // Dragging moves the world under the finger: the opposite of a mouse
       // delta, fed through the same 004ED5F0 mouse-look path.
-      mouseLookDelta[0] -= e.clientX - (touchPan.lastX ?? touchPan.x);
-      mouseLookDelta[1] -= e.clientY - (touchPan.lastY ?? touchPan.y);
+      mouseLookDelta[0] -= (e.clientX - (touchPan.lastX ?? touchPan.x)) / pinchZoom;
+      mouseLookDelta[1] -= (e.clientY - (touchPan.lastY ?? touchPan.y)) / pinchZoom;
       touchPan.lastX = e.clientX; touchPan.lastY = e.clientY;
       return;
     }
@@ -9063,8 +9092,43 @@ arena.addEventListener("pointermove", (e) => {
 });
 arena.addEventListener("pointerleave", () => { mousePanPointer = null; });
 window.addEventListener("blur", () => { mousePanPointer = null; });
+// Pinch scale follows the finger spread; the world point under the fingers'
+// midpoint stays under it, so moving both fingers also pans.
+function pinchMove() {
+  const [a, b] = pinch.ids.map((id) => touchPoints.get(id));
+  if (!a || !b) return;
+  const rect = arena.getBoundingClientRect();
+  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  const ratio = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)) / pinch.distance;
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  if (nativeCameraActive) {
+    const before = pinchZoom;
+    pinchZoom = Math.max(pinchMinZoom(), Math.min(PINCH_MAX_ZOOM, pinch.zoom * ratio));
+    // Mouse-look units are world pixels in screen directions.
+    mouseLookDelta[0] += (pinch.mid.x - cx) / before - (mid.x - cx) / pinchZoom;
+    mouseLookDelta[1] += (pinch.mid.y - cy) / before - (mid.y - cy) / pinchZoom;
+  } else if (!overview) {
+    const aspect = rect.width / rect.height;
+    const worldX = view.x + (pinch.mid.x - rect.left) / rect.width * view.w;
+    const worldY = view.y + view.h - (pinch.mid.y - rect.top) / rect.height * view.h;
+    const size = cameraView(W / 2, H / 2, pinch.zoom * ratio, aspect);
+    const next = cameraView(worldX - ((mid.x - rect.left) / rect.width - 0.5) * size.w,
+      worldY + ((mid.y - rect.top) / rect.height - 0.5) * size.h, size.zoom, aspect);
+    manualCamera = { cx: next.x + next.w / 2, cy: next.y + next.h / 2, zoom: next.zoom };
+    Object.assign(view, next);
+  }
+  pinch.mid = mid;
+}
 for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
   arena.addEventListener(event, e => {
+    touchPoints.delete(e.pointerId);
+    if (pinch?.ids.includes(e.pointerId)) {
+      // Lifting either finger ends the gesture; the other one stays idle.
+      pinch = null;
+      touchPan = null;
+      aiming = false;
+      return;
+    }
     if (touchPan?.id === e.pointerId) {
       if (event === "pointerup" && !touchPan.dragged && touchPan.touch) {
         if (targetUtility) handleUtilityTarget(e);
@@ -9306,6 +9370,8 @@ window.addEventListener("keyup", (e) => {
 });
 function releaseInputs() {
   touchPan = null;
+  pinch = null;
+  touchPoints.clear();
   sheepSteer = { left: false, right: false };
   aiming = false;
   stopBurstSound();

@@ -73,7 +73,8 @@ test("camera view clamps to the world and preserves the world aspect", { tag: "@
   const far = cameraView(W, H, 1.5);
   expect(far.x).toBeCloseTo(W - W / 1.5, 5);
   expect(far.y).toBeCloseTo(H - H / 1.5, 5);
-  expect(cameraView(W / 2, H / 2, 99).zoom).toBe(1.5);
+  // Pinch zoom may go past the automatic 1.35 framing, up to 3x.
+  expect(cameraView(W / 2, H / 2, 99).zoom).toBe(3);
 });
 
 test("a focused camera may dip into the sea band below the landscape", { tag: "@logic" }, () => {

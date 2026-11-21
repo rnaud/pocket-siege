@@ -29,12 +29,13 @@ export function chooseCameraTarget({ phase, projectile, worms, active }) {
   return { zoom, cx, cy };
 }
 
+// Automatic framing stays at or below 1.35; touch pinch may zoom up to 3x.
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 // bottom lets a focused view dip below the landscape into the sea band, so
 // worms standing at the landscape's bottom edge clear the overlaid HUD.
 export function cameraView(cx, cy, zoom, aspect = W / H, top = H, bottom = 0) {
-  const z = clamp(zoom, 1, 1.5),
+  const z = clamp(zoom, 1, 3),
     w = Math.min(W, H * aspect) / z,
     h = Math.min(H, W / aspect) / z;
   return {
