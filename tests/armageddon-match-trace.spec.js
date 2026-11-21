@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import fixture from "./fixtures/armageddon/match-trace.json" with { type: "json" };
+import { startMatch } from "./helpers/match.js";
 
 // The whole script runs inside the page in one evaluate: the simulation is
 // paused and advanced with the debug stepper, so there is nothing to wait for
@@ -55,11 +56,7 @@ const scriptedTrace = () => {
 };
 
 const runTrace = async (page) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   return page.evaluate(scriptedTrace);
 };
 

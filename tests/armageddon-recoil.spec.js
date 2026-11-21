@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
 import { nativePostFire, nativeRecoilTick } from "../src/armageddon/recoil.js";
+import { startMatch } from "./helpers/match.js";
 const fixture = JSON.parse(
   fs.readFileSync(
     new URL("./fixtures/armageddon/recoil.json", import.meta.url),
@@ -92,24 +93,15 @@ for (const [weapon, sprite] of [
   test(`live ${weapon} action displays original firing sprite`, async ({
     page,
   }) => {
-    await page.goto("/");
-    await page.waitForFunction(() => window.siege?.getState().assetsReady);
-    await page.locator('[data-mode="local"]').click();
-    await page.locator("#map-layout").selectOption("fern");
-    await page.locator("#start").click();
     // Fix landscape and object placement before staging the firing-art fixture.
-    await page.evaluate(async () => {
-      await window.siege.debug.resetSeed(42);
-      window.siege.debug.stageMeleeTargets();
-    });
+    await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+    await page.evaluate(() => window.siege.debug.stageMeleeTargets());
     await page.locator("#inventory-toggle").click();
 
     await page.locator(`[data-weapon="${weapon}"]`).click();
     const shooter = await page.evaluate(() => window.siege.getState().current);
-    await expect.poll(() => page.evaluate(shooter => {
-      const worm = window.siege.getState().worms[shooter];
-      return worm.ground && worm.y < 258;
-    }, shooter)).toBe(true);
+    await advanceUntil(page, (s, shooter) => s.worms[shooter].ground && s.worms[shooter].y < 258,
+      { arg: shooter, label: "shooter settles" });
     if (weapon === "shotgun") await page.locator("#angle").evaluate(el => {
       // Fire into clear sky so a nearby impact cannot replace recoil with hurt.
       el.value = "90";

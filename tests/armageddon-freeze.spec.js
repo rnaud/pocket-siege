@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { freezeTeam, nativeFreezeAnimation } from "../src/armageddon/freeze.js";
 import { blastImpulse } from "../src/physics.js";
 import { advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 const fixture = JSON.parse(
   fs.readFileSync(
     new URL("./fixtures/armageddon/freeze.json", import.meta.url),
@@ -64,11 +65,7 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
   page.on("response", (r) => {
     if (r.ok() && r.url().endsWith(".wav")) audio.add(r.url().split("/").pop());
   });
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   // Fix terrain/object placement so random settling does not time the Freeze check.
   await page.evaluate(async () => {
     await window.siege.debug.resetSeed(42);

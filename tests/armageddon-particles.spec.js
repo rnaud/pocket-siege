@@ -5,6 +5,7 @@ import {
   stepNativeParticles,
 } from "../src/armageddon/particles.js";
 import { fastForward, advance } from "./helpers/misc-fast-forward.js";
+import { startMatch } from "./helpers/match.js";
 
 test("particle integration and swap-last expiry match original executable pools", { tag: "@logic" }, () => {
   for (const row of fixture.cases) {
@@ -22,10 +23,7 @@ test("particle integration and swap-last expiry match original executable pools"
 test("live rocket emits original exhaust pixels instead of a vector trail and expires them", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { seed: 42 });
   await page.locator("#angle").evaluate((el) => {
     el.value = "90";
     el.dispatchEvent(new Event("input", { bubbles: true }));

@@ -1,12 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { startMatch } from "./helpers/match.js";
 
 test("original timer digits preserve every glyph pixel at integer scale", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator("#timer canvas")).toHaveAttribute(
     "data-native-font",
     "lnumwht1",

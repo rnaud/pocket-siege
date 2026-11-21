@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startMatch } from "./helpers/match.js";
 
 test("all 140 original HUD icon variants preserve source pixels", async ({
   page,
@@ -51,9 +52,7 @@ test("all 140 original HUD icon variants preserve source pixels", async ({
 test("arsenal and field kit use native icons with integer layout and disabled variants", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   // Random authored terrain can kill the active worm during startup. Icon
   // variants need a reproducible living actor, independent of spawn coverage.
   await page.evaluate(() => window.siege.debug.resetSeed(42));

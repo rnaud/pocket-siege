@@ -1,13 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("mole bomb burrows while host-walking", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
   const depth = await page.evaluate(() => window.siege.getState().projectile?.burrowDepth ?? 0);
@@ -15,10 +13,7 @@ test("mole bomb burrows while host-walking", async ({ page }) => {
 });
 
 test("mole bomb detonation poisons nearby worms", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
   await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
@@ -30,10 +25,7 @@ test("mole bomb detonation poisons nearby worms", async ({ page }) => {
 });
 
 test("sheep units do not walk in water", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   const y = await page.evaluate(() => window.siege.getState().waterLevel - 4);
   // 004E3920 returns before stepping while the body is submerged; Aqua Sheep
   // moves under water only in flight.
@@ -45,10 +37,7 @@ test("sheep units do not walk in water", async ({ page }) => {
 });
 
 test("mole bomb detonates below its burrow depth", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
   const before = await page.evaluate(() => window.siege.getState().projectile?.y ?? null);
@@ -60,10 +49,7 @@ test("mole bomb detonates below its burrow depth", async ({ page }) => {
 });
 
 test("walking units reverse at the map edge", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 1850));
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
   const state = await page.evaluate(() => window.siege.getState().projectile);
@@ -73,10 +59,7 @@ test("walking units reverse at the map edge", async ({ page }) => {
 });
 
 test("classic duel starts with the original default scheme kit", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   // Resource 195 through 00415540/00417750/004C2640.
   expect(await page.evaluate(() => {
     const { ammo, utilities } = window.siege.getState();

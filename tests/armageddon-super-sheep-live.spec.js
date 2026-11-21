@@ -1,11 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { startMatch } from "./helpers/match.js";
 
 async function startLocalMatch(page) {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   // Step the intro synchronously instead of waiting for it in real time.
   await page.waitForFunction(() => window.siege.getState().phase !== undefined && window.siege.debug);
   const phase = await page.evaluate(() => {

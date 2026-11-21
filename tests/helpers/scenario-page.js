@@ -1,4 +1,5 @@
 import { test } from "@playwright/test";
+import { startMatch } from "./match.js";
 
 // Shared setup for scenario and live-gameplay specs. Waits use
 // page.waitForFunction (checked every animation frame) rather than
@@ -39,12 +40,7 @@ export async function openScenario(page, path, { boot = true, aim = true } = {})
 
 // Starts a local match from the front end and waits for the first aim.
 export async function startLocalMatch(page, map = null) {
-  await bootGame(page);
-  await page.locator('[data-mode="local"]').click();
-  if (map) await page.locator("#map-layout").selectOption(map);
-  await page.locator("#start").click();
-  await page.waitForFunction(() => !document.querySelector("#menu").open && window.siege.getState().phase === "aim",
-    null, { timeout: 30000 });
+  await startMatch(page, { map });
 }
 
 // Steps logic frames until `predicate(state, arg)` holds (evaluated in the

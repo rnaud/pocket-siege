@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
@@ -106,9 +107,7 @@ test("sudden-death health and nuclear variants apply", async ({ page }) => {
 });
 
 test("surrender ends a live match from the menu", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator("#surrender")).toBeHidden();
   await page.locator("#restart").click();
   await expect(page.locator("#surrender")).toBeVisible();

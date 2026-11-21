@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fixture from './fixtures/armageddon/bat.json' with {type:'json'};
 import {nativeBatRequest} from '../src/armageddon/bat.js';
 import {nativeAreaDamage} from '../src/armageddon/area-damage.js';
+import { startMatch } from './helpers/match.js';
 
 test('bat area request matches original executable for aim, facing and overflow', { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(120);
@@ -27,12 +28,11 @@ test('bat hits all eligible bodies ahead, excludes self and rear, emits impact p
 test('live bat uses aimed native impulse, hits allies and enemies, and plays original impact art/audio', async ({ page }) => {
   const sounds = new Set();
   page.on('response', response => { if(response.ok() && response.url().endsWith('.wav')) sounds.add(response.url().split('/').pop()); });
-  await page.goto('/');
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator('#map-layout').selectOption('fern');
-  await page.locator('#start').click();
-  const targets = await page.evaluate(async () => { await window.siege.debug.resetSeed(42); return window.siege.debug.stageMeleeTargets(); });
+  await startMatch(page, { map: 'fern', seed: 42, manualClock: true });
+  const targets = await page.evaluate(() => window.siege.debug.stageMeleeTargets());
+  // The staged worms settle onto the ledge before the swing (about a second
+  // of play, which real time used to provide while the controls were clicked).
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(50));
   await page.locator('#sound').click();
   await page.locator('#inventory-toggle').click();
 
@@ -41,14 +41,14 @@ test('live bat uses aimed native impulse, hits allies and enemies, and plays ori
   await page.locator('#angle').dispatchEvent('input');
   await page.locator('#fire').click();
   // Step the swing synchronously and capture the first tick after the hit lands.
-  const hit = await page.evaluate(() => {
+  const hit = await page.evaluate((targets) => {
     for (let tick = 0; tick < 500; tick++) {
       const s = window.siege.getState();
-      if (s.shotCount) return {worms:s.worms, particles:s.nativeParticles};
+      if (s.shotCount && s.worms[targets.ally].hp < 100) return {worms:s.worms, particles:s.nativeParticles};
       window.siege.debug.advanceReplayFrames(1);
     }
     return null;
-  });
+  }, targets);
   expect(hit).not.toBeNull();
   for(const index of [targets.ally, targets.enemy]) {
     expect(hit.worms[index].hp, JSON.stringify({targets, worms:hit.worms.map(w=>({hp:w.hp,x:w.x,y:w.y,vx:w.vx,vy:w.vy,knocked:w.knocked})),particles:hit.particles})).toBe(70);

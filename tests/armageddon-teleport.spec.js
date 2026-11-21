@@ -5,6 +5,7 @@ import {
   nativeTeleportRenderProgress,
 } from "../src/armageddon/teleport.js";
 import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 test("teleport progress, relocation and completion match original executable", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeTeleportTick(row.input)).toEqual(row.output);
@@ -87,10 +88,7 @@ test("original teleport strip relocates only at tick 51 and completes at tick 10
 test("live teleport shows the dissolve before moving and holds the turn until it finishes", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { seed: 42 });
   const before = await page.evaluate(() => window.siege.getState());
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="teleport"]').click();

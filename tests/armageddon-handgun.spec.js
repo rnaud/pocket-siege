@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { nativeHitscanWeapon } from "../src/armageddon/hitscan-art.js";
 import { advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 
 test("handgun reads original resource195 bullet and burst fields", { tag: "@logic" }, () => {
   const config = nativeHitscanWeapon("handgun");
@@ -12,14 +13,9 @@ test("handgun reads original resource195 bullet and burst fields", { tag: "@logi
 });
 
 async function start(page) {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
   // Burst/retreat timing must not depend on a randomly selected authored map.
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(async () => {
-    await window.siege.debug.resetSeed(42);
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  await page.evaluate(() => {
     // Supply-drop settlement is independent of the burst interruption check.
     window.siege.debug.setCrateKind("grenade");
     window.siege.debug.collectCrate();

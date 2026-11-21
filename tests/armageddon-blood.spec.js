@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/blood.json" with { type: "json" };
 import { nativeBloodBurst } from "../src/armageddon/blood.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
+import { startMatch } from "./helpers/match.js";
 test("blood particle packets and logic RNG match original emitter", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(96);
   for (const row of fixture.cases) {
@@ -26,10 +27,7 @@ test("blood particle packets and logic RNG match original emitter", { tag: "@log
 test("live radial blast emits the original wormhit particle", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   const result = await page.evaluate(() => {
     const w = window.siege.getState().worms[0];
     window.siege.debug.explodeAt(w.x - 20, w.y, "death");

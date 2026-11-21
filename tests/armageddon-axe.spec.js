@@ -4,6 +4,7 @@ import receivers from './fixtures/armageddon/axe-receiver.json' with {type:'json
 import {nativeAxeTick} from '../src/armageddon/axe.js';
 import {nativeDirectHitResponse} from '../src/armageddon/direct-hit-response.js';
 import {fastForward, advance} from './helpers/misc-fast-forward.js';
+import { startMatch } from "./helpers/match.js";
 
 test('Axe animation thresholds, queues and hit windows match original executable', { tag: "@logic" }, () => {
   expect(ticks.cases).toHaveLength(288);
@@ -18,11 +19,7 @@ test('Axe percentage damage matches original receiver including 1HP and immunity
 });
 
 async function prepare(page) {
-  await page.goto('/');
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator('#map-layout').selectOption('fern');
-  await page.locator('#start').click();
+  await startMatch(page, { map: "fern" });
   const targets = await page.evaluate(async () => { await window.siege.debug.resetSeed(42); return window.siege.debug.stageMeleeTargets(); });
   await page.locator('#inventory-toggle').click();
 

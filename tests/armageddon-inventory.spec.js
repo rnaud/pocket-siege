@@ -38,6 +38,7 @@ import terrainMasks from './fixtures/armageddon/terrain-crater-masks.json' with 
 import bitmapCircle from './fixtures/armageddon/bitmap-circle.json' with {type:'json'};
 import {nativeCreateTerrainMasks} from '../src/armageddon/terrain-crater-masks.js';
 import {nativeFillBitmapCircle} from '../src/armageddon/bitmap-circle.js';
+import { startMatch } from "./helpers/match.js";
 import terrainGrass from './fixtures/armageddon/terrain-grass.json' with {type:'json'};
 import terrainSoil from './fixtures/armageddon/terrain-soil.json' with {type:'json'};
 import archiveRealImages from './fixtures/armageddon/archive-real-images.json' with {type:'json'};
@@ -2089,11 +2090,7 @@ test("inventory banks and ammo match original x86 sequences", { tag: "@logic" },
 test("unlimited shotgun survives both shots and remains selectable", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { seed: 42 });
   await page.evaluate(() => window.siege.debug.setAmmo(0, "shotgun", -1));
   await page.locator("#inventory-toggle").click();
   // Special weapons share the expanded arsenal panel.

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/hurt-entry.json" with { type: "json" };
 import { nativeHurtEntry } from "../src/armageddon/hurt-entry.js";
+import { startMatch } from "./helpers/match.js";
 test("hurt entries match original animation queue and angle reset", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeHurtEntry(row.state, row.angle)).toEqual(row.result);
@@ -59,11 +60,7 @@ test("native ordinary hits render the original rolling strip with exact pixels",
 test("live native death blast selects the rolling hurt pose", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { seed: 42 });
   const observed = await page.evaluate(
     () =>
       new Promise((resolve) => {

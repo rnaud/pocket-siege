@@ -1,14 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator(".aim-panel")).toBeVisible();
   await expect(page.locator("#power-meter")).toHaveAttribute(
     "aria-valuenow",
@@ -81,9 +80,7 @@ test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", a
 });
 for (const weapon of ["mortar", "sticky"])
   test(`${weapon} fires with its own impact behavior`, async ({ page }) => {
-    await page.goto("/");
-    await page.locator('[data-mode="local"]').click();
-    await page.locator("#start").click();
+    await startMatch(page);
     await openArsenal(page);
     await page.locator(`[data-weapon="${weapon}"]`).click();
     await setAim(page, "-60");
@@ -138,10 +135,7 @@ test("computer skill is selectable and hidden for local play", async ({
 });
 
 test("worm labels retain original world anchors while aiming", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   await expect(page.locator("#aim-reticle")).toBeVisible();
   await expect(page.locator(".worm-label.active")).toContainText("Sprout");
   for (const angle of [0, 90, -45]) {

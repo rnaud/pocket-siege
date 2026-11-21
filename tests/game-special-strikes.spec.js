@@ -1,13 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("longbow fires a host arrow projectile", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await openArsenal(page);
   await page.locator('[data-weapon="longbow"]').click();
   await chargeFor(page, 700);
@@ -17,10 +15,7 @@ test("longbow fires a host arrow projectile", async ({ page }) => {
 test("unit weapons fire without missing projectile art", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await openArsenal(page);
   await page.locator('[data-weapon="sheep"]').click();
   await chargeFor(page, 500);
@@ -101,10 +96,7 @@ test("scales of justice caps health at 100 with uneven survivors", async ({ page
 });
 
 test("skunk detonation infects nearby worms with poison", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   const target = await page.evaluate(() => {
     const state = window.siege.getState();
     return { x: state.worms[3].x, y: state.worms[3].y };

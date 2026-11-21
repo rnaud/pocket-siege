@@ -809,6 +809,7 @@ let lastShot = null,
   replayReady = false,
   lastResult = null;
 let assetsReady = false;
+let manualClock = false;
 let originalArtError = null;
 let loadingSteps=0,loadingFiles={files:0,cachedFiles:0};
 function updateLoadingProgress() {
@@ -8502,6 +8503,9 @@ function frame(now) {
   accumulator += frameDt * (slow ? 0.35 : 1);
   last = now;
   arena.classList.toggle("slow-mo", slow);
+  // Tests can stop real time from stepping the simulation (rendering goes on)
+  // and advance it only through debug.advanceReplayFrames.
+  if (manualClock) accumulator = 0;
   while (accumulator >= LOGIC_STEP_SECONDS) {
     step(LOGIC_STEP_SECONDS);
     accumulator -= LOGIC_STEP_SECONDS;
@@ -9368,8 +9372,11 @@ function clearScenarioTraining() {
   scenarioIsTraining = false;
   document.body.dataset.scenarioTraining = "0";
 }
-$("#start").onclick = async event => {
+$("#start").onclick = event => {
   event.preventDefault();
+  return startFrontendMatch();
+};
+async function startFrontendMatch() {
   expeditionStage = null;
   currentScenario = null;
   clearScenarioTraining();
@@ -9380,7 +9387,7 @@ $("#start").onclick = async event => {
     if (await reset() === false) return;
     menu.close();
   } catch (error) { console.error("Map loading failed", error); }
-};
+}
 menu.addEventListener("close", () => {
   matchStarted = true;
   if (phase === "menu" && !mapLoading) reset();
@@ -10009,6 +10016,7 @@ if (import.meta.env.DEV) {
     captureReplayState: captureMatchReplayState,
     restoreReplayState: restoreMatchReplayState,
     setSimulationPaused(value) { simulationPaused = Boolean(value); },
+    setManualClock(value = true) { manualClock = Boolean(value); },
     advanceReplayFrames(count=1) {
       const previous = replaySimulation;
       replaySimulation = true;
@@ -10246,6 +10254,25 @@ if (import.meta.env.DEV) {
     },
     resetSeed(seed = 42) {
       return reset({ seed });
+    },
+    // One in-page call for the usual test opening: pick a front-end mode and
+    // map, start the match as the START button does, optionally reseed, and
+    // step the logic (not real time) to the first aim. `manualClock` leaves
+    // the simulation advancing only through advanceReplayFrames.
+    async startMatch({ mode = "local", map = null, seed = null, manualClock: manual = false, aim = true } = {}) {
+      document.querySelector(`#menu [data-mode="${mode}"]`)?.click();
+      if (map != null && $("#map-layout").value !== map) {
+        $("#map-layout").value = map;
+        $("#map-layout").dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      await prepareDecorations();
+      // START uses the prepared seed, so a seeded start needs one reset, not
+      // a random start followed by resetSeed.
+      if (seed != null) preparedRandomSeed = seed;
+      await startFrontendMatch();
+      manualClock = Boolean(manual);
+      for (let i = 0; aim && i < 2000 && phase !== "aim"; i++) window.siege.debug.advanceReplayFrames(1);
+      return phase;
     },
     consumeVisualRandom(count = 1) {
       for (let i = 0; i < count; i++) visualRandom();

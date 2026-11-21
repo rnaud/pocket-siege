@@ -3,6 +3,7 @@ import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
 import { nativeRecordDamageReaction, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
+import { startMatch } from "./helpers/match.js";
 test("health, cumulative/displayed damage and events match original damage routine", { tag: "@logic" }, () => {
   for (const row of fixture.skipCases)
     expect(nativeSkipTurnSpeech(row.active, row.used, () => row.nearby)).toEqual(row.speech);
@@ -62,11 +63,7 @@ test("health, cumulative/displayed damage and events match original damage routi
 });
 
 test("live native damage totals reveal after settlement and lethal accounting stays capped", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   // Damage reveal waits for all tasks, including the unrelated initial supply drop.
   await page.evaluate(() => {
     window.siege.debug.setCrateKind("grenade");

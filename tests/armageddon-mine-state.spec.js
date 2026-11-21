@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-state.json" with { type: "json" };
 import { nativeMineStateEvents } from "../src/armageddon/mine-state.js";
 import { fastForward } from "./helpers/misc-fast-forward.js";
+import { startMatch } from "./helpers/match.js";
 
 test("mine physical-state detonation matches original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(48);
@@ -15,12 +16,7 @@ test("mine physical-state detonation matches original executable", { tag: "@logi
 test("live mine physical state detonates before its arming timer expires", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#inventory-toggle").click();
   const mine = page.locator('[data-weapon="mine"]');
   if (!(await mine.isVisible())) await page.locator("#inventory-toggle").click();

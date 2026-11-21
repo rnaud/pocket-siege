@@ -1,15 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("flame thrower emits native flames and spends its stream", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().phase))
     .toBe("aim");
@@ -23,12 +19,7 @@ test("flame thrower emits native flames and spends its stream", async ({ page })
 
 
 test("scales of justice balances team health", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await openArsenal(page);
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().phase))
@@ -43,10 +34,7 @@ test("scales of justice balances team health", async ({ page }) => {
 });
 
 test("all special weapons are reachable from the arsenal sheet", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await openArsenal(page);
   for (const kind of ["flamethrower", "scales", "sheep", "supersheep",
     "aquasheep", "donkey", "oldwoman", "molesquadron", "mingvase",
@@ -56,10 +44,7 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
 });
 
 test("kamikaze self-destructs the active worm", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await openArsenal(page);
   await page.locator('[data-weapon="kamikaze"]').click();
   const shooter = await page.evaluate(() => window.siege.getState().current);

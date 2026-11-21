@@ -1,13 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("released units walk along the ground", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   for (const kind of ["sheep", "supersheep", "aquasheep", "donkey", "oldwoman",
     "sallyarmy", "skunk", "madcow", "molebomb"]) {
     await page.evaluate(kind => window.siege.debug.spawnUnitAt(kind, 600), kind);
@@ -24,10 +22,7 @@ test("released units walk along the ground", async ({ page }) => {
 });
 
 test("donkey units use the released-unit walking path", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 600));
   const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
   expect(before).not.toBeNull();
@@ -38,10 +33,7 @@ test("donkey units use the released-unit walking path", async ({ page }) => {
 });
 
 test("walking skunk leaves a poison trail", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
   await page.evaluate(() => window.siege.debug.spawnUnitAt("skunk", 600));
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(160));
@@ -49,10 +41,7 @@ test("walking skunk leaves a poison trail", async ({ page }) => {
 });
 
 test("sally army detonation emits sheep payloads", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(() => window.siege.debug.detonateAt("sallyarmy", 600, 350));
   const kids = await page.evaluate(() =>
     window.siege.getState().bombs.filter((bomb) => bomb.kind === "sheep").length);
@@ -60,10 +49,7 @@ test("sally army detonation emits sheep payloads", async ({ page }) => {
 });
 
 test("released units walk at different speeds", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   const travel = async (kind) => {
     await page.evaluate(kind => window.siege.debug.spawnUnitAt(kind, 600), kind);
     await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
@@ -77,10 +63,7 @@ test("released units walk at different speeds", async ({ page }) => {
 });
 
 test("super sheep steers horizontally while airborne", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   const y = await page.evaluate(() => window.siege.getState().waterLevel + 100);
   await page.evaluate((y) => window.siege.debug.spawnUnitAt("supersheep", 600, y), y);
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));

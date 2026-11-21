@@ -3,6 +3,7 @@ import fixture from "./fixtures/armageddon/projectile-fragments.json" with { typ
 import { nativeProjectileFragments } from "../src/armageddon/projectile-fragments.js";
 import { MatchRandom } from "../src/armageddon/random.js";
 import { advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 
 test("fragment payloads and random consumption match original projectile emission", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(288);
@@ -15,12 +16,7 @@ test("fragment payloads and random consumption match original projectile emissio
 
 for (const [kind, sprite, damage] of [["cluster", "clustlet", 20], ["banana", "banana", 75]])
 test(`live ${kind} children use native secondary sprites, damage and lifecycle`, async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#inventory-toggle").click();
 
   await page.locator(`[data-weapon="${kind}"]`).click();

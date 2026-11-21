@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startMatch } from "./helpers/match.js";
 test("all 18 original girders stamp exact source pixels and carve with terrain", async ({
   page,
 }) => {
@@ -59,11 +60,7 @@ test("all 18 original girders stamp exact source pixels and carve with terrain",
 test("live girder uses original horizontal source dimensions", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="girder"]').click();
   const box = await page.locator("#arena").boundingBox();

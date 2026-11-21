@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/sight-geometry.json" with { type: "json" };
 import { nativeSightGeometry } from "../src/armageddon/sight-geometry.js";
+import { startMatch } from "./helpers/match.js";
 test("native sight coordinates match original trig and offset instructions", { tag: "@logic" }, () => {
   for (const r of fixture.cases)
     expect(nativeSightGeometry(r.x, r.y, r.aim, r.facing, r.opening)).toEqual(
@@ -10,10 +11,7 @@ test("native sight coordinates match original trig and offset instructions", { t
 test("live sight reaches native world distance independently of viewport", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   // The sight opens in simulation steps; the HUD reads it on the next render.
   // Advance the opening synchronously instead of waiting for it in real time.
   const distance = await page.evaluate(async () => {

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { fastForward } from "./helpers/misc-fast-forward.js";
+import { startMatch } from "./helpers/match.js";
 test("death strip completes on simulation ticks without render-driven advancement", async ({
   page,
 }) => {
@@ -51,11 +52,7 @@ test("death strip completes on simulation ticks without render-driven advancemen
 test("live death plays past the old cutoff before its explosion", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { seed: 42 });
   await fastForward(page, (s) => s.worms.slice(3).every((w) => w.ground));
   await page.evaluate(() => {
     // Late frames last less than a second. Keep the maximum on every render

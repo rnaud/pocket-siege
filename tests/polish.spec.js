@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { Terrain, W, H } from "../src/physics.js";
 import { cameraView } from "../src/camera.js";
 import { advanceFrames } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 test("portrait camera preserves world proportions and clamps to map", { tag: "@logic" }, () => {
   const v = cameraView(100, 350, 1, 0.6);
   expect(v.w / v.h).toBeCloseTo(0.6);
@@ -23,9 +24,7 @@ test("compact arsenal, overview and charge work across layouts", async ({
 }, info) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator(".weapon-panel")).not.toBeVisible();
   await page.locator("#inventory-toggle").click();
   await expect(page.locator(".weapon-panel")).toBeVisible();

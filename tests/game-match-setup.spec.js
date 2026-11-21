@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
@@ -8,9 +9,7 @@ test("desktop fills the window without page scrolling", async ({
 }, info) => {
   test.skip(info.project.name !== "desktop", "desktop layout");
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator("#fire")).toBeEnabled();
   const layout = await page.evaluate(() => {
     const app = document.querySelector("#app").getBoundingClientRect(),

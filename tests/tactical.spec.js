@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { Terrain, stepWorm, bodyBlocked } from "../src/physics.js";
 import { advanceUntil } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 
 test("seeded maps provide six stable, clear starting positions", { tag: "@logic" }, () => {
   for (const layout of [
@@ -38,11 +39,7 @@ test("seeded maps provide six stable, clear starting positions", { tag: "@logic"
 test("homing selects a fixed world target through the current camera", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("highlands");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "highlands" });
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().mapLayout))
     .toBe("highlands");

@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/bubbles.json" with { type: "json" };
 import { nativeBubble, nativeBubbleTick } from "../src/armageddon/bubble.js";
 import { advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 
 test("bubble physics and surface retirement match 192 original executable cases", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
@@ -19,9 +20,7 @@ for (const frozen of [false, true])
   test(`live ${frozen ? "frozen" : "normal"} drowning uses original sprite and rising bubbles`, async ({
     page,
   }, info) => {
-    await page.goto("/");
-    await page.locator('[data-mode="local"]').click();
-    await page.locator("#start").click();
+    await startMatch(page);
     const before = await page.evaluate(() => window.siege.getState().worms[0]);
     await page.evaluate(
       (frozen) => window.siege.debug.submergeWorm(0, frozen),

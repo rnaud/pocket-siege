@@ -3,6 +3,7 @@ import fixture from "./fixtures/armageddon/prod.json" with { type: "json" };
 import { nativeProdRequest } from "../src/armageddon/prod.js";
 import { nativeAreaDamage } from "../src/armageddon/area-damage.js";
 import { advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 
 test("Prod impulse and direct hit rectangle match original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(140);
@@ -29,10 +30,7 @@ test("Prod excludes self and blocked bodies, includes allies and obeys strict ra
 
 for (const interrupt of [false, true])
 test(`live Prod ${interrupt ? 'cancels on damage without spending' : 'waits for preparation and consumes one action'}`, async ({ page }) => {
-  await page.goto('/');
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator('#start').click();
+  await startMatch(page);
   await page.evaluate(async () => { await window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, 'prod', 2); });
   await page.locator('#inventory-toggle').click();
 

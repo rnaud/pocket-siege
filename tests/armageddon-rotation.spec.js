@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/rotation.json" with { type: "json" };
 import { nativeBodyRotation } from "../src/armageddon/motion.js";
+import { startMatch } from "./helpers/match.js";
 test("body rotation matches original velocity branches, radius and angle wrap", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeBodyRotation(row.body)).toEqual(row.result);
@@ -42,11 +43,7 @@ test("rolling hurt frames advance from native velocity rather than render time",
 });
 
 test("live blast advances the original rolling frames", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   // Random terrain can immediately select sliding instead of rolling.
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   const result = await page.evaluate(async () => {

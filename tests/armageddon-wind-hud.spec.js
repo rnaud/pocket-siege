@@ -1,11 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { startMatch } from "./helpers/match.js";
 test("original wind strips retain source pixels and clip left/right strength without scaling", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   const result = await page.evaluate(async () => {
     const { updateOriginalWindHUD, originalWindStrip } =
       await import("/src/armageddon/wind-hud.js");

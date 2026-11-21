@@ -1,14 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("action camera follows the shot and snaps back for the next turn", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.locator("#angle").evaluate((el) => {
     el.value = "45";
     el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -41,11 +40,7 @@ test("action camera follows the shot and snaps back for the next turn", async ({
 test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
   const mineSounds = [];
   page.on("request", r => { if (/\/(minearm|minetick|mineimpact)\.wav$/.test(r.url())) mineSounds.push(r.url().split("/").pop()); });
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#sound").click();
   await openArsenal(page);
   await page.locator('[data-weapon="mine"]').click();
@@ -91,10 +86,7 @@ test("a proximity mine spends ammo, arms, and detonates", async ({ page }) => {
 });
 
 test("the last shot can be replayed over the battlefield", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.locator("#angle").evaluate((el) => {
     el.value = "45";
     el.dispatchEvent(new Event("input", { bubbles: true }));

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { startMatch } from "./helpers/match.js";
 
 test("original team selection arrows preserve all frames and phase timing", async ({
   page,
@@ -60,10 +61,7 @@ test("original team selection arrows preserve all frames and phase timing", asyn
 });
 
 test("original team selection arrow follows the simulation phase", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(
     page.locator(".worm-label.active .original-selection"),
   ).toBeVisible();

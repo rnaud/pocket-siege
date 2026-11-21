@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/charge-art.json" with { type: "json" };
 import { nativeChargeBlobs } from "../src/armageddon/charge-art.js";
+import { startMatch } from "./helpers/match.js";
 test("charge blob requests match original x86 renderer", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeChargeBlobs(row.power, row.x, row.y, row.dx, row.dy)).toEqual(
@@ -10,10 +11,7 @@ test("charge blob requests match original x86 renderer", { tag: "@logic" }, () =
 test("original charge sprites appear while charging and clear on release", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   const mismatch = await page.evaluate(async () => {
     const { originalVisual } = await import("/src/armageddon/art.js");
     const { decodeSprite, spriteFrameRGBA } =

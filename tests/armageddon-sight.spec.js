@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/sight.json" with { type: "json" };
 import { nativeSightTick, stepOriginalSight } from "../src/armageddon/sight.js";
+import { startMatch } from "./helpers/match.js";
 test("sight easing matches original fixed point instructions", { tag: "@logic" }, () => {
   for (const row of fixture.cases)
     expect(nativeSightTick(row.opening, row.aim, row.target)).toEqual(row.next);
@@ -24,10 +25,7 @@ test("sight opens on simulation ticks and resets on equip and visibility changes
 test("sight overlay stops changing while the menu pauses simulation", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.locator("#restart").click();
   const read = () =>
     page.evaluate(() => ({

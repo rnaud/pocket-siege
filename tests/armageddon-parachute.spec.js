@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import entry from "./fixtures/armageddon/parachute.json" with { type: "json" };
 import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 
 test("parachute uses the native entry queue, canopy loop and landing fold", async ({
   page,
@@ -81,24 +82,22 @@ test("parachute uses the native entry queue, canopy loop and landing fold", asyn
 test("live falling worm deploys original canopy, slows continuously and folds on landing", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(async () => {
-    await window.siege.debug.resetSeed(42);
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  // Sprites come from the render loop: step one logic frame per drawn frame.
+  const sprites = await page.evaluate(async () => {
     window.siege.debug.dropWormForParachute();
+    const seen = [];
+    for (let frame = 0; frame < 200; frame++) {
+      window.siege.debug.advanceReplayFrames(1);
+      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      const sprite = window.siege.getState().worms[0].originalSprite;
+      if (seen.at(-1) !== sprite) seen.push(sprite);
+      if (sprite === "wparacht") break;
+    }
+    return seen;
   });
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.siege.getState().worms[0].originalSprite),
-    )
-    .toBe("wparalnk");
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.siege.getState().worms[0].originalSprite),
-    )
-    .toBe("wparacht");
+  expect(sprites).toContain("wparalnk");
+  expect(sprites.at(-1)).toBe("wparacht");
   const state = await page.evaluate(() => window.siege.getState());
   expect(state.worms[0].originalCanvas).toEqual({ width: 90, height: 90 });
   expect(state.worms[0].vy).toBeGreaterThanOrEqual(-70);

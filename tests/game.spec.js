@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
@@ -149,11 +150,7 @@ test("original art loads and character labels stay readable", async ({
 test("crosshair and articulated weapon follow upward and downward aim", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { seed: 42 });
   await expect(page.locator("#aim-reticle")).toBeVisible();
   await setAim(page, "90");
   await expect
@@ -204,11 +201,7 @@ test("crosshair and articulated weapon follow upward and downward aim", async ({
 test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await openArsenal(page);
   await page.locator('[data-weapon="grenade"]').click();
   await setAim(page, "90");
@@ -228,9 +221,7 @@ test("grenade shows fuse and swaps weapon, help pauses the turn", async ({
 test("Space charges until release, arrows only aim, and no shot prediction exists", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator("#fire")).toBeEnabled();
   await expect(page.locator("#power")).toHaveCount(0);
   await expect(
@@ -280,9 +271,7 @@ test("Space charges until release, arrows only aim, and no shot prediction exist
 test("holding fire caps at one full-power shot and canceled input does not shoot", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator("#fire")).toBeEnabled();
   const b = page.locator("#fire");
   await b.scrollIntoViewIfNeeded();
@@ -309,9 +298,7 @@ test("holding fire caps at one full-power shot and canceled input does not shoot
 test("grenade fuse selection and retreat movement work without granting another shot", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await expect(page.locator("#fire")).toBeEnabled();
   await openArsenal(page);
   await page.locator('[data-weapon="grenade"]').click();

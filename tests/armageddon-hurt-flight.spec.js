@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { fastForward } from "./helpers/misc-fast-forward.js";
 import { stepNativeHurtFlight, attachNativeDrowningFlight, stepNativeDrowningFlight } from "../src/armageddon/hurt-flight.js";
 import drowning from './fixtures/armageddon/drowning-flight.json' with { type: 'json' };
+import { startMatch } from "./helpers/match.js";
 
 test("native hurt flight recovers on ground and drowning follows original underwater trajectories", { tag: "@logic" }, () => {
   const worm = {
@@ -59,11 +60,7 @@ test("live hard landing plays native recovery and returns to idle", async ({
 }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { seed: 42 });
   await page.evaluate(() => window.siege.debug.dropWormForRecovery(0));
   // Step the fall faster than real time while still rendering each frame so
   // the render-derived recovery sprite (wtwang) stays observable.

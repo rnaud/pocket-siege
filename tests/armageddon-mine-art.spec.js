@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { fastForward } from "./helpers/misc-fast-forward.js";
 import fixture from "./fixtures/armageddon/mine-art.json" with { type: "json" };
 import { nativeMineRender, nativeMineArt } from "../src/armageddon/mine-art.js";
+import { startMatch } from "./helpers/match.js";
 
 test("mine water sprites, rotation and render order match the original executable", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(288);
@@ -22,12 +23,7 @@ test("live submerged mines use original water artwork at zero rotation", async (
   page.on("request", (request) => {
     if (request.url().endsWith("/splash.wav")) splashes.push(request.url());
   });
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#sound").click();
   await page.locator("#inventory-toggle").click();
   const mine = page.locator('[data-weapon="mine"]');

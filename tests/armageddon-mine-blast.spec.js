@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fixture from "./fixtures/armageddon/mine-blast.json" with { type: "json" };
 import { nativeMineBlast } from "../src/armageddon/mine-blast.js";
+import { startMatch } from "./helpers/match.js";
 
 test("mine blast event matches original executable damage and body impulses", { tag: "@logic" }, () => {
   expect(fixture.cases).toHaveLength(432);
@@ -15,12 +16,7 @@ test("mine blast event matches original executable damage and body impulses", { 
 test("live explosions deliver the original blast event to placed mines", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#inventory-toggle").click();
   const mine = page.locator('[data-weapon="mine"]');
   if (!(await mine.isVisible())) await page.locator("#inventory-toggle").click();

@@ -8,6 +8,7 @@ import { freshAmmo } from "../src/weapons.js";
 import { freshUtilities } from "../src/utilities.js";
 import { windowFrustum } from "../src/diorama.js";
 import { GRAPHICS_OPTIONS, SHOWCASE_GRAPHICS, defaultGraphics, sanitizeGraphics, readGraphics, writeGraphics, resolveAtmosphere, toggleAllGraphics } from "../src/fx.js";
+import { startMatch } from "./helpers/match.js";
 
 const memory = () => {
   const data = new Map();
@@ -174,11 +175,7 @@ async function startGraphicsMatch(page) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => { if (/shader|program info|GL_INVALID|THREE\.WebGL/i.test(message.text())) errors.push(message.text()); });
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   await expect(page.locator("#menu")).not.toBeVisible();
   return errors;
 }

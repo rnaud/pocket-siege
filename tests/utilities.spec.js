@@ -38,6 +38,7 @@ import { nativeBarrelBody } from "../src/armageddon/barrel-body.js";
 import barrelTicks from "./fixtures/armageddon/barrel-tick.json" with { type: "json" };
 import { nativeBarrelTick } from "../src/armageddon/barrel-tick.js";
 import barrelHits from "./fixtures/armageddon/barrel-hit.json" with { type: "json" };
+import { startMatch } from "./helpers/match.js";
 import { nativeBarrelHit } from "../src/armageddon/barrel-hit.js";
 import barrelDetonation from "./fixtures/armageddon/barrel-detonation.json" with { type: "json" };
 import { nativeBarrelDetonation } from "../src/armageddon/barrel-detonation.js";
@@ -781,9 +782,7 @@ test("native utility logic: crate body settles on terrain", { tag: "@logic" }, (
 
 
 test("crate shower drops native supply crates", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.waitForFunction(() => window.siege?.getState().assetsReady && window.siege.getState().phase === "aim");
   // Grant the shower to the team now playing (the opening team is random) and
   // drive it synchronously. Count crates as they appear: on some maps a
@@ -862,12 +861,7 @@ test("invisibility cloaks the active squad until the next turn", async ({ page }
 });
 
 test("bridge kit spends its own inventory on native placement", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="bridgekit"]').click();
   const before = await page.evaluate(() => window.siege.getState());
@@ -886,12 +880,7 @@ test("bridge kit spends its own inventory on native placement", async ({ page })
 });
 
 test("girder targeting cycles the original shape strips", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="girder"]').click();
   await page.keyboard.press("]");
@@ -910,12 +899,7 @@ test("girder targeting cycles the original shape strips", async ({ page }) => {
 });
 
 test("girder targeting switches between short and long original strips", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="girder"]').click();
   await page.keyboard.press("]");
@@ -934,12 +918,7 @@ test("girder targeting switches between short and long original strips", async (
 });
 
 test("teleport validates a target and relocates the active worm", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await expect
     .poll(() => page.evaluate(() => window.siege.getState().phase))
     .toBe("aim");

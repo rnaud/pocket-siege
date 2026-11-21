@@ -41,6 +41,7 @@ import {
   createNativeAirstrike,
   stepNativeAirstrike,
 } from "../src/armageddon/projectile-runtime.js";
+import { startMatch } from "./helpers/match.js";
 for (const [kind, carrierId, spriteId, damage, push, offset, timer] of [["airstrike", 673, 649, 30, 115, 50, 9000], ["postal", 675, 651, 50, 100, 0, 20000]])
 test(`live ${kind} adapter releases five original missile bodies on consecutive ticks`, { tag: "@logic" }, () => {
   for (const direction of [-1, 1]) {
@@ -75,12 +76,7 @@ for (const [kind, carrier, sprite, damage] of [["airstrike", "airjetg", "airmisl
 test(`live ${kind} aircraft releases original missiles and resolves its strike`, async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#inventory-toggle").click();
 
   await page.locator(`[data-weapon="${kind}"]`).click();
@@ -245,12 +241,7 @@ test("live mine strike releases five native mine bodies", { tag: "@logic" }, () 
 });
 
 test("live mine strike aircraft places five native mines", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   const before = await page.evaluate(() => window.siege.getState().mines.length);
   await page.locator("#inventory-toggle").click();
   await page.locator('[data-weapon="minestrike"]').click();

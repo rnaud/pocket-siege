@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { nativeHitscanWeapon } from "../src/armageddon/hitscan-art.js";
 import { advanceUntil } from "./helpers/scenario-page.js";
+import { startMatch } from "./helpers/match.js";
 
 // Bursts fire one bullet per frame and their looping sound starts
 // asynchronously, so bursts run in real frames (waitForFunction checks every
@@ -20,10 +21,7 @@ async function start(page, kind) {
       return node;
     };
   });
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
+  await startMatch(page);
   await page.evaluate(async kind => { await window.siege.debug.resetSeed(42); window.siege.debug.setAmmo(0, kind, 1); }, kind);
   await page.locator("#sound").click();
   await page.locator("#inventory-toggle").click();

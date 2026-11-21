@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil } from "./helpers/misc-advance.js";
+import { startMatch } from "./helpers/match.js";
 
 test("landing adapter selects native strips and completes on simulation ticks", async ({
   page,
@@ -94,21 +95,10 @@ test("landing playback yields to movement, damage, freezing and weapon actions",
 test("live jump returns through the recovered landing animation", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#start").click();
   // A fixed map keeps this landing-animation check away from random tree
   // edges that can turn a jump into a damaging fall or drowning.
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const s = window.siege.getState();
-        return s.worms[s.current].ground;
-      }),
-    )
-    .toBe(true);
+  await startMatch(page, { seed: 42, manualClock: true });
+  await advanceUntil(page, (s) => s.worms[s.current].ground, { label: "worm settles" });
   // Step the jump synchronously until the worm is back on the ground, then let
   // one rendered frame pick the landing strip (the render loop derives sprites).
   const index = await page.evaluate(() => window.siege.getState().current);

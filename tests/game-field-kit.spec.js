@@ -1,17 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
+import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("field kit teleport and girder target the battlefield", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
-  await page.evaluate(() => window.siege.debug.resetSeed(42));
+  await startMatch(page, { map: "fern", seed: 42 });
   await page.locator("#utilities-toggle").click();
   await page.locator('[data-utility="teleport"]').click();
   let box = await page.locator("#arena").boundingBox();
@@ -61,11 +57,7 @@ test("field kit teleport and girder target the battlefield", async ({
 });
 
 test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   let attached = false;
   for (const angle of [0, -10, 10, -30, 30, -50]) {
     await page.locator("#angle").evaluate((el, value) => {
@@ -99,11 +91,7 @@ test("rope attaches and releases; jetpack burns fuel", async ({ page }) => {
 test("parachute and freeze utilities resolve their effects", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  await page.locator("#map-layout").selectOption("fern");
-  await page.locator("#start").click();
+  await startMatch(page, { map: "fern" });
   // Turn-control checks exclude unrelated supply-drop settlement.
   await page.evaluate(async () => {
     await window.siege.debug.resetSeed(42);
