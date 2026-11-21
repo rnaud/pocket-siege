@@ -96,6 +96,10 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+      # The run's artifact listing can lag the upload by a few seconds; deploy-pages
+      # then reports "No artifacts named github-pages" even though it was finalized.
+      - name: Wait for the artifact listing
+        run: sleep 15
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
