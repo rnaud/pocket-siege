@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/hurt-entry.json" with { type: "json" };
 import { nativeHurtEntry } from "../src/armageddon/hurt-entry.js";
 import { startMatch } from "./helpers/match.js";

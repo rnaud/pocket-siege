@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { attachNativeProjectile, nativeProjectileLaunchGeometry, stepNativeProjectile } from "../src/armageddon/projectile-runtime.js";
 
 test("dynamite uses original fixed release power, five-second fuse and blast record", { tag: "@logic" }, () => {

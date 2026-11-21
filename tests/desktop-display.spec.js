@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import { test, expect } from "./helpers/shared-page.js";
 
 // Exercise the existing display check on a Retina-density desktop.
 test.use({ deviceScaleFactor: 2 });

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import themes from "../src/armageddon/terrain-themes.js";
 import { advanceUntil } from "./helpers/misc-advance.js";
 async function ready(page) {

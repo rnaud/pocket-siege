@@ -1,7 +1,7 @@
 import { inflateSync } from "node:zlib";
 import addressed from "./fixtures/armageddon/collision-overlap-memory.json" with { type: "json" };
 import { nativeCollisionOverlapMemory } from "../src/armageddon/collision-mask-memory.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import masks from "./fixtures/armageddon/collision-mask.json" with { type: "json" };
 import fixture from "./fixtures/armageddon/collision-overlap.json" with { type: "json" };
 import {

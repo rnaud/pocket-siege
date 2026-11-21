@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/hitscan-resolution.json" with { type: "json" };
 import { nativeHitscanResolution } from "../src/armageddon/hitscan-resolution.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";

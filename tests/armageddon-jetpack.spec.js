@@ -1,6 +1,6 @@
 import drawQueueFixture from "./fixtures/armageddon/sprite-draw-queue.json" with { type: "json" };
 import { NativeSpriteDrawQueue } from "../src/armageddon/sprite-draw-queue.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/jetpack.json" with { type: "json" };
 import { nativeDrawJetpackFlames, nativeJetpackInput, nativeJetpackVelocity, nativeJetpackTick } from "../src/armageddon/jetpack.js";
 test("jetpack poses, fuel and inputs match original executable ticks", { tag: "@logic" }, () => {

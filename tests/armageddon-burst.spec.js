@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/burst.json" with { type: "json" };
 import { nativeBurstTick } from "../src/armageddon/recoil.js";
 

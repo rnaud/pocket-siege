@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { MODIFIERS, modifierSettings } from "../src/modifiers.js";
 
 test("modifier presets expose gravity, blast and turn settings", { tag: "@logic" }, () => {

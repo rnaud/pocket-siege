@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/camera-framing.json" with { type: "json" };
 import shake from "./fixtures/armageddon/camera-shake.json" with { type: "json" };
 import { nativeCameraShake, nativeCameraShakeDecay } from "../src/armageddon/camera-shake.js";

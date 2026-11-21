@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/rope-tick.json" with { type: "json" };
 import { nativeRopeBodyTick } from "../src/armageddon/rope-tick.js";
 

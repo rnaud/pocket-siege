@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { resolveScenarioMatch } from "../src/armageddon/scenario-match.js";
 import { openScenario, sharedScenario } from "./helpers/scenario-page.js";
 

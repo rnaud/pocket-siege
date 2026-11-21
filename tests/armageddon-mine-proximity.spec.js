@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/mine-proximity.json" with { type: "json" };
 import { nativeMineProximity } from "../src/armageddon/mine-proximity.js";
 test("mine proximity matches original typed, ordered fixed-coordinate detection", { tag: "@logic" }, () => {

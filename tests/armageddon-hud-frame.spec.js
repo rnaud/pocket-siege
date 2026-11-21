@@ -181,7 +181,7 @@ import { nativeEnvironmentPalette } from "../src/armageddon/environment-palette.
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import { nativePoisonAnnouncement, nativeKillAnnouncement, nativeCrateDropAnnouncement, nativeWormDeathAnnouncement, nativeVictorySpeech, nativeSuddenDeathAnnouncement, nativeMatchResultAnnouncement, nativeTeamEliminationAnnouncement, nativeAnnouncementAudioTick, nativeAnnouncementsPending, nativeAnnouncementDraw, nativeAnnouncementFrame, nativeAnnouncementMask, createNativeAnnouncements, queueNativeAnnouncement, nativeAnnouncementTick } from "../src/armageddon/announcements.js";
 import { nativeTurnClockTick, nativeClockPresentationTick, nativeTimerFont, nativeClockFrame, nativeClockSlide } from "../src/armageddon/number-hud.js";
-import { test, expect as playwrightExpect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "./helpers/shared-page.js";
 import { fastExpect } from "./helpers/fast-expect.js";
 // Thousands of fixture assertions: skip Playwright step bookkeeping for passing ones.
 const expect = fastExpect(playwrightExpect);

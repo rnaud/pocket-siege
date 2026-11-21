@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/homing.json" with { type: "json" };
 import { nativeHomingSteer } from "../src/armageddon/homing.js";
 

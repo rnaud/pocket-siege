@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { startMatch } from "./helpers/match.js";
 
 test("original team selection arrows preserve all frames and phase timing", async ({

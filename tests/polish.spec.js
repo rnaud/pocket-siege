@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { Terrain, W, H } from "../src/physics.js";
 import { cameraView } from "../src/camera.js";
 import { advanceFrames } from "./helpers/game-sim.js";

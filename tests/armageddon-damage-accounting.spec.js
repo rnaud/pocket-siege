@@ -1,6 +1,6 @@
 import { nativeSkipTurnSpeech, nativeNearbyReactionTeam, nativeDamageRevealReaction, nativeDamageReactionEvent, nativeReactionWeaponUse, nativeDamageReactionVoice } from "../src/armageddon/damage-reactions.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/damage-accounting.json" with { type: "json" };
 import { nativeRecordDamageReaction, nativeRecordMatchDamage, nativeDamageAccounting, nativeHealthDisplayTick, nativeHealthDisplayReveal } from "../src/armageddon/damage-accounting.js";
 import { startMatch } from "./helpers/match.js";

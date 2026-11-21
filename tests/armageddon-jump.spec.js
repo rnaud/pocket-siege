@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import { nativeWormJumpLaunch } from "../src/armageddon/jump.js";
 const fixture = JSON.parse(

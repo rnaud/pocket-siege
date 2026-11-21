@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { test, expect } from '@playwright/test';
+import { test, expect } from "./helpers/shared-page.js";
 import { decodeImage } from '../src/armageddon/image.js';
 import { nativeTerrainCutMask, nativeTerrainToolMasks, carveNativeToolMask } from '../src/armageddon/terrain-cut-mask.js';
 import fixture from './fixtures/armageddon/terrain-cut-mask.json' with {type:'json'};

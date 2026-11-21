@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/blood.json" with { type: "json" };
 import { nativeBloodBurst } from "../src/armageddon/blood.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";

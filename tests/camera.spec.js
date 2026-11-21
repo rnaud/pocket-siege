@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { chooseCameraTarget, cameraView, FULL_VIEW } from "../src/camera.js";
 import { W, H } from "../src/physics.js";
 

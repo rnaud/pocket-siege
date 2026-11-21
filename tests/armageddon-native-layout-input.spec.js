@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { startNativeLayoutMatch as startLocalMatch } from "./helpers/scenario-page.js";
 
 // Weapon panel and keyboard input in the native layout; the camera and

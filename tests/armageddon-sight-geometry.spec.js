@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/sight-geometry.json" with { type: "json" };
 import { nativeSightGeometry } from "../src/armageddon/sight-geometry.js";
 import { startMatch } from "./helpers/match.js";

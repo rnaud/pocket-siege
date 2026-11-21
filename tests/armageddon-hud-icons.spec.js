@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { startMatch } from "./helpers/match.js";
 
 test("all 140 original HUD icon variants preserve source pixels", async ({

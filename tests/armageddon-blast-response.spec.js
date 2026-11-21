@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/blast-response.json" with { type: "json" };
 import { nativeBlastResponse } from "../src/armageddon/blast-response.js";
 test("worm blast exclusions, frozen velocity, damage modifier and hurt state match native handler", { tag: "@logic" }, () => {

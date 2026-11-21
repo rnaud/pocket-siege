@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { nativeArmageddonStart, nativeArmageddonTick } from "../src/armageddon/armageddon.js";
 import { nativeWeaponSlotBlock } from "../src/armageddon/projectile-runtime.js";
 

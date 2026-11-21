@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import missionNames from "../src/armageddon/mission-names.json" with { type: "json" };
 import mapCatalog from "../src/armageddon/map-catalog.json" with { type: "json" };
 import { resolveScenarioMatch } from "../src/armageddon/scenario-match.js";

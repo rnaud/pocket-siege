@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/charge-art.json" with { type: "json" };
 import { nativeChargeBlobs } from "../src/armageddon/charge-art.js";
 import { startMatch } from "./helpers/match.js";

@@ -1,5 +1,5 @@
 import probeFixture from './fixtures/armageddon/collision-probe.json' with { type: 'json' };
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import masks from "./fixtures/armageddon/collision-mask.json" with { type: "json" };
 import fixture from "./fixtures/armageddon/collision-registry.json" with { type: "json" };
 import { NativeCollisionRegistry } from "../src/armageddon/collision-registry.js";

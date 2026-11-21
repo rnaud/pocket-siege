@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { fastForward } from "./helpers/misc-fast-forward.js";
 import { stepNativeHurtFlight, attachNativeDrowningFlight, stepNativeDrowningFlight } from "../src/armageddon/hurt-flight.js";
 import drowning from './fixtures/armageddon/drowning-flight.json' with { type: 'json' };

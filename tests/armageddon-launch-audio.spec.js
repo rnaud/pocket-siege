@@ -13,7 +13,7 @@ import completionFixture from "./fixtures/armageddon/sound-completion.json" with
 import replayCleanup from "./fixtures/armageddon/replay-audio-cleanup.json" with { type: "json" };
 import queueFixture from "./fixtures/armageddon/sound-queue.json" with { type: "json" };
 import { NativeSoundQueue, nativeReplaySoundCleanup, nativeSoundChannel, NativeSoundHandles, nativeWormSoundCleanup } from "../src/armageddon/sound-queue.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/launch-audio.json" with { type: "json" };
 import { nativeLaunchAudio } from "../src/armageddon/launch-audio.js";
 

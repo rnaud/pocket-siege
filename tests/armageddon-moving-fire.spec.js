@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from './fixtures/armageddon/moving-fire.json' with { type: 'json' };
 import { nativeMovingFire } from '../src/armageddon/moving-fire.js';
 

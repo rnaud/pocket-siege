@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/mine-water.json" with { type: "json" };
 import { nativeMineWater } from "../src/armageddon/mine-water.js";
 

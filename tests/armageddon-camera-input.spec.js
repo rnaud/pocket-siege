@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/camera-input.json" with { type: "json" };
 import { nativeCameraMouseLook, nativeWormFrameCameraRequest, nativeWormFrameActivity } from "../src/armageddon/camera-framing.js";
 

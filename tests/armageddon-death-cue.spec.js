@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/death-cue.json" with { type: "json" };
 import { nativeDeathCue, nativeDeathEntry, nativeNextDeath, nativeRequestedDeathState } from "../src/armageddon/death-cue.js";
 test("death voice threshold, random consumption and completion match original x86", { tag: "@logic" }, () => {

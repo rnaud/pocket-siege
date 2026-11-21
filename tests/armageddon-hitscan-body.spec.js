@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/hitscan-body.json" with { type: "json" };
 import { nativeHitscanBody, nativeWormHitscanBodies } from "../src/armageddon/hitscan-body.js";
 test("nearest eligible body distance matches original x86 filtering and projections", { tag: "@logic" }, () => {

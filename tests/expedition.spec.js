@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import {
   EXPEDITION_LENGTH, MUTATORS, REWARDS, newRun, routeOptions, chooseIsland, stageConfig,
   resolveBattle, takeReward, expeditionScore, expeditionDailySeed, loadRun, saveRun,

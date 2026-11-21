@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/worm-receiver.json" with { type: "json" };
 import { nativeWormBodyCollision } from "../src/armageddon/body-collision.js";
 import {

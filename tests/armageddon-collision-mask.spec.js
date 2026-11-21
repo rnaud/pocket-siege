@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/collision-mask.json" with { type: "json" };
 import { ORIGINAL_MASK_REGIONS } from "../src/armageddon/collision-mask.js";
 test("native collision mask crops, anchors and all shifted pixels match original constructor", async ({

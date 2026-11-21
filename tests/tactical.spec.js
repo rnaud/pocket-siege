@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { Terrain, stepWorm, bodyBlocked } from "../src/physics.js";
 import { advanceUntil } from "./helpers/game-sim.js";
 import { startMatch } from "./helpers/match.js";

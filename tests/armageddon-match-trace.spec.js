@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import fixture from "./fixtures/armageddon/match-trace.json" with { type: "json" };
 import { startMatch } from "./helpers/match.js";

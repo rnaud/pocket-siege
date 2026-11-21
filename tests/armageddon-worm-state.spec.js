@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import { nativeWormTransitionBody } from "../src/armageddon/worm-state.js";
 const fixture = JSON.parse(

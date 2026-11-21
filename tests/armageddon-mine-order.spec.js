@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/mine-order.json" with { type: "json" };
 import { NativeRenderOrder } from "../src/armageddon/render-order.js";
 

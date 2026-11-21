@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/hit-voice.json" with { type: "json" };
 import { nativeHitVoice } from "../src/armageddon/hit-voice.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";

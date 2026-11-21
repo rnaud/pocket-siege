@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
 import { nativePostFire, nativeRecoilTick } from "../src/armageddon/recoil.js";

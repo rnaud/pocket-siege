@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/walking-art.json" with { type: "json" };
 import motion from "./fixtures/armageddon/walking-motion.json" with { type: "json" };
 import controller from "./fixtures/armageddon/walking-controller.json" with { type: "json" };

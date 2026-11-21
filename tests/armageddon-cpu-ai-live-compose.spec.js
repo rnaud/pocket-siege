@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { createLiveAi, stepLiveAi, destroyLiveAi, liveAiPlan } from "../src/armageddon/cpu-ai-live.js";
 import { nativeWalkPosition } from "../src/armageddon/walking-motion.js";
 

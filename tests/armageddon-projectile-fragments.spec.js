@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/projectile-fragments.json" with { type: "json" };
 import { nativeProjectileFragments } from "../src/armageddon/projectile-fragments.js";
 import { MatchRandom } from "../src/armageddon/random.js";

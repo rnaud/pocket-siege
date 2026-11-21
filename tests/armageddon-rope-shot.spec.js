@@ -1,5 +1,5 @@
 import { createNativeRopeShot, refireNativeRope } from "../src/armageddon/rope-runtime.js";
-import { test, expect } from '@playwright/test';
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from './fixtures/armageddon/rope-shot.json' with { type: 'json' };
 import { nativeRopeShotTick } from '../src/armageddon/rope-shot.js';
 

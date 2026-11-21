@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/sprite-draw-queue-primitives.json" with { type: "json" };
 import { NativeSpriteDrawQueue } from "../src/armageddon/sprite-draw-queue.js";
 

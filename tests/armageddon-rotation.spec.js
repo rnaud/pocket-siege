@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/rotation.json" with { type: "json" };
 import { nativeBodyRotation } from "../src/armageddon/motion.js";
 import { startMatch } from "./helpers/match.js";

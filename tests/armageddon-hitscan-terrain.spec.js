@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/hitscan-terrain.json" with { type: "json" };
 import { nativeHitscanTerrain } from "../src/armageddon/hitscan-terrain.js";
 test("terrain ray visits the exact original pixels and returns the original distance", { tag: "@logic" }, () => {

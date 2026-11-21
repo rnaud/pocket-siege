@@ -10255,6 +10255,37 @@ if (import.meta.env.DEV) {
     resetSeed(seed = 42) {
       return reset({ seed });
     },
+    // Returns a loaded page to the state of a fresh boot so tests can share
+    // one page per worker: the fixture restores storage first, then this
+    // re-reads settings and graphics and reopens the front end's home screen.
+    resetForTest() {
+      manualClock = false;
+      simulationPaused = false;
+      slowMo = 0;
+      releaseInputs();
+      for (const dialog of document.querySelectorAll("dialog[open]")) if (dialog !== menu) dialog.close();
+      arsenalPanel.close();
+      // Trays and toggles that live outside the match state.
+      const controls = document.querySelector(".controls");
+      controls?.classList.remove("inventory-open");
+      $("#inventory-toggle")?.setAttribute("aria-expanded", "false");
+      specialOpen = false;
+      closeUtilities();
+      if ($("#overview-toggle")?.getAttribute("aria-pressed") === "true") $("#overview-toggle").click();
+      mousePanPointer = null; manualCamera = null; touchPan = null;
+      expeditionStage = null;
+      daily = null;
+      currentScenario = null;
+      clearScenarioTraining();
+      scenarioProgress = null; scenarioSequence = []; scenarioSequenceIndex = 0; scenarioTimed = []; scenarioTurn = 0;
+      applySettings();
+      applyGraphics(readGraphics(), false);
+      frontend.showHome();
+      updateRecordUI();
+      if (!menu.open) menu.showModal();
+      resetMenuScroll();
+      updateUI();
+    },
     // One in-page call for the usual test opening: pick a front-end mode and
     // map, start the match as the START button does, optionally reseed, and
     // step the logic (not real time) to the first aim. `manualClock` leaves

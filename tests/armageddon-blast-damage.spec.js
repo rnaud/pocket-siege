@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/blast-damage.json" with { type: "json" };
 import { nativeBlastQuality, nativeBlastDamage } from "../src/armageddon/blast-damage.js";
 test("radial blast falloff and impulses match original executable", { tag: "@logic" }, () => {

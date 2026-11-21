@@ -1,5 +1,5 @@
 import { nativeContactReceiver } from "../src/armageddon/contact-receiver.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import {
   nativeBodyCollision,

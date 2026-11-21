@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/cpu-ai-movement.json" with { type: "json" };
 import {
   aiReachableSpots, aiBuildReachable, aiDecodePath, aiPathStart, aiPathStep, aiRingSolid, aiStepAlong,

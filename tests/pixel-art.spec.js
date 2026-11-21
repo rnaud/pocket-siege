@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { advanceFrames } from "./helpers/game-sim.js";
 
 test("original art stays on an integer pixel grid without bitmap requests", async ({

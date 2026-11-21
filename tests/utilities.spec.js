@@ -70,7 +70,7 @@ import crateHits from "./fixtures/armageddon/crate-hit.json" with { type: "json"
 import { nativeCrateHit, nativeCrateDirectHit } from "../src/armageddon/crate-hit.js";
 import detonation from "./fixtures/armageddon/crate-detonation.json" with { type: "json" };
 import { nativeCrateDetonation } from "../src/armageddon/crate-detonation.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { UTILITIES, UTILITY_KINDS, freshUtilities } from "../src/utilities.js";
 import environment from './fixtures/armageddon/team-environment.json' with { type: 'json' };
 import { nativeTeamEnvironment } from '../src/armageddon/team-environment.js';

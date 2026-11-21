@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { nativePrepareMapSpawns } from "../src/armageddon/map-setup.js";
 import fixture from "./fixtures/armageddon/map-objects.json" with { type: "json" };
 import { nativeMapObjects } from "../src/armageddon/map-objects.js";

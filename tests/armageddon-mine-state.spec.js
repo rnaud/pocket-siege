@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/mine-state.json" with { type: "json" };
 import { nativeMineStateEvents } from "../src/armageddon/mine-state.js";
 import { fastForward } from "./helpers/misc-fast-forward.js";

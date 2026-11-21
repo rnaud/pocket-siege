@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/direction.json" with { type: "json" };
 import { nativeDirectionTurn } from "../src/armageddon/direction.js";
 

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { createHash } from "node:crypto";
 import fixture from "./fixtures/armageddon/map-fallback.json" with { type: "json" };
 import {

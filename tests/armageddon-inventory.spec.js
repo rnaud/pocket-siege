@@ -208,7 +208,7 @@ import { nativeInitializeInventory } from '../src/armageddon/inventory-initializ
 import { createHash } from 'node:crypto';
 import bankFixture from './fixtures/armageddon/inventory-banks.json' with { type:'json' };
 import { nativeInventorySet, nativeInventoryAdd, nativeInventorySpend, nativeInventoryAvailable } from '../src/armageddon/inventory.js';
-import { test, expect as playwrightExpect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "./helpers/shared-page.js";
 import { fastExpect } from "./helpers/fast-expect.js";
 // Thousands of fixture assertions: skip Playwright step bookkeeping for passing ones.
 const expect = fastExpect(playwrightExpect);

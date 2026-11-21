@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from './fixtures/armageddon/rope-constraint.json' with { type: 'json' };
 import { nativeRopeConstraint } from '../src/armageddon/rope-constraint.js';
 

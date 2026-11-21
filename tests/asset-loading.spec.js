@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+// Loading-screen checks need a cold page and cache: no shared page here.
+import { test, expect } from "@playwright/test";
 
 test('slow loading shows only the loading screen until current art is ready',async({page})=>{
   let release;

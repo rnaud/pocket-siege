@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/hurt-contact.json" with { type: "json" };
 import { nativeWormHurtCollision } from "../src/armageddon/hurt-contact.js";
 test("hurt collision damage, recovery, bounce and state transitions match original callback", { tag: "@logic" }, () => {

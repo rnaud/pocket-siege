@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 test("original grave strips preserve dry/wet pixels and switch on submersion", async ({
   page,
 }) => {

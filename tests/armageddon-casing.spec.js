@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/casing.json" with { type: "json" };
 import { nativeCasing } from "../src/armageddon/casing.js";
 import { nextVisualRandom } from "../src/armageddon/numeric.js";

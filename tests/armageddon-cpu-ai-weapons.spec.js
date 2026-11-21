@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/cpu-ai-weapons.json" with { type: "json" };
 import { aiBlastEstimate } from "../src/armageddon/cpu-ai.js";
 import {

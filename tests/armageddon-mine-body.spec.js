@@ -1,7 +1,7 @@
 import slopeFixture from "./fixtures/armageddon/surface-slope.json" with { type: "json" };
 import { nativeSurfaceSlope } from "../src/armageddon/surface-slope.js";
 import { nativeMineTimerFromRecord } from "../src/armageddon/mine-timer.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/mine-body.json" with { type: "json" };
 import { nativeSettleMineBody, nativeMineBase, nativeMineBody } from "../src/armageddon/mine-body.js";
 test("mine base fields and physical setup match original constructors", { tag: "@logic" }, () => {

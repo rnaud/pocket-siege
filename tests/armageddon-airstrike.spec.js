@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { advanceUntil, fastForward } from "./helpers/scenario-page.js";
 import fixture from "./fixtures/armageddon/airstrike.json" with { type: "json" };
 import mineStrike from "./fixtures/armageddon/mine-strike.json" with { type: "json" };

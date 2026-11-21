@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
 import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
@@ -119,7 +119,8 @@ test("original art loads and character labels stay readable", async ({
 }, info) => {
   const missing = [];
   page.on("response", (r) => {
-    if (r.url().includes("/armageddon/") && r.status() !== 200) missing.push(r.url());
+    // A reused page may answer from the cache (304); only errors are missing art.
+    if (r.url().includes("/armageddon/") && r.status() >= 400) missing.push(r.url());
   });
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);

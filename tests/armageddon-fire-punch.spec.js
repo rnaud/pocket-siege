@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/fire-punch.json" with { type: "json" };
 import entryFixture from "./fixtures/armageddon/fire-punch-entry.json" with { type: "json" };
 import tickFixture from "./fixtures/armageddon/fire-punch-tick.json" with { type: "json" };

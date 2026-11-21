@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/worm-label.json" with { type: "json" };
 import { nativeWormLabelFont, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement } from "../src/armageddon/worm-label.js";
 import { startMatch } from "./helpers/match.js";

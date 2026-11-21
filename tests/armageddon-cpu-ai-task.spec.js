@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/cpu-ai-task.json" with { type: "json" };
 import { createAiTask, aiTaskStep, aiLogicRandom, aiWormAbove } from "../src/armageddon/cpu-ai-task.js";
 

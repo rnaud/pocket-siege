@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/mine-camera.json" with { type: "json" };
 import { nativeMineCamera } from "../src/armageddon/mine-camera.js";
 

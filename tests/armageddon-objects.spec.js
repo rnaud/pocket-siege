@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { fastForward } from "./helpers/scenario-page.js";
 async function start(page, map) {
   await page.goto("/");

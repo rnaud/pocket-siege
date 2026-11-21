@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { startMatch } from "./helpers/match.js";
 test("all 18 original girders stamp exact source pixels and carve with terrain", async ({
   page,

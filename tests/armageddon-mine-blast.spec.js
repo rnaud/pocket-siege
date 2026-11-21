@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/mine-blast.json" with { type: "json" };
 import { nativeMineBlast } from "../src/armageddon/mine-blast.js";
 import { startMatch } from "./helpers/match.js";

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { advanceUntil, startNativeLayoutMatch as startLocalMatch } from "./helpers/scenario-page.js";
 
 // The shared fixture opts into the host control layout; these cases check

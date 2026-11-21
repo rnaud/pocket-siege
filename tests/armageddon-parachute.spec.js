@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import entry from "./fixtures/armageddon/parachute.json" with { type: "json" };
 import { advanceFrames, advanceUntil } from "./helpers/misc-advance.js";
 import { startMatch } from "./helpers/match.js";

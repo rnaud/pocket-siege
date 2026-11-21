@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/bubbles.json" with { type: "json" };
 import { nativeBubble, nativeBubbleTick } from "../src/armageddon/bubble.js";
 import { advanceUntil } from "./helpers/misc-advance.js";

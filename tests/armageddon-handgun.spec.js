@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { nativeHitscanWeapon } from "../src/armageddon/hitscan-art.js";
 import { advanceUntil } from "./helpers/misc-advance.js";
 import { startMatch } from "./helpers/match.js";

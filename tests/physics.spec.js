@@ -1,7 +1,7 @@
 import { captureReplayEnvironment, restoreReplayEnvironment } from "../src/armageddon/replay-environment-adapter.js";
 import { MatchRandom } from "../src/armageddon/random.js";
 import { NativeGamePalette } from "../src/armageddon/game-palette.js";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import {
   Terrain,
   shotGeometry,

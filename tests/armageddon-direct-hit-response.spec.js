@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/direct-hit-response.json" with { type: "json" };
 import { nativeDirectHitResponse } from "../src/armageddon/direct-hit-response.js";
 

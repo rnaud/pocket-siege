@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/projectile-timer.json" with { type: "json" };
 import { nativeProjectileTimer, nativeProjectileSoundTick } from "../src/armageddon/projectile-timer.js";
 

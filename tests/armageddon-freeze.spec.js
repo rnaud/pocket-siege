@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import { freezeTeam, nativeFreezeAnimation } from "../src/armageddon/freeze.js";
 import { blastImpulse } from "../src/physics.js";

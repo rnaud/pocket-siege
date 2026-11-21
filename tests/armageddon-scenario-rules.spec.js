@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 // Split from armageddon-scenario-match: the import keeps these browser checks
 // selected (CI and pre-commit follow Node imports) when the resolver changes.
 import "../src/armageddon/scenario-match.js";

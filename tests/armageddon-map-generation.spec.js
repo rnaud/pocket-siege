@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { createHash } from "node:crypto";
 import indexedFixture from "./fixtures/armageddon/map-generation.json" with { type: "json" };
 import packedFixture from "./fixtures/armageddon/map-generation-packed.json" with { type: "json" };

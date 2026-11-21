@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 test("target markers preserve all team frames and native ping-pong cadence", async ({
   page,
 }) => {

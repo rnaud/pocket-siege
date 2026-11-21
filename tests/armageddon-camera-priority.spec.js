@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/camera-priority.json" with { type: "json" };
 import { NativeCameraPriority } from "../src/armageddon/camera-priority.js";
 test("camera bounds, disabled accumulation and priority hold match original routines", { tag: "@logic" }, () => {

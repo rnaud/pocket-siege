@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/dragon-ball.json" with { type: "json" };
 import hitFixture from "./fixtures/armageddon/dragon-ball-hit.json" with { type: "json" };
 import bodyFixture from "./fixtures/armageddon/dragon-ball-body.json" with { type: "json" };

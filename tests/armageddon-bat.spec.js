@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from './fixtures/armageddon/bat.json' with {type:'json'};
 import {nativeBatRequest} from '../src/armageddon/bat.js';
 import {nativeAreaDamage} from '../src/armageddon/area-damage.js';

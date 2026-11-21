@@ -4,7 +4,7 @@ import {createNativeRopeShot} from '../src/armageddon/rope-runtime.js';
 import { nativePlaceWormAt } from "../src/armageddon/worm-placement.js";
 import { nativeSceneCollision } from "../src/armageddon/collision-scene.js";
 import { nativeDefaultMapObjects } from "../src/armageddon/map-setup.js";
-import { test, expect as playwrightExpect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "./helpers/shared-page.js";
 import { fastExpect } from "./helpers/fast-expect.js";
 // Fixture loops make thousands of assertions: skip Playwright step bookkeeping for passing ones.
 const expect = fastExpect(playwrightExpect);

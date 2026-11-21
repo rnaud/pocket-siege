@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import missionNames from "../src/armageddon/mission-names.json" with { type: "json" };
 test.describe.configure({ mode: "parallel" });
 // Plays every scenario's scripted turns (about 6 minutes on 4 workers).

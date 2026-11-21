@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "./helpers/shared-page.js";
 import ticks from './fixtures/armageddon/axe.json' with {type:'json'};
 import receivers from './fixtures/armageddon/axe-receiver.json' with {type:'json'};
 import {nativeAxeTick} from '../src/armageddon/axe.js';

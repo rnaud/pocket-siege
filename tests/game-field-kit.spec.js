@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { advanceUntil, advanceFrames, chargeFor, fastForward, fixTerrainRandom, openArsenal, chargeShot, setAim, startCustomMatch } from "./helpers/game-sim.js";
 import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
@@ -159,7 +159,17 @@ test("stockpile keeps ammo and utilities across series islands", async ({
   await advanceUntil(page, (s) => s.seriesWins[0] === 1, { max: 500, step: 5, label: "series win" });
   expect(await page.evaluate(() => window.siege.getState().seriesWins)).toEqual([1, 0]);
   // The next island starts after the break; stockpiled ammo carries over.
-  await advanceUntil(page, (s) => s.ammo[0].grenade === 7 && s.phase !== "break", { max: 750, step: 5, label: "next island" });
+  // The next island may load its map asynchronously, so yield between steps.
+  const nextIsland = await page.evaluate(async () => {
+    for (let frame = 0; frame < 2000; frame += 5) {
+      const s = window.siege.getState();
+      if (s.ammo[0].grenade === 7 && s.phase !== "break") return true;
+      window.siege.debug.advanceReplayFrames(5);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    return false;
+  });
+  expect(nextIsland).toBe(true);
 });
 
 test("special and utility crates stock the field kit", async ({ page }) => {

@@ -2,7 +2,7 @@ import slopeSprites from "../src/armageddon/worm-slope-sprites.json" with {type:
 import spriteIds from "../src/armageddon/sprite-ids.json" with {type:"json"};
 import { captureReplayActors, restoreReplayActors } from "../src/armageddon/replay-actor-adapter.js";
 import replayAnimation from "./fixtures/armageddon/replay-animation.json" with { type: "json" };
-import { test, expect as playwrightExpect } from "@playwright/test";
+import { test, expect as playwrightExpect } from "./helpers/shared-page.js";
 import { fastExpect } from "./helpers/fast-expect.js";
 // Fixture loops make thousands of assertions: skip Playwright step bookkeeping for passing ones.
 const expect = fastExpect(playwrightExpect);

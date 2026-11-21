@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import { fastForward } from "./helpers/misc-fast-forward.js";
 import { startMatch } from "./helpers/match.js";
 test("death strip completes on simulation ticks without render-driven advancement", async ({
@@ -104,7 +104,11 @@ test("live death plays past the old cutoff before its explosion", async ({
       // between strips (reveals, announcements) larger batches are safe.
       if (probe.advancedFrames < 3000 && state.phase !== "over") {
         const batch = dying.length ? 16 : 30;
-        window.siege.debug.advanceReplayFrames(batch);
+        // Rings live only a few ticks: look for them on every stepped frame.
+        for (let i = 0; i < batch; i++) {
+          window.siege.debug.advanceReplayFrames(1);
+          if (!probe.rings) probe.rings = window.siege.getState().nativeParticles.some((p) => p.sprite === "circle25");
+        }
         probe.advancedFrames += batch;
       }
       requestAnimationFrame(sample);

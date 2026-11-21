@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import fixture from "./fixtures/armageddon/map-palette.json" with { type: "json" };

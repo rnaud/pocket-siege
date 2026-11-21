@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fs from "node:fs";
 import { nativeProjectileBody } from "../src/armageddon/projectile-body.js";
 const fixture = JSON.parse(

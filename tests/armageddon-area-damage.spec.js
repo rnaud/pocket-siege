@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/area-damage.json" with { type: "json" };
 import { nativeAreaDamage } from "../src/armageddon/area-damage.js";
 test("area recipients, damage falloff, self impulse and effects match original executable", { tag: "@logic" }, () => {

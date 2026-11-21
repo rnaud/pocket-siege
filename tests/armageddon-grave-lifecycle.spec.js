@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/grave-lifecycle.json" with { type: "json" };
 import { nativeGraveLifecycle } from "../src/armageddon/grave-lifecycle.js";
 test("grave depth, animation and bubble arithmetic match original x86", { tag: "@logic" }, () => {

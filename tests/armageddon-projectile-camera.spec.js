@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/projectile-camera.json" with { type: "json" };
 import { nativeProjectileCameraRequest } from "../src/armageddon/camera-priority.js";
 test("projectile camera priority matches original bounds and submerged branches", { tag: "@logic" }, () => {
