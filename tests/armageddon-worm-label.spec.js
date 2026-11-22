@@ -1,7 +1,7 @@
 import { test, expect } from "./helpers/shared-page.js";
 import fixture from "./fixtures/armageddon/worm-label.json" with { type: "json" };
 import slide from "./fixtures/armageddon/worm-selection-slide.json" with { type: "json" };
-import { nativeWormLabelFont, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nativeSelectionEase } from "../src/armageddon/worm-label.js";
+import { nativeWormLabelFont, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nativeSelectionFrame } from "../src/armageddon/worm-label.js";
 import { startMatch, renderedFrame } from "./helpers/match.js";
 
 test("worm label font and blink match original executable", { tag: "@logic" }, () => {
@@ -17,16 +17,13 @@ test("worm label font and blink match original executable", { tag: "@logic" }, (
     );
 });
 
-// One 004D9DFA..004D9EF5 frame: label slide, then arrow slide.
-const slideFrame = (state) => ({ ...state, arrow: nativeSelectionEase(state.arrow, state.arrowTarget),
-  label: nativeSelectionEase(state.label, state.labelTarget) });
-
-test("selection arrow and label slides match the original executable", { tag: "@logic" }, () => {
-  expect(slide.frames).toHaveLength(64);
-  for (const row of slide.frames) expect(slideFrame(row.input)).toEqual(row.output);
+test("selection arrow, label and weapon icon slides match the original executable", { tag: "@logic" }, () => {
+  expect(slide.frames).toHaveLength(76);
+  for (const row of slide.frames) expect(nativeSelectionFrame(row.input)).toEqual(row.output);
+  expect(slide.sequences).toHaveLength(6);
   for (const sequence of slide.sequences) {
     let state = sequence.input;
-    for (const step of sequence.steps) expect(state = slideFrame(state)).toEqual(step);
+    for (const step of sequence.steps) expect(state = nativeSelectionFrame(state)).toEqual(step);
   }
 });
 

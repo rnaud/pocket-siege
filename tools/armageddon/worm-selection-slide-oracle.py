@@ -1,8 +1,8 @@
 """Execute the worm frame event 0x3ED slide block 004D9DFA..004D9EF5.
 
 The label slide (+0x368 toward +0x36C) and the selection arrow slide (+0x360
-toward +0x364) run unchanged, including the 004EDA70 ammo-label ease of
-+0x370 toward +0x374, held at zero here (the browser has no ammo label yet).
+toward +0x364) run unchanged, including the 004EDA70 weapon-icon ease of
++0x370 toward +0x374 and its active-worm label gate.
 Single frames cover signed gaps around the 0x20C minimum step; sequences
 follow both slides from hidden to shown and back.
 """
@@ -41,21 +41,27 @@ def read(address):
 START, END = 0x4d9dfa, 0x4d9ef5
 
 def frame(state, active=1):
+    state={'icon':0,'iconTarget':0,'active':1,**state};active=state['active']
     write(owner+0x360,state['arrow']);write(owner+0x364,state['arrowTarget'])
     write(owner+0x368,state['label']);write(owner+0x36c,state['labelTarget'])
-    write(owner+0x370,0);write(owner+0x374,0);write(owner+0x104,active)
+    write(owner+0x370,state['icon']);write(owner+0x374,state['iconTarget']);write(owner+0x104,active)
     cpu.reg_write(UC_X86_REG_EDI,owner);cpu.reg_write(UC_X86_REG_ESI,0)
     cpu.reg_write(UC_X86_REG_ESP,stack+0x8000)
     cpu.emu_start(START,END,count=10000)
     if cpu.reg_read(UC_X86_REG_EIP)!=END:raise RuntimeError('Slide block did not complete')
     return dict(arrow=read(owner+0x360),arrowTarget=read(owner+0x364),
-        label=read(owner+0x368),labelTarget=read(owner+0x36c))
+        label=read(owner+0x368),labelTarget=read(owner+0x36c),
+        icon=read(owner+0x370),iconTarget=read(owner+0x374),active=active)
 
 values=[0,1,0x20b,0x20c,0x20d,0x418,0x4000,0x8000,0xa3d6,0xfdf3,0xfdf4,0xfdf5,0xffff,0x10000,-0x20c,-0x8000]
 frames=[]
 for current in values:
     for target in [0,0x10000,0x8000,-0x10000]:
         state=dict(arrow=current,arrowTarget=target,label=target,labelTarget=current)
+        frames.append(dict(input=state,output=frame(state)))
+for icon,target in [(0,0x10000),(0x8000,0x20000),(0x1f000,0x20000),(0x10000,0),(0x1000,0),(0,0)]:
+    for active in [0,1]:
+        state=dict(arrow=0x10000,arrowTarget=0x10000,label=0x8000,labelTarget=0x10000,icon=icon,iconTarget=target,active=active)
         frames.append(dict(input=state,output=frame(state)))
 sequences=[]
 for start,target in [(0,0x10000),(0x10000,0),(0x6000,0x10000),(0x10000,0x7fff)]:
@@ -64,5 +70,11 @@ for start,target in [(0,0x10000),(0x10000,0),(0x6000,0x10000),(0x10000,0x7fff)]:
     for _ in range(80):
         state=frame(state);steps.append(dict(state))
     sequences.append(dict(input=dict(arrow=start,arrowTarget=target,label=target,labelTarget=start),steps=steps))
+for icon_target in [0x10000,0x20000]:
+    state=dict(arrow=0x10000,arrowTarget=0x10000,label=0x10000,labelTarget=0x10000,icon=0,iconTarget=icon_target,active=1)
+    start=dict(state);steps=[]
+    for _ in range(30):
+        state=frame(state);steps.append(dict(state))
+    sequences.append(dict(input=start,steps=steps))
 args.output.write_text(json.dumps({'sha256':digest,'frames':frames,'sequences':sequences},separators=(',',':'))+'\n')
 print(f'{len(frames)} slide frames, {len(sequences)} sequences')

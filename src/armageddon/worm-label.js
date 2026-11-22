@@ -1,6 +1,7 @@
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { loadNativeFont, measureNativeText, rasterNativeText } from "./font.js";
 import { fixedMultiply } from './numeric.js';
+import { nativeIconEase } from './worm-icon.js';
 
 // Original004D8FC0: the damage text rises55 pixels during the first half
 // of its native lifetime, then holds; all offsets are signed16.16.
@@ -31,10 +32,22 @@ export function nativeSelectionEase(current, target) {
   return (current + step) | 0;
 }
 
-// Selection arrow and label slide fields of the worm task. Creation
-// (004D666E) hides the arrow and shows the label.
+// Selection arrow, label and weapon icon slide fields of the worm task.
+// Creation (004D666E) hides the arrow and icon and shows the label.
 export function nativeSelectionState() {
-  return { arrow: 0, arrowTarget: 0, label: 0x10000, labelTarget: 0x10000 };
+  return { arrow: 0, arrowTarget: 0, label: 0x10000, labelTarget: 0x10000, icon: 0, iconTarget: 0, iconValue: 0 };
+}
+
+// One 004D9DFA..004D9EF5 frame: the label slides, the weapon icon eases
+// (004EDA70) and, while it shows on the active worm, sends the label away;
+// then the arrow slides.
+export function nativeSelectionFrame(state) {
+  const next = { icon: 0, iconTarget: 0, active: 1, ...state };
+  next.label = nativeSelectionEase(next.label, next.labelTarget);
+  next.icon = nativeIconEase(next.icon, next.iconTarget);
+  if (next.icon && next.active) next.labelTarget = 0;
+  next.arrow = nativeSelectionEase(next.arrow, next.arrowTarget);
+  return next;
 }
 
 // 0049FDAA..0049FDD7: the Delete key advances detail and wraps after hidden.

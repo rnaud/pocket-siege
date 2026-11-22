@@ -1933,6 +1933,14 @@ body:has(.controls.inventory-open) #announcement {
 .worm-label .original-selection[hidden] {
   display: none;
 }
+.worm-label .original-weapon-icon {
+  position: absolute;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.worm-label .original-weapon-icon[hidden] {
+  display: none;
+}
 
 #aim-reticle:has(.original-crosshair[data-original-sprite]) > path,
 #aim-reticle:has(.original-crosshair[data-original-sprite]) > .reticle-dot {

@@ -304,7 +304,10 @@ import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel, updateHudTeamHealth } from "./pixel-hud.js";
-import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode, nativeSelectionEase, nativeSelectionState } from "./armageddon/worm-label.js";
+import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode, nativeSelectionFrame, nativeSelectionState } from "./armageddon/worm-label.js";
+import { nativeCanvasPaletteDisplay } from "./armageddon/canvas-palette.js";
+import { nativeWormIconUpdate, nativeWormIconDraw, nativeWormIconPanel, paintNativeWormIcon } from "./armageddon/worm-icon.js";
+import hudIconTable from "./armageddon/hud-resource-table.json";
 import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater, originalWaterColor } from "./water.js";
 import { mountExpedition } from "./expedition-ui.js";
@@ -420,6 +423,11 @@ let equippedTurnControl = 0;
 let pendingInputCamera = false;
 // Set by the 500-tick idle return; the native camera re-requests the worm.
 let nativeIdleReturn = false;
+// scene+0xB8 lo\ icon handles by arsenal slot (004CB380); the handle is the slot.
+const hudIconBySlot = new Map(hudIconTable.map(([slot, file]) => [slot, file.replace(/\.img$/, "")]));
+const wormIconHandle = (slot) => (originalHUDIcon(hudIconBySlot.get(slot), "lo") ? slot : 0);
+// 004A68E0 palette roles for the icon panel: grey, black, white.
+const WORM_ICON_COLORS = { 7: [157, 157, 157], 8: [0, 0, 0], 9: [255, 255, 255] };
 // Worm task +0x360/+0x364 (selection arrow) and +0x368/+0x36C (label slide).
 const selectionOf = (w) => (w.nativeSelection ??= nativeSelectionState());
 const mouseLookDelta = [0, 0];
@@ -2834,6 +2842,7 @@ function beginTurn() {
   // aim input may move the camera (+0x2A0) and the idle counter restarts.
   active.nativeCameraAim = true;
   active.nativeIdleTicks = 0;
+  active.nativeWeaponOut = false;
   // 004DAA35..004DAA4E: the arrow and label appear at once, fully shown.
   Object.assign(selectionOf(active), { arrow: 0x10000, arrowTarget: 0x10000, label: 0x10000, labelTarget: 0x10000 });
   pendingTurnCamera = [Math.round(active.x * 65536), Math.round((H - active.y) * 65536)];
@@ -4814,23 +4823,42 @@ function collectNativeLayoutCameraRequests() {
 // the camera) after 500 idle ticks of a still worm with no held fire, but
 // only while the arrow or the label has slid away (+0x360 or +0x368 zero).
 function stepNativeSelection() {
+  const turnWorm = matchStarted && phase !== "over" ? worms[current] : null;
   for (const w of worms) {
     const selection = selectionOf(w);
-    selection.label = nativeSelectionEase(selection.label, selection.labelTarget);
-    selection.arrow = nativeSelectionEase(selection.arrow, selection.arrowTarget);
+    // 004DE12E..004DE1D7: the equipped weapon (+0x170) and worm state pick
+    // the floating icon. Host states: jetpack flight is 0x78 and a worm that
+    // has stood still with its weapon out is 0x67.
+    const slot = w === turnWorm && w.hp > 0 ? currentArsenalSlot() : 0;
+    const record = nativeArsenalWeapons()[slot];
+    const state = w === turnWorm && jetpack.active ? 0x78
+      : [0x7b, 0x7c, 0x7d].includes(nativeWormState(w)) ? nativeWormState(w)
+      : w.nativeWeaponOut ? 0x67 : 0x65;
+    const icon = nativeWormIconUpdate({ slot, kind: record?.kind | 0, subtype: record?.subtype | 0, state,
+      value: selection.iconValue, progress: selection.icon, target: selection.iconTarget }, wormIconHandle);
+    selection.iconValue = icon.value; selection.icon = icon.progress; selection.iconTarget = icon.target;
+    Object.assign(selection, nativeSelectionFrame({ ...selection, active: w === turnWorm ? 1 : 0 }));
+    delete selection.active;
   }
   nativeIdleReturn = false;
   const active = worms[current];
   if (!active || active.hp <= 0 || phase !== "aim" || replaying) return;
   // 0x42E (weapon input disabled once a shot is away) clears +0x2A0.
   if (retreat > 0 || projectile || shotWait > 0) active.nativeCameraAim = false;
+  const still = Math.abs(active.vx) < 0.01 && Math.abs(active.vy) < 0.01 && active.ground !== false;
+  // Walking or leaving the ground puts the weapon away (state 0x65/0x66).
+  if (move !== 0 || !still) active.nativeWeaponOut = false;
   if (move !== 0 || pendingInputCamera || (aimInput !== 0 && active.nativeCameraAim)) {
     active.nativeIdleTicks = 0;
     return;
   }
-  const still = Math.abs(active.vx) < 0.01 && Math.abs(active.vy) < 0.01 && active.ground !== false;
   if (!still || charging) { active.nativeIdleTicks = 0; return; }
   active.nativeIdleTicks = ((active.nativeIdleTicks ?? 0) + 1) | 0;
+  // 004DE223..004DE28E: 25 still ticks take the weapon out (0x65 -> 0x67),
+  // except the Bungee and Parachute (kind 4, subtypes 7 and 12).
+  const held = nativeArsenalWeapons()[currentArsenalSlot()];
+  if (active.nativeIdleTicks >= 0x19 && !(held?.kind === 4 && (held.subtype === 7 || held.subtype === 12)))
+    active.nativeWeaponOut = true;
   const selection = selectionOf(active);
   if (active.nativeIdleTicks < 0x1f4 || (selection.arrow && selection.label)) return;
   active.nativeIdleTicks = 0;
@@ -4900,6 +4928,34 @@ function targetCursorEvent() {
     clientY: rect.top + (1 - (y - view.y) / view.h) * rect.height };
 }
 // Original teleport relocation and drowning updates dispatch004D6760.
+// 004D8A00 / 004FD690: the floating weapon icon, drawn into the label layer.
+function updateWormIcon(w, labelLeft, labelTop) {
+  const selection = selectionOf(w);
+  const draw = phase !== "over" && w.hp > 0 && nativeWormIconDraw({ progress: selection.icon, value: selection.iconValue,
+    ready: w === worms[current] && w.nativeCameraAim ? 1 : 0, facing: w.facing < 0 ? -1 : 1, tick: selectionTick,
+    x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536), rank: 0 });
+  let canvas = w.label.querySelector(".original-weapon-icon");
+  if (!draw) { if (canvas) canvas.hidden = true; return; }
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.className = "original-weapon-icon";
+    canvas.setAttribute("aria-hidden", "true");
+    w.label.append(canvas);
+    w.nativeIconCache = {};
+  }
+  const panel = nativeWormIconPanel(w.nativeIconCache, draw.image, draw.progress, draw.border, draw.fill);
+  if (panel.calls.length) {
+    paintNativeWormIcon(canvas, panel, WORM_ICON_COLORS, (slot) => originalHUDIcon(hudIconBySlot.get(slot), "lo"));
+    nativeCanvasPaletteDisplay.capture(canvas);
+  }
+  canvas.hidden = false;
+  canvas.style.width = `${panel.width}px`;
+  canvas.style.height = `${panel.height}px`;
+  canvas.dataset.weaponSlot = draw.image;
+  const point = screen(draw.x >> 16, H - (draw.y >> 16));
+  canvas.style.left = `${Math.round(point.x - panel.width / 2) - labelLeft}px`;
+  canvas.style.top = `${Math.round(point.y - panel.height / 2) - labelTop}px`;
+}
 function queueWormCamera(w, priority = null) {
   if (priority !== null) {
     if (!nativeCameraFraming) {
@@ -8822,6 +8878,7 @@ function frame(now) {
     const arrowPoint = arrow && screen(arrow.x >> 16, H - (arrow.y >> 16));
     updateOriginalSelection(w.label, w.team, selectionTick, Boolean(arrow) && w.hp > 0 && phase !== "over",
       arrow ? { x: arrowPoint.x - labelLeft, y: arrowPoint.y - labelTop } : null);
+    updateWormIcon(w, labelLeft, labelTop);
   }
   for (const flame of nativeFlames) if (flame) {
     const art = nativeFlameArt(flame.body);
@@ -10034,6 +10091,7 @@ window.siege = {
         nativeSelection,
       }) => ({
         selectionArrow: nativeSelection?.arrow ?? 0,
+        weaponIcon: nativeSelection ? { slot: nativeSelection.iconValue, progress: nativeSelection.icon, target: nativeSelection.iconTarget } : null,
         selectionLabel: nativeSelection?.label ?? 0x10000,
         nativeSpeechBank,
         team,
@@ -10121,6 +10179,8 @@ if (import.meta.env.DEV) {
     restoreReplayState: restoreMatchReplayState,
     setSimulationPaused(value) { simulationPaused = Boolean(value); },
     setManualClock(value = true) { manualClock = Boolean(value); },
+    // Selects an arsenal slot as the weapon panel does (004E5BF0 select).
+    equipSlot(slot) { equipArsenalSlot(slot); },
     advanceReplayFrames(count=1) {
       const previous = replaySimulation;
       replaySimulation = true;
