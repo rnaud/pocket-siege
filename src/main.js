@@ -258,6 +258,7 @@ import {
   updateNativeSpriteVisual,
   projectileSprites,
   originalWormFrame,
+  nativeEquipControl,
   updateOriginalCrate,
   stepOriginalIdle,
   startOriginalRecoil,
@@ -1102,6 +1103,11 @@ function updateLaserSight(visible) {
   line.setAttribute("y2", String(end.y));
   line.style.display = "";
 }
+// The item the active worm holds: an equipped panel item (Skip Go, Select
+// Worm, a utility) or the host weapon.
+function heldItem() {
+  return equippedTurnControl || weapon;
+}
 function updateAimHUD() {
   const visible =
     phase === "aim" &&
@@ -1111,7 +1117,7 @@ function updateAimHUD() {
     !rope.attached &&
     !jetpack.active &&
     worms[current]?.hp > 0 &&
-    weapon !== "mine";
+    nativeEquipControl(heldItem()) !== 0;
   aimHUD.guide.style.display = visible ? "" : "none";
   if (!visible) lastAim = null;
   if (visible) {
@@ -8784,7 +8790,7 @@ function frame(now) {
       pose,
       matchRandom.frame,
       angle,
-      weapon,
+      heldItem(),
       active,
     );
     w.body.visible = Boolean(original);

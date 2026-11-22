@@ -53,6 +53,21 @@ const spriteIdByName = new Map(
 );
 const freezeEntry = spriteIds.sprites[0x23c].name;
 const freezeIdle = spriteIds.sprites[0x248].name;
+// Panel items equipped without a host weapon: Ninja Rope, Bungee, Parachute,
+// Skip Go, Surrender, Select Worm and the instant utilities (slots 60-70).
+const PANEL_EQUIP_SLOTS = [37, 38, 39, 57, 58, 59, 60, 62, 63, 64, 65, 66, 67, 68, 69, 70];
+// The worm's held item is a host weapon name or an arsenal slot number.
+const equipSlot = (weapon) => (typeof weapon === "number" ? weapon : WEAPON_SLOTS[weapon]);
+const equipSprite = (weapon) => {
+  const record = weaponFields[equipSlot(weapon)];
+  return record ? nativeWeaponAnimation(record) : 0;
+};
+// 004F61E0 control (+0x27C): 0 has no crosshair (004FB970), 1 aims and 2
+// picks one of eight directions. Browser-only weapons keep their aim.
+export function nativeEquipControl(weapon) {
+  const slot = equipSlot(weapon), record = weaponFields[slot];
+  return record ? nativeWeaponEquip(record, 0x65, 0x8000, slot).control : 1;
+}
 const weaponSprites = Object.fromEntries(
   Object.entries(WEAPON_SLOTS).map(([kind, id]) => [
     kind,
@@ -155,7 +170,9 @@ const names = [
     ...Object.values(weaponSprites)
       .filter(Boolean)
       .map((id) => spriteIds.sprites[id].name),
-    ...Object.values(WEAPON_SLOTS).flatMap((id) =>
+    ...PANEL_EQUIP_SLOTS.map((id) => nativeWeaponAnimation(weaponFields[id]))
+      .filter(Boolean).map((id) => spriteIds.sprites[id].name),
+    ...[...Object.values(WEAPON_SLOTS), ...PANEL_EQUIP_SLOTS].flatMap((id) =>
       nativeWeaponEquip(weaponFields[id], 0x65, 0x8000, id)
         .calls.filter((call) => call.operation === "queue" && call.sprite_id)
         .map((call) => spriteIds.sprites[call.sprite_id].name),
@@ -1344,8 +1361,8 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
       aim: "wbrth1",
     }[pose] || "wwalk";
   let equipped = false;
-  if (active && pose === "aim" && weaponSprites[weapon]) {
-    name = spriteIds.sprites[weaponSprites[weapon]].name;
+  if (active && pose === "aim" && equipSprite(weapon)) {
+    name = spriteIds.sprites[equipSprite(weapon)].name;
     equipped = true;
   }
   // Zero HP waits for the controller's death dispatch; only originalDeath
@@ -1371,10 +1388,10 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
         }))
       : idle ? [] : equipped
         ? nativeWeaponEquip(
-            weaponFields[WEAPON_SLOTS[weapon]],
+            weaponFields[equipSlot(weapon)],
             wasEquipped ? 0x66 : 0x65,
             0x8000,
-            WEAPON_SLOTS[weapon],
+            equipSlot(weapon),
           ).calls.filter((call) => call.operation === "queue")
         : [{ sprite_id: spriteIdByName.get(name), progress: 0 }];
     if (
