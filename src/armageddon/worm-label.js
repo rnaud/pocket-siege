@@ -20,6 +20,23 @@ export function nativeSelectionPlacement(body) {
     progress: Math.trunc((body.tick << 16) / 50), order: 0x30000 };
 }
 
+// 004D9DFA..004D9EEF (worm frame event 0x3ED): the label slide (+0x368
+// toward +0x36C) and the selection arrow slide (+0x360 toward +0x364) each
+// move a twentieth of the gap per frame, at least 0x20C, and land exactly.
+export function nativeSelectionEase(current, target) {
+  current |= 0; target |= 0;
+  if (Math.abs(target - current) <= 0x20c) return target;
+  let step = fixedMultiply((target - current) | 0, 0xccc);
+  if (Math.abs(step) < 0x20c) step = step < 0 ? -0x20c : 0x20c;
+  return (current + step) | 0;
+}
+
+// Selection arrow and label slide fields of the worm task. Creation
+// (004D666E) hides the arrow and shows the label.
+export function nativeSelectionState() {
+  return { arrow: 0, arrowTarget: 0, label: 0x10000, labelTarget: 0x10000 };
+}
+
 // 0049FDAA..0049FDD7: the Delete key advances detail and wraps after hidden.
 export function nextNativeLabelMode(mode) {
   const next = (mode + 1) | 0;

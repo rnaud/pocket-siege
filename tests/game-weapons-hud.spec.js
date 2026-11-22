@@ -143,11 +143,13 @@ test("worm labels retain original world anchors while aiming", async ({ page }) 
     await page.locator('#angle').dispatchEvent('input');
     const anchors = await page.evaluate(() => {
       const state = window.siege.getState();
+      // The aiming worm's own label slides away on its first input
+      // (004D9969), so only the other worms keep their resting anchors.
       return [...document.querySelectorAll('.worm-label')].map((label, i) => ({
         x: +label.dataset.nativeX, y: +label.dataset.nativeTop,
         bodyX: state.worms[i].x, bodyY: state.world.height - state.worms[i].y,
         transform: getComputedStyle(label).transform,
-      }));
+      })).filter((_, i) => i !== state.current);
     });
     for (const anchor of anchors) {
       expect(Math.abs(anchor.x - anchor.bodyX)).toBeLessThanOrEqual(1);

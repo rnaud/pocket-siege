@@ -304,7 +304,7 @@ import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
 import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel, updateHudTeamHealth } from "./pixel-hud.js";
-import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode } from "./armageddon/worm-label.js";
+import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode, nativeSelectionEase, nativeSelectionState } from "./armageddon/worm-label.js";
 import { pixelViewport } from "./pixel-art.js";
 import { createWater, loadOriginalWater, originalWaterColor } from "./water.js";
 import { mountExpedition } from "./expedition-ui.js";
@@ -418,6 +418,10 @@ function clearNativeRetreat() {
 // Arsenal slot 57-59 (Skip Go/Surrender/Select Worm) equipped until fired.
 let equippedTurnControl = 0;
 let pendingInputCamera = false;
+// Set by the 500-tick idle return; the native camera re-requests the worm.
+let nativeIdleReturn = false;
+// Worm task +0x360/+0x364 (selection arrow) and +0x368/+0x36C (label slide).
+const selectionOf = (w) => (w.nativeSelection ??= nativeSelectionState());
 const mouseLookDelta = [0, 0];
 // 0x1247C/0x12480: native world-space target cursor (Y down, 16.16).
 let targetCursor = null;
@@ -2633,6 +2637,11 @@ function stepBombs(dt) {
 }
 function markNativePickupAction(w = worms[current]) {
   if (!w) return;
+  // 004D995F/004D9969 (same input block as 0x42F): the arrow and the
+  // worm's own label slide away on the first movement, aim or fire input.
+  const selection = selectionOf(w);
+  selection.arrowTarget = 0;
+  selection.labelTarget = 0;
   w.nativePickupFlag = nativeWormPickupEvent({
     team: w.team, worm: worms.indexOf(w), field154: w.nativePickupFlag ?? 0,
   }, [w.team, worms.indexOf(w)]).field154;
@@ -2825,6 +2834,8 @@ function beginTurn() {
   // aim input may move the camera (+0x2A0) and the idle counter restarts.
   active.nativeCameraAim = true;
   active.nativeIdleTicks = 0;
+  // 004DAA35..004DAA4E: the arrow and label appear at once, fully shown.
+  Object.assign(selectionOf(active), { arrow: 0x10000, arrowTarget: 0x10000, label: 0x10000, labelTarget: 0x10000 });
   pendingTurnCamera = [Math.round(active.x * 65536), Math.round((H - active.y) * 65536)];
   reactionOrigin = { x: Math.round(active.x * 65536) | 0, y: Math.round((H - active.y) * 65536) | 0 };
   matchDamageSourceActive = true;
@@ -3169,6 +3180,9 @@ function cycleWorm(direction = 1) {
   const roster = worms.filter((w) => w.team === team && w.hp > 0);
   const index = roster.indexOf(worms[current]);
   const next = roster[(index + direction + roster.length) % roster.length];
+  // The left worm ends its turn (0x41F) and the chosen one activates (0x41C).
+  if (worms[current]) Object.assign(selectionOf(worms[current]), { arrowTarget: 0, labelTarget: 0x10000 });
+  Object.assign(selectionOf(next), { arrow: 0x10000, arrowTarget: 0x10000, label: 0x10000, labelTarget: 0x10000 });
   current = worms.indexOf(next);
   lastSelectedWorm[team] = worms.filter(w => w.team === team).indexOf(next) + 1;
   reactionOrigin = { x: Math.round(next.x * 65536) | 0, y: Math.round((H - next.y) * 65536) | 0 };
@@ -4791,25 +4805,37 @@ function collectNativeLayoutCameraRequests() {
   }
   const active = worms[current];
   if (!active || active.hp <= 0 || phase !== "aim" || replaying) { pendingInputCamera = false; return; }
-  // 0x42E (weapon input disabled once a shot is away) clears +0x2A0.
-  if (retreat > 0 || projectile || shotWait > 0) active.nativeCameraAim = false;
   const input = move !== 0 || pendingInputCamera || (aimInput !== 0 && active.nativeCameraAim);
   pendingInputCamera = false;
-  if (input) {
+  if (input || nativeIdleReturn) queueWormCamera(active);
+}
+// Worm frame event 0x3ED for every worm: 004D9DFA..004D9EEF slide the label
+// and the selection arrow; 004D9F03..004DA052 bring both back (and request
+// the camera) after 500 idle ticks of a still worm with no held fire, but
+// only while the arrow or the label has slid away (+0x360 or +0x368 zero).
+function stepNativeSelection() {
+  for (const w of worms) {
+    const selection = selectionOf(w);
+    selection.label = nativeSelectionEase(selection.label, selection.labelTarget);
+    selection.arrow = nativeSelectionEase(selection.arrow, selection.arrowTarget);
+  }
+  nativeIdleReturn = false;
+  const active = worms[current];
+  if (!active || active.hp <= 0 || phase !== "aim" || replaying) return;
+  // 0x42E (weapon input disabled once a shot is away) clears +0x2A0.
+  if (retreat > 0 || projectile || shotWait > 0) active.nativeCameraAim = false;
+  if (move !== 0 || pendingInputCamera || (aimInput !== 0 && active.nativeCameraAim)) {
     active.nativeIdleTicks = 0;
-    queueWormCamera(active);
     return;
   }
-  // 004D9F03..004D9F68: the idle return needs a still worm (+0xF4), no held
-  // fire (+0x108) and a faded name or energy label (+0x360/+0x368 at zero),
-  // i.e. the Delete-key label cycle at "health only" or "hidden".
   const still = Math.abs(active.vx) < 0.01 && Math.abs(active.vy) < 0.01 && active.ground !== false;
-  if (!still || charging || labelMode < 2) { active.nativeIdleTicks = 0; return; }
+  if (!still || charging) { active.nativeIdleTicks = 0; return; }
   active.nativeIdleTicks = ((active.nativeIdleTicks ?? 0) + 1) | 0;
-  if (active.nativeIdleTicks >= 0x1f4) {
-    active.nativeIdleTicks = 0;
-    queueWormCamera(active);
-  }
+  const selection = selectionOf(active);
+  if (active.nativeIdleTicks < 0x1f4 || (selection.arrow && selection.label)) return;
+  active.nativeIdleTicks = 0;
+  selection.arrowTarget = selection.labelTarget = 0x10000;
+  nativeIdleReturn = true;
 }
 // 00501370 target branch / 004E6420 / 004E65F0. While a weapon waits for a
 // target, the mouse moves a world-space cursor (clamped to the world limits,
@@ -6766,6 +6792,9 @@ function nextTurn() {
   if (pendingTurnStart || nativeAnnouncementsPending(nativeAnnouncements)) return;
   // 004B35F0: end the active turn (0x41F/0x421/0x425), clearing the turn
   // fields and input mode and resetting the camera priority cap to 14.
+  // 004DAD16/004DAD2C (worm event 0x41F): the arrow slides away and the
+  // label slides back.
+  if (worms[current]) Object.assign(selectionOf(worms[current]), { arrowTarget: 0, labelTarget: 0x10000 });
   if (turnBody.activeTeam) {
     turnBody = nativeDeactivateTurn({ ...turnBody, cameraCounts: turnBody.cameraCounts ?? new Array(14).fill(0) }).body;
     nativeCamera.setPriority(14);
@@ -8395,6 +8424,7 @@ function stepFrame(dt) {
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
+  stepNativeSelection();
   if (nativeCameraActive) collectNativeLayoutCameraRequests();
   const wormTracking = pendingWormCamera.length > 0;
   const environmentTracking = pendingEnvironmentCamera !== null || nativeNuclearEffect?.progress >= 0;
@@ -8762,7 +8792,7 @@ function frame(now) {
     } else if (w.damageCanvas) w.damageCanvas.hidden = true;
     const labelPlacement = nativeWormLabelPlacement({
       x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
-      progress: 65536, labelMode, compact: 0, teamInactive: 0, surrendered: 0,
+      progress: selectionOf(w).label, labelMode, compact: 0, teamInactive: 0, surrendered: 0,
       state: nativeWormState(w), ammo: 0, suppressAmmo: 0,
       rank: 0, color: w.team ? 0 : 2, selected: active && phase !== "over",
       suppressed: 0, tick: selectionTick,
@@ -8785,12 +8815,13 @@ function frame(now) {
     const labelTop = Math.round(p.y);
     w.label.style.left = labelLeft + "px";
     w.label.style.top = labelTop + "px";
+    // 004D86F0 draws the arrow whenever +0x360 is non-zero, sliding with it.
     const arrow = nativeSelectionPlacement({ x: Math.round(w.x * 65536),
-      y: Math.round((H - w.y) * 65536), progress: 65536,
+      y: Math.round((H - w.y) * 65536), progress: selectionOf(w).arrow,
       color: w.team ? 0 : 2, alternate: false, tick: selectionTick });
-    const arrowPoint = screen(arrow.x >> 16, H - (arrow.y >> 16));
-    updateOriginalSelection(w.label, w.team, selectionTick, active && w.hp > 0 && phase !== "over",
-      { x: arrowPoint.x - labelLeft, y: arrowPoint.y - labelTop });
+    const arrowPoint = arrow && screen(arrow.x >> 16, H - (arrow.y >> 16));
+    updateOriginalSelection(w.label, w.team, selectionTick, Boolean(arrow) && w.hp > 0 && phase !== "over",
+      arrow ? { x: arrowPoint.x - labelLeft, y: arrowPoint.y - labelTop } : null);
   }
   for (const flame of nativeFlames) if (flame) {
     const art = nativeFlameArt(flame.body);
@@ -9145,6 +9176,10 @@ function updateLabelModeButton() {
 }
 function cycleLabelMode() {
   labelMode = nextNativeLabelMode(labelMode);
+  // 004DA06A..004DA090: a label detail change brings back the active
+  // worm's arrow and label.
+  if (matchStarted && phase !== "over" && worms[current])
+    Object.assign(selectionOf(worms[current]), { arrowTarget: 0x10000, labelTarget: 0x10000 });
   updateLabelModeButton();
 }
 $('#label-detail').onclick = cycleLabelMode;
@@ -9996,7 +10031,10 @@ window.siege = {
         nativePoison,
         originalRecovery,
         invisible,
+        nativeSelection,
       }) => ({
+        selectionArrow: nativeSelection?.arrow ?? 0,
+        selectionLabel: nativeSelection?.label ?? 0x10000,
         nativeSpeechBank,
         team,
         name,
