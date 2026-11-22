@@ -2511,7 +2511,11 @@ function stepNativeFlames() {
       gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
     }, {
       collide: (x, y) => terrain.solid(x, H - y),
-      candidates: () => [...nativeWormHitscanBodies(worms, null, H), ...nativeBarrelHitBodies()].sort((a, b) => a.type - b.type),
+      // Host adapter: the Flame Thrower spawns its stream at the nozzle, inside
+      // the shooter's box, so the streaming worm is not a target of it.
+      candidates: () => [...nativeWormHitscanBodies(worms, null, H)
+        .filter((body) => !(pendingFire?.stage === "flamethrower" && body.worm === pendingFire.worm)),
+        ...nativeBarrelHitBodies()].sort((a, b) => a.type - b.type),
       hit: (target, event, size, packet) => applyNativeHitPackets([target], [{ body: 0, packet }], flame.owner),
       logicRandom: () => matchRandom.logicUint(), visualRandom: () => matchRandom.visualUint(),
       parent: () => 23, allocate: () => true,
@@ -5870,7 +5874,9 @@ function fire() {
         ? "Rocket away. Incoming!"
         : kind === "mortar"
           ? "Mortar away. Heavy impact incoming!"
-          : `${kind === "sticky" ? "Sticky bomb" : "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`;
+          : WEAPONS[kind]?.timed
+            ? `${kind === "sticky" ? "Sticky bomb" : WEAPONS[kind]?.label ?? "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`
+            : `${WEAPONS[kind]?.label ?? "Shot"} away. Retreat!`;
   move = 0;
   shotWait = 0;
   if (projectile.nativeRelease) {
@@ -10192,6 +10198,8 @@ if (import.meta.env.DEV) {
     setManualClock(value = true) { manualClock = Boolean(value); },
     // Selects an arsenal slot as the weapon panel does (004E5BF0 select).
     equipSlot(slot) { equipArsenalSlot(slot); },
+    // Selects a host weapon as its inventory button does.
+    setWeapon(kind) { setWeapon(kind); updateUI(); },
     advanceReplayFrames(count=1) {
       const previous = replaySimulation;
       replaySimulation = true;

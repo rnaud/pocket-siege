@@ -15,6 +15,9 @@ test("flame thrower emits native flames and spends its stream", async ({ page })
   await advanceUntil(page, (s) => s.flames > 0, { max: 500, label: "flames" });
   const before = await page.evaluate(() => window.siege.getState().ammo[0].flamethrower);
   expect(before).toBeLessThan(56);
+  // The stream runs to its end: its own flames do not knock the shooter.
+  await advanceUntil(page, () => /Flame thrower complete/.test(document.querySelector("#status").textContent),
+    { max: 200, label: "stream complete" });
 });
 
 

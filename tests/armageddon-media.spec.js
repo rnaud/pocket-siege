@@ -271,8 +271,9 @@ test("original projectiles select drawn directional frames without rotating pixe
       return result;
     });
   });
+  // Super Banana's original sbanana strip is a 30 px canvas.
   const sourceSizedUnits = new Set([
-    "longbow", "sheep", "supersheep", "aquasheep", "donkey", "oldwoman",
+    "superbanana", "longbow", "sheep", "supersheep", "aquasheep", "donkey", "oldwoman",
     "sallyarmy", "skunk", "madcow", "molebomb", "mbbomb",
   ]);
   for (const entry of result) {
