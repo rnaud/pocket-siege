@@ -185,3 +185,21 @@ test("share metadata and manifest avoid retired bitmap branding", async ({
   expect(manifest.display).toBe("standalone");
   await expect(page.locator('link[href*="/art/"]')).toHaveCount(0);
 });
+
+test("the crosshair waits for the weapon to come out and leaves while walking", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const crosshair = async (frames) => {
+    await page.evaluate(async (n) => {
+      window.siege.debug.advanceReplayFrames(n);
+      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    }, frames);
+    return page.evaluate(() => getComputedStyle(document.querySelector("#aim-guide")).display !== "none");
+  };
+  // 004FB970 draws it only in state 0x67, entered after 25 still ticks.
+  expect(await crosshair(1)).toBe(false);
+  expect(await crosshair(30)).toBe(true);
+  await page.keyboard.down("ArrowRight");
+  expect(await crosshair(5)).toBe(false);
+  await page.keyboard.up("ArrowRight");
+  expect(await crosshair(60)).toBe(true);
+});

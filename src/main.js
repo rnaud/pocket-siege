@@ -1117,7 +1117,10 @@ function updateAimHUD() {
     !rope.attached &&
     !jetpack.active &&
     worms[current]?.hp > 0 &&
-    nativeEquipControl(heldItem()) !== 0;
+    nativeEquipControl(heldItem()) !== 0 &&
+    // 004FB970: only with the weapon out (state 0x67, after 25 still ticks)
+    // or, per 004C32B0, while a fired weapon still has shots this turn.
+    (worms[current].nativeWeaponOut || shotgunRemaining > 0);
   aimHUD.guide.style.display = visible ? "" : "none";
   if (!visible) lastAim = null;
   if (visible) {
@@ -4453,6 +4456,8 @@ function startCharge(source) {
   )
     return;
   markNativePickupAction();
+  // 004FA028..004FA061: fire takes the weapon out at once (state 0x67).
+  worms[current].nativeWeaponOut = true;
   manualCamera = null;
   wormLocked = true;
   if (WEAPONS[weapon]?.special === "homing" && !homingTarget) {
