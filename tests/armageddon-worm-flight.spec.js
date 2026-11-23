@@ -213,3 +213,13 @@ test("host worm position and velocity carry native 16.16 values without loss", {
   }
   expect(mismatches).toBe(0);
 });
+
+test("a suspended standing body neither wakes nor falls, as the shared tick skips it", { tag: "@logic" }, () => {
+  const w = { ...worm(), nativeStandingSleep: 0 };
+  const support = nativeStandingSupport(w, { height: 650, frame: 0, index: 0, suspended: 1 }, () => 0);
+  const body = nativeSimpleBodyTick({ ...nativeAirborneBody(w, 650, 96), suspended: 1 },
+    { frame: 0, index: 0, waterY: 650, gravity: 0x3d70, wind: 0 },
+    { awake: nativeBodyAwake, collide: () => 0, bounce: () => {} });
+  expect(support).toEqual({ sleeping: 0, fall: false });
+  expect([body.y, body.vy, body.moving]).toEqual([nativeAirborneBody(w, 650, 96).y, 0, 0]);
+});

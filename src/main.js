@@ -2489,7 +2489,9 @@ function seatWorm(w) {
 // the body moves and the worm must enter 0x7E. Keeps the 13-frame sleep flag.
 function wormBodyStartsFalling(w) {
   const support = nativeStandingSupport(w, { height: H, frame: matchRandom.frame,
-    index: worms.indexOf(w), gravity: Math.round(0x3d70 * gravityScale) },
+    index: worms.indexOf(w), gravity: Math.round(0x3d70 * gravityScale),
+    // 004D8030 suspends the dying worm's body (state 0x84).
+    suspended: w.originalDeath ? 1 : 0 },
   (x, y) => nativeSceneCollision(w, { ...nativeAirborneBody(w, H, 96), state: nativeWormState(w), type: 2 },
     x / 65536, H - y / 65536, terrain, worms, H) !== 0);
   w.nativeStandingSleep = support.sleeping;

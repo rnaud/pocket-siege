@@ -364,10 +364,12 @@ export function applyNativeWeaponImpulse(worm, x, y) {
 // collision world holds it one pixel below. Otherwise gravity moves the body,
 // and the state handler (004DED81, virtual +0xF4) puts it in 0x7E. Returns
 // the new sleep flag and whether the worm starts falling. `collide(x, y)`
-// takes native 16.16 y-down coordinates.
-export function nativeStandingSupport(worm, { height, frame = 0, index = 0, gravity = 0x3d70 }, collide) {
+// takes native 16.16 y-down coordinates. A suspended body (death 0x84,
+// Blowtorch 0x71) is skipped by the tick, so it neither wakes nor falls.
+export function nativeStandingSupport(worm, { height, frame = 0, index = 0, gravity = 0x3d70, suspended = 0 }, collide) {
   const body = nativeAirborneBody(worm, height, 96);
   let sleeping = worm.nativeStandingSleep ? 1 : 0;
+  if (suspended) return { sleeping, fall: false };
   if (((frame + index) | 0) % 13 === 0 || nativeBodyAwake(body)) sleeping = 0;
   if (sleeping) return { sleeping, fall: false };
   if (!gravity) return { sleeping: 1, fall: false };
