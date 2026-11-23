@@ -340,7 +340,6 @@ export const projectileSprites = {
   pigeon: "pigeonr0",
   magic: "bullet",
   grenade: "grenade",
-  sticky: "grenade",
   cluster: "cluster",
   banana: "banana",
   superbanana: "sbanana",

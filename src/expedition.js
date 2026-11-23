@@ -40,7 +40,6 @@ export const MUTATORS = {
 // island, so a run builds an arsenal instead of hoarding single shots.
 export const REWARDS = {
   mortars: { label: "Mortar rack", text: "+2 mortars every island", weapons: { mortar: 2 }, weight: 4 },
-  sticky: { label: "Tar bombs", text: "+2 sticky bombs every island", weapons: { sticky: 2 }, weight: 4 },
   mines: { label: "Sapper's bag", text: "+2 mines every island", weapons: { mine: 2 }, weight: 3 },
   longbow: { label: "Archers", text: "+2 longbow shots every island", weapons: { longbow: 2 }, weight: 3 },
   sheep: { label: "Flock", text: "+1 sheep every island", weapons: { sheep: 1 }, weight: 3 },

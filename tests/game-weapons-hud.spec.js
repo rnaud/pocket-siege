@@ -78,11 +78,9 @@ test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", a
     "0",
   );
 });
-for (const weapon of ["mortar", "sticky"])
+for (const weapon of ["mortar"])
   test(`${weapon} fires with its own impact behavior`, async ({ page }) => {
     await startMatch(page);
-    // Sticky is a browser-only weapon: original schemes give it no ammo.
-    await page.evaluate((weapon) => window.siege.debug.setAmmo(0, weapon, 2), weapon);
     await openArsenal(page);
     await page.locator(`[data-weapon="${weapon}"]`).click();
     await setAim(page, "-60");
@@ -90,12 +88,6 @@ for (const weapon of ["mortar", "sticky"])
       () => window.siege.getState().terrainPixels,
     );
     await chargeShot(page, 300);
-    if (weapon === "sticky") {
-      await advanceUntil(page, (s) => s.projectile?.stuck === true, { max: 500, label: "sticky stuck" });
-      const p = await page.evaluate(() => window.siege.getState().projectile);
-      expect(p.vx).toBe(0);
-      expect(p.vy).toBe(0);
-    }
     await advanceUntil(page, (s) => s.explosions > 0, { max: 1000, label: `${weapon} explosion` });
     expect(
       await page.evaluate(() => window.siege.getState().terrainPixels),

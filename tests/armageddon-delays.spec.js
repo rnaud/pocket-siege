@@ -53,7 +53,7 @@ test("AI cannot select delayed weapons even with unlimited stock", { tag: "@logi
     planTurn({
       me,
       worms: [me, { team: 0, hp: 100 }],
-      ammo: { grenade: -1, mortar: -1, sticky: 0 },
+      ammo: { grenade: -1, mortar: -1 },
       delays: createWeaponDelays({ rocket: 1, grenade: 1, mortar: 1 }),
     }),
   ).toBeNull();

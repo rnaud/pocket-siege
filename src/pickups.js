@@ -4,7 +4,6 @@ export const PICKUP_KINDS = [
   "health",
   "grenade",
   "mortar",
-  "sticky",
   "utility",
 ];
 

@@ -27,7 +27,6 @@ const sounds = {
   axerelease: "vikingaxerelease",
   shotgunreload: "shotgunreload",
   grenade: "throwrelease",
-  sticky: "throwrelease",
   cluster: "throwrelease",
   holy: "holygrenade",
   napalm: "petrol",

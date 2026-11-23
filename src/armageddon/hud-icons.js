@@ -74,7 +74,7 @@ export function originalHUDIcon(name, variant = "hi") {
 export function updateOriginalHUDIcons(root = document) {
   for (const button of root.querySelectorAll("[data-weapon], [data-utility]")) {
     const name = HUD_ICONS[button.dataset.weapon || button.dataset.utility];
-    if (!name) continue; // Sticky is a browser-only weapon, with no native icon.
+    if (!name) continue;
     const variant = button.disabled ? "lo" : "hi";
     const source = originalHUDIcon(name, variant);
     if (!source) continue;

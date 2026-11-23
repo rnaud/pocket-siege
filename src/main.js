@@ -2387,9 +2387,6 @@ function applyOriginalSchemeLoadout(configured) {
   const count = value => value === -1 ? Infinity : value;
   loadouts.forEach(({ counts, delays }, index) => {
     for (const [kind, slot] of Object.entries(WEAPON_SLOTS)) ammo[index][kind] = count(counts[slot]);
-    // Weapons with no original slot (the browser-only Sticky bomb) are not
-    // part of any original scheme.
-    for (const kind of Object.keys(ammo[index])) if (!(kind in WEAPON_SLOTS)) ammo[index][kind] = 0;
     for (const [slot, kind] of Object.entries(NATIVE_UTILITY_SLOTS))
       if (kind in utilityAmmo[index]) utilityAmmo[index][kind] = count(counts[slot]);
     // Menu weapon delays still override the scheme's own delays.
@@ -6281,7 +6278,7 @@ function fire() {
         : kind === "mortar"
           ? "Mortar away. Heavy impact incoming!"
           : WEAPONS[kind]?.timed
-            ? `${kind === "sticky" ? "Sticky bomb" : WEAPONS[kind]?.label ?? "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`
+            ? `${WEAPONS[kind]?.label ?? "Grenade"} thrown. ${thisFuse}-second fuse. Retreat!`
             : `${WEAPONS[kind]?.label ?? "Shot"} away. Retreat!`;
   move = 0;
   shotWait = 0;
@@ -8503,10 +8500,6 @@ function stepFrame(dt) {
       oy = p.y;
     if (!p.stuck && p.sleeping && !terrain.solid(p.x, p.y - 4))
       p.sleeping = false;
-    if (p.attached) {
-      p.x = p.attached.w.x + p.attached.dx;
-      p.y = p.attached.w.y + p.attached.dy;
-    }
     if (!p.sleeping && !p.stuck) {
       if (p.nativeBody && sheepUnit(p)?.phase === 1) {
         nativeContact = stepSheepFlight(p);
@@ -8578,20 +8571,6 @@ function stepFrame(dt) {
     let boom =
       (p.nativeBody ? Boolean(nativeContact?.detonate) : (!WEAPONS[p.kind].timed && hit)) ||
       (!p.nativeBody && WEAPONS[p.kind].timed && p.age >= p.fuse);
-    if (hit && p.kind === "sticky" && !p.stuck) {
-      p.stuck = true;
-      p.vx = 0;
-      p.vy = 0;
-      const w =
-        hitWorm ??
-        worms.find(
-          (w, i) =>
-            w.hp > 0 &&
-            (i !== p.owner || p.age > 0.25) &&
-            hitsWorm(w, p.x, p.y, 3),
-        );
-      if (w) p.attached = { w, dx: p.x - w.x, dy: p.y - w.y };
-    }
     if (hit && WEAPONS[p.kind].bounces && !p.nativeBody) {
       const victim =
         hitWorm ??
@@ -9830,7 +9809,6 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "F1") setWeapon("rocket");
     if (e.key === "F2") setWeapon("grenade");
     if (e.key === "F3") setWeapon("mortar");
-    if (e.key === "F4") setWeapon("sticky");
     if (e.key.toLowerCase() === "m") setWeapon("mine");
     if (WEAPONS[weapon].timed && /^[1-5]$/.test(e.key)) {
       fuse = +e.key;

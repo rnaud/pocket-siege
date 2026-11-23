@@ -1,6 +1,5 @@
 // Slot identities from WA 3.0.0.0 mission inventory loader 0043F2E0.
 // The saved browser key napalm now selects the original Petrol Bomb (slot47).
-// Browser-only sticky has no asserted native equivalent.
 export const WEAPON_SLOTS = Object.freeze({
   rocket: 1,
   homing: 2,

@@ -50,7 +50,6 @@ test("weapon metadata and starting ammo match the loadout", { tag: "@logic" }, (
   expect(freshAmmo()).toMatchObject({
     grenade: 3,
     mortar: 2,
-    sticky: 2,
     mine: 2,
     shotgun: 3,
     dynamite: 2,
@@ -92,7 +91,7 @@ test("planner never spends a weapon with no ammo left", { tag: "@logic" }, () =>
     base({
       me,
       worms: [me, target],
-      ammo: { grenade: 0, mortar: 0, sticky: 0 },
+      ammo: { grenade: 0, mortar: 0 },
       random: () => 0.5,
     }),
   );

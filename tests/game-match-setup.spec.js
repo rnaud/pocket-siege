@@ -50,7 +50,6 @@ test("best-of-three, storm weather and a supply crate start together", async ({
     "health",
     "grenade",
     "mortar",
-    "sticky",
     "utility",
     "special",
   ]).toContain(state.crate?.kind);

@@ -159,7 +159,6 @@ function blastPoint(
     p.x = hit.x;
     p.y = hit.y;
     if (!meta.timed) return { x: p.x, y: p.y };
-    if (kind === "sticky") return { x: p.x, y: p.y };
     let normal;
     if (hit.type === "worm") {
       const dx = p.x - hit.worm.x,

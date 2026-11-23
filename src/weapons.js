@@ -43,18 +43,6 @@ export const WEAPONS = {
     ammo: 2,
     key: "F3",
   },
-  sticky: {
-    label: "Sticky",
-    icon: "✿",
-    radius: 64,
-    damage: 50,
-    wind: false,
-    speed: 1,
-    timed: true,
-    bounces: false,
-    ammo: 2,
-    key: "F4",
-  },
   mine: {
     label: "Mine",
     icon: "✸",
@@ -613,7 +601,7 @@ export const SPECIAL_WEAPONS = [
   "holy",
   "scales",
 ];
-export const WEAPON_ORDER = ["rocket", "grenade", "mortar", "sticky"];
+export const WEAPON_ORDER = ["rocket", "grenade", "mortar"];
 export const PROJECTILE_ORDER = [
   "banana",
   ...WEAPON_ORDER,
@@ -663,7 +651,6 @@ export const freshAmmo = () => ({
   banana: WEAPONS.banana.ammo,
   grenade: WEAPONS.grenade.ammo,
   mortar: WEAPONS.mortar.ammo,
-  sticky: WEAPONS.sticky.ammo,
   mine: WEAPONS.mine.ammo,
   shotgun: WEAPONS.shotgun.ammo,
   dynamite: WEAPONS.dynamite.ammo,

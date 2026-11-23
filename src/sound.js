@@ -5,7 +5,6 @@ export const SOUND_PROFILES = {
   mortar: [85, 32, 0.35, "triangle", 0.12],
   shotgun: [180, 35, 0.14, "square", 0.09],
   grenade: [340, 180, 0.12, "triangle", 0.07],
-  sticky: [650, 180, 0.16, "sine", 0.07],
   cluster: [300, 85, 0.18, "square", 0.06],
   holy: [880, 440, 0.35, "triangle", 0.07],
   napalm: [240, 65, 0.3, "sawtooth", 0.05],

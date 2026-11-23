@@ -7,7 +7,7 @@ test.beforeEach(fixTerrainRandom);
 // keeps all three in the CI smoke selection.
 test("special tray fires shotgun, dynamite and airstrike: shotgun", async ({ page }) => {
   await startCustomMatch(page);
-  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(52);
+  await expect(page.locator(".weapons [data-weapon]")).toHaveCount(51);
   await page.locator('[data-weapon="shotgun"]').click();
   await page.evaluate(() => {
     window.shotgunSpriteProbe = {
