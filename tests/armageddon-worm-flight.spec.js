@@ -223,3 +223,22 @@ test("a suspended standing body neither wakes nor falls, as the shared tick skip
   expect(support).toEqual({ sleeping: 0, fall: false });
   expect([body.y, body.vy, body.moving]).toEqual([nativeAirborneBody(w, 650, 96).y, 0, 0]);
 });
+
+test("a jump flight moved by the physics pass matches the composed flight step", { tag: "@logic" }, () => {
+  // 004CA750 ticks the body before the worm's 0x3EA state logic; landing on
+  // a floor must give the same body, events and result either way.
+  const composed = worm(), split = worm();
+  attachNativeJumpFlight(composed, environment, 1);
+  attachNativeJumpFlight(split, environment, 1);
+  const floor = (x, y) => Number(y < 5);
+  for (let tick = 1; tick <= 120 && composed.nativeFlight; tick++) {
+    const env = { ...environment, frame: tick, index: 2, waterLevel: -100 };
+    const a = stepNativeJumpFlight(composed, env, floor);
+    stepNativeJumpFlight(split, { ...env, physicsOnly: true }, floor);
+    const b = stepNativeJumpFlight(split, { ...env, moved: true }, floor);
+    expect(b).toEqual(a);
+    expect([split.x, split.y, split.vx, split.vy, split.ground]).toEqual(
+      [composed.x, composed.y, composed.vx, composed.vy, composed.ground]);
+  }
+  expect(composed.ground).toBe(true);
+});

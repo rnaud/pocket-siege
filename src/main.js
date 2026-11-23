@@ -2570,6 +2570,44 @@ function objectPhysicsInterfaces(object) {
     skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
   };
 }
+// Hurt, frozen and flying worm bodies, shared by the physics pass and the
+// worm frame step.
+function wormBodyEnvironment(w, earthquake) {
+  return {
+    height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: physicsSlot(w),
+    random: () => matchRandom.logicUint(), earthquake,
+    pickup: body => queryNativeWormPickup(w, body),
+    collisionBody: hit => nativeContactBody(hit),
+    updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
+  };
+}
+function wormFlightEnvironment(w) {
+  return { ...wormBodyEnvironment(w, 0), wind,
+    horizontal: w === worms[current] ? move : 0, vertical: w === worms[current] ? aimInput : 0 };
+}
+function wormBodyCollide(w) {
+  return (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H);
+}
+// The worm body the frame step would tick, read before its 0x3EA logic:
+// hurt, frozen (0x88) or jump/parachute flight. Rope, jetpack, Drill, Fire
+// Punch, Blowtorch, recovery and standing worms keep their own steps.
+function wormPhysicsKind(w) {
+  if (!wormTaskLive(w) || w.drowned || w.originalDeath) return null;
+  if (w === worms[current] && (jetpack.active || rope.attached)) return null;
+  if (w.originalBlowtorch || w.originalDrill || w.originalFirePunch || w.originalRecovery) return null;
+  if (w.originalHurt && !w.frozen) return "hurt";
+  if (w.nativeFlight && !w.frozen) return w.originalParachute ? "parachute" : "flight";
+  if (w.frozen && w.nativeHurtBody?.state === 0x88) return "frozen";
+  return null;
+}
+function stepWormPhysics(w) {
+  const kind = wormPhysicsKind(w);
+  if (!kind) return;
+  const physicsOnly = { physicsOnly: true };
+  if (kind === "hurt" || kind === "frozen") stepNativeHurtFlight(w, { ...wormBodyEnvironment(w, nativeQuake()), ...physicsOnly }, wormBodyCollide(w));
+  else (kind === "parachute" ? stepNativeParachuteFlight : stepNativeJumpFlight)(w, { ...wormFlightEnvironment(w), ...physicsOnly }, wormBodyCollide(w));
+  w.nativeMovedFrame = matchRandom.frame;
+}
 function projectilePhysicsEnvironment(p) {
   return {
     height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame, index: physicsSlot(p),
@@ -2596,10 +2634,11 @@ function activeProjectileUsesBodyTick(p) {
 function runObjectPhysicsPass() {
   const mineSet = new Set(phase === "over" ? [] : mines), barrelSet = new Set(hazards),
     crateSet = new Set(crates), graveSet = new Set(graves),
-    projectileSet = new Set(bombs.filter((b) => b.nativeBody));
+    projectileSet = new Set(bombs.filter((b) => b.nativeBody)), wormSet = new Set(worms);
   if (activeProjectileUsesBodyTick(projectile)) projectileSet.add(projectile);
   for (const [object] of physicsList.ordered()) {
-    if (projectileSet.has(object)) {
+    if (wormSet.has(object)) stepWormPhysics(object);
+    else if (projectileSet.has(object)) {
       nativeProjectilePhysics(object, projectilePhysicsEnvironment(object), projectileCollide(object));
       object.nativeMovedFrame = matchRandom.frame;
     } else if (mineSet.has(object)) stepMinePhysics(object);
@@ -8355,50 +8394,21 @@ function stepFrame(dt) {
         attachNativeFastFall(w, H);
         startOriginalHurt(w, 0x80);
       }
+      const moved = w.nativeMovedFrame === matchRandom.frame;
       if (w.originalHurt && !w.frozen) {
-        result = stepNativeHurtFlight(
-          w,
-          {
-            height: H,
-            waterLevel,
-            gravityScale,
-            frame: matchRandom.frame,
-            index: physicsSlot(w),
-            random: () => matchRandom.logicUint(),
-            earthquake: quakeKicked ? 0 : nativeQuake(),
-            pickup: body => queryNativeWormPickup(w, body),
-        collisionBody: (hit) =>
-              nativeContactBody(hit),
-            updateCollisionBody: (hit, body) => {
-              updateNativeContactBody(hit, body);
-            },
-          },
-          (x, y, body) =>
-            nativeSceneCollision(w, body, x, y, terrain, worms, H),
-        );
+        result = stepNativeHurtFlight(w, { ...wormBodyEnvironment(w, quakeKicked ? 0 : nativeQuake()), moved },
+          wormBodyCollide(w));
         dispatchNativeWormMotionEvents(w, result);
       } else if (w.nativeFlight && !w.frozen) {
         const tickFlight = w.originalParachute ? stepNativeParachuteFlight : stepNativeJumpFlight;
-        result = tickFlight(w, {
-          height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: physicsSlot(w),
-          horizontal: w === worms[current] ? move : 0, vertical: w === worms[current] ? aimInput : 0,
-          random: () => matchRandom.logicUint(),
-          pickup: body => queryNativeWormPickup(w, body),
-        collisionBody: hit => nativeContactBody(hit),
-          updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
-        }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
+        result = tickFlight(w, { ...wormFlightEnvironment(w), moved }, wormBodyCollide(w));
         dispatchNativeWormMotionEvents(w, { ...result,
           events: result.events.filter(call => call.target !== 0x7a) });
       } else if (w.frozen) {
         // State 0x88 runs the shared worm body tick like any other state.
         if (w.nativeHurtBody?.state !== 0x88) attachNativeFrozenBody(w, H);
-        result = stepNativeHurtFlight(w, {
-          height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: physicsSlot(w),
-          random: () => matchRandom.logicUint(), earthquake: nativeQuake(),
-          pickup: body => queryNativeWormPickup(w, body),
-          collisionBody: (hit) => nativeContactBody(hit),
-          updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
-        }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
+        result = stepNativeHurtFlight(w, { ...wormBodyEnvironment(w, nativeQuake()),
+          moved: moved && w.nativeHurtBody?.state === 0x88 }, wormBodyCollide(w));
         dispatchNativeWormMotionEvents(w, result);
       }
     }

@@ -283,6 +283,9 @@ export function nativeWormMotionCallbacks(worm, environment, collision, events) 
   };
 }
 
+// With `environment.physicsOnly` only the body tick runs (004CA750's pass)
+// and its events wait on the worm; `environment.moved` then runs the state
+// logic on the moved body with those events.
 export function stepNativeHurtFlight(worm, environment, collide) {
   const {
     height,
@@ -291,13 +294,22 @@ export function stepNativeHurtFlight(worm, environment, collide) {
     gravityScale = 1,
     random = () => 0,
   } = environment;
+  let body, events;
+  if (environment.moved) {
+    body = worm.nativeHurtBody ?? attachNativeHurtFlight(worm, height);
+    // A flight tick's events when its body turned into this hurt body after
+    // the pass (fast fall).
+    const stored = worm.nativePhysicsEvents;
+    events = Array.isArray(stored) ? stored : stored?.events ?? [];
+    worm.nativePhysicsEvents = null;
+  } else {
   const input = worm.nativeHurtBody ?? attachNativeHurtFlight(worm, height);
   if (input.voiceCooldown) input.voiceCooldown--;
   if (input.state === 0x7f) input.damageScale = byte(0x11d40);
-  const events = [];
+  events = [];
   const collision = (x, y, current = input) =>
     collide(x / 65536, height - y / 65536, current);
-  const body = nativeSimpleBodyTick(
+  body = nativeSimpleBodyTick(
     input,
     {
       frame,
@@ -309,6 +321,16 @@ export function stepNativeHurtFlight(worm, environment, collide) {
     },
     nativeWormMotionCallbacks(worm, environment, collision, events),
   );
+  if (environment.physicsOnly) {
+    worm.nativeHurtBody = body;
+    worm.nativePhysicsEvents = events;
+    worm.x = body.x / 65536;
+    worm.y = height - body.y / 65536;
+    worm.vx = (body.vx / 65536) * 50;
+    worm.vy = (-body.vy / 65536) * 50;
+    return null;
+  }
+  }
   if (body.state === 0x7f && !nativeBodyAwake(body)) {
     body.state = 0x76;
     events.push({ operation: "state", target: 0x76, previous: 0x7f });

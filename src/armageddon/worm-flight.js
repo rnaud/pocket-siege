@@ -167,6 +167,7 @@ export function attachNativeParachuteFlight(worm, { height, friction = 96, windP
 
 // 004DD020 state7D applies half-gravity directional impulses before motion.
 export function stepNativeParachuteFlight(worm, environment, collide) {
+  if (environment.moved) return stepNativeJumpFlight(worm, environment, collide);
   const half = Math.trunc(Math.round(0x3d70 * (environment.gravityScale ?? 1)) / 2);
   const { result, ...velocity } = nativeBodyImpulse(worm.nativeFlight,
     Math.sign(environment.horizontal ?? 0) * half,
@@ -206,10 +207,18 @@ export function stepNativeJumpFlight(
 ) {
   const { height, waterLevel, gravityScale = 1, frame = 0, random = () => 0 } = environment;
   if (!worm.nativeFlight) throw new Error("Native airborne flight is not attached");
-  const events = [];
+  let events = [];
   let landingSpeed = 0;
+  let body;
+  if (environment.moved) {
+    body = worm.nativeFlight;
+    const stored = worm.nativePhysicsEvents;
+    ({ events, landingSpeed } = Array.isArray(stored) ? { events: stored, landingSpeed: 0 }
+      : stored ?? { events: [], landingSpeed: 0 });
+    worm.nativePhysicsEvents = null;
+  } else {
   const collision = (x, y, body) => collide(x / 65536, height - y / 65536, body);
-  const body = nativeSimpleBodyTick(
+  body = nativeSimpleBodyTick(
     worm.nativeFlight,
     {
       frame,
@@ -290,6 +299,16 @@ export function stepNativeJumpFlight(
       },
     },
   );
+  if (environment.physicsOnly) {
+    worm.nativeFlight = body;
+    worm.nativePhysicsEvents = { events, landingSpeed };
+    worm.x = body.x / 65536;
+    worm.y = height - body.y / 65536;
+    worm.vx = (body.vx / 65536) * 50;
+    worm.vy = body.vy ? (-body.vy / 65536) * 50 : 0;
+    return null;
+  }
+  }
   worm.nativeFlight = body;
   worm.x = body.x / 65536;
   worm.y = height - body.y / 65536;
