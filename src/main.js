@@ -243,6 +243,7 @@ import {
   nativeProjectileCollision as queryNativeProjectile,
   attachNativeProjectile,
   stepNativeProjectile,
+  nativeProjectilePhysics,
   nativeProjectileDetonationEvents,
   nativeProjectileChildren,
   nativeProjectilePlacementHit as queryNativePlacement,
@@ -2569,14 +2570,39 @@ function objectPhysicsInterfaces(object) {
     skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
   };
 }
+function projectilePhysicsEnvironment(p) {
+  return {
+    height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame, index: physicsSlot(p),
+    solid: (x, y) => terrain.solid(x, H - y),
+    random: () => matchRandom.logicUint(),
+    collisionBody: hit => nativeContactBody(hit),
+    updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
+    earthquake: nativeQuake(), kick: kickNativeObject,
+  };
+}
+function projectileCollide(p) {
+  return (x, y, body) => nativeProjectileCollision(p, x, y, terrain, worms, H, body);
+}
+// The active projectile takes the shared body tick only in the frame step's
+// plain branch: not a Dragon Ball, arrow, stuck shot or flying sheep.
+function activeProjectileUsesBodyTick(p) {
+  if (!p?.nativeBody || p.nativeDragonBall || p.nativeArrow || p.stuck) return false;
+  if (p.sleeping && !terrain.solid(p.x, p.y - 4)) p.sleeping = false;
+  return !p.sleeping && sheepUnit(p)?.phase !== 1;
+}
 // 004CA750 at event 0x3E9: every body advances in physics-list order before
-// the 0x3EA task events. Mines, oil drums, crates and graves run here; worm
-// and projectile physics still run inside their own frame steps.
+// the 0x3EA task events. Mines, oil drums, crates, graves and projectiles
+// run here; worm physics still runs inside the worm frame step.
 function runObjectPhysicsPass() {
   const mineSet = new Set(phase === "over" ? [] : mines), barrelSet = new Set(hazards),
-    crateSet = new Set(crates), graveSet = new Set(graves);
+    crateSet = new Set(crates), graveSet = new Set(graves),
+    projectileSet = new Set(bombs.filter((b) => b.nativeBody));
+  if (activeProjectileUsesBodyTick(projectile)) projectileSet.add(projectile);
   for (const [object] of physicsList.ordered()) {
-    if (mineSet.has(object)) stepMinePhysics(object);
+    if (projectileSet.has(object)) {
+      nativeProjectilePhysics(object, projectilePhysicsEnvironment(object), projectileCollide(object));
+      object.nativeMovedFrame = matchRandom.frame;
+    } else if (mineSet.has(object)) stepMinePhysics(object);
     else if (barrelSet.has(object) || crateSet.has(object)) {
       object.impactPlayback = cleanupNativeContactSound(object.impactPlayback);
       const physics = barrelSet.has(object) ? nativeBarrelPhysics : nativeCratePhysics;
@@ -2747,14 +2773,8 @@ function stepBombs(dt) {
         audio.resume();
         b.nativeFusePlayback = playNativeProjectileFuse(audio, b.nativeFuseSound);
       }
-      const result = stepNativeProjectile(b, {
-        height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame, index: physicsSlot(b),
-        solid: (x, y) => terrain.solid(x, H - y),
-        random: () => matchRandom.logicUint(),
-        collisionBody: hit => nativeContactBody(hit),
-        updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
-        earthquake: nativeQuake(), kick: kickNativeObject,
-      }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
+      const result = stepNativeProjectile(b, { ...projectilePhysicsEnvironment(b),
+        moved: b.nativeMovedFrame === matchRandom.frame }, projectileCollide(b));
       stepWalkingUnit(b);
       stepProjectileGas(b);
       stepMoleBurrow(b);
@@ -8629,27 +8649,8 @@ function stepFrame(dt) {
       if (p.nativeBody && sheepUnit(p)?.phase === 1) {
         nativeContact = stepSheepFlight(p);
       } else if (p.nativeBody) {
-        nativeContact = stepNativeProjectile(
-          p,
-          {
-            height: H,
-            solid: (x, y) => terrain.solid(x, H - y),
-            waterLevel,
-            wind,
-            gravityScale,
-            frame: matchRandom.frame,
-            index: physicsSlot(p),
-            random: () => matchRandom.logicUint(),
-            collisionBody: (hit) => nativeContactBody(hit),
-            updateCollisionBody: (hit, body) => {
-              updateNativeContactBody(hit, body);
-            },
-            earthquake: nativeQuake(), kick: kickNativeObject,
-          },
-          (x, y, body) => {
-            return nativeProjectileCollision(p, x, y, terrain, worms, H, body);
-          },
-        );
+        nativeContact = stepNativeProjectile(p, { ...projectilePhysicsEnvironment(p),
+          moved: p.nativeMovedFrame === matchRandom.frame }, projectileCollide(p));
         stepWalkingUnit(p);
         stepProjectileGas(p);
         stepMoleBurrow(p);

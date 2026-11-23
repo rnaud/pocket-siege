@@ -368,9 +368,20 @@ export function nativeProjectileCollision(
 ) {
   return nativeSceneCollision(p, body, x, y, terrain, worms, height, objects);
 }
+// The projectile's physics step (004CA320 with its contact response),
+// scheduled by 004CA750 before the task events. Contacts, sounds and
+// contact events are kept on the projectile for its following event step.
+export function nativeProjectilePhysics(p, environment, collide) {
+  stepNativeProjectile(p, { ...environment, physicsOnly: true }, collide);
+}
+
+// One projectile frame: physics, then the 0x3EA timer, lifetime and homing.
+// With `moved` the physics pass already advanced the body this frame.
 export function stepNativeProjectile(
   p,
   {
+    moved = false,
+    physicsOnly = false,
     height,
     waterLevel,
     wind = 0,
@@ -387,16 +398,18 @@ export function stepNativeProjectile(
   },
   collide,
 ) {
-  const sounds = [], events = [];
-  const art = p.nativeGuidance?.initialized ? p.nativeArt.secondary : p.nativeArt.primary;
-  p.nativeArt.progress = nativeProjectileAnimationTick(art.mode, p.nativeArt.rate, p.nativeArt.progress);
+  let sounds = [], events = [];
+  let firstHit = 0,
+    contacts = 0;
+  if (moved && p.nativePhysics) {
+    ({ sounds, events, firstHit, contacts } = p.nativePhysics);
+    p.nativePhysics = null;
+  } else {
   const waterSound = (body, skim) => {
     const event = nativeWaterSound(body, skim);
     body.splashSuppress = event.suppress;
     if (event.sound) enqueueNativeSound(sounds, event.sound);
   };
-  let firstHit = 0,
-    contacts = 0;
   const body = {
     ...p.nativeBody,
     x: fixed(p.x),
@@ -454,6 +467,17 @@ export function stepNativeProjectile(
       },
     },
   );
+  if (physicsOnly) {
+    p.nativePhysics = { sounds, events, firstHit, contacts };
+    p.x = p.nativeBody.x / 65536;
+    p.y = height - p.nativeBody.y / 65536;
+    p.vx = (p.nativeBody.vx / 65536) * 50;
+    p.vy = (-p.nativeBody.vy / 65536) * 50;
+    return null;
+  }
+  }
+  const art = p.nativeGuidance?.initialized ? p.nativeArt.secondary : p.nativeArt.primary;
+  p.nativeArt.progress = nativeProjectileAnimationTick(art.mode, p.nativeArt.rate, p.nativeArt.progress);
   const timer = nativeProjectileTimer({ ...p.nativeTimer,
     state: p.nativeBody.state, phase: p.nativeBody.phase,
   }, { submerged: p.nativeBody.submerged, awake: nativeBodyAwake(p.nativeBody), random });

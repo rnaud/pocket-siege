@@ -4,6 +4,7 @@ import {
   nativeProjectileLaunchGeometry,
   attachNativeProjectile,
   stepNativeProjectile,
+  nativeProjectilePhysics,
   nativeProjectileDetonationEvents,
   nativeProjectileChildren,
   nativeProjectilePlacementHit,
@@ -100,6 +101,24 @@ test("a resting projectile takes the earthquake kick through the shared body tic
   }, (x, y) => (y < 300 ? 1 : 0));
   expect(kicks[0]).toBe(0x8000);
   expect(p.vy).toBeGreaterThan(0);
+});
+
+test("a projectile moved by the physics pass matches the composed projectile step", { tag: "@logic" }, () => {
+  // 004CA750 moves the body before the 0x3EA timer/lifetime step; the split
+  // must give the same body, contacts and events as the composed step.
+  const composed = projectile("grenade", { x: 100, y: 330, vx: 300, vy: 200 });
+  const split = projectile("grenade", { x: 100, y: 330, vx: 300, vy: 200 });
+  const floor = (x, y) => (y < 300 ? 1 : 0);
+  for (let frame = 1; frame < 200; frame++) {
+    const env = { ...environment, frame, index: 4, bounces: true };
+    const a = stepNativeProjectile(composed, env, floor);
+    nativeProjectilePhysics(split, env, floor);
+    const b = stepNativeProjectile(split, { ...env, moved: true }, floor);
+    expect(b).toEqual(a);
+    expect([split.x, split.y, split.vx, split.vy, split.nativeBody]).toEqual(
+      [composed.x, composed.y, composed.vx, composed.vy, composed.nativeBody]);
+    if (a.removed || a.detonate) break;
+  }
 });
 
 test("crossing the integer water boundary allows native skimming on the following tick", { tag: "@logic" }, () => {
