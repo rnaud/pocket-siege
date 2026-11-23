@@ -12,6 +12,9 @@ export const ORIGINAL_MASK_REGIONS = {
   8: [371, 9, 472, 27, 418, 3],
   9: [485, 7, 505, 38, 495, 22],
 };
+// 004A59CF..004A5A69: shapes 10..41 crop the 60x60 images arrow00..31.img
+// (Longbow headings in 1/32 turns) to their centre 20x20, anchored at 30,30.
+export const ORIGINAL_ARROW_SHAPE_REGION = [20, 20, 40, 40, 30, 30];
 
 // 004CBE20: half-open crop, source index != 0 is solid. Anchors are relative
 // to the crop. Native bit-plane collision precomputes 32 horizontal shifts.

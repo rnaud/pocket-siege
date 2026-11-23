@@ -26,7 +26,8 @@ import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/
 import { nativeEarthquakeStart, nativeEarthquakeTick, nativeEarthquakeKick, nativeWormEarthquakeResponse } from "./armageddon/earthquake.js";
 import { nativeKamikazeStart, nativeKamikazeTick, nativeToolMaskHits } from "./armageddon/kamikaze.js";
 import { nativeProjectileGas } from "./armageddon/projectile-gas.js";
-import { nativeMoleBurrow } from "./armageddon/mole-burrow.js";
+import { nativeMoleBurrow, nativeDirtSpray } from "./armageddon/mole-burrow.js";
+import { nativeArrowCreate, nativeArrowFrame, nativeArrowWaterSound, NATIVE_ARROW_SPRITE } from "./armageddon/longbow.js";
 import { nativeSuicideBomberStart, nativeSuicideBomberTick, nativeGasCloud, nativeGasCloudTick } from "./armageddon/suicide-bomber.js";
 import { nativeCameraShake, nativeCameraShakeDecay } from "./armageddon/camera-shake.js";
 import { nativePaletteDisplay } from "./armageddon/palette-material.js";
@@ -134,7 +135,7 @@ import {
   nativeWormContactBody,
   applyNativeWormContact,
 } from "./armageddon/hurt-flight.js";
-import { nativeSceneCollision as queryNativeScene, nativeSceneObject, nativeFinishSceneCollisionFrame } from "./armageddon/collision-scene.js";
+import { nativeSceneCollision as queryNativeScene, nativeSceneObject, nativeFinishSceneCollisionFrame, nativeSceneProbe } from "./armageddon/collision-scene.js";
 import { nativeDirectHitResponse } from "./armageddon/direct-hit-response.js";
 import { nativeBloodBurst, nativeBloodAmount } from "./armageddon/blood.js";
 import { nativeBlastResponse } from "./armageddon/blast-response.js";
@@ -196,6 +197,8 @@ import {
   loadOriginalGirders,
   originalGirder,
   stampOriginalGirder,
+  originalArrow,
+  stampNativeLandscapeImage,
 } from "./armageddon/girders.js";
 import { nativeSceneGirderPlacement } from "./armageddon/girder-placement.js";
 import { nativeClampPlacementTarget } from "./armageddon/target-placement.js";
@@ -241,7 +244,7 @@ import {
   nativeProjectilePlacementHit as queryNativePlacement,
 } from "./armageddon/projectile-runtime.js";
 import { nativeWormState, nativeWormCollisionType } from "./armageddon/worm-collision-type.js";
-import { nativeChargeTick } from "./armageddon/power.js";
+import { nativeChargeTick, nativeLaunchVelocity } from "./armageddon/power.js";
 import { freezeTeam } from "./armageddon/freeze.js";
 import {
   WEAPON_SLOTS,
@@ -5477,6 +5480,150 @@ function stepDragonBall() {
     }
   }
 }
+// 004FCB20 kind 1 mode 4: the launch packet goes to the arrow constructor
+// 00502E70 (src/armageddon/longbow.js); it flies straight at 20 px a frame.
+function fireLongbow(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "longbow") <= 0) return;
+  const w = worms[current];
+  if (!prepared && beginWeaponPreparation(w, "longbow", angle)) {
+    pendingFire = { worm: w, angle, kind: "longbow", stage: "prepare" };
+    wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
+    updateUI(); return;
+  }
+  const config = nativeHitscanWeapon("longbow");
+  const launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint());
+  const [vx, vy] = nativeLaunchVelocity(config.record, launch.vx, launch.vy, 65536);
+  const packet = [w.team + 1, current + 1, launch.x, launch.y, vx, vy, 0, 0, 0, 0, 0];
+  spendSpecial("longbow"); shotCount++; recordReactionWeaponUse("longbow");
+  startOriginalRecoil(w, "longbow", angle, matchRandom.frame);
+  const p = { kind: "longbow", owner: current, age: 0, x: launch.x / 65536, y: H - launch.y / 65536,
+    vx: vx / 65536 * 50, vy: -vy / 65536 * 50, mesh: projectileMesh("longbow") };
+  p.mesh.position.set(Math.round(p.x), Math.round(p.y), 40);
+  group.add(p.mesh);
+  projectile = p;
+  lastShot = { kind: "longbow", shooter: w.name, points: [{ x: p.x, y: p.y }], impact: null };
+  phase = "flight"; requestNativeRetreat(); shotWait = 0;
+  move = aimInput = 0; charging = false; chargeSource = null;
+  const release = nativeLaunchAudio(config.record, { loop: 0, burst: 0, ordinal: 0, flag: 0, team: w.team });
+  if (sound) {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    playNativeProjectileReleaseSound(audio, release, queueGameSound, w);
+  }
+  // 004F4000 base body fields the arrow keeps (movement shapes 6/7 are empty).
+  const base = { x: 0, y: -1024 * 65536, sleeping: 0, submerged: 0, surface: 0, state: 0, suspended: 0 };
+  // 004FCB20 clears the shooter's collision enable (+0x48) around the
+  // constructor, so the arrow's first check cannot meet its own worm.
+  w.nativeLaunching = true;
+  const created = nativeArrowCreate(base, packet, config.record["0x74"], 0, arrowInterfaces(p));
+  w.nativeLaunching = false;
+  p.nativeArrow = { body: created.body, motion: { angle: 0, angularVelocity: 0, contact: 0, moving: 0 } };
+  syncArrow(p);
+  $("#status").textContent = "Arrow away. Retreat!";
+  if (created.removed) finishArrow(p);
+  updateUI();
+}
+// Live interfaces for the arrow port: the collision world, hit receivers,
+// dirt, bubbles, camera, busy and the landscape blit. Targets are native
+// collision ids (1 landscape, 2+ worms, negative objects).
+function arrowInterfaces(p) {
+  const objects = () => [...mines, ...crates, ...hazards];
+  const probe = (shape, x, y, flags) => nativeSceneProbe(terrain, worms, H, objects(), shape, x, y, flags)?.id ?? 0;
+  return {
+    base: () => {}, task: () => {}, notify: () => {}, event: () => {},
+    place: () => 0,
+    probe,
+    // +0x3C queries at the arrow; its empty movement shape caches no
+    // overlaps, so this is the standalone probe at its position.
+    query: (shape, flags, body) => probe(shape, body.x, body.y, flags),
+    reshape: (shape, body) => Number(!probe(shape, body.x, body.y, body.flags)),
+    owner: () => p.owner + 2,
+    category: (id) => {
+      if (id === 1) return 1;
+      if (id >= 2) return nativeWormCollisionType(nativeWormState(worms[id - 2]));
+      return nativeSceneObject(terrain, id)?.nativeBody?.type ?? 0;
+    },
+    hit: (id, _event, _size, packet) => {
+      let target = null;
+      if (id >= 2) target = { worm: worms[id - 2] };
+      else {
+        const object = nativeSceneObject(terrain, id);
+        if (mines.includes(object)) target = { mine: object };
+        else if (hazards.includes(object)) target = { barrel: object };
+        else if (crates.includes(object)) target = { crate: object };
+      }
+      if (target) applyNativeHitPackets([target], [{ body: 0, packet }], p.owner);
+      if (lastShot) lastShot.impact = { x: packet[1] / 65536, y: H - packet[2] / 65536, kind: "longbow" };
+    },
+    dirt: (x, y, direction, spread, distance) => {
+      for (const call of nativeDirtSpray(x, y, direction, spread, distance, {
+        color: (px, py) => (terrain.solid(px, H - py) ? 1 : 0),
+        random: () => matchRandom.logicUint(),
+      })) spawnDirt(call.packet);
+    },
+    sound: (request) => queueGameSound(request),
+    random: () => matchRandom.visualUint(),
+    bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
+    camera: (request) => pendingWormCamera.push(request),
+    busy: () => nativeBusy.wake(),
+    size: (index) => [originalArrow(index)?.width ?? 0, originalArrow(index)?.height ?? 0],
+    stamp: ([left, top, , , index]) => {
+      const image = originalArrow(index);
+      if (!image || !stampNativeLandscapeImage(terrain, W, H, left, top, image)) return;
+      paintTerrain(ctx, terrain, texture);
+      terrainDirty = false;
+      if (lastShot) lastShot.impact ??= { x: p.x, y: p.y, kind: "longbow" };
+    },
+    remove: () => { p.nativeArrowRemoved = true; },
+  };
+}
+function syncArrow(p) {
+  const body = p.nativeArrow.body;
+  p.x = body.x / 65536; p.y = H - body.y / 65536;
+  p.vx = body.vx / 65536 * 50; p.vy = -body.vy / 65536 * 50;
+  p.mesh.position.set(Math.round(p.x), Math.round(p.y), 40);
+  // 0x3EB draws sprite 0x282 at the arrow's heading (+0x134).
+  updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age, false, false,
+    { sprite: NATIVE_ARROW_SPRITE, progress: body.angle });
+}
+function finishArrow(p) {
+  releaseProjectileMesh(p.mesh);
+  if (projectile === p) projectile = null;
+  phase = "settle"; shotWait = 0; updateUI();
+}
+function stepArrow() {
+  const p = projectile, arrow = p.nativeArrow;
+  // Separately scheduled body tick (004CA320): gravity and wind scales start
+  // at zero; the empty movement shapes never collide.
+  const body = arrow.body;
+  const motion = nativeSimpleBodyTick({
+    ...arrow.motion, x: body.x, y: body.y, vx: body.vx, vy: body.vy, flags: body.flags,
+    gravityScale: body.gravityScale, windScale: body.windScale, drag: 0x10000, waterDrag: 0xcccc,
+    skimScale: 0x10000, radius: 0x100000, enabled: body.enabled, suspended: body.suspended,
+    sleeping: body.sleeping, submerged: body.submerged,
+  }, {
+    frame: matchRandom.frame, index: 0, waterY: Math.floor(H - waterLevel),
+    gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
+  }, {
+    awake: nativeBodyAwake, collide: () => 0, bounce: () => {},
+    skim: () => queueGameSound([0x3a, 0, 0x10000, 0x10000, 0]),
+    waterChanged: (b) => queueGameSound(nativeArrowWaterSound(b)),
+  });
+  arrow.motion = { angle: motion.angle, angularVelocity: motion.angularVelocity, contact: motion.contact, moving: motion.moving };
+  Object.assign(body, { x: motion.x, y: motion.y, vx: motion.vx, vy: motion.vy,
+    sleeping: motion.sleeping, submerged: motion.submerged });
+  const limits = nativeCameraActive ? nativeCameraLimits() : null;
+  const water = Math.floor(H - waterLevel);
+  // scene+0x808 sits 200 px under the water line (0049D47A).
+  const frame = nativeArrowFrame(body, { water, bottom: water + 200,
+    left: limits ? limits[0] : 0, right: limits ? limits[2] : W * 65536, top: limits ? limits[1] : -256 * 65536,
+  }, arrowInterfaces(p));
+  arrow.body = frame.body;
+  p.age += LOGIC_STEP_SECONDS;
+  syncArrow(p);
+  if (lastShot) lastShot.points.push({ x: p.x, y: p.y });
+  if (frame.removed) finishArrow(p);
+}
 function torchPosition(w, body, x, y, flags = body.flags) {
   const candidate = { ...body, flags };
   return nativeTryBodyPosition(candidate,x,y,(px,py) =>
@@ -6036,6 +6183,7 @@ function fire() {
     return;
   }
   if (kind === "kamikaze") { fireKamikaze(); return; }
+  if (kind === "longbow") { fireLongbow(); return; }
   if (kind === "suicidebomber") {
     fireSuicideBomber();
     return;
@@ -8360,6 +8508,7 @@ function stepFrame(dt) {
         if (pending.kind === "blowtorch") fireBlowtorch(true);
         else if (pending.kind === "drill") fireDrill(true);
         else if (pending.kind === "dragonball") fireDragonBall(true);
+        else if (pending.kind === "longbow") fireLongbow(true);
         else if (pending.kind === "firepunch") firePunch(true);
         else if (pending.kind === "kamikaze") fireKamikaze(true);
         else if (pending.kind === "suicidebomber") fireSuicideBomber(true);
@@ -8372,6 +8521,7 @@ function stepFrame(dt) {
   }
   if (phase === "aim") updateUI();
   if (projectile?.nativeDragonBall) stepDragonBall();
+  else if (projectile?.nativeArrow) stepArrow();
   else if (projectile) {
     const p = projectile;
     if (sound && p.nativeTimer?.loopSound && !p.nativeFusePlayback) {
@@ -10443,6 +10593,7 @@ window.siege = {
           target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,
+          arrow: projectile.nativeArrow ? { ...projectile.nativeArrow.body, packet: undefined } : null,
           sprite: projectile.mesh.userData.originalSprite,
           frame: projectile.mesh.userData.originalFrame,
         }
@@ -10553,6 +10704,23 @@ if (import.meta.env.DEV) {
       }
       return { shooter:current, ally, enemy, rear };
     },
+    // A flat range at y 250 with a 20 px wall at wallX: shooter at 400, the
+    // enemy at enemyX, the others parked behind the shooter.
+    stageArrowRange(enemyX = 520, wallX = 700) {
+      const shooter = worms[current];
+      const enemy = worms.findIndex(w => w.team !== shooter.team);
+      for (let y = 0; y < H; y++) for (let x = 300; x < 800; x++)
+        terrain.data[y * W + x] = y < 250 || (x >= wallX && x < wallX + 20 && y < 330) ? 1 : 0;
+      terrainDirty = true;
+      let parked = 300;
+      worms.forEach((w, index) => {
+        const x = index === current ? 400 : index === enemy ? enemyX : (parked += 12);
+        Object.assign(w, { x, y: 252, renderY: 252, vx: 0, vy: 0, ground: true, knocked: false, hurt: 0,
+          nativeHurtBody: null, nativeFlight: null, originalHurt: null, originalJump: null });
+      });
+      return { shooter: current, enemy };
+    },
+    solidAt(x, y) { return terrain.solid(x, y); },
     stageWormContact() {
       for (const [index, vx] of [
         [0, 600],

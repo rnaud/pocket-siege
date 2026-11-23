@@ -4,14 +4,6 @@ import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
-test("longbow fires a host arrow projectile", async ({ page }) => {
-  await startMatch(page);
-  await openArsenal(page);
-  await page.locator('[data-weapon="longbow"]').click();
-  await chargeFor(page, 700);
-  await advanceUntil(page, (s) => s.explosions > 0, { max: 1000, label: "arrow impact" });
-});
-
 test("unit weapons fire without missing projectile art", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));

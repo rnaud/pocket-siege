@@ -120,7 +120,9 @@ export class NativeCollisionScene {
         this.registerBody(body,type);
       }
       Object.assign(body, {
-        x: fixed(w.x), y: fixed(this.height - w.y), enabled: Number(w.hp > 0),
+        x: fixed(w.x), y: fixed(this.height - w.y),
+        // 004FCB20 disables the firing worm (+0x48) while it builds the shot.
+        enabled: Number(w.hp > 0 && !w.nativeLaunching),
       });
     });
   }
@@ -221,6 +223,20 @@ export function nativeSceneCollision(
   scene.syncWorms(worms);
   scene.syncObjects(objects);
   return scene.query(identity, body, x, y);
+}
+
+// Collision world +8 (004C9650): a standalone shape probe at native 16.16
+// (x, y) over the selected categories. Returns the first body as {id, type}.
+export function nativeSceneProbe(terrain, worms, height, objects, shape, x, y, flags) {
+  let scene = scenes.get(terrain);
+  if (!scene || scene.height !== height) {
+    scene = new NativeCollisionScene(terrain, height);
+    scenes.set(terrain, scene);
+  }
+  scene.syncWorms(worms);
+  scene.syncObjects(objects);
+  const body = scene.manager.probe(shapes.shapes[shape], x, y, flags);
+  return body ? { id: body.id, type: body.type } : null;
 }
 
 export function nativeSceneObject(terrain, id) {
