@@ -1,3 +1,4 @@
+import { nativeEarthquakeKick, nativeWormEarthquakeResponse } from "./earthquake.js";
 import { nativeWormPickupContact } from "./worm-pickup.js";
 import {
   nativeSimpleBodyTick,
@@ -171,6 +172,17 @@ export function nativeWormMotionCallbacks(worm, environment, collision, events) 
   return {
     awake: nativeBodyAwake,
     collide: collision,
+    // 004CA250 through the worm's +0x34 (004D6940).
+    earthquake: (body, strength) => {
+      const kick = nativeEarthquakeKick(strength, body.submerged, random);
+      if (!kick) return;
+      const response = nativeWormEarthquakeResponse(body.state, body.vx, body.vy, kick.x, kick.y);
+      body.vx = response.vx; body.vy = response.vy;
+      if (response.state !== null && response.state !== body.state) {
+        body.state = response.state;
+        events.push({ operation: "state", target: response.state });
+      }
+    },
     waterChanged: body => {
       const request = nativeWaterSound(body).sound;
       if (request) events.push({ operation: "waterSound", request });
@@ -284,6 +296,7 @@ export function stepNativeHurtFlight(worm, environment, collide) {
       waterY: Math.floor(height - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale),
       wind: 0,
+      earthquake: environment.earthquake ?? 0,
     },
     nativeWormMotionCallbacks(worm, environment, collision, events),
   );

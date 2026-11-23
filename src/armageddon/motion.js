@@ -184,8 +184,11 @@ export function nativeWaterMotion(body, waterY, suppressSkim, collide) {
   };
 }
 
-// 004CA320 simple-body path, without earthquake impulses. Collision masks are
-// supplied by the caller; response callbacks may update the body in place.
+// 004CA320 simple-body path. Collision masks are supplied by the caller;
+// response callbacks may update the body in place. With a quake strength
+// (scene+0x1AC4) in `environment.earthquake`, 004CA250 kicks a sleeping body
+// and, after motion, a body that is not falling; `callbacks.earthquake`
+// delivers that kick.
 export function nativeSimpleBodyTick(input, environment, callbacks) {
   const body = { ...input };
   // Native collision queries read the actor's current body fields, including
@@ -195,7 +198,10 @@ export function nativeSimpleBodyTick(input, environment, callbacks) {
   const awake = () => callbacks.awake(body);
   if (((environment.frame + environment.index) | 0) % 13 === 0 || awake())
     body.sleeping = 0;
-  if (body.sleeping) return body;
+  if (body.sleeping) {
+    if (environment.earthquake) callbacks.earthquake?.(body, environment.earthquake);
+    return body;
+  }
   const wasSubmerged = body.submerged;
   body.submerged = 0;
   body.contact = 0;
@@ -236,6 +242,7 @@ export function nativeSimpleBodyTick(input, environment, callbacks) {
   body.vy = Math.max(-0x200000, Math.min(0x200000, body.vy));
   if (!body.vx && !body.vy && collide(body.x, add(body.y, 65536)))
     body.moving = 0;
+  if (environment.earthquake && !body.moving) callbacks.earthquake?.(body, environment.earthquake);
   if (!awake()) body.sleeping = 1;
   return body;
 }

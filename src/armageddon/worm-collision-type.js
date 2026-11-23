@@ -19,6 +19,7 @@ export function nativeWormCollisionType(state) {
 export function nativeWormState(worm) {
   if (worm.drowned) return 0x87;
   if (worm.originalDeath) return 0x84;
+  if (worm.originalKamikaze) return 0x6d;
   if (worm.frozen) return 0x88;
   if (worm.nativeRopeBody?.constrained) return worm.nativeRopeBody.state;
   if (worm.originalBlowtorch) return 0x71;

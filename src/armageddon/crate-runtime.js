@@ -23,6 +23,7 @@ export function stepNativeCrateBody(input, environment, interfaces) {
     motion: body => nativeSimpleBodyTick(body, environment, {
       awake: nativeBodyAwake, collide: interfaces.collide,
       skim: interfaces.skim, waterChanged: interfaces.waterChanged,
+      earthquake: interfaces.earthquake,
       bounce: (body, hit, side) => {
         const other = interfaces.other(hit);
         nativeCrateContact(body, side, environment.suppressSound || 0, {

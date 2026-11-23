@@ -23,6 +23,8 @@ import { nativeSuddenDeathActivation, nativeSuddenDeathHealth, nativeSuddenDeath
 import { nativeWaterRiseStart, nativeWaterRiseTick, clearNativeWaterRow } from "./armageddon/water-rise.js";
 let nativeWaterRise = null;
 import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
+import { nativeEarthquakeStart, nativeEarthquakeTick, nativeEarthquakeKick, nativeWormEarthquakeResponse } from "./armageddon/earthquake.js";
+import { nativeKamikazeStart, nativeKamikazeTick, nativeToolMaskHits } from "./armageddon/kamikaze.js";
 import { nativeCameraShake, nativeCameraShakeDecay } from "./armageddon/camera-shake.js";
 import { nativePaletteDisplay } from "./armageddon/palette-material.js";
 import { playNativeNuclearLoop } from "./armageddon/audio.js";
@@ -92,7 +94,7 @@ import { nativeRetreatRequest } from "./armageddon/retreat-request.js";
 import { nativeCollectWeaponInput } from "./armageddon/controller-input.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFallingFlight, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
-import { startOriginalFirePunch, updateOriginalFirePunch } from "./armageddon/art.js";
+import { startOriginalFirePunch, updateOriginalFirePunch, startOriginalKamikaze } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
 import { bodyBlocked } from "./physics.js";
@@ -727,6 +729,9 @@ let scenarioTimed = [], scenarioTurn = 0, suddenDeathDamageTurn = -1;
 let matchElapsed = 0, scenarioClockSecond = -1, lastLossOfControl = false;
 let lastWaterRiseRound = 0;
 let earthquakeShake = 0;
+// World earthquake fields (004EB2E0); `quake` is the scene+0x1AC4 strength.
+let nativeEarthquake = null;
+const earthquakePlaybacks = new Map();
 // Strongest shake since the match started (diagnostic for slow runners).
 let earthquakeShakePeak = 0;
 let teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
@@ -1430,6 +1435,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   waterLevel = WATER;
   nativeWaterRise = null;
   stopNativeNuclearAudio();
+  stopNativeEarthquakeAudio();
   nativeNuclearEffect = null;
   nativePaletteDisplay.update();
   suddenDeath = false;
@@ -1753,6 +1759,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     scenarioTimed = []; scenarioTurn = 0; suddenDeathDamageTurn = -1; matchElapsed = 0; scenarioClockSecond = -1; lastWaterRiseRound = 0;
   }
   nativeArmageddon = null;
+  stopNativeEarthquakeAudio();
+  nativeEarthquake = null;
+  earthquakeShake = 0;
   // 004B75F4/004B7617: turn-0 timed events, then one sequence pass, run
   // between turns before the first turn starts.
   runMissionBetweenTurns();
@@ -2174,11 +2183,9 @@ function missionNuclearTest() {
     dose, { announce: () => {} });
   poisoned = worms.some(w => w.nativePoison.amount !== 0);
 }
-// 0x445 {8}: the same host effect as the Earthquake utility, without a user.
+// 0x445 {8}: the same world event the Earthquake utility sends.
 function missionEarthquake() {
-  for (const target of worms)
-    if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
-  earthquakeShake = 0x8000; earthquakeShakePeak = Math.max(earthquakeShakePeak, earthquakeShake);
+  startNativeEarthquake(8);
 }
 // 004EF6B0 type 10: 0x443 {100, 0xa6, 56} plus the 004EEB70 camera request.
 function missionArmageddon() {
@@ -3988,6 +3995,73 @@ function stopNativeNuclearAudio() {
   nuclearPlaybacks.clear();
   if (nativeNuclearEffect) nativeNuclearEffect.handleA = nativeNuclearEffect.handleB = 0;
 }
+function stopNativeEarthquakeAudio() {
+  for (const playback of earthquakePlaybacks.values()) playback.stop();
+  earthquakePlaybacks.clear();
+  if (nativeEarthquake) nativeEarthquake.handleA = nativeEarthquake.handleB = 0;
+}
+function startNativeEarthquake(duration = 8) {
+  nativeEarthquake = nativeEarthquakeStart(nativeEarthquake ?? { strength: 0, target: 0, progress: -1,
+    duration: 0, handleA: 0, handleB: 0, busy: 0, shake: 0, quake: 0, started: 0 }, duration).body;
+}
+// 004EB2E0 runs after the 004EB110 shake decay and before the nuclear tick.
+function stepNativeEarthquake() {
+  if (!nativeEarthquake) return;
+  if (!sound) stopNativeEarthquakeAudio();
+  for (const [handle, field] of [[1, "handleA"], [2, "handleB"]]) {
+    if (earthquakePlaybacks.get(handle)?.finished) {
+      earthquakePlaybacks.get(handle).stop(); earthquakePlaybacks.delete(handle);
+      nativeEarthquake[field] = 0;
+    }
+  }
+  if (nativeEarthquake.progress >= 0) nativeBusy.wake();
+  const result = nativeEarthquakeTick({ ...nativeEarthquake, shake: earthquakeShake }, request => {
+    if (!sound) return 0;
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    const handle = request[0] === 0x10004 ? 1 : 2;
+    const playback = playNativeNuclearLoop(audio, request);
+    if (!playback) return 0;
+    earthquakePlaybacks.set(handle, playback);
+    return handle;
+  });
+  nativeEarthquake = result.body;
+  earthquakeShake = result.body.shake;
+  earthquakeShakePeak = Math.max(earthquakeShakePeak, earthquakeShake);
+  for (const call of result.calls) {
+    if (call.operation === "volume") earthquakePlaybacks.get(call.handle)?.setVolume(call.volume / 65536);
+    else if (call.operation === "stop") {
+      earthquakePlaybacks.get(call.handle)?.stop(); earthquakePlaybacks.delete(call.handle);
+    }
+  }
+  if (!result.body.strength && result.body.progress < 0) nativeEarthquake = null;
+}
+function nativeQuake() {
+  return nativeEarthquake?.quake ?? 0;
+}
+// 004CA250 on an object whose +0x34 is 004F4D20: the kick adds velocity.
+function kickNativeObject(body, strength) {
+  const kick = nativeEarthquakeKick(strength, body.submerged, () => matchRandom.logicUint());
+  if (!kick) return;
+  body.vx = (body.vx + kick.x) | 0;
+  body.vy = (body.vy + kick.y) | 0;
+}
+// A standing worm's sleeping body takes the kick every frame; 004D6940
+// throws it into flight (0x7F) unless it is already airborne.
+function kickStandingWorm(w) {
+  const kick = nativeEarthquakeKick(nativeQuake(), 0, () => matchRandom.logicUint());
+  if (!kick) return false;
+  const response = nativeWormEarthquakeResponse(nativeWormState(w),
+    Math.round(w.vx * 65536 / 50) | 0, Math.round(-w.vy * 65536 / 50) | 0, kick.x, kick.y);
+  w.vx = response.vx / 65536 * 50;
+  w.vy = -response.vy / 65536 * 50;
+  if (response.state !== 0x7f) return false;
+  startOriginalHurt(w, 0x7f);
+  w.knocked = true;
+  w.ground = false;
+  if (w === worms[current]) { move = 0; lastLossOfControl = true; }
+  return true;
+}
 function startNativeNuclearEffect(duration = 8) {
   const result = nativeNuclearEffectStart(nativeNuclearEffect ?? { volume: 0, target: 0,
     handleA: 0, handleB: 0, flash: 0, fade: 0, shake: 0, busy: 0 }, duration, () => matchRandom.logicUint());
@@ -4246,6 +4320,7 @@ function restoreMatchReplayState(snapshot) {
   for (const value of currentSnapshot.resources.values()) if (isReplayAudioResource(value)) value.stop();
   announcementPlayback?.stop(); announcementPlayback = null;
   stopNativeNuclearAudio();
+  stopNativeEarthquakeAudio();
   const savedResources = new Set(snapshot.resources.values());
   for (const object of currentSnapshot.resources.values()) {
     if (savedResources.has(object)) continue;
@@ -5439,10 +5514,9 @@ function useEarthquake() {
   ammo[team].earthquake = spendAmmo(ammo[team].earthquake);
   shotCount++;
   recordReactionWeaponUse("earthquake");
-  for (const target of worms)
-    if (target.hp > 0 && target.ground) injure(target, WEAPONS.earthquake.damage);
+  // 004FC990 sends 0x445 {8}: an eight-second quake.
+  startNativeEarthquake(8);
   w.recoil = 0.4;
-  earthquakeShake = 0x8000; earthquakeShakePeak = Math.max(earthquakeShakePeak, earthquakeShake);
   $("#status").textContent = "Earthquake! The ground heaves.";
   finishAction("Earthquake! Retreat!");
 }
@@ -5648,6 +5722,85 @@ function firePunch(prepared = false) {
   pendingFire = {worm:w, angle, kind:"firepunch", stage:"firepunch", spent:true};
   updateUI();
 }
+// Kamikaze: 004F67E0 prepares with wkamlnk and the Kamikaze speech, then the
+// 004FCB20 launch enters state 0x6D (004F76A0).
+function fireKamikaze(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "kamikaze") <= 0) return;
+  const w = worms[current];
+  if (!prepared && beginWeaponPreparation(w, "kamikaze", angle)) {
+    pendingFire = { worm: w, angle, kind: "kamikaze", stage: "prepare" };
+    wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
+    updateUI(); return;
+  }
+  spendSpecial("kamikaze"); shotCount++; recordReactionWeaponUse("kamikaze");
+  const record = nativeHitscanWeapon("kamikaze").record;
+  const closed = $("#map-layout")?.value === "caverns";
+  const start = nativeKamikazeStart(record, {
+    aim: cpuAimValue(w), facing: w.facing < 0 ? -1 : 1,
+    x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0,
+  }, { border: currentScenario?.indestructibleBorder ? 1 : 0, roof: closed ? 1 : 0 });
+  startOriginalKamikaze(w, start.calls.find((call) => call.operation === "queue").sprite);
+  w.nativeKamikaze = { ...start.body, aim: cpuAimValue(w) };
+  w.x = start.body.x / 65536; w.y = H - start.body.y / 65536;
+  w.vx = w.vy = 0; w.ground = false;
+  w.originalHurt = null; w.nativeHurtBody = null; w.nativeFlight = null; w.originalRecovery = null;
+  pendingFire = { worm: w, angle, kind: "kamikaze", stage: "kamikaze", spent: true };
+  $("#status").textContent = `${w.name}: Kamikaze!`;
+  updateUI();
+}
+// 004F77E0 once per 50 Hz frame while the worm is in state 0x6D.
+function stepKamikaze(w) {
+  const state = w.nativeKamikaze;
+  const record = nativeHitscanWeapon("kamikaze").record;
+  w.originalKamikaze.player.advance();
+  const tick = nativeKamikazeTick(record, state, {
+    // The team's scene+0x3CD2 byte (set only by mission scripts) would skip
+    // the farewell; the host has no such teams yet.
+    aim: state.aim, facing: w.facing < 0 ? -1 : 1, total: w.damageTaken ?? 0, health: w.hp, marked: 0,
+  }, { water: Math.floor(H - waterLevel) }, {
+    dig: (size, x, y) => {
+      terrain.craterRim ??= new Uint8Array(W * H);
+      carveScenarioTool(terrain.data, W, H, toolCuts[size], x, y, terrain.craterRim);
+      terrainDirty = true;
+    },
+    test: (size, x, y) => nativeToolMaskHits(toolCuts[size], x, y, (px, py) => terrain.solid(px, H - py)),
+    random: () => matchRandom.visualUint(),
+  });
+  w.nativeKamikaze = { ...state, ...tick.body };
+  for (const call of tick.calls) {
+    if (call.operation === "camera") queueWormCamera(w);
+    else if (call.operation === "position") {
+      w.x = call.x / 65536; w.y = H - call.y / 65536;
+    } else if (call.operation === "area") {
+      const targets = [...nativeWormHitscanBodies(worms, w, H), ...nativeMineHitBodies(mines),
+        ...nativeCrateHitBodies(), ...nativeBarrelHitBodies()].sort((a, b) => a.type - b.type);
+      applyNativeAreaRequest(targets, call.request);
+    } else if (call.operation === "particle") spawnNativeParticleRequest(call.request);
+    else if (call.operation === "velocity") {
+      w.vx = call.x / 65536 * 50; w.vy = -call.y / 65536 * 50;
+    } else if (call.operation === "blast") {
+      explode(call.packet[1] / 65536, H - call.packet[2] / 65536, "kamikaze", current, call.packet);
+    } else if (call.operation === "accounting") {
+      accountWormDamage(w, call.request[0], { force: true, multiplier: call.request[2] });
+    } else if (call.operation === "announcement") announceWormDeath(w);
+  }
+  if (tick.result) return;
+  // State 0x87 hands the worm to drowning; 0x89 deletes the worm task, so it
+  // leaves no grave and no death blast.
+  w.originalKamikaze = null; w.nativeKamikaze = null;
+  if (pendingFire?.worm === w) pendingFire = null;
+  wormLocked = true;
+  if (tick.calls.some((call) => call.operation === "delete")) {
+    w.deathPending = false; w.dying = 0; w.hp = 0; w.nativeDeathRequest = 0;
+    w.g.visible = false;
+    if (w === worms[current]) {
+      cancelCharge();
+      retreat = 0; clearNativeRetreat();
+      move = 0;
+      if (phase === "aim") { phase = "settle"; shotWait = 0; }
+    }
+  }
+}
 function fireAxe(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team], "axe") <= 0) return;
   const w = worms[current];
@@ -5754,7 +5907,8 @@ function fire() {
     useEarthquake();
     return;
   }
-  if (kind === "kamikaze" || kind === "suicidebomber") {
+  if (kind === "kamikaze") { fireKamikaze(); return; }
+  if (kind === "suicidebomber") {
     useSelfDestruct(kind);
     return;
   }
@@ -6679,6 +6833,7 @@ function revealWormHealth(w) {
 }
 function finishMatch(winner, series) {
   stopNativeNuclearAudio();
+  stopNativeEarthquakeAudio();
   nativeNuclearEffect = null;
   nativePaletteDisplay.update();
   nativeClockTarget = 0;
@@ -6747,6 +6902,7 @@ function finishMatch(winner, series) {
 }
 function endGame() {
   stopNativeNuclearAudio();
+  stopNativeEarthquakeAudio();
   nativeNuclearEffect = null;
   nativePaletteDisplay.update();
   if (currentScenario && missionState) return finishMission();
@@ -7431,6 +7587,7 @@ function stepFrame(dt) {
   if (menu.open || document.hidden) {
     stopBurstSound(); stopProjectileSound();
     stopNativeNuclearAudio();
+    stopNativeEarthquakeAudio();
     announcementPlayback?.stop(); announcementPlayback = null;
     return;
   }
@@ -7461,6 +7618,7 @@ function stepFrame(dt) {
   }
   if (phase !== "over" && phase !== "menu" && phase !== "break") {
     stepNativeWaterRise();
+    stepNativeEarthquake();
     stepNativeNuclearEffect();
   }
   if (pendingTurnStart && !nativeAnnouncementsPending(nativeAnnouncements)) beginTurn();
@@ -7727,6 +7885,10 @@ function stepFrame(dt) {
       if (teleport?.relocate) queueWormCamera(w);
       continue;
     }
+    if (w.originalKamikaze) { stepKamikaze(w); continue; }
+    const quakeKicked = nativeQuake() !== 0 && w.ground && !w.frozen && !w.drowned &&
+      !w.nativeHurtBody && !w.nativeFlight && !(w === worms[current] && (jetpack.active || rope.attached)) &&
+      kickStandingWorm(w);
     if (w.originalBlowtorch && !w.originalHurt && !w.frozen) continue;
     if (w.originalDrill && !w.originalHurt && !w.frozen) {
       stepNativeDrillFlight(w, {
@@ -7810,6 +7972,7 @@ function stepFrame(dt) {
             frame: matchRandom.frame,
             index: worms.indexOf(w),
             random: () => matchRandom.logicUint(),
+            earthquake: quakeKicked ? 0 : nativeQuake(),
             pickup: body => queryNativeWormPickup(w, body),
         collisionBody: (hit) =>
               nativeContactBody(hit),
@@ -7895,7 +8058,7 @@ function stepFrame(dt) {
     }
   }
   for (let i = graves.length - 1; i >= 0; i--) {
-    if (!stepOriginalGrave(graves[i], terrain, dt, waterLevel, gravityScale)) {
+    if (!stepOriginalGrave(graves[i], terrain, dt, waterLevel, gravityScale, nativeQuake(), kickNativeObject)) {
       dispose(graves[i].mesh);
       graves.splice(i, 1);
     } else {
@@ -7925,8 +8088,9 @@ function stepFrame(dt) {
     mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
       frame: matchRandom.frame, index: i, waterY: Math.floor(H - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
+      earthquake: nativeQuake(),
     }, {
-      awake: nativeBodyAwake, collide,
+      awake: nativeBodyAwake, collide, earthquake: kickNativeObject,
       skim: body => waterSound(body, true),
       waterChanged: body => waterSound(body, false),
       bounce: (body, hit, side) => {
@@ -8061,7 +8225,7 @@ function stepFrame(dt) {
       }
     } else if (pending.stage === "drill") {
       stepDrill(pending);
-    } else if (pending.stage === "firepunch") {
+    } else if (pending.stage === "firepunch" || pending.stage === "kamikaze") {
       // Native body/state tick runs in the worm loop above.
     } else if (pending.stage === "firepunch-recoil") {
       if (!w.originalRecoil) { pendingFire = null; finishAction("Fire punch complete. Retreat!"); }
@@ -8109,6 +8273,7 @@ function stepFrame(dt) {
         else if (pending.kind === "drill") fireDrill(true);
         else if (pending.kind === "dragonball") fireDragonBall(true);
         else if (pending.kind === "firepunch") firePunch(true);
+        else if (pending.kind === "kamikaze") fireKamikaze(true);
         else if (pending.kind === "axe") fireAxe(true);
         else if (pending.kind === "prod") fireProd(true);
         else if (pending.kind === "bat") fireBat(true);
@@ -8302,9 +8467,9 @@ function stepFrame(dt) {
       frame: matchRandom.frame, index: hazards.indexOf(barrel),
       bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
       waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
-      wind: Math.round(wind / 2500 * 65536),
+      wind: Math.round(wind / 2500 * 65536), earthquake: nativeQuake(),
     }, {
-      collide,
+      collide, earthquake: kickNativeObject,
       other: hit => nativeContactBody(hit),
       receive: (body, other, hit, side) => {
 
@@ -8351,9 +8516,9 @@ function stepFrame(dt) {
       frame: matchRandom.frame, index: crates.indexOf(crate),
       bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
       waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
-      wind: Math.round(wind / 2500 * 65536),
+      wind: Math.round(wind / 2500 * 65536), earthquake: nativeQuake(),
     }, {
-      collide,
+      collide, earthquake: kickNativeObject,
       other: hit => nativeContactBody(hit),
       receive: (body, other, hit, side) => {
 
@@ -9533,7 +9698,7 @@ $("#daily").addEventListener("click", async () => {
 $("#sound").onclick = () => {
   sound = !sound;
   syncMusic(); music.unlock();
-  if (!sound) stopNativeNuclearAudio();
+  if (!sound) { stopNativeNuclearAudio(); stopNativeEarthquakeAudio(); }
   if (!sound) { stopBurstSound(); stopProjectileSound(); }
   if (!sound) for (const b of bombs) {
     b.nativeFusePlayback?.stop();
@@ -10034,6 +10199,8 @@ window.siege = {
     waterSprite: water.userData.originalSprite,
     waterSurface: water.userData.surfaceLevel,
     earthquakeShakePeak,
+    earthquake: nativeEarthquake ? { strength: nativeEarthquake.strength, progress: nativeEarthquake.progress,
+      quake: nativeEarthquake.quake } : null,
     turnBody: { turnCount: turnBody.turnCount, turnDuration: turnBody.turnDuration, retreatDuration: turnBody.retreatDuration,
       retreatRemaining: turnBody.retreatRemaining, retreatPending: turnBody.retreatPending, clockTarget: turnBody.clockTarget },
     waterFrame: water.userData.originalFrame,
@@ -10106,7 +10273,7 @@ window.siege = {
         originalRecovery,
         invisible,
         nativeSelection,
-      }) => ({
+      }, index) => ({
         selectionArrow: nativeSelection?.arrow ?? 0,
         weaponIcon: nativeSelection ? { slot: nativeSelection.iconValue, progress: nativeSelection.icon, target: nativeSelection.iconTarget } : null,
         selectionLabel: nativeSelection?.label ?? 0x10000,
@@ -10137,6 +10304,7 @@ window.siege = {
         invisible: Boolean(invisible),
         deathPending,
         nativeHurtState: nativeHurtBody?.state ?? null,
+        nativeState: nativeWormState(worms[index]),
         recovering: !!originalRecovery,
         hurt,
         hits,
@@ -10200,6 +10368,8 @@ if (import.meta.env.DEV) {
     equipSlot(slot) { equipArsenalSlot(slot); },
     // Selects a host weapon as its inventory button does.
     setWeapon(kind) { setWeapon(kind); updateUI(); },
+    // Native aim word (+0x260): 0 down, 0x8000 level, 0x10000 up.
+    setNativeAim(aim) { setCpuAim(aim); updateUI(); },
     advanceReplayFrames(count=1) {
       const previous = replaySimulation;
       replaySimulation = true;

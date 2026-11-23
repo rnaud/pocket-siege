@@ -10,6 +10,7 @@ export function stepNativeBarrelBody(input, environment, interfaces) {
     motion: body => nativeSimpleBodyTick(body, environment, {
       awake: nativeBodyAwake, collide: interfaces.collide,
       skim: interfaces.skim, waterChanged: interfaces.waterChanged,
+      earthquake: interfaces.earthquake,
       bounce: (body, hit, side) => {
         const other = interfaces.other(hit);
         nativeBarrelContact(body, side, environment.suppressSound || 0, {

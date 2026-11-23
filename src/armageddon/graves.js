@@ -38,6 +38,8 @@ export function stepOriginalGrave(
   dt,
   waterLevel,
   gravityScale = 1,
+  earthquake = 0,
+  kick,
 ) {
   grave.body.x = Math.round(grave.x * 65536);
   grave.body.y = Math.round((H - grave.y) * 65536);
@@ -49,8 +51,10 @@ export function stepOriginalGrave(
       waterY: Math.floor(H - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale),
       wind: 0,
+      earthquake,
     },
     (x, y) => Number(bodyBlocked(terrain, x / 65536, H - y / 65536)),
+    kick,
   );
   grave.x = grave.body.x / 65536;
   grave.y = H - grave.body.y / 65536;

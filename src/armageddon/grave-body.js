@@ -32,11 +32,12 @@ export function nativeGraveBody(x, y, friction = 96) {
     flags: 0x400002,
   };
 }
-export function stepNativeGraveBody(body, environment, terrainCollision) {
+export function stepNativeGraveBody(body, environment, terrainCollision, earthquake) {
   const collide = (x, y) => (body.flags & 2 ? terrainCollision(x, y) : 0);
   const next = nativeSimpleBodyTick(body, environment, {
     awake: nativeBodyAwake,
     collide,
+    earthquake,
     bounce: (b, hit, side) =>
       Object.assign(b, nativeSimpleBounce(b, { vx: 0, vy: 0 }, side).body),
   });

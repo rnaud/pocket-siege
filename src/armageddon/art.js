@@ -97,6 +97,8 @@ const names = [
     "uzicase",
     "shothit",
     "spsheep1", "spsheep2", "aquashp1", "aquashp2",
+    // Kamikaze: 004F67E0 preparation and the 004F76A0 flight frames.
+    "wkamlnk", "wkamjmp", "wkami1", "wkami2", "wkami3", "wkami4", "wkami5",
     "basehit", "firehit", "kamismk", "wpncup", "wpnctop", "wpncbak", "wpnclnk", "wfirbl1", "wfirbl2", "fireball",
     "wormhit1",
     "wormhit2",
@@ -792,6 +794,15 @@ export function startOriginalFirePunch(worm) {
   worm.originalRecoil = worm.originalPreparation = worm.originalJump = worm.originalLanding = null;
   worm.originalAnimationKey = null;
 }
+// 004F76A0 clears the worm's animation and queues the wkami1..5 frame for
+// its aim; state 0x6D holds it for the whole flight.
+export function startOriginalKamikaze(worm, sprite) {
+  const player = new NativeAnimationPlayer();
+  player.enqueue(sprite, animations.get(spriteIds.sprites[sprite].name).metadata);
+  worm.originalKamikaze = { player };
+  worm.originalRecoil = worm.originalPreparation = worm.originalJump = worm.originalLanding = null;
+  worm.originalAnimationKey = null;
+}
 export function updateOriginalFirePunch(worm, calls) {
   const player = worm.originalFirePunch.player;
   for (const call of calls) {
@@ -823,7 +834,7 @@ export function stepOriginalAxe(worm, percent, height) {
 }
 
 export function startOriginalPreparation(worm, weapon, angle) {
-  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch", "dragonball", "drill", "blowtorch"].includes(weapon)) return false;
+  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch", "dragonball", "drill", "blowtorch", "kamikaze"].includes(weapon)) return false;
   const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
   const record = weaponFields[WEAPON_SLOTS[weapon]];
   const state = nativePreparation(
@@ -1221,6 +1232,9 @@ export function originalWormFrame(worm, pose, frame, angle, weapon, active) {
   }
   if (worm.originalTeleport && worm.hp > 0) {
     return resolvedPlayerPose(worm,worm.originalTeleport.player,0x6f);
+  }
+  if (worm.originalKamikaze && worm.hp > 0) {
+    return resolvedPlayerPose(worm,worm.originalKamikaze.player,0x6d);
   }
   if (worm.originalRope && worm.hp > 0 && !worm.frozen && !worm.knocked) {
     const state=worm.nativeRopeBody?.state===0x7c?0x7c:0x7b;

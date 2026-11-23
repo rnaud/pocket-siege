@@ -46,7 +46,7 @@ test("all special weapons are reachable from the arsenal sheet", async ({ page }
   }
 });
 
-test("kamikaze self-destructs the active worm", async ({ page }) => {
+test("kamikaze from the arsenal flies off and removes the active worm", async ({ page }) => {
   await startMatch(page);
   await openArsenal(page);
   await page.locator('[data-weapon="kamikaze"]').click();
@@ -68,44 +68,44 @@ test("crate spy reveals the current crate contents", async ({ page }) => {
   await expect(page.locator(".crate-spy-label").first()).toBeVisible();
 });
 
-test("earthquake damages grounded worms", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  // Custom keeps the host kit; Classic duel starts with the original default kit.
-  await page.selectOption("#scheme", "custom");
-  await page.locator("#start").click();
-  await openArsenal(page);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase))
-    .toBe("aim");
-  const before = await page.evaluate(() =>
-    window.siege.getState().worms.reduce((sum, w) => sum + w.hp, 0));
-  await page.locator('[data-weapon="earthquake"]').click();
-  // Sample the shake every frame from before firing: a slow runner can land
-  // the quake during the real-time key press, before stepping starts.
-  await page.evaluate(() => {
-    window.quakeShake = 0;
-    const sample = () => {
-      window.quakeShake = Math.max(window.quakeShake, window.siege.getState().earthquakeShake);
-      window.quakeFrame = requestAnimationFrame(sample);
-    };
-    sample();
-  });
-  await chargeFor(page, 250);
-  // Step frames synchronously and keep the strongest shake: on a slow runner
-  // the shake can decay between polls before the damage is observed.
-  const quake = await page.evaluate((before) => {
-    let shake = window.quakeShake, hp = window.siege.getState().worms.reduce((sum, w) => sum + w.hp, 0);
-    for (let frame = 0; frame < 1500 && hp >= before; frame++) {
+test("earthquake shakes the island for eight seconds and throws worms", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const quake = await page.evaluate(() => {
+    const key = (type) => window.dispatchEvent(new KeyboardEvent(type, { key: " ", code: "Space", bubbles: true }));
+    window.siege.debug.advanceReplayFrames(30);
+    window.siege.debug.setAmmo(0, "earthquake", 9);
+    window.siege.debug.setWeapon("earthquake");
+    const team = window.siege.getState().team;
+    key("keydown"); window.siege.debug.advanceReplayFrames(2); key("keyup");
+    let peak = 0, shake = 0, frames = 0, ended = 0;
+    const thrown = new Set(), moved = new Set();
+    const start = window.siege.getState().worms.map((w) => [w.x, w.y]);
+    for (let i = 0; i < 2000; i++) {
       window.siege.debug.advanceReplayFrames(1);
       const s = window.siege.getState();
+      if (s.earthquake) { frames++; peak = Math.max(peak, s.earthquake.strength); }
+      else if (frames && !ended) ended = i;
       shake = Math.max(shake, s.earthquakeShake);
-      hp = s.worms.reduce((sum, w) => sum + w.hp, 0);
+      s.worms.forEach((w, index) => {
+        if (w.nativeState === 0x7f) thrown.add(index);
+        if (Math.hypot(w.x - start[index][0], w.y - start[index][1]) > 2) moved.add(index);
+      });
+      if (ended && s.team !== team) break;
     }
-    cancelAnimationFrame(window.quakeFrame);
-    return { shake: Math.max(shake, window.quakeShake), hp };
-  }, before);
-  expect(quake.hp).toBeLessThan(before);
-  expect(Math.max(quake.shake, await page.evaluate(() => window.siege.getState().earthquakeShakePeak))).toBeGreaterThan(0);
+    const s = window.siege.getState();
+    return { peak, shake, frames, thrown: thrown.size, moved: moved.size, team: s.team, before: team,
+      ammo: s.ammo[0].earthquake, hp: s.worms.map((w) => w.hp) };
+  });
+  expect(errors).toEqual([]);
+  expect(quake.ammo).toBe(8);
+  // 004EB2E0: the strength ramps to 1.0 over 8 s * 50 frames, then settles.
+  expect(quake.peak).toBe(0x10000);
+  expect(quake.frames).toBeGreaterThan(400);
+  expect(quake.shake).toBe(0x80000);
+  // Every resting worm is kicked into flight (0x7F); the quake itself deals no damage.
+  expect(quake.thrown).toBeGreaterThan(3);
+  expect(quake.moved).toBeGreaterThan(3);
+  expect(quake.team).not.toBe(quake.before);
 });
