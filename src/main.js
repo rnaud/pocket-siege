@@ -8171,8 +8171,9 @@ function stepFrame(dt) {
       // falling (0x7E) once it moves; oil drums, crates, mines and other worms
       // hold it up as well as terrain.
       let standing = false;
-      if (!w.frozen && !w.originalHurt && !w.knocked && !w.nativeFlight) {
-        if (w.ground) {
+      // Every other worm is hurt, flying or frozen and runs that body below.
+      if (!w.frozen && !w.originalHurt && !w.nativeFlight) {
+        if (w.ground && !w.knocked) {
           const support = nativeStandingSupport(w, { height: H, frame: matchRandom.frame,
             index: worms.indexOf(w), gravity: Math.round(0x3d70 * gravityScale) },
           (x, y) => nativeSceneCollision(w, { ...nativeAirborneBody(w, H, 96), state: 0x65, type: 2 },
@@ -8180,7 +8181,7 @@ function stepFrame(dt) {
           w.nativeStandingSleep = support.sleeping;
           standing = !support.fall;
         }
-        if (!standing) { w.nativeStandingSleep = 0; attachNativeFallingFlight(w, { height: H }); }
+        if (!standing) { w.nativeStandingSleep = 0; w.knocked = false; attachNativeFallingFlight(w, { height: H }); }
       }
       const fallState = nativeWormState(w);
       const fastFall = !w.frozen && [0x79, 0x7e, 0x7f].includes(fallState) && w.vy <= -400;
@@ -8242,8 +8243,6 @@ function stepFrame(dt) {
           updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
         }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
         dispatchNativeWormMotionEvents(w, result);
-      } else if (!standing) {
-        result = stepWorm(w, terrain, dt, gravityScale);
       }
     }
     if (result.landed && w.ground && !w.landing) {
