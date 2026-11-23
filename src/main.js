@@ -177,6 +177,7 @@ import { nextVisualRandom, fixedMultiply } from "./armageddon/numeric.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { createOriginalGrave, stepOriginalGrave, stepOriginalGravePhysics } from "./armageddon/graves.js";
 import { NativePhysicsList, nativeRunTaskGroup, nativeTaskSerial } from "./armageddon/physics-list.js";
+import { nativeAimStep, nativeWeaponSubtype } from "./armageddon/aim-step.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
 import { stepOriginalSight } from "./armageddon/sight.js";
@@ -5210,15 +5211,18 @@ function setMove(direction) {
     if (!rope.attached && !jetpack.active) turnFacing(direction);
   }
 }
-function adjustAim(direction, dt) {
+// One frame of a held aim key (004FB567): 0x200 per frame over the full
+// 0..0x10000 range, with the Longbow and Mortar limits.
+function stepNativeAim(direction, w = worms[current]) {
+  const slot = WEAPON_SLOTS[weapon] ?? 0;
+  setCpuAim(nativeAimStep(cpuAimValue(w), { up: direction > 0, down: direction < 0,
+    subtype: nativeWeaponSubtype(slot), slot }), w);
+}
+function adjustAim(direction) {
   if (!canAct() || charging) return;
   markNativePickupAction();
   hideNativeTeamPanelAfterInput(nativeTeamPanel);
-  const facing = worms[current].facing,
-    elevation = facing > 0 ? angle : 180 - angle;
-  const next = Math.max(-85, Math.min(90, elevation + direction * 65 * dt));
-  angle = facing > 0 ? next : 180 - next;
-  updateSliders();
+  stepNativeAim(direction);
 }
 function accountWormDamage(w, damage, options = {}) {
   const accounting = nativeDamageAccounting(
@@ -8139,7 +8143,7 @@ function applyCpuEvent(event, words) {
     else if (event === 0x408 || event === 0x409) {
       if (canAct() && !charging) {
         markNativePickupAction();
-        setCpuAim(cpuAimValue(w) + (event === 0x408 ? 0x200 : -0x200), w);
+        stepNativeAim(event === 0x408 ? 1 : -1, w);
       }
     } else if (event === 0x40e) {
       if (phase === "aim" && !pendingFire) cpuAi.fired = true; // 0x40E clears controller+0x58
