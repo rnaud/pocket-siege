@@ -228,10 +228,10 @@ export const WEAPONS = {
     special: "sheep",
   },
   nuclearbomb: {
-    label: "Nuclear bomb",
+    label: "Nuclear test",
     icon: "☢",
-    radius: 150,
-    damage: 100,
+    radius: 0,
+    damage: 0,
     wind: false,
     speed: 1,
     timed: false,

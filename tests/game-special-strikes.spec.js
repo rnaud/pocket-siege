@@ -63,22 +63,25 @@ test("armageddon rains native meteors that damage worms", async ({ page }) => {
   await advanceUntil(page, (s) => s.worms.some((worm) => worm.hp < 100), { max: 2500, label: "meteor damage" });
 });
 
-test("nuclear bomb targets a nuclear strike", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  // Custom keeps the host kit; Classic duel starts with the original default kit.
-  await page.selectOption("#scheme", "custom");
-  await page.locator("#start").click();
-  await openArsenal(page);
-  await page.locator('[data-weapon="nuclearbomb"]').click();
-  await chargeFor(page, 250);
-  const box = await page.locator("#arena").boundingBox();
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-  await advanceUntil(page, (s) => s.explosions > 0, { max: 1000, label: "nuclear strike" });
-  expect(await page.evaluate(() =>
-    window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0),
-  )).toBe(true);
+test("nuclear test raises the water and poisons every worm without a target", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    window.siege.debug.advanceReplayFrames(30);
+    window.siege.debug.setAmmo(0, "nuclearbomb", 9);
+    window.siege.debug.setWeapon("nuclearbomb");
+    const before = window.siege.getState().waterLevel;
+    const key = (type) => window.dispatchEvent(new KeyboardEvent(type, { key: " ", code: "Space", bubbles: true }));
+    key("keydown"); window.siege.debug.advanceReplayFrames(2); key("keyup");
+    window.siege.debug.advanceReplayFrames(600);
+    const s = window.siege.getState();
+    return { before, after: s.waterLevel, explosions: s.explosions, ammo: s.ammo[0].nuclearbomb,
+      poisoned: s.worms.filter((w) => w.hp > 0).every((w) => w.nativePoison.amount > 0) };
+  });
+  // 004FC8D0: 0x441 water rise by record +0x70, the 0x442 effect, 0x439 dose +0x74.
+  expect(result.ammo).toBe(8);
+  expect(result.after).toBeGreaterThan(result.before);
+  expect(result.poisoned).toBe(true);
+  expect(result.explosions).toBe(0);
 });
 
 test("scales of justice caps health at 100 with uneven survivors", async ({ page }) => {

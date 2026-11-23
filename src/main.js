@@ -2180,6 +2180,17 @@ function executeMissionEvent(event, timed) {
   }
   return false;
 }
+// Nuclear Test (slot 55, kind 4 subtype 16): 004FC8D0 is the mission event
+// below followed by sound 0x1E at priority 5. It needs no target.
+function useNuclearTest() {
+  if (!canAct() || availableAmmo(ammo[team], "nuclearbomb") <= 0) return;
+  ammo[team].nuclearbomb = spendAmmo(ammo[team].nuclearbomb);
+  shotCount++;
+  recordReactionWeaponUse("nuclearbomb");
+  missionNuclearTest();
+  queueGameSound([0x1e, 5, 0x10000, 0x10000, 0]);
+  finishAction("Nuclear test! Retreat!");
+}
 // 004EF6B0 type 8 (as 004FC8D0 without its trailing sound): weapon 55 entry
 // +0x70 water rise and +0x74 poison dose from the default scheme record.
 function missionNuclearTest() {
@@ -3410,17 +3421,6 @@ function applyUtilityTarget(x, y, strikeDirection = undefined) {
     ammo[team][strikeKind] = spendAmmo(ammo[team][strikeKind]);
     spawnAirstrike(x, y, strikeKind, strikeDirection);
     finishUtilityTurn(`${WEAPONS[strikeKind].label} called. Bombs away!`);
-    return;
-  }
-  if (targetUtility === "nuclearbomb") {
-    if ((availableAmmo(ammo[team], "nuclearbomb") ?? 0) <= 0) return;
-    ammo[team].nuclearbomb = spendAmmo(ammo[team].nuclearbomb);
-    targetUtility = null;
-    activeUtility = null;
-    startNativeNuclearEffect(8);
-    explode(x, y, "nuclearbomb", team);
-    infectPoisonCloud(x, y, WEAPONS.nuclearbomb.radius, 20);
-    finishAction("Nuclear bomb! Retreat!");
     return;
   }
   if (targetUtility === "teleport") {
@@ -5669,19 +5669,6 @@ function useEarthquake() {
   $("#status").textContent = "Earthquake! The ground heaves.";
   finishAction("Earthquake! Retreat!");
 }
-function infectPoisonCloud(x, y, radius = 80, amount = 10) {
-  let infected = false;
-  for (const w of worms) {
-    if (w.hp <= 0) continue;
-    if (Math.hypot(w.x - x, w.y - y) > radius) continue;
-    w.nativePoison = nativeWormPoisonInfect({
-      ...w.nativePoison, team: w.matchStats.team,
-      worm: w.matchStats.worm, state: nativeWormState(w),
-    }, amount, { announce: () => {} });
-    infected = true;
-  }
-  if (infected) poisoned = true;
-}
 function useScales() {
   if (!canAct() || availableAmmo(ammo[team], "scales") <= 0) return;
   const totals = [0, 1].map((t) => worms
@@ -6149,11 +6136,7 @@ function fire() {
     kind = weapon,
     meta = WEAPONS[kind];
   if (kind === "nuclearbomb") {
-    if (!canAct() || availableAmmo(ammo[team], "nuclearbomb") <= 0) return;
-    targetUtility = "nuclearbomb";
-    activeUtility = "nuclearbomb";
-    $("#status").textContent = "Click or tap to drop the nuclear bomb.";
-    updateUI();
+    useNuclearTest();
     return;
   }
   if (kind === "armageddon") {
