@@ -24,6 +24,7 @@ import {
 import { nativeLaunchVelocity } from "./power.js";
 import { nativeSin, nativeCos } from "./trig.js";
 import { nativeSceneCollision } from "./collision-scene.js";
+import { nativeTaskSerial } from "./physics-list.js";
 import {
   nativeSimpleBodyTick,
   nativeSimpleBounce,
@@ -178,6 +179,7 @@ export function nativeWeaponSlotBlock(slot, offset) {
 // Shared004E1830 constructor adapter for an explicit native projectile block.
 // Contents effects supply the original11-word payload without weapon release.
 export function attachNativeProjectileBlock(p, height, block, nativePayload = null) {
+  nativeTaskSerial(p);
   const payload = {
     owner: p.owner ?? 0,
     x: fixed(p.x),

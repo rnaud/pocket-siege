@@ -1,5 +1,13 @@
 import { nativeCompactPhysicsEntries } from "./physics-compaction.js";
 
+// Creation serial for live tasks and bodies: lists append newcomers in this
+// order, as the original appends each task and body at construction.
+let serial = 0;
+export function nativeTaskSerial(object) {
+  if (object && object.nativeSerial === undefined) object.nativeSerial = ++serial;
+  return object;
+}
+
 // The environment's physics list (scene+0x7D4, +0x24 count, +0x28 entries).
 // 004C8F80 appends each new body, 004C9460 leaves a hole when one is removed,
 // and the end-of-frame 004CA7E0 compacts the list, keeping its order.
@@ -24,10 +32,10 @@ export class NativePhysicsList {
         this.dirty = true;
       }
     });
-    for (const body of bodies) {
-      if (body == null || this.slots.has(body)) continue;
-      this.append(body);
-    }
+    const fresh = bodies.filter((body) => body != null && !this.slots.has(body));
+    // Stable: unstamped bodies keep the given order after stamped ones.
+    fresh.sort((a, b) => (a.nativeSerial ?? Infinity) - (b.nativeSerial ?? Infinity));
+    for (const body of new Set(fresh)) this.append(body);
   }
 
   append(body) {

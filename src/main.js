@@ -176,7 +176,7 @@ import {
 import { nextVisualRandom, fixedMultiply } from "./armageddon/numeric.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { createOriginalGrave, stepOriginalGrave, stepOriginalGravePhysics } from "./armageddon/graves.js";
-import { NativePhysicsList, nativeRunTaskGroup } from "./armageddon/physics-list.js";
+import { NativePhysicsList, nativeRunTaskGroup, nativeTaskSerial } from "./armageddon/physics-list.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
 import { stepOriginalSight } from "./armageddon/sight.js";
@@ -1790,6 +1790,9 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   // between turns before the first turn starts.
   runMissionBetweenTurns();
   if(!authored)spawnHazards();
+  // 004EAAD0 creates the landscape, then the map objects, then each team's
+  // worms: worm bodies follow the startup objects in the physics list.
+  for (const w of worms) { delete w.nativeSerial; nativeTaskSerial(w); }
   introPending = true;
   beginTurn();
   updateRecordUI();
@@ -2069,7 +2072,7 @@ function spawnCrate(announceDrop = false, forcedKind = null) {
     collide: (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H),
     sound: queueCrateSound,
   });
-  crates.push(crate);
+  crates.push(nativeTaskSerial(crate));
   if (announceDrop) {
     const message = nativeCrateDropAnnouncement(kind, () => matchRandom.logicUint());
     queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
@@ -2099,7 +2102,7 @@ function spawnShowerCrate(record, mapping, quantity) {
     collide: (cx, cy, body) => nativeSceneCollision(crate, body, cx / 65536, H - cy / 65536, terrain, worms, H),
     sound: queueCrateSound,
   });
-  crates.push(crate);
+  crates.push(nativeTaskSerial(crate));
   return crate;
 }
 function spawnScenarioBarrel(object) {
@@ -2114,7 +2117,7 @@ function spawnScenarioBarrel(object) {
   hazard.y = H - hazard.nativeBody.y / 65536;
   mesh.position.set(hazard.x, hazard.y, 17);
   group.add(mesh);
-  hazards.push(hazard);
+  hazards.push(nativeTaskSerial(hazard));
   hazard.scenario = object;
 }
 function spawnScenarioObject(object) {
@@ -2298,7 +2301,7 @@ function spawnMissionCrate(event) {
     // 004DFE8E: settled placement emits the 0x43E landing puff (sprite 0x349).
     effect: request => spawnNativeParticleRequest(request),
   });
-  crates.push(crate);
+  crates.push(nativeTaskSerial(crate));
   // 004DFFA0 tail: Marked crates/targets feed sequence waits 15/16.
   if (crate.mission.marked) {
     if (target) missionState.markedTargets++; else missionState.markedCrates++;
@@ -2454,7 +2457,7 @@ function spawnHazards(requests=null) {
         Math.floor(H-waterLevel),matchFriction,
         (px,py,body)=>nativeSceneCollision(hazard,body,px/65536,H-py/65536,terrain,worms,H));
       hazard.x=hazard.nativeBody.x/65536;hazard.y=H-hazard.nativeBody.y/65536;
-      mesh.position.set(hazard.x,hazard.y,17);group.add(mesh);hazards.push(hazard);
+      mesh.position.set(hazard.x,hazard.y,17);group.add(mesh);hazards.push(nativeTaskSerial(hazard));
     }
     return;
   }
@@ -2477,7 +2480,7 @@ function spawnHazards(requests=null) {
         (px, py, body) => nativeSceneCollision(hazard, body, px / 65536, H - py / 65536, terrain, worms, H));
       hazard.x = hazard.nativeBody.x / 65536; hazard.y = H - hazard.nativeBody.y / 65536;
       mesh.position.set(hazard.x, hazard.y, 17);
-      hazards.push(hazard);
+      hazards.push(nativeTaskSerial(hazard));
       break;
     }
   }
@@ -2661,7 +2664,7 @@ function runObjectPhysicsPass() {
 // The live physics list (004CA750 order). The terrain body holds slot 1.
 // Bodies join when first seen at the start of a frame; their slot is the
 // index 004CA320 uses for the 13-frame sleeping recheck.
-const PHYSICS_TERRAIN = { terrain: true };
+const PHYSICS_TERRAIN = nativeTaskSerial({ terrain: true });
 // Task-tree children in creation order: the global group 25 and the
 // startup map objects (mines and oil drums placed at match start).
 function globalGroupMembers() {
@@ -5255,7 +5258,7 @@ function registerLiveMine(mine,color) {
   }
   mine.nativeSlot = registration.slot;
   mine.nativeCreatedFrame = registration.registeredFrame;
-  mines.push(mine);
+  mines.push(nativeTaskSerial(mine));
 }
 function spawnNaturalMine(request) {
   const payload={x:request.payload[2],y:request.payload[3],vx:request.payload[4],vy:request.payload[5]};
@@ -5586,7 +5589,7 @@ function spawnAirstrike(x, y, kind = "airstrike", direction = Number($("#strike-
     strike.mesh.scale.x = Math.abs(strike.mesh.scale.x) * (direction > 0 ? -1 : 1);
     group.add(strike.mesh);
   }
-  airstrikes.push(strike);
+  airstrikes.push(nativeTaskSerial(strike));
   nativeCamera.reset();
   nativeCameraFocus = null;
   // The host viewport supplies world units; depth stays zero during tracking.
@@ -8598,7 +8601,7 @@ function stepFrame(dt) {
         spawnDeathSmoke(w);
         const grave = createOriginalGrave(w, w.graveStyle);
         if (grave) {
-          graves.push(grave);
+          graves.push(nativeTaskSerial(grave));
           group.add(grave.mesh);
         }
         announceWormDeath(w);
@@ -10774,6 +10777,7 @@ if (import.meta.env.DEV) {
         const w = worms[index];
         Object.assign(w, { x, y:258, renderY:258, vx:0, vy:0, ground:true, knocked:false, hurt:0,
           nativeHurtBody:null, nativeFlight:null, originalHurt:null, originalJump:null });
+        seatWorm(w);
       }
       return { shooter:current, ally, enemy, rear };
     },

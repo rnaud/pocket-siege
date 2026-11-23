@@ -1,5 +1,5 @@
 import { test, expect } from "./helpers/shared-page.js";
-import { NativePhysicsList, nativeRunTaskGroup } from "../src/armageddon/physics-list.js";
+import { NativePhysicsList, nativeRunTaskGroup, nativeTaskSerial } from "../src/armageddon/physics-list.js";
 
 test("physics list slots follow append, hole and end-of-frame compaction order", { tag: "@logic" }, () => {
   const terrain = {}, a = {}, b = {}, c = {}, d = {};
@@ -34,4 +34,13 @@ test("task group traversal reaches children appended during the pass and skips r
   live = [d, c, a];
   nativeRunTaskGroup(list, () => live, (task) => seen.push(task.id));
   expect(seen).toEqual(["a", "c", "d"]);
+});
+
+test("bodies created in the same frame join the list in creation order", { tag: "@logic" }, () => {
+  // A strike missile created before a crate in the same frame still precedes
+  // it, whatever order the host's per-kind arrays are listed in.
+  const terrain = nativeTaskSerial({}), missile = nativeTaskSerial({}), crate = nativeTaskSerial({});
+  const list = new NativePhysicsList();
+  list.sync([crate, terrain, missile]);
+  expect([terrain, missile, crate].map((body) => list.slot(body))).toEqual([1, 2, 3]);
 });
