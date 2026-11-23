@@ -79,3 +79,30 @@ test("live hard landing plays native recovery and returns to idle", async ({
   await expect(page.locator("#angle")).toBeEnabled();
   expect(errors).toEqual([]);
 });
+
+test("a recovering worm whose ground is dug away falls instead of finishing its recovery", async ({ page }) => {
+  await startMatch(page, { seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    const debug = window.siege.debug;
+    debug.dropWormForRecovery(0);
+    let s;
+    for (let i = 0; i < 600; i++) {
+      debug.advanceReplayFrames(1);
+      s = window.siege.getState();
+      if (s.worms[0].recovering) break;
+    }
+    const start = s.worms[0];
+    debug.carveAt(start.x, start.y - 10, 40);
+    const states = [];
+    for (let i = 0; i < 20; i++) {
+      debug.advanceReplayFrames(1);
+      states.push(window.siege.getState().worms[0].nativeState);
+    }
+    const end = window.siege.getState().worms[0];
+    return { recovering: start.recovering, states, startY: start.y, endY: end.y };
+  });
+  expect(result.recovering).toBe(true);
+  // 004DED81 sends a moving 0x76 body to 0x7E within one 13-frame recheck.
+  expect(result.states.slice(0, 14)).toContain(0x7e);
+  expect(result.endY).toBeLessThan(result.startY - 5);
+});

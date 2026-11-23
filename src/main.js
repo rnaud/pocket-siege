@@ -2485,6 +2485,16 @@ function seatWorm(w) {
   w.renderY = y;
   w.nativeStandingSleep = 0;
 }
+// 004CA320 on a resting worm body, then the 004DED81 state check: true when
+// the body moves and the worm must enter 0x7E. Keeps the 13-frame sleep flag.
+function wormBodyStartsFalling(w) {
+  const support = nativeStandingSupport(w, { height: H, frame: matchRandom.frame,
+    index: worms.indexOf(w), gravity: Math.round(0x3d70 * gravityScale) },
+  (x, y) => nativeSceneCollision(w, { ...nativeAirborneBody(w, H, 96), state: nativeWormState(w), type: 2 },
+    x / 65536, H - y / 65536, terrain, worms, H) !== 0);
+  w.nativeStandingSleep = support.sleeping;
+  return support.fall;
+}
 // 004F4D80 for a walking worm: the collision world with the worm's own body.
 function wormWalkCollide(w) {
   const body = { ...nativeAirborneBody(w, H, 96), state: 0x66, type: 2 };
@@ -8143,7 +8153,15 @@ function stepFrame(dt) {
       }
       continue;
     }
-    if (w.originalRecovery) {
+    // 004DED81 also covers recovery (0x76): once its body moves, the worm
+    // leaves the recovery animation for 0x7E, whose flight runs this frame.
+    if (w.originalRecovery && wormBodyStartsFalling(w)) {
+      w.originalRecovery = null;
+      w.hurt = 0;
+      w.knocked = false;
+      w.nativeStandingSleep = 0;
+      attachNativeFallingFlight(w, { height: H });
+    } else if (w.originalRecovery) {
       for (const call of stepOriginalRecovery(w)) {
         if (call.operation === "sound" && sound) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -8176,12 +8194,7 @@ function stepFrame(dt) {
       // Every other worm is hurt, flying or frozen and runs that body below.
       if (!w.frozen && !w.originalHurt && !w.nativeFlight) {
         if (w.ground && !w.knocked) {
-          const support = nativeStandingSupport(w, { height: H, frame: matchRandom.frame,
-            index: worms.indexOf(w), gravity: Math.round(0x3d70 * gravityScale) },
-          (x, y) => nativeSceneCollision(w, { ...nativeAirborneBody(w, H, 96), state: 0x65, type: 2 },
-            x / 65536, H - y / 65536, terrain, worms, H) !== 0);
-          w.nativeStandingSleep = support.sleeping;
-          standing = !support.fall;
+          standing = !wormBodyStartsFalling(w);
         }
         if (!standing) { w.nativeStandingSleep = 0; w.knocked = false; attachNativeFallingFlight(w, { height: H }); }
       }
@@ -10705,6 +10718,7 @@ if (import.meta.env.DEV) {
       return { shooter: current, enemy };
     },
     solidAt(x, y) { return terrain.solid(x, y); },
+    carveAt(x, y, radius) { terrain.carve(x, y, radius); terrainDirty = true; },
     stageWormContact() {
       for (const [index, vx] of [
         [0, 600],
