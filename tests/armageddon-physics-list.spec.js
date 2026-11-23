@@ -1,5 +1,5 @@
 import { test, expect } from "./helpers/shared-page.js";
-import { NativePhysicsList } from "../src/armageddon/physics-list.js";
+import { NativePhysicsList, nativeRunTaskGroup } from "../src/armageddon/physics-list.js";
 
 test("physics list slots follow append, hole and end-of-frame compaction order", { tag: "@logic" }, () => {
   const terrain = {}, a = {}, b = {}, c = {}, d = {};
@@ -17,4 +17,21 @@ test("physics list slots follow append, hole and end-of-frame compaction order",
   // A body first seen while ticking is appended, as at construction.
   const e = {};
   expect(list.slot(e) || list.append(e)).toBe(5);
+});
+
+test("task group traversal reaches children appended during the pass and skips removed ones", { tag: "@logic" }, () => {
+  const a = { id: "a" }, b = { id: "b" }, c = { id: "c" }, d = { id: "d" };
+  let live = [a, b, c];
+  const list = new NativePhysicsList(), seen = [];
+  nativeRunTaskGroup(list, () => live, (task) => {
+    seen.push(task.id);
+    // a creates d (appended, reached this pass) and removes b before it runs.
+    if (task === a) live = [a, c, d];
+  });
+  expect(seen).toEqual(["a", "c", "d"]);
+  // Creation order persists into the next frame, after compaction.
+  seen.length = 0;
+  live = [d, c, a];
+  nativeRunTaskGroup(list, () => live, (task) => seen.push(task.id));
+  expect(seen).toEqual(["a", "c", "d"]);
 });

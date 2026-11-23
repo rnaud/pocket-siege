@@ -59,3 +59,17 @@ export class NativePhysicsList {
     this.dirty = false;
   }
 }
+
+// 004B26F0: forward an event to each child task in order, re-reading the
+// list after each callback, so children appended meanwhile are reached in
+// the same pass and removed ones are skipped. `members()` gives the live
+// children; the same list keeps their creation order across frames.
+export function nativeRunTaskGroup(list, members, step) {
+  list.sync(members());
+  for (let index = 0; index < list.entries.length; index++) {
+    const task = list.entries[index];
+    if (task !== null) step(task);
+    list.sync(members());
+  }
+  list.finishFrame();
+}

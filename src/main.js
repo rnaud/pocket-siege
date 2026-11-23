@@ -176,7 +176,7 @@ import {
 import { nextVisualRandom, fixedMultiply } from "./armageddon/numeric.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { createOriginalGrave, stepOriginalGrave, stepOriginalGravePhysics } from "./armageddon/graves.js";
-import { NativePhysicsList } from "./armageddon/physics-list.js";
+import { NativePhysicsList, nativeRunTaskGroup } from "./armageddon/physics-list.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
 import { stepOriginalSight } from "./armageddon/sight.js";
@@ -768,6 +768,8 @@ let format = "single",
   bombs = [],
   // The live physics list (004CA750 order); see syncPhysicsList.
   physicsList = new NativePhysicsList(),
+  globalTaskGroup = new NativePhysicsList(),
+  mapObjectTasks = new NativePhysicsList(),
   airstrikes = [],
   nativeFlames = Array(200).fill(null),
   nativeFlameCounter = 0,
@@ -1523,6 +1525,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   for (const b of bombs) { stopProjectileSound(b); dispose(b.mesh); }
   bombs = [];
   physicsList = new NativePhysicsList();
+  globalTaskGroup = new NativePhysicsList();
+  mapObjectTasks = new NativePhysicsList();
   for (const strike of airstrikes) if(strike.mesh) dispose(strike.mesh);
   airstrikes = [];
   nativeCamera.reset();
@@ -2658,6 +2662,15 @@ function runObjectPhysicsPass() {
 // Bodies join when first seen at the start of a frame; their slot is the
 // index 004CA320 uses for the 13-frame sleeping recheck.
 const PHYSICS_TERRAIN = { terrain: true };
+// Task-tree children in creation order: the global group 25 and the
+// startup map objects (mines and oil drums placed at match start).
+function globalGroupMembers() {
+  return [projectile, ...bombs, ...airstrikes, ...crates, ...mines.filter((m) => !m.nativeMapObject)];
+}
+function mapObjectMembers() {
+  return [...mines.filter((m) => m.nativeMapObject), ...hazards];
+}
+const runTaskGroup = nativeRunTaskGroup;
 function wormTaskLive(w) {
   return !w.disabledRoster && (w.hp > 0 || w.deathPending || w.dying > 0);
 }
@@ -2803,9 +2816,280 @@ function detonateNativeCrate(crate) {
     broadcast: () => {},
   });
 }
-function stepBombs(dt) {
-  for (let i = bombs.length - 1; i >= 0; i--) {
-    const b = bombs[i];
+// The active projectile's frame logic (its 0x3EA step).
+function stepActiveProjectileLogic(dt) {
+  if (projectile?.nativeDragonBall) stepDragonBall();
+  else if (projectile?.nativeArrow) stepArrow();
+  else if (projectile) {
+    const p = projectile;
+    if (sound && p.nativeTimer?.loopSound && !p.nativeFusePlayback) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      p.nativeFusePlayback = playNativeProjectileFuse(audio, p.nativeFuseSound);
+    }
+    let nativeContact = null;
+    const ox = p.x,
+      oy = p.y;
+    if (!p.stuck && p.sleeping && !terrain.solid(p.x, p.y - 4))
+      p.sleeping = false;
+    if (!p.sleeping && !p.stuck) {
+      if (p.nativeBody && sheepUnit(p)?.phase === 1) {
+        nativeContact = stepSheepFlight(p);
+      } else if (p.nativeBody) {
+        nativeContact = stepNativeProjectile(p, { ...projectilePhysicsEnvironment(p),
+          moved: p.nativeMovedFrame === matchRandom.frame }, projectileCollide(p));
+        stepWalkingUnit(p);
+        stepProjectileGas(p);
+        stepMoleBurrow(p);
+        applyProjectileContactBlasts(p, nativeContact.events);
+        if (sound && nativeContact.sounds.length) {
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          for (const event of nativeContact.sounds)
+            nativeSoundQueue.enqueue(event);
+        }
+        if (sound) for (const event of nativeContact.events) {
+          if (event.operation !== "sound") continue;
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          if (event.timer) nativeSoundQueue.enqueue(event.request);
+          else p.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, p.nativeContactPlayback);
+        }
+      } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
+    }
+    p.age += dt;
+    emitProjectileTrail(p);
+    if (
+      !p.nativeBody && WEAPONS[p.kind].timed &&
+      p.fuse - p.age < 1.5 &&
+      Math.floor(p.age * 4) !== Math.floor((p.age - dt) * 4)
+    )
+      sfx("fuse");
+    let hit = p.blocked;
+    p.blocked = false;
+    let hitWorm = nativeContact?.hit >= 2 ? worms[nativeContact.hit - 2] : null;
+    hit ||= Boolean(nativeContact?.hit);
+    if (!hit && !p.nativeBody) {
+      const contact = sweepProjectile({ x: ox, y: oy }, p, (x, y) => {
+        if (terrain.solid(x, y)) return 1;
+        const index = worms.findIndex(
+          (w, i) =>
+            w.hp > 0 && (i !== p.owner || p.age > 0.25) && hitsWorm(w, x, y, 3),
+        );
+        return index < 0 ? 0 : index + 2;
+      });
+      p.x = contact.x;
+      p.y = contact.y;
+      hit = Boolean(contact.hit);
+      if (contact.hit >= 2) hitWorm = worms[contact.hit - 2];
+    }
+    let boom =
+      (p.nativeBody ? Boolean(nativeContact?.detonate) : (!WEAPONS[p.kind].timed && hit)) ||
+      (!p.nativeBody && WEAPONS[p.kind].timed && p.age >= p.fuse);
+    if (hit && WEAPONS[p.kind].bounces && !p.nativeBody) {
+      const victim =
+        hitWorm ??
+        worms.find(
+          (w, i) =>
+            w.hp > 0 &&
+            (i !== p.owner || p.age > 0.25) &&
+            hitsWorm(w, p.x, p.y, 3),
+        );
+      let n = victim
+        ? { x: p.x - victim.x, y: p.y - victim.y - 17 }
+        : terrainNormal(terrain, p.x, p.y, p.vx, p.vy);
+      const l = Math.hypot(n.x, n.y) || 1;
+      n = { x: n.x / l, y: n.y / l };
+      if (Math.hypot(p.vx, p.vy) > 30) sfx("bounce");
+      reflectVelocity(p, n, p.bounce);
+      p.x = ox + n.x * 0.3;
+      p.y = oy + n.y * 0.3;
+      if (n.y > 0.5 && Math.hypot(p.vx, p.vy) < 16) {
+        p.vx = 0;
+        p.vy = 0;
+        p.sleeping = true;
+      }
+    }
+    p.mesh.position.set(p.x, p.y, 40);
+    if (lastShot) {
+      const lastPoint = lastShot.points[lastShot.points.length - 1];
+      if (!lastPoint || Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y) > 6)
+        lastShot.points.push({ x: p.x, y: p.y });
+    }
+    if (p.sheep?.phase === 1 && renderSheepFlight(p)) {
+      // 004E27F0 mode3 flight art (spsheep/aquashp, rotated by heading).
+    } else if (p.sheep && updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age,
+        p.y < waterLevel, false, p.nativeRender)) {
+      p.mesh.scale.x = Math.abs(p.mesh.scale.x) * (p.sheep.direction < 0 ? 1 : -1);
+      p.mesh.position.y = p.y - p.sheepDrawOffset;
+    } else if (
+      !updateOriginalProjectile(
+        p.mesh,
+        p.kind,
+        p.vx,
+        p.vy,
+        p.age,
+        p.y < waterLevel,
+        Boolean(p.nativeGuidance?.initialized),
+        p.nativeRender,
+      )
+    )
+      p.mesh.rotation.z =
+        p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
+
+    if (p.nativeBody) updateNativeProjectileAudio(sound ? audio : null, p);
+    if (!p.nativeTimer?.loopSound) {
+      p.nativeFusePlayback?.stop();
+      p.nativeFusePlayback = null;
+    }
+    if (
+      boom ||
+      (p.nativeBody ? p.nativeRemoved : (
+        p.y < waterLevel || p.x < -50 || p.x > W + 50 || p.age > 12
+      ))
+    ) {
+      if (boom && p.y > waterLevel) {
+        explodeProjectile(p);
+      }
+      stopProjectileSound(p);
+      releaseProjectileMesh(p.mesh);
+      projectile = null;
+      phase = "settle";
+      shotWait = 0;
+      updateUI();
+    }
+  }
+}
+function stepCrateLogic(crate, activity) {
+  const wasFalling = crate.falling;
+  let detonate = false;
+  const result = stepNativeCrateBody(crate.nativeBody, { ...objectPhysicsEnvironment(crate), moved: true }, {
+    ...objectPhysicsInterfaces(crate),
+    camera: request => activity.camera.push(request), busy: () => { activity.busy = true; },
+    delete: () => {},
+    detonate: () => { detonate = true; },
+    visualRandom: () => matchRandom.visualUint(),
+    bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
+  });
+  crate.nativeBody = result.body;
+  crate.x = result.body.x / 65536;
+  crate.y = H - result.body.y / 65536;
+  crate.vy = -result.body.vy / 65536 * 50;
+  crate.falling = !!nativeBodyAwake(result.body);
+  crate.mesh.position.set(crate.x, crate.y, 18);
+  if (result.deleted) {
+    if (detonate) detonateNativeCrate(crate);
+    nativeRenderOrder.release(crate.nativeOrderId);
+    dispose(crate.mesh);
+    crates.splice(crates.indexOf(crate), 1);
+    missionCrateRemoved(crate, detonate ? "destroyed" : "lost");
+  } else if (wasFalling && !crate.falling) announce("SUPPLY CRATE LANDED");
+}
+function stepMineLogic(mine, mineCameraRequests) {
+  if (phase === "over" || !mines.includes(mine)) return;
+  const proximity = (radius) => {
+    const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
+      x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
+      type: nativeWormCollisionType(nativeWormState(w)),
+    }));
+    return nativeMineProximity({
+      x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), mask: NATIVE_MINE_MASK,
+    }, radius, candidates) >= 0;
+  };
+  const result = nativeMineTimer(mine.nativeTimer, {
+    vx: mine.nativeBody.vx, vy: mine.nativeBody.vy, awake: nativeBodyAwake(mine.nativeBody), submerged: mine.nativeBody.submerged,
+    frame: matchRandom.frame, friction: matchFriction,
+  }, proximity);
+  mine.nativeTimer = result.body;
+  mine.arm = result.body.arm / 1000;
+  for (const call of result.calls) {
+    if (call.operation === "friction") mine.nativeBody.tangent = call.request[0];
+    if (call.operation === "complex") mine.nativeBody.complex = call.request[0];
+  }
+  if (sound) for (const call of result.calls) {
+    if (call.operation !== "sound") continue;
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    nativeSoundQueue.enqueue(call.request);
+  }
+  if (!result.expired) {
+    if ((mine.nativeBody.y >> 16) >= nativeProjectileDepth(Math.floor(H - waterLevel))) {
+      removeMineTask(mine);
+      return;
+    }
+    const cameraRequest = nativeMineCameraRequest(mine.nativeBody, mine.nativeTimer);
+    if (cameraRequest) {
+      nativeRenderOrder.promote(mine.nativeOrderId);
+      mineCameraRequests.push(cameraRequest);
+    }
+    const water = nativeMineWater({
+      ...mine.nativeWater, flags: mine.nativeBody.flags, forceBlast: mine.nativeTimer.forceBlast,
+    }, {
+      ...mine.nativeBody, awake: nativeBodyAwake(mine.nativeBody),
+    }, () => matchRandom.visualUint());
+    const { flags, forceBlast, ...waterState } = water.body;
+    mine.nativeWater = waterState;
+    mine.nativeBody.flags = flags;
+    mine.nativeTimer.forceBlast = forceBlast;
+    for (const call of water.calls) {
+      if (call.operation === "bubble") {
+        const [x, y, , , size] = call.request;
+        spawnWaterBubble(x / 65536, H - y / 65536, 0, size);
+      } else if (call.operation === "sound" && sound) {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+        nativeSoundQueue.enqueue(call.request);
+      }
+    }
+    for (const call of nativeMineStateEvents(mine.nativeBody, mine.nativeTimer.damage)) {
+      if (call.operation === "blast") explode(mine.x, mine.y, "mine", mine.owner, call.request);
+      else if (call.operation === "delete") {
+        removeMineTask(mine);
+      }
+    }
+    return;
+  }
+  const expiry = nativeMineExpiry(mine.nativeTimer, {
+    x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), dudsEnabled: true,
+  }, mineDudPool, {
+    logic: () => matchRandom.logicUint(), visual: () => matchRandom.visualUint(), proximity,
+  });
+  mine.nativeTimer = expiry.body;
+  for (const call of expiry.calls) {
+    if (call.operation === "blast") explode(mine.x, mine.y, "mine", mine.owner, call.request);
+    else if (call.operation === "smoke") spawnOriginalSmoke([call.request]);
+    else if (call.operation === "sound" && sound) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      nativeSoundQueue.enqueue(call.request);
+    } else if (call.operation === "delete") {
+      removeMineTask(mine);
+    }
+  }
+}
+function stepBarrelLogic(barrel, barrelActivity) {
+  let detonate = false;
+  const result = stepNativeBarrelBody(barrel.nativeBody, { ...objectPhysicsEnvironment(barrel), moved: true }, {
+    ...objectPhysicsInterfaces(barrel),
+    camera: request => barrelActivity.camera.push(request), busy: () => { barrelActivity.busy = true; },
+    promote: () => nativeRenderOrder.promote(barrel.nativeOrderId),
+    delete: () => {},
+    detonate: () => { detonate = true; },
+    visualRandom: () => matchRandom.visualUint(),
+    bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
+  });
+  barrel.nativeBody = result.body;
+  barrel.x = result.body.x / 65536; barrel.y = H - result.body.y / 65536;
+  if (result.deleted) {
+    hazards.splice(hazards.indexOf(barrel), 1);
+    nativeRenderOrder.release(barrel.nativeOrderId);
+    barrel.impactPlayback?.stop();
+    dispose(barrel.mesh);
+    if (detonate) detonateNativeBarrel(barrel);
+  }
+}
+function stepBomb(b, dt) {
+    if (!bombs.includes(b)) return;
     if (b.nativeBody) {
       if (sound && b.nativeTimer.loopSound && !b.nativeFusePlayback) {
         audio ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -2839,13 +3123,13 @@ function stepBombs(dt) {
       }
       if (result.removed || result.detonate) {
         stopProjectileSound(b);
-        bombs.splice(i, 1);
+        bombs.splice(bombs.indexOf(b), 1);
         releaseProjectileMesh(b.mesh);
         if (result.detonate) {
           detonateNativeProjectile(b);
         }
       }
-      continue;
+      return;
     }
     b.fuse -= dt;
     b.age += dt;
@@ -2879,17 +3163,17 @@ function stepBombs(dt) {
       b.mesh.position.set(b.x, b.y, 40);
       const hitGround = terrain.solid(b.x, b.y);
       if (b.fuse <= 0 || b.y < waterLevel || hitGround) {
-        bombs.splice(i, 1);
+        bombs.splice(bombs.indexOf(b), 1);
         dispose(b.mesh);
         if (b.y > waterLevel) explode(b.x, b.y, b.kind, b.owner);
       }
     } else if (b.fuse <= 0) {
-      bombs.splice(i, 1);
+      bombs.splice(bombs.indexOf(b), 1);
       dispose(b.mesh);
       explode(b.x, b.y, b.kind, b.owner);
     }
-  }
 }
+
 function markNativePickupAction(w = worms[current]) {
   if (!w) return;
   // 004D995F/004D9969 (same input block as 0x42F): the arrow and the
@@ -4934,6 +5218,10 @@ function injure(w, damage, direction = 0, native = false) {
   }
   updateUI();
 }
+function removeMineTask(mine) {
+  const index = mines.indexOf(mine);
+  if (index >= 0) removeMine(index);
+}
 function removeMine(index) {
   const mine = mines[index];
   nativeRenderOrder.release(mine.nativeOrderId);
@@ -4980,6 +5268,8 @@ function spawnNaturalMine(request) {
   if(request.settle)mine.nativeBody=nativeSettleMineBody(mine.nativeBody,payload,Math.floor(H-waterLevel),collide);
   mine.x=mine.nativeBody.x/65536;mine.y=H-mine.nativeBody.y/65536;
   mine.mesh.position.set(mine.x,mine.y,18);group.add(mine.mesh);
+  // Startup map objects are world children (004EAAD0), not group 25 tasks.
+  mine.nativeMapObject=true;
   registerLiveMine(mine,0);
 }
 function spawnStrikeMine(payload) {
@@ -5306,9 +5596,9 @@ function spawnAirstrike(x, y, kind = "airstrike", direction = Number($("#strike-
   // 004DF518: the carrier record supplies one queued cue at priority8.
   if (strike.sound) queueGameSound([strike.sound, 8, 65536, 65536, 0]);
 }
-function stepAirstrikes() {
-  for (let i=airstrikes.length-1; i>=0; i--) {
-    const strike=airstrikes[i], result=stepNativeAirstrike(strike,H);
+function stepAirstrike(strike) {
+    if (!airstrikes.includes(strike)) return;
+    const result=stepNativeAirstrike(strike,H);
     for (const call of result.calls) {
       if (call.operation === "camera") nativeCamera.offer(...call.request);
     }
@@ -5328,9 +5618,8 @@ function stepAirstrikes() {
     }
     if(result.removed) {
       if(strike.mesh) dispose(strike.mesh);
-      airstrikes.splice(i,1);
+      airstrikes.splice(airstrikes.indexOf(strike),1);
     }
-  }
 }
 
 function placeDynamite() {
@@ -8198,281 +8487,25 @@ function stepFrame(dt) {
   // the global group 25 (weapon projectiles, strikes, crates, weapon mines)
   // and the startup map objects run before the team controllers and their
   // worms; graves follow their team and flames (group 23) come after.
-  if (projectile?.nativeDragonBall) stepDragonBall();
-  else if (projectile?.nativeArrow) stepArrow();
-  else if (projectile) {
-    const p = projectile;
-    if (sound && p.nativeTimer?.loopSound && !p.nativeFusePlayback) {
-      audio ??= new (window.AudioContext || window.webkitAudioContext)();
-      audio.resume();
-      p.nativeFusePlayback = playNativeProjectileFuse(audio, p.nativeFuseSound);
-    }
-    let nativeContact = null;
-    const ox = p.x,
-      oy = p.y;
-    if (!p.stuck && p.sleeping && !terrain.solid(p.x, p.y - 4))
-      p.sleeping = false;
-    if (!p.sleeping && !p.stuck) {
-      if (p.nativeBody && sheepUnit(p)?.phase === 1) {
-        nativeContact = stepSheepFlight(p);
-      } else if (p.nativeBody) {
-        nativeContact = stepNativeProjectile(p, { ...projectilePhysicsEnvironment(p),
-          moved: p.nativeMovedFrame === matchRandom.frame }, projectileCollide(p));
-        stepWalkingUnit(p);
-        stepProjectileGas(p);
-        stepMoleBurrow(p);
-        applyProjectileContactBlasts(p, nativeContact.events);
-        if (sound && nativeContact.sounds.length) {
-          audio ??= new (window.AudioContext || window.webkitAudioContext)();
-          audio.resume();
-          for (const event of nativeContact.sounds)
-            nativeSoundQueue.enqueue(event);
-        }
-        if (sound) for (const event of nativeContact.events) {
-          if (event.operation !== "sound") continue;
-          audio ??= new (window.AudioContext || window.webkitAudioContext)();
-          audio.resume();
-          if (event.timer) nativeSoundQueue.enqueue(event.request);
-          else p.nativeContactPlayback = playNativeProjectileContactSound(audio, event.request, p.nativeContactPlayback);
-        }
-      } else integrate(p, dt, WEAPONS[p.kind].wind ? wind : 0, gravityScale);
-    }
-    p.age += dt;
-    emitProjectileTrail(p);
-    if (
-      !p.nativeBody && WEAPONS[p.kind].timed &&
-      p.fuse - p.age < 1.5 &&
-      Math.floor(p.age * 4) !== Math.floor((p.age - dt) * 4)
-    )
-      sfx("fuse");
-    let hit = p.blocked;
-    p.blocked = false;
-    let hitWorm = nativeContact?.hit >= 2 ? worms[nativeContact.hit - 2] : null;
-    hit ||= Boolean(nativeContact?.hit);
-    if (!hit && !p.nativeBody) {
-      const contact = sweepProjectile({ x: ox, y: oy }, p, (x, y) => {
-        if (terrain.solid(x, y)) return 1;
-        const index = worms.findIndex(
-          (w, i) =>
-            w.hp > 0 && (i !== p.owner || p.age > 0.25) && hitsWorm(w, x, y, 3),
-        );
-        return index < 0 ? 0 : index + 2;
-      });
-      p.x = contact.x;
-      p.y = contact.y;
-      hit = Boolean(contact.hit);
-      if (contact.hit >= 2) hitWorm = worms[contact.hit - 2];
-    }
-    let boom =
-      (p.nativeBody ? Boolean(nativeContact?.detonate) : (!WEAPONS[p.kind].timed && hit)) ||
-      (!p.nativeBody && WEAPONS[p.kind].timed && p.age >= p.fuse);
-    if (hit && WEAPONS[p.kind].bounces && !p.nativeBody) {
-      const victim =
-        hitWorm ??
-        worms.find(
-          (w, i) =>
-            w.hp > 0 &&
-            (i !== p.owner || p.age > 0.25) &&
-            hitsWorm(w, p.x, p.y, 3),
-        );
-      let n = victim
-        ? { x: p.x - victim.x, y: p.y - victim.y - 17 }
-        : terrainNormal(terrain, p.x, p.y, p.vx, p.vy);
-      const l = Math.hypot(n.x, n.y) || 1;
-      n = { x: n.x / l, y: n.y / l };
-      if (Math.hypot(p.vx, p.vy) > 30) sfx("bounce");
-      reflectVelocity(p, n, p.bounce);
-      p.x = ox + n.x * 0.3;
-      p.y = oy + n.y * 0.3;
-      if (n.y > 0.5 && Math.hypot(p.vx, p.vy) < 16) {
-        p.vx = 0;
-        p.vy = 0;
-        p.sleeping = true;
-      }
-    }
-    p.mesh.position.set(p.x, p.y, 40);
-    if (lastShot) {
-      const lastPoint = lastShot.points[lastShot.points.length - 1];
-      if (!lastPoint || Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y) > 6)
-        lastShot.points.push({ x: p.x, y: p.y });
-    }
-    if (p.sheep?.phase === 1 && renderSheepFlight(p)) {
-      // 004E27F0 mode3 flight art (spsheep/aquashp, rotated by heading).
-    } else if (p.sheep && updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age,
-        p.y < waterLevel, false, p.nativeRender)) {
-      p.mesh.scale.x = Math.abs(p.mesh.scale.x) * (p.sheep.direction < 0 ? 1 : -1);
-      p.mesh.position.y = p.y - p.sheepDrawOffset;
-    } else if (
-      !updateOriginalProjectile(
-        p.mesh,
-        p.kind,
-        p.vx,
-        p.vy,
-        p.age,
-        p.y < waterLevel,
-        Boolean(p.nativeGuidance?.initialized),
-        p.nativeRender,
-      )
-    )
-      p.mesh.rotation.z =
-        p.kind === "rocket" ? Math.atan2(p.vy, p.vx) : p.age * 5;
-
-    if (p.nativeBody) updateNativeProjectileAudio(sound ? audio : null, p);
-    if (!p.nativeTimer?.loopSound) {
-      p.nativeFusePlayback?.stop();
-      p.nativeFusePlayback = null;
-    }
-    if (
-      boom ||
-      (p.nativeBody ? p.nativeRemoved : (
-        p.y < waterLevel || p.x < -50 || p.x > W + 50 || p.age > 12
-      ))
-    ) {
-      if (boom && p.y > waterLevel) {
-        explodeProjectile(p);
-      }
-      stopProjectileSound(p);
-      releaseProjectileMesh(p.mesh);
-      projectile = null;
-      phase = "settle";
-      shotWait = 0;
-      updateUI();
-    }
-  }
-  stepAirstrikes();
-  stepBombs(dt);
-  const crateCameraRequests = [];
-  let cratesBusy = false;
-  for (const crate of [...crates]) {
-    const wasFalling = crate.falling;
-    let detonate = false;
-    const result = stepNativeCrateBody(crate.nativeBody, { ...objectPhysicsEnvironment(crate), moved: true }, {
-      ...objectPhysicsInterfaces(crate),
-      camera: request => crateCameraRequests.push(request), busy: () => { cratesBusy = true; },
-      delete: () => {},
-      detonate: () => { detonate = true; },
-      visualRandom: () => matchRandom.visualUint(),
-      bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
-    });
-    crate.nativeBody = result.body;
-    crate.x = result.body.x / 65536;
-    crate.y = H - result.body.y / 65536;
-    crate.vy = -result.body.vy / 65536 * 50;
-    crate.falling = !!nativeBodyAwake(result.body);
-    crate.mesh.position.set(crate.x, crate.y, 18);
-    if (result.deleted) {
-      if (detonate) detonateNativeCrate(crate);
-      nativeRenderOrder.release(crate.nativeOrderId);
-      dispose(crate.mesh);
-      crates.splice(crates.indexOf(crate), 1);
-      missionCrateRemoved(crate, detonate ? "destroyed" : "lost");
-    } else if (wasFalling && !crate.falling) announce("SUPPLY CRATE LANDED");
-  }
+  // Group 25 runs first; like 004B26F0 it re-reads its list, so tasks
+  // created during it (strike missiles, fragments) run this frame too.
+  const crateActivity = { camera: [], busy: false };
   const mineCameraRequests = [];
-  for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
-    const mine = mines[i];
-    const proximity = (radius) => {
-      const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
-        x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
-        type: nativeWormCollisionType(nativeWormState(w)),
-      }));
-      return nativeMineProximity({
-        x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), mask: NATIVE_MINE_MASK,
-      }, radius, candidates) >= 0;
-    };
-    const result = nativeMineTimer(mine.nativeTimer, {
-      vx: mine.nativeBody.vx, vy: mine.nativeBody.vy, awake: nativeBodyAwake(mine.nativeBody), submerged: mine.nativeBody.submerged,
-      frame: matchRandom.frame, friction: matchFriction,
-    }, proximity);
-    mine.nativeTimer = result.body;
-    mine.arm = result.body.arm / 1000;
-    for (const call of result.calls) {
-      if (call.operation === "friction") mine.nativeBody.tangent = call.request[0];
-      if (call.operation === "complex") mine.nativeBody.complex = call.request[0];
-    }
-    if (sound) for (const call of result.calls) {
-      if (call.operation !== "sound") continue;
-      audio ??= new (window.AudioContext || window.webkitAudioContext)();
-      audio.resume();
-      nativeSoundQueue.enqueue(call.request);
-    }
-    if (!result.expired) {
-      if ((mine.nativeBody.y >> 16) >= nativeProjectileDepth(Math.floor(H - waterLevel))) {
-        removeMine(i);
-        continue;
-      }
-      const cameraRequest = nativeMineCameraRequest(mine.nativeBody, mine.nativeTimer);
-      if (cameraRequest) {
-        nativeRenderOrder.promote(mine.nativeOrderId);
-        mineCameraRequests.push(cameraRequest);
-      }
-      const water = nativeMineWater({
-        ...mine.nativeWater, flags: mine.nativeBody.flags, forceBlast: mine.nativeTimer.forceBlast,
-      }, {
-        ...mine.nativeBody, awake: nativeBodyAwake(mine.nativeBody),
-      }, () => matchRandom.visualUint());
-      const { flags, forceBlast, ...waterState } = water.body;
-      mine.nativeWater = waterState;
-      mine.nativeBody.flags = flags;
-      mine.nativeTimer.forceBlast = forceBlast;
-      for (const call of water.calls) {
-        if (call.operation === "bubble") {
-          const [x, y, , , size] = call.request;
-          spawnWaterBubble(x / 65536, H - y / 65536, 0, size);
-        } else if (call.operation === "sound" && sound) {
-          audio ??= new (window.AudioContext || window.webkitAudioContext)();
-          audio.resume();
-          nativeSoundQueue.enqueue(call.request);
-        }
-      }
-      for (const call of nativeMineStateEvents(mine.nativeBody, mine.nativeTimer.damage)) {
-        if (call.operation === "blast") explode(mine.x, mine.y, "mine", mine.owner, call.request);
-        else if (call.operation === "delete") {
-          removeMine(i);
-        }
-      }
-      continue;
-    }
-    const expiry = nativeMineExpiry(mine.nativeTimer, {
-      x: Math.round(mine.x * 65536), y: Math.round((H - mine.y) * 65536), dudsEnabled: true,
-    }, mineDudPool, {
-      logic: () => matchRandom.logicUint(), visual: () => matchRandom.visualUint(), proximity,
-    });
-    mine.nativeTimer = expiry.body;
-    for (const call of expiry.calls) {
-      if (call.operation === "blast") explode(mine.x, mine.y, "mine", mine.owner, call.request);
-      else if (call.operation === "smoke") spawnOriginalSmoke([call.request]);
-      else if (call.operation === "sound" && sound) {
-        audio ??= new (window.AudioContext || window.webkitAudioContext)();
-        audio.resume();
-        nativeSoundQueue.enqueue(call.request);
-      } else if (call.operation === "delete") {
-        removeMine(i);
-      }
-    }
-  }
   const barrelActivity = { camera: [], busy: false };
-  for (const barrel of [...hazards]) {
-    let detonate = false;
-    const result = stepNativeBarrelBody(barrel.nativeBody, { ...objectPhysicsEnvironment(barrel), moved: true }, {
-      ...objectPhysicsInterfaces(barrel),
-      camera: request => barrelActivity.camera.push(request), busy: () => { barrelActivity.busy = true; },
-      promote: () => nativeRenderOrder.promote(barrel.nativeOrderId),
-      delete: () => {},
-      detonate: () => { detonate = true; },
-      visualRandom: () => matchRandom.visualUint(),
-      bubble: ([x, y, , , size]) => spawnWaterBubble(x / 65536, H - y / 65536, 0, size),
-    });
-    barrel.nativeBody = result.body;
-    barrel.x = result.body.x / 65536; barrel.y = H - result.body.y / 65536;
-    if (result.deleted) {
-      hazards.splice(hazards.indexOf(barrel), 1);
-      nativeRenderOrder.release(barrel.nativeOrderId);
-      barrel.impactPlayback?.stop();
-      dispose(barrel.mesh);
-      if (detonate) detonateNativeBarrel(barrel);
-    }
-  }
+  runTaskGroup(globalTaskGroup, globalGroupMembers, (task) => {
+    if (task === projectile) stepActiveProjectileLogic(dt);
+    else if (bombs.includes(task)) stepBomb(task, dt);
+    else if (airstrikes.includes(task)) stepAirstrike(task);
+    else if (crates.includes(task)) stepCrateLogic(task, crateActivity);
+    else if (mines.includes(task)) stepMineLogic(task, mineCameraRequests);
+  });
+  // Startup map objects (world children after group 25).
+  runTaskGroup(mapObjectTasks, mapObjectMembers, (task) => {
+    if (mines.includes(task)) stepMineLogic(task, mineCameraRequests);
+    else if (hazards.includes(task)) stepBarrelLogic(task, barrelActivity);
+  });
+  const crateCameraRequests = crateActivity.camera;
+  const cratesBusy = crateActivity.busy;
   for (const w of worms) {
     stepOriginalSight(
       w,
