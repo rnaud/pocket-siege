@@ -71,7 +71,8 @@ test("released units walk at different speeds", async ({ page }) => {
 
 test("super sheep steers horizontally while airborne", async ({ page }) => {
   await startMatch(page);
-  const y = await page.evaluate(() => window.siege.getState().waterLevel + 100);
+  // Open sky above the highest worm, clear of the landscape.
+  const y = await page.evaluate(() => Math.max(...window.siege.getState().worms.map((w) => w.y)) + 120);
   await page.evaluate((y) => window.siege.debug.spawnUnitAt("supersheep", 600, y), y);
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(30));
   const x = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);

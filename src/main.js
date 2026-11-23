@@ -1568,8 +1568,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     cameraZoom = 1;
     cameraSnap = true; manualCamera = null;
   }
-  // Scenario land.dat files carry Landgen's default0% water.
-  if (authored && currentScenario) waterLevel = nativeScenarioWaterLevel(H);
+  // Original image maps reach LANDGEN through /mission (scenarios) or
+  // /custom (imported images in ordinary games); neither command string
+  // (0053E5F2, 0053E823) passes /water, so land.dat carries 0% water.
+  if (authored) waterLevel = nativeScenarioWaterLevel(H);
   // The mesh keeps its own surface level; sync it or it still draws the
   // default 80-row sea over the scenario's bottom-edge waterline.
   water.userData.setLevel?.(waterLevel);

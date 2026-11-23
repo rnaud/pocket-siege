@@ -1,4 +1,5 @@
 import { test, expect } from "./helpers/shared-page.js";
+import { startMatch } from "./helpers/match.js";
 import missionNames from "../src/armageddon/mission-names.json" with { type: "json" };
 import mapCatalog from "../src/armageddon/map-catalog.json" with { type: "json" };
 import { resolveScenarioMatch } from "../src/armageddon/scenario-match.js";
@@ -111,6 +112,12 @@ test("scenario waterline follows Landgen's default water percentage", { tag: "@l
   expect(nativeInitialWaterY(0)).toBe(696);
   expect(nativeInitialWaterY(50)).toBe(348);
   expect(nativeScenarioWaterLevel(696)).toBe(0);
+});
+
+test("an ordinary match on an original image map starts with the sea at the bottom edge", async ({ page }) => {
+  // WA builds /custom and /mission LANDGEN commands without /water.
+  await startMatch(page, { map: "original:mission/mission6.img", seed: 3 });
+  expect(await page.evaluate(() => window.siege.getState().waterLevel)).toBe(0);
 });
 
 test("repeated WAM keys keep their first profile value", { tag: "@logic" }, () => {
