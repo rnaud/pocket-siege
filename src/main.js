@@ -5483,7 +5483,7 @@ function stepDragonBall() {
 // 004FCB20 kind 1 mode 4: the launch packet goes to the arrow constructor
 // 00502E70 (src/armageddon/longbow.js); it flies straight at 20 px a frame.
 function fireLongbow(prepared = false) {
-  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "longbow") <= 0) return;
+  if ((!prepared && !canAct()) || (!shotgunRemaining && availableAmmo(ammo[team], "longbow") <= 0)) return;
   const w = worms[current];
   if (!prepared && beginWeaponPreparation(w, "longbow", angle)) {
     pendingFire = { worm: w, angle, kind: "longbow", stage: "prepare" };
@@ -5494,7 +5494,14 @@ function fireLongbow(prepared = false) {
   const launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint());
   const [vx, vy] = nativeLaunchVelocity(config.record, launch.vx, launch.vy, 65536);
   const packet = [w.team + 1, current + 1, launch.x, launch.y, vx, vy, 0, 0, 0, 0, 0];
-  spendSpecial("longbow"); shotCount++; recordReactionWeaponUse("longbow");
+  // Record +0x54: shots per use (2). Ammo goes on the first; the worm keeps
+  // control between arrows (the shared repeat counter used by the shotgun).
+  if (!shotgunRemaining) {
+    ammo[team].longbow = spendAmmo(ammo[team].longbow);
+    shotgunRemaining = config.record["0x54"] | 0;
+  }
+  shotgunRemaining = Math.max(0, shotgunRemaining - 1);
+  shotCount++; recordReactionWeaponUse("longbow");
   startOriginalRecoil(w, "longbow", angle, matchRandom.frame);
   const p = { kind: "longbow", owner: current, age: 0, x: launch.x / 65536, y: H - launch.y / 65536,
     vx: vx / 65536 * 50, vy: -vy / 65536 * 50, mesh: projectileMesh("longbow") };
@@ -5502,7 +5509,7 @@ function fireLongbow(prepared = false) {
   group.add(p.mesh);
   projectile = p;
   lastShot = { kind: "longbow", shooter: w.name, points: [{ x: p.x, y: p.y }], impact: null };
-  phase = "flight"; requestNativeRetreat(); shotWait = 0;
+  phase = "flight"; if (!shotgunRemaining) requestNativeRetreat(); shotWait = 0;
   move = aimInput = 0; charging = false; chargeSource = null;
   const release = nativeLaunchAudio(config.record, { loop: 0, burst: 0, ordinal: 0, flag: 0, team: w.team });
   if (sound) {
@@ -5519,7 +5526,7 @@ function fireLongbow(prepared = false) {
   w.nativeLaunching = false;
   p.nativeArrow = { body: created.body, motion: { angle: 0, angularVelocity: 0, contact: 0, moving: 0 } };
   syncArrow(p);
-  $("#status").textContent = "Arrow away. Retreat!";
+  $("#status").textContent = shotgunRemaining ? "Arrow away. One more shot." : "Arrow away. Retreat!";
   if (created.removed) finishArrow(p);
   updateUI();
 }
@@ -5589,6 +5596,14 @@ function syncArrow(p) {
 function finishArrow(p) {
   releaseProjectileMesh(p.mesh);
   if (projectile === p) projectile = null;
+  const w = worms[p.owner];
+  if (shotgunRemaining && w === worms[current] && w.hp > 0 && !w.knocked) {
+    phase = "aim"; wormLocked = false; shotWait = 0;
+    $("#status").textContent = "One shot left. Move or adjust your aim, then fire again.";
+    updateSliders(); updateUI();
+    return;
+  }
+  shotgunRemaining = 0;
   phase = "settle"; shotWait = 0; updateUI();
 }
 function stepArrow() {

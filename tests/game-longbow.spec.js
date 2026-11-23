@@ -70,3 +70,36 @@ test("longbow arrow flies along its aim, hits a worm or sticks in landscape", as
   expect(wall.stuck).toEqual([true, true]);
   expect(errors).toEqual([]);
 });
+
+test("longbow fires two arrows per use, as record +0x54 allows", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    const debug = window.siege.debug;
+    debug.advanceReplayFrames(30);
+    debug.setAmmo(0, "longbow", 9);
+    debug.setWeapon("longbow");
+    const key = (type) => window.dispatchEvent(new KeyboardEvent(type, { key: " ", code: "Space", bubbles: true }));
+    const shoot = () => {
+      key("keydown");
+      let seen = false;
+      for (let i = 0; i < 400; i++) {
+        debug.advanceReplayFrames(1);
+        const s = window.siege.getState();
+        if (s.projectile?.kind === "longbow") seen = true;
+        else if (seen) break;
+        if (i === 3) key("keyup");
+      }
+      key("keyup");
+      debug.advanceReplayFrames(2);
+      const s = window.siege.getState();
+      return { phase: s.phase, ammo: s.ammo[0].longbow, team: s.team, retreat: s.retreat > 0 };
+    };
+    const team = window.siege.getState().team;
+    return { team, first: shoot(), second: shoot() };
+  });
+  // After the first arrow the worm aims again with one use spent.
+  expect(result.first).toMatchObject({ phase: "aim", ammo: 8, team: result.team, retreat: false });
+  // The second arrow uses no more ammo and starts the retreat.
+  expect(result.second.ammo).toBe(8);
+  expect(result.second.phase === "aim" && result.second.team === result.team && !result.second.retreat).toBe(false);
+});
