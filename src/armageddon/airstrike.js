@@ -47,3 +47,21 @@ export function nativeAirstrikeTick(input, config, payload) {
   calls.push({ operation: "update" });
   return { body, calls };
 }
+
+// 004DF53C..004DF587: a carrier record without a plane sprite (+0x70 = 0,
+// e.g. Donkey and MB Bomb) releases every payload at once (004DF690) from
+// y = -208 px, centred on the target and spaced by the record, then deletes.
+export function nativeAirstrikeImmediate(config, payload) {
+  const calls = [];
+  const half = Math.trunc((Math.imul(config.count, config.spacing) << 16) / 2);
+  for (let i = 0; i < config.count; i++) {
+    const child = [...payload];
+    child[2] = (((Math.imul(i, config.spacing) << 16) - half) + config.targetX) | 0;
+    child[3] = -0xd00000;
+    child[4] = Math.trunc(Math.imul(config.direction, config.speed) / 25);
+    child[5] = 0; child[8] = 0;
+    calls.push({ operation: config.kind === 0 ? "mine" : "missile", payload: child });
+  }
+  calls.push({ operation: "delete" });
+  return { calls };
+}

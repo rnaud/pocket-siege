@@ -5,7 +5,7 @@ import { nativeProjectileDetonation } from "./projectile-detonation.js";
 import { nativeProjectileFragments } from "./projectile-fragments.js";
 import { nativeProjectilePlacement } from "./projectile-placement.js";
 import { nativeWormState } from "./worm-collision-type.js";
-import { nativeAirstrikeInitial, nativeAirstrikeTick } from "./airstrike.js";
+import { nativeAirstrikeInitial, nativeAirstrikeTick, nativeAirstrikeImmediate } from "./airstrike.js";
 import { nativeProjectileLifetime, nativeProjectileDepth } from "./projectile-lifetime.js";
 import { nativeProjectileArt, nativeProjectileAnimationRate, nativeProjectileAnimationTick } from "./projectile-art.js";
 import { nativeHomingSteer, nativeHomingSchedule, nativeHomingAvoid } from "./homing.js";
@@ -332,7 +332,8 @@ export function createNativeAirstrike(x, y, direction, owner, height, gravitySca
 }
 
 export function stepNativeAirstrike(strike, height) {
-  const result = nativeAirstrikeTick(strike.body, strike.config, strike.payload);
+  const result = strike.sprite ? nativeAirstrikeTick(strike.body, strike.config, strike.payload)
+    : { body: strike.body, ...nativeAirstrikeImmediate(strike.config, strike.payload) };
   strike.body = result.body;
   const mines = result.calls.filter(c => c.operation === "mine").map(({payload}) => ({
     kind: "minestrike", owner: strike.owner,

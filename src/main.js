@@ -2603,6 +2603,7 @@ function stepBombs(dt) {
       stepMoleBurrow(b);
       b.age += dt;
       updateNativeProjectileAudio(sound ? audio : null, b);
+      applyProjectileContactBlasts(b, result.events);
       if (!b.nativeTimer.loopSound || result.removed || result.detonate) {
         b.nativeFusePlayback?.stop();
         b.nativeFusePlayback = null;
@@ -5870,6 +5871,13 @@ function spawnDirt([x, y, vx, vy]) {
   particles.push({ mesh, size: 1.5, x: x / 65536, y: H - y / 65536,
     vx: vx / 65536 * 50, vy: -vy / 65536 * 50, life: 0.6, max: 0.6, age: 0 });
 }
+// 004E2240: a mode-2 projectile touching on a selected side sends a 0x404
+// blast (004EF070) and keeps going: Donkey, Carpet Bomb and Sheep Strike.
+function applyProjectileContactBlasts(p, events) {
+  for (const event of events ?? [])
+    if (event.operation === "effect")
+      explode(event.request[1] / 65536, H - event.request[2] / 65536, p.nativeWeaponKind ?? p.kind, p.owner, event.request);
+}
 // 004E3870 after each projectile frame.
 function stepProjectileGas(p) {
   // 004E48ED: only mode-3 projectiles run the gas routine.
@@ -8406,6 +8414,7 @@ function stepFrame(dt) {
         stepWalkingUnit(p);
         stepProjectileGas(p);
         stepMoleBurrow(p);
+        applyProjectileContactBlasts(p, nativeContact.events);
         if (sound && nativeContact.sounds.length) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();

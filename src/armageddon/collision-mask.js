@@ -6,6 +6,10 @@ export const ORIGINAL_MASK_REGIONS = {
   4: [46, 36, 65, 54, 55, 45],
   5: [0, 32, 24, 61, 12, 51],
   6: [0, 0, 1, 1, 0, 0],
+  // 004A5781 scene slots 0x3C0 and 0x3C4 (ids are slot index + 1); shape 8
+  // is the Donkey's.
+  7: [45, 7, 46, 8, 45, 7],
+  8: [371, 9, 472, 27, 418, 3],
   9: [485, 7, 505, 38, 495, 22],
 };
 
