@@ -2592,6 +2592,11 @@ function wormFlightEnvironment(w) {
   return { ...wormBodyEnvironment(w, 0), wind,
     horizontal: w === worms[current] ? move : 0, vertical: w === worms[current] ? aimInput : 0 };
 }
+// The Fire Punch flight probes terrain only (bodyBlocked), as before.
+function firePunchEnvironment(w) {
+  return { height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: physicsSlot(w),
+    random: () => matchRandom.logicUint() };
+}
 function wormBodyCollide(w) {
   return (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H);
 }
@@ -2602,7 +2607,8 @@ function wormPhysicsKind(w) {
   if (!wormTaskLive(w) || w.drowned || w.originalDeath) return null;
   if (w === worms[current] && jetpack.active) return jetpack.owner === current && w.nativeFlight ? "jetpack" : null;
   if (w === worms[current] && rope.attached) return rope.body?.constrained ? "rope" : null;
-  if (w.originalBlowtorch || w.originalFirePunch || w.originalRecovery) return null;
+  if (w.originalBlowtorch || w.originalRecovery) return null;
+  if (w.originalFirePunch) return w.originalHurt || w.frozen || !w.nativeFlight ? null : "firepunch";
   if (w.originalDrill) return w.originalHurt || w.frozen ? null : "drill";
   if (w.originalHurt && !w.frozen) return "hurt";
   if (w.nativeFlight && !w.frozen) return w.originalParachute ? "parachute" : "flight";
@@ -2611,9 +2617,18 @@ function wormPhysicsKind(w) {
 }
 function stepWormPhysics(w, dt) {
   const kind = wormPhysicsKind(w);
-  if (!kind) return;
+  if (!kind) {
+    // 004CA320 on the resting body; the worm frame's 004DED81 check reads it.
+    if (wormRestsOnBody(w)) {
+      w.nativeStandingFalls = standingBodyMoves(w);
+      w.nativeStandingFrame = matchRandom.frame;
+    }
+    return;
+  }
   const physicsOnly = { physicsOnly: true };
   if (kind === "rope") stepRopePhysics(w);
+  else if (kind === "firepunch") stepNativeJumpFlight(w, { ...firePunchEnvironment(w), physicsOnly: true },
+    (x, y) => (bodyBlocked(terrain, x, y) ? 1 : 0));
   else if (kind === "jetpack") stepNativeJetpackFlight(w, { ...jetpackEnvironment(w, jetpackFrameThrust(dt)), ...physicsOnly }, wormBodyCollide(w));
   else if (kind === "drill") stepNativeDrillFlight(w, { ...wormBodyEnvironment(w, 0), ...physicsOnly }, wormBodyCollide(w));
   else if (kind === "hurt" || kind === "frozen") stepNativeHurtFlight(w, { ...wormBodyEnvironment(w, nativeQuake()), ...physicsOnly }, wormBodyCollide(w));
@@ -2692,6 +2707,17 @@ function physicsSlot(body) {
   return physicsList.slot(body) || physicsList.append(body);
 }
 function wormBodyStartsFalling(w) {
+  if (w.nativeStandingFrame === matchRandom.frame) return w.nativeStandingFalls;
+  return standingBodyMoves(w);
+}
+// Standing and recovering worms whose resting body the pass ticks.
+function wormRestsOnBody(w) {
+  if (!wormTaskLive(w) || w.drowned || w.frozen || w.originalHurt || w.nativeFlight) return false;
+  if (w.originalBlowtorch || w.originalDrill || w.originalFirePunch) return false;
+  if (w === worms[current] && (jetpack.active || rope.attached)) return false;
+  return Boolean(w.originalRecovery) || (w.ground && !w.knocked);
+}
+function standingBodyMoves(w) {
   const support = nativeStandingSupport(w, { height: H, frame: matchRandom.frame,
     index: physicsSlot(w), gravity: Math.round(0x3d70 * gravityScale),
     // 004D8030 suspends the dying worm's body (state 0x84).
@@ -8659,10 +8685,8 @@ function stepFrame(dt) {
       continue;
     }
     if (w.originalFirePunch && !w.originalHurt && !w.frozen) {
-      const result = stepNativeFirePunchFlight(w, {
-        height:H, waterLevel, gravityScale, frame:matchRandom.frame,
-        random:()=>matchRandom.logicUint(),
-      }, (x,y)=>bodyBlocked(terrain,x,y)?1:0,
+      const result = stepNativeFirePunchFlight(w, { ...firePunchEnvironment(w),
+        moved: w.nativeMovedFrame === matchRandom.frame }, (x,y)=>bodyBlocked(terrain,x,y)?1:0,
       w.originalFirePunch.player.current.id, nativeHitscanWeapon("firepunch").record);
       updateOriginalFirePunch(w,result.calls);
       dispatchFirePunchCalls(w,result.calls);
