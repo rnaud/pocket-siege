@@ -23,6 +23,16 @@ function placementMask(mask) {
   return result;
 }
 
+// A worm's body stays registered until its task is deleted: the death blast,
+// the end of drowning or a 0x89 delete. A worm at 0 health waiting for its
+// death turn still collides. Only 004FCB20 clears +0x48, disabling the
+// firing worm while it builds the shot.
+export function nativeWormBodyEnabled(w) {
+  if (w.disabledRoster) return 0;
+  if (w.hp <= 0 && !w.deathPending && !(w.dying > 0)) return 0;
+  return Number(!w.nativeLaunching);
+}
+
 // Bridge live bodies to the original type-ordered registry.
 // Negative IDs identify non-worm bodies; terrain/worm IDs retain their host mapping.
 export class NativeCollisionScene {
@@ -121,8 +131,7 @@ export class NativeCollisionScene {
       }
       Object.assign(body, {
         x: fixed(w.x), y: fixed(this.height - w.y),
-        // 004FCB20 disables the firing worm (+0x48) while it builds the shot.
-        enabled: Number(w.hp > 0 && !w.nativeLaunching),
+        enabled: nativeWormBodyEnabled(w),
       });
     });
   }

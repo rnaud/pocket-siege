@@ -72,6 +72,18 @@ test("registry membership refresh and disabled worms preserve contact identities
   expect(nativeProjectileCollision(p, 20, 20, terrain, [second], height)).toBe(
     2,
   );
+  // A worm at 0 health keeps its body until its task is deleted.
+  const doomed = { x: 20, y: 20, hp: 0, deathPending: true };
+  // A fresh scene: registry rows keep registration order, not worm order.
+  const fresh = projectile(), field = { solid: () => false };
+  expect(nativeProjectileCollision(fresh, 20, 20, field, [doomed, second], height)).toBe(2);
+  doomed.deathPending = false;
+  doomed.dying = 0.5;
+  expect(nativeProjectileCollision(fresh, 20, 20, field, [doomed, second], height)).toBe(2);
+  doomed.dying = 0;
+  expect(nativeProjectileCollision(fresh, 20, 20, field, [doomed, second], height)).toBe(3);
+  second.nativeLaunching = true;
+  expect(nativeProjectileCollision(fresh, 20, 20, field, [doomed, second], height)).toBe(0);
 });
 
 test("projectile collision callbacks see the current body after the first sweep", { tag: "@logic" }, () => {
