@@ -123,3 +123,34 @@ test("Freeze protects its own squad, shows native ice and thaws without skipping
     ),
   ).toEqual([93, 93, 93]);
 });
+
+test("a frozen worm is moved by the shared body tick and stays frozen", async ({ page }) => {
+  const { startMatch } = await import("./helpers/match.js");
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    const debug = window.siege.debug;
+    debug.advanceReplayFrames(30);
+    const s0 = window.siege.getState();
+    const index = s0.worms.findIndex((w, i) => i !== s0.current && w.hp > 0);
+    debug.freezeWorm(index);
+    debug.advanceReplayFrames(2);
+    const w0 = window.siege.getState().worms[index];
+    // A blast just below it: 0x404 on state 0x88 adds the impulse, then the
+    // frozen receiver (004D97F0) clears the horizontal speed and skips damage.
+    debug.nativeBlastAt(w0.x + 6, w0.y - 14, 100, 50);
+    let maxRise = 0, maxShift = 0, states = new Set();
+    for (let i = 0; i < 200; i++) {
+      debug.advanceReplayFrames(1);
+      const w = window.siege.getState().worms[index];
+      maxRise = Math.max(maxRise, w.y - w0.y);
+      maxShift = Math.max(maxShift, Math.abs(w.x - w0.x));
+      states.add(w.nativeState);
+    }
+    const w = window.siege.getState().worms[index];
+    return { hp: [w0.hp, w.hp], frozen: w.frozen, states: [...states], maxRise, maxShift };
+  });
+  expect(result.hp[1]).toBe(result.hp[0]);
+  expect(result.states).toEqual([0x88]);
+  expect(result.maxRise).toBeGreaterThan(1);
+  expect(result.maxShift).toBeLessThan(1);
+});

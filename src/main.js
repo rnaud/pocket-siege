@@ -129,6 +129,7 @@ import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, pla
 import {
   stepNativeHurtFlight,
   nativeSchemeFallByte,
+  attachNativeFrozenBody,
   attachNativeFastFall,
   attachNativeDrowningFlight,
   stepNativeDrowningFlight,
@@ -2862,6 +2863,7 @@ function beginTurn() {
     if (w.hp > 0 && w.frozen > 0)
       dispatchWormEntryAudio(w, [{ operation: "sound", request: [25, 3, 65536, 65536, 0] }]);
     w.frozen = 0;
+    if (w.nativeHurtBody?.state === 0x88) w.nativeHurtBody = null;
   }
   // Native420 follows team activation and resets every worm infection latch.
   for (const w of worms) w.nativePoison = nativeWormPoisonTurnReset(w.nativePoison);
@@ -8214,8 +8216,18 @@ function stepFrame(dt) {
         }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
         dispatchNativeWormMotionEvents(w, { ...result,
           events: result.events.filter(call => call.target !== 0x7a) });
+      } else if (w.frozen) {
+        // State 0x88 runs the shared worm body tick like any other state.
+        if (w.nativeHurtBody?.state !== 0x88) attachNativeFrozenBody(w, H);
+        result = stepNativeHurtFlight(w, {
+          height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: worms.indexOf(w),
+          random: () => matchRandom.logicUint(), earthquake: nativeQuake(),
+          pickup: body => queryNativeWormPickup(w, body),
+          collisionBody: (hit) => nativeContactBody(hit),
+          updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
+        }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
+        dispatchNativeWormMotionEvents(w, result);
       } else {
-        if (w.frozen) w.nativeFlight = null;
         result = stepWorm(w, terrain, dt, gravityScale);
       }
     }
@@ -10564,6 +10576,7 @@ if (import.meta.env.DEV) {
     equipSlot(slot) { equipArsenalSlot(slot); },
     // Selects a host weapon as its inventory button does.
     setWeapon(kind) { setWeapon(kind); updateUI(); },
+    freezeWorm(index) { if (worms[index]) worms[index].frozen = 1; },
     // Native aim word (+0x260): 0 down, 0x8000 level, 0x10000 up.
     setNativeAim(aim) { setCpuAim(aim); updateUI(); },
     advanceReplayFrames(count=1) {

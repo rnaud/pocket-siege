@@ -67,6 +67,12 @@ export function applyNativeWormContact(worm, body) {
 
 // Constructor fields from 004F4000/004D5A40, entering hurt from ordinary
 // unrestrained state. Live collision dispatch supplies native terrain/worm IDs.
+// A frozen worm's body: the shared worm body in state 0x88.
+export function attachNativeFrozenBody(worm, height) {
+  worm.nativeHurtBody = createNativeWormBody(worm, height, 0x88, 0);
+  worm.nativeFlight = null;
+  return worm.nativeHurtBody;
+}
 export function attachNativeHurtFlight(worm, height) {
   const body = createNativeWormBody(worm, height, worm.originalHurt.state, worm.originalHurt.angle);
   worm.nativeHurtBody = body;
@@ -319,6 +325,9 @@ export function stepNativeHurtFlight(worm, environment, collide) {
   worm.facing = body.facing;
   worm.ground = body.state === 0x76 || body.state === 0x65;
   worm.knocked = body.state !== 0x73 && !worm.ground;
+  // Frozen (0x88) worms keep their state: 004DED36 only switches collision
+  // category 7/6 with the awake test while the shared body tick moves them.
+  if (body.state === 0x88) { worm.ground = !nativeBodyAwake(body); worm.knocked = false; }
   if (worm.originalHurt) {
     worm.originalHurt.angle = body.angle;
     worm.originalHurt.angularVelocity = body.angularVelocity;
