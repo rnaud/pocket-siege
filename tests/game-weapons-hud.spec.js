@@ -81,6 +81,8 @@ test("pixel HUD exposes aim and charge, W/S aim and walking keep fire stable", a
 for (const weapon of ["mortar", "sticky"])
   test(`${weapon} fires with its own impact behavior`, async ({ page }) => {
     await startMatch(page);
+    // Sticky is a browser-only weapon: original schemes give it no ammo.
+    await page.evaluate((weapon) => window.siege.debug.setAmmo(0, weapon, 2), weapon);
     await openArsenal(page);
     await page.locator(`[data-weapon="${weapon}"]`).click();
     await setAim(page, "-60");

@@ -120,3 +120,23 @@ test("earthquake shakes the island for eight seconds and throws worms", async ({
   expect(quake.moved).toBeGreaterThan(3);
   expect(quake.team).not.toBe(quake.before);
 });
+
+test("a second fire press splits a flying super banana, as fire mode 1 allows", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    window.siege.debug.advanceReplayFrames(30);
+    window.siege.debug.setAmmo(0, "superbanana", 9);
+    window.siege.debug.setWeapon("superbanana");
+    const key = (type) => window.dispatchEvent(new KeyboardEvent(type, { key: " ", code: "Space", bubbles: true }));
+    key("keydown"); window.siege.debug.advanceReplayFrames(25); key("keyup");
+    window.siege.debug.advanceReplayFrames(15);
+    const flying = window.siege.getState().projectile?.kind ?? null;
+    // 004E44A0 event 0x414: word 22 = 1 sets state 1, so it detonates now.
+    key("keydown"); window.siege.debug.advanceReplayFrames(2); key("keyup");
+    const s = window.siege.getState();
+    return { flying, kids: s.bombs.map((b) => b.nativeRepeat).sort(), projectile: s.projectile?.kind ?? null };
+  });
+  expect(result.flying).toBe("superbanana");
+  expect(result.projectile).toBeNull();
+  expect(result.kids).toEqual([1, 2, 3, 4, 5]);
+});

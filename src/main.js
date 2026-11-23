@@ -2387,6 +2387,9 @@ function applyOriginalSchemeLoadout(configured) {
   const count = value => value === -1 ? Infinity : value;
   loadouts.forEach(({ counts, delays }, index) => {
     for (const [kind, slot] of Object.entries(WEAPON_SLOTS)) ammo[index][kind] = count(counts[slot]);
+    // Weapons with no original slot (the browser-only Sticky bomb) are not
+    // part of any original scheme.
+    for (const kind of Object.keys(ammo[index])) if (!(kind in WEAPON_SLOTS)) ammo[index][kind] = 0;
     for (const [slot, kind] of Object.entries(NATIVE_UTILITY_SLOTS))
       if (kind in utilityAmmo[index]) utilityAmmo[index][kind] = count(counts[slot]);
     // Menu weapon delays still override the scheme's own delays.
@@ -5562,11 +5565,13 @@ function arrowInterfaces(p) {
       if (target) applyNativeHitPackets([target], [{ body: 0, packet }], p.owner);
       if (lastShot) lastShot.impact = { x: packet[1] / 65536, y: H - packet[2] / 65536, kind: "longbow" };
     },
+    // 004EDD10 still draws its random numbers, but no task in the original
+    // handles the 0x43F dirt messages it sends, so nothing is drawn.
     dirt: (x, y, direction, spread, distance) => {
-      for (const call of nativeDirtSpray(x, y, direction, spread, distance, {
+      nativeDirtSpray(x, y, direction, spread, distance, {
         color: (px, py) => (terrain.solid(px, H - py) ? 1 : 0),
         random: () => matchRandom.logicUint(),
-      })) spawnDirt(call.packet);
+      });
     },
     sound: (request) => queueGameSound(request),
     random: () => matchRandom.visualUint(),
@@ -5588,10 +5593,15 @@ function syncArrow(p) {
   const body = p.nativeArrow.body;
   p.x = body.x / 65536; p.y = H - body.y / 65536;
   p.vx = body.vx / 65536 * 50; p.vy = -body.vy / 65536 * 50;
+  // 00503840 (0x3EB) draws sprite 0x282 at the arrow's heading (+0x134),
+  // using its 004AAFD0 water-bank variant while submerged or at the surface.
+  const name = body.submerged || body.surface ? "water/arrow" : "arrow";
+  if (p.mesh.userData.originalSprite !== name) {
+    const mesh = createOriginalVisual(name);
+    if (mesh) { releaseProjectileMesh(p.mesh); p.mesh = mesh; group.add(mesh); }
+  }
   p.mesh.position.set(Math.round(p.x), Math.round(p.y), 40);
-  // 0x3EB draws sprite 0x282 at the arrow's heading (+0x134).
-  updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age, false, false,
-    { sprite: NATIVE_ARROW_SPRITE, progress: body.angle });
+  updateNativeSpriteVisual(p.mesh, name, body.angle);
 }
 function finishArrow(p) {
   releaseProjectileMesh(p.mesh);
@@ -5985,18 +5995,9 @@ function stepMoleBurrow(p) {
     } else if (call.operation === "velocity") {
       b.vx = call.x; b.vy = call.y; p.vx = call.x / 65536 * 50; p.vy = -call.y / 65536 * 50;
     } else if (call.operation === "physics") b.suspended = 0;
-    else if (call.operation === "dirt") spawnDirt(call.packet);
+    // "dirt" (0x43F) has no receiver in the original: nothing to draw.
   }
   if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
-}
-// Host stand-in for the 0x43F dirt receiver: a short-lived ballistic speck.
-function spawnDirt([x, y, vx, vy]) {
-  if (replaySimulation || particles.length > 400) return;
-  const mesh = new THREE.Mesh(debrisGeometry, debrisMaterials[0]);
-  mesh.position.set(x / 65536, H - y / 65536, 35);
-  group.add(mesh);
-  particles.push({ mesh, size: 1.5, x: x / 65536, y: H - y / 65536,
-    vx: vx / 65536 * 50, vy: -vy / 65536 * 50, life: 0.6, max: 0.6, age: 0 });
 }
 // 004E2240: a mode-2 projectile touching on a selected side sends a 0x404
 // blast (004EF070) and keeps going: Donkey, Carpet Bomb and Sheep Strike.
@@ -6432,6 +6433,12 @@ function sheepFire() {
   // including a launched unit's secondary child (Sheep Launcher).
   const armed = (p) => p && !p.nativeRemoved && sheepUnit(p) && p.sheepFireArmed &&
     worms[current]?.team + 1 === p.sheep.team;
+  // Any other fire-mode-1 projectile (word 22: Super Banana, the launched
+  // Sheep Launcher sheep) is set off by 004E44A0: 0x414 sets state 1 unless
+  // it is under water.
+  const plain = (q) => q && !q.nativeRemoved && q.nativeBody && !sheepUnit(q) &&
+    q.nativeWords?.[22] === 1 && !q.nativeBody.submerged && worms[q.owner]?.team === worms[current]?.team;
+  if (plain(projectile)) { projectile.nativeBody.state = 1; return true; }
   const p = armed(projectile) ? projectile : bombs.find(armed);
   if (!p) return false;
   const s = p.sheep;
@@ -6583,7 +6590,11 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
   } else if (!scenarioBlocksCarve(x, y, radius)) terrain.carve(x, y, radius);
   terrainDirty = true;
   explosions++;
-  hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
+  // Host-only flourishes (a hit-stop pause and extra debris) apply only to
+  // non-original explosions; native blasts keep the original's timing and
+  // 004EE020 debris alone.
+  const hostBlast = nativeStrength === null;
+  if (hostBlast) hitStop = Math.max(hitStop, reducedMotion ? 0 : 0.055);
   spawnExplosionArt(x, y, nativeStrength ?? Math.round(maxDamage));
   sfx("explosion");
   for (const fragment of nativePacket ? [] : fragments(kind)) {
@@ -6595,7 +6606,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
     barrel.nativeBody = nativeBarrelHit(barrel.nativeBody, 0x404, packet);
     if (barrel.nativeBody.state) barrel.hitOwner = ownerIndex;
   }
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < (hostBlast ? 46 : 0); i++) {
     const a = visualRandom() * Math.PI * 2,
       s = 40 + visualRandom() * 210,
       size = 2 + visualRandom() * 6;
@@ -6731,7 +6742,7 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
       updateRecordUI();
     }
   }
-  if (reports.length && !reducedMotion) hitStop = Math.max(hitStop, 0.085);
+  if (hostBlast && reports.length && !reducedMotion) hitStop = Math.max(hitStop, 0.085);
   $("#status").textContent = reports.length
     ? reports.join("   /   ")
     : "Terrain destroyed. No worms hit.";
