@@ -6384,7 +6384,12 @@ function applySheepCalls(p, result) {
       p.sheepLoops?.get(call.request[0])?.stop();
       p.sheepLoops?.delete(call.request[0]);
     } else if (call.operation === "particle") spawnNativeParticleRequest(call.request);
-    else if (call.operation === "waterEntry") sfx("splash");
+    // 004E2220 -> 004F4FE0: the shared water response queues the splash from
+    // the unit's own speed.
+    else if (call.operation === "waterEntry") {
+      const { sound: request } = nativeWaterSound({ ...p.nativeBody, vx: result.body.vx, vy: result.body.vy }, false);
+      if (request) queueGameSound(request);
+    }
   }
   const s = p.sheep;
   p.nativeBody.x = s.x; p.nativeBody.y = s.y;
