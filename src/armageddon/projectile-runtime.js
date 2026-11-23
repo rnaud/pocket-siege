@@ -1,3 +1,4 @@
+import { nativeSheepStrikeFlames } from "./flame-spread.js";
 import { nativeLaunchAudio } from "./launch-audio.js";
 import { nativeLaunch } from "./launch.js";
 import { nativePlacedFire, nativePlacedPower } from "./placed-fire.js";
@@ -421,6 +422,9 @@ export function stepNativeProjectile(
         const response = nativeProjectileContact(body, other.type, side, {
           random,
           effectRandom: (amount, variance) => nativeDamageVariation(amount, variance, random),
+          // 004E2F60 draws its flames before the blast strength (Sheep Strike).
+          specialEffect: ([x, y, count]) =>
+            events.push({ operation: "flames", records: nativeSheepStrikeFlames(x, y, count, random) }),
           probe: (x, y) => collide(x / 65536, height - y / 65536, body),
           respond: (incoming, contactSide) => {
             {

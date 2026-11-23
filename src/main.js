@@ -5718,7 +5718,7 @@ function fireFlameRound(w, config, launch, burst) {
     }
   }
   spawnNativeFlame([launch.x, launch.y, vx, vy, 0, 4, 1, record["0x80"] | 0, record["0x7c"] | 0,
-    record["0x78"] | 0, record["0x84"] | 0], w.team);
+    record["0x78"] | 0, record["0x84"] | 0], worms.indexOf(w));
   if (!burst.spent) {
     ammo[team].flamethrower = spendAmmo(ammo[team].flamethrower);
     burst.spent = true;
@@ -6001,9 +6001,12 @@ function spawnDirt([x, y, vx, vy]) {
 // 004E2240: a mode-2 projectile touching on a selected side sends a 0x404
 // blast (004EF070) and keeps going: Donkey, Carpet Bomb and Sheep Strike.
 function applyProjectileContactBlasts(p, events) {
-  for (const event of events ?? [])
+  for (const event of events ?? []) {
+    if (event.operation === "flames")
+      for (const record of event.records) spawnNativeFlame(record, p.owner ?? -1);
     if (event.operation === "effect")
       explode(event.request[1] / 65536, H - event.request[2] / 65536, p.nativeWeaponKind ?? p.kind, p.owner, event.request);
+  }
 }
 // 004E3870 after each projectile frame.
 function stepProjectileGas(p) {

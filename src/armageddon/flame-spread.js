@@ -37,3 +37,16 @@ export function registerNativeFlame(pool, body, frame, remove) {
   body.slot = slot;
   return slot;
 }
+
+// 004E2F60, a Sheep Strike payload's contact effect: `count` flames (004D3C50)
+// within ±8 px, two logic-random draws each, falling at 4 px a frame with the
+// record {.., 0, 8, 1, 5000, 100, 0, 0}. Returns the flame records.
+export function nativeSheepStrikeFlames(x, y, count, random) {
+  const flames = [];
+  for (let i = 0; i < count; i++) {
+    const dx = ((((random() >>> 0) & 0xffff00) >>> 8) - 0x8000) << 4;
+    const dy = ((((random() >>> 0) & 0xffff00) >>> 8) - 0x8000) << 4;
+    flames.push([(x + dx) | 0, (y + dy) | 0, 0, 0x40000, 0, 8, 1, 5000, 100, 0, 0]);
+  }
+  return flames;
+}

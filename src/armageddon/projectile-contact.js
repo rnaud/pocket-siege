@@ -64,8 +64,10 @@ export function nativeProjectileContact(input, otherType, side, environment) {
   calls.push({ operation: "respond", side });
   environment.respond?.(body, side);
   if (body.mode === 2 && selectedSide && body.effect) {
-    if (body.sprite === 0x2ab)
+    if (body.sprite === 0x2ab) {
       calls.push({ operation: "specialEffect", request: [body.x, body.y, 12] });
+      environment.specialEffect?.([body.x, body.y, 12]);
+    }
     calls.push({ operation: "effectRandom", request: [body.effect, body.effectRange] });
     const value = environment.effectRandom(body.effect, body.effectRange);
     calls.push({ operation: "effect", request: [1, body.x, body.y, body.effectKind, value, 0] });
