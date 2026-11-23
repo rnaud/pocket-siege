@@ -201,6 +201,8 @@ export function attachNativeProjectileBlock(p, height, block, nativePayload = nu
     [payload.owner, 0, payload.x, payload.y, payload.vx, payload.vy,
       0, 0, payload.repeat, payload.bounce, payload.timer];
   p.nativeTrail = { fields: selected.words.slice(8, 12), progress: 0 };
+  // Actor +0x2D4.. holds these 42 words (004E1830); unit routines read them.
+  p.nativeWords = selected.words;
   // 004E1830 copies the selected block to +0x2D4; word 35 is the 004E3870 gas
   // delay (+0x360) and word 36 its amount (+0x364).
   p.nativeGas = selected.words[35] ? { emitting: 0, delay: selected.words[35], amount: selected.words[36], sunk: false } : null;
@@ -224,6 +226,14 @@ export function attachNativeProjectileBlock(p, height, block, nativePayload = nu
     payload,
     96,
   );
+  // 004E1830 may replace the payload's motion (a mode-4 child jumps from
+  // 8 px higher); the host copy must follow, since frames rebuild from it.
+  if (selected.config.mode === 4) {
+    p.x = p.nativeBody.x / 65536;
+    p.y = height - p.nativeBody.y / 65536;
+    p.vx = (p.nativeBody.vx / 65536) * 50;
+    p.vy = (-p.nativeBody.vy / 65536) * 50;
+  }
   const words = selected.words;
   p.nativeFire = { count: block[47], delay: block[48], lifetime: block[49], persistent: block[50] };
   p.nativeDetonation = {

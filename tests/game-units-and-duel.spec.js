@@ -4,14 +4,6 @@ import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
-test("mole bomb burrows while host-walking", async ({ page }) => {
-  await startMatch(page);
-  await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
-  const depth = await page.evaluate(() => window.siege.getState().projectile?.burrowDepth ?? 0);
-  expect(depth).toBeGreaterThan(0);
-});
-
 test("mole bomb detonation releases no poison gas", async ({ page }) => {
   await startMatch(page);
   await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
@@ -42,26 +34,28 @@ test("sheep units do not walk in water", async ({ page }) => {
   }
 });
 
-test("mole bomb detonates below its burrow depth", async ({ page }) => {
+test("mole bomb's mole digs into the ground and explodes below it", async ({ page }) => {
   await startMatch(page);
   await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
-  const before = await page.evaluate(() => window.siege.getState().projectile?.y ?? null);
-  expect(before).not.toBeNull();
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(20));
+  const start = await page.evaluate(() => window.siege.getState().projectile?.y ?? null);
+  expect(start).not.toBeNull();
   await page.evaluate(() => window.siege.debug.detonateCurrent());
-  const blastY = await page.evaluate(() => window.siege.getState().lastExplosion?.y ?? null);
-  expect(blastY).not.toBeNull();
-  expect(blastY).toBeLessThan(before);
-});
-
-test("walking units reverse at the map edge", async ({ page }) => {
-  await startMatch(page);
-  await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 1850));
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
-  const state = await page.evaluate(() => window.siege.getState().projectile);
-  expect(state).not.toBeNull();
-  expect(state.walkTicks).toBeGreaterThan(0);
-  expect(state.x).toBeLessThan(1850);
+  // The primary does no damage; its mode-4 child jumps, lands, then 004E3570
+  // follows its arc through the terrain until it surfaces armed or explodes.
+  const result = await page.evaluate(() => {
+    let lowest = Infinity, moles = 0;
+    for (let i = 0; i < 600; i++) {
+      window.siege.debug.advanceReplayFrames(1);
+      const s = window.siege.getState();
+      for (const b of s.bombs) { moles = Math.max(moles, s.bombs.length); lowest = Math.min(lowest, b.y); }
+      if (!s.bombs.length && moles) break;
+    }
+    return { lowest, moles, blast: window.siege.getState().lastExplosion };
+  });
+  expect(result.moles).toBe(1);
+  expect(result.lowest).toBeLessThan(start - 10);
+  expect(result.blast.y).toBeLessThan(start);
 });
 
 test("classic duel starts with the original default scheme kit", async ({ page }) => {

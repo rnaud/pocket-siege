@@ -26,6 +26,7 @@ import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/
 import { nativeEarthquakeStart, nativeEarthquakeTick, nativeEarthquakeKick, nativeWormEarthquakeResponse } from "./armageddon/earthquake.js";
 import { nativeKamikazeStart, nativeKamikazeTick, nativeToolMaskHits } from "./armageddon/kamikaze.js";
 import { nativeProjectileGas } from "./armageddon/projectile-gas.js";
+import { nativeMoleBurrow } from "./armageddon/mole-burrow.js";
 import { nativeSuicideBomberStart, nativeSuicideBomberTick, nativeGasCloud, nativeGasCloudTick } from "./armageddon/suicide-bomber.js";
 import { nativeCameraShake, nativeCameraShakeDecay } from "./armageddon/camera-shake.js";
 import { nativePaletteDisplay } from "./armageddon/palette-material.js";
@@ -2597,7 +2598,9 @@ function stepBombs(dt) {
         collisionBody: hit => nativeContactBody(hit),
         updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
       }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
+      stepWalkingUnit(b);
       stepProjectileGas(b);
+      stepMoleBurrow(b);
       b.age += dt;
       updateNativeProjectileAudio(sound ? audio : null, b);
       if (!b.nativeTimer.loopSound || result.removed || result.detonate) {
@@ -5829,9 +5832,48 @@ function stepSuicideBomber(w) {
   }
   if (!tick.result) finishSelfDestruct(w, tick.calls);
 }
+// 004E48F6: mode-4 projectiles (Mole Bomb's mole) run 004E3570. The contact
+// handler saved the arc and set the dig counter (body.delay) on landing.
+function stepMoleBurrow(p) {
+  const b = p.nativeBody;
+  if (!b || p.nativeWords?.[23] !== 4 || !b.delay) return;
+  const burrow = nativeMoleBurrow({ counter: b.delay, armed: b.armed | 0, time: b.field3b4 | 0,
+    x: b.savedX, y: b.savedY, vx: b.savedVx, vy: b.savedVy },
+  { gravity: Math.round(0x3d70 * gravityScale), frame: matchRandom.frame, water: Math.floor(H - waterLevel) }, {
+    test: (size, x, y) => nativeToolMaskHits(toolCuts[size], x, y, (px, py) => terrain.solid(px, H - py)),
+    dig: (size, x, y) => {
+      terrain.craterRim ??= new Uint8Array(W * H);
+      carveScenarioTool(terrain.data, W, H, toolCuts[size], x, y, terrain.craterRim);
+      terrainDirty = true;
+    },
+    place: () => true,
+    color: (x, y) => (terrain.solid(x, H - y) ? 1 : 0),
+    random: () => matchRandom.logicUint(),
+  });
+  Object.assign(b, { delay: burrow.body.counter, armed: burrow.body.armed, field3b4: burrow.body.time });
+  for (const call of burrow.calls) {
+    if (call.operation === "position") {
+      b.x = call.x; b.y = call.y; p.x = call.x / 65536; p.y = H - call.y / 65536;
+    } else if (call.operation === "velocity") {
+      b.vx = call.x; b.vy = call.y; p.vx = call.x / 65536 * 50; p.vy = -call.y / 65536 * 50;
+    } else if (call.operation === "physics") b.suspended = 0;
+    else if (call.operation === "dirt") spawnDirt(call.packet);
+  }
+  if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
+}
+// Host stand-in for the 0x43F dirt receiver: a short-lived ballistic speck.
+function spawnDirt([x, y, vx, vy]) {
+  if (replaySimulation || particles.length > 400) return;
+  const mesh = new THREE.Mesh(debrisGeometry, debrisMaterials[0]);
+  mesh.position.set(x / 65536, H - y / 65536, 35);
+  group.add(mesh);
+  particles.push({ mesh, size: 1.5, x: x / 65536, y: H - y / 65536,
+    vx: vx / 65536 * 50, vy: -vy / 65536 * 50, life: 0.6, max: 0.6, age: 0 });
+}
 // 004E3870 after each projectile frame.
 function stepProjectileGas(p) {
-  if (!p.nativeGas || !p.nativeBody) return;
+  // 004E48ED: only mode-3 projectiles run the gas routine.
+  if (!p.nativeGas || !p.nativeBody || p.nativeWords?.[23] !== 3) return;
   p.nativeGas.sunk ||= Boolean(p.nativeBody.submerged);
   const result = nativeProjectileGas(p.nativeGas, { x: p.nativeBody.x, y: p.nativeBody.y,
     facing: p.nativeBody.facing ?? 1, sunk: p.nativeGas.sunk });
@@ -6173,20 +6215,19 @@ function detonateNativeProjectile(p) {
       });
   }
   if (p.kind === "sallyarmy") spawnSallyArmyChildren(p);
-  if (p.kind === "molebomb")
-    explode(p.x, p.y - (p.burrowDepth ?? 0), "molebomb", p.owner);
 }
 // Mode3 units of the projectile actor (004E44A0): Sheep, Super Sheep and Aqua
 // Sheep. Record words 0x80.. are copied to actor 0x2D4..; a nonzero flight
 // sprite (actor 0x36C) lets fire take off, steer with left/right and land.
-const SHEEP_UNIT_SLOTS = { sheep: 23, supersheep: 24, aquasheep: 25 };
+// Every mode-3 projectile (actor +0x330) runs these routines: Sheep, Super
+// and Aqua Sheep, Old Woman, Sally Army, Skunk (and its gas child), Mad Cow
+// and Mole Bomb.
 let sheepSteer = { left: false, right: false };
 function sheepUnit(p) {
   if (p.sheep !== undefined) return p.sheep;
-  const slot = SHEEP_UNIT_SLOTS[p.kind];
-  if (slot === undefined || !p.nativeBody) return (p.sheep = null);
-  const block = nativeWeaponSlotBlock(slot, 0x74).slice(3, 45);
-  const at = (offset) => block[(offset - 0x2d4) / 4] | 0;
+  const words = p.nativeWords;
+  if (!words || !p.nativeBody || words[23] !== 3) return (p.sheep = null);
+  const at = (offset) => words[(offset - 0x2d4) / 4] | 0;
   const owner = worms[p.owner];
   p.sheep = {
     flags: at(0x334) | at(0x2d4), state: 0, sprite: at(0x2ec), suspended: 0, impulseScale: 65536,
@@ -6317,18 +6358,6 @@ function renderSheepFlight(p) {
   p.mesh.position.set(p.x, p.y, 40);
   return true;
 }
-const WALKING_UNIT_KINDS = new Set([
-  "sheep", "supersheep", "aquasheep", "donkey",
-  "oldwoman", "sallyarmy", "skunk", "madcow", "molebomb",
-]);
-const WALKING_UNIT_SPEED = {
-  donkey: 1.3,
-  oldwoman: 0.45, sallyarmy: 0.8, skunk: 0.7, madcow: 1.25, molebomb: 0.6,
-};
-function walkingUnitGrounded(x, y) {
-  for (const offset of [-8, -4, 0, 4]) if (terrain.solid(x, y + offset)) return true;
-  return false;
-}
 // 004E48B8: after the shared body frame, a mode3 sheep outside flight runs
 // the original ground routine 004E3920. The frame handler clears the
 // first-frame flag (actor+0x388) at its end (004E4C76).
@@ -6348,38 +6377,11 @@ function stepSheepWalk(p) {
   p.walkFacing = p.sheep.direction;
   if (p.mesh) p.mesh.position.set(p.x, p.y, 40);
 }
+// 004E48B8: mode-3 projectiles walk with 004E3920 unless flying (+0x394).
 function stepWalkingUnit(p) {
-  if (!WALKING_UNIT_KINDS.has(p.kind) || !p.nativeBody || p.nativeRemoved) return;
+  if (!p.nativeBody || p.nativeRemoved) return;
   if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
-  if (sheepUnit(p)) { stepSheepWalk(p); return; }
-  if (p.nativeBody.state === 1 || p.nativeBody.enabled === 0) return;
-  if (p.walkFacing === undefined) p.walkFacing = p.vx < 0 ? -1 : 1;
-  if (p.y <= waterLevel + 12) return;
-  if (!walkingUnitGrounded(p.x, p.y)) return;
-  const step = p.walkFacing * (WALKING_UNIT_SPEED[p.kind] ?? 0.8);
-  const aheadX = p.x + step * 4;
-  if (!walkingUnitGrounded(aheadX, p.y) ||
-      (terrain.solid(aheadX, p.y - 4) && !terrain.solid(p.x, p.y - 4))) {
-    p.walkFacing = -p.walkFacing;
-    return;
-  }
-  p.x += step;
-  p.walkTicks = (p.walkTicks ?? 0) + 1;
-  if (p.kind === "molebomb") p.burrowDepth = Math.min(12, (p.burrowDepth ?? 0) + 0.12);
-  p.nativeBody.x = Math.round(p.x * 65536);
-  p.nativeBody.vx = 0;
-  const surface = terrain.surface(p.x);
-  if (Number.isFinite(surface)) {
-    p.y = surface + 2;
-    // Native bodies are y-down. The original walking routine only accepts
-    // positions where the unit's mask is clear, so lift the body out of the
-    // ground rather than leaving it embedded at the host foot position.
-    p.nativeBody.y = Math.round((H - p.y) * 65536);
-    for (let lift = 0; lift < 40 && nativeProjectilePlacementHit(p, terrain, worms, H); lift++)
-      p.nativeBody.y -= 65536;
-    p.y = H - p.nativeBody.y / 65536;
-  }
-  if (p.mesh) p.mesh.position.set(p.x, p.y - (p.burrowDepth ?? 0), 40);
+  if (sheepUnit(p) && sheepUnit(p).phase !== 1) stepSheepWalk(p);
 }
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
@@ -8403,6 +8405,7 @@ function stepFrame(dt) {
         );
         stepWalkingUnit(p);
         stepProjectileGas(p);
+        stepMoleBurrow(p);
         if (sound && nativeContact.sounds.length) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();
@@ -10428,7 +10431,6 @@ window.siege = {
           walkTicks: projectile.walkTicks ?? 0,
           sheep: projectile.sheep ? { phase: projectile.sheep.phase, angle: projectile.sheep.angle,
             vx: projectile.sheep.vx, vy: projectile.sheep.vy, state: projectile.sheep.state, steering: projectile.sheepSteering } : null,
-          burrowDepth: Math.round((projectile.burrowDepth ?? 0) * 10) / 10,
           target: projectile.target,
           kind: projectile.kind,
           stuck: projectile.stuck,

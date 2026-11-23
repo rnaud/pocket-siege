@@ -6,13 +6,14 @@ import { startMatch } from "./helpers/match.js";
 test.beforeEach(fixTerrainRandom);
 test("released units walk along the ground", async ({ page }) => {
   await startMatch(page);
-  for (const kind of ["sheep", "supersheep", "aquasheep", "donkey", "oldwoman",
+  // Every mode-3 unit walks with the original 004E3920 routine.
+  for (const kind of ["sheep", "supersheep", "aquasheep", "oldwoman",
     "sallyarmy", "skunk", "madcow", "molebomb"]) {
     await page.evaluate(kind => window.siege.debug.spawnUnitAt(kind, 600), kind);
     const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
     expect(before, kind).not.toBeNull();
     await page.evaluate(frames => window.siege.debug.advanceReplayFrames(frames),
-      kind === "donkey" ? 20 : 80);
+      40);
     const after = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
     expect(after, `${kind}:${before}->${after}`).not.toBeNull();
     expect(after, `${kind}:${before}->${after}`).not.toBe(before);
@@ -21,15 +22,12 @@ test("released units walk along the ground", async ({ page }) => {
   }
 });
 
-test("donkey units use the released-unit walking path", async ({ page }) => {
+test("donkey is a mode-2 projectile and never walks", async ({ page }) => {
   await startMatch(page);
   await page.evaluate(() => window.siege.debug.spawnUnitAt("donkey", 600));
-  const before = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
-  expect(before).not.toBeNull();
+  expect(await page.evaluate(() => window.siege.getState().projectile?.x ?? null)).not.toBeNull();
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(20));
-  const after = await page.evaluate(() => window.siege.getState().projectile?.x ?? null);
-  expect(after).not.toBeNull();
-  expect(after).not.toBe(before);
+  expect(await page.evaluate(() => window.siege.getState().projectile?.walkTicks ?? 0)).toBe(0);
 });
 
 test("walking skunk releases no gas before it goes off", async ({ page }) => {

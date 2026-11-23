@@ -109,6 +109,8 @@ test("skunk detonation leaves a gas emitter that poisons nearby worms", async ({
       const s = window.siege.getState();
       gas = Math.max(gas, s.gasClouds.length);
       emitter = Math.max(emitter, s.bombs.length);
+      // Keep a worm standing at the emitter so its clouds reach it.
+      if (s.bombs.length) window.siege.debug.setWormPosition(3, s.bombs[0].x);
       if (s.worms.some((worm) => worm.nativePoison.amount !== 0)) return { gas, emitter, poisoned: true };
     }
     return { gas, emitter, poisoned: false };
