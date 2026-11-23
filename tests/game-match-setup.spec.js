@@ -173,7 +173,7 @@ test("daily island records today's result in the local record book", async ({
   await expect(page.locator("#daily-status")).toContainText("TODAY: WON");
 });
 
-test("supply crate and a killing blow feed the pickup and slow-motion systems", async ({
+test("supply crate pickup, and a killing blow keeps normal speed as in the original", async ({
   page,
 }) => {
   await page.goto("/");
@@ -195,10 +195,9 @@ test("supply crate and a killing blow feed the pickup and slow-motion systems", 
       before.ammo[0][before.crate.kind] + 1,
     );
   await page.evaluate(() => window.siege.debug.hit(1, 200));
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().slowMo))
-    .toBeGreaterThan(0);
-  await expect(page.locator("#arena")).toHaveClass(/slow-mo/);
+  // The original has no slow motion on deaths.
+  expect(await page.evaluate(() => window.siege.getState().slowMo)).toBe(0);
+  await expect(page.locator("#arena")).not.toHaveClass(/slow-mo/);
 });
 
 test("match modifiers change gravity, blast size and turn length", async ({

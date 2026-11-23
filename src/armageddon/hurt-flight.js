@@ -17,6 +17,9 @@ import { nativeWormTransitionBody } from "./worm-state.js";
 import schemes from "./scheme-runtime.js";
 const scheme = schemes.schemes.find((s) => s.resource_id === 195);
 const byte = (address) => scheme.bytes[address - schemes.context_offset];
+// Default scheme byte 0x11D40 (fall-damage scale), read by worm hurt states
+// and stored into worm +0x15C by the 0x433 receiver (004DA4EA).
+export const nativeSchemeFallByte = () => byte(0x11d40);
 const fixed = (value) => Math.round(value * 65536) | 0;
 
 export function nativeWormContactBody(worm, height = 0) {

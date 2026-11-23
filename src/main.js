@@ -128,6 +128,7 @@ import { NativeCameraPriority, nativeProjectileCameraRequest, nativeWormCameraRe
 import { playNativeProjectileContactSound, playNativeProjectileReleaseSound, playNativeProjectileFuse, updateNativeProjectileAudio, cleanupNativeContactSound } from "./armageddon/audio.js";
 import {
   stepNativeHurtFlight,
+  nativeSchemeFallByte,
   attachNativeFastFall,
   attachNativeDrowningFlight,
   stepNativeDrowningFlight,
@@ -4697,7 +4698,8 @@ function injure(w, damage, direction = 0, native = false) {
   // Frozen state 0x88 bypasses weapon damage in events 0x404/0x433.
   if (w.hp <= 0 || damage <= 0) return;
   if (w.frozen > 0) {
-    sfx("frozenhit");
+    // Native hits on frozen worms queue their own sound (0x6A).
+    if (!native) sfx("frozenhit");
     return;
   }
   accountWormDamage(w, damage);
@@ -4708,12 +4710,12 @@ function injure(w, damage, direction = 0, native = false) {
     w.originalRecovery = null;
   }
   w.hurt = 1.4;
-  sfx("hit");
+  // Native damage plays the original contact/voice sounds itself.
+  if (!native) sfx("hit");
   w.hits++;
   if (direction) w.hitDirection = direction;
   if (w.hp === 0) {
     w.deathPending = true;
-    slowMo = Math.max(slowMo, 0.7);
   }
   if (w === worms[current]) {
     shotgunRemaining = 0;
@@ -5197,7 +5199,7 @@ function applyNativeHitPackets(targets, dispatches, owner = current) {
           seen: victim.nativeDirectHitFrame === matchRandom.frame ? 1 : 0,
         },
         dispatch.packet,
-        0, // Host scheme delay adapter; native scheme receiver state remains partial.
+        nativeSchemeFallByte(), // 004DA4EA: scheme byte 0x11D40 into worm +0x15C.
         1,
         {
           frame: matchRandom.frame,
@@ -8253,7 +8255,6 @@ function stepFrame(dt) {
       w.dying = 1;
       startOriginalDrowning(w);
       w.hurt = 0.65;
-      slowMo = Math.max(slowMo, 0.5);
 
       tone(150, 0.3);
       if (w === worms[current]) {
