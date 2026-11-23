@@ -89,6 +89,19 @@ test("resting native bodies sleep and periodically recheck removed support", { t
   expect(p.nativeBody.sleeping).toBe(0);
 });
 
+test("a resting projectile takes the earthquake kick through the shared body tick", { tag: "@logic" }, () => {
+  const p = projectile("grenade", { x: 200, y: 300, vx: 0, vy: 0 });
+  stepNativeProjectile(p, { ...environment, bounces: true }, (x, y) => (y < 300 ? 1 : 0));
+  expect(p.nativeBody.sleeping).toBe(1);
+  const kicks = [];
+  stepNativeProjectile(p, {
+    ...environment, frame: 2, bounces: true, earthquake: 0x8000,
+    kick: (body, strength) => { kicks.push(strength); body.vy = (body.vy - 0x20000) | 0; },
+  }, (x, y) => (y < 300 ? 1 : 0));
+  expect(kicks[0]).toBe(0x8000);
+  expect(p.vy).toBeGreaterThan(0);
+});
+
 test("crossing the integer water boundary allows native skimming on the following tick", { tag: "@logic" }, () => {
   const p = projectile("grenade", { x: 200, y: 80.5, vx: 600, vy: -50 });
   stepNativeProjectile(p, { ...environment, bounces: true }, () => 0);

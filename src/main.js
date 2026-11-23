@@ -2616,6 +2616,7 @@ function stepBombs(dt) {
         random: () => matchRandom.logicUint(),
         collisionBody: hit => nativeContactBody(hit),
         updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
+        earthquake: nativeQuake(), kick: kickNativeObject,
       }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
       stepWalkingUnit(b);
       stepProjectileGas(b);
@@ -8536,6 +8537,7 @@ function stepFrame(dt) {
             updateCollisionBody: (hit, body) => {
               updateNativeContactBody(hit, body);
             },
+            earthquake: nativeQuake(), kick: kickNativeObject,
           },
           (x, y, body) => {
             return nativeProjectileCollision(p, x, y, terrain, worms, H, body);

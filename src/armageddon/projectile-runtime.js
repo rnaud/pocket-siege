@@ -381,6 +381,8 @@ export function stepNativeProjectile(
     solid = () => false,
     collisionBody = () => ({ type: 1, vx: 0, vy: 0 }),
     updateCollisionBody = () => {},
+    earthquake = 0,
+    kick = null,
   },
   collide,
 ) {
@@ -409,9 +411,11 @@ export function stepNativeProjectile(
       waterY: Math.floor(height - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale),
       wind: fixed(wind / 2500),
+      earthquake,
     },
     {
       awake: nativeBodyAwake,
+      earthquake: kick,
       skim: (body) => waterSound(body, true),
       waterChanged: (body) => waterSound(body, false),
       collide: (x, y, body) => collide(x / 65536, height - y / 65536, body),
