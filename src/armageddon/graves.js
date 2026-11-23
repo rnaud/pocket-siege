@@ -1,5 +1,6 @@
 import { nativeGraveLifecycle } from "./grave-lifecycle.js";
-import { H, bodyBlocked } from "../physics.js";
+import { H } from "../physics.js";
+import { nativeShapeTerrainOverlap } from "./collision-world.js";
 import { nativeGraveBody, stepNativeGraveBody } from "./grave-body.js";
 import { createOriginalVisual, originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
@@ -53,7 +54,8 @@ export function stepOriginalGrave(
       wind: 0,
       earthquake,
     },
-    (x, y) => Number(bodyBlocked(terrain, x / 65536, H - y / 65536)),
+    // 004D5170 builds the grave body with collision shape 2 (004F4000).
+    (x, y) => Number(nativeShapeTerrainOverlap(2, terrain, x / 65536, H - y / 65536)),
     kick,
   );
   grave.x = grave.body.x / 65536;

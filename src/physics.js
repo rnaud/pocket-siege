@@ -182,7 +182,11 @@ export function blastImpulse(w, x, y, radius, strength = 270) {
   w.knocked = true;
   return factor;
 }
-export function walkWorm(w, terrain, direction, dt) {
+// `collide(x, y)` takes native 16.16 y-down coordinates; live play passes the
+// worm's scene query (004F4D80 asks the collision world with the worm's mask
+// and flags), the default is the terrain-only mask test.
+export function walkWorm(w, terrain, direction, dt,
+  collide = (x, y) => bodyBlocked(terrain, x / 65536, H - y / 65536)) {
   if (!w.ground || w.knocked || !direction) return false;
   const startY = w.y;
   w.walkDirection = Math.sign(direction);
@@ -203,8 +207,7 @@ export function walkWorm(w, terrain, direction, dt) {
       speed: input.state === 0x66 ? input.speed ?? 65536 : 65536,
       accumulator: input.state === 0x66 ? input.accumulator ?? 0 : 0,
     }, Boolean(w.nativeTeamModifiers & 2), () => {
-      const result = nativeWalkingStep(body, w.walkDirection, 0x20, 1,
-        (x, y) => bodyBlocked(terrain, x / 65536, H - y / 65536));
+      const result = nativeWalkingStep(body, w.walkDirection, 0x20, 1, collide);
       body = result.body;
       calls.push(...result.calls);
       return body.state;

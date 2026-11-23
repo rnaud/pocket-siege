@@ -2471,6 +2471,11 @@ function spawnHazards(requests=null) {
   }
 }
 // Probe one pixel below an idle worm with its airborne collision shape.
+// 004F4D80 for a walking worm: the collision world with the worm's own body.
+function wormWalkCollide(w) {
+  const body = { ...nativeAirborneBody(w, H, 96), state: 0x66, type: 2 };
+  return (x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H) !== 0;
+}
 function wormSupportedByObject(w) {
   const body = { ...nativeAirborneBody(w, H, 96), state: 0x65, type: 2 };
   const hit = nativeSceneCollision(w, body, w.x, w.y - 1, terrain, worms, H);
@@ -7935,7 +7940,7 @@ function stepFrame(dt) {
         const w = worms[current];
         if (w.ground && !w.knocked) {
           markNativePickupAction(w);
-          w.moving = walkWorm(w, terrain, aiMoveDirection, dt);
+          w.moving = walkWorm(w, terrain, aiMoveDirection, dt, wormWalkCollide(w));
         }
         if (aiMoveTime === 0) aiAim();
       } else {
@@ -7963,7 +7968,7 @@ function stepFrame(dt) {
   if (canMove() && move && !rope.attached && !jetpack.active && !worms[current].originalParachute) {
     const w = worms[current];
     markNativePickupAction(w);
-    w.moving = walkWorm(w, terrain, move, dt);
+    w.moving = walkWorm(w, terrain, move, dt, wormWalkCollide(w));
     cpuWalked = cpuWalk && w.moving && w.ground;
   }
   cpuInput = false;
@@ -7980,7 +7985,7 @@ function stepFrame(dt) {
       if (aiRetreatDirection) markNativePickupAction(w);
       w.moving =
         aiRetreatDirection !== 0 &&
-        walkWorm(w, terrain, aiRetreatDirection, dt);
+        walkWorm(w, terrain, aiRetreatDirection, dt, wormWalkCollide(w));
     }
   }
   if (bungeeArmed && !rope.attached && !jetpack.active) {
