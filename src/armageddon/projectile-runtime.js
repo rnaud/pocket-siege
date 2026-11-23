@@ -383,6 +383,7 @@ export function stepNativeProjectile(
     updateCollisionBody = () => {},
     earthquake = 0,
     kick = null,
+    index = 0,
   },
   collide,
 ) {
@@ -407,7 +408,8 @@ export function stepNativeProjectile(
     body,
     {
       frame,
-      index: 0,
+      // The one-based physics-list slot 004CA750 passes to 004CA320.
+      index,
       waterY: Math.floor(height - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale),
       wind: fixed(wind / 2500),

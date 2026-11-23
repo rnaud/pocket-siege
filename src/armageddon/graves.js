@@ -41,14 +41,17 @@ export function stepOriginalGrave(
   gravityScale = 1,
   earthquake = 0,
   kick,
+  frame = grave.ticks,
+  index = 0,
 ) {
   grave.body.x = Math.round(grave.x * 65536);
   grave.body.y = Math.round((H - grave.y) * 65536);
   grave.body = stepNativeGraveBody(
     grave.body,
     {
-      frame: grave.ticks++,
-      index: 0,
+      // The scene frame and the grave's physics-list slot (004CA750).
+      frame,
+      index,
       waterY: Math.floor(H - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale),
       wind: 0,
@@ -76,11 +79,11 @@ export function stepOriginalGrave(
   if (!lifecycle.alive) return false;
   const name = `${grave.wet ? "water/" : ""}grave${grave.style}`;
   const art = originalVisual(name);
-  const index = nativeSpriteFrame(art.count, art.flags, grave.progress);
-  grave.mesh.material.map = originalVisual(name, index).map;
+  const spriteFrame = nativeSpriteFrame(art.count, art.flags, grave.progress);
+  grave.mesh.material.map = originalVisual(name, spriteFrame).map;
   grave.mesh.position.set(Math.round(grave.x), Math.round(grave.y), 14);
   grave.mesh.scale.x = grave.facing > 0 ? -1 : 1;
   grave.mesh.userData.originalSprite = name;
-  grave.mesh.userData.originalFrame = index;
+  grave.mesh.userData.originalFrame = spriteFrame;
   return true;
 }

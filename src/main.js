@@ -176,6 +176,7 @@ import {
 import { nextVisualRandom, fixedMultiply } from "./armageddon/numeric.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
 import { createOriginalGrave, stepOriginalGrave } from "./armageddon/graves.js";
+import { NativePhysicsList } from "./armageddon/physics-list.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
 import { stepOriginalSight } from "./armageddon/sight.js";
@@ -764,6 +765,8 @@ let format = "single",
   girders = [],
   graves = [],
   bombs = [],
+  // The live physics list (004CA750 order); see syncPhysicsList.
+  physicsList = new NativePhysicsList(),
   airstrikes = [],
   nativeFlames = Array(200).fill(null),
   nativeFlameCounter = 0,
@@ -1518,6 +1521,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   graves = [];
   for (const b of bombs) { stopProjectileSound(b); dispose(b.mesh); }
   bombs = [];
+  physicsList = new NativePhysicsList();
   for (const strike of airstrikes) if(strike.mesh) dispose(strike.mesh);
   airstrikes = [];
   nativeCamera.reset();
@@ -2487,9 +2491,25 @@ function seatWorm(w) {
 }
 // 004CA320 on a resting worm body, then the 004DED81 state check: true when
 // the body moves and the worm must enter 0x7E. Keeps the 13-frame sleep flag.
+// The live physics list (004CA750 order). The terrain body holds slot 1.
+// Bodies join when first seen at the start of a frame; their slot is the
+// index 004CA320 uses for the 13-frame sleeping recheck.
+const PHYSICS_TERRAIN = { terrain: true };
+function wormTaskLive(w) {
+  return !w.disabledRoster && (w.hp > 0 || w.deathPending || w.dying > 0);
+}
+function syncPhysicsList() {
+  physicsList.sync([PHYSICS_TERRAIN, ...worms.filter(wormTaskLive), ...mines, ...hazards, ...crates,
+    ...graves, ...bombs.filter((b) => b.nativeBody), projectile?.nativeBody || projectile?.nativeArrow ? projectile : null]);
+}
+// A body created after this frame's sync is appended when it first ticks,
+// as 004C8F80 appends it at construction.
+function physicsSlot(body) {
+  return physicsList.slot(body) || physicsList.append(body);
+}
 function wormBodyStartsFalling(w) {
   const support = nativeStandingSupport(w, { height: H, frame: matchRandom.frame,
-    index: worms.indexOf(w), gravity: Math.round(0x3d70 * gravityScale),
+    index: physicsSlot(w), gravity: Math.round(0x3d70 * gravityScale),
     // 004D8030 suspends the dying worm's body (state 0x84).
     suspended: w.originalDeath ? 1 : 0 },
   (x, y) => nativeSceneCollision(w, { ...nativeAirborneBody(w, H, 96), state: nativeWormState(w), type: 2 },
@@ -2630,7 +2650,7 @@ function stepBombs(dt) {
         b.nativeFusePlayback = playNativeProjectileFuse(audio, b.nativeFuseSound);
       }
       const result = stepNativeProjectile(b, {
-        height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame,
+        height: H, waterLevel, wind, gravityScale, frame: matchRandom.frame, index: physicsSlot(b),
         solid: (x, y) => terrain.solid(x, H - y),
         random: () => matchRandom.logicUint(),
         collisionBody: hit => nativeContactBody(hit),
@@ -3655,7 +3675,7 @@ function stepJetpack(w, dt) {
   const thrust =
     aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0);
   const result = stepNativeJetpackFlight(w, {
-    height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: current,
+    height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: physicsSlot(w),
     horizontal: move, vertical: thrust,
     pickup: body => queryNativeWormPickup(w, body),
     collisionBody: hit => nativeContactBody(hit),
@@ -3894,7 +3914,7 @@ function stepRope(w, dt) {
   rope.body = stepNativeRopeSwing(rope.body, {
     left: move < 0, right: move > 0, up: aimInput > 0, down: aimInput < 0,
   }, {
-    frame: matchRandom.frame, index: current, earthquake: 0,
+    frame: matchRandom.frame, index: physicsSlot(w), earthquake: 0,
     waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
   }, {
     motion,
@@ -5653,7 +5673,7 @@ function stepArrow() {
     skimScale: 0x10000, radius: 0x100000, enabled: body.enabled, suspended: body.suspended,
     sleeping: body.sleeping, submerged: body.submerged,
   }, {
-    frame: matchRandom.frame, index: 0, waterY: Math.floor(H - waterLevel),
+    frame: matchRandom.frame, index: physicsSlot(p), waterY: Math.floor(H - waterLevel),
     gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
   }, {
     awake: nativeBodyAwake, collide: () => 0, bounce: () => {},
@@ -7784,7 +7804,7 @@ function step(dt) {
   const advancing=!mapLoading && !menu.open && !document.hidden && !replaying && hitStop<=0;
   if(advancing) matchElapsed += dt;
   stepFrame(dt);
-  if(advancing)nativeFinishSceneCollisionFrame(terrain,worms,[...mines,...crates,...hazards]);
+  if(advancing){nativeFinishSceneCollisionFrame(terrain,worms,[...mines,...crates,...hazards]);physicsList.finishFrame();}
   if (!mapLoading && !menu.open && !document.hidden)
     tickOriginalWindPresentation(replaying);
   // 004A1A00 submits queued sounds after frame tasks. Immediate per-body
@@ -7907,6 +7927,7 @@ function stepFrame(dt) {
   });
   updateHudTeamHealth(nativeTeamHealthValues, phase === "over" ? -1 : team, selectionTick);
   updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress), nativeTeamList);
+  syncPhysicsList();
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -8133,7 +8154,7 @@ function stepFrame(dt) {
     if (w.originalDrill && !w.originalHurt && !w.frozen) {
       stepNativeDrillFlight(w, {
         height:H, waterLevel, gravityScale, frame:matchRandom.frame,
-        index:worms.indexOf(w),
+        index:physicsSlot(w),
         pickup: body => queryNativeWormPickup(w, body),
         collisionBody: hit => nativeContactBody(hit),
         updateCollisionBody: (hit,body) => { updateNativeContactBody(hit, body); },
@@ -8223,7 +8244,7 @@ function stepFrame(dt) {
             waterLevel,
             gravityScale,
             frame: matchRandom.frame,
-            index: worms.indexOf(w),
+            index: physicsSlot(w),
             random: () => matchRandom.logicUint(),
             earthquake: quakeKicked ? 0 : nativeQuake(),
             pickup: body => queryNativeWormPickup(w, body),
@@ -8240,7 +8261,7 @@ function stepFrame(dt) {
       } else if (w.nativeFlight && !w.frozen) {
         const tickFlight = w.originalParachute ? stepNativeParachuteFlight : stepNativeJumpFlight;
         result = tickFlight(w, {
-          height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: worms.indexOf(w),
+          height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: physicsSlot(w),
           horizontal: w === worms[current] ? move : 0, vertical: w === worms[current] ? aimInput : 0,
           random: () => matchRandom.logicUint(),
           pickup: body => queryNativeWormPickup(w, body),
@@ -8253,7 +8274,7 @@ function stepFrame(dt) {
         // State 0x88 runs the shared worm body tick like any other state.
         if (w.nativeHurtBody?.state !== 0x88) attachNativeFrozenBody(w, H);
         result = stepNativeHurtFlight(w, {
-          height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: worms.indexOf(w),
+          height: H, waterLevel, gravityScale, frame: matchRandom.frame, index: physicsSlot(w),
           random: () => matchRandom.logicUint(), earthquake: nativeQuake(),
           pickup: body => queryNativeWormPickup(w, body),
           collisionBody: (hit) => nativeContactBody(hit),
@@ -8318,7 +8339,8 @@ function stepFrame(dt) {
     }
   }
   for (let i = graves.length - 1; i >= 0; i--) {
-    if (!stepOriginalGrave(graves[i], terrain, dt, waterLevel, gravityScale, nativeQuake(), kickNativeObject)) {
+    if (!stepOriginalGrave(graves[i], terrain, dt, waterLevel, gravityScale, nativeQuake(), kickNativeObject,
+      matchRandom.frame, physicsSlot(graves[i]))) {
       dispose(graves[i].mesh);
       graves.splice(i, 1);
     } else {
@@ -8346,7 +8368,7 @@ function stepFrame(dt) {
     const collide = (x, y, body) => nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
     mine.impactPlayback = cleanupNativeContactSound(mine.impactPlayback);
     mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
-      frame: matchRandom.frame, index: i, waterY: Math.floor(H - waterLevel),
+      frame: matchRandom.frame, index: physicsSlot(mine), waterY: Math.floor(H - waterLevel),
       gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
       earthquake: nativeQuake(),
     }, {
@@ -8562,6 +8584,7 @@ function stepFrame(dt) {
             wind,
             gravityScale,
             frame: matchRandom.frame,
+            index: physicsSlot(p),
             random: () => matchRandom.logicUint(),
             collisionBody: (hit) => nativeContactBody(hit),
             updateCollisionBody: (hit, body) => {
@@ -8704,7 +8727,7 @@ function stepFrame(dt) {
     const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
     barrel.impactPlayback = cleanupNativeContactSound(barrel.impactPlayback);
     const result = stepNativeBarrelBody(barrel.nativeBody, {
-      frame: matchRandom.frame, index: hazards.indexOf(barrel),
+      frame: matchRandom.frame, index: physicsSlot(barrel),
       bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
       waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
       wind: Math.round(wind / 2500 * 65536), earthquake: nativeQuake(),
@@ -8753,7 +8776,7 @@ function stepFrame(dt) {
     const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
     crate.impactPlayback = cleanupNativeContactSound(crate.impactPlayback);
     const result = stepNativeCrateBody(crate.nativeBody, {
-      frame: matchRandom.frame, index: crates.indexOf(crate),
+      frame: matchRandom.frame, index: physicsSlot(crate),
       bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
       waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
       wind: Math.round(wind / 2500 * 65536), earthquake: nativeQuake(),
