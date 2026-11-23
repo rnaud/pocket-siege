@@ -43,7 +43,34 @@ export function stepOriginalGrave(
   kick,
   frame = grave.ticks,
   index = 0,
+  moved = false,
 ) {
+  if (!moved) stepOriginalGravePhysics(grave, terrain, waterLevel, gravityScale, earthquake, kick, frame, index);
+  const lifecycle = nativeGraveLifecycle(
+    grave.progress,
+    grave.bubblePhase,
+    grave.wet,
+    Math.round((H - grave.y) * 65536),
+    H,
+  );
+  grave.progress = lifecycle.progress;
+  grave.bubblePhase = lifecycle.phase;
+  grave.bubbleRequests = lifecycle.bubbles;
+  if (!lifecycle.alive) return false;
+  const name = `${grave.wet ? "water/" : ""}grave${grave.style}`;
+  const art = originalVisual(name);
+  const spriteFrame = nativeSpriteFrame(art.count, art.flags, grave.progress);
+  grave.mesh.material.map = originalVisual(name, spriteFrame).map;
+  grave.mesh.position.set(Math.round(grave.x), Math.round(grave.y), 14);
+  grave.mesh.scale.x = grave.facing > 0 ? -1 : 1;
+  grave.mesh.userData.originalSprite = name;
+  grave.mesh.userData.originalFrame = spriteFrame;
+  return true;
+}
+
+// The grave's physics step (004CA320), scheduled by 004CA750 before the task
+// events: the scene frame and the grave's physics-list slot.
+export function stepOriginalGravePhysics(grave, terrain, waterLevel, gravityScale = 1, earthquake = 0, kick, frame = 0, index = 0) {
   grave.body.x = Math.round(grave.x * 65536);
   grave.body.y = Math.round((H - grave.y) * 65536);
   grave.body = stepNativeGraveBody(
@@ -66,24 +93,4 @@ export function stepOriginalGrave(
   grave.vx = (grave.body.vx / 65536) * 50;
   grave.vy = (-grave.body.vy / 65536) * 50;
   grave.wet ||= !!grave.body.submerged;
-  const lifecycle = nativeGraveLifecycle(
-    grave.progress,
-    grave.bubblePhase,
-    grave.wet,
-    Math.round((H - grave.y) * 65536),
-    H,
-  );
-  grave.progress = lifecycle.progress;
-  grave.bubblePhase = lifecycle.phase;
-  grave.bubbleRequests = lifecycle.bubbles;
-  if (!lifecycle.alive) return false;
-  const name = `${grave.wet ? "water/" : ""}grave${grave.style}`;
-  const art = originalVisual(name);
-  const spriteFrame = nativeSpriteFrame(art.count, art.flags, grave.progress);
-  grave.mesh.material.map = originalVisual(name, spriteFrame).map;
-  grave.mesh.position.set(Math.round(grave.x), Math.round(grave.y), 14);
-  grave.mesh.scale.x = grave.facing > 0 ? -1 : 1;
-  grave.mesh.userData.originalSprite = name;
-  grave.mesh.userData.originalFrame = spriteFrame;
-  return true;
 }

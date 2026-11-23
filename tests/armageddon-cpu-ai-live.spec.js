@@ -117,7 +117,10 @@ test("a CPU turn walks its planned path, aims, charges, fires and retreats", asy
   expect(retreatWalks.length).toBeGreaterThan(0);
   expect(shot.frames.some((frame) => frame.f > events[release].f && frame.state === 0x6a)).toBe(true);
   const lastRetreat = retreatWalks.at(-1);
-  expect(Math.abs(lastRetreat.position[0] - events[release].position[0])).toBeGreaterThan(3);
+  // The retreat moves the worm (seen the frame after its last walk event),
+  // possibly stepping it off a ledge into a fall.
+  const moved = shot.frames.find((frame) => frame.f > lastRetreat.f).position;
+  expect(Math.hypot(moved[0] - events[release].position[0], moved[1] - events[release].position[1])).toBeGreaterThan(3);
   expect(after.some((e) => FIRE.has(e.event))).toBe(false);
 });
 

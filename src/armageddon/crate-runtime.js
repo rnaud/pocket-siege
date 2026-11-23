@@ -14,13 +14,10 @@ export function createNativeCrateBody(record, mode, bottom, friction, interfaces
   }, record, mode, bottom, interfaces);
 }
 
-// Compose physics then task event3EA and animation event3ED at50Hz.
-// Event3FF is a global drop/cancel request, NOT an impact notification.
-export function stepNativeCrateBody(input, environment, interfaces) {
-  const result = nativeCrateTick(input, environment.bottom, {
-    ...interfaces,
-    moving: nativeBodyAwake,
-    motion: body => nativeSimpleBodyTick(body, environment, {
+// The crate's physics step (004CA320 with its contact response), scheduled
+// by 004CA750 before the task events.
+export function nativeCratePhysics(input, environment, interfaces) {
+  return nativeSimpleBodyTick(input, environment, {
       awake: nativeBodyAwake, collide: interfaces.collide,
       skim: interfaces.skim, waterChanged: interfaces.waterChanged,
       earthquake: interfaces.earthquake,
@@ -37,7 +34,17 @@ export function stepNativeCrateBody(input, environment, interfaces) {
           },
         });
       },
-    }),
+    });
+}
+
+// Compose physics then task event3EA and animation event3ED at50Hz. With
+// `environment.moved` the physics pass has already advanced the body.
+// Event3FF is a global drop/cancel request, NOT an impact notification.
+export function stepNativeCrateBody(input, environment, interfaces) {
+  const result = nativeCrateTick(input, environment.bottom, {
+    ...interfaces,
+    moving: nativeBodyAwake,
+    motion: environment.moved ? (body) => body : (body) => nativeCratePhysics(body, environment, interfaces),
   });
   if (!result.deleted) result.body = nativeCrateEvent(result.body, 0x3ed);
   return result;

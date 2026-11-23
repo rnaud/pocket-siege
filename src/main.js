@@ -39,7 +39,7 @@ import { nativeWormPoisonInfect, nativeWormPoisonPickup, nativeWormPoisonDamage,
 import { nativeCrateTransfer, nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from "./armageddon/crate-transfer.js";
 import { nativeWormPickupEvent, nativeWormPickupTick, nativeWormPickupTransition } from "./armageddon/worm-pickup.js";
 import { nativeBarrelBody } from "./armageddon/barrel-body.js";
-import { stepNativeBarrelBody } from "./armageddon/barrel-runtime.js";
+import { stepNativeBarrelBody, nativeBarrelPhysics } from "./armageddon/barrel-runtime.js";
 import { nativeBarrelArt } from "./armageddon/barrel-art.js";
 import { nativeBarrelHit } from "./armageddon/barrel-hit.js";
 import { nativeBarrelDetonation } from "./armageddon/barrel-detonation.js";
@@ -62,7 +62,7 @@ import { nativeFlameBody } from "./armageddon/flame-body.js";
 import { registerNativeFlame } from "./armageddon/flame-spread.js";
 import { stepNativeFlame } from "./armageddon/flame-runtime.js";
 import { nativeFlameArt } from "./armageddon/flame-art.js";
-import { createNativeCrateBody, stepNativeCrateBody } from "./armageddon/crate-runtime.js";
+import { createNativeCrateBody, stepNativeCrateBody, nativeCratePhysics } from "./armageddon/crate-runtime.js";
 import nativeWaterSpriteIds from "./armageddon/water-sprite-ids.json";
 import { NativeSoundQueue } from "./armageddon/sound-queue.js";
 import { nativeTeamEnvironment } from "./armageddon/team-environment.js";
@@ -175,7 +175,7 @@ import {
 } from "./armageddon/smoke.js";
 import { nextVisualRandom, fixedMultiply } from "./armageddon/numeric.js";
 import { nativeSin, nativeCos } from "./armageddon/trig.js";
-import { createOriginalGrave, stepOriginalGrave } from "./armageddon/graves.js";
+import { createOriginalGrave, stepOriginalGrave, stepOriginalGravePhysics } from "./armageddon/graves.js";
 import { NativePhysicsList } from "./armageddon/physics-list.js";
 import { updateOriginalTarget } from "./armageddon/target-hud.js";
 import { nativeSightGeometry } from "./armageddon/sight-geometry.js";
@@ -2488,6 +2488,104 @@ function seatWorm(w) {
   w.y = y;
   w.renderY = y;
   w.nativeStandingSleep = 0;
+}
+// Mine physics (004CA320 with the 004E9CB0 contact response).
+function stepMinePhysics(mine) {
+  const waterSound = (body, skim) => {
+    const { sound: request } = nativeWaterSound(body, skim);
+    if (!sound || !request) return;
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume();
+    nativeSoundQueue.enqueue(request);
+  };
+  const collide = (x, y, body) => nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
+  mine.impactPlayback = cleanupNativeContactSound(mine.impactPlayback);
+  mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
+    frame: matchRandom.frame, index: physicsSlot(mine), waterY: Math.floor(H - waterLevel),
+    gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
+    earthquake: nativeQuake(),
+  }, {
+    awake: nativeBodyAwake, collide, earthquake: kickNativeObject,
+    skim: body => waterSound(body, true),
+    waterChanged: body => waterSound(body, false),
+    bounce: (body, hit, side) => {
+      const other = nativeContactBody(hit);
+      nativeMineContact(body, mine.nativeTimer, side, 0, {
+        sound: request => {
+          if (!sound) return;
+          audio ??= new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+          mine.impactPlayback = playNativeProjectileContactSound(audio, request, mine.impactPlayback);
+        },
+        receive: side => {
+
+          const response = nativeContactReceiver(other, body, side, {});
+          Object.assign(body, response.incoming);
+          Object.assign(other, response.receiver);
+          if (response.result) updateNativeContactBody(hit, other);
+          return response.result;
+        },
+        bounce: side => {
+          const response = nativeSimpleBounce(body, other, side, (x, y) => collide(x, y, body));
+          Object.assign(body, response.body);
+          updateNativeContactBody(hit, {...other, ...response.other});
+        },
+      });
+    },
+  });
+  mine.x = mine.nativeBody.x / 65536;
+  mine.y = H - mine.nativeBody.y / 65536;
+  mine.mesh.position.set(mine.x, mine.y, 18);
+}
+function objectPhysicsEnvironment(object) {
+  return {
+    frame: matchRandom.frame, index: physicsSlot(object),
+    bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
+    waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
+    wind: Math.round(wind / 2500 * 65536), earthquake: nativeQuake(),
+  };
+}
+// Collision, contact and sound interfaces of a barrel or crate body.
+function objectPhysicsInterfaces(object) {
+  const collide = (x, y, body) => nativeSceneCollision(object, body, x / 65536, H - y / 65536, terrain, worms, H);
+  const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
+  return {
+    collide, earthquake: kickNativeObject,
+    other: hit => nativeContactBody(hit),
+    receive: (body, other, hit, side) => {
+      const response = nativeContactReceiver(other, body, side, {});
+      Object.assign(body, response.incoming);
+      Object.assign(other, response.receiver);
+      if (response.result) updateNativeContactBody(hit, other);
+      return response.result;
+    },
+    otherUpdated: (hit, body) => { updateNativeContactBody(hit, body); },
+    impactSound: request => {
+      if (!sound) return;
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      object.impactPlayback = playNativeProjectileContactSound(audio, request, object.impactPlayback);
+    },
+    skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
+  };
+}
+// 004CA750 at event 0x3E9: every body advances in physics-list order before
+// the 0x3EA task events. Mines, oil drums, crates and graves run here; worm
+// and projectile physics still run inside their own frame steps.
+function runObjectPhysicsPass() {
+  const mineSet = new Set(phase === "over" ? [] : mines), barrelSet = new Set(hazards),
+    crateSet = new Set(crates), graveSet = new Set(graves);
+  for (const [object] of physicsList.ordered()) {
+    if (mineSet.has(object)) stepMinePhysics(object);
+    else if (barrelSet.has(object) || crateSet.has(object)) {
+      object.impactPlayback = cleanupNativeContactSound(object.impactPlayback);
+      const physics = barrelSet.has(object) ? nativeBarrelPhysics : nativeCratePhysics;
+      object.nativeBody = physics(object.nativeBody, objectPhysicsEnvironment(object), objectPhysicsInterfaces(object));
+    } else if (graveSet.has(object)) {
+      stepOriginalGravePhysics(object, terrain, waterLevel, gravityScale, nativeQuake(), kickNativeObject,
+        matchRandom.frame, physicsSlot(object));
+    }
+  }
 }
 // 004CA320 on a resting worm body, then the 004DED81 state check: true when
 // the body moves and the worm must enter 0x7E. Keeps the 13-frame sleep flag.
@@ -7928,6 +8026,7 @@ function stepFrame(dt) {
   updateHudTeamHealth(nativeTeamHealthValues, phase === "over" ? -1 : team, selectionTick);
   updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress), nativeTeamList);
   syncPhysicsList();
+  runObjectPhysicsPass();
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -8340,7 +8439,7 @@ function stepFrame(dt) {
   }
   for (let i = graves.length - 1; i >= 0; i--) {
     if (!stepOriginalGrave(graves[i], terrain, dt, waterLevel, gravityScale, nativeQuake(), kickNativeObject,
-      matchRandom.frame, physicsSlot(graves[i]))) {
+      matchRandom.frame, physicsSlot(graves[i]), true)) {
       dispose(graves[i].mesh);
       graves.splice(i, 1);
     } else {
@@ -8358,51 +8457,6 @@ function stepFrame(dt) {
   const mineCameraRequests = [];
   for (let i = phase === "over" ? -1 : mines.length - 1; i >= 0; i--) {
     const mine = mines[i];
-    const waterSound = (body, skim) => {
-      const { sound: request } = nativeWaterSound(body, skim);
-      if (!sound || !request) return;
-      audio ??= new (window.AudioContext || window.webkitAudioContext)();
-      audio.resume();
-      nativeSoundQueue.enqueue(request);
-    };
-    const collide = (x, y, body) => nativeSceneCollision(mine, body, x / 65536, H - y / 65536, terrain, worms, H);
-    mine.impactPlayback = cleanupNativeContactSound(mine.impactPlayback);
-    mine.nativeBody = nativeSimpleBodyTick(mine.nativeBody, {
-      frame: matchRandom.frame, index: physicsSlot(mine), waterY: Math.floor(H - waterLevel),
-      gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
-      earthquake: nativeQuake(),
-    }, {
-      awake: nativeBodyAwake, collide, earthquake: kickNativeObject,
-      skim: body => waterSound(body, true),
-      waterChanged: body => waterSound(body, false),
-      bounce: (body, hit, side) => {
-        const other = nativeContactBody(hit);
-        nativeMineContact(body, mine.nativeTimer, side, 0, {
-          sound: request => {
-            if (!sound) return;
-            audio ??= new (window.AudioContext || window.webkitAudioContext)();
-            audio.resume();
-            mine.impactPlayback = playNativeProjectileContactSound(audio, request, mine.impactPlayback);
-          },
-          receive: side => {
-
-            const response = nativeContactReceiver(other, body, side, {});
-            Object.assign(body, response.incoming);
-            Object.assign(other, response.receiver);
-            if (response.result) updateNativeContactBody(hit, other);
-            return response.result;
-          },
-          bounce: side => {
-            const response = nativeSimpleBounce(body, other, side, (x, y) => collide(x, y, body));
-            Object.assign(body, response.body);
-            updateNativeContactBody(hit, {...other, ...response.other});
-          },
-        });
-      },
-    });
-    mine.x = mine.nativeBody.x / 65536;
-    mine.y = H - mine.nativeBody.y / 65536;
-    mine.mesh.position.set(mine.x, mine.y, 18);
     const proximity = (radius) => {
       const candidates = worms.filter((w) => w.hp > 0).map((w) => ({
         x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
@@ -8723,33 +8777,8 @@ function stepFrame(dt) {
   const barrelActivity = { camera: [], busy: false };
   for (const barrel of [...hazards]) {
     let detonate = false;
-    const collide = (x, y, body) => nativeSceneCollision(barrel, body, x / 65536, H - y / 65536, terrain, worms, H);
-    const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
-    barrel.impactPlayback = cleanupNativeContactSound(barrel.impactPlayback);
-    const result = stepNativeBarrelBody(barrel.nativeBody, {
-      frame: matchRandom.frame, index: physicsSlot(barrel),
-      bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
-      waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
-      wind: Math.round(wind / 2500 * 65536), earthquake: nativeQuake(),
-    }, {
-      collide, earthquake: kickNativeObject,
-      other: hit => nativeContactBody(hit),
-      receive: (body, other, hit, side) => {
-
-        const response = nativeContactReceiver(other, body, side, {});
-        Object.assign(body, response.incoming);
-        Object.assign(other, response.receiver);
-        if (response.result) updateNativeContactBody(hit, other);
-        return response.result;
-      },
-      otherUpdated: (hit, body) => { updateNativeContactBody(hit, body); },
-      impactSound: request => {
-        if (!sound) return;
-        audio ??= new (window.AudioContext || window.webkitAudioContext)();
-        audio.resume();
-        barrel.impactPlayback = playNativeProjectileContactSound(audio, request, barrel.impactPlayback);
-      },
-      skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
+    const result = stepNativeBarrelBody(barrel.nativeBody, { ...objectPhysicsEnvironment(barrel), moved: true }, {
+      ...objectPhysicsInterfaces(barrel),
       camera: request => barrelActivity.camera.push(request), busy: () => { barrelActivity.busy = true; },
       promote: () => nativeRenderOrder.promote(barrel.nativeOrderId),
       delete: () => {},
@@ -8772,33 +8801,8 @@ function stepFrame(dt) {
   for (const crate of [...crates]) {
     const wasFalling = crate.falling;
     let detonate = false;
-    const collide = (x, y, body) => nativeSceneCollision(crate, body, x / 65536, H - y / 65536, terrain, worms, H);
-    const waterSound = (body, skim) => queueCrateSound(nativeWaterSound(body, skim).sound);
-    crate.impactPlayback = cleanupNativeContactSound(crate.impactPlayback);
-    const result = stepNativeCrateBody(crate.nativeBody, {
-      frame: matchRandom.frame, index: physicsSlot(crate),
-      bottom: nativeProjectileDepth(Math.floor(H - waterLevel)),
-      waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
-      wind: Math.round(wind / 2500 * 65536), earthquake: nativeQuake(),
-    }, {
-      collide, earthquake: kickNativeObject,
-      other: hit => nativeContactBody(hit),
-      receive: (body, other, hit, side) => {
-
-        const response = nativeContactReceiver(other, body, side, {});
-        Object.assign(body, response.incoming);
-        Object.assign(other, response.receiver);
-        if (response.result) updateNativeContactBody(hit, other);
-        return response.result;
-      },
-      otherUpdated: (hit, body) => { updateNativeContactBody(hit, body); },
-      impactSound: request => {
-        if (!sound) return;
-        audio ??= new (window.AudioContext || window.webkitAudioContext)();
-        audio.resume();
-        crate.impactPlayback = playNativeProjectileContactSound(audio, request, crate.impactPlayback);
-      },
-      skim: body => waterSound(body, true), waterChanged: body => waterSound(body, false),
+    const result = stepNativeCrateBody(crate.nativeBody, { ...objectPhysicsEnvironment(crate), moved: true }, {
+      ...objectPhysicsInterfaces(crate),
       camera: request => crateCameraRequests.push(request), busy: () => { cratesBusy = true; },
       delete: () => {},
       detonate: () => { detonate = true; },

@@ -94,7 +94,7 @@ import transfer from './fixtures/armageddon/crate-transfer.json' with { type: 'j
 import { nativeCrateTransfer, nativeCratePickupAudio, nativePickupCategory, nativeRecordPickup } from '../src/armageddon/crate-transfer.js';
 import { nativeInventorySet } from '../src/armageddon/inventory.js';
 import { nativeBodyBase } from '../src/armageddon/mine-body.js';
-import { createNativeCrateBody, stepNativeCrateBody } from '../src/armageddon/crate-runtime.js';
+import { createNativeCrateBody, stepNativeCrateBody, nativeCratePhysics } from '../src/armageddon/crate-runtime.js';
 import { nativeCollisionBitmapOverlap } from '../src/armageddon/collision-mask.js';
 import shapes from '../src/armageddon/collision-shapes.json' with { type: 'json' };
 
@@ -780,6 +780,29 @@ test("native utility logic: crate body settles on terrain", { tag: "@logic" }, (
   expect(collide(body.x, body.y + 65536, body)).toBe(1);
 });
 
+
+test("a crate advanced by the physics pass matches the composed crate step", { tag: "@logic" }, () => {
+  // 004CA750 moves every body before the 0x3EA task events; the split
+  // physics + moved event step must equal the composed step.
+  const collide = (x, y, body) => nativeCollisionBitmapOverlap(
+    shapes.shapes[body.shape], x >> 16, y >> 16,
+    { width: 1000, height: 1000, left: 0, top: 0, solid: (x, y) => y >= 500 },
+  );
+  const hooks = {
+    shape: (body, shape) => { body.shape = shape; }, collide,
+    sound: () => {}, effect: () => {}, remove: () => {}, register: () => {},
+    other: () => ({ type: 1, vx: 0, vy: 0 }), receive: () => 0,
+    impactSound: () => {}, camera: () => {}, busy: () => {}, delete: () => {},
+    detonate: () => {}, visualRandom: () => 0, bubble: () => {},
+  };
+  let composed = createNativeCrateBody({ kind: 1, x: 100 * 65536, y: 0 }, 1, 800, 96, hooks), split = composed;
+  for (let frame = 0; frame < 300; frame++) {
+    const environment = { frame, index: 3, gravity: 0x3d70, wind: 0, waterY: 750, bottom: 800 };
+    composed = stepNativeCrateBody(composed, environment, hooks).body;
+    split = stepNativeCrateBody(nativeCratePhysics(split, environment, hooks), { ...environment, moved: true }, hooks).body;
+    expect(split).toEqual(composed);
+  }
+});
 
 test("crate shower drops native supply crates", async ({ page }) => {
   await startMatch(page);

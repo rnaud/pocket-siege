@@ -2,12 +2,10 @@ import { nativeBarrelTick } from './barrel-tick.js';
 import { nativeBarrelContact } from './barrel-contact.js';
 import { nativeSimpleBodyTick, nativeSimpleBounce, nativeBodyAwake } from './motion.js';
 
-// Compose separately scheduled physics and barrel event3EA at50Hz.
-export function stepNativeBarrelBody(input, environment, interfaces) {
-  const result = nativeBarrelTick(input, environment.bottom, {
-    ...interfaces,
-    moving: nativeBodyAwake,
-    motion: body => nativeSimpleBodyTick(body, environment, {
+// The barrel's physics step (004CA320 with its contact response), scheduled
+// by 004CA750 before the task events.
+export function nativeBarrelPhysics(input, environment, interfaces) {
+  return nativeSimpleBodyTick(input, environment, {
       awake: nativeBodyAwake, collide: interfaces.collide,
       skim: interfaces.skim, waterChanged: interfaces.waterChanged,
       earthquake: interfaces.earthquake,
@@ -24,7 +22,15 @@ export function stepNativeBarrelBody(input, environment, interfaces) {
           },
         });
       },
-    }),
+    });
+}
+
+// Compose separately scheduled physics and barrel event3EA at50Hz. With
+// `environment.moved` the physics pass has already advanced the body.
+export function stepNativeBarrelBody(input, environment, interfaces) {
+  return nativeBarrelTick(input, environment.bottom, {
+    ...interfaces,
+    moving: nativeBodyAwake,
+    motion: environment.moved ? (body) => body : (body) => nativeBarrelPhysics(body, environment, interfaces),
   });
-  return result;
 }
