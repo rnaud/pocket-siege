@@ -63,10 +63,11 @@ export function attachNativeDrillFlight(worm, { height, friction = 96 }) {
   worm.nativeFlight = body;
 }
 
+// `physicsOnly` / `moved` split the tick from the state step, as for jumps.
 export function stepNativeDrillFlight(worm, environment, collide) {
   const { height, waterLevel, gravityScale = 1, frame = 0 } = environment;
   const collision = (x, y, body) => collide(x / 65536, height - y / 65536, body);
-  const body = nativeSimpleBodyTick(worm.nativeFlight, {
+  const body = environment.moved ? worm.nativeFlight : nativeSimpleBodyTick(worm.nativeFlight, {
     frame, index: environment.index ?? 0,
     waterY: Math.floor(height - waterLevel),
     gravity: Math.round(0x3d70 * gravityScale), wind: 0,
@@ -91,6 +92,14 @@ export function stepNativeDrillFlight(worm, environment, collide) {
       environment.updateCollisionBody?.(hit, result.other);
     },
   });
+  if (environment.physicsOnly) {
+    worm.nativeFlight = body;
+    worm.x = body.x / 65536;
+    worm.y = height - body.y / 65536;
+    worm.vx = body.vx / 65536 * 50;
+    worm.vy = -body.vy / 65536 * 50;
+    return null;
+  }
   worm.nativeFlight = body;
   worm.x = body.x / 65536;
   worm.y = height - body.y / 65536;
@@ -143,6 +152,7 @@ export function releaseNativeJetpackFlight(worm) {
 }
 
 export function stepNativeJetpackFlight(worm, environment, collide) {
+  if (environment.moved) return stepNativeJumpFlight(worm, environment, collide);
   const body = worm.nativeFlight;
   const input = nativeJetpackInput({ facing: body.facing, side: 0, down: 0 },
     { left: environment.horizontal < 0, right: environment.horizontal > 0, up: environment.vertical > 0 },

@@ -52,3 +52,21 @@ test('rope resizing matches native segment traversal, collision rejection and ve
   expect(body.state).toBe(0x65);
   expect(body.constrained).toBe(0);
 });
+
+test('the rope pass ticks the body without the worm-frame input', { tag: '@logic' }, () => {
+  // 004CA750 runs the rope body tick before the worm frame applies 004DC730
+  // input and the 004F8790 bungee to the moved body.
+  const input = { ...createNativeRopeShot({ x: 200, y: 500, facing: 1, team: 0 }, 45, 650),
+    state: 0x65, type: 2, minimumDrop: 200, bungeeLength: 0, field1f0: 0 };
+  const interfaces = { collide: () => 0, solid: () => false, otherType: () => 1,
+    voice: () => 777, launchSetup: () => [0, 0, 0, 0] };
+  const body = tryNativeBungee(input, { weapon: { type: 4, subtype: 7 }, height: 650 }, interfaces).body;
+  let moved = body, plain = body;
+  for (let frame = 1; frame <= 20; frame++) {
+    const environment = { frame, index: 2, waterY: 1000, gravity: 0x3d70 };
+    moved = stepNativeRopeSwing(moved, { right: true }, { ...environment, physicsOnly: true }, interfaces);
+    plain = stepNativeRopeSwing(plain, {}, { ...environment, physicsOnly: true }, interfaces);
+  }
+  // Controls do not reach the physics-only tick.
+  expect(moved).toEqual(plain);
+});

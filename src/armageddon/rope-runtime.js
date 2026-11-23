@@ -110,6 +110,9 @@ export function createNativeBungeeBody(worm, height, gravity) {
 
 // Called at the host's fixed50Hz tick. Preserve native segment and velocity
 // state between ticks rather than reconstructing it from floating positions.
+// With `environment.physicsOnly` only the rope body tick runs (004CA320 with
+// its constraint, in 004CA750's pass); `environment.moved` then applies the
+// worm-frame input (004DC730) and bungee (004F8790) to the moved body.
 export function stepNativeRopeSwing(input, controls, environment, interfaces) {
   const attempt = (x, y, candidate) => {
     const result = nativeTryBodyPosition(candidate, x, y,
@@ -117,6 +120,7 @@ export function stepNativeRopeSwing(input, controls, environment, interfaces) {
     if (result.result) candidate.sleeping = result.sleeping;
     return result.result;
   };
+  if (environment.physicsOnly) return ropeBodyTick(input, environment, interfaces);
   const directed = nativeRopeInput({ ...input, ...controls }, {
     impulse: (body, { request }) => {
       const impulse = nativeBodyImpulse(body, ...request);
@@ -124,18 +128,7 @@ export function stepNativeRopeSwing(input, controls, environment, interfaces) {
     },
     resize: (body, { length }) => Object.assign(body, nativeRopeLength(body, length, attempt).body),
   }).body;
-  let body = nativeRopeBodyTick(directed, environment, {
-    awake: nativeBodyAwake,
-    terrain: interfaces.solid,
-    collide: (x, y, body) => interfaces.collide(body, x, y),
-    bounce: (body, hit) => Object.assign(body, nativeRopeContact(body,
-      interfaces.otherType(hit), { ...interfaces,
-        intercept: (...args) => interfaces.pickup ? interfaces.pickup(body) : interfaces.intercept?.(...args),
-      })),
-    skim: interfaces.motion?.skim,
-    waterChanged: interfaces.motion?.waterChanged,
-    freeBounce: interfaces.motion?.bounce,
-  });
+  let body = environment.moved ? directed : ropeBodyTick(directed, environment, interfaces);
   if (body.constrained && body.state === 0x7c) {
     body = nativeBungeeTick(body, {
       resize: (candidate, { length }) => {
@@ -155,6 +148,21 @@ export function stepNativeRopeSwing(input, controls, environment, interfaces) {
     body.angleDamping = nativeRopeAnimation(body.facing, body.angle).friction;
   }
   return body;
+}
+
+function ropeBodyTick(body, environment, interfaces) {
+  return nativeRopeBodyTick(body, environment, {
+    awake: nativeBodyAwake,
+    terrain: interfaces.solid,
+    collide: (x, y, body) => interfaces.collide(body, x, y),
+    bounce: (body, hit) => Object.assign(body, nativeRopeContact(body,
+      interfaces.otherType(hit), { ...interfaces,
+        intercept: (...args) => interfaces.pickup ? interfaces.pickup(body) : interfaces.intercept?.(...args),
+      })),
+    skim: interfaces.motion?.skim,
+    waterChanged: interfaces.motion?.waterChanged,
+    freeBounce: interfaces.motion?.bounce,
+  });
 }
 
 export function nativeRopePoints(body, height) {

@@ -2600,18 +2600,23 @@ function wormBodyCollide(w) {
 // Punch, Blowtorch, recovery and standing worms keep their own steps.
 function wormPhysicsKind(w) {
   if (!wormTaskLive(w) || w.drowned || w.originalDeath) return null;
-  if (w === worms[current] && (jetpack.active || rope.attached)) return null;
-  if (w.originalBlowtorch || w.originalDrill || w.originalFirePunch || w.originalRecovery) return null;
+  if (w === worms[current] && jetpack.active) return jetpack.owner === current && w.nativeFlight ? "jetpack" : null;
+  if (w === worms[current] && rope.attached) return rope.body?.constrained ? "rope" : null;
+  if (w.originalBlowtorch || w.originalFirePunch || w.originalRecovery) return null;
+  if (w.originalDrill) return w.originalHurt || w.frozen ? null : "drill";
   if (w.originalHurt && !w.frozen) return "hurt";
   if (w.nativeFlight && !w.frozen) return w.originalParachute ? "parachute" : "flight";
   if (w.frozen && w.nativeHurtBody?.state === 0x88) return "frozen";
   return null;
 }
-function stepWormPhysics(w) {
+function stepWormPhysics(w, dt) {
   const kind = wormPhysicsKind(w);
   if (!kind) return;
   const physicsOnly = { physicsOnly: true };
-  if (kind === "hurt" || kind === "frozen") stepNativeHurtFlight(w, { ...wormBodyEnvironment(w, nativeQuake()), ...physicsOnly }, wormBodyCollide(w));
+  if (kind === "rope") stepRopePhysics(w);
+  else if (kind === "jetpack") stepNativeJetpackFlight(w, { ...jetpackEnvironment(w, jetpackFrameThrust(dt)), ...physicsOnly }, wormBodyCollide(w));
+  else if (kind === "drill") stepNativeDrillFlight(w, { ...wormBodyEnvironment(w, 0), ...physicsOnly }, wormBodyCollide(w));
+  else if (kind === "hurt" || kind === "frozen") stepNativeHurtFlight(w, { ...wormBodyEnvironment(w, nativeQuake()), ...physicsOnly }, wormBodyCollide(w));
   else (kind === "parachute" ? stepNativeParachuteFlight : stepNativeJumpFlight)(w, { ...wormFlightEnvironment(w), ...physicsOnly }, wormBodyCollide(w));
   w.nativeMovedFrame = matchRandom.frame;
 }
@@ -2638,13 +2643,13 @@ function activeProjectileUsesBodyTick(p) {
 // 004CA750 at event 0x3E9: every body advances in physics-list order before
 // the 0x3EA task events. Mines, oil drums, crates, graves and projectiles
 // run here; worm physics still runs inside the worm frame step.
-function runObjectPhysicsPass() {
+function runObjectPhysicsPass(dt) {
   const mineSet = new Set(phase === "over" ? [] : mines), barrelSet = new Set(hazards),
     crateSet = new Set(crates), graveSet = new Set(graves),
     projectileSet = new Set(bombs.filter((b) => b.nativeBody)), wormSet = new Set(worms);
   if (activeProjectileUsesBodyTick(projectile)) projectileSet.add(projectile);
   for (const [object] of physicsList.ordered()) {
-    if (wormSet.has(object)) stepWormPhysics(object);
+    if (wormSet.has(object)) stepWormPhysics(object, dt);
     else if (projectileSet.has(object)) {
       nativeProjectilePhysics(object, projectilePhysicsEnvironment(object), projectileCollide(object));
       object.nativeMovedFrame = matchRandom.frame;
@@ -4111,20 +4116,23 @@ function startJetpack() {
     "Jet pack on. Up thrusts; left/right steer; R stops.";
   updateUI();
 }
+// The jetpack thrust for this frame, computed once (by the physics pass or,
+// for a jetpack started later in the frame, by the jetpack step).
+function jetpackFrameThrust(dt) {
+  if (jetpack.thrustFrame === matchRandom.frame) return jetpack.thrust;
+  if (jetpack.pulseTime > 0) jetpack.pulseTime = Math.max(0, jetpack.pulseTime - dt);
+  jetpack.thrustFrame = matchRandom.frame;
+  jetpack.thrust = aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0);
+  return jetpack.thrust;
+}
+function jetpackEnvironment(w, thrust) {
+  return { ...wormBodyEnvironment(w, 0), wind, horizontal: move, vertical: thrust };
+}
 function stepJetpack(w, dt) {
   if (!jetpack.active || jetpack.owner !== current) return;
-  if (jetpack.pulseTime > 0) {
-    jetpack.pulseTime = Math.max(0, jetpack.pulseTime - dt);
-  }
-  const thrust =
-    aimInput + (jetpack.pulseTime > 0 ? jetpack.pulse : 0);
-  const result = stepNativeJetpackFlight(w, {
-    height: H, waterLevel, gravityScale, wind, frame: matchRandom.frame, index: physicsSlot(w),
-    horizontal: move, vertical: thrust,
-    pickup: body => queryNativeWormPickup(w, body),
-    collisionBody: hit => nativeContactBody(hit),
-    updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
-  }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
+  const thrust = jetpackFrameThrust(dt);
+  const result = stepNativeJetpackFlight(w, { ...jetpackEnvironment(w, thrust),
+    moved: w.nativeMovedFrame === matchRandom.frame }, wormBodyCollide(w));
   dispatchNativeWormMotionEvents(w, result);
   if (result.body.state !== 0x78) { stopJetpack(); return; }
   w.moving = Boolean(move);
@@ -4344,23 +4352,15 @@ function dispatchNativeWormMotionEvents(w, result) {
     }
   }
 }
-function stepRope(w, dt) {
-  if (!rope.attached || w !== worms[current]) return;
-  const events = [];
+// The rope swing's interfaces; contact events go to `events`.
+function ropeSwingInterfaces(w, events) {
   const motion = nativeWormMotionCallbacks(w, {
     frame: matchRandom.frame, random: () => matchRandom.logicUint(),
     pickup: body => queryNativeWormPickup(w, body),
     collisionBody: hit => nativeContactBody(hit),
     updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
   }, (x, y, body) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H), events);
-  rope.body.soundHandle = w.nativeHitVoicePlayback ? 1 : 0;
-  rope.body.field154 = w.nativePickupFlag ?? 0;
-  rope.body = stepNativeRopeSwing(rope.body, {
-    left: move < 0, right: move > 0, up: aimInput > 0, down: aimInput < 0,
-  }, {
-    frame: matchRandom.frame, index: physicsSlot(w), earthquake: 0,
-    waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
-  }, {
+  return {
     motion,
     solid: (x, y) => terrain.solid(x, H - y),
     collide: (body, x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H),
@@ -4375,7 +4375,36 @@ function stepRope(w, dt) {
       }
       return w.nativeHitVoicePlayback ? 1 : 0;
     },
-  });
+  };
+}
+function ropeSwingEnvironment(w) {
+  return {
+    frame: matchRandom.frame, index: physicsSlot(w), earthquake: 0,
+    waterY: Math.floor(H - waterLevel), gravity: Math.round(0x3d70 * gravityScale),
+  };
+}
+// The rope body tick in the physics pass (004CA320 with its constraint).
+function stepRopePhysics(w) {
+  const events = [];
+  rope.body.soundHandle = w.nativeHitVoicePlayback ? 1 : 0;
+  rope.body.field154 = w.nativePickupFlag ?? 0;
+  rope.body = stepNativeRopeSwing(rope.body, {}, { ...ropeSwingEnvironment(w), physicsOnly: true },
+    ropeSwingInterfaces(w, events));
+  w.nativePhysicsEvents = events;
+  w.nativeRopeBody = rope.body;
+  w.x = rope.body.x / 65536; w.y = H - rope.body.y / 65536;
+  w.vx = rope.body.vx / 65536 * 50; w.vy = -rope.body.vy / 65536 * 50;
+}
+function stepRope(w, dt) {
+  if (!rope.attached || w !== worms[current]) return;
+  const moved = w.nativeMovedFrame === matchRandom.frame;
+  const events = moved && Array.isArray(w.nativePhysicsEvents) ? w.nativePhysicsEvents : [];
+  w.nativePhysicsEvents = null;
+  rope.body.soundHandle = w.nativeHitVoicePlayback ? 1 : 0;
+  rope.body.field154 = w.nativePickupFlag ?? 0;
+  rope.body = stepNativeRopeSwing(rope.body, {
+    left: move < 0, right: move > 0, up: aimInput > 0, down: aimInput < 0,
+  }, { ...ropeSwingEnvironment(w), moved }, ropeSwingInterfaces(w, events));
   const body = rope.body;
   w.nativeRopeBody = body;
   w.x = body.x / 65536; w.y = H - body.y / 65536;
@@ -8377,7 +8406,7 @@ function stepFrame(dt) {
   updateHudTeamHealth(nativeTeamHealthValues, phase === "over" ? -1 : team, selectionTick);
   updateHudTeamPanel(Math.max(nativeTeamPanelVisibility.minimum, nativeTeamPanel.progress), nativeTeamList);
   syncPhysicsList();
-  runObjectPhysicsPass();
+  runObjectPhysicsPass(dt);
   for (const w of worms) w.moving = false;
   jumpClock += dt;
   bannerTime = Math.max(0, bannerTime - dt);
@@ -8625,13 +8654,8 @@ function stepFrame(dt) {
       kickStandingWorm(w);
     if (w.originalBlowtorch && !w.originalHurt && !w.frozen) continue;
     if (w.originalDrill && !w.originalHurt && !w.frozen) {
-      stepNativeDrillFlight(w, {
-        height:H, waterLevel, gravityScale, frame:matchRandom.frame,
-        index:physicsSlot(w),
-        pickup: body => queryNativeWormPickup(w, body),
-        collisionBody: hit => nativeContactBody(hit),
-        updateCollisionBody: (hit,body) => { updateNativeContactBody(hit, body); },
-      }, (x,y,body)=>nativeSceneCollision(w,body,x,y,terrain,worms,H));
+      stepNativeDrillFlight(w, { ...wormBodyEnvironment(w, 0),
+        moved: w.nativeMovedFrame === matchRandom.frame }, wormBodyCollide(w));
       continue;
     }
     if (w.originalFirePunch && !w.originalHurt && !w.frozen) {
