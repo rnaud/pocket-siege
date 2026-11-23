@@ -98,7 +98,7 @@ import { nativeDeactivateTurn } from "./armageddon/settlement-entry.js";
 import { nativeRetreatRequest } from "./armageddon/retreat-request.js";
 import { nativeCollectWeaponInput } from "./armageddon/controller-input.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
-import { attachNativeFallingFlight, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
+import { attachNativeFallingFlight, nativeStandingSupport, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
 import { startOriginalFirePunch, updateOriginalFirePunch, startOriginalSelfDestruct } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
@@ -2471,17 +2471,22 @@ function spawnHazards(requests=null) {
     }
   }
 }
-// Probe one pixel below an idle worm with its airborne collision shape.
+
+// Debug staging: stand a worm clear of the landscape and touching it, as the
+// shared body tick needs. An embedded body has its terrain overlap excluded
+// (004A5781's marker) and would fall through.
+function seatWorm(w) {
+  let y = Math.ceil(w.y);
+  while (y < H && bodyBlocked(terrain, w.x, y)) y++;
+  while (y > 0 && !bodyBlocked(terrain, w.x, y - 1)) y--;
+  w.y = y;
+  w.renderY = y;
+  w.nativeStandingSleep = 0;
+}
 // 004F4D80 for a walking worm: the collision world with the worm's own body.
 function wormWalkCollide(w) {
   const body = { ...nativeAirborneBody(w, H, 96), state: 0x66, type: 2 };
   return (x, y) => nativeSceneCollision(w, body, x / 65536, H - y / 65536, terrain, worms, H) !== 0;
-}
-function wormSupportedByObject(w) {
-  const body = { ...nativeAirborneBody(w, H, 96), state: 0x65, type: 2 };
-  const hit = nativeSceneCollision(w, body, w.x, w.y - 1, terrain, worms, H);
-  return hit > 1; // 1 is terrain, which bodyBlocked already answers
-
 }
 function nativeSceneCollision(identity, body, x, y, landscape, actors, height) {
   return queryNativeScene(identity, body, x, y, landscape, actors, height, [...mines, ...crates, ...hazards]);
@@ -8162,12 +8167,21 @@ function stepFrame(dt) {
     } else if (w === worms[current] && rope.attached) {
       stepRope(w, dt);
     } else {
-      // 004DED81: an idle worm starts falling (0x7E) only when nothing holds
-      // it up; oil drums, crates, mines and other worms support it as well as
-      // terrain.
-      if (!w.frozen && !w.originalHurt && !w.knocked && !w.nativeFlight &&
-          (!w.ground || (!bodyBlocked(terrain, w.x, w.y - 1) && !wormSupportedByObject(w))))
-        attachNativeFallingFlight(w, { height: H });
+      // 004DED81: a standing worm's body runs the shared tick and starts
+      // falling (0x7E) once it moves; oil drums, crates, mines and other worms
+      // hold it up as well as terrain.
+      let standing = false;
+      if (!w.frozen && !w.originalHurt && !w.knocked && !w.nativeFlight) {
+        if (w.ground) {
+          const support = nativeStandingSupport(w, { height: H, frame: matchRandom.frame,
+            index: worms.indexOf(w), gravity: Math.round(0x3d70 * gravityScale) },
+          (x, y) => nativeSceneCollision(w, { ...nativeAirborneBody(w, H, 96), state: 0x65, type: 2 },
+            x / 65536, H - y / 65536, terrain, worms, H) !== 0);
+          w.nativeStandingSleep = support.sleeping;
+          standing = !support.fall;
+        }
+        if (!standing) { w.nativeStandingSleep = 0; attachNativeFallingFlight(w, { height: H }); }
+      }
       const fallState = nativeWormState(w);
       const fastFall = !w.frozen && [0x79, 0x7e, 0x7f].includes(fallState) && w.vy <= -400;
       if (w === worms[current] && parachuteArmed && !w.ground && fastFall) {
@@ -8228,7 +8242,7 @@ function stepFrame(dt) {
           updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
         }, (x, y, body) => nativeSceneCollision(w, body, x, y, terrain, worms, H));
         dispatchNativeWormMotionEvents(w, result);
-      } else {
+      } else if (!standing) {
         result = stepWorm(w, terrain, dt, gravityScale);
       }
     }
@@ -10685,6 +10699,7 @@ if (import.meta.env.DEV) {
         const x = index === current ? 400 : index === enemy ? enemyX : (parked += 12);
         Object.assign(w, { x, y: 252, renderY: 252, vx: 0, vy: 0, ground: true, knocked: false, hurt: 0,
           nativeHurtBody: null, nativeFlight: null, originalHurt: null, originalJump: null });
+        seatWorm(w);
       });
       return { shooter: current, enemy };
     },
@@ -10817,9 +10832,9 @@ if (import.meta.env.DEV) {
       if (!worm) return;
       worm.x = x;
       worm.y = Math.max(0, terrain.surface(x)) + 2;
-      worm.renderY = worm.y;
       worm.vx = worm.vy = 0;
       worm.ground = true;
+      seatWorm(worm);
       worm.g.position.set(worm.x, worm.y, 15);
       updateUI();
     },

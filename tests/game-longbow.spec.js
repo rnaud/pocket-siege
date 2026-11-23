@@ -34,7 +34,7 @@ async function fireArrow(page, enemyX, wallX = 700) {
     const after = window.siege.getState();
     return { staged, path, before: before.worms[staged.enemy].hp, after: after.worms[staged.enemy].hp,
       enemy: after.worms[staged.enemy], ammo: after.ammo[0].longbow,
-      stuck: [wallX - 2, wallX - 1].map((x) => debug.solidAt(x, 252)) };
+      stuck: [wallX - 2, wallX - 1].map((x) => debug.solidAt(x, Math.round(before.worms[staged.shooter].y))) };
   }, [enemyX, wallX]);
 }
 

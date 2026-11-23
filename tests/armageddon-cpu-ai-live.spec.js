@@ -132,7 +132,7 @@ test("with only close-range weapons the CPU plans a gun or fire punch shot", asy
     debug.setAmmo(1, "firepunch", 2);
     debug.setUtility(1, "teleport", 0);
     const enemy = state.worms.findIndex((w) => w.team === 0 && w.hp > 0);
-    state.worms.forEach((w, i) => { if (w.team === 1) debug.setWormPosition(i, state.worms[enemy].x + 24 + 30 * (i % 3)); });
+    state.worms.forEach((w, i) => { if (w.team === 1) debug.setWormPosition(i, state.worms[enemy].x - 24 - 30 * (i % 3)); });
   `;
   const turns = await recordCpuTurns(page, { turns: 2, prepare });
   const close = turns.find((turn) => turn.frames.some((frame) => ["gun", "melee"].includes(frame.family) &&

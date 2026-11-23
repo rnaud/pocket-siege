@@ -3,7 +3,10 @@ import {
   attachNativeJumpFlight,
   attachNativeParachuteFlight,
   stepNativeJumpFlight,
+  nativeStandingSupport,
+  nativeAirborneBody,
 } from "../src/armageddon/worm-flight.js";
+import { nativeSimpleBodyTick, nativeBodyAwake } from "../src/armageddon/motion.js";
 const environment = { height: 650, waterLevel: 0 };
 const worm = () => ({
   x: 40,
@@ -175,4 +178,23 @@ test("Fire Punch rises with native forces and exits directly to recoil on ground
   expect(w.nativeFlight).toBeNull();
   expect(w.y).toBeGreaterThan(10);
   expect(w.y).toBeLessThanOrEqual(11);
+});
+
+test("a standing worm falls exactly when the shared body tick would move it", { tag: "@logic" }, () => {
+  // Support is the floor at native y 650 - 11 + 1 px; frames cover the
+  // 13-frame sleep recheck at index 2.
+  let checked = 0;
+  for (const floor of [true, false]) for (const vx of [0, 25]) for (const sleep of [0, 1])
+    for (let frame = 0; frame < 26; frame++) {
+      const w = { ...worm(), vx, nativeStandingSleep: sleep };
+      const collide = (x, y) => Number(floor && y >= (650 - 11 + 1) * 65536);
+      const support = nativeStandingSupport(w, { height: 650, frame, index: 2 }, collide);
+      const body = nativeSimpleBodyTick({ ...nativeAirborneBody(w, 650, 96), sleeping: sleep },
+        { frame, index: 2, waterY: 650, gravity: 0x3d70, wind: 0 },
+        { awake: nativeBodyAwake, collide, bounce: () => {} });
+      expect(support.fall).toBe(Boolean(body.moving || body.vx || body.vy));
+      if (!support.fall) expect(support.sleeping).toBe(body.sleeping);
+      checked++;
+    }
+  expect(checked).toBe(208);
 });
