@@ -838,7 +838,7 @@ export function stepOriginalAxe(worm, percent, height) {
 }
 
 export function startOriginalPreparation(worm, weapon, angle) {
-  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch", "dragonball", "drill", "blowtorch", "kamikaze", "suicidebomber"].includes(weapon)) return false;
+  if (!["shotgun", "handgun", "uzi", "minigun", "prod", "bat", "axe", "firepunch", "dragonball", "drill", "blowtorch", "kamikaze", "suicidebomber", "flamethrower"].includes(weapon)) return false;
   const player = (worm.originalPlayer ??= new NativeAnimationPlayer());
   const record = weaponFields[WEAPON_SLOTS[weapon]];
   const state = nativePreparation(

@@ -1,12 +1,12 @@
 import records from "./scheme-weapons.js";
 import { WEAPON_SLOTS } from "./delays.js";
 import { nativeLaunch } from "./launch.js";
-export function nativeBulletLaunch(config, worm, angle, height, random) {
+export function nativeBulletLaunch(config, worm, angle, height, random, solid = () => false) {
   const radians = angle * Math.PI / 180;
   return nativeLaunch(config.record, {
     x: Math.round(worm.x * 65536), y: Math.round((height - worm.y) * 65536),
     angle: Math.round((Math.asin(Math.sin(radians)) / Math.PI + 0.5) * 65536),
-    facing: Math.cos(radians) < 0 ? -1 : 1, random,
+    facing: Math.cos(radians) < 0 ? -1 : 1, random, solid,
   });
 }
 const baseline = records.schemes.find((s) => s.resource_id === 195).weapons;

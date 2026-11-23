@@ -4,20 +4,31 @@ import { startMatch } from "./helpers/match.js";
 // Gameplay assertions need reproducible terrain: random original decorations
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
-test("flame thrower emits native flames and spends its stream", async ({ page }) => {
-  await startMatch(page, { map: "fern", seed: 42 });
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase))
-    .toBe("aim");
-  await openArsenal(page);
-  await page.locator('[data-weapon="flamethrower"]').click();
-  await chargeFor(page, 250);
-  await advanceUntil(page, (s) => s.flames > 0, { max: 500, label: "flames" });
-  const before = await page.evaluate(() => window.siege.getState().ammo[0].flamethrower);
-  expect(before).toBeLessThan(56);
-  // The stream runs to its end: its own flames do not knock the shooter.
-  await advanceUntil(page, () => /Flame thrower complete/.test(document.querySelector("#status").textContent),
-    { max: 200, label: "stream complete" });
+test("flame thrower streams its 56 original rounds", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    window.siege.debug.advanceReplayFrames(30);
+    window.siege.debug.setAmmo(0, "flamethrower", 9);
+    window.siege.debug.setWeapon("flamethrower");
+    // Aim level so no flame falls back on the shooter and interrupts it.
+    const aim = document.querySelector("#angle");
+    aim.value = 0; aim.dispatchEvent(new Event("input", { bubbles: true }));
+    window.siege.debug.advanceReplayFrames(5);
+    const key = (type) => window.dispatchEvent(new KeyboardEvent(type, { key: " ", code: "Space", bubbles: true }));
+    key("keydown"); window.siege.debug.advanceReplayFrames(2); key("keyup");
+    let peak = 0, done = -1;
+    for (let i = 0; i < 400 && done < 0; i++) {
+      window.siege.debug.advanceReplayFrames(1);
+      peak = Math.max(peak, window.siege.getState().flames);
+      if (/Flame thrower burst complete/.test(document.querySelector("#status").textContent)) done = i;
+    }
+    return { peak, done, ammo: window.siege.getState().ammo[0].flamethrower };
+  });
+  expect(result.ammo).toBe(8);
+  expect(result.peak).toBeGreaterThan(10);
+  // Record +0x74 = 56 rounds through the burst/recoil cycle: about four seconds.
+  expect(result.done).toBeGreaterThan(150);
+  expect(result.done).toBeLessThan(300);
 });
 
 

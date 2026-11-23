@@ -2528,10 +2528,7 @@ function stepNativeFlames() {
       gravity: Math.round(0x3d70 * gravityScale), wind: Math.round(wind / 2500 * 65536),
     }, {
       collide: (x, y) => terrain.solid(x, H - y),
-      // Host adapter: the Flame Thrower spawns its stream at the nozzle, inside
-      // the shooter's box, so the streaming worm is not a target of it.
-      candidates: () => [...nativeWormHitscanBodies(worms, null, H)
-        .filter((body) => !(pendingFire?.stage === "flamethrower" && body.worm === pendingFire.worm)),
+      candidates: () => [...nativeWormHitscanBodies(worms, null, H),
         ...nativeBarrelHitBodies()].sort((a, b) => a.type - b.type),
       hit: (target, event, size, packet) => applyNativeHitPackets([target], [{ body: 0, packet }], flame.owner),
       logicRandom: () => matchRandom.logicUint(), visualRandom: () => matchRandom.visualUint(),
@@ -5282,9 +5279,11 @@ function fireBulletWeapon(prepared = false, kind = "shotgun", burst = null) {
     return;
   }
   const w = worms[current],
-    launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint()),
+    // Action 9 (Flame Thrower) probes up to 8 px for terrain ahead.
+    launch = nativeBulletLaunch(config, w, angle, H, () => matchRandom.logicUint(), (x, y) => terrain.solid(x, H - y)),
     start = { x: launch.x / 65536, y: H - launch.y / 65536 };
   startOriginalRecoil(w, kind, angle, matchRandom.frame);
+  if (kind === "flamethrower") { fireFlameRound(w, config, launch, burst); return; }
   const release = nativeLaunchAudio(config.record, { loop: burst?.playback ? 1 : 0, burst: 0, ordinal: burst?.ordinal ?? 1, flag: 0, team: w.team });
   spawnNativeParticleRequest(
     nativeCasing(
@@ -5705,41 +5704,36 @@ function useScales() {
   updateUI();
   finishAction("Scales balanced. Retreat!");
 }
+// Flame Thrower: kind 1 launch mode 1 (004FCB67 -> 004FCA00), repeated by the
+// burst machinery for record +0x74 = 56 rounds at interval +0x78.
 function fireFlamethrower() {
-  if (!canAct() || availableAmmo(ammo[team], "flamethrower") <= 0) return;
-  const w = worms[current];
-  ammo[team].flamethrower = spendAmmo(ammo[team].flamethrower);
-  shotCount++;
-  recordReactionWeaponUse("flamethrower");
-  pendingFire = { worm: w, angle, kind: "flamethrower", stage: "flamethrower", spent: true,
-    stream: { remaining: 18, frame: 0 } };
-  charging = false;
-  chargeSource = null;
-  $("#status").textContent = "Flames away. Retreat!";
-  updateSliders();
-  updateUI();
+  fireBulletWeapon(false, "flamethrower");
 }
-function stepFlamethrower(pending) {
-  if (pending.stream.remaining <= 0) {
-    pendingFire = null;
-    finishAction("Flame thrower complete. Retreat!");
-    return;
+// 004FCA00: the first round starts sound 0x16 and the owned loop 0x10017; each
+// round builds one flame (004D3C50) from {x, y, vx, vy, 0, 4, 1, +0x80, +0x7C,
+// +0x78, +0x84}, moving 24 times the aim direction (004FAF90 case 1).
+function fireFlameRound(w, config, launch, burst) {
+  const record = config.record;
+  const [vx, vy] = nativeLaunchVelocity(record, launch.vx, launch.vy, 65536);
+  if (!burst.playback) {
+    queueGameSound([0x16, 5, 0x10000, 0x10000, 0]);
+    if (sound) {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+      burst.playback = playNativeOwnedSound(audio, [0x10017, 3, 0x10000, 0x10000, 0], null);
+    }
   }
-  const w = pending.worm, radians = pending.angle * Math.PI / 180;
-  const cos = Math.cos(radians), sin = Math.sin(radians);
-  const baseX = w.x + cos * 14, baseY = w.y - sin * 14;
-  const count = Math.min(2, pending.stream.remaining);
-  for (let i = 0; i < count; i++) {
-    const spread = (i - 0.5) * 0.11 + (matchRandom.logicUint() / 0xffffffff - 0.5) * 0.04;
-    const a = radians + spread, speed = (3.2 + (matchRandom.logicUint() / 0xffffffff) * 1.2) * 65536;
-    spawnNativeFlame([
-      Math.round(baseX * 65536), Math.round((H - baseY) * 65536),
-      Math.round(Math.cos(a) * speed), Math.round(-Math.sin(a) * speed),
-      40, 0, 0, 10, 40, 4, 0,
-    ], w.team);
+  spawnNativeFlame([launch.x, launch.y, vx, vy, 0, 4, 1, record["0x80"] | 0, record["0x7c"] | 0,
+    record["0x78"] | 0, record["0x84"] | 0], w.team);
+  if (!burst.spent) {
+    ammo[team].flamethrower = spendAmmo(ammo[team].flamethrower);
+    burst.spent = true;
+    shotCount++; recordReactionWeaponUse("flamethrower");
   }
-  pending.stream.remaining -= count;
-  pending.stream.frame++;
+  wormLocked = true;
+  pendingFire = { worm: w, angle, kind: "flamethrower", stage: "recoil", burst,
+    recoilDelay: nativePostFire(record, 0).delay };
+  updateUI();
 }
 function fireBlowtorch(prepared = false) {
   if ((!prepared && !canAct()) || availableAmmo(ammo[team],"blowtorch") <= 0) return;
@@ -8425,15 +8419,6 @@ function stepFrame(dt) {
       if ((pending.burst?.spent || pending.spent) && phase === "aim") finishAction("Firing interrupted. Retreat!");
     } else if (pending.stage === "blowtorch") {
       stepBlowtorch(pending);
-    } else if (pending.stage === "flamethrower") {
-      if (pending.stream.frame % 4 === 0) stepFlamethrower(pending);
-      else {
-        pending.stream.frame++;
-        if (pending.stream.remaining <= 0) {
-          pendingFire = null;
-          finishAction("Flame thrower complete. Retreat!");
-        }
-      }
     } else if (pending.stage === "drill") {
       stepDrill(pending);
     } else if (pending.stage === "firepunch" || pending.stage === "kamikaze") {
