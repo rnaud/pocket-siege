@@ -46,14 +46,15 @@ test("walking skunk releases no gas before it goes off", async ({ page }) => {
   expect(walk).toEqual({ gas: 0, poisoned: false });
 });
 
-test("sally army detonation emits sheep payloads", async ({ page }) => {
+test("sally army detonation releases its five original children", async ({ page }) => {
   await startMatch(page);
-  await page.evaluate(() => window.siege.debug.detonateAt("sallyarmy", 600, 350));
+  // Detonate in open air so no child is rejected on placement.
+  await page.evaluate(() => window.siege.debug.detonateAt("sallyarmy", 600, 650));
+  // 004E2CA0 with block word 47 = 5 children of the mode-2 secondary (sprite 656).
   const kids = await page.evaluate(() =>
-    window.siege.getState().bombs.filter((bomb) => bomb.kind === "sheep").length);
-  expect(kids).toBe(4);
+    window.siege.getState().bombs.filter((bomb) => bomb.nativeRepeat >= 1).map((bomb) => bomb.nativeRepeat));
+  expect(kids.sort()).toEqual([1, 2, 3, 4, 5]);
 });
-
 test("released units walk at different speeds", async ({ page }) => {
   await startMatch(page);
   const travel = async (kind) => {

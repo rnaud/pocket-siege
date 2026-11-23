@@ -99,6 +99,8 @@ const names = [
     "spsheep1", "spsheep2", "aquashp1", "aquashp2",
     // Kamikaze: 004F67E0 preparation and the 004F76A0 flight frames.
     "wkamlnk", "wkamjmp", "wkami1", "wkami2", "wkami3", "wkami4", "wkami5", "wkambmr", "gassgrn", "sheeplau", "lshpwlk",
+    // Secondary child art: Sally Army tambourines and Ming Vase shards.
+    "tamborin", "vasebit1", "vasebit2", "vasebit3",
     "basehit", "firehit", "kamismk", "wpncup", "wpnctop", "wpncbak", "wpnclnk", "wfirbl1", "wfirbl2", "fireball",
     "wormhit1",
     "wormhit2",
