@@ -8921,6 +8921,9 @@ function stepFrame(dt) {
     }
   }
   if (phase === "aim") updateUI();
+  // Group 24 (004D3190 bubbles, 004D4F10 smoke) runs before group 23 flames.
+  updateOriginalSmoke();
+  stepWaterBubbles();
   const flameActivity = stepNativeFlames();
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
@@ -9023,8 +9026,6 @@ function stepFrame(dt) {
   stepOriginalEffects(dt);
   updateNativeParticles();
   updateOriginalDebris();
-  updateOriginalSmoke();
-  stepWaterBubbles();
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
