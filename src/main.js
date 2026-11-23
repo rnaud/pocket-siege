@@ -3262,7 +3262,8 @@ function collectCrate(w, crate = crates[0]) {
   }
   let label;
   // Content keys adapt the current host inventory to native transfer callbacks;
-  // numeric slot ownership and donor inventories remain separate integration work.
+  // numeric slot ownership remains separate integration work. Donor crates
+  // (kind 5) cannot arise: with two sides, an elimination ends the match.
   const inventory = kind === "utility" ? utilityAmmo : ammo;
   nativeCrateTransfer({kind:crate.nativeBody.kind,weapon:crate.content,quantity,health:quantity},
     w.team,worms.indexOf(w),{
@@ -8940,9 +8941,6 @@ function stepFrame(dt) {
     }
   }
   if (phase === "aim") updateUI();
-  // Group 24 (004D3190 bubbles, 004D4F10 smoke) runs before group 23 flames.
-  updateOriginalSmoke();
-  stepWaterBubbles();
   const flameActivity = stepNativeFlames();
   // 004B64B0 gives damage reveal priority over 004EC060's single death dispatch.
   // Host physics still supplies the busy predicate until the full task scheduler is ported.
@@ -9045,6 +9043,10 @@ function stepFrame(dt) {
   stepOriginalEffects(dt);
   updateNativeParticles();
   updateOriginalDebris();
+  // Smoke (004D5030) and bubbles (004D32C0) step on event 0x3ED, after the
+  // whole 0x3EA pass, like debris (004DFA10) and particles (004E15D0).
+  updateOriginalSmoke();
+  stepWaterBubbles();
   const trackedProjectiles = bombs.filter((b) => b.nativeBody);
   if (projectile?.nativeBody) trackedProjectiles.push(projectile);
   const teleportTracking = worms.some((w) => w.originalTeleport) || Boolean(projectile?.nativeDragonBall);
