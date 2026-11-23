@@ -12,16 +12,22 @@ test("mole bomb burrows while host-walking", async ({ page }) => {
   expect(depth).toBeGreaterThan(0);
 });
 
-test("mole bomb detonation poisons nearby worms", async ({ page }) => {
+test("mole bomb detonation releases no poison gas", async ({ page }) => {
   await startMatch(page);
   await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
   await page.evaluate(() => window.siege.debug.spawnUnitAt("molebomb", 600));
   await page.evaluate(() => window.siege.debug.advanceReplayFrames(40));
   await page.evaluate(() => window.siege.debug.detonateCurrent());
-  await expect
-    .poll(() => page.evaluate(() =>
-      window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0)))
-    .toBe(true);
+  // Mole Bomb's blocks carry no 004E3870 gas delay in the original records.
+  const result = await page.evaluate(() => {
+    let gas = 0;
+    for (let i = 0; i < 300; i++) {
+      window.siege.debug.advanceReplayFrames(1);
+      gas = Math.max(gas, window.siege.getState().gasClouds.length);
+    }
+    return { gas, poisoned: window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0) };
+  });
+  expect(result).toEqual({ gas: 0, poisoned: false });
 });
 
 test("sheep units do not walk in water", async ({ page }) => {

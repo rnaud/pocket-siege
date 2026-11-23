@@ -201,6 +201,9 @@ export function attachNativeProjectileBlock(p, height, block, nativePayload = nu
     [payload.owner, 0, payload.x, payload.y, payload.vx, payload.vy,
       0, 0, payload.repeat, payload.bounce, payload.timer];
   p.nativeTrail = { fields: selected.words.slice(8, 12), progress: 0 };
+  // 004E1830 copies the selected block to +0x2D4; word 35 is the 004E3870 gas
+  // delay (+0x360) and word 36 its amount (+0x364).
+  p.nativeGas = selected.words[35] ? { emitting: 0, delay: selected.words[35], amount: selected.words[36], sunk: false } : null;
   p.nativeBody = nativeProjectileBody(
     {
       // 004E1830 calls 004F4000(context, type15, projectileBlock[0]).

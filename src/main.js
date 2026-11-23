@@ -25,6 +25,7 @@ let nativeWaterRise = null;
 import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
 import { nativeEarthquakeStart, nativeEarthquakeTick, nativeEarthquakeKick, nativeWormEarthquakeResponse } from "./armageddon/earthquake.js";
 import { nativeKamikazeStart, nativeKamikazeTick, nativeToolMaskHits } from "./armageddon/kamikaze.js";
+import { nativeProjectileGas } from "./armageddon/projectile-gas.js";
 import { nativeSuicideBomberStart, nativeSuicideBomberTick, nativeGasCloud, nativeGasCloudTick } from "./armageddon/suicide-bomber.js";
 import { nativeCameraShake, nativeCameraShakeDecay } from "./armageddon/camera-shake.js";
 import { nativePaletteDisplay } from "./armageddon/palette-material.js";
@@ -2596,6 +2597,7 @@ function stepBombs(dt) {
         collisionBody: hit => nativeContactBody(hit),
         updateCollisionBody: (hit, body) => { updateNativeContactBody(hit, body); },
       }, (x, y, body) => nativeProjectileCollision(b, x, y, terrain, worms, H, body));
+      stepProjectileGas(b);
       b.age += dt;
       updateNativeProjectileAudio(sound ? audio : null, b);
       if (!b.nativeTimer.loopSound || result.removed || result.detonate) {
@@ -5827,6 +5829,17 @@ function stepSuicideBomber(w) {
   }
   if (!tick.result) finishSelfDestruct(w, tick.calls);
 }
+// 004E3870 after each projectile frame.
+function stepProjectileGas(p) {
+  if (!p.nativeGas || !p.nativeBody) return;
+  p.nativeGas.sunk ||= Boolean(p.nativeBody.submerged);
+  const result = nativeProjectileGas(p.nativeGas, { x: p.nativeBody.x, y: p.nativeBody.y,
+    facing: p.nativeBody.facing ?? 1, sunk: p.nativeGas.sunk });
+  p.nativeGas = { ...p.nativeGas, ...result.body };
+  const random = () => matchRandom.logicUint();
+  for (const call of result.calls)
+    spawnGasCloud(nativeGasCloud(...call.request, random, matchRandom.frame));
+}
 function spawnGasCloud(body) {
   const mesh = createOriginalVisual("gassgrn");
   if (mesh) group.add(mesh);
@@ -6358,16 +6371,15 @@ function stepWalkingUnit(p) {
   const surface = terrain.surface(p.x);
   if (Number.isFinite(surface)) {
     p.y = surface + 2;
-    p.nativeBody.y = Math.round(p.y * 65536);
+    // Native bodies are y-down. The original walking routine only accepts
+    // positions where the unit's mask is clear, so lift the body out of the
+    // ground rather than leaving it embedded at the host foot position.
+    p.nativeBody.y = Math.round((H - p.y) * 65536);
+    for (let lift = 0; lift < 40 && nativeProjectilePlacementHit(p, terrain, worms, H); lift++)
+      p.nativeBody.y -= 65536;
+    p.y = H - p.nativeBody.y / 65536;
   }
   if (p.mesh) p.mesh.position.set(p.x, p.y - (p.burrowDepth ?? 0), 40);
-  if (p.kind === "skunk" || p.kind === "molebomb") {
-    p.walkPoisonFrame = (p.walkPoisonFrame ?? 0) + 1;
-    if (p.walkPoisonFrame >= 20) {
-      p.walkPoisonFrame = 0;
-      infectPoisonCloud(p.x, p.y, 45, 2);
-    }
-  }
 }
 function explodeProjectile(p) {
   if (lastShot) lastShot.impact = { x: p.x, y: p.y, kind: p.kind };
@@ -6424,7 +6436,6 @@ function explode(x, y, kind, ownerIndex = -1, nativePacket = null) {
         };
   const { radius, damage: maxDamage, impulse } = profile;
   fx.explosion(x, y, radius, kind === "holy");
-  if (kind === "skunk" || kind === "molebomb") infectPoisonCloud(x, y, radius || 80);
   const exposure = new Map(
     worms.map((w) => [w, blastExposure(terrain, x, y, w.x, w.y + 17)]),
   );
@@ -8391,6 +8402,7 @@ function stepFrame(dt) {
           },
         );
         stepWalkingUnit(p);
+        stepProjectileGas(p);
         if (sound && nativeContact.sounds.length) {
           audio ??= new (window.AudioContext || window.webkitAudioContext)();
           audio.resume();

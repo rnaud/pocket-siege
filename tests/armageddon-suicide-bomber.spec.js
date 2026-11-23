@@ -1,6 +1,8 @@
 import { test, expect } from "./helpers/shared-page.js";
 import { startMatch } from "./helpers/match.js";
 import fixture from "./fixtures/armageddon/suicide-bomber.json" with { type: "json" };
+import projectileGas from "./fixtures/armageddon/projectile-gas.json" with { type: "json" };
+import { nativeProjectileGas } from "../src/armageddon/projectile-gas.js";
 import { nextLogicRandom } from "../src/armageddon/numeric.js";
 import {
   nativeSuicideBomberStart, nativeSuicideBomberTick, nativeGasCloud, nativeGasCloudTick, nativeGasCloudDraw,
@@ -16,6 +18,16 @@ test("suicide bomber matches the original state 0x75", { tag: "@logic" }, () => 
     const tick = nativeSuicideBomberTick(record, input, () => (random = nextLogicRandom(random, input.frame)));
     expect(tick.calls).toEqual(result.calls);
     expect([tick.result, random >>> 0]).toEqual([result.returned, result.random]);
+  }
+});
+
+test("projectiles release gas like the original 004E3870", { tag: "@logic" }, () => {
+  expect(projectileGas.cases).toHaveLength(144);
+  for (const { input, result } of projectileGas.cases) {
+    const tick = nativeProjectileGas(input, input);
+    // A failed allocation skips the constructor.
+    expect(input.allocated ? tick.calls : []).toEqual(result.calls);
+    expect([tick.body.emitting, tick.body.delay]).toEqual([result.emitting, result.delay]);
   }
 });
 

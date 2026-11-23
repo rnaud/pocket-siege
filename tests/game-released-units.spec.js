@@ -32,12 +32,20 @@ test("donkey units use the released-unit walking path", async ({ page }) => {
   expect(after).not.toBe(before);
 });
 
-test("walking skunk leaves a poison trail", async ({ page }) => {
+test("walking skunk releases no gas before it goes off", async ({ page }) => {
   await startMatch(page);
   await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
   await page.evaluate(() => window.siege.debug.spawnUnitAt("skunk", 600));
-  await page.evaluate(() => window.siege.debug.advanceReplayFrames(160));
-  await advanceUntil(page, (s) => s.worms.some((worm) => worm.nativePoison.amount !== 0), { max: 500, label: "poisoned" });
+  // Skunk's primary block has no 004E3870 gas delay: walking emits nothing.
+  const walk = await page.evaluate(() => {
+    let gas = 0;
+    for (let i = 0; i < 160; i++) {
+      window.siege.debug.advanceReplayFrames(1);
+      gas = Math.max(gas, window.siege.getState().gasClouds.length);
+    }
+    return { gas, poisoned: window.siege.getState().worms.some((worm) => worm.nativePoison.amount !== 0) };
+  });
+  expect(walk).toEqual({ gas: 0, poisoned: false });
 });
 
 test("sally army detonation emits sheep payloads", async ({ page }) => {

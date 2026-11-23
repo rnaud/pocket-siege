@@ -95,12 +95,25 @@ test("scales of justice caps health at 100 with uneven survivors", async ({ page
     .toBeLessThanOrEqual(100);
 });
 
-test("skunk detonation infects nearby worms with poison", async ({ page }) => {
+test("skunk detonation leaves a gas emitter that poisons nearby worms", async ({ page }) => {
   await startMatch(page);
-  const target = await page.evaluate(() => {
-    const state = window.siege.getState();
-    return { x: state.worms[3].x, y: state.worms[3].y };
+  await page.evaluate(() => window.siege.debug.setWormPosition(3, 600));
+  await page.evaluate(() => window.siege.debug.spawnUnitAt("skunk", 630));
+  await page.evaluate(() => window.siege.debug.advanceReplayFrames(20));
+  await page.evaluate(() => window.siege.debug.detonateCurrent());
+  // The secondary child (delay 1, poison 5) releases a 004D37D0 cloud every frame.
+  const result = await page.evaluate(() => {
+    let gas = 0, emitter = 0;
+    for (let i = 0; i < 600; i++) {
+      window.siege.debug.advanceReplayFrames(1);
+      const s = window.siege.getState();
+      gas = Math.max(gas, s.gasClouds.length);
+      emitter = Math.max(emitter, s.bombs.length);
+      if (s.worms.some((worm) => worm.nativePoison.amount !== 0)) return { gas, emitter, poisoned: true };
+    }
+    return { gas, emitter, poisoned: false };
   });
-  await page.evaluate(({ x, y }) => window.siege.debug.explodeAt(x, y, "skunk"), target);
-  await advanceUntil(page, (s) => s.worms.some((worm) => worm.nativePoison.amount !== 0), { max: 500, label: "poisoned" });
+  expect(result.emitter).toBe(1);
+  expect(result.gas).toBeGreaterThan(5);
+  expect(result.poisoned).toBe(true);
 });

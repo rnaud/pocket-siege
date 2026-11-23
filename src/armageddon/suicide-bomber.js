@@ -38,7 +38,7 @@ export function nativeSuicideBomberTick(record, worm, random, create) {
 // 004D37D0: a poison gas cloud (task type 0x19) with a lifetime speed of
 // a draw order from the frame counter, the
 // gassgrn sprite and a poison radius growing from 1 to 23 px (+12).
-// The speed is 0x3D7 + (rand & 0xFFFF) / 200: about 20 to 25 seconds.
+// The speed is 0x3D7 + (rand & 0xFFFF) / 200: a cloud lasts 55 to 67 frames.
 export function nativeGasCloud(x, y, amount, random, frame) {
   return {
     x: x | 0, y: y | 0, vx: 0, vy: 0, progress: 0,
