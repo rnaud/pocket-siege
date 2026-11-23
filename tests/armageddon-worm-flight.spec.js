@@ -198,3 +198,18 @@ test("a standing worm falls exactly when the shared body tick would move it", { 
     }
   expect(checked).toBe(208);
 });
+
+test("host worm position and velocity carry native 16.16 values without loss", { tag: "@logic" }, () => {
+  // Bodies are built from w.x, H - w.y and w.vx/w.vy (px/s at 50 Hz); every
+  // native value written back that way rebuilds exactly.
+  let seed = 7;
+  const next = () => (seed = (Math.imul(seed, 1103515245) + 12345) | 0);
+  let mismatches = 0;
+  for (let i = 0; i < 20000; i++) {
+    const vx = next() >> 10, vy = next() >> 10, x = (next() >>> 6) & 0x3ffffff, y = (next() >>> 6) & 0x1ffffff;
+    const w = { ...worm(), x: x / 65536, y: 650 - y / 65536, vx: (vx / 65536) * 50, vy: -(vy / 65536) * 50 };
+    const body = nativeAirborneBody(w, 650, 96);
+    if (body.x !== x || body.y !== y || body.vx !== vx || body.vy !== vy) mismatches++;
+  }
+  expect(mismatches).toBe(0);
+});
