@@ -98,7 +98,7 @@ const names = [
     "shothit",
     "spsheep1", "spsheep2", "aquashp1", "aquashp2",
     // Kamikaze: 004F67E0 preparation and the 004F76A0 flight frames.
-    "wkamlnk", "wkamjmp", "wkami1", "wkami2", "wkami3", "wkami4", "wkami5", "wkambmr", "gassgrn",
+    "wkamlnk", "wkamjmp", "wkami1", "wkami2", "wkami3", "wkami4", "wkami5", "wkambmr", "gassgrn", "sheeplau", "lshpwlk",
     "basehit", "firehit", "kamismk", "wpncup", "wpnctop", "wpncbak", "wpnclnk", "wfirbl1", "wfirbl2", "fireball",
     "wormhit1",
     "wormhit2",
@@ -347,6 +347,8 @@ export const projectileSprites = {
   napalm: "petrolbm",
   longbow: "arrow",
   sheep: "sheepwlk",
+  // Slot 5 primary sprite 636; its walking child is sprite 625.
+  sheeplauncher: "sheeplau",
   supersheep: "sheepwlk",
   aquasheep: "sheepwlk",
   donkey: "donkey",

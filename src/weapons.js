@@ -258,10 +258,9 @@ export const WEAPONS = {
     damage: 75,
     wind: false,
     speed: 1,
-    timed: true,
+    timed: false,
     bounces: false,
     ammo: 1,
-    special: "sheeplauncher",
   },
   longbow: {
     label: "Longbow",

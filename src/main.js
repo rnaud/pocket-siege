@@ -5648,29 +5648,6 @@ function syncTorchPosition(w, body) {
   if(w.originalBlowtorch)w.originalBlowtorch.body=body;
   w.x = body.x/65536; w.y = H-body.y/65536;
 }
-function fireSheepLauncher() {
-  if (!canAct() || availableAmmo(ammo[team], "sheeplauncher") <= 0) return;
-  const w = worms[current], origin = launchGeometry(w, angle, "sheep", terrain);
-  const v = launch(angle, power);
-  const p = {
-    ...origin.muzzle, ...v, target: null,
-    launchX: origin.muzzle.x, launchY: origin.muzzle.y, age: 0,
-    fuse: 2, bounce: 0, owner: current, kind: "sheep", sleeping: false,
-    stuck: false, attached: null, mesh: projectileMesh("sheep"),
-    blocked: false,
-  };
-  attachNativeProjectile(p, H);
-  p.mesh.position.set(p.x, p.y, 40);
-  group.add(p.mesh);
-  projectile = p;
-  ammo[team].sheeplauncher = spendAmmo(ammo[team].sheeplauncher);
-  shotCount++;
-  recordReactionWeaponUse("sheeplauncher");
-  phase = "flight";
-  requestNativeRetreat();
-  $("#status").textContent = "Sheep launched!";
-  updateUI();
-}
 function useArmageddon() {
   if (!canAct() || availableAmmo(ammo[team], "armageddon") <= 0) return;
   ammo[team].armageddon = spendAmmo(ammo[team].armageddon);
@@ -6189,10 +6166,6 @@ function fire() {
     useArmageddon();
     return;
   }
-  if (kind === "sheeplauncher") {
-    fireSheepLauncher();
-    return;
-  }
   if (kind === "earthquake") {
     useEarthquake();
     return;
@@ -6331,7 +6304,12 @@ function fire() {
       playNativeProjectileReleaseSound(audio, projectile.nativeRelease, request => nativeSoundQueue.enqueue(request), w);
     }
   } else sfx(kind);
-  if (projectile.nativeBody && nativeProjectilePlacementHit(projectile, terrain, worms, H)) {
+  // 004FCB20 turns the shooter's collision off (+0x48 via +0x68/+0x64)
+  // around every launched constructor, so placement cannot meet the shooter.
+  w.nativeLaunching = true;
+  const rejected = projectile.nativeBody && nativeProjectilePlacementHit(projectile, terrain, worms, H);
+  w.nativeLaunching = false;
+  if (rejected) {
     explodeProjectile(projectile);
     releaseProjectileMesh(projectile.mesh);
     projectile = null;
@@ -6479,10 +6457,13 @@ function sheepHost(p) {
 }
 // Owner controller fire key (00501FF0 -> event 0x414). True when consumed.
 function sheepFire() {
-  const p = projectile;
-  if (!p || p.nativeRemoved || !sheepUnit(p) || !p.sheepFireArmed) return false;
+  // 004E1830 event 0x43A arms the owner's fire key for any fire-mode-1 unit,
+  // including a launched unit's secondary child (Sheep Launcher).
+  const armed = (p) => p && !p.nativeRemoved && sheepUnit(p) && p.sheepFireArmed &&
+    worms[current]?.team + 1 === p.sheep.team;
+  const p = armed(projectile) ? projectile : bombs.find(armed);
+  if (!p) return false;
   const s = p.sheep;
-  if (worms[current]?.team + 1 !== s.team) return false;
   if (s.phase !== 1) Object.assign(s, { x: p.nativeBody.x, y: p.nativeBody.y,
     vx: p.nativeBody.vx, vy: p.nativeBody.vy, submerged: p.nativeBody.submerged ? 1 : 0 });
   applySheepCalls(p, nativeSheepEvent(s, SHEEP_FIRE_EVENT, s.team, sheepHost(p)));
@@ -9771,7 +9752,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "ArrowLeft") sheepSteer.left = true;
   if (e.key === "ArrowRight") sheepSteer.right = true;
-  if (e.key === " " && projectile && !e.repeat && sheepFire()) {
+  if (e.key === " " && (projectile || bombs.length) && !e.repeat && sheepFire()) {
     e.preventDefault();
     return;
   }

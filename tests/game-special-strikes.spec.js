@@ -15,17 +15,35 @@ test("unit weapons fire without missing projectile art", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("sheep launcher fires a native sheep projectile", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  // Custom keeps the host kit; Classic duel starts with the original default kit.
-  await page.selectOption("#scheme", "custom");
-  await page.locator("#start").click();
-  await openArsenal(page);
-  await page.locator('[data-weapon="sheeplauncher"]').click();
-  await chargeFor(page, 500);
-  await advanceUntil(page, (s) => s.projectile?.kind === "sheep", { max: 250, label: "sheep released" });
+test("sheep launcher fires slot 5's sheep, which lands and walks as a secondary", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    window.siege.debug.advanceReplayFrames(30);
+    window.siege.debug.setAmmo(0, "sheeplauncher", 9);
+    window.siege.debug.setWeapon("sheeplauncher");
+    const key = (type) => window.dispatchEvent(new KeyboardEvent(type, { key: " ", code: "Space", bubbles: true }));
+    key("keydown"); window.siege.debug.advanceReplayFrames(2); key("keyup");
+    let flew = false, walker = null;
+    for (let i = 0; i < 300 && !walker; i++) {
+      window.siege.debug.advanceReplayFrames(1);
+      const s = window.siege.getState();
+      if (s.projectile?.kind === "sheeplauncher") flew = true;
+      walker = s.bombs.find((b) => b.nativeRepeat === 1) ?? null;
+    }
+    // Fire mode 1: the owner's fire key sets the walking sheep off.
+    window.siege.debug.advanceReplayFrames(20);
+    const before = window.siege.getState().bombs.length;
+    key("keydown"); window.siege.debug.advanceReplayFrames(1); key("keyup");
+    window.siege.debug.advanceReplayFrames(5);
+    return { flew, walker, before, after: window.siege.getState().bombs.length,
+      ammo: window.siege.getState().ammo[0].sheeplauncher };
+  });
+  expect(result.ammo).toBe(8);
+  // Kind 1 mode 3 at the record's fixed 50% power, then the mode-3 child.
+  expect(result.flew).toBe(true);
+  expect(result.walker).not.toBeNull();
+  expect(result.before).toBe(1);
+  expect(result.after).toBe(0);
 });
 
 test("armageddon rains native meteors that damage worms", async ({ page }) => {
