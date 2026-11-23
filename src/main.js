@@ -417,11 +417,11 @@ let crateDropArmed = false;
 let introPending = false;
 // 004B4CE0 event 0x432 at weapon completion: request the retreat (pending
 // until the worm's action ends), size it (004B4230) and slide the clock out.
-// Host adapters: every finished action ends the turn, the controller +104
-// gate is open, and weapon +5C and scheme 11D47 minimums are not mapped.
+// Host adapters: every finished action ends the turn, and weapon +5C and
+// scheme 11D47 minimums are not mapped; +104 is the worm's activity flag.
 function requestNativeRetreat() {
   const w = worms[current];
-  const request = nativeRetreatRequest({ ...turnBody, activeTeam: team + 1, field104: 1,
+  const request = nativeRetreatRequest({ ...turnBody, activeTeam: team + 1, field104: w?.nativeActive ? 1 : 0,
     retreatDuration: Math.round(retreatSeconds * 1000), endsTurn: 1, schemeFlag: 0,
     weaponRetreat: 0, traversalSeconds: 0, wormState: w ? nativeWormState(w) : 0 });
   turnBody = request.body;
@@ -3232,9 +3232,9 @@ function queryNativeWormPickup(w, body) {
 }
 function stepNativeWormPickup(w) {
   const state = nativeWormState(w);
-  // Host turn ownership adapts native field104 until controller events41C/41D
-  // are integrated. Pending health display is native damage field188.
-  const active = Number(w === worms[current] && phase !== "over" && w.hp > 0);
+  // +0x104 follows the controller's 0x41C turn activation and the 0x41F turn
+  // end. Pending health display is native damage field188.
+  const active = w.nativeActive ? 1 : 0;
   let flag = w.nativePickupFlag ?? 0;
   if (w.nativePickupState !== state)
     flag = nativeWormPickupTransition(flag, active, state);
@@ -3432,6 +3432,12 @@ function beginTurn() {
   });
   turnBody = turnStart.body;
   nativeClockTarget = turnBody.clockTarget;
+  // The turn start's 0x41C reaches the active worm (004E6810 -> 004DAA02),
+  // which sets its +0x104 activity flag; 0x41F at the turn end clears it.
+  if (turnStart.calls.some((call) => call.event === 0x41c)) {
+    for (const w of worms) w.nativeActive = 0;
+    active.nativeActive = 1;
+  }
   // 004B761C (S10c): the first turn opens with StartRound (sound 0x2D,
   // priority 8) and a 1 s busy hold; the turn starts in the same pass.
   // Host adapter: the mission-mode intro text (language +0x2D8) is not loaded.
@@ -3756,9 +3762,14 @@ function cycleWorm(direction = 1) {
   const index = roster.indexOf(worms[current]);
   const next = roster[(index + direction + roster.length) % roster.length];
   // The left worm ends its turn (0x41F) and the chosen one activates (0x41C).
-  if (worms[current]) Object.assign(selectionOf(worms[current]), { arrowTarget: 0, labelTarget: 0x10000 });
+  if (worms[current]) {
+    Object.assign(selectionOf(worms[current]), { arrowTarget: 0, labelTarget: 0x10000 });
+    // 004DAD1D/004DAD26: the worm's 0x41F also clears +0x108 and +0x104.
+    worms[current].nativeActive = 0;
+  }
   Object.assign(selectionOf(next), { arrow: 0x10000, arrowTarget: 0x10000, label: 0x10000, labelTarget: 0x10000 });
   current = worms.indexOf(next);
+  next.nativeActive = 1; // 0x41C (004DAA54)
   lastSelectedWorm[team] = worms.filter(w => w.team === team).indexOf(next) + 1;
   reactionOrigin = { x: Math.round(next.x * 65536) | 0, y: Math.round((H - next.y) * 65536) | 0 };
   cancelCharge();
@@ -7786,7 +7797,11 @@ function nextTurn() {
   // fields and input mode and resetting the camera priority cap to 14.
   // 004DAD16/004DAD2C (worm event 0x41F): the arrow slides away and the
   // label slides back.
-  if (worms[current]) Object.assign(selectionOf(worms[current]), { arrowTarget: 0, labelTarget: 0x10000 });
+  if (worms[current]) {
+    Object.assign(selectionOf(worms[current]), { arrowTarget: 0, labelTarget: 0x10000 });
+    // 004DAD1D/004DAD26: the worm's 0x41F also clears +0x108 and +0x104.
+    worms[current].nativeActive = 0;
+  }
   if (turnBody.activeTeam) {
     turnBody = nativeDeactivateTurn({ ...turnBody, cameraCounts: turnBody.cameraCounts ?? new Array(14).fill(0) }).body;
     nativeCamera.setPriority(14);
@@ -10672,6 +10687,7 @@ window.siege = {
         deathPending,
         nativeHurtState: nativeHurtBody?.state ?? null,
         nativeState: nativeWormState(worms[index]),
+        nativeActive: worms[index].nativeActive ? 1 : 0,
         recovering: !!originalRecovery,
         hurt,
         hits,

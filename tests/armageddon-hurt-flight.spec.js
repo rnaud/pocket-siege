@@ -106,3 +106,22 @@ test("a recovering worm whose ground is dug away falls instead of finishing its 
   expect(result.states.slice(0, 14)).toContain(0x7e);
   expect(result.endY).toBeLessThan(result.startY - 5);
 });
+
+test("the worm activity flag follows the turn's 0x41C activation and 0x41F end", async ({ page }) => {
+  await startMatch(page, { seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    const debug = window.siege.debug, active = () => window.siege.getState().worms.map((w) => w.nativeActive);
+    const { current: first, team } = window.siege.getState(), during = active();
+    debug.finishTurn();
+    const between = active();
+    for (let i = 0; i < 4000 && window.siege.getState().team === team; i++) debug.advanceReplayFrames(1);
+    return { first, during, between, next: window.siege.getState().current, after: active() };
+  });
+  // Only the worm whose turn is running carries +0x104.
+  expect(result.during.filter(Boolean)).toHaveLength(1);
+  expect(result.during[result.first]).toBe(1);
+  // 0x41F clears it as the turn ends, before the next worm is chosen.
+  expect(result.between.every((value) => value === 0)).toBe(true);
+  expect(result.after[result.next]).toBe(1);
+  expect(result.after.filter(Boolean)).toHaveLength(1);
+});
