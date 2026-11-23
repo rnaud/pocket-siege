@@ -84,28 +84,26 @@ test("nuclear test raises the water and poisons every worm without a target", as
   expect(result.explosions).toBe(0);
 });
 
-test("scales of justice caps health at 100 with uneven survivors", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForFunction(() => window.siege?.getState().assetsReady);
-  await page.locator('[data-mode="local"]').click();
-  // Custom keeps the host kit; Classic duel starts with the original default kit.
-  await page.selectOption("#scheme", "custom");
-  await page.locator("#start").click();
-  await openArsenal(page);
-  await expect
-    .poll(() => page.evaluate(() => window.siege.getState().phase))
-    .toBe("aim");
-  await page.evaluate(() => {
+test("scales of justice splits health evenly with no cap, as the original", async ({ page }) => {
+  await startMatch(page, { map: "fern", seed: 42, manualClock: true });
+  const result = await page.evaluate(() => {
+    window.siege.debug.advanceReplayFrames(30);
+    // Team 1 keeps a single worm: 004ECCF0 gives it the whole team share.
     window.siege.debug.setWormHp(4, 0);
     window.siege.debug.setWormHp(5, 0);
+    window.siege.debug.setAmmo(0, "scales", 9);
+    window.siege.debug.setWeapon("scales");
+    const key = (type) => window.dispatchEvent(new KeyboardEvent(type, { key: " ", code: "Space", bubbles: true }));
+    key("keydown"); window.siege.debug.advanceReplayFrames(2); key("keyup");
+    window.siege.debug.advanceReplayFrames(10);
+    return window.siege.getState().worms.map((w) => [w.team, w.hp]);
   });
-  await page.locator('[data-weapon="scales"]').click();
-  await chargeFor(page, 250);
-  await expect
-    .poll(() => page.evaluate(() =>
-      Math.max(...window.siege.getState().worms.map((worm) => worm.hp))),
-    { timeout: 10000 })
-    .toBeLessThanOrEqual(100);
+  // 400 health over two alliances: 200 a side, 66/67/67 and a lone 200.
+  const team0 = result.filter(([team]) => team === 0).map(([, hp]) => hp);
+  const team1 = result.filter(([team, hp]) => team === 1 && hp > 0).map(([, hp]) => hp);
+  expect(team0.reduce((a, b) => a + b, 0)).toBe(200);
+  expect(Math.max(...team0) - Math.min(...team0)).toBeLessThanOrEqual(1);
+  expect(team1).toEqual([200]);
 });
 
 test("skunk detonation leaves a gas emitter that poisons nearby worms", async ({ page }) => {

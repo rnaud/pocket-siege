@@ -26,6 +26,7 @@ import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/
 import { nativeEarthquakeStart, nativeEarthquakeTick, nativeEarthquakeKick, nativeWormEarthquakeResponse } from "./armageddon/earthquake.js";
 import { nativeKamikazeStart, nativeKamikazeTick, nativeToolMaskHits } from "./armageddon/kamikaze.js";
 import { nativeProjectileGas } from "./armageddon/projectile-gas.js";
+import { nativeScalesOfJustice, nativeScalesAnnouncement } from "./armageddon/scales.js";
 import { nativeMoleBurrow, nativeDirtSpray } from "./armageddon/mole-burrow.js";
 import { nativeArrowCreate, nativeArrowFrame, nativeArrowWaterSound, NATIVE_ARROW_SPRITE } from "./armageddon/longbow.js";
 import { nativeSuicideBomberStart, nativeSuicideBomberTick, nativeGasCloud, nativeGasCloudTick } from "./armageddon/suicide-bomber.js";
@@ -5669,25 +5670,31 @@ function useEarthquake() {
   $("#status").textContent = "Earthquake! The ground heaves.";
   finishAction("Earthquake! Retreat!");
 }
+// Scales of Justice (slot 41, kind 4 subtype 22): 004FCFF8 sends 0x446 to
+// the world (004ECCF0 balances every living team's health by alliance), then
+// announces; the world adds sound 0x1F at priority 5.
 function useScales() {
   if (!canAct() || availableAmmo(ammo[team], "scales") <= 0) return;
-  const totals = [0, 1].map((t) => worms
-    .filter((w) => w.team === t && w.hp > 0)
-    .reduce((sum, w) => sum + w.hp, 0));
-  const average = Math.round((totals[0] + totals[1]) / 2);
-  for (const t of [0, 1]) {
-    const roster = worms.filter((w) => w.team === t && w.hp > 0);
-    if (!roster.length) continue;
-    const base = Math.floor(average / roster.length);
-    const remainder = average % roster.length;
-    roster.forEach((w, index) => {
-      w.hp = Math.min(100, base + (index < remainder ? 1 : 0));
+  const teamIds = [...new Set(worms.map((w) => w.team))].sort((a, b) => a - b);
+  const alliances = [...new Set(worms.map((w) => w.matchStats.alliance))].sort((a, b) => a - b);
+  const rosters = teamIds.map((t) => worms.filter((w) => w.team === t));
+  const result = nativeScalesOfJustice(alliances.length, rosters.map((roster) => ({
+    alliance: alliances.indexOf(roster[0].matchStats.alliance), hp: roster.map((w) => w.hp) })));
+  for (const call of result.calls) {
+    const w = rosters[call.request[0] - 1][call.request[1] - 1];
+    if (call.operation === "set") {
+      w.hp = call.request[2];
+      w.matchStats.hp = w.hp;
       revealWormHealth(w);
-    });
+    } else if (call.operation === "report" && matchDamageSourceActive)
+      nativeRecordMatchDamage(nativeMatchStatistics, w.matchStats, worms[current].matchStats, call.request[2]);
   }
   ammo[team].scales = spendAmmo(ammo[team].scales);
   shotCount++;
   recordReactionWeaponUse("scales");
+  queueGameSound([0x1f, 5, 0x10000, 0x10000, 0]);
+  const message = nativeScalesAnnouncement(worms[current].name, () => matchRandom.logicUint());
+  queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
   updateUI();
   finishAction("Scales balanced. Retreat!");
 }
