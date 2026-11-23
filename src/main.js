@@ -25,6 +25,7 @@ let nativeWaterRise = null;
 import { nativeNuclearEffectStart, nativeNuclearEffectTick } from "./armageddon/nuclear-effect.js";
 import { nativeEarthquakeStart, nativeEarthquakeTick, nativeEarthquakeKick, nativeWormEarthquakeResponse } from "./armageddon/earthquake.js";
 import { nativeKamikazeStart, nativeKamikazeTick, nativeToolMaskHits } from "./armageddon/kamikaze.js";
+import { nativeSuicideBomberStart, nativeSuicideBomberTick, nativeGasCloud, nativeGasCloudTick } from "./armageddon/suicide-bomber.js";
 import { nativeCameraShake, nativeCameraShakeDecay } from "./armageddon/camera-shake.js";
 import { nativePaletteDisplay } from "./armageddon/palette-material.js";
 import { playNativeNuclearLoop } from "./armageddon/audio.js";
@@ -94,7 +95,7 @@ import { nativeRetreatRequest } from "./armageddon/retreat-request.js";
 import { nativeCollectWeaponInput } from "./armageddon/controller-input.js";
 import { nativeDragonBallBody, nativeDragonBallHit, nativeDragonBallEvent } from "./armageddon/dragon-ball.js";
 import { attachNativeFallingFlight, attachNativeJetpackFlight, releaseNativeJetpackFlight, stepNativeJetpackFlight, attachNativeParachuteFlight, stepNativeParachuteFlight, attachNativeJumpFlight, stepNativeJumpFlight, attachNativeDrillFlight, stepNativeDrillFlight, attachNativeFirePunchFlight, stepNativeFirePunchFlight } from "./armageddon/worm-flight.js";
-import { startOriginalFirePunch, updateOriginalFirePunch, startOriginalKamikaze } from "./armageddon/art.js";
+import { startOriginalFirePunch, updateOriginalFirePunch, startOriginalSelfDestruct } from "./armageddon/art.js";
 import { carveNativeToolMask } from "./armageddon/terrain-cut-mask.js";
 import toolCuts from "./armageddon/tool-cuts.json";
 import { bodyBlocked } from "./physics.js";
@@ -731,6 +732,8 @@ let lastWaterRiseRound = 0;
 let earthquakeShake = 0;
 // World earthquake fields (004EB2E0); `quake` is the scene+0x1AC4 strength.
 let nativeEarthquake = null;
+// Poison gas clouds (004D37D0 tasks): { body, mesh }.
+let gasClouds = [];
 const earthquakePlaybacks = new Map();
 // Strongest shake since the match started (diagnostic for slow runners).
 let earthquakeShakePeak = 0;
@@ -1762,6 +1765,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   stopNativeEarthquakeAudio();
   nativeEarthquake = null;
   earthquakeShake = 0;
+  for (const cloud of gasClouds) if (cloud.mesh) dispose(cloud.mesh);
+  gasClouds = [];
   // 004B75F4/004B7617: turn-0 timed events, then one sequence pass, run
   // between turns before the first turn starts.
   runMissionBetweenTurns();
@@ -5520,24 +5525,6 @@ function useEarthquake() {
   $("#status").textContent = "Earthquake! The ground heaves.";
   finishAction("Earthquake! Retreat!");
 }
-function useSelfDestruct(kind) {
-  if (!canAct() || availableAmmo(ammo[team], kind) <= 0) return;
-  const w = worms[current];
-  ammo[team][kind] = spendAmmo(ammo[team][kind]);
-  shotCount++;
-  recordReactionWeaponUse(kind);
-  w.hp = 0;
-  w.deathPending = true;
-  w.dying = 1;
-  w.nativeDeathRequest = 0;
-  startOriginalDeath(w);
-  phase = "settle";
-  requestNativeRetreat();
-  shotWait = 0;
-  wormLocked = true;
-  $("#status").textContent = `${w.name} self-destructs.`;
-  updateUI();
-}
 function infectPoisonCloud(x, y, radius = 80, amount = 10) {
   let infected = false;
   for (const w of worms) {
@@ -5739,7 +5726,7 @@ function fireKamikaze(prepared = false) {
     aim: cpuAimValue(w), facing: w.facing < 0 ? -1 : 1,
     x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0,
   }, { border: currentScenario?.indestructibleBorder ? 1 : 0, roof: closed ? 1 : 0 });
-  startOriginalKamikaze(w, start.calls.find((call) => call.operation === "queue").sprite);
+  startOriginalSelfDestruct(w, start.calls.find((call) => call.operation === "queue").sprite, 0x6d);
   w.nativeKamikaze = { ...start.body, aim: cpuAimValue(w) };
   w.x = start.body.x / 65536; w.y = H - start.body.y / 65536;
   w.vx = w.vy = 0; w.ground = false;
@@ -5752,7 +5739,7 @@ function fireKamikaze(prepared = false) {
 function stepKamikaze(w) {
   const state = w.nativeKamikaze;
   const record = nativeHitscanWeapon("kamikaze").record;
-  w.originalKamikaze.player.advance();
+  w.originalSelfDestruct.player.advance();
   const tick = nativeKamikazeTick(record, state, {
     // The team's scene+0x3CD2 byte (set only by mission scripts) would skip
     // the farewell; the host has no such teams yet.
@@ -5785,20 +5772,98 @@ function stepKamikaze(w) {
     } else if (call.operation === "announcement") announceWormDeath(w);
   }
   if (tick.result) return;
-  // State 0x87 hands the worm to drowning; 0x89 deletes the worm task, so it
-  // leaves no grave and no death blast.
-  w.originalKamikaze = null; w.nativeKamikaze = null;
+  w.nativeKamikaze = null;
+  finishSelfDestruct(w, tick.calls);
+}
+// State 0x87 hands the worm to drowning; 0x89 deletes the worm task, so it
+// leaves no grave and no death blast.
+function finishSelfDestruct(w, calls) {
+  w.originalSelfDestruct = null;
   if (pendingFire?.worm === w) pendingFire = null;
   wormLocked = true;
-  if (tick.calls.some((call) => call.operation === "delete")) {
-    w.deathPending = false; w.dying = 0; w.hp = 0; w.nativeDeathRequest = 0;
-    w.g.visible = false;
-    if (w === worms[current]) {
-      cancelCharge();
-      retreat = 0; clearNativeRetreat();
-      move = 0;
-      if (phase === "aim") { phase = "settle"; shotWait = 0; }
+  if (!calls.some((call) => call.operation === "delete")) return;
+  w.deathPending = false; w.dying = 0; w.hp = 0; w.nativeDeathRequest = 0;
+  w.g.visible = false;
+  if (w === worms[current]) {
+    cancelCharge();
+    retreat = 0; clearNativeRetreat();
+    move = 0;
+    if (phase === "aim") { phase = "settle"; shotWait = 0; }
+  }
+}
+// Suicide Bomber: 004F67E0 prepares with wkambmr and the Kamikaze speech,
+// then the 004FCB20 launch enters state 0x75 (004F7BE0).
+function fireSuicideBomber(prepared = false) {
+  if ((!prepared && !canAct()) || availableAmmo(ammo[team], "suicidebomber") <= 0) return;
+  const w = worms[current];
+  if (!prepared && beginWeaponPreparation(w, "suicidebomber", angle)) {
+    pendingFire = { worm: w, angle, kind: "suicidebomber", stage: "prepare" };
+    wormLocked = true; move = aimInput = 0; charging = false; chargeSource = null;
+    updateUI(); return;
+  }
+  spendSpecial("suicidebomber"); shotCount++; recordReactionWeaponUse("suicidebomber");
+  const queue = nativeSuicideBomberStart().find((call) => call.operation === "queue");
+  startOriginalSelfDestruct(w, queue.sprite, 0x75);
+  w.originalHurt = null; w.nativeHurtBody = null; w.nativeFlight = null; w.originalRecovery = null;
+  pendingFire = { worm: w, angle, kind: "suicidebomber", stage: "kamikaze", spent: true };
+  $("#status").textContent = `${w.name}: Suicide Bomber!`;
+  updateUI();
+}
+// 004F7C10 once per 50 Hz frame while the worm is in state 0x75.
+function stepSuicideBomber(w) {
+  const player = w.originalSelfDestruct.player;
+  player.advance();
+  const record = nativeHitscanWeapon("suicidebomber").record;
+  const x = Math.round(w.x * 65536) | 0, y = Math.round((H - w.y) * 65536) | 0;
+  const random = () => matchRandom.logicUint();
+  const tick = nativeSuicideBomberTick(record, { progress: player.current.progress, health: w.hp, marked: 0, x, y },
+    random, (gx, gy, amount) => spawnGasCloud(nativeGasCloud(gx, gy, amount, random, matchRandom.frame)));
+  for (const call of tick.calls) {
+    if (call.operation === "blast")
+      explode(call.packet[1] / 65536, H - call.packet[2] / 65536, "suicidebomber", current, call.packet);
+    else if (call.operation === "accounting")
+      accountWormDamage(w, call.request[0], { force: true, multiplier: call.request[2] });
+    else if (call.operation === "announcement") announceWormDeath(w);
+  }
+  if (!tick.result) finishSelfDestruct(w, tick.calls);
+}
+function spawnGasCloud(body) {
+  const mesh = createOriginalVisual("gassgrn");
+  if (mesh) group.add(mesh);
+  gasClouds.push({ body, mesh });
+}
+// 004D3AB0 for every live gas cloud, in creation order.
+function stepGasClouds() {
+  if (!gasClouds.length) return;
+  const nativeWind = Math.round(wind / 2500 * 65536);
+  // Only worms answer 0x439; they stand in for registry types 2..5.
+  const live = worms.filter((w) => w.hp > 0 && !w.drowned);
+  const targets = live.map((w) => ({ type: 5, x: Math.round(w.x * 65536) | 0, y: Math.round((H - w.y) * 65536) | 0 }));
+  for (const cloud of [...gasClouds]) {
+    const tick = nativeGasCloudTick(cloud.body, { wind: nativeWind, frame: matchRandom.frame,
+      random: () => matchRandom.logicUint(), targets });
+    cloud.body = tick.body;
+    if (tick.busy) nativeBusy.wake();
+    for (const call of tick.calls) {
+      if (call.operation === "poison") {
+        const w = live[call.target];
+        w.nativePoison = nativeWormPoisonInfect({ ...w.nativePoison, team: w.matchStats.team,
+          worm: w.matchStats.worm, state: nativeWormState(w) }, call.amount, { announce: () => {} });
+        poisoned = true;
+      } else if (call.operation === "delete") {
+        if (cloud.mesh) dispose(cloud.mesh);
+        gasClouds.splice(gasClouds.indexOf(cloud), 1);
+      }
     }
+  }
+}
+function updateGasClouds() {
+  for (const { body, mesh } of gasClouds) {
+    if (!mesh) continue;
+    const art = originalVisual("gassgrn");
+    const index = nativeSpriteFrame(art.count, art.flags, body.progress);
+    mesh.material.map = originalVisual("gassgrn", index).map;
+    mesh.position.set(Math.round(body.x / 65536), Math.round(H - body.y / 65536), 36);
   }
 }
 function fireAxe(prepared = false) {
@@ -5909,7 +5974,7 @@ function fire() {
   }
   if (kind === "kamikaze") { fireKamikaze(); return; }
   if (kind === "suicidebomber") {
-    useSelfDestruct(kind);
+    fireSuicideBomber();
     return;
   }
   if (kind === "mine") {
@@ -6702,6 +6767,7 @@ function spawnNativeParticle(name, x, y, vx, vy, step) {
   });
 }
 function updateNativeParticles() {
+  updateGasClouds();
   for (const p of stepNativeParticles(nativeParticles)) dispose(p.mesh);
   for (const p of nativeParticles) {
     const art = originalVisual(p.name);
@@ -7619,6 +7685,7 @@ function stepFrame(dt) {
   if (phase !== "over" && phase !== "menu" && phase !== "break") {
     stepNativeWaterRise();
     stepNativeEarthquake();
+    stepGasClouds();
     stepNativeNuclearEffect();
   }
   if (pendingTurnStart && !nativeAnnouncementsPending(nativeAnnouncements)) beginTurn();
@@ -7885,7 +7952,7 @@ function stepFrame(dt) {
       if (teleport?.relocate) queueWormCamera(w);
       continue;
     }
-    if (w.originalKamikaze) { stepKamikaze(w); continue; }
+    if (w.originalSelfDestruct) { if (w.originalSelfDestruct.state === 0x75) stepSuicideBomber(w); else stepKamikaze(w); continue; }
     const quakeKicked = nativeQuake() !== 0 && w.ground && !w.frozen && !w.drowned &&
       !w.nativeHurtBody && !w.nativeFlight && !(w === worms[current] && (jetpack.active || rope.attached)) &&
       kickStandingWorm(w);
@@ -8274,6 +8341,7 @@ function stepFrame(dt) {
         else if (pending.kind === "dragonball") fireDragonBall(true);
         else if (pending.kind === "firepunch") firePunch(true);
         else if (pending.kind === "kamikaze") fireKamikaze(true);
+        else if (pending.kind === "suicidebomber") fireSuicideBomber(true);
         else if (pending.kind === "axe") fireAxe(true);
         else if (pending.kind === "prod") fireProd(true);
         else if (pending.kind === "bat") fireBat(true);
@@ -10074,6 +10142,7 @@ window.siege = {
     suddenDeathType,
     sdTriggered,
     poisoned,
+    gasClouds: gasClouds.map(({ body }) => ({ x: body.x / 65536, y: H - body.y / 65536, progress: body.progress })),
     seriesWins: [...seriesWins],
     seriesRound,
     breakTimer: Math.round(breakTimer * 10) / 10,
