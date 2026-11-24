@@ -3,7 +3,7 @@ import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { loadNativeFont } from "./font.js";
 import { nativeAnnouncementDraw } from "./announcements.js";
 
-const fontNames = { 15: "stdwht1", 17: "medred1", 19: "medgrn1", 23: "medwht1", 28: "digiwht" };
+const fontNames = { 15: "stdwht1", 17: "medred1", 18: "medblu1", 19: "medgrn1", 20: "medyel1", 23: "medwht1", 28: "digiwht" };
 const fonts = new Map();
 const renderers = new WeakMap();
 export async function loadNativeAnnouncementArt() {

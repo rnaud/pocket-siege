@@ -151,6 +151,12 @@ main {
   justify-content: flex-end;
   text-align: right;
 }
+.team-tide {
+  color: #8fa8ef;
+}
+.team-amber {
+  color: #e8d26a;
+}
 .health-track {
   height: 4px;
   background: #354553;

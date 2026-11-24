@@ -1,3 +1,4 @@
+import { teamColor } from "../teams.js";
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
@@ -14,7 +15,7 @@ export function updateOriginalCrosshair(canvas, team, angle, sight = null) {
   const pitch = Math.asin(Math.sin((angle * Math.PI) / 180));
   const aim = Math.round((pitch / Math.PI + 0.5) * 0xffff);
   const { name, index } = originalCrosshairFrame(
-    team ? 0 : 2,
+    teamColor(team),
     sight?.aim ?? aim,
     sight?.opening ?? 0x10000,
   );

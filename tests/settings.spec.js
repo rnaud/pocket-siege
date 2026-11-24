@@ -18,7 +18,9 @@ test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
   expect(readSettings(storage)).toEqual(defaultSettings());
   const settings = {
     sound: true,
-    teamSpeech:['danish~1','austra~1'],
+    teamSpeech:['danish~1','austra~1','english','german'],
+    teamCount: 4,
+    teamControl: ["human", "cpu", "human", "cpu"],
     weaponDelays: { holy: 2, airstrike: -1 },
     mode: "local",
     difficulty: "veteran",
@@ -45,7 +47,10 @@ test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
   writeSettings({ ...settings, terrainTheme: "invalid" }, storage);
   expect(readSettings(storage).terrainTheme).toBe("forest");
   writeSettings({...settings,teamSpeech:['missing','german']},storage);
-  expect(readSettings(storage).teamSpeech).toEqual(['english','german']);
+  expect(readSettings(storage).teamSpeech).toEqual(['english','german','english','english']);
+  writeSettings({ ...settings, teamCount: 5, teamControl: ["robot", "cpu"] }, storage);
+  expect(readSettings(storage).teamCount).toBe(2);
+  expect(readSettings(storage).teamControl).toEqual(["human", "cpu", "human", "human"]);
   storage.setItem("pocket-siege-settings-v1", "{nope");
   expect(readSettings(storage)).toEqual(defaultSettings());
 });

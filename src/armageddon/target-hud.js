@@ -1,3 +1,4 @@
+import { teamColor } from "../teams.js";
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
@@ -10,7 +11,7 @@ export function originalTargetFrame(color, tick) {
   };
 }
 export function updateOriginalTarget(canvas, team, tick) {
-  const { name, index } = originalTargetFrame(team ? 0 : 2, tick);
+  const { name, index } = originalTargetFrame(teamColor(team), tick);
   const frame = originalVisual(name, index);
   if (!frame) return false;
   if (canvas.width !== 60 || canvas.height !== 60)

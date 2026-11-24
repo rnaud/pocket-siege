@@ -1,3 +1,4 @@
+import { TEAMS, teamInfo, teamColor, teamSpriteSuffix, teamIds, clampTeamCount } from "./teams.js";
 import {observeAssetCache} from './asset-cache.js';
 import { OriginalMusic } from "./armageddon/music.js";
 import {nativeInitializeWormSpawnFields} from './armageddon/worm-spawn-fields.js';
@@ -563,14 +564,14 @@ const land = new THREE.Mesh(
 );
 land.position.set(W / 2, H / 2, 0);
 group.add(land);
-const names = [
-  ["Sprout", "Moss", "Pickle", "Fern", "Root", "Bud"],
-  ["Pepper", "Toast", "Chilli", "Ember", "Ash", "Flint"],
-];
+const names = TEAMS.map((info) => info.worms);
 let terrain,
   worms = [],
   current = 0,
   team = 0,
+  // Local pass & play fields 2–4 teams; every other match type keeps two.
+  teamCount = 2,
+  teamControllers = ["human", "cpu"],
   round = 1,
   phase = "menu",
   projectile = null,
@@ -578,7 +579,7 @@ let terrain,
   wind = 0,
   time = 45,
   shotWait = 0,
-  lastSelectedWorm = [0, 0],
+  lastSelectedWorm = [0, 0, 0, 0],
   selectedNativeTeam = null,
   lastSelectedWormAlliance = new Map(),
   soloMatch = false,
@@ -1027,8 +1028,8 @@ function createWorm(t, i, x, spawnY = null) {
   const wormName = names[t][i] ?? `Worm ${i + 1}`;
   const label = document.createElement("div");
   label.className = "worm-label";
-  label.style.setProperty("--worm-color", t ? "#ef9d89" : "#b7c86a");
-  label.style.color = t ? "#a94a3d" : "#4d6b3a";
+  label.style.setProperty("--worm-color", teamInfo(t).tint);
+  label.style.color = teamInfo(t).label;
   label.innerHTML = `<span class="worm-label-name">${wormName}</span><strong>100</strong>`;
   $("#labels").appendChild(label);
   group.add(g);
@@ -1217,7 +1218,7 @@ function announce(text) {
   queueNativeAnnouncement(nativeAnnouncements, text, 23);
 }
 function announceWormDeath(worm) {
-  const message = nativeWormDeathAnnouncement(worm.name, worm.team ? 0 : 2, worm.drowned, () => matchRandom.logicUint());
+  const message = nativeWormDeathAnnouncement(worm.name, teamColor(worm.team), worm.drowned, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 function winningSideName(winner) {
@@ -1244,7 +1245,7 @@ function announceMatchResult(winner) {
     audio.resume();
     queueControllerSpeech([2, 8, 65536, 65536, 0], worms.find((w) => w.team === team));
   }
-  const message = nativeMatchResultAnnouncement(winningSideName(winner), winner ? 0 : 2, winner === null, () => matchRandom.logicUint());
+  const message = nativeMatchResultAnnouncement(winningSideName(winner), teamColor(winner ?? 0), winner === null, () => matchRandom.logicUint());
   queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
 }
 const music = new OriginalMusic();
@@ -1311,6 +1312,28 @@ const nativeTeamPanel = { progress: 0, target: 65536, countdown: 0 };
 let mapLoading = false;
 let preparedRandomSeed = null;
 const nativeSoundQueue = new NativeSoundQueue();
+// Local pass & play reads the team count and each team's controller from the
+// menu; solo, daily, scenario and expedition matches stay Moss vs. Coral.
+function configureMatchTeams(isDaily = false) {
+  const selectedMode = $("#mode").value;
+  const local = selectedMode === "local" && !currentScenario && !expeditionStage && !isDaily;
+  teamCount = local ? clampTeamCount($("#team-count")?.value) : 2;
+  teamControllers = local
+    ? teamIds(teamCount).map((t) => $(`#team-control-${t}`)?.value === "cpu" ? "cpu" : "human")
+    : selectedMode === "ai" ? ["human", "cpu"] : ["human", "human"];
+}
+// Duels keep Moss facing right and Coral left; larger matches face the
+// active worm toward the middle of the island.
+function teamStartFacing(w) {
+  if (teamCount > 2) return w.x < W / 2 ? 1 : -1;
+  return w.team ? -1 : 1;
+}
+function isCpuTeam(t = team) {
+  return teamControllers[t] === "cpu";
+}
+function livingTeams() {
+  return teamIds(teamCount).filter((t) => worms.some((w) => w.team === t && w.hp > 0));
+}
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending: 0 };
   suddenDeathCountdown = 0;
@@ -1320,7 +1343,8 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   const selectedLayout = $("#map-layout").value;
   soloMatch = /train/i.test(selectedLayout);
   matchFriction = currentScenario?.friction ?? NATIVE_MINE_FRICTION;
-  teamDisplayNames = ["MOSS COMPANY", "CORAL CREW"];
+  configureMatchTeams(isDaily);
+  teamDisplayNames = TEAMS.slice(0, teamCount).map((info) => info.name);
   if (currentScenario?.teamNames) {
     teamDisplayNames[0] = currentScenario.teamNames[0] ?? teamDisplayNames[0];
     teamDisplayNames[1] = currentScenario.teamNames[1] ?? teamDisplayNames[1];
@@ -1355,18 +1379,18 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   selectionTick = 0;
   nativeClockProgress = nativeClockTarget = 0;
   nativeClockPresentation.phase = 0;
-  nativeTeamList = createNativeTeamList(soloScenario() ? [0] : [0, 1]);
+  nativeTeamList = createNativeTeamList(soloScenario() ? [0] : teamIds(teamCount));
   teamPanelSoundState.drop = teamPanelSoundState.bounce = 0;
   pendingEliminationTeam = null;
   nativeTeamHealthMaximum = 1;
   nativeBusy.value = 0;
-  nativeTeamHealthValues = [65536, 65536];
+  nativeTeamHealthValues = Array(teamCount).fill(65536);
   updateHudTeamHealth(nativeTeamHealthValues);
   Object.assign(nativeTeamPanel, { progress: 0, target: 65536, countdown: 0 });
   labelMode = 1;
   updateLabelModeButton();
   if (!keepSeries) {
-    seriesWins = [0, 0];
+    seriesWins = Array(teamCount).fill(0);
     seriesRound = 1;
     slowMo = 0;
     daily = isDaily ? daily : null;
@@ -1422,7 +1446,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   aimHUD.replay.group.style.display = "none";
   const carriedAmmo = keepSeries && stockpile ? ammo : null;
   const carriedUtilities = keepSeries && stockpile ? utilityAmmo : null;
-  ammo = carriedAmmo ?? [freshAmmo(), freshAmmo()];
+  ammo = carriedAmmo ?? teamIds(teamCount).map(() => freshAmmo());
   if (currentScenario?.loadouts) {
     for (const [index, loadout] of currentScenario.loadouts.entries()) {
       for (const kind of Object.keys(WEAPONS)) if (kind !== "rocket") ammo[index][kind] = 0;
@@ -1433,10 +1457,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     for (const teamAmmo of ammo)
       for (const kind of SECRET_WEAPONS) teamAmmo[kind] = 0;
   }
-  weaponDelays = [0, 1].map(() =>
+  weaponDelays = teamIds(teamCount).map(() =>
     createWeaponDelays(isDaily ? {} : configuredDelays),
   );
-  utilityAmmo = carriedUtilities ?? [freshUtilities(), freshUtilities()];
+  utilityAmmo = carriedUtilities ?? teamIds(teamCount).map(() => freshUtilities());
   if (!currentScenario && !carriedAmmo && $("#scheme").value === "classic")
     applyOriginalSchemeLoadout(isDaily ? {} : configuredDelays);
   if (currentScenario?.utilityLoadouts) {
@@ -1449,7 +1473,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   damageMultiplier = 1;
   automaticUtilityState = { doubleTime: 0, crateShower: 0, crateTimer: 0, crateCount: 0 };
   crateShowerPool = null; crateShowerUsed = []; crateShowerAmmo = null;
-  teamWeapon = ["rocket", "rocket"];
+  teamWeapon = Array(teamCount).fill("rocket");
   waterLevel = WATER;
   nativeWaterRise = null;
   stopNativeNuclearAudio();
@@ -1601,7 +1625,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
       bridges: "BRIDGES",
     }[terrain.layout] ??
     terrain.layout.replace("original:", "").replace(".img", "").toUpperCase();
-  const slots = [180, 340, 490, 710, 860, 1020];
+  // Three worms per team; generated islands spread extra teams evenly.
+  const slots = teamCount > 2
+    ? teamIds(teamCount * 3).map((i) => Math.round(W * (i + 0.5) / (teamCount * 3)))
+    : [180, 340, 490, 710, 860, 1020];
   const spawns = authored
     ? originalMapSpawns(
         terrain,
@@ -1627,7 +1654,10 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   worms = [];
   if(authored)spawnHazards(terrain.nativeSpawnSetup.objects);
   for(const [index,p] of spawns.entries()) {
-    const worm=createWorm(index<3?0:1,index%3,p.x,p.y);
+    // Two-team matches keep the host's 3+3 roster order; larger local
+    // matches deal spawns round-robin so no team owns one end of the island.
+    const worm=teamCount>2?createWorm(index%teamCount,Math.floor(index/teamCount),p.x,p.y)
+      :createWorm(index<3?0:1,index%3,p.x,p.y);
     if(authored) {
       const placed=nativePlaceWormAt(Math.round(p.x*65536),Math.round((H-p.y)*65536),
         Math.floor(H-waterLevel),matchFriction,
@@ -1733,12 +1763,12 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
     }
   }
   if (expeditionStage) applyExpeditionStage();
-  nativeTeamRotation = nativeTeamRotationReset({ groups: 2,
-    initialGroup: keepSeries ? (seriesRound - 1) % 2 : 0,
-    cursors: Array(nativeTeamCandidates().length).fill(1), starts: [0, 0] });
+  nativeTeamRotation = nativeTeamRotationReset({ groups: teamCount,
+    initialGroup: keepSeries ? (seriesRound - 1) % teamCount : 0,
+    cursors: Array(Math.max(teamCount, nativeTeamCandidates().length)).fill(1), starts: Array(teamCount).fill(0) });
   team = selectNativeMatchTeam();
   round = 1;
-  lastSelectedWorm = [0, 0];
+  lastSelectedWorm = Array(teamCount).fill(0);
   selectedNativeTeam = null;
   lastSelectedWormAlliance = new Map();
   explosions = 0;
@@ -1978,7 +2008,7 @@ function updateScenarioObjectiveHUD() {
 function updateSeriesHUD() {
   const el = $("#series");
   el.hidden = format !== "best3";
-  if (!el.hidden) el.textContent = `SERIES ${seriesWins[0]}–${seriesWins[1]}`;
+  if (!el.hidden) el.textContent = `SERIES ${seriesWins.join("–")}`;
 }
 function applyWeather() {
   $("#weather-layer").className = weather === "clear" ? "" : weather;
@@ -2400,7 +2430,7 @@ function scheduleScenarioFrontendReturn(path) {
 // Classic duel starts from the original default scheme (resource 195): the
 // recovered 00415540/00417750/004C2640 setup supplies counts and delays.
 function applyOriginalSchemeLoadout(configured) {
-  const loadouts = nativeSchemeLoadouts(195, 2);
+  const loadouts = nativeSchemeLoadouts(195, teamCount);
   const count = value => value === -1 ? Infinity : value;
   loadouts.forEach(({ counts, delays }, index) => {
     for (const [kind, slot] of Object.entries(WEAPON_SLOTS)) ammo[index][kind] = count(counts[slot]);
@@ -3429,7 +3459,7 @@ function beginTurn() {
     state: nativeWormState(active), positionX: Math.round(active.x * 65536) | 0,
     positionY: Math.round((H - active.y) * 65536) | 0,
     teamHealth: roster.reduce((sum, w) => sum + Math.max(0, w.hp), 0),
-    teamFlags: active.nativeTeamModifiers | 0, teamControl: mode === "ai" && team === 1 ? 128 : 0,
+    teamFlags: active.nativeTeamModifiers | 0, teamControl: isCpuTeam(team) ? 128 : 0,
     initialDeployment: false, deployment: false,
   });
   turnBody = turnStart.body;
@@ -3468,12 +3498,11 @@ function beginTurn() {
   }, () => matchRandom.logicUint());
   wind = selectedWind.wind / 65536 * 2500;
   slowMo = 0;
-  angle = team ? 135 : 45;
-  active.facing = team ? -1 : 1;
+  active.facing = teamStartFacing(active);
+  angle = active.facing < 0 ? 135 : 45;
   if (
-    team === 1 &&
-    mode === "ai" &&
-    displayAmmo(utilityAmmo[1]?.parachute ?? 0) > 0
+    isCpuTeam(team) &&
+    displayAmmo(utilityAmmo[team]?.parachute ?? 0) > 0
   )
     parachuteArmed = true;
   cancelCharge();
@@ -3493,18 +3522,16 @@ function beginTurn() {
   updateSliders();
   destroyCpuAi();
   cpuTarget = null;
-  if (team === 1 && mode === "ai" && !cpuAiFailed) startCpuAi();
+  if (isCpuTeam(team) && !cpuAiFailed) startCpuAi();
   $("#round").textContent = suddenDeath
     ? "SUDDEN DEATH"
     : `ROUND ${String(round).padStart(2, "0")}`;
   $("#turn-label").textContent =
-    mode === "ai"
+    mode === "ai" && teamCount <= 2
       ? team
         ? "COMPUTER TURN"
         : "YOUR MOVE"
-      : team
-        ? "CORAL’S MOVE"
-        : "MOSS’S MOVE";
+      : `${teamInfo(team).short}’S MOVE${isCpuTeam(team) ? " · CPU" : ""}`;
   tickOriginalWindHUD(wind, false);
   $(".location span").textContent = daily
     ? "DAILY ISLAND"
@@ -3542,7 +3569,7 @@ function beginTurn() {
     : "";
   $("#status").textContent = suddenDeath
     ? `${active.name} is up.${suddenNote}${weatherNote}`
-    : `${active.name} is up. ${team && mode === "ai" ? "Taking aim…" : "Pick your angle. Make a little chaos."}${weatherNote}`;
+    : `${active.name} is up. ${isCpuTeam(team) ? "Taking aim…" : "Pick your angle. Make a little chaos."}${weatherNote}`;
   bannerTime = 1.8;
   $("#turn-banner").textContent =
     `${activeTeamName(active)} · ${active.name.toUpperCase()}`;
@@ -3559,9 +3586,10 @@ function updateUI() {
   updateCrateSpyHUD();
   updateScenarioAllianceHealth();
   updateHudTeams(worms, team);
-  for (let t = 0; t < 2; t++) {
+  for (let t = 0; t < teamCount; t++) {
     const roster = worms.filter((w) => w.team === t && !w.disabledRoster);
     const hp = roster.reduce((s, w) => s + w.hp, 0);
+    if (!$("#score" + t)) continue;
     $("#score" + t).textContent = hp;
     $("#health" + t).style.width = `${Math.min(100, hp / Math.max(1, roster.length * 100) * 100)}%`;
   }
@@ -3725,7 +3753,7 @@ function canAct() {
 }
 // CPU turns accept only the native AI's own events (cpuInput).
 function cpuInputBlocked() {
-  return team === 1 && mode === "ai" && !cpuInput;
+  return isCpuTeam(team) && !cpuInput;
 }
 function canMove() {
   return (
@@ -3778,8 +3806,8 @@ function cycleWorm(direction = 1) {
   power = 0;
   charging = false;
   chargeSource = null;
-  next.facing = team ? -1 : 1;
-  angle = team ? 135 : 45;
+  next.facing = teamStartFacing(next);
+  angle = next.facing < 0 ? 135 : 45;
   cameraSnap = true; manualCamera = null;
   wormLocked = false;
   setWeapon(teamWeapon[team] || "rocket");
@@ -4487,6 +4515,26 @@ function surrenderMatch() {
       w.dying = 0;
     }
   if (menu.open) menu.close();
+  if (teamCount > 2) {
+    // Larger local matches only drop the surrendering team; play goes on
+    // until one team remains.
+    const alive = livingTeams();
+    if (alive.length > 1) {
+      cancelCharge(); stopRope(); stopJetpack();
+      phase = "settle"; shotWait = 0; move = 0; aimInput = 0;
+      retreat = 0; clearNativeRetreat();
+      updateUI();
+      return;
+    }
+    const winner = alive[0] ?? null;
+    if (format === "best3" && winner !== null) {
+      seriesWins = Array(teamCount).fill(0);
+      seriesWins[winner] = 2;
+    }
+    finishMatch(winner, format === "best3");
+    updateUI();
+    return;
+  }
   if (format === "best3") {
     const winner = 1 - losingTeam;
     seriesWins = [0, 0];
@@ -4733,10 +4781,12 @@ function applySuddenDeath() {
     updateUI();
     return false;
   }
-  const totals = [0, 1].map((t) =>
+  const totals = teamIds(teamCount).map((t) =>
     worms.filter((w) => w.team === t).reduce((sum, w) => sum + w.hp, 0),
   );
-  const winner = totals[0] === totals[1] ? null : totals[0] > totals[1] ? 0 : 1;
+  const best = Math.max(...totals);
+  const leaders = teamIds(teamCount).filter((t) => totals[t] === best);
+  const winner = leaders.length === 1 ? leaders[0] : null;
   for (const w of worms)
     if (winner !== null && w.team !== winner) {
       w.hp = 0;
@@ -4772,12 +4822,9 @@ async function shareResultCard() {
     ctx.drawImage(portrait,650,220,portrait.width*8,portrait.height*8);
     ctx.drawImage(portrait,875,270,portrait.width*8,portrait.height*8);
   }
-  const result =
-    lastResult.winner === 0
-      ? `${lastResult.winnerName ?? teamDisplayNames[0]} WINS`
-      : lastResult.winner === 1
-        ? `${lastResult.winnerName ?? teamDisplayNames[1]} WINS`
-        : "MUTUAL DESTRUCTION";
+  const result = lastResult.winner !== null && lastResult.winner !== undefined
+    ? `${lastResult.winnerName ?? teamDisplayNames[lastResult.winner]} WINS`
+    : "MUTUAL DESTRUCTION";
   ctx.fillStyle = "#efc58b";
   ctx.font = '24px "Siege Pixel"';
   ctx.fillText("POCKET SIEGE", 64, 92);
@@ -4787,8 +4834,8 @@ async function shareResultCard() {
   ctx.fillStyle = "#e7dcc0";
   ctx.font = '24px "Siege Pixel"';
   const line = lastResult.series
-    ? `BEST OF 3 · ${lastResult.seriesWins[0]}–${lastResult.seriesWins[1]}`
-    : `FINAL HEALTH · ${lastResult.score[0]}–${lastResult.score[1]}`;
+    ? `BEST OF 3 · ${lastResult.seriesWins.join("–")}`
+    : `FINAL HEALTH · ${lastResult.score.join("–")}`;
   ctx.fillText(line, 64, 248);
   if (lastResult.daily) {
     ctx.fillStyle = "#efc58b";
@@ -4856,7 +4903,7 @@ function captureMatchReplayState() {
     display: { palette: { flash: nativePaletteDisplay.flash.value, fade: nativePaletteDisplay.fade.value,
       dark: nativePaletteDisplay.dark.value }, waterFrame: water.userData.originalFrame ?? 0 },
     actors: { worms, projectile, particles, crates, mines, girders, graves, bombs, airstrikes, nativeFlames, hazards, nativeParticles, originalEffects, originalSmoke, originalDebris, waterBubbles },
-    turn: { current, team, round, phase, wind, time, shotWait, lastSelectedWorm, mode, weapon, move, angle, power, aiWait,
+    turn: { current, team, teamCount, teamControllers, round, phase, wind, time, shotWait, lastSelectedWorm, mode, weapon, move, angle, power, aiWait,
       explosions, configuredDelays, nativeAnnouncements, pendingTurnStart, pendingPoisonSettlement, pendingEnvironmentSettlement,
       matchDamageSourceActive, nativeMatchStatistics, nativeDamageReaction, reactionOrigin, announcementVolume,
       weaponDelays, ammo, teamWeapon, waterLevel, suddenDeath, suddenDeathType, sdTriggered, poisoned, difficulty,
@@ -4925,6 +4972,9 @@ function restoreMatchReplayState(snapshot) {
     pendingEliminationTeam, nativeTeamHealthMaximum, nativeTeamHealthValues, toggleTeamPanelVisibility, smokeRandom, impactBag, bubbleSeed,
     nativeWaterRise, nativeNuclearEffect
   } = state.turn);
+  teamCount = state.turn.teamCount ?? 2;
+  // Solo matches are always Moss (player) against a CPU Coral.
+  teamControllers = mode === "ai" ? ["human", "cpu"] : state.turn.teamControllers ?? ["human", "human"];
   Object.assign(nativeTeamPanelVisibility,state.turn.nativeTeamPanelVisibility);
   Object.assign(nativeTeamPanel,state.turn.nativeTeamPanel);
   Object.assign(mineDudPool,state.controllers.mineDudPool);
@@ -5000,7 +5050,9 @@ function saveSettings() {
   writeSettings({
     sound,
     weaponDelays: configuredDelays,
-    teamSpeech:[0,1].map(t=>$('#team-voice-'+t).value),
+    teamSpeech:[0,1,2,3].map(t=>$('#team-voice-'+t).value),
+    teamCount: +$("#team-count").value,
+    teamControl: [0, 1, 2, 3].map((t) => $(`#team-control-${t}`).value),
     mode: $("#mode").value,
     difficulty: $("#difficulty").value,
     format: $("#format").value,
@@ -5036,6 +5088,9 @@ function applySettings() {
   set("#retreat-time", String(saved.retreatTime));
   set("#sudden-death", saved.suddenDeath);
   saved.teamSpeech.forEach((bank,t)=>set('#team-voice-'+t,bank));
+  set("#team-count", String(saved.teamCount));
+  saved.teamControl.forEach((value, t) => set(`#team-control-${t}`, value));
+  syncMenuOptions();
   sound = saved.sound;
   updateSoundButton();
 }
@@ -5392,7 +5447,7 @@ function spawnPlacedMine(release) {
   mine.y = H - mine.nativeBody.y / 65536;
   mesh.position.set(mine.x, mine.y, 18);
   group.add(mesh);
-  registerLiveMine(mine,team === 0 ? 2 : 0);
+  registerLiveMine(mine,teamColor(team));
   ammo[team].mine = spendAmmo(ammo[team].mine);
   if (ammo[team].mine === 0) setWeapon("rocket");
   charging = false;
@@ -5585,7 +5640,7 @@ function stepNativeTargetCursor(limits) {
     // 004E6190: team cursor 0x31C+colour at progress = angle, drawn at the
     // point minus (sin, cos)(angle) * 16 so the arrow tip touches it.
     const angle = targetCursorAngle;
-    updateOriginalObject(targetCursorMesh, team ? "cursorr" : "cursorg", 0, angle & 0xffff);
+    updateOriginalObject(targetCursorMesh, `cursor${teamSpriteSuffix(team)}`, 0, angle & 0xffff);
     targetCursorMesh.visible = true;
     const x = (targetCursor[0] - Math.imul(nativeSin(angle), 16)) / 65536;
     const y = (targetCursor[1] - Math.imul(nativeCos(angle), 16)) / 65536;
@@ -7624,10 +7679,10 @@ function finishMatch(winner, series) {
   $("#turn-label").textContent = series ? "SERIES COMPLETE" : "MATCH COMPLETE";
   $("#status").textContent =
     format === "best3"
-      ? `Final series ${seriesWins[0]}–${seriesWins[1]}. Tap New match for another.`
+      ? `Final series ${seriesWins.join("–")}. Tap New match for another.`
       : "Good game. Tap New match for another round.";
   updateSeriesHUD();
-  const score = [0, 1].map((t) =>
+  const score = teamIds(teamCount).map((t) =>
     worms.filter((w) => w.team === t).reduce((sum, w) => sum + w.hp, 0),
   );
   lastResult = {
@@ -7687,7 +7742,7 @@ function endGame() {
   if (currentScenario && missionState) return finishMission();
   const a = worms.some((w) => w.team === 0 && w.hp > 0),
     b = worms.some((w) => w.team === 1 && w.hp > 0);
-  if (!a && b) {
+  if (!a && b && teamCount <= 2) {
     const groups = new Set(worms.filter((w) => w.team === 1 && w.hp > 0)
       .map((w) => w.alliance ?? null));
     const candidates = nativeTeamCandidates().filter((candidate) =>
@@ -7700,7 +7755,9 @@ function endGame() {
       return;
     }
   }
-  const winner = a && !b ? 0 : b && !a ? 1 : null;
+  const alive = livingTeams();
+  const winner = teamCount > 2 ? (alive.length === 1 ? alive[0] : null)
+    : a && !b ? 0 : b && !a ? 1 : null;
   if (format === "best3" && winner !== null) {
     seriesWins = nextSeriesWins(seriesWins, winner);
     const wonSeries = seriesWinner(seriesWins);
@@ -7711,7 +7768,7 @@ function endGame() {
     announceMatchResult(winner);
     $("#turn-label").textContent = "ROUND OVER";
     $("#status").textContent =
-      `Series ${seriesWins[0]}–${seriesWins[1]}. Next island incoming…`;
+      `Series ${seriesWins.join("–")}. Next island incoming…`;
     updateSeriesHUD();
     updateUI();
     return;
@@ -7724,7 +7781,7 @@ function endGame() {
     announceMatchResult(null);
     $("#turn-label").textContent = "ROUND OVER";
     $("#status").textContent =
-      `Series ${seriesWins[0]}–${seriesWins[1]}. Next island incoming…`;
+      `Series ${seriesWins.join("–")}. Next island incoming…`;
     updateSeriesHUD();
     updateUI();
     return;
@@ -7783,11 +7840,14 @@ function nativeTeamCandidates() {
   }
   for (const [alliance, groupWorms] of groups)
     candidates.push({ team: 1, alliance, group: 1, worms: groupWorms });
+  // Extra local teams are separate alliances, each its own rotation group.
+  for (let t = 2; t < teamCount; t++)
+    candidates.push({ team: t, alliance: null, group: t, worms: worms.filter((w) => w.team === t) });
   return candidates;
 }
 function selectNativeMatchTeam() {
   const candidates = nativeTeamCandidates();
-  const selected = nativeSelectNextTeam({ ...nativeTeamRotation, groups: 2,
+  const selected = nativeSelectNextTeam({ ...nativeTeamRotation, groups: teamCount,
     deployment: false, teams: candidates.map((candidate) => ({ group: candidate.group,
       unavailable: 0, eliminated: 0,
       worms: candidate.worms.map(w => ({ hp: w.hp, state: nativeWormState(w) })),
@@ -7829,7 +7889,7 @@ function nextTurn() {
   if (missionState && missionIsOver()) return endGame();
   const killer = matchDamageSourceActive ? worms[current] : null;
   const killMessage = nativeKillAnnouncement(killer?.matchStats, killer?.name,
-    killer?.team ? 0 : 2, () => matchRandom.logicUint());
+    teamColor(killer?.team ?? 0), () => matchRandom.logicUint());
   if (killMessage) {
     queueNativeAnnouncement(nativeAnnouncements, killMessage.text, killMessage.font);
     return;
@@ -7844,7 +7904,7 @@ function nextTurn() {
   const cpuGroups = new Set(worms.filter((w) => w.team === 1 && w.hp > 0)
     .map((w) => w.alliance ?? null));
   if (soloScenario() ? !playerAlive : !(playerAlive === false && cpuGroups.size > 1) &&
-      [0, 1].some((t) => !worms.some((w) => w.team === t && w.hp > 0)))
+      livingTeams().length <= 1)
     return endGame();
   matchDamageSourceActive = false;
   if (!advanceNativePoisonSettlement()) return;
@@ -7873,10 +7933,13 @@ function nextTurn() {
     }
   }
   // 004B768A (S10d): choose the next team and start its turn.
+  const previousTeam = team;
   const nextTeam = selectNativeMatchTeam();
   if (nextTeam < 0) return endGame();
   team = nextTeam;
-  if (team === 0) {
+  // A round ends once every team has played: Moss opens each duel round, and
+  // larger local matches wrap past the last living team.
+  if (teamCount > 2 ? nextTeam <= previousTeam : team === 0) {
     round++;
     // Host presets without the native crate bag keep their round crates.
     if (
@@ -7943,18 +8006,20 @@ function difficultyForWorm(worm) {
 }
 function startAiTurn() {
   const w = worms[current];
-  const aiAlive = worms.filter((t) => t.team === 1 && t.hp > 0).length;
-  const playerAlive = worms.filter((t) => t.team === 0 && t.hp > 0).length;
-  if (displayAmmo(utilityAmmo[1]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
-    utilityAmmo[1].freeze = spendAmmo(utilityAmmo[1].freeze);
-    freezeNativeTeam(1);
+  const aiAlive = worms.filter((t) => t.team === team && t.hp > 0).length;
+  const playerAlive = Math.max(0, ...teamIds(teamCount).filter((t) => t !== team)
+    .map((t) => worms.filter((o) => o.team === t && o.hp > 0).length));
+  if (displayAmmo(utilityAmmo[team]?.freeze ?? 0) > 0 && aiAlive < playerAlive) {
+    utilityAmmo[team].freeze = spendAmmo(utilityAmmo[team].freeze);
+    freezeNativeTeam(team);
     playSkipTurnSpeech();
     phase = "settle";
     retreat = 0; clearNativeRetreat();
     shotWait = 0;
     move = 0;
     $("#status").textContent =
-      "The computer freezes its squad for protection. Your turn is next.";
+      teamCount > 2 ? `${teamDisplayNames[team]} freezes its squad for protection.`
+        : "The computer freezes its squad for protection. Your turn is next.";
     updateUI();
     return;
   }
@@ -8182,7 +8247,7 @@ function cpuFireDown() {
 }
 function stepCpuAi() {
   const w = worms[current];
-  const live = team === cpuAi.team && team === 1 && mode === "ai" && w?.hp > 0 &&
+  const live = team === cpuAi.team && isCpuTeam(team) && w?.hp > 0 &&
     (phase === "aim" || retreat > 0 || ((phase === "flight" || phase === "settle") && turnBody.retreatPending));
   if (!live) { destroyCpuAi(); return; }
   if (replaying) return;
@@ -8424,7 +8489,7 @@ function stepFrame(dt) {
   const teamWasRemoving = nativeTeamList.removal !== 0;
   for (const strength of nativeTeamListTick(nativeTeamList)) teamPanelSoundState.bounce = strength << 2;
   if (teamWasRemoving && !nativeTeamList.removal && phase === "aim" &&
-      [0, 1].some(id => !worms.some(w => w.team === id && w.hp > 0))) {
+      livingTeams().length <= 1) {
     cancelCharge(); stopRope(); stopJetpack();
     phase = "settle"; shotWait = 0; move = 0; aimInput = 0;
     updateUI();
@@ -8437,11 +8502,11 @@ function stepFrame(dt) {
   }
   if (pendingEliminationTeam !== null) {
     const id = pendingEliminationTeam;
-    const message = nativeTeamEliminationAnnouncement(teamDisplayNames[id ?? 0], id ? 0 : 2, () => matchRandom.logicUint());
+    const message = nativeTeamEliminationAnnouncement(teamDisplayNames[id ?? 0], teamColor(id ?? 0), () => matchRandom.logicUint());
     queueNativeAnnouncement(nativeAnnouncements, message.text, message.font);
     pendingEliminationTeam = null;
   }
-  const teamRosters = [0, 1].map(team => worms.filter(w => w.team === team));
+  const teamRosters = teamIds(teamCount).map(team => worms.filter(w => w.team === team));
   for (const roster of teamRosters)
     nativeTeamHealthMaximum = Math.max(nativeTeamHealthMaximum, roster.reduce((sum, w) => (sum + w.hp) | 0, 0));
   nativeTeamHealthValues = teamRosters.map((roster, index) => {
@@ -8501,8 +8566,8 @@ function stepFrame(dt) {
     }
     if (aimInput && !rope.attached && !jetpack.active) adjustAim(aimInput, dt);
     // A CPU turn that lost its task (restored snapshot, turn resumed) activates a new one.
-    if (team === 1 && mode === "ai" && !cpuAi && !cpuAiFailed && worms[current]?.hp > 0) startCpuAi();
-    if (team === 1 && mode === "ai" && !cpuAi) {
+    if (isCpuTeam(team) && !cpuAi && !cpuAiFailed && worms[current]?.hp > 0) startCpuAi();
+    if (isCpuTeam(team) && !cpuAi) {
       if (aiMoveTime > 0) {
         aiMoveTime = Math.max(0, aiMoveTime - dt);
         const w = worms[current];
@@ -8541,8 +8606,7 @@ function stepFrame(dt) {
   }
   cpuInput = false;
   if (
-    team === 1 &&
-    mode === "ai" &&
+    isCpuTeam(team) &&
     aiRetreatTime > 0 &&
     retreat > 0 &&
     !charging
@@ -8972,7 +9036,7 @@ function stepFrame(dt) {
     let healthDisplayBusy = worms.some(w => w.nativeHealthDisplay.active);
     let deathStarted = false;
     if (settled && !healthDisplayBusy) {
-      const teams = [0, 1].map(team => worms.filter(w => w.team === team));
+      const teams = teamIds(teamCount).map(team => worms.filter(w => w.team === team));
       const dispatch = worms.some(w => w.nativeDeathRequest) ? null : nativeNextDeath(
         teams.map(roster => roster.map(w => ({ hp: w.hp,
           state: w.deathPending ? nativeWormState(w) : 0x89, x: Math.round(w.x * 65536) | 0 }))));
@@ -9200,7 +9264,7 @@ function frame(now) {
   if (nativeLayout || arsenalPanel.open) {
     // 0x42E (weapon input disabled) and turn changes close the panel.
     if (!nativeLayout || !matchStarted || menu.open || phase === "over" || !canAct()) arsenalPanel.close();
-    arsenalPanel.render(arena.clientWidth, arena.clientHeight, team ? "cursorr" : "cursorg");
+    arsenalPanel.render(arena.clientWidth, arena.clientHeight, `cursor${teamSpriteSuffix(team)}`);
   }
   if (!nativeCameraActive && mousePanPointer && matchStarted && !menu.open && !overview && !replaying && !touchPan) {
     const rect = arena.getBoundingClientRect();
@@ -9402,7 +9466,7 @@ function frame(now) {
     w.rig.pivot.visible = false;
     const damagePlacement = nativeDamageTextPlacement({
       ...w.nativeHealthDisplay, x: Math.round(w.x * 65536),
-      y: Math.round((H - w.y) * 65536), color: w.team ? 0 : 2, rank: 0,
+      y: Math.round((H - w.y) * 65536), color: teamColor(w.team), rank: 0,
     });
     if (damagePlacement && w.nativeDamageText !== undefined) {
       if (!w.damageCanvas) {
@@ -9420,7 +9484,7 @@ function frame(now) {
       x: Math.round(w.x * 65536), y: Math.round((H - w.y) * 65536),
       progress: selectionOf(w).label, labelMode, compact: 0, teamInactive: 0, surrendered: 0,
       state: nativeWormState(w), ammo: 0, suppressAmmo: 0,
-      rank: 0, color: w.team ? 0 : 2, selected: active && phase !== "over",
+      rank: 0, color: teamColor(w.team), selected: active && phase !== "over",
       suppressed: 0, tick: selectionTick,
     });
     updateOriginalWormLabel(w.label, w, active && phase !== "over", selectionTick, labelPlacement, {
@@ -9444,7 +9508,7 @@ function frame(now) {
     // 004D86F0 draws the arrow whenever +0x360 is non-zero, sliding with it.
     const arrow = nativeSelectionPlacement({ x: Math.round(w.x * 65536),
       y: Math.round((H - w.y) * 65536), progress: selectionOf(w).arrow,
-      color: w.team ? 0 : 2, alternate: false, tick: selectionTick });
+      color: teamColor(w.team), alternate: false, tick: selectionTick });
     const arrowPoint = arrow && screen(arrow.x >> 16, H - (arrow.y >> 16));
     updateOriginalSelection(w.label, w.team, selectionTick, Boolean(arrow) && w.hp > 0 && phase !== "over",
       arrow ? { x: arrowPoint.x - labelLeft, y: arrowPoint.y - labelTop } : null);
@@ -9471,7 +9535,7 @@ function frame(now) {
       // Offline host control mapping: local humans have visibility; AI has a
       // negative native controller byte. Full scene permission ownership remains.
       showContents: nativeCrateContentsVisible(worms[current] ? team + 1 : 0, true,
-        team === 1 && mode === "ai" ? -1 : 0, worms[current]?.nativeTeamModifiers || 0),
+        isCpuTeam(team) ? -1 : 0, worms[current]?.nativeTeamModifiers || 0),
       contentName: (WEAPONS[crate.content] || UTILITIES[crate.content] || AUTOMATIC_UTILITIES[crate.content])?.label || "",
       contentSpecial: nativeSpecialCrateContent(WEAPON_SLOTS[crate.content]),
     });
@@ -9531,7 +9595,7 @@ function frame(now) {
     if (graphics.lighting === "night")
       for (const [index, w] of worms.entries())
         if (w.hp > 0 && !w.disabledRoster)
-          fx.glow(w.x, w.y + 14, index === current ? 150 : 95, w.team ? 0xffb090 : 0xd8ffa8, index === current ? 1.25 : 0.8);
+          fx.glow(w.x, w.y + 14, index === current ? 150 : 95, teamInfo(w.team).glow, index === current ? 1.25 : 0.8);
     const level = water.userData.surfaceLevel ?? waterLevel;
     const focusOn = projectile ?? worms[current];
     fx.render({
@@ -10123,12 +10187,21 @@ menu.addEventListener("close", () => {
 if (coarsePointer) $("#fire small").textContent = "HOLD / RELEASE";
 const difficultyRow = $("#difficulty-row");
 function syncMenuOptions() {
-  difficultyRow.hidden = $("#mode").value !== "ai";
+  const local = $("#mode").value === "local";
+  const count = local ? clampTeamCount($("#team-count").value) : 2;
+  $("#team-count-row").hidden = !local;
+  for (let t = 0; t < 4; t++) {
+    $(`#team-control-row-${t}`).hidden = !local || t >= count;
+    if (t >= 2) $(`#team-voice-row-${t}`).hidden = t >= count;
+  }
+  const cpu = local && teamIds(count).some((t) => $(`#team-control-${t}`).value === "cpu");
+  difficultyRow.hidden = $("#mode").value !== "ai" && !cpu;
 }
-$("#mode").addEventListener("change", () => {
-  syncMenuOptions();
-  saveSettings();
-});
+for (const selector of ["#mode", "#team-count", "#team-control-0", "#team-control-1", "#team-control-2", "#team-control-3"])
+  $(selector).addEventListener("change", () => {
+    syncMenuOptions();
+    saveSettings();
+  });
 function markSchemeCustom() {
   const select = $("#scheme");
   if (select && select.value !== "custom") select.value = "custom";
@@ -10200,7 +10273,7 @@ for (const folder of ["image", "mission"]) {
     );
   $("#map-layout").append(optgroup);
 }
-for(const t of [0,1]) {
+for(const t of [0,1,2,3]) {
   const select=$('#team-voice-'+t);
   for(const bank of speechBankOptions)select.add(new Option(bank.label,bank.value));
   select.value='english';select.addEventListener('change',saveSettings);
@@ -10398,6 +10471,8 @@ window.siege = {
     bounce,
     current,
     team,
+    teamCount,
+    teamControllers: [...teamControllers],
     round,
     wind,
     explosions,

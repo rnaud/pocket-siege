@@ -1,3 +1,4 @@
+import { TEAMS, teamColor, teamFontName, teamInfo } from "../teams.js";
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { loadNativeFont, measureNativeText, rasterNativeText } from "./font.js";
 import { fixedMultiply } from './numeric.js';
@@ -80,7 +81,7 @@ export function paintOriginalDamageText(canvas, value, team) {
   if (!fonts) return;
   const key = `${team}:${value}`;
   if (canvas.dataset.nativeDamage === key) return;
-  const image = rasterNativeText(fonts[team], String(value));
+  const image = rasterNativeText(fonts.get(teamFontName(team)), String(value));
   canvas.width = image.width;
   canvas.height = image.height;
   canvas.style.width = `${image.width}px`;
@@ -98,9 +99,8 @@ export function nativeWormLabelFont(color, selected, suppressed, tick) {
     : (color | 0) + 9;
 }
 export async function loadOriginalWormLabels() {
-  fonts = await Promise.all(
-    ["stdgrn1", "stdred1", "stdwht1"].map(loadNativeFont),
-  );
+  const names = [...new Set([...TEAMS.keys()].map(team => teamFontName(team))), "stdwht1"];
+  fonts = new Map(await Promise.all(names.map(async name => [name, await loadNativeFont(name)])));
 }
 
 // 004D8C20 uses standard team-color fonts (color+9), switching the selected
@@ -108,7 +108,7 @@ export async function loadOriginalWormLabels() {
 // Positions come from the original label renderer, with integer render-queue snapping.
 export function updateOriginalWormLabel(label, worm, selected, tick, placement, origin) {
   if (!fonts) return false;
-  label.setAttribute('aria-label', `${worm.name}, ${worm.team ? 'CORAL' : 'MOSS'}, ${worm.hp} health`);
+  label.setAttribute('aria-label', `${worm.name}, ${teamInfo(worm.team).short}, ${worm.hp} health`);
   const existingCanvas = label.querySelector('.native-worm-text');
   if (existingCanvas) existingCanvas.hidden = placement.length === 0;
   if (!placement.length) {
@@ -117,9 +117,9 @@ export function updateOriginalWormLabel(label, worm, selected, tick, placement, 
     label.dataset.nativeWidth = '0';
     return true;
   }
-  const fontId = nativeWormLabelFont(worm.team ? 0 : 2, selected, false, tick);
-  const fontIndex = fontId === 15 ? 2 : worm.team;
-  const teamName = worm.team ? "CORAL" : "MOSS";
+  const fontId = nativeWormLabelFont(teamColor(worm.team), selected, false, tick);
+  const fontIndex = fontId === 15 ? "stdwht1" : teamFontName(worm.team);
+  const teamName = teamInfo(worm.team).short;
   const displayedHealth = worm.nativeHealthDisplay
     ? Math.max(0, Math.min(9999, worm.nativeHealthDisplay.value >> 16)) : worm.hp;
   const text = { team: teamName, name: worm.name, health: String(displayedHealth), ammo: String((worm.nativeLabelAmmo ?? 0) >> 16) };
@@ -132,7 +132,7 @@ export function updateOriginalWormLabel(label, worm, selected, tick, placement, 
     label.dataset.nativeWidth = String(existingCanvas.width);
     return true;
   }
-  const font = fonts[fontIndex];
+  const font = fonts.get(fontIndex);
   const width = Math.max(
     ...lines.map(([text]) => measureNativeText(font, text).width),
   );
@@ -161,7 +161,7 @@ export function updateOriginalWormLabel(label, worm, selected, tick, placement, 
   nativeCanvasPaletteDisplay.capture(canvas);
   label.classList.add("has-native-text");
   label.dataset.nativeLabel = key;
-  label.dataset.nativeFont = ["stdgrn1", "stdred1", "stdwht1"][fontIndex];
+  label.dataset.nativeFont = fontIndex;
   label.setAttribute(
     "aria-label",
     `${worm.name}, ${teamName}, ${worm.hp} health`,

@@ -78,7 +78,9 @@ test("live team names use original colored glyphs on the pixel grid", async ({
     "data-native-font",
     "stdred1",
   );
-  for (const label of await page.locator(".native-team-name").all()) {
+  // A two-team match hides the Tide and Amber panels.
+  await expect(page.locator(".team:not([hidden]) .native-team-name")).toHaveCount(2);
+  for (const label of await page.locator(".team:not([hidden]) .native-team-name").all()) {
     await expect(label).toBeInViewport();
     expect(
       await label.evaluate((canvas) => ({

@@ -5,6 +5,8 @@ import { MAP_LAYOUTS } from "./map-generator.js";
 import mapCatalog from "./armageddon/map-catalog.json" with { type: "json" };
 const KEY = "pocket-siege-settings-v1";
 const MODES = ["ai", "local"];
+const TEAM_COUNTS = [2, 3, 4];
+const TEAM_CONTROLS = ["human", "cpu"];
 const DIFFICULTIES = ["rookie", "regular", "veteran"];
 const FORMATS = ["single", "best3"];
 const WEATHERS = ["clear", "rain", "storm"];
@@ -30,7 +32,9 @@ const SCHEMES = [
 export function defaultSettings() {
   return {
     sound: false,
-    teamSpeech:['english','english'],
+    teamSpeech:['english','english','english','english'],
+    teamCount: 2,
+    teamControl: ["human", "human", "human", "human"],
     weaponDelays: {},
     mode: "ai",
     difficulty: "regular",
@@ -74,7 +78,7 @@ export function readSettings(storage) {
           .map((k) => [k, parsed.weaponDelays[k]]),
       ),
       sound: Boolean(parsed.sound),
-      teamSpeech:[0,1].map(i=>Object.hasOwn(speechBanks.banks,parsed.teamSpeech?.[i])?parsed.teamSpeech[i]:'english'),
+      teamSpeech:[0,1,2,3].map(i=>Object.hasOwn(speechBanks.banks,parsed.teamSpeech?.[i])?parsed.teamSpeech[i]:'english'),
       terrainTheme: terrainThemes.includes(parsed.terrainTheme)
         ? parsed.terrainTheme
         : base.terrainTheme,
@@ -83,6 +87,9 @@ export function readSettings(storage) {
         ? parsed.mapLayout
         : base.mapLayout,
       mode: MODES.includes(parsed.mode) ? parsed.mode : base.mode,
+      teamCount: TEAM_COUNTS.includes(parsed.teamCount) ? parsed.teamCount : base.teamCount,
+      teamControl: base.teamControl.map((value, i) =>
+        TEAM_CONTROLS.includes(parsed.teamControl?.[i]) ? parsed.teamControl[i] : value),
       difficulty: DIFFICULTIES.includes(parsed.difficulty)
         ? parsed.difficulty
         : base.difficulty,

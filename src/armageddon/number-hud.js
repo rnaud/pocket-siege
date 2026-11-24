@@ -1,3 +1,4 @@
+import { teamInfo } from "../teams.js";
 import { nativeHUDFrame, paintNativeFrameRequests } from "./hud-frame.js";
 import { fixedMultiply } from "./numeric.js";
 import { loadNativeFont, paintNativeText } from "./font.js";
@@ -71,7 +72,7 @@ export function updateOriginalClockPanel(progress, team, root = document) {
     panel.prepend(frame);
   }
   if (frame.dataset.team !== String(team)) {
-    paintNativeFrameRequests(frame, 56, 42, nativeClockFrame(56, 42, "#000000", team ? "#ff8080" : "#80ff80"));
+    paintNativeFrameRequests(frame, 56, 42, nativeClockFrame(56, 42, "#000000", teamInfo(team).css));
     frame.dataset.team = String(team);
   }
   // 004B5860: center (38, screenHeight - 60 * progress + 30).

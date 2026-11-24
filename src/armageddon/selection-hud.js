@@ -1,3 +1,4 @@
+import { teamColor } from "../teams.js";
 import { nativeCanvasPaletteDisplay } from "./canvas-palette.js";
 import { originalVisual } from "./art.js";
 import { nativeSpriteFrame } from "./animation.js";
@@ -18,7 +19,7 @@ export function updateOriginalSelection(label, team, tick, visible, offset = nul
     return;
   }
   // Host Moss/Coral teams map to the original green/red palettes.
-  const { name, index } = originalSelectionFrame(team ? 0 : 2, false, tick);
+  const { name, index } = originalSelectionFrame(teamColor(team), false, tick);
   const frame = originalVisual(name, index);
   if (!frame) return;
   if (!canvas) {

@@ -173,6 +173,12 @@ main {
 .team-coral {
   color: var(--hud-coral);
 }
+.team-tide {
+  color: #8fa8ef;
+}
+.team-amber {
+  color: #e8d26a;
+}
 .team .team-portrait {
   position: absolute;
   left: 8px;
@@ -2403,3 +2409,4 @@ body.native-layout #arena.targeting {
   pointer-events: none;
 }
 .native-girder-preview[hidden] { display: none; }
+.team[hidden] { display: none; }

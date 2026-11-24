@@ -1,3 +1,4 @@
+import { teamColor, teamFontName, teamInfo } from "./teams.js";
 import {
   paintNativeHUDFrame,
   paintNativeTeamHealth,
@@ -115,13 +116,12 @@ export function mountPixelHUD(arena) {
   document.body.classList.add("native-game-hud");
   arena.append(document.querySelector("#wind"));
   frame(document.querySelector(".controls"), true);
-  document.querySelector(".team-lime b").textContent = "MOSS";
-  document.querySelector(".team-coral b").textContent = "CORAL";
-  for (const [selector, fontName] of [
-    [".team-lime b", "stdgrn1"],
-    [".team-coral b", "stdred1"],
-  ]) {
-    const label = document.querySelector(selector);
+  document.querySelectorAll(".team").forEach((panel, team) => {
+    panel.querySelector("b").textContent = teamInfo(team).short;
+  });
+  for (const [team, panel] of [...document.querySelectorAll(".team")].entries()) {
+    const fontName = teamFontName(team);
+    const label = panel.querySelector("b");
     Promise.all([loadNativeFont(fontName), loadNativeFont("stdwht1")])
       .then(([font, white]) => {
         teamFonts.set(fontName, font);
@@ -202,7 +202,7 @@ export function updateHudTeams(worms, activeTeam) {
 
     panel.setAttribute(
       "aria-label",
-      `${t ? "Coral" : "Moss"}: ${hp} health, ${alive} worms alive`,
+      `${teamInfo(t).short}: ${hp} health, ${alive} worms alive`,
     );
   });
 }
@@ -223,11 +223,11 @@ export function updateHudTeamPanel(progress, list) {
 
 export function updateHudTeamHealth(values, activeTeam = -1, tick = 0) {
   document.querySelectorAll(".team").forEach((panel, team) => {
-    const highlight = nativeTeamHighlight(team ? 0 : 2, team === activeTeam, tick);
-    const color = highlight.flashing ? "#ffffff" : team ? "#ff8080" : "#80ff80";
+    const highlight = nativeTeamHighlight(teamColor(team), team === activeTeam, tick);
+    const color = highlight.flashing ? "#ffffff" : teamInfo(team).css;
     const health = panel.querySelector(".native-team-health");
-    if (health) paintNativeTeamHealth(health, values[team], color);
-    const name = highlight.font === 15 ? "stdwht1" : team ? "stdred1" : "stdgrn1";
+    if (health && values[team] !== undefined) paintNativeTeamHealth(health, values[team], color);
+    const name = highlight.font === 15 ? "stdwht1" : teamFontName(team);
     const label = panel.querySelector("b");
     const canvas = label.querySelector(".native-team-name");
     if (canvas && teamFonts.has(name) && label.dataset.nativeFont !== name) {

@@ -129,6 +129,20 @@
               aria-hidden="true"
             ></canvas>
           </div>
+          <div class="team team-tide" hidden>
+            <strong id="score2">300</strong>
+            <div>
+              <b id="team2-name">TIDE PATROL</b>
+              <div class="health-track"><i id="health2"></i></div>
+            </div>
+          </div>
+          <div class="team team-amber" hidden>
+            <strong id="score3">300</strong>
+            <div>
+              <b id="team3-name">AMBER LEGION</b>
+              <div class="health-track"><i id="health3"></i></div>
+            </div>
+          </div>
         </div>
         <section id="arena" aria-label="Battlefield">
           <div id="scene"></div>
@@ -533,7 +547,9 @@
             mine. Grenades, mortars and mines are limited. Falling can
             hurt you; water is lethal, and from round six a chosen sudden-death
             event fires. Open ✦ UTILS for rope, jet pack, parachute, teleport,
-            girder and freeze. Solo skill is chosen in the menu.
+            girder and freeze. Solo skill is chosen in the menu. Local pass &amp;
+            play takes 2–4 teams on one device; set each team to a player or the
+            computer.
           </p>
           <p>
             <b>04 &nbsp; Field notes</b><br />Walk onto an airdropped supply
@@ -548,11 +564,49 @@
         <div class="menu-grid">
           <div><label class="mode-label" for="team-voice-0">MOSS COMPANY VOICE</label><select id="team-voice-0"></select></div>
           <div><label class="mode-label" for="team-voice-1">CORAL CREW VOICE</label><select id="team-voice-1"></select></div>
+          <div id="team-voice-row-2" hidden><label class="mode-label" for="team-voice-2">TIDE PATROL VOICE</label><select id="team-voice-2"></select></div>
+          <div id="team-voice-row-3" hidden><label class="mode-label" for="team-voice-3">AMBER LEGION VOICE</label><select id="team-voice-3"></select></div>
           <div>
             <label class="mode-label" for="mode">MATCH TYPE</label
             ><select id="mode">
               <option value="ai">Solo vs. computer</option>
               <option value="local">Local pass &amp; play</option>
+            </select>
+          </div>
+          <div id="team-count-row" hidden>
+            <label class="mode-label" for="team-count">TEAMS</label
+            ><select id="team-count">
+              <option value="2" selected>2 teams</option>
+              <option value="3">3 teams</option>
+              <option value="4">4 teams</option>
+            </select>
+          </div>
+          <div id="team-control-row-0" class="team-control-row" hidden>
+            <label class="mode-label" for="team-control-0">MOSS COMPANY</label
+            ><select id="team-control-0">
+              <option value="human">Player</option>
+              <option value="cpu">Computer</option>
+            </select>
+          </div>
+          <div id="team-control-row-1" class="team-control-row" hidden>
+            <label class="mode-label" for="team-control-1">CORAL CREW</label
+            ><select id="team-control-1">
+              <option value="human">Player</option>
+              <option value="cpu">Computer</option>
+            </select>
+          </div>
+          <div id="team-control-row-2" class="team-control-row" hidden>
+            <label class="mode-label" for="team-control-2">TIDE PATROL</label
+            ><select id="team-control-2">
+              <option value="human">Player</option>
+              <option value="cpu">Computer</option>
+            </select>
+          </div>
+          <div id="team-control-row-3" class="team-control-row" hidden>
+            <label class="mode-label" for="team-control-3">AMBER LEGION</label
+            ><select id="team-control-3">
+              <option value="human">Player</option>
+              <option value="cpu">Computer</option>
             </select>
           </div>
           <div id="difficulty-row">
