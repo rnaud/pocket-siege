@@ -43,32 +43,25 @@ test("rolling hurt frames advance from native velocity rather than render time",
 });
 
 test("live blast advances the original rolling frames", async ({ page }) => {
-  await startMatch(page, { map: "fern" });
+  // A manual clock draws every logic tick, so a slow runner cannot skip the
+  // short rolling strip between two rendered frames.
+  await startMatch(page, { map: "fern", manualClock: true });
   // Random terrain can immediately select sliding instead of rolling.
   await page.evaluate(() => window.siege.debug.resetSeed(42));
   const result = await page.evaluate(async () => {
     const initial = window.siege.getState();
     const w = initial.worms[0];
     window.siege.debug.explodeAt(w.x - 20, w.y, "death");
-    const seen = new Set(),
-      states = new Set(),
-      start = performance.now();
+    const seen = new Set(), states = new Set();
     let ticks = 0;
-    await new Promise((resolve) => {
-      function sample() {
-        const state = window.siege.getState();
-        const worm = state.worms[0];
-        ticks = state.random.frame - initial.random.frame;
-        states.add(`${worm.nativeHurtState}:${worm.originalSprite}`);
-        if (worm.originalSprite === "wroll") seen.add(worm.originalFrame);
-        // CI rendering can be slower than the 50Hz simulation budget. Observe
-        // 1.5 simulation seconds, with a wall-clock guard for a stalled game.
-        if (seen.size >= 2 || ticks >= 75 || performance.now() - start > 10000)
-          resolve();
-        else requestAnimationFrame(sample);
-      }
-      requestAnimationFrame(sample);
-    });
+    // Observe 1.5 simulation seconds, one rendered frame per tick.
+    for (; ticks < 75 && seen.size < 2; ticks++) {
+      window.siege.debug.advanceReplayFrames(1);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const worm = window.siege.getState().worms[0];
+      states.add(`${worm.nativeHurtState}:${worm.originalSprite}`);
+      if (worm.originalSprite === "wroll") seen.add(worm.originalFrame);
+    }
     return { frames: [...seen], ticks, states: [...states] };
   });
   expect(result.frames.length, JSON.stringify(result)).toBeGreaterThan(1);

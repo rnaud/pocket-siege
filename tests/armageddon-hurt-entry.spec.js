@@ -60,22 +60,18 @@ test("native ordinary hits render the original rolling strip with exact pixels",
 test("live native death blast selects the rolling hurt pose", async ({
   page,
 }) => {
-  await startMatch(page, { seed: 42 });
-  const observed = await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const w = window.siege.getState().worms[0];
-        window.siege.debug.explodeAt(w.x - 20, w.y, "death");
-        // Observe each rendered frame: remote CI polling can miss this short pose.
-        const deadline = performance.now() + 5000;
-        const sample = () => {
-          if (window.siege.getState().worms[0].originalSprite === "wroll")
-            resolve(true);
-          else if (performance.now() >= deadline) resolve(false);
-          else requestAnimationFrame(sample);
-        };
-        requestAnimationFrame(sample);
-      }),
-  );
+  // A manual clock renders every logic tick: on a slow runner the real-time
+  // loop can step past this short pose between two drawn frames.
+  await startMatch(page, { seed: 42, manualClock: true });
+  const observed = await page.evaluate(async () => {
+    const w = window.siege.getState().worms[0];
+    window.siege.debug.explodeAt(w.x - 20, w.y, "death");
+    for (let tick = 0; tick < 250; tick++) {
+      window.siege.debug.advanceReplayFrames(1);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (window.siege.getState().worms[0].originalSprite === "wroll") return true;
+    }
+    return false;
+  });
   expect(observed).toBe(true);
 });

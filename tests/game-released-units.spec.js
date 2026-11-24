@@ -5,7 +5,9 @@ import { startMatch } from "./helpers/match.js";
 // can obstruct a replay shot or put a jump above a lethal drop.
 test.beforeEach(fixTerrainRandom);
 test("released units walk along the ground", async ({ page }) => {
-  await startMatch(page);
+  // Only the explicit logic frames may move a unit; real time between page
+  // calls would let a slow runner carry it off its walk.
+  await startMatch(page, { manualClock: true });
   // Every mode-3 unit walks with the original 004E3920 routine.
   for (const kind of ["sheep", "supersheep", "aquasheep", "oldwoman",
     "sallyarmy", "skunk", "madcow", "molebomb"]) {
