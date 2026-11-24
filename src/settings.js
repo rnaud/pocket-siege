@@ -2,6 +2,7 @@ import speechBanks from './armageddon/speech-bank-data.json' with {type:'json'};
 import terrainThemes from "./armageddon/terrain-themes.js";
 import { WEAPON_SLOTS } from "./armageddon/delays.js";
 import { MAP_LAYOUTS } from "./map-generator.js";
+import { FLAG_FILES, TEAMS } from "./teams.js";
 import mapCatalog from "./armageddon/map-catalog.json" with { type: "json" };
 const KEY = "pocket-siege-settings-v1";
 const MODES = ["ai", "local"];
@@ -35,6 +36,7 @@ export function defaultSettings() {
     teamSpeech:['english','english','english','english'],
     teamCount: 2,
     teamControl: ["human", "human", "human", "human"],
+    teamFlag: TEAMS.map((team) => team.flag),
     weaponDelays: {},
     mode: "ai",
     difficulty: "regular",
@@ -90,6 +92,8 @@ export function readSettings(storage) {
       teamCount: TEAM_COUNTS.includes(parsed.teamCount) ? parsed.teamCount : base.teamCount,
       teamControl: base.teamControl.map((value, i) =>
         TEAM_CONTROLS.includes(parsed.teamControl?.[i]) ? parsed.teamControl[i] : value),
+      teamFlag: base.teamFlag.map((value, i) =>
+        FLAG_FILES.some(([file]) => file === parsed.teamFlag?.[i]) ? parsed.teamFlag[i] : value),
       difficulty: DIFFICULTIES.includes(parsed.difficulty)
         ? parsed.difficulty
         : base.difficulty,

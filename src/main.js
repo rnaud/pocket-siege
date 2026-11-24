@@ -1,4 +1,4 @@
-import { TEAMS, teamInfo, teamColor, teamSpriteSuffix, teamIds, clampTeamCount } from "./teams.js";
+import { TEAMS, FLAG_FILES, cpuFlagFile, teamInfo, teamColor, teamSpriteSuffix, teamIds, clampTeamCount } from "./teams.js";
 import {observeAssetCache} from './asset-cache.js';
 import { OriginalMusic } from "./armageddon/music.js";
 import {nativeInitializeWormSpawnFields} from './armageddon/worm-spawn-fields.js';
@@ -319,7 +319,7 @@ import { LOGIC_STEP_SECONDS } from "./armageddon/clock.js";
 import { playSound } from "./sound.js";
 import { fragments } from "./weapon-behavior.js";
 import { pixelBrush } from "./pixel-draw.js";
-import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel, updateHudTeamHealth } from "./pixel-hud.js";
+import { mountPixelHUD, updateHudPower, updateHudTeams, updateHudTeamPanel, updateHudTeamHealth, updateHudTeamFlags } from "./pixel-hud.js";
 import { loadOriginalWormLabels, updateOriginalWormLabel, paintOriginalDamageText, nativeDamageTextPlacement, nativeWormLabelPlacement, nativeSelectionPlacement, nextNativeLabelMode, nativeSelectionFrame, nativeSelectionState } from "./armageddon/worm-label.js";
 import { nativeCanvasPaletteDisplay } from "./armageddon/canvas-palette.js";
 import { nativeWormIconUpdate, nativeWormIconDraw, nativeWormIconPanel, paintNativeWormIcon } from "./armageddon/worm-icon.js";
@@ -408,6 +408,10 @@ let nativeLayout = false;
 // control tests) frames through the native camera task at 1:1 pixels.
 let nativeCameraActive = false;
 let pendingTurnCamera = null;
+// Host adapter: a Tab worm selection centres the camera like the turn start's
+// special offer, holding it at the active worm's input priority (1) so lower
+// requests such as a drifting crate wait out the ordinary 49-frame hold.
+let pendingSelectCamera = null;
 // Turn-game root turn fields owned by 004B3210 and the retreat/settlement
 // routines (turn and retreat durations in ms, turn count, clock target).
 let turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending: 0 };
@@ -1334,6 +1338,19 @@ function isCpuTeam(t = team) {
 function livingTeams() {
   return teamIds(teamCount).filter((t) => worms.some((w) => w.team === t && w.hp > 0));
 }
+// Scenario teams fly their authored CPU flag; CPU teams fly the skill flag
+// (0041BC40) and players fly the country flag chosen in the menu.
+function teamFlagFiles() {
+  return teamIds(teamCount).map((t) => {
+    if (currentScenario) {
+      const flag = currentScenario.teamWorms?.[t]?.find((worm) => worm.place !== false)?.flag;
+      return flag ? `cpuflag${Math.max(1, Math.min(5, flag))}.bww` : null;
+    }
+    if (isCpuTeam(t)) return cpuFlagFile({ rookie: 30, regular: 60, veteran: 100 }[difficulty] ?? 60);
+    const chosen = $(`#team-flag-${t}`)?.value;
+    return FLAG_FILES.some(([file]) => file === chosen) ? chosen : TEAMS[t].flag;
+  });
+}
 function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   turnBody = { turnCount: 0, matchTime: 0, retreatRemaining: 0, retreatPending: 0 };
   suddenDeathCountdown = 0;
@@ -1493,6 +1510,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   } else if (currentScenario?.difficulty === 1) difficulty = "rookie";
   else if (currentScenario?.difficulty === 2) difficulty = "regular";
   else if (currentScenario?.difficulty === 3) difficulty = "veteran";
+  updateHudTeamFlags(teamFlagFiles());
   shotFuse = null;
   shotBounce = null;
   aiMoveTime = 0;
@@ -1558,7 +1576,7 @@ function reset({ keepSeries = false, seed = null, isDaily = false } = {}) {
   nativeCameraFocus = null;
   nativeCameraFraming = null;
   pendingEnvironmentCamera = null;
-  pendingTurnCamera = null; pendingInputCamera = false;
+  pendingTurnCamera = null; pendingInputCamera = false; pendingSelectCamera = null;
   mouseLookDelta[0] = mouseLookDelta[1] = 0;
   pinchZoom = 1;
   pendingWormCamera = [];
@@ -2985,7 +3003,8 @@ function stepActiveProjectileLogic(dt) {
       // 004E27F0 mode3 flight art (spsheep/aquashp, rotated by heading).
     } else if (p.sheep && updateOriginalProjectile(p.mesh, p.kind, p.vx, p.vy, p.age,
         p.y < waterLevel, false, p.nativeRender)) {
-      p.mesh.scale.x = Math.abs(p.mesh.scale.x) * (p.sheep.direction < 0 ? 1 : -1);
+      // 004E2A95: walking-unit art faces right; a left walk sets mirror 0x40000.
+      p.mesh.scale.x = Math.abs(p.mesh.scale.x) * (p.sheep.direction < 0 ? -1 : 1);
       p.mesh.position.y = p.y - p.sheepDrawOffset;
     } else if (
       !updateOriginalProjectile(
@@ -3806,9 +3825,10 @@ function cycleWorm(direction = 1) {
   power = 0;
   charging = false;
   chargeSource = null;
-  next.facing = teamStartFacing(next);
+  // A selected worm keeps the way it faces; the camera centres on it.
   angle = next.facing < 0 ? 135 : 45;
   cameraSnap = true; manualCamera = null;
+  pendingSelectCamera = [Math.round(next.x * 65536), Math.round((H - next.y) * 65536)];
   wormLocked = false;
   setWeapon(teamWeapon[team] || "rocket");
   updateSliders();
@@ -5053,6 +5073,7 @@ function saveSettings() {
     teamSpeech:[0,1,2,3].map(t=>$('#team-voice-'+t).value),
     teamCount: +$("#team-count").value,
     teamControl: [0, 1, 2, 3].map((t) => $(`#team-control-${t}`).value),
+    teamFlag: [0, 1, 2, 3].map((t) => $(`#team-flag-${t}`).value),
     mode: $("#mode").value,
     difficulty: $("#difficulty").value,
     format: $("#format").value,
@@ -5090,6 +5111,7 @@ function applySettings() {
   saved.teamSpeech.forEach((bank,t)=>set('#team-voice-'+t,bank));
   set("#team-count", String(saved.teamCount));
   saved.teamControl.forEach((value, t) => set(`#team-control-${t}`, value));
+  saved.teamFlag.forEach((value, t) => set(`#team-flag-${t}`, value));
   syncMenuOptions();
   sound = saved.sound;
   updateSoundButton();
@@ -9129,6 +9151,11 @@ function stepFrame(dt) {
     nativeCamera.offerSpecial(...pendingTurnCamera);
     pendingTurnCamera = null;
   }
+  if (nativeCameraActive && pendingSelectCamera) {
+    nativeCamera.setPriority(1);
+    nativeCamera.offerSpecial(...pendingSelectCamera);
+    pendingSelectCamera = null;
+  }
   if (nativeCameraActive) stepNativeTargetCursor(limits);
   if (!nativeCameraFraming && (trackedProjectiles.length || mineCameraRequests.length || crateCameraRequests.length || barrelActivity.camera.length || flameActivity.camera.length || teleportTracking || wormTracking || environmentTracking)) {
     nativeCamera.reset();
@@ -10195,6 +10222,11 @@ function syncMenuOptions() {
     if (t >= 2) $(`#team-voice-row-${t}`).hidden = t >= count;
   }
   const cpu = local && teamIds(count).some((t) => $(`#team-control-${t}`).value === "cpu");
+  // Computer teams fly the skill flag, so only players pick a country.
+  for (let t = 0; t < 4; t++) {
+    const human = local ? $(`#team-control-${t}`).value !== "cpu" : t === 0;
+    $(`#team-flag-row-${t}`).hidden = t >= count || !human;
+  }
   difficultyRow.hidden = $("#mode").value !== "ai" && !cpu;
 }
 for (const selector of ["#mode", "#team-count", "#team-control-0", "#team-control-1", "#team-control-2", "#team-control-3"])
@@ -10272,6 +10304,12 @@ for (const folder of ["image", "mission"]) {
       ),
     );
   $("#map-layout").append(optgroup);
+}
+for (const t of [0, 1, 2, 3]) {
+  const select = $(`#team-flag-${t}`);
+  for (const [file, label] of FLAG_FILES) select.add(new Option(label, file));
+  select.value = TEAMS[t].flag;
+  select.addEventListener("change", saveSettings);
 }
 for(const t of [0,1,2,3]) {
   const select=$('#team-voice-'+t);

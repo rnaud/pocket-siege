@@ -2410,3 +2410,14 @@ body.native-layout #arena.targeting {
 }
 .native-girder-preview[hidden] { display: none; }
 .team[hidden] { display: none; }
+/* The 20x17 team flag sits in the gap between the name and the health bar. */
+.team-flag { display: none; }
+.native-game-hud .team-flag {
+  position: absolute;
+  left: -10px;
+  top: 0;
+  width: 20px;
+  height: 17px;
+  image-rendering: pixelated;
+}
+.native-game-hud .team-flag:not([hidden]) { display: block; }

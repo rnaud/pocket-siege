@@ -85,6 +85,43 @@ test("worm selection, turn pace and skip change the turn economy", async ({
   await advanceUntil(page, (s) => s.team === 1, { max: 500, step: 5, label: "next team" });
 });
 
+test("Tab selects each worm in turn and centres the camera on it", async ({ page }) => {
+  // Native layout narrower than the island, so the camera has room to scroll.
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto("/");
+  // Desktop players get the native layout and camera; the fixture's host
+  // layout flag would bypass both.
+  await page.evaluate(() => localStorage.removeItem("pocket-siege-host-layout"));
+  await page.reload();
+  await page.waitForFunction(() => window.siege?.getState().assetsReady);
+  // Four local teams spread each team's worms across the island.
+  await page.evaluate(async () => {
+    const count = document.querySelector("#team-count");
+    count.value = "4";
+    count.dispatchEvent(new Event("change", { bubbles: true }));
+    await window.siege.debug.startMatch({ mode: "local", map: "fern", seed: 42, manualClock: true });
+  });
+  const step = (ticks) => page.evaluate(async (ticks) => {
+    for (let tick = 0; tick < ticks; tick++) {
+      window.siege.debug.advanceReplayFrames(1);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+    const s = window.siege.getState();
+    return { current: s.current, focus: Boolean(s.nativeCameraFocus),
+      centre: s.camera.x + s.camera.w / 2, target: s.worms[s.current].x };
+  }, ticks);
+  // The opening crate holds the native camera; Tab must still take it.
+  const opening = await step(10);
+  expect(opening.focus).toBe(true);
+  const views = [];
+  for (let press = 0; press < 3; press++) {
+    await page.keyboard.press("Tab");
+    views.push(await step(30));
+  }
+  expect(new Set(views.map((view) => view.current)).size, JSON.stringify(views)).toBe(3);
+  for (const view of views) expect(Math.abs(view.centre - view.target), JSON.stringify(views)).toBeLessThan(24);
+});
+
 test("sudden-death health and nuclear variants apply", async ({ page }) => {
   await page.goto("/");
   await page.waitForFunction(() => window.siege?.getState().assetsReady);

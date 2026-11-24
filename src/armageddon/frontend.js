@@ -39,9 +39,9 @@ export function mountArmageddonFrontend(host = {}) {
   const modeField = field('#mode');
   modeField.hidden = true;
   const game = panel("TEAMS", "frontend-game");
-  // Each team's controller (local play only) sits above its voice.
+  // Each team's controller (local play only) sits above its voice and flag.
   game.append(modeField, field('#difficulty'), field('#team-count'),
-    ...[0, 1, 2, 3].flatMap(t => [field(`#team-control-${t}`), field(`#team-voice-${t}`)]), portrait);
+    ...[0, 1, 2, 3].flatMap(t => [field(`#team-control-${t}`), field(`#team-voice-${t}`), field(`#team-flag-${t}`)]), portrait);
   const terrain = panel("LANDSCAPE", "frontend-terrain");
   terrain.append(field("#map-layout"));
   const rules = panel("GAME OPTIONS", "frontend-rules");

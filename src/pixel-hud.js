@@ -236,3 +236,39 @@ export function updateHudTeamHealth(values, activeTeam = -1, tick = 0) {
     }
   });
 }
+
+// Team flags are original 20x17 8-bit bitmaps (data/user/flags); each is drawn
+// whole, border included, between the team name and its health bar.
+const flagBitmaps = new Map();
+function loadFlagBitmap(file) {
+  if (!flagBitmaps.has(file))
+    flagBitmaps.set(file, fetch(`${import.meta.env.BASE_URL}armageddon/media/user/flags/${file}`)
+      .then((response) => response.ok ? response.arrayBuffer() : Promise.reject(new Error(file)))
+      .then((bytes) => createImageBitmap(new Blob([bytes], { type: "image/bmp" })))
+      .catch((error) => { flagBitmaps.delete(file); throw error; }));
+  return flagBitmaps.get(file);
+}
+export function updateHudTeamFlags(files) {
+  document.querySelectorAll(".team").forEach((panel, team) => {
+    const canvas = panel.querySelector(".team-flag");
+    if (!canvas) return;
+    const file = files[team] ?? null;
+    if (!file) { canvas.hidden = true; delete canvas.dataset.flag; return; }
+    if (canvas.dataset.flag === file) return;
+    canvas.dataset.flag = file;
+    loadFlagBitmap(file).then((bitmap) => {
+      if (canvas.dataset.flag !== file) return;
+      canvas.width = 20;
+      canvas.height = 17;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, 20, 17);
+      ctx.drawImage(bitmap, 0, 0);
+      nativeCanvasPaletteDisplay.capture(canvas);
+      canvas.hidden = false;
+    }).catch((error) => {
+      canvas.hidden = true;
+      console.warn("Team flag unavailable", error);
+    });
+  });
+}

@@ -21,6 +21,7 @@ test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
     teamSpeech:['danish~1','austra~1','english','german'],
     teamCount: 4,
     teamControl: ["human", "cpu", "human", "cpu"],
+    teamFlag: ["scotland.bmp", "japan.bmp", "greece.bmp", "sweden.bmp"],
     weaponDelays: { holy: 2, airstrike: -1 },
     mode: "local",
     difficulty: "veteran",
@@ -51,6 +52,8 @@ test("settings round-trip and reject unknown values", { tag: "@logic" }, () => {
   writeSettings({ ...settings, teamCount: 5, teamControl: ["robot", "cpu"] }, storage);
   expect(readSettings(storage).teamCount).toBe(2);
   expect(readSettings(storage).teamControl).toEqual(["human", "cpu", "human", "human"]);
+  writeSettings({ ...settings, teamFlag: ["nowhere.bmp", "japan.bmp"] }, storage);
+  expect(readSettings(storage).teamFlag).toEqual(["ireland.bmp", "japan.bmp", "greece.bmp", "sweden.bmp"]);
   storage.setItem("pocket-siege-settings-v1", "{nope");
   expect(readSettings(storage)).toEqual(defaultSettings());
 });
